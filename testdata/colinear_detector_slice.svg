@@ -1,6 +1,9 @@
 <svg viewBox="0 0 167.764 99.8822" xmlns="http://www.w3.org/2000/svg">
+<g id="slice:0:1">
 <path d="M106.51,16 C115.561 29.5765,115.561 29.5765,129.137 38.6274 C138.188 52.2039,138.188 52.2039,151.764 61.2548 C133.663 34.1019,133.663 34.1019,106.51 16" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M106.51,16 C115.561 29.5765,115.561 29.5765,129.137 38.6274 C138.188 52.2039,138.188 52.2039,151.764 61.2548 C133.663 34.1019,133.663 34.1019,106.51 16" stroke="black" fill="none"/>
+</g>
+<g id="slice:1:1">
 <path d="M16,16 C25.051 29.5765,25.051 29.5765,38.6274 38.6274 C47.6784 52.2039,47.6784 52.2039,61.2548 61.2548 L16,83.8822 L16,16" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
 <defs>
 <radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
@@ -13,11 +16,12 @@
 <circle clip-path="url(#clip0)" cx="61.2548" cy="61.2548" r="20" stroke="none" fill="url('#zgrad')"/>
 <circle clip-path="url(#clip0)" cx="16" cy="83.8822" r="20" stroke="none" fill="url('#xgrad')"/>
 <path d="M16,16 C25.051 29.5765,25.051 29.5765,38.6274 38.6274 C47.6784 52.2039,47.6784 52.2039,61.2548 61.2548 L16,83.8822 L16,16" stroke="black" fill="none"/>
-<circle cx="16" cy="16" r="2" stroke="none" fill="black"/>
-<circle cx="38.6274" cy="38.6274" r="2" stroke="none" fill="black"/>
-<circle cx="61.2548" cy="61.2548" r="2" stroke="none" fill="black"/>
-<circle cx="16" cy="83.8822" r="2" stroke="none" fill="black"/>
-<circle cx="106.51" cy="16" r="2" stroke="none" fill="black"/>
-<circle cx="129.137" cy="38.6274" r="2" stroke="none" fill="black"/>
-<circle cx="151.764" cy="61.2548" r="2" stroke="none" fill="black"/>
+</g>
+<circle id="qubitdot:0:0_0:1" cx="16" cy="16" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:1:1_1:1" cx="38.6274" cy="38.6274" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:2:2_2:1" cx="61.2548" cy="61.2548" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:3:0_3:1" cx="16" cy="83.8822" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:4:4_0:1" cx="106.51" cy="16" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:5:5_1:1" cx="129.137" cy="38.6274" r="2" stroke="none" fill="black"/>
+<circle id="qubitdot:6:6_2:1" cx="151.764" cy="61.2548" r="2" stroke="none" fill="black"/>
 </svg>
