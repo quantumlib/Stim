@@ -622,8 +622,15 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             std::stringstream id_ss;
             id_ss << "qubitdot";
             id_ss << ":" << q;
+            bool first = true;
             for (auto c : coordinates.at(q)){
-                id_ss << "_" << c; // the raw qubit coordinates, not projected to 2D
+                if(first){
+                    id_ss << ":";
+                } else {
+                    id_ss << "_";
+                }
+                id_ss << c; // the raw qubit coordinates, not projected to 2D
+                first = false;
             }
             id_ss << ":" << t; // the absolute tick
             
@@ -712,8 +719,15 @@ void DetectorSliceSet::write_svg_contents_to(
 
             // Open the group element for this slice
             out << "<g id=\"slice:" << target.val();
-            for (const auto c : detector_coordinates.at(target.val())){
-                out << "_" << c ;
+            bool first = true;
+            for (auto c : detector_coordinates.at(target.val())){
+                if(first){
+                    out << ":";
+                } else {
+                    out << "_";
+                }
+                out << c;
+                first = false;
             }
             out << ":" << tick << "\">\n";
 
