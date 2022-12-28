@@ -657,8 +657,7 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                    
                 std::stringstream id_ss;
                 id_ss << "border:" << k;
-                id_ss << "_" << row;
-                id_ss << "_" << col;
+                id_ss << ":" << row << "_" << col;
                 id_ss << ":" << k+min_tick;
                 
                 out << "<rect";
