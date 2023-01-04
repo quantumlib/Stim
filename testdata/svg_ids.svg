@@ -15,8 +15,10 @@
 <circle cx="63.1878" cy="55.3231" r="6" stroke="none" fill="#4DA6FF"/>
 <circle cx="63.1878" cy="55.3231" r="6" stroke="black" fill="none"/>
 </g>
-<circle id="qubitdot:0:1" cx="16" cy="16" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:1:1:1" cx="26.4862" cy="16" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:2:2_2:1" cx="36.9723" cy="36.9723" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:3:3_3_3:1" cx="63.1878" cy="55.3231" r="2" stroke="none" fill="black"/>
+<g id="qubit_dots">
+<circle id="qubit_dot:0:1" cx="16" cy="16" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1:1" cx="26.4862" cy="16" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_2:1" cx="36.9723" cy="36.9723" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_3_3:1" cx="63.1878" cy="55.3231" r="2" stroke="none" fill="black"/>
+</g>
 </svg>

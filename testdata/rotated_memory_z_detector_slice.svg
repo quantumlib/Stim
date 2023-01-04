@@ -1,11 +1,6 @@
 <svg viewBox="0 0 77.2548 122.51" xmlns="http://www.w3.org/2000/svg">
 <g id="slice:1:2_0_1:8">
 <path d="M38.6274,16 L61.2548,38.6274 L16,38.6274 L38.6274,16" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<defs>
-<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="ygrad"><stop offset="50%" stop-color="#59FF7A" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="zgrad"><stop offset="50%" stop-color="#4DA6FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-</defs>
 <clipPath id="clip0"><path d="M38.6274,16 L61.2548,38.6274 L16,38.6274 L38.6274,16"/></clipPath>
 <circle clip-path="url(#clip0)" cx="16" cy="38.6274" r="20" stroke="none" fill="url('#xgrad')"/>
 <circle clip-path="url(#clip0)" cx="38.6274" cy="16" r="20" stroke="none" fill="url('#zgrad')"/>
@@ -36,11 +31,18 @@
 <circle cx="38.6274" cy="106.51" r="6" stroke="none" fill="#4DA6FF"/>
 <circle cx="38.6274" cy="106.51" r="6" stroke="black" fill="none"/>
 </g>
-<circle id="qubitdot:1:1_1:8" cx="16" cy="38.6274" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:2:2_0:8" cx="38.6274" cy="16" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:3:3_1:8" cx="61.2548" cy="38.6274" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:6:1_3:8" cx="16" cy="83.8822" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:7:2_2:8" cx="38.6274" cy="61.2548" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:8:3_3:8" cx="61.2548" cy="83.8822" r="2" stroke="none" fill="black"/>
-<circle id="qubitdot:12:2_4:8" cx="38.6274" cy="106.51" r="2" stroke="none" fill="black"/>
+<defs>
+<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="ygrad"><stop offset="50%" stop-color="#59FF7A" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="zgrad"><stop offset="50%" stop-color="#4DA6FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+</defs>
+<g id="qubit_dots">
+<circle id="qubit_dot:1:1_1:8" cx="16" cy="38.6274" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:8" cx="38.6274" cy="16" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_1:8" cx="61.2548" cy="38.6274" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_3:8" cx="16" cy="83.8822" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_2:8" cx="38.6274" cy="61.2548" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_3:8" cx="61.2548" cy="83.8822" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_4:8" cx="38.6274" cy="106.51" r="2" stroke="none" fill="black"/>
+</g>
 </svg>
