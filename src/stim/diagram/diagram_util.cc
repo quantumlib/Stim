@@ -38,3 +38,14 @@ size_t stim_draw_internal::utf8_char_count(const std::string &s) {
     }
     return t;
 }
+
+void stim_draw_internal::add_vector_to_ss(std::ostream &ss, std::vector<double> vec) {
+    bool first = true;
+    for (const auto &c : vec){
+        if(!first){
+            ss << "_";
+        }
+        ss << c;
+        first = false;
+    }
+}

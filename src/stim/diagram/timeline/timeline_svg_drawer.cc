@@ -795,17 +795,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 for (auto q : obj.detector_slice_set.used_qubits()) {
                     std::stringstream id_ss;
                     id_ss << "qubitdot";
-                    id_ss << ":" << q;
-                    bool first = true;
-                    for (auto c : obj.detector_slice_set.coordinates.at(q)){
-                        if(first){
-                            id_ss << ":";
-                        } else {
-                            id_ss << "_";
-                        }
-                        id_ss << c; // the raw qubit coordinates, not projected to 2D
-                        first = false;
-                    }
+                    id_ss << ":" << q << ":";
+                    add_vector_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
                     id_ss << ":" << tick; // the absolute tick
 
                     auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D
@@ -873,7 +864,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 auto sh = obj.coord_sys.size.xyz[1];
 
                 std::stringstream id_ss;
-                id_ss << "border:" << k;
+                id_ss << "tick_border:" << k;
                 id_ss << ":" << row << "_" << col;
                 id_ss << ":" << k+tick_slice_start; // the absolute tick
 
