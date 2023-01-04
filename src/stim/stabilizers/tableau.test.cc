@@ -701,6 +701,14 @@ TEST(tableau, expand_pad) {
     }
 }
 
+TEST(tableau, expand_pad_equals) {
+    auto t = Tableau::random(15, SHARED_TEST_RNG());
+    auto t2 = t;
+    t.expand(500, 1.0);
+    t2.expand(500, 2.0);
+    ASSERT_EQ(t, t2);
+}
+
 TEST(tableau, transposed_access) {
     size_t n = 1000;
     Tableau t(n);

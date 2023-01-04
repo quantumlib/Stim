@@ -173,9 +173,31 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
     }
 }
 
+template <size_t W>
+bool truncated_bits_equals(size_t nw, const simd_bits_range_ref<W> &t1, const simd_bits_range_ref<W> &t2) {
+    return t1.word_range_ref(0, nw) == t2.word_range_ref(0, nw);
+}
+
+template <size_t W>
+bool truncated_tableau_equals(size_t n, const simd_bit_table<W> &t1, const simd_bit_table<W> &t2) {
+    size_t nw = (n + W - 1) / W;
+    for (size_t k = 0; k < n; k++) {
+        if (!truncated_bits_equals(nw, t1[k], t2[k])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Tableau::operator==(const Tableau &other) const {
-    return num_qubits == other.num_qubits && xs.xt == other.xs.xt && xs.zt == other.xs.zt && zs.xt == other.zs.xt &&
-           zs.zt == other.zs.zt && xs.signs == other.xs.signs && zs.signs == other.zs.signs;
+    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
+    return num_qubits == other.num_qubits
+           && truncated_tableau_equals(num_qubits, xs.xt, other.xs.xt)
+           && truncated_tableau_equals(num_qubits, xs.zt, other.xs.zt)
+           && truncated_tableau_equals(num_qubits, zs.xt, other.zs.xt)
+           && truncated_tableau_equals(num_qubits, zs.zt, other.zs.zt)
+           && xs.signs.word_range_ref(0, nw) == other.xs.signs.word_range_ref(0, nw)
+           && zs.signs.word_range_ref(0, nw) == other.zs.signs.word_range_ref(0, nw);
 }
 
 bool Tableau::operator!=(const Tableau &other) const {
