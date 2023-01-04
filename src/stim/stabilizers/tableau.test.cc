@@ -624,7 +624,7 @@ TEST(tableau, expand) {
     auto t = Tableau::random(4, SHARED_TEST_RNG());
     auto t2 = t;
     for (size_t n = 8; n < 500; n += 255) {
-        t2.expand(n, n);
+        t2.expand(n, 1.0);
         ASSERT_EQ(t2.num_qubits, n);
         for (size_t k = 0; k < n; k++) {
             if (k < 4) {
