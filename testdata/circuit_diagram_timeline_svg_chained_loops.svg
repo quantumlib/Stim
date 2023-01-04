@@ -43,15 +43,15 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="390.4" y="432">Y</text>
 <rect x="620.8" y="416" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="636.8" y="432">Z</text>
-<rect id="border:0:0_0:0" x="0" y="0" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:1_0:0" x="0" y="176" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:2_0:0" x="0" y="352" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:0_1:0" x="246.4" y="0" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:1_1:0" x="246.4" y="176" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:2_1:0" x="246.4" y="352" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:0_2:0" x="492.8" y="0" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:1_2:0" x="492.8" y="176" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:2_2:0" x="492.8" y="352" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:0_3:0" x="739.2" y="0" width="224" height="160" stroke="black" fill="none"/>
-<rect id="border:0:1_3:0" x="739.2" y="176" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_0:0" x="0" y="0" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_0:0" x="0" y="176" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_0:0" x="0" y="352" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_1:0" x="246.4" y="0" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_1:0" x="246.4" y="176" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_1:0" x="246.4" y="352" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_2:0" x="492.8" y="0" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_2:0" x="492.8" y="176" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_2:0" x="492.8" y="352" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_3:0" x="739.2" y="0" width="224" height="160" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_3:0" x="739.2" y="176" width="224" height="160" stroke="black" fill="none"/>
 </svg>

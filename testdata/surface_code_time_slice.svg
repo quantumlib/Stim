@@ -370,15 +370,15 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1119.87" y="1210.38">H</text>
 <rect x="1194.38" y="1284.89" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1210.38" y="1300.89">H</text>
-<rect id="border:0:0_0:5" x="0" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:1_0:5" x="0" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:2_0:5" x="0" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:0_1:5" x="474.682" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:1_1:5" x="474.682" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:2_1:5" x="474.682" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:0_2:5" x="949.364" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:1_2:5" x="949.364" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:2_2:5" x="949.364" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:0_3:5" x="1424.05" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="border:0:1_3:5" x="1424.05" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_0:5" x="0" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_0:5" x="0" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_0:5" x="0" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_1:5" x="474.682" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_1:5" x="474.682" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_1:5" x="474.682" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_2:5" x="949.364" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_2:5" x="949.364" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_2:5" x="949.364" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_3:5" x="1424.05" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_3:5" x="1424.05" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
 </svg>
