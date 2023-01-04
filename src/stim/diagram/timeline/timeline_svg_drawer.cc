@@ -790,11 +790,12 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     if (mode != SVG_MODE_TIMELINE) {
         // Draw qubit points.
         auto tick = tick_slice_start;
+        svg_out << "<g id=\"qubit_dots\">\n";
         for (uint64_t col = 0; col < obj.num_cols; col++) {
             for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
                 for (auto q : obj.detector_slice_set.used_qubits()) {
                     std::stringstream id_ss;
-                    id_ss << "qubitdot";
+                    id_ss << "qubit_dot";
                     id_ss << ":" << q;
                     add_vector_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
                     id_ss << ":" << tick; // the absolute tick
@@ -819,12 +820,14 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
             }
             tick++;
         }
+        svg_out << "</g>\n";
     } else {
+        svg_out << "<g id=\"qubit_lines\">\n";
         // Draw qubit lines.
         for (size_t q = 0; q < obj.num_qubits; q++) {
 
             std::stringstream id_ss;
-            id_ss << "qubitline";
+            id_ss << "qubit_line";
             id_ss << ":" << q;
 
             auto x1 = PADDING + CIRCUIT_START_X;
@@ -851,6 +854,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
             svg_out << "q" << q;
             svg_out << "</text>\n";
         }
+        svg_out << "</g>\n";
     }
 
     svg_out << buffer.str();
@@ -858,6 +862,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     // Border around different slices.
     if (mode != SVG_MODE_TIMELINE && tick_slice_num > 1) {
         auto k = 0;
+        svg_out << "<g id=\"tick_borders\">\n";
         for (uint64_t col = 0; col < obj.num_cols; col++) {
             for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
                 auto sw = obj.coord_sys.size.xyz[0];
@@ -879,7 +884,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 svg_out << "/>\n";
             }
         }
+        svg_out << "</g>\n";
     }
-
     svg_out << "</svg>";
 }

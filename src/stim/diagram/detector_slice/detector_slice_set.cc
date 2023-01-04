@@ -615,12 +615,13 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
     };
     write_svg_contents_to(out, coords, 6);
 
+    out << "<g id=\"qubit_dots\">\n";
     for (size_t k = 0; k < num_ticks; k++) {
         for (auto q : used_qubits()) {
             auto t = min_tick + k;
             
             std::stringstream id_ss;
-            id_ss << "qubitdot";
+            id_ss << "qubit_dot";
             id_ss << ":" << q;
             add_vector_to_ss(id_ss, coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
             id_ss << ":" << t; // the absolute tick
@@ -637,10 +638,12 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             out << "/>\n";
         }
     }
+    out << "</g>\n";
 
     // Border around different slices.
     if (num_ticks > 1) {
         size_t k = 0;
+        out << "<g id=\"tick_borders\">\n";
         for (uint64_t col = 0; col < num_cols; col++) {
             for (uint64_t row = 0; row < num_rows && row * num_cols + col < num_ticks; row++) {
                 auto sw = coordsys.size.xyz[0];
@@ -663,6 +666,7 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 k++;
             }
         }
+        out << "</g>\n";
     }
 
     out << R"SVG(</svg>)SVG";
@@ -726,27 +730,7 @@ void DetectorSliceSet::write_svg_contents_to(
             out << "/>\n";
 
             if (drawCorners) {
-                if (!haveDrawnCorners) {
-                    // write out the universal radialGradients that all corners will reference
-                    out << "<defs>\n";
-                    static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
-                    static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
-                    for (int i = 0; i < 3; ++i) {
-                        out << "<radialGradient";
-                        write_key_val(out, "id", names[i]);
-                        out << "><stop";
-                        write_key_val(out, "offset", "50%");
-                        write_key_val(out, "stop-color", colors[i]);
-                        write_key_val(out, "stop-opacity", "1");
-                        out << "/><stop";
-                        write_key_val(out, "offset", "100%");
-                        write_key_val(out, "stop-color", "#AAAAAA");
-                        write_key_val(out, "stop-opacity", "0");
-                        out << "/></radialGradient>\n";
-                    }
-                    out << "</defs>\n";
-                    haveDrawnCorners = true;
-                }
+                haveDrawnCorners = true;  // controls later writing out the universal gradients we'll reference here
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
                 out << "\">";
@@ -795,5 +779,25 @@ void DetectorSliceSet::write_svg_contents_to(
             // Close the group element for this slice
             out << "</g>\n";
         }
+    }
+    if (haveDrawnCorners) {
+        // write out the universal radialGradients that all corners reference
+        out << "<defs>\n";
+        static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
+        static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
+        for (int i = 0; i < 3; ++i) {
+            out << "<radialGradient";
+            write_key_val(out, "id", names[i]);
+            out << "><stop";
+            write_key_val(out, "offset", "50%");
+            write_key_val(out, "stop-color", colors[i]);
+            write_key_val(out, "stop-opacity", "1");
+            out << "/><stop";
+            write_key_val(out, "offset", "100%");
+            write_key_val(out, "stop-color", "#AAAAAA");
+            write_key_val(out, "stop-opacity", "0");
+            out << "/></radialGradient>\n";
+        }
+        out << "</defs>\n";
     }
 }
