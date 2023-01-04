@@ -960,7 +960,7 @@ TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
     TableauSimulator sim(rng, 4);
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     auto s1 = sim.canonical_stabilizers();
-    sim.inv_state.expand(8);
+    sim.inv_state.expand(8, 1.0);
     scramble_stabilizers(sim);
     sim.set_num_qubits(4);
     auto s2 = sim.canonical_stabilizers();
@@ -2126,4 +2126,10 @@ TEST(TableauSimulator, measure_pauli_string) {
     }
     ASSERT_GT(t / 10000.0, 0.05);
     ASSERT_LT(t / 10000.0, 0.35);
+}
+
+TEST(TableauSimulator, amortized_resizing) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 5120);
+    sim.ensure_large_enough_for_qubits(5121);
+    ASSERT_GT(sim.inv_state.xs.xt.num_minor_bits_padded(), 5600);
 }

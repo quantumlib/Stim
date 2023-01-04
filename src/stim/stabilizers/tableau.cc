@@ -28,14 +28,16 @@
 
 using namespace stim;
 
-void Tableau::expand(size_t new_num_qubits) {
+void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
     // If the new qubits fit inside the padding, just extend into it.
     assert(new_num_qubits >= num_qubits);
+    assert(resize_pad_factor >= 1);
     if (new_num_qubits <= xs.xt.num_major_bits_padded()) {
         size_t old_num_qubits = num_qubits;
         num_qubits = new_num_qubits;
         xs.num_qubits = new_num_qubits;
         zs.num_qubits = new_num_qubits;
+        // Initialize identity elements along the diagonal.
         for (size_t k = old_num_qubits; k < new_num_qubits; k++) {
             xs[k].xs[k] = true;
             zs[k].zs[k] = true;
@@ -47,8 +49,10 @@ void Tableau::expand(size_t new_num_qubits) {
     size_t old_num_simd_words = xs.xt.num_simd_words_major;
     size_t old_num_qubits = num_qubits;
     Tableau old_state = std::move(*this);
-    this->~Tableau();
-    new (this) Tableau(new_num_qubits);
+    *this = Tableau((size_t)(new_num_qubits * resize_pad_factor));
+    this->num_qubits = new_num_qubits;
+    this->xs.num_qubits = new_num_qubits;
+    this->zs.num_qubits = new_num_qubits;
 
     // Copy stored state back into new larger space.
     auto partial_copy = [=](simd_bits_range_ref<MAX_BITWORD_WIDTH> dst, simd_bits_range_ref<MAX_BITWORD_WIDTH> src) {
@@ -513,7 +517,7 @@ Tableau Tableau::operator+(const Tableau &second) const {
 
 Tableau &Tableau::operator+=(const Tableau &second) {
     size_t n = num_qubits;
-    expand(n + second.num_qubits);
+    expand(n + second.num_qubits, 1.1);
     for (size_t i = 0; i < second.num_qubits; i++) {
         xs.signs[n + i] = second.xs.signs[i];
         zs.signs[n + i] = second.zs.signs[i];
