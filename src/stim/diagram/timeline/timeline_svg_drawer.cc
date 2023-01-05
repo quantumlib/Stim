@@ -797,7 +797,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                     std::stringstream id_ss;
                     id_ss << "qubit_dot";
                     id_ss << ":" << q;
-                    add_vector_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
+                    add_coord_summary_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
                     id_ss << ":" << tick; // the absolute tick
 
                     auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D

@@ -623,7 +623,7 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             std::stringstream id_ss;
             id_ss << "qubit_dot";
             id_ss << ":" << q;
-            add_vector_to_ss(id_ss, coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
+            add_coord_summary_to_ss(id_ss, coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
             id_ss << ":" << t; // the absolute tick
             
             auto sc = coords(t, q); // the svg coordinates, offset to the correct slice plot
@@ -713,7 +713,7 @@ void DetectorSliceSet::write_svg_contents_to(
 
             // Open the group element for this slice
             out << "<g id=\"slice:" << target.val();
-            add_vector_to_ss(out, detector_coordinates.at(target.val()));
+            add_coord_summary_to_ss(out, detector_coordinates.at(target.val()));
             out << ":" << tick << "\">\n";
 
             _start_slice_shape_command(out,

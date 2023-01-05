@@ -39,7 +39,7 @@ std::pair<std::string, std::string> two_qubit_gate_pieces(const std::string &nam
 
 /// Adds each element of a vector to the string stream starting with ':', separated by '_'
 /// adds nothing if the vector is empty
-void add_vector_to_ss(std::ostream &ss, std::vector<double> vec);
+void add_coord_summary_to_ss(std::ostream &ss, std::vector<double> vec);
 
 }  // namespace stim_draw_internal
 
