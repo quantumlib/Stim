@@ -317,8 +317,8 @@ TEST(PauliString, ensure_num_qubits) {
 TEST(PauliString, ensure_num_qubits_padded) {
     auto p = PauliString::from_str("IXYZ_I");
     auto p2 = p;
-    p.ensure_num_qubits(100, 10.0);
-    p2.ensure_num_qubits(100, 1.0);
+    p.ensure_num_qubits(1121, 10.0);
+    p2.ensure_num_qubits(1121, 1.0);
     ASSERT_GT(p.xs.num_simd_words, p2.xs.num_simd_words);
     ASSERT_EQ(p, p2);
 }
