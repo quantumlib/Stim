@@ -217,10 +217,11 @@ TEST(pauli_string, foreign_memory) {
     size_t bits = 2048;
     auto buffer = simd_bits<MAX_BITWORD_WIDTH>::random(bits, SHARED_TEST_RNG());
     bool signs = false;
+    size_t num_qubits = MAX_BITWORD_WIDTH*2 - 12;
 
-    auto p1 = PauliStringRef(500, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
-    auto p1b = new PauliStringRef(500, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
-    auto p2 = PauliStringRef(500, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
+    auto p1 = PauliStringRef(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p1b = new PauliStringRef(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p2 = PauliStringRef(num_qubits, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
     PauliString copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
@@ -298,18 +299,27 @@ TEST(PauliStringPtr, sparse_str) {
 
 TEST(PauliString, ensure_num_qubits) {
     auto p = PauliString::from_str("IXYZ_I");
-    p.ensure_num_qubits(1);
+    p.ensure_num_qubits(1, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
-    p.ensure_num_qubits(6);
+    p.ensure_num_qubits(6, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
-    p.ensure_num_qubits(7);
+    p.ensure_num_qubits(7, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I_"));
-    p.ensure_num_qubits(1000);
+    p.ensure_num_qubits(1000, 1.0);
     PauliString p2(1000);
     p2.xs[1] = true;
     p2.xs[2] = true;
     p2.zs[2] = true;
     p2.zs[3] = true;
+    ASSERT_EQ(p, p2);
+}
+
+TEST(PauliString, ensure_num_qubits_padded) {
+    auto p = PauliString::from_str("IXYZ_I");
+    auto p2 = p;
+    p.ensure_num_qubits(100, 10.0);
+    p2.ensure_num_qubits(100, 1.0);
+    ASSERT_GT(p.xs.num_simd_words, p2.xs.num_simd_words);
     ASSERT_EQ(p, p2);
 }
 

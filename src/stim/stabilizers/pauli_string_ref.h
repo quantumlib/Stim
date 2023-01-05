@@ -39,6 +39,10 @@ struct PauliStringRef {
     simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, zs;
 
     /// Constructs a PauliStringRef pointing at the given sign, x, and z data.
+    ///
+    /// Requires:
+    ///     xs.num_bits_padded() == zs.num_bits_padded()
+    ///     xs.num_simd_words == ceil(num_qubits / MAX_BITWORD_WIDTH)
     PauliStringRef(
         size_t num_qubits,
         bit_ref sign,

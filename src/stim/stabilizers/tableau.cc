@@ -69,11 +69,21 @@ void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
 }
 
 PauliStringRef TableauHalf::operator[](size_t input_qubit) {
-    return PauliStringRef(num_qubits, signs[input_qubit], xt[input_qubit], zt[input_qubit]);
+    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
+    return PauliStringRef(
+        num_qubits,
+        signs[input_qubit],
+        xt[input_qubit].word_range_ref(0, nw),
+        zt[input_qubit].word_range_ref(0, nw));
 }
 
 const PauliStringRef TableauHalf::operator[](size_t input_qubit) const {
-    return PauliStringRef(num_qubits, signs[input_qubit], xt[input_qubit], zt[input_qubit]);
+    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
+    return PauliStringRef(
+        num_qubits,
+        signs[input_qubit],
+        xt[input_qubit].word_range_ref(0, nw),
+        zt[input_qubit].word_range_ref(0, nw));
 }
 
 PauliString Tableau::eval_y_obs(size_t qubit) const {

@@ -876,7 +876,7 @@ TEST(tableau, direct_sum) {
     ASSERT_EQ(t3, t1 + t2);
 
     PauliString p1 = t1.xs[5];
-    p1.ensure_num_qubits(260 + 270);
+    p1.ensure_num_qubits(260 + 270, 1.0);
     ASSERT_EQ(t3.xs[5], p1);
 
     std::string p2 = t2.xs[6].str();
