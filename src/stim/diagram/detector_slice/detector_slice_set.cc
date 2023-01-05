@@ -545,11 +545,11 @@ void _start_two_body_svg_path(
 
     out << "<path d=\"";
     out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
-    out << "C ";
+    out << "C";
     out << ac1.xyz[0] << " " << ac1.xyz[1] << ", ";
     out << ac2.xyz[0] << " " << ac2.xyz[1] << ", ";
     out << b.xyz[0] << " " << b.xyz[1] << " ";
-    out << "C ";
+    out << "C";
     out << bc1.xyz[0] << " " << bc1.xyz[1] << ", ";
     out << bc2.xyz[0] << " " << bc2.xyz[1] << ", ";
     out << a.xyz[0] << " " << a.xyz[1];
