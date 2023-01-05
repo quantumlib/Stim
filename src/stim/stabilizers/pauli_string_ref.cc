@@ -26,6 +26,8 @@ PauliStringRef::PauliStringRef(
     simd_bits_range_ref<MAX_BITWORD_WIDTH> init_xs,
     simd_bits_range_ref<MAX_BITWORD_WIDTH> init_zs)
     : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {
+    assert(init_xs.num_bits_padded() == init_zs.num_bits_padded());
+    assert(init_xs.num_simd_words == (init_num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH);
 }
 
 std::string PauliStringRef::sparse_str() const {
