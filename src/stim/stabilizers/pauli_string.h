@@ -111,7 +111,19 @@ struct PauliString {
     /// Returns a string describing the given Pauli string, with one character per qubit.
     std::string str() const;
 
-    void ensure_num_qubits(size_t min_num_qubits);
+    /// Grows the pauli string to be at least as large as the given number
+    /// of qubits.
+    ///
+    /// Requires:
+    ///     resize_pad_factor >= 1
+    ///
+    /// Args:
+    ///     min_num_qubits: A minimum number of qubits that will be needed.
+    ///     resize_pad_factor: When resizing, memory will be overallocated
+    ///          so that the pauli string can be expanded to at least this
+    ///          many times the number of requested qubits. Use this to
+    ///          avoid quadratic overheads from constant slight expansions.
+    void ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

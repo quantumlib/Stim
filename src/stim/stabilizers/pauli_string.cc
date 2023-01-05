@@ -38,16 +38,22 @@ PauliString::PauliString(const PauliStringRef &other)
 }
 
 const PauliStringRef PauliString::ref() const {
+    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
     return PauliStringRef(
         num_qubits,
         // HACK: const correctness is temporarily removed, but immediately restored.
         bit_ref((bool *)&sign, 0),
-        xs,
-        zs);
+        xs.word_range_ref(0, nw),
+        zs.word_range_ref(0, nw));
 }
 
 PauliStringRef PauliString::ref() {
-    return PauliStringRef(num_qubits, bit_ref(&sign, 0), xs, zs);
+    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
+    return PauliStringRef(
+        num_qubits,
+        bit_ref(&sign, 0),
+        xs.word_range_ref(0, nw),
+        zs.word_range_ref(0, nw));
 }
 
 std::string PauliString::str() const {
@@ -118,7 +124,8 @@ bool PauliString::operator!=(const PauliStringRef &other) const {
     return ref() != other;
 }
 
-void PauliString::ensure_num_qubits(size_t min_num_qubits) {
+void PauliString::ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor) {
+    assert(resize_pad_factor >= 1);
     if (min_num_qubits <= num_qubits) {
         return;
     }
@@ -127,8 +134,9 @@ void PauliString::ensure_num_qubits(size_t min_num_qubits) {
         return;
     }
 
-    simd_bits<MAX_BITWORD_WIDTH> new_xs(min_num_qubits);
-    simd_bits<MAX_BITWORD_WIDTH> new_zs(min_num_qubits);
+    size_t new_num_qubits = (size_t)(min_num_qubits * resize_pad_factor);
+    simd_bits<MAX_BITWORD_WIDTH> new_xs(new_num_qubits);
+    simd_bits<MAX_BITWORD_WIDTH> new_zs(new_num_qubits);
     new_xs.truncated_overwrite_from(xs, num_qubits);
     new_zs.truncated_overwrite_from(zs, num_qubits);
     xs = std::move(new_xs);

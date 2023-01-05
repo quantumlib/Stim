@@ -777,7 +777,7 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
     if (num_qubits <= inv_state.num_qubits) {
         return;
     }
-    inv_state.expand(num_qubits);
+    inv_state.expand(num_qubits, 1.1);
 }
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
