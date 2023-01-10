@@ -260,7 +260,11 @@ def main_collect(*, command_line_args: List[str]):
                 did_work = True
             printer.print_out(stats.to_csv_line())
 
-        printer.show_latest_progress(sample.status_message)
+        msg = sample.status_message
+        if msg == 'KeyboardInterrupt':
+            msg = '\nInterrupted. Output is flushed. Cleaning up workers...'
+        printer.show_latest_progress(msg)
+        printer.flush()
 
     try:
         collect(
@@ -280,5 +284,4 @@ def main_collect(*, command_line_args: List[str]):
             custom_decoders=args.custom_decoders,
         )
     except KeyboardInterrupt:
-        printer.show_latest_progress('')
-        print("\033[33m\nInterrupted\033[0m")
+        pass

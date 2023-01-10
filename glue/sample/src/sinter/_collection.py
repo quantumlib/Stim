@@ -104,32 +104,39 @@ def iter_collect(*,
             decoders=decoders,
             additional_existing_data=additional_existing_data,
             custom_decoders=custom_decoders) as manager:
-        yield Progress(
-            new_stats=(),
-            status_message="Starting workers..."
-        )
-        manager.start_workers(num_workers)
-
-        yield Progress(
-            new_stats=(),
-            status_message="Finding work..."
-        )
-        manager.fill_work_queue()
-        yield Progress(
-            new_stats=(),
-            status_message=manager.status(num_circuits=hint_num_tasks)
-        )
-
-        while manager.fill_work_queue():
-            # Wait for a worker to finish a job.
-            sample = manager.wait_for_next_sample()
-            manager.fill_work_queue()
-
-            # Report the incremental results.
+        try:
             yield Progress(
-                new_stats=(sample,) if sample.shots > 0 else (),
-                status_message=manager.status(num_circuits=hint_num_tasks),
+                new_stats=(),
+                status_message="Starting workers..."
             )
+            manager.start_workers(num_workers)
+
+            yield Progress(
+                new_stats=(),
+                status_message="Finding work..."
+            )
+            manager.fill_work_queue()
+            yield Progress(
+                new_stats=(),
+                status_message=manager.status(num_circuits=hint_num_tasks)
+            )
+
+            while manager.fill_work_queue():
+                # Wait for a worker to finish a job.
+                sample = manager.wait_for_next_sample()
+                manager.fill_work_queue()
+
+                # Report the incremental results.
+                yield Progress(
+                    new_stats=(sample,) if sample.shots > 0 else (),
+                    status_message=manager.status(num_circuits=hint_num_tasks),
+                )
+        except KeyboardInterrupt:
+            yield Progress(
+                new_stats=(),
+                status_message='KeyboardInterrupt',
+            )
+            raise
 
 
 def collect(*,
