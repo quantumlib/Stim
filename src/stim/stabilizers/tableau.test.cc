@@ -624,8 +624,8 @@ TEST(tableau, expand) {
     auto t = Tableau::random(4, SHARED_TEST_RNG());
     auto t2 = t;
     for (size_t n = 8; n < 500; n += 255) {
-        t2.expand(n);
-        assert(t2.num_qubits == n);
+        t2.expand(n, 1.0);
+        ASSERT_EQ(t2.num_qubits, n);
         for (size_t k = 0; k < n; k++) {
             if (k < 4) {
                 ASSERT_EQ(t.xs[k].sign, t2.xs[k].sign);
@@ -654,6 +654,59 @@ TEST(tableau, expand) {
             }
         }
     }
+}
+
+TEST(tableau, expand_pad) {
+    auto t = Tableau::random(4, SHARED_TEST_RNG());
+    auto t2 = t;
+    size_t n = 8;
+    while (n < 10000) {
+        n++;
+        t2.expand(n, 2);
+    }
+
+    ASSERT_EQ(t2.num_qubits, n);
+    for (size_t k = 0; k < n; k++) {
+        if (k < 4) {
+            ASSERT_EQ(t.xs[k].sign, t2.xs[k].sign);
+            ASSERT_EQ(t.zs[k].sign, t2.zs[k].sign);
+        } else {
+            ASSERT_EQ(t2.xs[k].sign, false);
+            ASSERT_EQ(t2.zs[k].sign, false);
+        }
+        for (size_t k2 = 0; k2 < n; k2++) {
+            if (k2 == 4 && k > 8) {
+                k2 = k - 2;
+            }
+            if (k2 == k + 2) {
+                k2 = n - 1;
+            }
+            if (k < 4 && k2 < 4) {
+                ASSERT_EQ(t.xs[k].xs[k2], t2.xs[k].xs[k2]);
+                ASSERT_EQ(t.xs[k].zs[k2], t2.xs[k].zs[k2]);
+                ASSERT_EQ(t.zs[k].xs[k2], t2.zs[k].xs[k2]);
+                ASSERT_EQ(t.zs[k].zs[k2], t2.zs[k].zs[k2]);
+            } else if (k == k2) {
+                ASSERT_EQ(t2.xs[k].xs[k2], true);
+                ASSERT_EQ(t2.xs[k].zs[k2], false);
+                ASSERT_EQ(t2.zs[k].xs[k2], false);
+                ASSERT_EQ(t2.zs[k].zs[k2], true);
+            } else {
+                ASSERT_EQ(t2.xs[k].xs[k2], false);
+                ASSERT_EQ(t2.xs[k].zs[k2], false);
+                ASSERT_EQ(t2.zs[k].xs[k2], false);
+                ASSERT_EQ(t2.zs[k].zs[k2], false);
+            }
+        }
+    }
+}
+
+TEST(tableau, expand_pad_equals) {
+    auto t = Tableau::random(15, SHARED_TEST_RNG());
+    auto t2 = t;
+    t.expand(500, 1.0);
+    t2.expand(500, 2.0);
+    ASSERT_EQ(t, t2);
 }
 
 TEST(tableau, transposed_access) {
@@ -823,7 +876,7 @@ TEST(tableau, direct_sum) {
     ASSERT_EQ(t3, t1 + t2);
 
     PauliString p1 = t1.xs[5];
-    p1.ensure_num_qubits(260 + 270);
+    p1.ensure_num_qubits(260 + 270, 1.0);
     ASSERT_EQ(t3.xs[5], p1);
 
     std::string p2 = t2.xs[6].str();

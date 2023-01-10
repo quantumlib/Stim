@@ -102,7 +102,7 @@ PyPauliString &PyPauliString::operator+=(const PyPauliString &rhs) {
     }
 
     size_t n = value.num_qubits;
-    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits);
+    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits, 1.1);
     for (size_t k = 0; k < rhs.value.num_qubits; k++) {
         value.xs[k + n] = rhs.value.xs[k];
         value.zs[k + n] = rhs.value.zs[k];
@@ -281,10 +281,10 @@ PyPauliString PyPauliString::operator*(const PyPauliString &rhs) const {
 }
 
 PyPauliString &PyPauliString::operator*=(const PyPauliString &rhs) {
-    value.ensure_num_qubits(rhs.value.num_qubits);
+    value.ensure_num_qubits(rhs.value.num_qubits, 1.1);
     if (rhs.value.num_qubits < value.num_qubits) {
         PyPauliString copy = rhs;
-        copy.value.ensure_num_qubits(value.num_qubits);
+        copy.value.ensure_num_qubits(value.num_qubits, 1.0);
         *this *= copy;
         return *this;
     }
