@@ -362,7 +362,7 @@ def _plot_helper(
         if yaxis is not None and not include_custom_plot:
             ax_err.set_ylabel(yaxis)
         else:
-            ax_dis.set_ylabel(f"Discard Rate (per {failure_unit}")
+            ax_dis.set_ylabel(f"Discard Rate (per {failure_unit})")
         ax_dis.legend()
 
     if ax_cus is not None:

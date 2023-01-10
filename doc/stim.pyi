@@ -815,6 +815,13 @@ class Circuit:
         filter_coords: Optional[Iterable[Iterable[float]]] = None,
     ) -> 'stim._DiagramHelper':
         pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["interactive"]',
+    ) -> 'stim._DiagramHelper':
+        pass
     def diagram(
         self,
         type: str = 'timeline-text',
@@ -867,6 +874,10 @@ class Circuit:
                     and detector-slice-svg, with the operations overlaid
                     over the detector slices taken from the TICK after the
                     operations were applied.
+                "interactive": An HTML web page containing Crumble (an
+                    interactive editor for 2D stabilizer circuits)
+                    initialized with the given circuit as its default
+                    contents.
             tick: Required for detector and time slice diagrams. Specifies
                 which TICK instruction, or range of TICK instructions, to
                 slice at. Note that the first TICK instruction in the
