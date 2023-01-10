@@ -1948,6 +1948,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: Union[int, range], filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["time-slice-svg"]', tick: Union[int, range], filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["time+detector-slice-svg"]', tick: Union[int, range], filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["interactive"]') -> 'stim._DiagramHelper':
             @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
@@ -1994,6 +1995,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         and detector-slice-svg, with the operations overlaid
                         over the detector slices taken from the TICK after the
                         operations were applied.
+                    "interactive": An HTML web page containing Crumble (an
+                        interactive editor for 2D stabilizer circuits)
+                        initialized with the given circuit as its default
+                        contents.
                 tick: Required for detector and time slice diagrams. Specifies
                     which TICK instruction, or range of TICK instructions, to
                     slice at. Note that the first TICK instruction in the

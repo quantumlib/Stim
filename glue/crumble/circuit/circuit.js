@@ -1,0 +1,530 @@
+import {Operation} from "./operation.js"
+import {GATE_MAP} from "../gates/gateset.js"
+import {Layer} from "./layer.js"
+
+/**
+ * @param {!Iterator<TItem>}items
+ * @param {!function(item: TItem): TKey} func
+ * @returns {!Map<TKey, !Array<TItem>>}
+ * @template TItem
+ * @template TKey
+ */
+function groupBy(items, func) {
+    let result = new Map();
+    for (let item of items) {
+        let key = func(item);
+        let group = result.get(key);
+        if (group === undefined) {
+            result.set(key, [item]);
+        } else {
+            group.push(item);
+        }
+    }
+    return result;
+}
+
+class Circuit {
+    /**
+     * @param {!Float64Array} qubitCoordData
+     * @param {!Array<!Layer>} layers
+     */
+    constructor(qubitCoordData, layers = []) {
+        if (!(qubitCoordData instanceof Float64Array)) {
+            throw new Error('!(qubitCoords instanceof Float64Array)');
+        }
+        if (!Array.isArray(layers)) {
+            throw new Error('!Array.isArray(layers)');
+        }
+        if (!layers.every(e => e instanceof Layer)) {
+            throw new Error('!layers.every(e => e instanceof Layer)');
+        }
+        this.qubitCoordData = qubitCoordData;
+        this.layers = layers;
+    }
+
+    /**
+     * @param {!string} stimCircuit
+     * @returns {!Circuit}
+     */
+    static fromStimCircuit(stimCircuit) {
+        let lines = stimCircuit.replaceAll(';', '\n').
+            replaceAll('_', ' ').
+            replaceAll('Q(', 'QUBIT_COORDS(').
+            replaceAll('DT', 'DETECTOR').
+            replaceAll(' COORDS', '_COORDS').
+            replaceAll(' ERROR', '_ERROR').
+            replaceAll('C XYZ', 'C_XYZ').
+            replaceAll('H XY', 'H_XY').
+            replaceAll('H YZ', 'H_YZ').
+            replaceAll(' INCLUDE', '_INCLUDE').
+            replaceAll('SQRT ', 'SQRT_').
+            replaceAll(' DAG ', '_DAG ').
+            replaceAll('C ZYX', 'C_ZYX').split('\n');
+        let layers = [new Layer()];
+        let i2q = new Map();
+        let used_positions = new Set();
+        let next_auto_position_x = 0;
+        let ensure_has_coords = t => {
+            while (!i2q.has(t)) {
+                let k = `${next_auto_position_x},0`;
+                if (!used_positions.has(k)) {
+                    used_positions.add(k);
+                    i2q.set(t, [next_auto_position_x, 0]);
+                }
+                next_auto_position_x++;
+            }
+        };
+
+        let findEndOfBlock = (lines, startIndex, endIndex) => {
+            let nestLevel = 0;
+            for (let k = startIndex; k < endIndex; k++) {
+                let line = lines[k];
+                line = line.split('#')[0].trim();
+                if (line.toLowerCase().startsWith("repeat ")) {
+                    nestLevel++;
+                } else if (line === '}') {
+                    nestLevel--;
+                    if (nestLevel === 0) {
+                        return k;
+                    }
+                }
+            }
+            throw Error("Repeat block didn't end");
+        };
+
+        let processLineChunk = (lines, startIndex, endIndex, repetitions) => {
+            if (!layers[layers.length - 1].empty()) {
+                layers.push(new Layer());
+            }
+            for (let rep = 0; rep < repetitions; rep++) {
+                for (let k = startIndex; k < endIndex; k++) {
+                    let line = lines[k];
+                    line = line.split('#')[0].trim();
+                    if (line.toLowerCase().startsWith("repeat ")) {
+                        let reps = parseInt(line.split(" ")[1]);
+                        let k2 = findEndOfBlock(lines, k, endIndex);
+                        processLineChunk(lines, k + 1, k2, reps);
+                        k = k2;
+                    } else {
+                        processLine(line);
+                    }
+                }
+                if (!layers[layers.length - 1].empty()) {
+                    layers.push(new Layer());
+                }
+            }
+        };
+
+        let processLine = line => {
+            let args = [];
+            let targets = [];
+            let name = '';
+            if (line.indexOf(')') !== -1) {
+                let [ab, c] = line.split(')');
+                let [a, b] = ab.split('(');
+                name = a.trim();
+                args = b.split(',').map(e => e.trim()).map(parseFloat);
+                targets = c.split(' ').map(e => e.trim()).filter(e => e !== '');
+            } else {
+                let ab = line.split(' ').map(e => e.trim()).filter(e => e !== '');
+                if (ab.length === 0) {
+                    return;
+                }
+                let [a, ...b] = ab;
+                name = a.trim();
+                args = [];
+                targets = b.map(e => e.trim()).filter(e => e !== '');
+            }
+            let reverse_pairs = false;
+            if (name === '') {
+                return;
+            } else if (name === 'XCZ') {
+                reverse_pairs = true;
+                name = 'CX'
+            } else if (name === 'CNOT') {
+                name = 'CX'
+            } else if (name === 'RZ') {
+                name = 'R'
+            } else if (name === 'MZ') {
+                name = 'M'
+            } else if (name === 'MRZ') {
+                name = 'MR'
+            } else if (name === 'ZCX') {
+                name = 'CX'
+            } else if (name === 'ZCY') {
+                name = 'CY'
+            } else if (name === 'ZCZ') {
+                name = 'CZ'
+            } else if (name === 'YCX') {
+                reverse_pairs = true;
+                name = 'XCY'
+            } else if (name === 'YCZ') {
+                reverse_pairs = true;
+                name = 'CY'
+            } else if (name === 'TICK') {
+                layers.push(new Layer());
+                return;
+            } else if (name === 'MPP') {
+                let layer = layers[layers.length - 1]
+                for (let targ of targets) {
+                    let name = 'M';
+                    let qubits = [];
+                    for (let term of targ.split('*')) {
+                        name += term[0];
+                        qubits.push(term.substring(1));
+                    }
+                    let gate = GATE_MAP.get(name);
+                    let a = new Float32Array(args);
+                    let layer = layers[layers.length - 1]
+                    if (gate !== undefined) {
+                        layer.put(new Operation(gate, a, new Uint32Array(qubits)));
+                    } else {
+                        console.warn("SPLIT MPP INTO INDIVIDUAL MEASUREMENTS");
+                        for (let k = 0; k < name.length - 1; k++) {
+                            let sub_gate = 'M' + name[k+1];
+                            if (sub_gate === 'MZ') {
+                                sub_gate = 'M';
+                            }
+                            gate = GATE_MAP.get(sub_gate);
+                            layer.put(new Operation(gate, a, new Uint32Array(qubits[k])));
+                        }
+                    }
+                }
+                return;
+            } else if (name === "X_ERROR" ||
+                       name === "Y_ERROR" ||
+                       name === "Z_ERROR" ||
+                       name === "DETECTOR" ||
+                       name === "OBSERVABLE_INCLUDE" ||
+                       name === "DEPOLARIZE1" ||
+                       name === "DEPOLARIZE2" ||
+                       name === "SHIFT_COORDS" ||
+                       name === "REPEAT" ||
+                       name === "}") {
+                return;
+            } else if (name.startsWith('QUBIT_COORDS')) {
+                let x = args.length < 1 ? 0 : args[0];
+                let y = args.length < 2 ? 0 : args[1];
+                for (let targ of targets) {
+                    let t = parseInt(targ);
+                    if (i2q.has(t)) {
+                        console.warn(`Ignoring "${line}" because there's already coordinate data for qubit ${t}.`);
+                    } else if (used_positions.has(`${x},${y}`)) {
+                        console.warn(`Ignoring "${line}" because there's already a qubit placed at ${x},${y}.`);
+                    } else {
+                        i2q.set(t, [x, y]);
+                        used_positions.add(`${x},${y}`);
+                    }
+                }
+                return;
+            }
+
+            let ignored = false;
+            for (let targ of targets) {
+                if (targ.startsWith("rec[")) {
+                    if (name === "CX" || name === "CY" || name === "CZ" || name === "ZCX" || name === "ZCY") {
+                        ignored = true;
+                        break;
+                    }
+                }
+                let t = parseInt(targ);
+                if (typeof parseInt(targ) !== 'number') {
+                    throw new Error(line);
+                }
+                ensure_has_coords(t);
+            }
+            if (ignored) {
+                console.warn("IGNORED", name);
+                return;
+            }
+
+            let gate = GATE_MAP.get(name);
+            if (gate === undefined) {
+                throw new Error("Unrecognized gate name in " + line);
+            }
+            let a = new Float32Array(args);
+
+            let layer = layers[layers.length - 1];
+            if (gate.num_qubits === undefined) {
+                layer.put(new Operation(gate, a, new Uint32Array(targets)));
+            } else {
+                if (targets.length % gate.num_qubits !== 0) {
+                    throw new Error("Incorrect number of targets in line " + line);
+                }
+                for (let k = 0; k < targets.length; k += gate.num_qubits) {
+                    let sub_targets = targets.slice(k, k + gate.num_qubits);
+                    if (reverse_pairs) {
+                        sub_targets.reverse();
+                    }
+                    let qs = new Uint32Array(sub_targets);
+                    try {
+                        layer.put(new Operation(gate, a, qs), false);
+                    } catch (_) {
+                        layers.push(new Layer());
+                        layer = layers[layers.length - 1];
+                        layer.put(new Operation(gate, a, qs), false);
+                    }
+                }
+            }
+        };
+
+        processLineChunk(lines, 0, lines.length, 1);
+        if (layers.length > 0 && layers[layers.length - 1].isEmpty()) {
+            layers.pop();
+        }
+
+        let numQubits = Math.max(...i2q.keys(), 0) + 1;
+        let qubitCoords = new Float64Array(numQubits*2);
+        for (let q = 0; q < numQubits; q++) {
+            ensure_has_coords(q);
+            let [x, y] = i2q.get(q);
+            qubitCoords[2*q] = x;
+            qubitCoords[2*q + 1] = y;
+        }
+
+        return new Circuit(qubitCoords, layers);
+    }
+
+    /**
+     * @returns {!Set<!int>}
+     */
+    allQubits() {
+        let result = new Set();
+        for (let layer of this.layers) {
+            for (let op of layer.iter_gates_and_markers()) {
+                for (let t of op.id_targets) {
+                    result.add(t);
+                }
+            }
+         }
+        return result;
+    }
+
+    /**
+     * @returns {!Circuit}
+     */
+    rotated45() {
+        return this.afterCoordTransform((x, y) => [x - y, x + y]);
+    }
+
+    coordTransformForRectification() {
+        let coordSet = new Map();
+        for (let k = 0; k < this.qubitCoordData.length; k += 2) {
+            let x = this.qubitCoordData[k];
+            let y = this.qubitCoordData[k+1];
+            coordSet.set(`${x},${y}`, [x, y]);
+        }
+        let minX = Infinity;
+        let minY = Infinity;
+        let step = 256;
+        for (let [x, y] of coordSet.values()) {
+            minX = Math.min(x, minX);
+            minY = Math.min(y, minY);
+            while ((x % step !== 0 || y % step !== 0) && step > 1 / 256) {
+                step /= 2;
+            }
+        }
+        let scale;
+        if (step <= 1 / 256) {
+            scale = 1;
+        } else {
+            scale = 1 / step;
+            let mask = 0;
+            for (let [x, y] of coordSet.values()) {
+                let b1 = (x - minX + y - minY) % (2 * step);
+                let b2 = (x - minX - y + minY) % (2 * step);
+                mask |= b1 === 0 ? 1 : 2;
+                mask |= b2 === 0 ? 4 : 8;
+            }
+            if (mask === (1 | 4)) {
+                scale /= 2;
+            } else if (mask === (2 | 8)) {
+                minX -= step;
+                scale /= 2;
+            }
+        }
+
+        let offsetX = -minX;
+        let offsetY = -minY;
+        return (x, y) => [(x + offsetX) * scale, (y + offsetY) * scale];
+    }
+
+    /**
+     * @returns {!Circuit}
+     */
+    afterRectification() {
+        return this.afterCoordTransform(this.coordTransformForRectification());
+    }
+
+    /**
+     * @param {!number} dx
+     * @param {!number} dy
+     * @returns {!Circuit}
+     */
+    shifted(dx, dy) {
+        return this.afterCoordTransform((x, y) => [x + dx, y + dy]);
+    }
+
+    /**
+     * @return {!Circuit}
+     */
+    copy() {
+        return this.shifted(0, 0);
+    }
+
+    /**
+     * @param {!function(!number, !number): ![!number, !number]} coordTransform
+     * @returns {!Circuit}
+     */
+    afterCoordTransform(coordTransform) {
+        let newCoords = new Float64Array(this.qubitCoordData.length);
+        for (let k = 0; k < this.qubitCoordData.length; k += 2) {
+            let x = this.qubitCoordData[k];
+            let y = this.qubitCoordData[k + 1];
+            let [x2, y2] = coordTransform(x, y);
+            newCoords[k] = x2;
+            newCoords[k + 1] = y2;
+        }
+        let newLayers = this.layers.map(e => e.copy());
+        return new Circuit(newCoords, newLayers);
+    }
+
+    /**
+     * @returns {!string}
+     */
+    toStimCircuit() {
+        let usedQubits = new Set();
+        for (let layer of this.layers) {
+            for (let op of layer.iter_gates_and_markers()) {
+                for (let t of op.id_targets) {
+                    usedQubits.add(t);
+                }
+            }
+        }
+
+        let packedQubitCoords = [];
+        for (let q of usedQubits) {
+            let x = this.qubitCoordData[2*q];
+            let y = this.qubitCoordData[2*q+1];
+            packedQubitCoords.push({q, x, y});
+        }
+        packedQubitCoords.sort((a, b) => {
+            if (a.x !== b.x) {
+                return a.x < b.x;
+            }
+            if (a.y !== b.y) {
+                return a.y < b.y;
+            }
+            return a.q < b.q;
+        });
+        let old2new = new Map();
+        let out = [];
+        for (let q = 0; q < packedQubitCoords.length; q++) {
+            let {q: old_q, x, y} = packedQubitCoords[q];
+            old2new.set(old_q, q);
+            out.push(`QUBIT_COORDS(${x}, ${y}) ${q}`);
+        }
+
+        for (let layer of this.layers) {
+            let opsByName = groupBy(layer.iter_gates_and_markers(), op => {
+                let key = op.gate.name;
+                if (op.args.length > 0) {
+                    key += '(' + [...op.args].join(',') + ')';
+                }
+                return key;
+            });
+            let namesWithArgs = [...opsByName.keys()];
+            namesWithArgs.sort((a, b) => {
+                let ma = a.startsWith('MARK') || a.startsWith('POLY');
+                let mb = b.startsWith('MARK') || b.startsWith('POLY');
+                if (ma !== mb) {
+                    return ma < mb ? -1 : +1;
+                }
+                return a < b ? -1 : a > b ? +1 : 0;
+            });
+
+            for (let nameWithArgs of namesWithArgs) {
+                let group = opsByName.get(nameWithArgs);
+                let targetGroups = [];
+
+                if (GATE_MAP.get(nameWithArgs.split('(')[0]).can_fuse) {
+                    let flatTargetGroups = [];
+                    for (let op of group) {
+                        flatTargetGroups.push(...op.id_targets)
+                    }
+                    targetGroups.push(flatTargetGroups);
+                } else {
+                    for (let op of group) {
+                        targetGroups.push([...op.id_targets])
+                    }
+                }
+
+                for (let targetGroup of targetGroups) {
+                    let line = [nameWithArgs];
+                    for (let t of targetGroup) {
+                        line.push(old2new.get(t));
+                    }
+                    out.push(line.join(' '));
+                }
+            }
+            out.push(`TICK`);
+        }
+        while (out.length > 0 && out[out.length - 1] === 'TICK') {
+            out.pop();
+        }
+
+        return out.join('\n');
+    }
+
+    /**
+     * @param {!Iterable<![!number, !number]>} coords
+     */
+    withCoordsIncluded(coords) {
+        let coordMap = this.coordToQubitMap();
+        let extraCoordData = [];
+        for (let [x, y] of coords) {
+            let key = `${x},${y}`;
+            if (!coordMap.has(key)) {
+                coordMap.set(key, coordMap.size);
+                extraCoordData.push(x, y);
+            }
+        }
+        return new Circuit(
+            new Float64Array([...this.qubitCoordData, ...extraCoordData]),
+            this.layers.map(e => e.copy()),
+        );
+    }
+
+    /**
+     * @returns {!Map<!string, !int>}
+     */
+    coordToQubitMap() {
+        let result = new Map();
+        for (let q = 0; q < this.qubitCoordData.length; q += 2) {
+            let x = this.qubitCoordData[q];
+            let y = this.qubitCoordData[q + 1];
+            result.set(`${x},${y}`, q / 2);
+        }
+        return result;
+    }
+
+    /**
+     * @returns {!string}
+     */
+    toString() {
+        return this.toStimCircuit();
+    }
+
+    /**
+     * @param {*} other
+     * @returns {!boolean}
+     */
+    isEqualTo(other) {
+        if (!(other instanceof Circuit)) {
+            return false;
+        }
+        return this.toStimCircuit() === other.toStimCircuit();
+    }
+}
+
+export {Circuit};

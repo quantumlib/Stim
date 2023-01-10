@@ -24,11 +24,13 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/diagram/crumble.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
 enum DiagramTypes {
+    INTERACTIVE_HTML,
     TIMELINE_TEXT,
     TIMELINE_SVG,
     TIMELINE_3D,
@@ -92,6 +94,7 @@ int stim::command_diagram(int argc, const char **argv) {
         {"match-graph-svg", MATCH_GRAPH_SVG},
         {"match-graph-3d", MATCH_GRAPH_3D},
         {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
+        {"interactive-html", INTERACTIVE_HTML},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
@@ -176,6 +179,11 @@ int stim::command_diagram(int argc, const char **argv) {
             std::stringstream tmp_out;
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
             write_html_viewer_for_gltf_data(tmp_out.str(), out);
+            break;
+        }
+        case INTERACTIVE_HTML: {
+            auto circuit = read_circuit();
+            write_crumble_html_with_preloaded_circuit(circuit, out);
             break;
         }
         case MATCH_GRAPH_3D: {

@@ -227,7 +227,7 @@ jobs:
         sudo make install
     - uses: egor-tensin/setup-clang@v1
       with:
-        version: 14
+        version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
     - run: cmake --build .
@@ -375,3 +375,11 @@ jobs:
       - run: npm install
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
+  test_crumble:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - run: node glue/crumble/run_tests_headless.js
