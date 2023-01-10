@@ -263,3 +263,24 @@ TEST(detector_slice_set_svg_diagram, colinear_polygon) {
     slice_set.write_svg_diagram_to(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "colinear_detector_slice.svg");
 }
+
+TEST(detector_slice_set_svg_diagram, svg_ids) {
+    Circuit circuit(R"CIRCUIT(
+        QUBIT_COORDS 0
+        QUBIT_COORDS(1) 1
+        QUBIT_COORDS(2, 2) 2
+        QUBIT_COORDS(3, 3, 3) 3
+        R 0 1 2 3
+        TICK
+        M 0 1 2 3
+        DETECTOR rec[-1]
+        DETECTOR(1) rec[-1] rec[-2] 
+        DETECTOR(2, 2) rec[-1] rec[-2] rec[-3]
+        DETECTOR(3, 3, 3) rec[-1] rec[-2] rec[-3] rec[-4]
+    )CIRCUIT");
+    std::vector<double> empty_filter;
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
+    std::stringstream ss;
+    slice_set.write_svg_diagram_to(ss);
+    expect_string_is_identical_to_saved_file(ss.str(), "svg_ids.svg");
+}

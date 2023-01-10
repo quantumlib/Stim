@@ -1,8 +1,10 @@
 <svg viewBox="0 0 224 224"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L192,64 " stroke="black"/>
+<g id="qubit_lines">
+<path id="qubit_line:0" d="M64,64 L192,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L192,128 " stroke="black"/>
+<path id="qubit_line:1" d="M64,128 L192,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
+</g>
 <rect x="80" y="48" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="96" y="64">H</text>
 <path d="M160,64 L160,128 " stroke="black"/>

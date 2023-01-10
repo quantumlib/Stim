@@ -1,367 +1,457 @@
 <svg viewBox="0 0 1788.8 1331.2"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<g id="slice:9:2_1_1:6">
 <path d="M208,80 L208,144 L272,144 L208,208 L144,144 L208,80" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M208,80 L208,144 L272,144 L208,208 L144,144 L208,80" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:6">
 <path d="M208,208 L208,272 L272,272 L208,336 L144,272 L208,208" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M208,208 L208,272 L272,272 L208,336 L144,272 L208,208" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:7">
 <path d="M665.6,80 L665.6,144 L729.6,144 L665.6,208 L601.6,144 L665.6,80" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,80 L665.6,144 L729.6,144 L665.6,208 L601.6,144 L665.6,80" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:7">
 <path d="M665.6,208 L665.6,272 L729.6,272 L665.6,336 L601.6,272 L665.6,208" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,208 L665.6,272 L729.6,272 L665.6,336 L601.6,272 L665.6,208" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:8">
 <path d="M1123.2,80 L1123.2,144 L1187.2,144 L1123.2,208 L1059.2,144 L1123.2,80" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,80 L1123.2,144 L1187.2,144 L1123.2,208 L1059.2,144 L1123.2,80" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:8">
 <path d="M1123.2,208 L1123.2,272 L1187.2,272 L1123.2,336 L1059.2,272 L1123.2,208" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,208 L1123.2,272 L1187.2,272 L1123.2,336 L1059.2,272 L1123.2,208" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:9">
 <path d="M1580.8,80 L1580.8,144 L1644.8,144 L1580.8,208 L1516.8,144 L1580.8,80" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1580.8,80 L1580.8,144 L1644.8,144 L1580.8,208 L1516.8,144 L1580.8,80" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:9">
 <path d="M1580.8,208 L1580.8,272 L1644.8,272 L1580.8,336 L1516.8,272 L1580.8,208" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1580.8,208 L1580.8,272 L1644.8,272 L1580.8,336 L1516.8,272 L1580.8,208" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:10">
 <path d="M144,601.6 C150.4 569.6,150.4 569.6,144 537.6 L208,537.6 C201.6 569.6,201.6 569.6,208 601.6 C201.6 633.6,201.6 633.6,208 665.6 L144,665.6 C150.4 633.6,150.4 633.6,144 601.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M144,601.6 C150.4 569.6,150.4 569.6,144 537.6 L208,537.6 C201.6 569.6,201.6 569.6,208 601.6 C201.6 633.6,201.6 633.6,208 665.6 L144,665.6 C150.4 633.6,150.4 633.6,144 601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:10">
 <path d="M144,729.6 C150.4 697.6,150.4 697.6,144 665.6 L208,665.6 C201.6 697.6,201.6 697.6,208 729.6 C201.6 761.6,201.6 761.6,208 793.6 L144,793.6 C150.4 761.6,150.4 761.6,144 729.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M144,729.6 C150.4 697.6,150.4 697.6,144 665.6 L208,665.6 C201.6 697.6,201.6 697.6,208 729.6 C201.6 761.6,201.6 761.6,208 793.6 L144,793.6 C150.4 761.6,150.4 761.6,144 729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:11">
 <path d="M665.6,537.6 L665.6,601.6 L601.6,665.6 L601.6,601.6 L665.6,537.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,537.6 L665.6,601.6 L601.6,665.6 L601.6,601.6 L665.6,537.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:11">
 <path d="M665.6,665.6 L665.6,729.6 L601.6,793.6 L601.6,729.6 L665.6,665.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,665.6 L665.6,729.6 L601.6,793.6 L601.6,729.6 L665.6,665.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:11">
 <path d="M729.6,537.6 L729.6,601.6 L665.6,665.6 L665.6,601.6 L729.6,537.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M729.6,537.6 L729.6,601.6 L665.6,665.6 L665.6,601.6 L729.6,537.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:11">
 <path d="M729.6,665.6 L729.6,729.6 L665.6,793.6 L665.6,729.6 L729.6,665.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M729.6,665.6 L729.6,729.6 L665.6,793.6 L665.6,729.6 L729.6,665.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:12">
 <path d="M1123.2,601.6 C1129.6 569.6,1129.6 569.6,1123.2 537.6 L1187.2,537.6 C1180.8 569.6,1180.8 569.6,1187.2 601.6 C1180.8 633.6,1180.8 633.6,1187.2 665.6 L1123.2,665.6 C1129.6 633.6,1129.6 633.6,1123.2 601.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,601.6 C1129.6 569.6,1129.6 569.6,1123.2 537.6 L1187.2,537.6 C1180.8 569.6,1180.8 569.6,1187.2 601.6 C1180.8 633.6,1180.8 633.6,1187.2 665.6 L1123.2,665.6 C1129.6 633.6,1129.6 633.6,1123.2 601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:12">
 <path d="M1123.2,729.6 C1129.6 697.6,1129.6 697.6,1123.2 665.6 L1187.2,665.6 C1180.8 697.6,1180.8 697.6,1187.2 729.6 C1180.8 761.6,1180.8 761.6,1187.2 793.6 L1123.2,793.6 C1129.6 761.6,1129.6 761.6,1123.2 729.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,729.6 C1129.6 697.6,1129.6 697.6,1123.2 665.6 L1187.2,665.6 C1180.8 697.6,1180.8 697.6,1187.2 729.6 C1180.8 761.6,1180.8 761.6,1187.2 793.6 L1123.2,793.6 C1129.6 761.6,1129.6 761.6,1123.2 729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:13">
 <path d="M1580.8,537.6 L1580.8,601.6 L1644.8,601.6 L1580.8,665.6 L1516.8,601.6 L1580.8,537.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1580.8,537.6 L1580.8,601.6 L1644.8,601.6 L1580.8,665.6 L1516.8,601.6 L1580.8,537.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:13">
 <path d="M1580.8,665.6 L1580.8,729.6 L1644.8,729.6 L1580.8,793.6 L1516.8,729.6 L1580.8,665.6" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1580.8,665.6 L1580.8,729.6 L1644.8,729.6 L1580.8,793.6 L1516.8,729.6 L1580.8,665.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:14">
 <path d="M208,995.2 L208,1059.2 L272,1059.2 L208,1123.2 L144,1059.2 L208,995.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M208,995.2 L208,1059.2 L272,1059.2 L208,1123.2 L144,1059.2 L208,995.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:14">
 <path d="M208,1123.2 L208,1187.2 L272,1187.2 L208,1251.2 L144,1187.2 L208,1123.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M208,1123.2 L208,1187.2 L272,1187.2 L208,1251.2 L144,1187.2 L208,1123.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:15">
 <path d="M665.6,995.2 L665.6,1059.2 L729.6,1059.2 L665.6,1123.2 L601.6,1059.2 L665.6,995.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,995.2 L665.6,1059.2 L729.6,1059.2 L665.6,1123.2 L601.6,1059.2 L665.6,995.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:15">
 <path d="M665.6,1123.2 L665.6,1187.2 L729.6,1187.2 L665.6,1251.2 L601.6,1187.2 L665.6,1123.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M665.6,1123.2 L665.6,1187.2 L729.6,1187.2 L665.6,1251.2 L601.6,1187.2 L665.6,1123.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:16">
 <path d="M1123.2,995.2 L1123.2,1059.2 L1187.2,1059.2 L1123.2,1123.2 L1059.2,1059.2 L1123.2,995.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,995.2 L1123.2,1059.2 L1187.2,1059.2 L1123.2,1123.2 L1059.2,1059.2 L1123.2,995.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:16">
 <path d="M1123.2,1123.2 L1123.2,1187.2 L1187.2,1187.2 L1123.2,1251.2 L1059.2,1187.2 L1123.2,1123.2" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M1123.2,1123.2 L1123.2,1187.2 L1187.2,1187.2 L1123.2,1251.2 L1059.2,1187.2 L1123.2,1123.2" stroke="black" fill="none"/>
-<path d="M208,601.6 C 227.2 614.4, 252.8 614.4, 272 601.6 C 252.8 588.8, 227.2 588.8, 208 601.6" stroke="none" fill="#4DA6FF"/>
-<path d="M208,601.6 C 227.2 614.4, 252.8 614.4, 272 601.6 C 252.8 588.8, 227.2 588.8, 208 601.6" stroke="black" fill="none"/>
-<path d="M208,729.6 C 227.2 742.4, 252.8 742.4, 272 729.6 C 252.8 716.8, 227.2 716.8, 208 729.6" stroke="none" fill="#4DA6FF"/>
-<path d="M208,729.6 C 227.2 742.4, 252.8 742.4, 272 729.6 C 252.8 716.8, 227.2 716.8, 208 729.6" stroke="black" fill="none"/>
-<path d="M1059.2,601.6 C 1078.4 614.4, 1104 614.4, 1123.2 601.6 C 1104 588.8, 1078.4 588.8, 1059.2 601.6" stroke="none" fill="#4DA6FF"/>
-<path d="M1059.2,601.6 C 1078.4 614.4, 1104 614.4, 1123.2 601.6 C 1104 588.8, 1078.4 588.8, 1059.2 601.6" stroke="black" fill="none"/>
-<path d="M1059.2,729.6 C 1078.4 742.4, 1104 742.4, 1123.2 729.6 C 1104 716.8, 1078.4 716.8, 1059.2 729.6" stroke="none" fill="#4DA6FF"/>
-<path d="M1059.2,729.6 C 1078.4 742.4, 1104 742.4, 1123.2 729.6 C 1104 716.8, 1078.4 716.8, 1059.2 729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:10">
+<path d="M208,601.6 C227.2 614.4, 252.8 614.4, 272 601.6 C252.8 588.8, 227.2 588.8, 208 601.6" stroke="none" fill="#4DA6FF"/>
+<path d="M208,601.6 C227.2 614.4, 252.8 614.4, 272 601.6 C252.8 588.8, 227.2 588.8, 208 601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:10">
+<path d="M208,729.6 C227.2 742.4, 252.8 742.4, 272 729.6 C252.8 716.8, 227.2 716.8, 208 729.6" stroke="none" fill="#4DA6FF"/>
+<path d="M208,729.6 C227.2 742.4, 252.8 742.4, 272 729.6 C252.8 716.8, 227.2 716.8, 208 729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:12">
+<path d="M1059.2,601.6 C1078.4 614.4, 1104 614.4, 1123.2 601.6 C1104 588.8, 1078.4 588.8, 1059.2 601.6" stroke="none" fill="#4DA6FF"/>
+<path d="M1059.2,601.6 C1078.4 614.4, 1104 614.4, 1123.2 601.6 C1104 588.8, 1078.4 588.8, 1059.2 601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:12">
+<path d="M1059.2,729.6 C1078.4 742.4, 1104 742.4, 1123.2 729.6 C1104 716.8, 1078.4 716.8, 1059.2 729.6" stroke="none" fill="#4DA6FF"/>
+<path d="M1059.2,729.6 C1078.4 742.4, 1104 742.4, 1123.2 729.6 C1104 716.8, 1078.4 716.8, 1059.2 729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:2:2_1_0:6">
 <circle cx="208" cy="144" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="208" cy="144" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:3:2_3_0:6">
 <circle cx="208" cy="272" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="208" cy="272" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:2:2_1_0:7">
 <circle cx="665.6" cy="144" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="665.6" cy="144" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:3:2_3_0:7">
 <circle cx="665.6" cy="272" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="665.6" cy="272" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:8">
 <circle cx="1123.2" cy="144" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1123.2" cy="144" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:8">
 <circle cx="1123.2" cy="272" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1123.2" cy="272" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:21:2_1_2:9">
 <circle cx="1580.8" cy="144" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1580.8" cy="144" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:26:2_3_2:9">
 <circle cx="1580.8" cy="272" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1580.8" cy="272" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:13">
 <circle cx="1580.8" cy="601.6" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1580.8" cy="601.6" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:13">
 <circle cx="1580.8" cy="729.6" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1580.8" cy="729.6" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:9:2_1_1:14">
 <circle cx="208" cy="1059.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="208" cy="1059.2" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:14:2_3_1:14">
 <circle cx="208" cy="1187.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="208" cy="1187.2" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:33:2_1_3:15">
 <circle cx="665.6" cy="1059.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="665.6" cy="1059.2" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:38:2_3_3:15">
 <circle cx="665.6" cy="1187.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="665.6" cy="1187.2" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:33:2_1_3:16">
 <circle cx="1123.2" cy="1059.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1123.2" cy="1059.2" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:38:2_3_3:16">
 <circle cx="1123.2" cy="1187.2" r="24" stroke="none" fill="#4DA6FF"/>
 <circle cx="1123.2" cy="1187.2" r="24" stroke="black" fill="none"/>
-<circle cx="80" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="80" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="144" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="208" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="272" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="336" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="537.6" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="601.6" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="665.6" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="729.6" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="793.6" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="995.2" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="1059.2" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="1123.2" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="1187.2" r="2" stroke="none" fill="black"/>
-<circle cx="995.2" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="1059.2" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="1123.2" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="1187.2" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="1251.2" cy="1251.2" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="80" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="144" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="208" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="272" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="336" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="537.6" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="601.6" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="665.6" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="729.6" r="2" stroke="none" fill="black"/>
-<circle cx="1452.8" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1516.8" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1580.8" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1644.8" cy="793.6" r="2" stroke="none" fill="black"/>
-<circle cx="1708.8" cy="793.6" r="2" stroke="none" fill="black"/>
+</g>
+<g id="qubit_dots">
+<circle id="qubit_dot:0:0_0:5" cx="80" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:5" cx="144" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:5" cx="208" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:5" cx="272" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:5" cx="336" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:5" cx="80" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:5" cx="144" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:5" cx="208" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:5" cx="272" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:5" cx="336" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:5" cx="80" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:5" cx="144" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:5" cx="208" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:5" cx="272" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:5" cx="336" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:5" cx="80" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:5" cx="144" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:5" cx="208" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:5" cx="272" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:5" cx="336" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:5" cx="80" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:5" cx="144" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:5" cx="208" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:5" cx="272" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:5" cx="336" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:5" cx="80" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:5" cx="144" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:5" cx="208" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:5" cx="272" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:5" cx="336" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:5" cx="80" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:5" cx="144" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:5" cx="208" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:5" cx="272" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:5" cx="336" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:5" cx="80" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:5" cx="144" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:5" cx="208" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:5" cx="272" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:5" cx="336" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:5" cx="80" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:5" cx="144" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:5" cx="208" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:5" cx="272" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:5" cx="336" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:5" cx="80" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:5" cx="144" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:5" cx="208" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:5" cx="272" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:5" cx="336" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:5" cx="80" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:5" cx="144" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:5" cx="208" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:5" cx="272" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:5" cx="336" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:5" cx="80" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:5" cx="144" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:5" cx="208" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:5" cx="272" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:5" cx="336" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:5" cx="80" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:5" cx="144" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:5" cx="208" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:5" cx="272" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:5" cx="336" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:5" cx="80" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:5" cx="144" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:5" cx="208" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:5" cx="272" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:5" cx="336" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:5" cx="80" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:5" cx="144" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:5" cx="208" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:5" cx="272" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:5" cx="336" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:6" cx="537.6" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:6" cx="601.6" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:6" cx="665.6" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:6" cx="729.6" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:6" cx="793.6" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:6" cx="537.6" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:6" cx="601.6" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:6" cx="665.6" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:6" cx="729.6" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:6" cx="793.6" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:6" cx="537.6" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:6" cx="601.6" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:6" cx="665.6" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:6" cx="729.6" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:6" cx="793.6" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:6" cx="537.6" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:6" cx="601.6" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:6" cx="665.6" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:6" cx="729.6" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:6" cx="793.6" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:6" cx="537.6" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:6" cx="601.6" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:6" cx="665.6" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:6" cx="729.6" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:6" cx="793.6" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:6" cx="537.6" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:6" cx="601.6" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:6" cx="665.6" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:6" cx="729.6" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:6" cx="793.6" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:6" cx="537.6" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:6" cx="601.6" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:6" cx="665.6" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:6" cx="729.6" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:6" cx="793.6" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:6" cx="537.6" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:6" cx="601.6" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:6" cx="665.6" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:6" cx="729.6" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:6" cx="793.6" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:6" cx="537.6" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:6" cx="601.6" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:6" cx="665.6" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:6" cx="729.6" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:6" cx="793.6" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:6" cx="537.6" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:6" cx="601.6" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:6" cx="665.6" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:6" cx="729.6" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:6" cx="793.6" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:6" cx="537.6" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:6" cx="601.6" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:6" cx="665.6" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:6" cx="729.6" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:6" cx="793.6" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:6" cx="537.6" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:6" cx="601.6" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:6" cx="665.6" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:6" cx="729.6" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:6" cx="793.6" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:6" cx="537.6" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:6" cx="601.6" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:6" cx="665.6" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:6" cx="729.6" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:6" cx="793.6" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:6" cx="537.6" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:6" cx="601.6" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:6" cx="665.6" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:6" cx="729.6" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:6" cx="793.6" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:6" cx="537.6" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:6" cx="601.6" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:6" cx="665.6" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:6" cx="729.6" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:6" cx="793.6" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:7" cx="995.2" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:7" cx="1059.2" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:7" cx="1123.2" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:7" cx="1187.2" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:7" cx="1251.2" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:7" cx="995.2" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:7" cx="1059.2" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:7" cx="1123.2" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:7" cx="1187.2" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:7" cx="1251.2" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:7" cx="995.2" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:7" cx="1059.2" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:7" cx="1123.2" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:7" cx="1187.2" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:7" cx="1251.2" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:7" cx="995.2" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:7" cx="1059.2" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:7" cx="1123.2" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:7" cx="1187.2" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:7" cx="1251.2" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:7" cx="995.2" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:7" cx="1059.2" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:7" cx="1123.2" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:7" cx="1187.2" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:7" cx="1251.2" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:7" cx="995.2" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:7" cx="1059.2" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:7" cx="1123.2" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:7" cx="1187.2" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:7" cx="1251.2" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:7" cx="995.2" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:7" cx="1059.2" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:7" cx="1123.2" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:7" cx="1187.2" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:7" cx="1251.2" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:7" cx="995.2" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:7" cx="1059.2" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:7" cx="1123.2" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:7" cx="1187.2" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:7" cx="1251.2" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:7" cx="995.2" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:7" cx="1059.2" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:7" cx="1123.2" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:7" cx="1187.2" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:7" cx="1251.2" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:7" cx="995.2" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:7" cx="1059.2" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:7" cx="1123.2" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:7" cx="1187.2" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:7" cx="1251.2" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:7" cx="995.2" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:7" cx="1059.2" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:7" cx="1123.2" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:7" cx="1187.2" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:7" cx="1251.2" cy="995.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:7" cx="995.2" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:7" cx="1059.2" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:7" cx="1123.2" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:7" cx="1187.2" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:7" cx="1251.2" cy="1059.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:7" cx="995.2" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:7" cx="1059.2" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:7" cx="1123.2" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:7" cx="1187.2" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:7" cx="1251.2" cy="1123.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:7" cx="995.2" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:7" cx="1059.2" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:7" cx="1123.2" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:7" cx="1187.2" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:7" cx="1251.2" cy="1187.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:7" cx="995.2" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:7" cx="1059.2" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:7" cx="1123.2" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:7" cx="1187.2" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:7" cx="1251.2" cy="1251.2" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:8" cx="1452.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:8" cx="1516.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:8" cx="1580.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:8" cx="1644.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:8" cx="1708.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:8" cx="1452.8" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:8" cx="1516.8" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:8" cx="1580.8" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:8" cx="1644.8" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:8" cx="1708.8" cy="144" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:8" cx="1452.8" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:8" cx="1516.8" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:8" cx="1580.8" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:8" cx="1644.8" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:8" cx="1708.8" cy="208" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:8" cx="1452.8" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:8" cx="1516.8" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:8" cx="1580.8" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:8" cx="1644.8" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:8" cx="1708.8" cy="272" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:8" cx="1452.8" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:8" cx="1516.8" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:8" cx="1580.8" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:8" cx="1644.8" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:8" cx="1708.8" cy="336" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0_0:8" cx="1452.8" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1_0:8" cx="1516.8" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:2_0:8" cx="1580.8" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:3:3_0:8" cx="1644.8" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:4:4_0:8" cx="1708.8" cy="537.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:5:0_1:8" cx="1452.8" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:6:1_1:8" cx="1516.8" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:7:2_1:8" cx="1580.8" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:8:3_1:8" cx="1644.8" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:9:4_1:8" cx="1708.8" cy="601.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:10:0_2:8" cx="1452.8" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:11:1_2:8" cx="1516.8" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:12:2_2:8" cx="1580.8" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:13:3_2:8" cx="1644.8" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:14:4_2:8" cx="1708.8" cy="665.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:15:0_3:8" cx="1452.8" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:16:1_3:8" cx="1516.8" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:17:2_3:8" cx="1580.8" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:18:3_3:8" cx="1644.8" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:19:4_3:8" cx="1708.8" cy="729.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:20:0_4:8" cx="1452.8" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:21:1_4:8" cx="1516.8" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:22:2_4:8" cx="1580.8" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:23:3_4:8" cx="1644.8" cy="793.6" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:24:4_4:8" cx="1708.8" cy="793.6" r="2" stroke="none" fill="black"/>
+</g>
 <path d="M144,80 L80,80 " stroke="black" stroke-width="5"/>
 <circle cx="144" cy="80" r="12" stroke="none" fill="black"/>
 <circle cx="80" cy="80" r="12" stroke="black" fill="white"/>
@@ -658,15 +748,17 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1059.2" y="1251.2">H</text>
 <rect x="1171.2" y="1235.2" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1187.2" y="1251.2">H</text>
-<rect x="0" y="0" width="416" height="416" stroke="black" fill="none"/>
-<rect x="0" y="457.6" width="416" height="416" stroke="black" fill="none"/>
-<rect x="0" y="915.2" width="416" height="416" stroke="black" fill="none"/>
-<rect x="457.6" y="0" width="416" height="416" stroke="black" fill="none"/>
-<rect x="457.6" y="457.6" width="416" height="416" stroke="black" fill="none"/>
-<rect x="457.6" y="915.2" width="416" height="416" stroke="black" fill="none"/>
-<rect x="915.2" y="0" width="416" height="416" stroke="black" fill="none"/>
-<rect x="915.2" y="457.6" width="416" height="416" stroke="black" fill="none"/>
-<rect x="915.2" y="915.2" width="416" height="416" stroke="black" fill="none"/>
-<rect x="1372.8" y="0" width="416" height="416" stroke="black" fill="none"/>
-<rect x="1372.8" y="457.6" width="416" height="416" stroke="black" fill="none"/>
+<g id="tick_borders">
+<rect id="tick_border:0:0_0:5" x="0" y="0" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_0:5" x="0" y="457.6" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_0:5" x="0" y="915.2" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_1:5" x="457.6" y="0" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_1:5" x="457.6" y="457.6" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_1:5" x="457.6" y="915.2" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_2:5" x="915.2" y="0" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_2:5" x="915.2" y="457.6" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:2_2:5" x="915.2" y="915.2" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:0_3:5" x="1372.8" y="0" width="416" height="416" stroke="black" fill="none"/>
+<rect id="tick_border:0:1_3:5" x="1372.8" y="457.6" width="416" height="416" stroke="black" fill="none"/>
+</g>
 </svg>

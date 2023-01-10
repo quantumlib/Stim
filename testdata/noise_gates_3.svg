@@ -1,14 +1,16 @@
 <svg viewBox="0 0 1376 416"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L1344,64 " stroke="black"/>
+<g id="qubit_lines">
+<path id="qubit_line:0" d="M64,64 L1344,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L1344,128 " stroke="black"/>
+<path id="qubit_line:1" d="M64,128 L1344,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
-<path d="M64,192 L1344,192 " stroke="black"/>
+<path id="qubit_line:2" d="M64,192 L1344,192 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
-<path d="M64,256 L1344,256 " stroke="black"/>
+<path id="qubit_line:3" d="M64,256 L1344,256 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="256">q3</text>
-<path d="M64,320 L1344,320 " stroke="black"/>
+<path id="qubit_line:4" d="M64,320 L1344,320 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="320">q4</text>
+</g>
 <rect x="80" y="48" width="224" height="32" stroke="black" fill="pink"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="192" y="64">PAULI_CHANNEL_1</text>
 <text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="192" y="84">0.125,0.25,0.125</text>

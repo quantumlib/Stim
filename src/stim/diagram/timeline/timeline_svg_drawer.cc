@@ -786,14 +786,24 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
         }, 24);
     }
 
-    // Make sure qubit lines are drawn first, so they are in the background.
+    // Make sure qubit lines/points are drawn first, so they are in the background.
     if (mode != SVG_MODE_TIMELINE) {
         // Draw qubit points.
+        auto tick = tick_slice_start;
+        svg_out << "<g id=\"qubit_dots\">\n";
         for (uint64_t col = 0; col < obj.num_cols; col++) {
             for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
                 for (auto q : obj.detector_slice_set.used_qubits()) {
-                    auto c = obj.coord_sys.qubit_coords[q];
+                    std::stringstream id_ss;
+                    id_ss << "qubit_dot";
+                    id_ss << ":" << q;
+                    add_coord_summary_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
+                    id_ss << ":" << tick; // the absolute tick
+
+                    auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D
+                    
                     svg_out << "<circle";
+                    write_key_val(svg_out, "id", id_ss.str());
                     write_key_val(
                         svg_out,
                         "cx",
@@ -808,15 +818,25 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                     svg_out << "/>\n";
                 }
             }
+            tick++;
         }
+        svg_out << "</g>\n";
     } else {
+        svg_out << "<g id=\"qubit_lines\">\n";
         // Draw qubit lines.
         for (size_t q = 0; q < obj.num_qubits; q++) {
+
+            std::stringstream id_ss;
+            id_ss << "qubit_line";
+            id_ss << ":" << q;
+
             auto x1 = PADDING + CIRCUIT_START_X;
             auto x2 = w;
             auto y = obj.q2y(q);
 
-            svg_out << "<path d=\"";
+            svg_out << "<path";
+            write_key_val(svg_out, "id", id_ss.str());
+            svg_out << " d=\"";
             svg_out << "M" << x1 << "," << y << " ";
             svg_out << "L" << x2 << "," << y << " ";
             svg_out << "\"";
@@ -834,17 +854,27 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
             svg_out << "q" << q;
             svg_out << "</text>\n";
         }
+        svg_out << "</g>\n";
     }
 
     svg_out << buffer.str();
 
-    // Boundaries around different slices.
+    // Border around different slices.
     if (mode != SVG_MODE_TIMELINE && tick_slice_num > 1) {
+        auto k = 0;
+        svg_out << "<g id=\"tick_borders\">\n";
         for (uint64_t col = 0; col < obj.num_cols; col++) {
             for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
                 auto sw = obj.coord_sys.size.xyz[0];
                 auto sh = obj.coord_sys.size.xyz[1];
+
+                std::stringstream id_ss;
+                id_ss << "tick_border:" << k;
+                id_ss << ":" << row << "_" << col;
+                id_ss << ":" << k+tick_slice_start; // the absolute tick
+
                 svg_out << "<rect";
+                write_key_val(svg_out, "id", id_ss.str());
                 write_key_val(svg_out, "x", sw * col * SLICE_WINDOW_GAP);
                 write_key_val(svg_out, "y", sh * row * SLICE_WINDOW_GAP);
                 write_key_val(svg_out, "width", sw);
@@ -854,7 +884,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 svg_out << "/>\n";
             }
         }
+        svg_out << "</g>\n";
     }
-
     svg_out << "</svg>";
 }
