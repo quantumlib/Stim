@@ -423,7 +423,7 @@ async function run_tests(callback) {
             passed = true;
         } catch (ex) {
             if (ex instanceof Error && ex.message === "skipRestOfTestIfHeadless:document === undefined") {
-                console.warn("skipped part of test because running headless", test.name);
+                console.warn(`skipped part of test '${test.name}' because tests are running headless`);
                 skipped = true;
                 any_skipped = true;
                 passed = true;
