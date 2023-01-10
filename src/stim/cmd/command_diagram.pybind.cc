@@ -23,6 +23,7 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/diagram/crumble.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -186,6 +187,10 @@ DiagramHelper stim_pybind::circuit_diagram(
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
             .write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "interactive") {
+        std::stringstream out;
+        write_crumble_html_with_preloaded_circuit(circuit, out);
+        return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
     } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, type);

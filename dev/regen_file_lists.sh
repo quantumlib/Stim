@@ -22,10 +22,15 @@ find src | grep "\\.perf\\.cc$" | LC_ALL=C sort > "${FOLDER}/benchmark_files"
 find src | grep "\\.pybind\\.cc$" | LC_ALL=C sort > "${FOLDER}/python_api_files"
 
 # Regenerate 'stim.h' to include all relevant headers.
-echo "#ifndef _STIM_H" > src/stim.h
-echo "#define _STIM_H" >> src/stim.h
-echo "/// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES." >> src/stim.h
-echo "/// It may change arbitrarily and catastrophically from minor version to minor version." >> src/stim.h
-echo "/// If you need a stable API, use stim's Python API." >> src/stim.h
-find src | grep "\\.h$" | grep -v "\\.\(test\|perf\|pybind\)\\.h$" | grep -v "src/stim\\.h" | grep -v "src/stim/mem/simd_word_.*" | LC_ALL=C sort | sed 's/src\/\(.*\)/#include "\1"/g' >> "src/stim.h"
-echo "#endif" >> src/stim.h
+{
+    echo "#ifndef _STIM_H";
+    echo "#define _STIM_H";
+    echo "/// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES.";
+    echo "/// It may change arbitrarily and catastrophically from minor version to minor version.";
+    echo "/// If you need a stable API, use stim's Python API.";
+    find src | grep "\\.h$" | grep -v "\\.\(test\|perf\|pybind\)\\.h$" | grep -v "src/stim\\.h" | grep -v "src/stim/mem/simd_word_.*" | LC_ALL=C sort | sed 's/src\/\(.*\)/#include "\1"/g';
+    echo "#endif";
+} > src/stim.h
+
+# Regenerate crumble's unit test imports.
+find glue/crumble | grep "\\.test.js$" | LC_ALL=C sort | sed 's/glue\/crumble\(.*\)/import "..\1"/g' > "glue/crumble/test/test_import_all.js"
