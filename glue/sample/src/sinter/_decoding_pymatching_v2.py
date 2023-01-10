@@ -18,7 +18,7 @@ def decode_using_pymatching_v2(*,
             f.write(b'\0' * (num_obs * num_shots))
         return
 
-    pymatching._cpp_pymatching.main(command_line_args=[
+    result = pymatching._cpp_pymatching.main(command_line_args=[
         "predict",
         "--dem", str(dem_path),
         "--in", str(dets_b8_in_path),
@@ -26,3 +26,5 @@ def decode_using_pymatching_v2(*,
         "--out", str(obs_predictions_b8_out_path),
         "--out_format", "b8",
     ])
+    if result:
+        raise ValueError("pymatching.main returned a non-zero exit code")

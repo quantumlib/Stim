@@ -1,9 +1,13 @@
+import pathlib
+import tempfile
+
 import numpy as np
 import pytest
 import stim
 
 from sinter._collection import post_selection_mask_from_4th_coord
 from sinter._decoding import sample_decode
+from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 
 DECODER_PACKAGES = [
     ('pymatching', 'pymatching'),
@@ -212,3 +216,35 @@ def test_post_selection(decoder: str, required_import: str):
     )
     assert 1050 <= result.discards <= 1350
     assert 40 <= result.errors <= 160
+
+
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_decode_fails_correctly(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
+
+    decoder_obj = BUILT_IN_DECODERS.get(decoder)
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        circuit = stim.Circuit("""
+            REPEAT 9 {
+                MR(0.001) 0
+                DETECTOR rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            }
+        """)
+        dem = circuit.detector_error_model()
+        circuit.to_file(d / 'circuit.stim')
+        dem.to_file(d / 'dem.dem')
+        with open(d / 'bad_dets.b8', 'wb') as f:
+            f.write(b'!')
+
+        with pytest.raises(Exception):
+            decoder_obj.decode_via_files(
+                num_shots=1,
+                num_dets=dem.num_detectors,
+                num_obs=dem.num_observables,
+                dem_path=d / 'dem.dem',
+                dets_b8_in_path=d / 'bad_dets.b8',
+                obs_predictions_b8_out_path=d / 'predict.b8',
+                tmp_dir=d,
+            )
