@@ -434,6 +434,7 @@ async function run_tests(callback) {
                 console.error("failed test", test.name, ex);
             }
         }
+        num_tests_left--;
         callback(new TestProgress(name, passed, error, num_tests, num_tests_failed, num_tests_left, skipped));
     }
     if (all_passed) {

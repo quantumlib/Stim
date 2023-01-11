@@ -11,15 +11,52 @@ Crumble is not stable.**
 
 ## Index
 
-
 - [Using Crumble](#using-crumble)
     - [Loading and Saving Circuits](#loading-saving)
     - [Keyboard Controls](#keyboard-commands)
     - [Mouse Controls](#mouse-commands)
 - [Building Crumble](#building-crumble)
+- [Testing Crumble](#testing-crumble)
 
 <a name="using-crumble"></a>
 # Using Crumble
+
+There are two core pieces to using crumble effectively:
+(1) editing the circuit
+and (2) propagating Paulis.
+
+Editing the circuit is done by selecting qubits with the mouse and hitting
+keyboard keys to place gates.
+The layers of the circuit can be navigated using the Q/E keys.
+
+Propagating Paulis is done by placing *markers* to indicate where to add terms.
+Each marker has a type (X, Y, or Z) and an index (0-9) indicating which indexed
+Pauli product the marker is modifying.
+For example, to place a Z term after a reset gate into the Pauli product with
+index 1, select the reset gate and press `Z`+`1`. This introduces a Z term into
+the Pauli product, and advancing through the circuit will show how the now
+non-empty Pauli product changes as it is rewritten by the circuit's stabilizer
+operations.
+
+The simplest way to use markers is as a method for seeing how errors propagate
+through the circuit.
+But the far more useful case is for seeing how *knowledge*
+propagates through the circuit.
+After a qubit is reset, its Z observable is in a known state.
+As the circuit executes, this piece of knowledge is transformed into different
+forms; it may later correspond to knowing a multi-qubit Pauli product or to
+knowing what the result of a measurement must be.
+Pauli propagation shows how these pieces of knowledge move
+through the circuit.
+
+Of particular interest is finding small sets of resets that match small sets of
+nearby measurements (i.e. resets that prepare knowledge predicting the parity
+of a set of measurements).
+These local reset-vs-measurement tautologies correspond to detectors, which can
+be used to correct errors.
+The path that the Pauli product takes, starting from the various resets and
+terminating on the various measurements, forms the detecting region of the
+detector.
 
 <a name="loading-saving"></a>
 ## Loading and Saving Circuits
@@ -99,8 +136,8 @@ Note: use `shift` to get the inverse of a gate.
 Note: when a single qubit is selected and a two qubit gate is placed, the gate
 spans between the selected qubit and *the qubit the mouse is hovering over*.
 When multiple qubits are selected, the difference between the topmost leftmost
-qubit and *the qubit the mouse is hovering over* and then each selected qubit
-targets its position offset by that same difference.
+qubit and *the qubit the mouse is hovering over* is computed, and then each selected qubit
+targets its position offset by that difference.
 
 Note: use `shift` to get the inverse of a gate.
 
@@ -119,6 +156,7 @@ Note: use `shift` to get the inverse of a gate.
 - `c+m+y`: Overwrite selection with `MPP Y*Y` gate targeting mouse
 - `c+m+z`: Overwrite selection with `MPP Z*Z` gate targeting mouse
 
+<a name="mouse-commands"></a>
 ### Mouse Controls
 
 Note: to `BoxSelect` means to press down the left mouse button, drag the mouse
@@ -141,6 +179,7 @@ box selection action. The specific parity being used depends on context. For
 example, when selecting a column of qubits, the row parity is used. When
 selecting a 2d region, the subgrid parity is used.
 
+<a name="building-crumble"></a>
 # Building Crumble
 
 Crumble's source code can be served directly by a webserver.
@@ -165,4 +204,30 @@ A single-page version of crumble can be created using rollup-js and uglify-js:
     rollup glue/crumble/main.js | uglifyjs -c -m --mangle-props --toplevel;
     echo "</script>";
 } > crumble_single_page.html
+```
+
+<a name="testing-crumble"></a>
+# Testing Crumble
+
+Crumble's unit tests can be executed by opening the page `test/test.html` in a
+web browser:
+
+```bash
+# from the root of Stim's git repository:
+python -m http.server --directory glue/crumble &
+firefox localhost:8000/test/test.html
+
+# if page says "All X tests passed" then tests passed.
+# see the browser console for a log of tests that were run
+```
+
+Unit tests can also be run headless using NodeJS.
+Unit tests for functionality such as canvas drawing will be skipped when running
+headless:
+
+```
+# from the root of Stim's git repository:
+
+node glue/crumble/run_tests_headless.js
+# will end with 'all tests passed' if all tests passed
 ```
