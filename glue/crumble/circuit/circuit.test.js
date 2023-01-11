@@ -38,9 +38,9 @@ test("circuit.fromStimCircuit", () => {
 QUBIT_COORDS(0, 0) 0
 QUBIT_COORDS(0, 1) 1
 QUBIT_COORDS(2, 0) 2
-QUBIT_COORDS(2, 4) 3
-QUBIT_COORDS(2, 3) 4
-CX 3 4
+QUBIT_COORDS(2, 3) 3
+QUBIT_COORDS(2, 4) 4
+CX 4 3
 H 0
 S 1 2
     `.trim());

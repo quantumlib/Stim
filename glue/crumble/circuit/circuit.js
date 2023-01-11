@@ -410,12 +410,12 @@ class Circuit {
         }
         packedQubitCoords.sort((a, b) => {
             if (a.x !== b.x) {
-                return a.x < b.x;
+                return a.x - b.x;
             }
             if (a.y !== b.y) {
-                return a.y < b.y;
+                return a.y - b.y;
             }
-            return a.q < b.q;
+            return a.q - b.q;
         });
         let old2new = new Map();
         let out = [];
