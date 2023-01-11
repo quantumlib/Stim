@@ -16,6 +16,7 @@ Crumble is not stable.**
     - [Keyboard Controls](#keyboard-commands)
     - [Mouse Controls](#mouse-commands)
 - [Building Crumble](#building-crumble)
+- [Testing Crumble](#testing-crumble)
 
 <a name="using-crumble"></a>
 # Using Crumble
@@ -155,6 +156,7 @@ Note: use `shift` to get the inverse of a gate.
 - `c+m+y`: Overwrite selection with `MPP Y*Y` gate targeting mouse
 - `c+m+z`: Overwrite selection with `MPP Z*Z` gate targeting mouse
 
+<a name="mouse-commands"></a>
 ### Mouse Controls
 
 Note: to `BoxSelect` means to press down the left mouse button, drag the mouse
@@ -177,6 +179,7 @@ box selection action. The specific parity being used depends on context. For
 example, when selecting a column of qubits, the row parity is used. When
 selecting a 2d region, the subgrid parity is used.
 
+<a name="building-crumble"></a>
 # Building Crumble
 
 Crumble's source code can be served directly by a webserver.
@@ -203,6 +206,7 @@ A single-page version of crumble can be created using rollup-js and uglify-js:
 } > crumble_single_page.html
 ```
 
+<a name="testing-crumble"></a>
 # Testing Crumble
 
 Crumble's unit tests can be executed by opening the page `test/test.html` in a
