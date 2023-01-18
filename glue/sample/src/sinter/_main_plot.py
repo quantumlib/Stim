@@ -300,7 +300,7 @@ def _plot_helper(
     force_log_y = yaxis is not None and yaxis.startswith('[log]')
     force_not_log_y = yaxis is not None and not yaxis.startswith('[log]')
     _ax_log_helper(ax=ax_err, log_x=want_log_x, log_y=not force_not_log_y)
-    _ax_log_helper(ax=ax_dis, log_x=want_log_x, log_y=force_log_y)
+    _ax_log_helper(ax=ax_dis, log_x=want_log_x, log_y=force_log_y and ax_err is None)
     _ax_log_helper(ax=ax_cus, log_x=want_log_x, log_y=force_log_y)
     if xaxis.startswith('[log]'):
         xaxis = xaxis[5:]
@@ -357,10 +357,12 @@ def _plot_helper(
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=plot_args_func,
         )
+        ax_dis.set_yticks([p / 10 for p in range(11)], labels=[f'{10*p}%' for p in range(11)])
         ax_dis.set_ylim(0, 1)
-        ax_err.grid()
-        if yaxis is not None and not include_custom_plot:
-            ax_err.set_ylabel(yaxis)
+        ax_dis.grid(which='minor')
+        ax_dis.grid(which='major', color='black')
+        if yaxis is not None and not include_custom_plot and ax_err is None:
+            ax_dis.set_ylabel(yaxis)
         else:
             ax_dis.set_ylabel(f"Discard Rate (per {failure_unit})")
         ax_dis.legend()
