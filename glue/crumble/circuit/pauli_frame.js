@@ -425,6 +425,24 @@ class PauliFrame {
     /**
      * @param {!Array<!int>} targets
      */
+    do_cx_swap(targets) {
+        for (let k = 0; k < targets.length; k += 2) {
+            let c = k;
+            let t = k + 1;
+            let xc = this.xs[c];
+            let zc = this.zs[c];
+            let xt = this.xs[t];
+            let zt = this.zs[t];
+            this.xs[c] = xt ^ xc;
+            this.zs[c] = zt;
+            this.xs[t] = xc;
+            this.zs[t] = zc ^ zt;
+        }
+    }
+
+    /**
+     * @param {!Array<!int>} targets
+     */
     do_cy(targets) {
         for (let k = 0; k < targets.length; k += 2) {
             let control = k;

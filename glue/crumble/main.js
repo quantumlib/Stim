@@ -243,7 +243,6 @@ function makeChordHandlers() {
     addGateChords(['m+r+x', 'm+r+y+z'], "MRX");
     addGateChords(['m+r+y', 'm+r+x+z'], "MRY");
     addGateChords(['m+r', 'm+r+z', 'm+r+x+y'], "MR");
-    addGateChords(['w'], "SWAP", "SWAP");
     addGateChords(['c+x'], "CX", "CX");
     addGateChords(['c+y'], "CY", "CY");
     addGateChords(['c+z'], "CZ", "CZ");
@@ -251,8 +250,12 @@ function makeChordHandlers() {
     addGateChords(['alt+c+x'], "XCX", "XCX");
     addGateChords(['alt+c+y'], "YCY", "YCY");
 
+    addGateChords(['w'], "SWAP", "SWAP");
+    addGateChords(['w+x'], "CXSWAP", undefined);
+    addGateChords(['c+w+x'], "CXSWAP", undefined);
+    addGateChords(['i+w'], "ISWAP", "ISWAP_DAG");
+
     addGateChords(['f'], "C_XYZ", "C_ZYX");
-    addGateChords(['i'], "ISWAP", "ISWAP_DAG");
     addGateChords(['c+s+x'], "SQRT_XX", "SQRT_XX_DAG");
     addGateChords(['c+s+y'], "SQRT_YY", "SQRT_YY_DAG");
     addGateChords(['c+s+z'], "SQRT_ZZ", "SQRT_ZZ_DAG");

@@ -11,7 +11,7 @@ cd "$(git rev-parse --show-toplevel)"
     echo 'std::string stim_draw_internal::make_crumble_html() {';
     echo '    std::string result;'
     {
-        cat glue/crumble/main.html | grep -v "^<script";
+        cat glue/crumble/crumble.html | grep -v "^<script";
         echo "<script>";
         rollup glue/crumble/main.js | uglifyjs -c -m --mangle-props --toplevel;
         echo "</script>";

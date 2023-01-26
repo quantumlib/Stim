@@ -113,6 +113,7 @@ test("gateset.expected_gates", () => {
     expectedGates.delete("TICK");
 
     // Custom crumble gates and markers.
+    expectedGates.add("CXSWAP");
     expectedGates.add("MXX");
     expectedGates.add("MYY");
     expectedGates.add("MZZ");
