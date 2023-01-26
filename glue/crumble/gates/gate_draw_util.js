@@ -67,16 +67,77 @@ function draw_z_control(ctx, x, y) {
  * @param {undefined|!number} x
  * @param {undefined|!number} y
  */
+function draw_xswap_control(ctx, x, y) {
+    if (x === undefined || y === undefined) {
+        return;
+    }
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    let r = rad * 0.4;
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - r, y - r);
+    ctx.lineTo(x + r, y + r);
+    ctx.stroke();
+    ctx.moveTo(x - r, y + r);
+    ctx.lineTo(x + r, y - r);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+}
+
+/**
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {undefined|!number} x
+ * @param {undefined|!number} y
+ */
+function draw_zswap_control(ctx, x, y) {
+    if (x === undefined || y === undefined) {
+        return;
+    }
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    let r = rad * 0.4;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - r, y - r);
+    ctx.lineTo(x + r, y + r);
+    ctx.stroke();
+    ctx.moveTo(x - r, y + r);
+    ctx.lineTo(x + r, y - r);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+}
+
+/**
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {undefined|!number} x
+ * @param {undefined|!number} y
+ */
 function draw_iswap_control(ctx, x, y) {
     if (x === undefined || y === undefined) {
         return;
     }
-    ctx.fillStyle = 'gray';
+    ctx.fillStyle = '#888';
+    ctx.strokeStyle = '#222';
     ctx.beginPath();
     ctx.arc(x, y, rad, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.stroke();
 
-    let r = rad / 3;
+    let r = rad * 0.4;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = 'black';
     ctx.beginPath();
     ctx.moveTo(x - r, y - r);
@@ -85,6 +146,7 @@ function draw_iswap_control(ctx, x, y) {
     ctx.moveTo(x - r, y + r);
     ctx.lineTo(x + r, y - r);
     ctx.stroke();
+    ctx.lineWidth = 1;
 }
 
 /**
@@ -170,4 +232,14 @@ function draw_connector(ctx, x1, y1, x2, y2) {
     ctx.lineWidth = 1;
 }
 
-export {draw_x_control, draw_y_control, draw_z_control, draw_swap_control, draw_iswap_control, stroke_connector_to, draw_connector};
+export {
+    draw_x_control,
+    draw_y_control,
+    draw_z_control,
+    draw_swap_control,
+    draw_iswap_control,
+    stroke_connector_to,
+    draw_connector,
+    draw_xswap_control,
+    draw_zswap_control,
+};

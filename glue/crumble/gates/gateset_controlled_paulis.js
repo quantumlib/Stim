@@ -1,7 +1,34 @@
 import {Gate} from "./gate.js"
-import {draw_x_control, draw_y_control, draw_z_control, draw_connector} from "./gate_draw_util.js"
+import {
+    draw_x_control,
+    draw_y_control,
+    draw_z_control,
+    draw_connector,
+    draw_xswap_control,
+    draw_zswap_control,
+} from "./gate_draw_util.js"
 
 function *iter_gates_controlled_paulis() {
+    yield new Gate(
+        'CXSWAP',
+        2,
+        true,
+        false,
+        new Map([
+            ['IX', 'XI'],
+            ['IZ', 'ZZ'],
+            ['XI', 'XX'],
+            ['ZI', 'IZ'],
+        ]),
+        (frame, targets) => frame.do_cx_swap(targets),
+        (op, coordFunc, ctx) => {
+            let [x1, y1] = coordFunc(op.id_targets[0]);
+            let [x2, y2] = coordFunc(op.id_targets[1]);
+            draw_connector(ctx, x1, y1, x2, y2);
+            draw_zswap_control(ctx, x1, y1);
+            draw_xswap_control(ctx, x2, y2);
+        },
+    )
     yield new Gate(
         'CX',
         2,

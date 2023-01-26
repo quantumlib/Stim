@@ -142,19 +142,48 @@ targets its position offset by that difference.
 Note: use `shift` to get the inverse of a gate.
 
 - `w`: Overwrite selection with `SWAP` gate targeting mouse
+- `w+i`: Overwrite selection with `ISWAP` gate targeting mouse
+- `w+x`: Overwrite selection with `CXSWAP` gate targeting mouse
 - `c+x`: Overwrite selection with `CX` gate targeting mouse
 - `c+y`: Overwrite selection with `CY` gate targeting mouse
 - `c+z`: Overwrite selection with `CZ` gate targeting mouse
 - `c+x+y`: Overwrite selection with `XCY` gate targeting mouse
 - `alt+c+x`: Overwrite selection with `XCX` gate targeting mouse
 - `alt+c+y`: Overwrite selection with `YCY` gate targeting mouse
-- `i`: Overwrite selection with `ISWAP` gate targeting mouse
 - `c+s+x`: Overwrite selection with `SQRT_XX` gate targeting mouse
 - `c+s+y`: Overwrite selection with `SQRT_YY` gate targeting mouse
 - `c+s+z`: Overwrite selection with `SQRT_ZZ` gate targeting mouse
 - `c+m+x`: Overwrite selection with `MPP X*X` gate targeting mouse
 - `c+m+y`: Overwrite selection with `MPP Y*Y` gate targeting mouse
 - `c+m+z`: Overwrite selection with `MPP Z*Z` gate targeting mouse
+
+**Keyboard Buttons as Gate Adjectives**
+
+Roughly speaking, the "keyboard language" for gates used by Crumble has the following "adjectives":
+
+- `x` means "X basis"
+- `y` means "Y basis"
+- `z` means "Z basis"
+- `shift` means "inverse"
+- `c` means "controlled gate" or more generally "two qubit variant of gate"
+- `s` means "square root"
+- `m` means "measure"
+- `r` means "reset"
+- `w` means "swap"
+- `alt` means "no not that one, a different one"
+
+Here are some examples:
+
+- `r+x` is the **X basis variant** of the **reset operation** (i.e. the gate `RX 0`).
+- `m+r` is the **measure** (m) and **reset** (r) operation (i.e. the gate `MR 0`).
+- `m+r+y` is the **Y basis variant** of the **measure** (m) and **reset** (r) operation (i.e. the gate `MRY 0`).
+- `c+m+x` is the **two qubit variant** (c)
+of **measurement** (m)
+in the **X basis** (x) (i.e. the gate `MPP X1*X2`).
+- `shift+c+s+y` is the **inverse** (shift)
+of the **two qubit variant** (c)
+of the **square root** (s)
+of the **Y gate** (y) (i.e. the gate `SQRT_YY_DAG 1 2`).
 
 <a name="mouse-commands"></a>
 ### Mouse Controls
@@ -190,7 +219,7 @@ For example, serve crumble using python's built-in web server:
 python -m http.server --directory glue/crumble
 ```
 
-then open [http://localhost:8000/main.html](http://localhost:8000/main.html) in a web browser.
+then open [http://localhost:8000/crumble.html](http://localhost:8000/crumble.html) in a web browser.
 
 A single-page version of crumble can be created using rollup-js and uglify-js:
 
@@ -199,7 +228,7 @@ A single-page version of crumble can be created using rollup-js and uglify-js:
 
 # from the root of Stim's git repository:
 {
-    cat glue/crumble/main.html | grep -v "^<script";
+    cat glue/crumble/crumble.html | grep -v "^<script";
     echo "<script>";
     rollup glue/crumble/main.js | uglifyjs -c -m --mangle-props --toplevel;
     echo "</script>";
