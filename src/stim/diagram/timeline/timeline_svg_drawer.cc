@@ -720,7 +720,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     uint64_t tick_slice_start,
     uint64_t tick_slice_num,
     DiagramTimelineSvgDrawerMode mode,
-    ConstPointerRange<std::vector<double>> det_coord_filter) {
+    ConstPointerRange<CoordFilter> filter) {
     uint64_t circuit_num_ticks = circuit.count_ticks();
     auto circuit_has_ticks = circuit_num_ticks > 0;
     auto num_qubits = circuit.count_qubits();
@@ -733,7 +733,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     if (mode != SVG_MODE_TIMELINE) {
         // The +1 is because we're showing the detector slice at the end of each tick region.
         obj.detector_slice_set =
-            DetectorSliceSet::from_circuit_ticks(circuit, tick_slice_start + 1, tick_slice_num, det_coord_filter);
+            DetectorSliceSet::from_circuit_ticks(circuit, tick_slice_start + 1, tick_slice_num, filter);
         obj.coord_sys = FlattenedCoords::from(obj.detector_slice_set, GATE_PITCH);
         obj.coord_sys.size.xyz[0] += TIME_SLICE_PADDING * 2;
         obj.coord_sys.size.xyz[1] += TIME_SLICE_PADDING * 2;
@@ -781,9 +781,16 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     svg_out << ">\n";
 
     if (mode == SVG_MODE_TIME_DETECTOR_SLICE) {
-        obj.detector_slice_set.write_svg_contents_to(svg_out, [&](uint64_t tick, uint32_t qubit) {
-            return obj.qt2xy(tick - 1, 0, qubit);
-        }, 24);
+        obj.detector_slice_set.write_svg_contents_to(
+            svg_out,
+            [&](uint32_t qubit) {
+                return obj.coord_sys.unscaled_qubit_coords[qubit];
+            },
+            [&](uint64_t tick, uint32_t qubit) {
+                return obj.qt2xy(tick - 1, 0, qubit);
+            },
+            obj.max_tick + 2,
+            24);
     }
 
     // Make sure qubit lines/points are drawn first, so they are in the background.
@@ -801,7 +808,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                     id_ss << ":" << tick; // the absolute tick
 
                     auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D
-                    
+
                     svg_out << "<circle";
                     write_key_val(svg_out, "id", id_ss.str());
                     write_key_val(

@@ -1233,78 +1233,71 @@ def diagram(
 def diagram(
     self,
     *,
-    type: 'Literal["timeline-3d"]',
+    type: 'Literal["timeline-3d", "timeline-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["timeline-3d-html"]',
+    type: 'Literal["matchgraph-svg"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["match-graph-svg"]',
+    type: 'Literal["matchgraph-3d"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["match-graph-3d"]',
+    type: 'Literal["matchgraph-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["match-graph-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    *,
-    type: 'Literal["detector-slice-text"]',
+    type: 'Literal["detslice-text"]',
     tick: int,
-    filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["detector-slice-svg"]',
+    type: 'Literal["detslice-svg"]',
     tick: Union[int, range],
-    filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["time-slice-svg"]',
+    type: 'Literal["detslice-with-ops-svg"]',
     tick: Union[int, range],
-    filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["time+detector-slice-svg"]',
+    type: 'Literal["timeslice-svg"]',
     tick: Union[int, range],
-    filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
     *,
-    type: 'Literal["interactive"]',
+    type: 'Literal["interactive", "interactive-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 def diagram(
@@ -1312,7 +1305,7 @@ def diagram(
     type: str = 'timeline-text',
     *,
     tick: Union[None, int, range] = None,
-    filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
     """Returns a diagram of the circuit, from a variety of options.
 
@@ -1332,11 +1325,11 @@ def diagram(
             "timeline-3d-html": Same 3d model as 'timeline-3d' but
                 embedded into an HTML web page containing an interactive
                 THREE.js viewer for the 3d model.
-            "detector-slice-text": An ASCII diagram of the stabilizers
+            "detslice-text": An ASCII diagram of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument.
-            "detector-slice-svg": An SVG image of the stabilizers
+            "detslice-svg": An SVG image of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument. For example, a detector slice diagram of a
@@ -1345,24 +1338,24 @@ def diagram(
                 usual diagram of a surface code.
 
                 Uses the Pauli color convention XYZ=RGB.
-            "match-graph-svg": An SVG image of the match graph extracted
+            "matchgraph-svg": An SVG image of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
-            "match-graph-3d": An 3D model of the match graph extracted
+            "matchgraph-3d": An 3D model of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
-            "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+            "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
                 embedded into an HTML web page containing an interactive
                 THREE.js viewer for the 3d model.
-            "time-slice-svg": An SVG image of the operations applied
+            "timeslice-svg": An SVG image of the operations applied
                 between two TICK instructions in the circuit, with the
                 operations laid out in 2d.
-            "time+detector-slice-svg": A combination of time-slice-svg
-                and detector-slice-svg, with the operations overlaid
+            "detslice-with-ops-svg": A combination of timeslice-svg
+                and detslice-svg, with the operations overlaid
                 over the detector slices taken from the TICK after the
                 operations were applied.
-            "interactive": An HTML web page containing Crumble (an
-                interactive editor for 2D stabilizer circuits)
-                initialized with the given circuit as its default
-                contents.
+            "interactive" or "interactive-html": An HTML web page
+                containing Crumble (an interactive editor for 2D
+                stabilizer circuits) initialized with the given circuit
+                as its default contents.
         tick: Required for detector and time slice diagrams. Specifies
             which TICK instruction, or range of TICK instructions, to
             slice at. Note that the first TICK instruction in the
@@ -1374,9 +1367,11 @@ def diagram(
 
             Passing `range(A, B)` for a time slice will show the
             operations between tick A and tick B.
-        filter_coords: A set of acceptable coordinate prefixes. For
-            detector slice diagrams, only detectors whose coordinates
-            begin with one of these filters will be included.
+        filter_coords: A set of acceptable coordinate prefixes, or
+            desired stim.DemTargets. For detector slice diagrams, only
+            detectors match one of the filters are included. If no filter
+            is specified, all detectors are included (but no observables).
+            To include an observable, add it as one of the filters.
 
     Returns:
         An object whose `__str__` method returns the diagram, so that
@@ -1407,7 +1402,7 @@ def diagram(
         ...     DETECTOR rec[-1] rec[-2]
         ... ''')
 
-        >>> print(circuit.diagram("detector-slice-text", tick=1))
+        >>> print(circuit.diagram("detslice-text", tick=1))
         q0: -Z:D0-
              |
         q1: -Z:D0-
@@ -4947,19 +4942,19 @@ def copy(
 @overload
 def diagram(
     self,
-    type: 'Literal["match-graph-svg"]',
+    type: 'Literal["matchgraph-svg"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    type: 'Literal["match-graph-3d"]',
+    type: 'Literal["matchgraph-3d"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    type: 'Literal["match-graph-3d-html"]',
+    type: 'Literal["matchgraph-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 def diagram(
@@ -4970,11 +4965,11 @@ def diagram(
 
     Args:
         type: The type of diagram. Available types are:
-            "match-graph-svg": An image of the decoding graph of the
+            "matchgraph-svg": An image of the decoding graph of the
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
                 errors.
-            "match-graph-3d": A 3d model of the decoding graph of the
+            "matchgraph-3d": A 3d model of the decoding graph of the
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
                 errors.
@@ -4983,7 +4978,7 @@ def diagram(
                 opened online in viewers such as
                 https://gltf-viewer.donmccurdy.com/ . Red lines are
                 errors crossing a logical observable.
-            "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+            "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
                 embedded into an HTML web page containing an interactive
                 THREE.js viewer for the 3d model.
 

@@ -63,7 +63,7 @@ struct DiagramTimelineSvgDrawer {
         uint64_t tick_slice_start,
         uint64_t tick_slice_num,
         DiagramTimelineSvgDrawerMode mode,
-        stim::ConstPointerRange<std::vector<double>> det_coord_filter);
+        stim::ConstPointerRange<CoordFilter> det_coord_filter);
 
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);

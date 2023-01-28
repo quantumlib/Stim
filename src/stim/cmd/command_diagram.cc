@@ -14,6 +14,8 @@
 
 #include "stim/cmd/command_diagram.h"
 
+#include <limits>
+
 #include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
@@ -30,6 +32,7 @@ using namespace stim;
 using namespace stim_draw_internal;
 
 enum DiagramTypes {
+    NOT_A_DIAGRAM,
     INTERACTIVE_HTML,
     TIMELINE_TEXT,
     TIMELINE_SVG,
@@ -89,16 +92,34 @@ int stim::command_diagram(int argc, const char **argv) {
         {"timeline-svg", TIMELINE_SVG},
         {"timeline-3d", TIMELINE_3D},
         {"timeline-3d-html", TIMELINE_3D_HTML},
+        {"timeslice-svg", TIME_SLICE_SVG},
+        {"detslice-with-ops-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"matchgraph-svg", MATCH_GRAPH_SVG},
+        {"matchgraph-3d", MATCH_GRAPH_3D},
+        {"matchgraph-3d-html", MATCH_GRAPH_3D_HTML},
+        {"interactive-html", INTERACTIVE_HTML},
+        {"detslice-text", DETECTOR_SLICE_TEXT},
+        {"detslice-svg", DETECTOR_SLICE_SVG},
+    };
+    std::map<std::string, DiagramTypes> quietly_allowed_diagram_types{
         {"time-slice-svg", TIME_SLICE_SVG},
         {"time+detector-slice-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"interactive", INTERACTIVE_HTML},
+        {"detector-slice-text", DETECTOR_SLICE_TEXT},
+        {"detector-slice-svg", DETECTOR_SLICE_SVG},
         {"match-graph-svg", MATCH_GRAPH_SVG},
         {"match-graph-3d", MATCH_GRAPH_3D},
         {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
-        {"interactive-html", INTERACTIVE_HTML},
-        {"detector-slice-text", DETECTOR_SLICE_TEXT},
-        {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
-    DiagramTypes type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
+    DiagramTypes type = NOT_A_DIAGRAM;
+    try {
+        type = find_enum_argument("--type", nullptr, quietly_allowed_diagram_types, argc, argv);
+    } catch (const std::invalid_argument &_) {
+    }
+    if (type == NOT_A_DIAGRAM) {
+        type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
+        assert(type != NOT_A_DIAGRAM);
+    }
 
     auto read_circuit = [&]() {
         auto circuit = Circuit::from_file(in.f);
@@ -130,18 +151,15 @@ int stim::command_diagram(int argc, const char **argv) {
         }
         return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
     };
-    auto read_coords = [&]() -> std::vector<std::vector<double>> {
+    auto read_coord_filter = [&]() -> std::vector<CoordFilter> {
         const char *arg = find_argument("--filter_coords", argc, argv);
         if (arg == nullptr) {
             return {{}};
         }
 
-        std::vector<std::vector<double>> result;
+        std::vector<CoordFilter> result;
         for (const auto &term : split(':', arg)) {
-            result.push_back({});
-            for (const auto &v : split(',', term)) {
-                result.back().push_back(parse_exact_double_from_string(v));
-            }
+            result.push_back(CoordFilter::parse_from(term));
         }
         return result;
     };
@@ -153,19 +171,19 @@ int stim::command_diagram(int argc, const char **argv) {
         }
         case TIMELINE_SVG: {
             auto circuit = read_circuit();
-            auto coord_filter = read_coords();
+            auto coord_filter = read_coord_filter();
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
             break;
         }
         case TIME_SLICE_SVG: {
             auto circuit = read_circuit();
-            auto coord_filter = read_coords();
+            auto coord_filter = read_coord_filter();
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
             break;
         }
         case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
             auto circuit = read_circuit();
-            auto coord_filter = read_coords();
+            auto coord_filter = read_coord_filter();
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
             break;
         }
@@ -207,7 +225,7 @@ int stim::command_diagram(int argc, const char **argv) {
             if (!has_tick_arg) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
             }
-            auto coord_filter = read_coords();
+            auto coord_filter = read_coord_filter();
             auto circuit = read_circuit();
             out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
             break;
@@ -216,7 +234,7 @@ int stim::command_diagram(int argc, const char **argv) {
             if (!has_tick_arg) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
             }
-            auto coord_filter = read_coords();
+            auto coord_filter = read_coord_filter();
             auto circuit = read_circuit();
             DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
             break;
@@ -327,9 +345,9 @@ SubCommandHelp stim::command_diagram_help() {
 
     result.flags.push_back(SubCommandHelpFlag{
         "--filter_coords",
-        "float.seperatedby(',').seperatedby(':')",
+        "(float.seperatedby(',') | L# | D#).seperatedby(':')",
         "",
-        {"[none]", "float.seperatedby(',').seperatedby(':')"},
+        {"[none]", "(float.seperatedby(',') | L# | D#).seperatedby(':')"},
         clean_doc_string(R"PARAGRAPH(
             Specifies coordinate filters that determine what appears in the diagram.
 
@@ -339,12 +357,19 @@ SubCommandHelp stim::command_diagram_help() {
             A filter is a set of points.
             Points are separated by colons (':').
 
-            For example, in a detector slice diagram, specifying
-            "--filter-coords 2,3:4,5,6" means that only detectors whose
-            first two coordinates are (2,3), or whose first three coordinate
-            are (4,5,6), should be included in the diagram. Note that the
-            filters are always prefix matches, so a detector with coordinates
-            (2,3,4) matches the filter 2,3.
+            Filters can also be set to specific detector or observable indices,
+            like D0 or L0.
+            targets like L0
+
+            Example:
+                --filter-coords 2,3:4,5,6
+                    In a detector slice diagram this means that only detectors whose
+                    first two coordinates are (2,3), or whose first three coordinate
+                    are (4,5,6), should be included in the diagram.
+                --filter-coords L0
+                    In a detector slice diagram this means that logical observable 0
+                    should be included. Logical observables are only included if
+                    explicitly filtered in.
         )PARAGRAPH"),
     });
 
@@ -387,12 +412,12 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
-            "match-graph-svg": An image of the decoding graph of a detector
+            "matchgraph-svg": An image of the decoding graph of a detector
                 error model. Red lines are errors crossing a logical observable.
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "match-graph-3d": A 3d model, in GLTF format, of the
+            "matchgraph-3d": A 3d model, in GLTF format, of the
                 decoding graph of a detector error model. Red lines are
                 errors crossing a logical observable.
 
@@ -402,20 +427,20 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "match-graph-3d-html": A web page containing a 3d model
+            "matchgraph-3d-html": A web page containing a 3d model
                 viewer of the decoding graph of a detector error
                 model or circuit.
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "detector-slice-text": An ASCII diagram of the stabilizers
+            "detslice-text": An ASCII diagram of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument.
 
                 INPUT MUST BE A CIRCUIT.
 
-            "detector-slice-svg": An SVG image of the stabilizers
+            "detslice-svg": An SVG image of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument. For example, a detector slice diagram of a
@@ -426,12 +451,12 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
-            "time-slice-svg": An SVG image of the operations that a circuit
+            "timeslice-svg": An SVG image of the operations that a circuit
                 applies during the specified tick or range of ticks.
 
                 INPUT MUST BE A CIRCUIT.
 
-            "time+detector-slice-svg": An SVG image of the operations that a
+            "timeslice-with-ops-svg": An SVG image of the operations that a
                 circuit applies during the specified tick or range of ticks,
                 combined with the detector slices after those operations are
                 applied.
