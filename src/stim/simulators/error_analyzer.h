@@ -25,13 +25,13 @@
 #include <stim/stabilizers/pauli_string.h>
 #include <vector>
 
+#include "sparse_rev_frame_tracker.h"
 #include "stim/circuit/circuit.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/fixed_cap_vector.h"
 #include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/simd_util.h"
 #include "stim/mem/sparse_xor_vec.h"
-#include "sparse_rev_frame_tracker.h"
 
 namespace stim {
 

@@ -49,11 +49,7 @@ const PauliStringRef PauliString::ref() const {
 
 PauliStringRef PauliString::ref() {
     size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return PauliStringRef(
-        num_qubits,
-        bit_ref(&sign, 0),
-        xs.word_range_ref(0, nw),
-        zs.word_range_ref(0, nw));
+    return PauliStringRef(num_qubits, bit_ref(&sign, 0), xs.word_range_ref(0, nw), zs.word_range_ref(0, nw));
 }
 
 std::string PauliString::str() const {

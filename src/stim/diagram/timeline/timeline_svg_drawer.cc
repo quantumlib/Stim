@@ -70,7 +70,8 @@ void DiagramTimelineSvgDrawer::do_feedback(
     draw_annotated_gate(
         c.xyz[0],
         c.xyz[1],
-        SvgGateData{(uint16_t)(mode == SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black", 0, 10},
+        SvgGateData{
+            (uint16_t)(mode == SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black", 0, 10},
         {});
 }
 
@@ -183,7 +184,13 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
     write_key_val(svg_out, "dominant-baseline", "central");
     write_key_val(svg_out, "text-anchor", "middle");
     write_key_val(svg_out, "font-family", "monospace");
-    write_key_val(svg_out, "font-size", data.font_size != 0 ? data.font_size : n == 1 ? 30 : n >= 4 && data.span == 1 ? 12 : 16);
+    write_key_val(
+        svg_out,
+        "font-size",
+        data.font_size != 0        ? data.font_size
+        : n == 1                   ? 30
+        : n >= 4 && data.span == 1 ? 12
+                                   : 16);
     write_key_val(svg_out, "x", cx);
     write_key_val(svg_out, "y", cy);
     if (data.text_color != "black") {
@@ -597,7 +604,8 @@ void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &
     ss << "COORDS";
     write_coords(ss, op.args);
     auto c = q2xy(target.qubit_value());
-    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{(uint16_t)(2 + op.args.size()), ss.str(), "", "", "white", "black", 0, 10}, {});
+    draw_annotated_gate(
+        c.xyz[0], c.xyz[1], SvgGateData{(uint16_t)(2 + op.args.size()), ss.str(), "", "", "white", "black", 0, 10}, {});
 }
 
 void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) {
@@ -804,10 +812,12 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                     std::stringstream id_ss;
                     id_ss << "qubit_dot";
                     id_ss << ":" << q;
-                    add_coord_summary_to_ss(id_ss, obj.detector_slice_set.coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
-                    id_ss << ":" << tick; // the absolute tick
+                    add_coord_summary_to_ss(
+                        id_ss,
+                        obj.detector_slice_set.coordinates.at(q));  // the raw qubit coordinates, not projected to 2D
+                    id_ss << ":" << tick;                           // the absolute tick
 
-                    auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D
+                    auto c = obj.coord_sys.qubit_coords[q];  // the flattened coordinates in 2D
 
                     svg_out << "<circle";
                     write_key_val(svg_out, "id", id_ss.str());
@@ -832,7 +842,6 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
         svg_out << "<g id=\"qubit_lines\">\n";
         // Draw qubit lines.
         for (size_t q = 0; q < obj.num_qubits; q++) {
-
             std::stringstream id_ss;
             id_ss << "qubit_line";
             id_ss << ":" << q;
@@ -878,7 +887,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 std::stringstream id_ss;
                 id_ss << "tick_border:" << k;
                 id_ss << ":" << row << "_" << col;
-                id_ss << ":" << k+tick_slice_start; // the absolute tick
+                id_ss << ":" << k + tick_slice_start;  // the absolute tick
 
                 svg_out << "<rect";
                 write_key_val(svg_out, "id", id_ss.str());

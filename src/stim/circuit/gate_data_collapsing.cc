@@ -15,8 +15,8 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
+#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -519,7 +519,8 @@ R 0
             &FrameSimulator::MPP,
             &ErrorAnalyzer::MPP,
             &SparseUnsignedRevFrameTracker::undo_MPP,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
+                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
