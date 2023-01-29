@@ -289,7 +289,9 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     }
     for (auto t : removed) {
         result.slices.erase(t);
-        result.detector_coordinates.erase(t.second.raw_id());
+        if (t.second.is_relative_detector_id()) {
+            result.detector_coordinates.erase(t.second.raw_id());
+        }
     }
 
     return result;
