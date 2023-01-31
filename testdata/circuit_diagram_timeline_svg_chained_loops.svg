@@ -34,11 +34,11 @@
 <rect x="64" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="80" y="256">Z</text>
 <rect x="310.4" y="240" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="326.4" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="326.4" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="556.8" y="240" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="572.8" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="572.8" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="803.2" y="240" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="819.2" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="819.2" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="128" y="416" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="144" y="432">X</text>
 <rect x="374.4" y="416" width="32" height="32" stroke="black" fill="white"/>

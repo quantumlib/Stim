@@ -446,6 +446,28 @@ void SparseUnsignedRevFrameTracker::undo_SWAP(const OperationData &dat) {
     }
 }
 
+void SparseUnsignedRevFrameTracker::undo_CXSWAP(const OperationData &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
+        zs[a] ^= zs[b];
+        zs[b] ^= zs[a];
+        xs[b] ^= xs[a];
+        xs[a] ^= xs[b];
+    }
+}
+
+void SparseUnsignedRevFrameTracker::undo_SWAPCX(const OperationData &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
+        zs[b] ^= zs[a];
+        zs[a] ^= zs[b];
+        xs[a] ^= xs[b];
+        xs[b] ^= xs[a];
+    }
+}
+
 void SparseUnsignedRevFrameTracker::undo_ISWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;

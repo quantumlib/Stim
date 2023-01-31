@@ -18,33 +18,33 @@
 <rect x="80" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="96" y="256">Z</text>
 <rect x="144" y="48" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="160" y="64">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="160" y="64">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="144" y="112" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="160" y="128">C<tspan baseline-shift="sub" font-size="10">ZYX</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="160" y="128">C<tspan baseline-shift="sub" font-size="10">ZYX</tspan></text>
 <rect x="144" y="176" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="160" y="192">H</text>
 <rect x="144" y="240" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="160" y="256">H<tspan baseline-shift="sub" font-size="10">XY</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="160" y="256">H<tspan baseline-shift="sub" font-size="12">XY</tspan></text>
 <rect x="208" y="48" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="224" y="64">H</text>
 <rect x="208" y="112" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="224" y="128">H<tspan baseline-shift="sub" font-size="10">YZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="224" y="128">H<tspan baseline-shift="sub" font-size="12">YZ</tspan></text>
 <rect x="208" y="176" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="224" y="192">S</text>
 <rect x="208" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="224" y="256">√X</text>
 <rect x="272" y="48" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="288" y="64">√X<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="288" y="64">√X<tspan baseline-shift="super" font-size="14">†</tspan></text>
 <rect x="272" y="112" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="288" y="128">√Y</text>
 <rect x="272" y="176" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="288" y="192">√Y<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="288" y="192">√Y<tspan baseline-shift="super" font-size="14">†</tspan></text>
 <rect x="272" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="288" y="256">S</text>
 <rect x="336" y="48" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="352" y="64">S<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="26" x="352" y="64">S<tspan baseline-shift="super" font-size="14">†</tspan></text>
 <rect x="336" y="112" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="352" y="128">S<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="26" x="352" y="128">S<tspan baseline-shift="super" font-size="14">†</tspan></text>
 <rect x="336" y="176" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="352" y="192">H</text>
 <rect x="400" y="48" width="32" height="32" stroke="black" fill="white"/>

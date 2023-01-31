@@ -103,6 +103,8 @@ TEST(circuit_diagram_timeline_3d, two_qubits_gates) {
         ZCX 2 3
         ZCY 4 5
         ZCZ 0 5 2 3 1 4
+        CXSWAP 0 1
+        SWAPCX 2 3
     )CIRCUIT");
     expect_diagram_is_identical_to_saved_file(circuit, "two_qubits_gates.gltf");
 }

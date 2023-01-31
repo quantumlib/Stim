@@ -289,11 +289,11 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
 TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
     auto t = Tableau::random(10, SHARED_TEST_RNG());
     TableauSimulator sim(SHARED_TEST_RNG(), 10);
-    sim.inv_state = t;
     for (const auto &gate : GATE_DATA.gates()) {
         if (!(gate.flags & GATE_IS_UNITARY)) {
             continue;
         }
+        sim.inv_state = t;
 
         const auto &action = gate.tableau_simulator_function;
         const auto &inverse_op_tableau = gate.inverse().tableau();

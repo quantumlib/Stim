@@ -471,7 +471,7 @@ TEST(conversions, tableau_to_circuit) {
 TEST(conversions, unitary_to_tableau_vs_gate_data) {
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            ASSERT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
+            EXPECT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
         }
     }
 }

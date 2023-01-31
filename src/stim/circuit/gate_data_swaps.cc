@@ -100,6 +100,76 @@ CNOT 0 1
     add_gate(
         failed,
         Gate{
+            "CXSWAP",
+            0,
+            &TableauSimulator::CXSWAP,
+            &FrameSimulator::CXSWAP,
+            &ErrorAnalyzer::CXSWAP,
+            &SparseUnsignedRevFrameTracker::undo_CXSWAP,
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+A combination CX-then-SWAP gate.
+This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},
+                    {"+XX", "+IZ", "+XI", "+ZZ"},
+                    R"CIRCUIT(
+CNOT 1 0
+CNOT 0 1
+)CIRCUIT",
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            "SWAPCX",
+            0,
+            &TableauSimulator::SWAPCX,
+            &FrameSimulator::SWAPCX,
+            &ErrorAnalyzer::SWAPCX,
+            &SparseUnsignedRevFrameTracker::undo_SWAPCX,
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+A combination SWAP-then-CX gate.
+This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}},
+                    {"+IX", "+ZZ", "+XX", "+ZI"},
+                    R"CIRCUIT(
+CNOT 0 1
+CNOT 1 0
+)CIRCUIT",
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
             "ISWAP_DAG",
             0,
             &TableauSimulator::ISWAP_DAG,

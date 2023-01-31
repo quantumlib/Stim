@@ -118,6 +118,48 @@ void DiagramTimelineSvgDrawer::draw_z_control(float cx, float cy) {
     svg_out << "/>\n";
 }
 
+void DiagramTimelineSvgDrawer::draw_xswap_control(float cx, float cy) {
+    svg_out << "<circle";
+    write_key_val(svg_out, "cx", cx);
+    write_key_val(svg_out, "cy", cy);
+    write_key_val(svg_out, "r", CONTROL_RADIUS);
+    write_key_val(svg_out, "stroke", "black");
+    write_key_val(svg_out, "fill", "white");
+    svg_out << "/>\n";
+
+    float r = CONTROL_RADIUS / 2.2f;
+    svg_out << "<path d=\"";
+    svg_out << "M" << cx - r << "," << cy - r << " ";
+    svg_out << "L" << cx + r << "," << cy + r << " ";
+    svg_out << "M" << cx + r << "," << cy - r << " ";
+    svg_out << "L" << cx - r << "," << cy + r << " ";
+    svg_out << "\"";
+    write_key_val(svg_out, "stroke", "black");
+    write_key_val(svg_out, "stroke-width", 4);
+    svg_out << "/>\n";
+}
+
+void DiagramTimelineSvgDrawer::draw_zswap_control(float cx, float cy) {
+    svg_out << "<circle";
+    write_key_val(svg_out, "cx", cx);
+    write_key_val(svg_out, "cy", cy);
+    write_key_val(svg_out, "r", CONTROL_RADIUS);
+    write_key_val(svg_out, "stroke", "none");
+    write_key_val(svg_out, "fill", "black");
+    svg_out << "/>\n";
+
+    float r = CONTROL_RADIUS / 2.2f;
+    svg_out << "<path d=\"";
+    svg_out << "M" << cx - r << "," << cy - r << " ";
+    svg_out << "L" << cx + r << "," << cy + r << " ";
+    svg_out << "M" << cx + r << "," << cy - r << " ";
+    svg_out << "L" << cx - r << "," << cy + r << " ";
+    svg_out << "\"";
+    write_key_val(svg_out, "stroke", "white");
+    write_key_val(svg_out, "stroke-width", 4);
+    svg_out << "/>\n";
+}
+
 void DiagramTimelineSvgDrawer::draw_swap_control(float cx, float cy) {
     float r = CONTROL_RADIUS / 2.0f;
     svg_out << "<path d=\"";
@@ -127,6 +169,7 @@ void DiagramTimelineSvgDrawer::draw_swap_control(float cx, float cy) {
     svg_out << "L" << cx - r << "," << cy + r << " ";
     svg_out << "\"";
     write_key_val(svg_out, "stroke", "black");
+    write_key_val(svg_out, "stroke-width", 3);
     svg_out << "/>\n";
 }
 
@@ -238,6 +281,10 @@ void DiagramTimelineSvgDrawer::draw_two_qubit_gate_end_point(
         draw_iswap_control(cx, cy, false);
     } else if (type == "ISWAP_DAG") {
         draw_iswap_control(cx, cy, true);
+    } else if (type == "XSWAP") {
+        draw_xswap_control(cx, cy);
+    } else if (type == "ZSWAP") {
+        draw_zswap_control(cx, cy);
     } else {
         draw_generic_box(cx, cy, type, args);
     }
@@ -801,7 +848,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                     id_ss << ":" << tick; // the absolute tick
 
                     auto c = obj.coord_sys.qubit_coords[q]; // the flattened coordinates in 2D
-                    
+
                     svg_out << "<circle";
                     write_key_val(svg_out, "id", id_ss.str());
                     write_key_val(

@@ -79,6 +79,8 @@ struct DiagramTimelineSvgDrawer {
     Coord<2> qt2xy(uint64_t tick, uint64_t moment_delta, size_t q) const;
     void draw_annotated_gate(float cx, float cy, const SvgGateData &data, stim::ConstPointerRange<double> end_args);
 
+    void draw_xswap_control(float cx, float cy);
+    void draw_zswap_control(float cx, float cy);
     void draw_x_control(float cx, float cy);
     void draw_y_control(float cx, float cy);
     void draw_z_control(float cx, float cy);

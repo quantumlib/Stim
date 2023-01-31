@@ -184,6 +184,8 @@ struct TableauSimulator {
     void Z(const OperationData &target_data);
     void ISWAP(const OperationData &target_data);
     void ISWAP_DAG(const OperationData &target_data);
+    void CXSWAP(const OperationData &target_data);
+    void SWAPCX(const OperationData &target_data);
     void XCX(const OperationData &target_data);
     void XCY(const OperationData &target_data);
     void XCZ(const OperationData &target_data);

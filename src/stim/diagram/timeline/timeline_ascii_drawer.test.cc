@@ -80,19 +80,21 @@ TEST(circuit_diagram_timeline_text, two_qubits_gates) {
         ZCX 2 3
         ZCY 4 5
         ZCZ 0 5 2 3 1 4
+        CXSWAP 0 1
+        SWAPCX 0 1
     )CIRCUIT");
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n", R"DIAGRAM(
-q0: -@-@-------------------------SQRT_XX_DAG---------SQRT_YY_DAG-SWAP----------X-Y---@-----
-     | |                         |                   |           |             | |   |
-q1: -X-|-ISWAP-------------------|-------------------SQRT_YY_DAG-SWAP----------@-@---|---@-
+q0: -@-@-------------------------SQRT_XX_DAG---------SQRT_YY_DAG-SWAP----------X-Y---@-----ZSWAP-XSWAP-
+     | |                         |                   |           |             | |   |     |     |
+q1: -X-|-ISWAP-------------------|-------------------SQRT_YY_DAG-SWAP----------@-@---|---@-XSWAP-ZSWAP-
        | |                       |                                                   |   |
-q2: -@-@-|-----ISWAP_DAG---------|-------------------------------SQRT_ZZ-----X---Y-@-|-@-|-
+q2: -@-@-|-----ISWAP_DAG---------|-------------------------------SQRT_ZZ-----X---Y-@-|-@-|-------------
      |   |     |                 |                               |           |   | | | | |
-q3: -X---ISWAP-|---------SQRT_XX-|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ-----X-X-X-X-|-@-|-
+q3: -X---ISWAP-|---------SQRT_XX-|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ-----X-X-X-X-|-@-|-------------
                |         |       |           |       |                         |     |   |
-q4: -@-Y-------ISWAP_DAG-|-------|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ_DAG---Y-Y-@-|---@-
+q4: -@-Y-------ISWAP_DAG-|-------|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ_DAG---Y-Y-@-|---@-------------
      | |                 |       |                               |               | | |
-q5: -Y-@-----------------SQRT_XX-SQRT_XX_DAG---------------------SQRT_ZZ_DAG-----Y-Y-@-----
+q5: -Y-@-----------------SQRT_XX-SQRT_XX_DAG---------------------SQRT_ZZ_DAG-----Y-Y-@-----------------
 )DIAGRAM");
 }
 

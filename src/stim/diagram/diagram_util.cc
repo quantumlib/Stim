@@ -23,6 +23,10 @@ std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(co
         return {"Y", "Y"};
     } else if (name == "YCZ") {
         return {"Y", "Z"};
+    } else if (name == "CXSWAP") {
+        return {"ZSWAP", "XSWAP"};
+    } else if (name == "SWAPCX") {
+        return {"XSWAP", "ZSWAP"};
     } else {
         return {name, name};
     }

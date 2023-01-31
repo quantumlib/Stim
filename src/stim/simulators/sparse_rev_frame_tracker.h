@@ -93,6 +93,8 @@ struct SparseUnsignedRevFrameTracker {
     void undo_SQRT_ZZ(const OperationData &dat);
     void undo_SWAP(const OperationData &dat);
     void undo_ISWAP(const OperationData &dat);
+    void undo_CXSWAP(const OperationData &dat);
+    void undo_SWAPCX(const OperationData &dat);
     void undo_tableau(const Tableau &tableau, ConstPointerRange<uint32_t> targets);
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
