@@ -1,4 +1,5 @@
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
+from ._cx_swap_gate import CXSwapGate
 from ._det_annotation import DetAnnotation
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
@@ -17,5 +18,6 @@ JSON_RESOLVERS_DICT = {
     "ShiftCoordsAnnotation": ShiftCoordsAnnotation,
     "SweepPauli": SweepPauli,
     "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
+    "CXSwapGate": CXSwapGate,
 }
 JSON_RESOLVER = JSON_RESOLVERS_DICT.get

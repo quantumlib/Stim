@@ -23,6 +23,7 @@
 - Two Qubit Clifford Gates
     - [CNOT](#CNOT)
     - [CX](#CX)
+    - [CXSWAP](#CXSWAP)
     - [CY](#CY)
     - [CZ](#CZ)
     - [ISWAP](#ISWAP)
@@ -34,6 +35,7 @@
     - [SQRT_ZZ](#SQRT_ZZ)
     - [SQRT_ZZ_DAG](#SQRT_ZZ_DAG)
     - [SWAP](#SWAP)
+    - [SWAPCX](#SWAPCX)
     - [XCX](#XCX)
     - [XCY](#XCY)
     - [XCZ](#XCZ)
@@ -786,6 +788,47 @@ Decomposition (into H, S, CX, M, R):
     # (The decomposition is trivial because this gate is in the target gate set.)
     
 
+<a name="CXSWAP"></a>
+### The 'CXSWAP' Gate
+
+A combination CX-then-SWAP gate.
+This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Example:
+
+    CXSWAP 5 6
+    CXSWAP 42 43
+    CXSWAP 5 6 42 43
+    
+Stabilizer Generators:
+
+    X_ -> +XX
+    Z_ -> +_Z
+    _X -> +X_
+    _Z -> +ZZ
+    
+Unitary Matrix (little endian):
+
+    [+1  ,     ,     ,     ]
+    [    ,     , +1  ,     ]
+    [    ,     ,     , +1  ]
+    [    , +1  ,     ,     ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `CXSWAP 0 1`
+    CNOT 1 0
+    CNOT 0 1
+    
+
 <a name="CY"></a>
 ### The 'CY' Gate
 
@@ -1280,6 +1323,47 @@ Decomposition (into H, S, CX, M, R):
     CNOT 0 1
     CNOT 1 0
     CNOT 0 1
+    
+
+<a name="SWAPCX"></a>
+### The 'SWAPCX' Gate
+
+A combination SWAP-then-CX gate.
+This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Example:
+
+    SWAPCX 5 6
+    SWAPCX 42 43
+    SWAPCX 5 6 42 43
+    
+Stabilizer Generators:
+
+    X_ -> +_X
+    Z_ -> +ZZ
+    _X -> +XX
+    _Z -> +Z_
+    
+Unitary Matrix (little endian):
+
+    [+1  ,     ,     ,     ]
+    [    ,     ,     , +1  ]
+    [    , +1  ,     ,     ]
+    [    ,     , +1  ,     ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `SWAPCX 0 1`
+    CNOT 0 1
+    CNOT 1 0
     
 
 <a name="XCX"></a>

@@ -177,6 +177,103 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_x_control_mesh() {
     return {"X_CONTROL", mesh};
 }
 
+std::pair<std::string, std::shared_ptr<GltfMesh>> make_xswap_control_mesh() {
+    float h = CONTROL_RADIUS * sqrtf(2) * 0.8f;
+    auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"control_xswap_line_cross"},
+        {{0, -h, -h}, {0, +h, +h}, {0, -h, +h}, {0, +h, -h}},
+    });
+    auto circle = make_circle_loop(16, CONTROL_RADIUS, true);
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto white_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"white"},
+        {1, 1, 1, 1},
+        0.4,
+        0.5,
+        true,
+        nullptr,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_XSWAP_CONTROL"},
+        {
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_circle_interior"},
+                GL_TRIANGLE_FAN,
+                circle,
+                nullptr,
+                white_material,
+            }),
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_circle_perimeter"},
+                GL_LINE_STRIP,
+                circle,
+                nullptr,
+                black_material,
+            }),
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_line_cross"},
+                GL_LINES,
+                line_cross,
+                nullptr,
+                black_material,
+            }),
+        },
+    });
+    return {"XSWAP", mesh};
+}
+
+std::pair<std::string, std::shared_ptr<GltfMesh>> make_zswap_control_mesh() {
+    float h = CONTROL_RADIUS * sqrtf(2) * 0.8f;
+    auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"control_zswap_line_cross"},
+        {{0, -h, -h}, {0, +h, +h}, {0, -h, +h}, {0, +h, -h}},
+    });
+    auto circle = make_circle_loop(16, CONTROL_RADIUS, true);
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto white_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"white"},
+        {1, 1, 1, 1},
+        0.4,
+        0.5,
+        true,
+        nullptr,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_XSWAP_CONTROL"},
+        {
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_circle_interior"},
+                GL_TRIANGLE_FAN,
+                circle,
+                nullptr,
+                black_material,
+            }),
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_line_cross"},
+                GL_LINES,
+                line_cross,
+                nullptr,
+                white_material,
+            }),
+        },
+    });
+    return {"ZSWAP", mesh};
+}
+
 std::pair<std::string, std::shared_ptr<GltfMesh>> make_y_control_mesh() {
     auto gray_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
         {"gray"},
@@ -352,5 +449,7 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         make_x_control_mesh(),
         make_y_control_mesh(),
         make_z_control_mesh(),
+        make_xswap_control_mesh(),
+        make_zswap_control_mesh(),
     };
 }

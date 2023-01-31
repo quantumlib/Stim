@@ -346,6 +346,24 @@ void FrameSimulator::ISWAP(const OperationData &target_data) {
     });
 }
 
+void FrameSimulator::CXSWAP(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+        z2 ^= z1;
+        z1 ^= z2;
+        x1 ^= x2;
+        x2 ^= x1;
+    });
+}
+
+void FrameSimulator::SWAPCX(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+        z1 ^= z2;
+        z2 ^= z1;
+        x2 ^= x1;
+        x1 ^= x2;
+    });
+}
+
 void FrameSimulator::SQRT_XX(const OperationData &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         simd_word dz = z1 ^ z2;

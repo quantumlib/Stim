@@ -212,6 +212,8 @@ struct ErrorAnalyzer {
     void PAULI_CHANNEL_1(const OperationData &dat);
     void PAULI_CHANNEL_2(const OperationData &dat);
     void ISWAP(const OperationData &dat);
+    void CXSWAP(const OperationData &dat);
+    void SWAPCX(const OperationData &dat);
 
     void RX_with_context(const OperationData &dat, const char *context_op);
     void RY_with_context(const OperationData &dat, const char *context_op);

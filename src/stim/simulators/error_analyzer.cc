@@ -351,6 +351,12 @@ void ErrorAnalyzer::SWAP(const OperationData &dat) {
 void ErrorAnalyzer::ISWAP(const OperationData &dat) {
     tracker.undo_ISWAP(dat);
 }
+void ErrorAnalyzer::CXSWAP(const OperationData &dat) {
+    tracker.undo_CXSWAP(dat);
+}
+void ErrorAnalyzer::SWAPCX(const OperationData &dat) {
+    tracker.undo_SWAPCX(dat);
+}
 void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
     tracker.undo_DETECTOR(dat);
     auto id = DemTarget::relative_detector_id(tracker.num_detectors_in_past);

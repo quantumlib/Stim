@@ -141,6 +141,9 @@ class Circuit {
             } else if (name === 'XCZ') {
                 reverse_pairs = true;
                 name = 'CX'
+            } else if (name === 'SWAPCX') {
+                reverse_pairs = true;
+                name = 'CXSWAP'
             } else if (name === 'CNOT') {
                 name = 'CX'
             } else if (name === 'RZ') {

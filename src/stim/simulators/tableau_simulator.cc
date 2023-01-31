@@ -506,6 +506,28 @@ void TableauSimulator::SWAP(const OperationData &target_data) {
     }
 }
 
+void TableauSimulator::CXSWAP(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
+        inv_state.prepend_ZCX(q2, q1);
+        inv_state.prepend_ZCX(q1, q2);
+    }
+}
+
+void TableauSimulator::SWAPCX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
+        inv_state.prepend_ZCX(q1, q2);
+        inv_state.prepend_ZCX(q2, q1);
+    }
+}
+
 void TableauSimulator::ISWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));

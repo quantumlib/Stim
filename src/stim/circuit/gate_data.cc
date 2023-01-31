@@ -82,6 +82,10 @@ const Gate &Gate::inverse() const {
         inv_name = "C_ZYX";
     } else if (id == gate_name_to_id("C_ZYX")) {
         inv_name = "C_XYZ";
+    } else if (id == gate_name_to_id("CXSWAP")) {
+        inv_name = "SWAPCX";
+    } else if (id == gate_name_to_id("SWAPCX")) {
+        inv_name = "CXSWAP";
     } else {
         // Self inverse.
     }
