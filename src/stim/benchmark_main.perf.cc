@@ -25,40 +25,40 @@ std::vector<RegisteredBenchmark> all_registered_benchmarks{};
 
 /// Describe quantity as an SI-prefixed value with two significant figures.
 std::string si2(double val) {
-    std::string unit = "";
+    char unit = ' ';
     if (val < 1) {
         if (val < 1) {
             val *= 1000;
-            unit = "m";
+            unit = 'm';
         }
         if (val < 1) {
             val *= 1000;
-            unit = "u";
+            unit = 'u';
         }
         if (val < 1) {
             val *= 1000;
-            unit = "n";
+            unit = 'n';
         }
         if (val < 1) {
             val *= 1000;
-            unit = "p";
+            unit = 'p';
         }
     } else {
         if (val > 1000) {
             val /= 1000;
-            unit = "k";
+            unit = 'k';
         }
         if (val > 1000) {
             val /= 1000;
-            unit = "M";
+            unit = 'M';
         }
         if (val > 1000) {
             val /= 1000;
-            unit = "G";
+            unit = 'G';
         }
         if (val > 1000) {
             val /= 1000;
-            unit = "T";
+            unit = 'T';
         }
     }
     std::stringstream ss;

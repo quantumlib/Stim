@@ -71,8 +71,10 @@ struct simd_bits {
 
     // Equality.
     bool operator==(const simd_bits_range_ref<W> &other) const;
+    bool operator==(const simd_bits<W> &other) const;
     // Inequality.
     bool operator!=(const simd_bits_range_ref<W> &other) const;
+    bool operator!=(const simd_bits<W> &other) const;
     /// Determines whether or not any of the bits in the simd_bits are non-zero.
     bool not_zero() const;
 

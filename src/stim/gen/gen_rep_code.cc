@@ -81,11 +81,11 @@ GeneratedCircuit stim::generate_rep_code_circuit(const CircuitGenParameters &par
     Circuit full_circuit = head + body * (params.rounds - 1) + tail;
 
     // Produce a 2d layout.
-    std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
+    std::map<std::pair<uint32_t, uint32_t>, std::pair<char, uint32_t>> layout;
     for (uint32_t k = 0; k < n; k++) {
-        layout[{k, 0}] = {std::string() + "dZ"[k & 1], k};
+        layout[{k, 0}] = {"dZ"[k & 1], k};
     }
-    layout[{0, 0}].first = "L";
+    layout[{0, 0}].first = 'L';
 
     return {
         full_circuit,

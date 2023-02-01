@@ -75,7 +75,7 @@ void simd_bits_range_ref<W>::clear() {
 }
 
 template <size_t W>
-bool simd_bits_range_ref<W>::operator==(const simd_bits_range_ref<W> other) const {
+bool simd_bits_range_ref<W>::operator==(const simd_bits_range_ref<W> &other) const {
     return num_simd_words == other.num_simd_words && memcmp(ptr_simd, other.ptr_simd, num_u8_padded()) == 0;
 }
 
@@ -89,7 +89,7 @@ bool simd_bits_range_ref<W>::not_zero() const {
 }
 
 template <size_t W>
-bool simd_bits_range_ref<W>::operator!=(const simd_bits_range_ref<W> other) const {
+bool simd_bits_range_ref<W>::operator!=(const simd_bits_range_ref<W> &other) const {
     return !(*this == other);
 }
 

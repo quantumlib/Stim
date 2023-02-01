@@ -91,8 +91,10 @@ struct PauliString {
 
     /// Equality.
     bool operator==(const PauliStringRef &other) const;
+    bool operator==(const PauliString &other) const;
     /// Inequality.
     bool operator!=(const PauliStringRef &other) const;
+    bool operator!=(const PauliString &other) const;
 
     /// Implicit conversion to a reference.
     operator PauliStringRef();

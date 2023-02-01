@@ -57,19 +57,25 @@ void CircuitGenParameters::append_unitary_2(
 }
 
 void CircuitGenParameters::append_reset(Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
-    circuit.safe_append_u(std::string("R") + basis, targets);
+    std::string gate("R");
+    gate.push_back(basis);
+    circuit.safe_append_u(gate, targets);
     append_anti_basis_error(circuit, targets, after_reset_flip_probability, basis);
 }
 
 void CircuitGenParameters::append_measure(Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
+    std::string gate("M");
+    gate.push_back(basis);
     append_anti_basis_error(circuit, targets, before_measure_flip_probability, basis);
-    circuit.safe_append_u(std::string("M") + basis, targets);
+    circuit.safe_append_u(gate, targets);
 }
 
 void CircuitGenParameters::append_measure_reset(
     Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
+    std::string gate("MR");
+    gate.push_back(basis);
     append_anti_basis_error(circuit, targets, before_measure_flip_probability, basis);
-    circuit.safe_append_u(std::string("MR") + basis, targets);
+    circuit.safe_append_u(gate, targets);
     append_anti_basis_error(circuit, targets, after_reset_flip_probability, basis);
 }
 

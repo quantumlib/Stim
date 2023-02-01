@@ -103,7 +103,17 @@ bool simd_bits<W>::operator==(const simd_bits_range_ref<W> &other) const {
 }
 
 template <size_t W>
+bool simd_bits<W>::operator==(const simd_bits<W> &other) const {
+    return simd_bits_range_ref<W>(*this) == simd_bits_range_ref<W>(other);
+}
+
+template <size_t W>
 bool simd_bits<W>::operator!=(const simd_bits_range_ref<W> &other) const {
+    return !(*this == other);
+}
+
+template <size_t W>
+bool simd_bits<W>::operator!=(const simd_bits<W> &other) const {
     return !(*this == other);
 }
 
