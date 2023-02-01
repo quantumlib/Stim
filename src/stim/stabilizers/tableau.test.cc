@@ -223,12 +223,12 @@ TEST(tableau, apply_within) {
 
     auto p1 = PauliString::from_str("-XX");
     PauliStringRef p1_ptr(p1);
-    cnot.apply_within(p1_ptr, {0, 1});
+    cnot.apply_within(p1_ptr, std::vector<size_t>{0, 1});
     ASSERT_EQ(p1, PauliString::from_str("-XI"));
 
     auto p2 = PauliString::from_str("+XX");
     PauliStringRef p2_ptr(p2);
-    cnot.apply_within(p2_ptr, {0, 1});
+    cnot.apply_within(p2_ptr, std::vector<size_t>{0, 1});
     ASSERT_EQ(p2, PauliString::from_str("+XI"));
 }
 

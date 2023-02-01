@@ -822,3 +822,14 @@ def test_fuzz_to_from_unitary_matrix(n: int, endian: str):
     via_tableau = stim.Tableau.from_unitary_matrix(u, endian=endian).to_pauli_string()
     r.sign = +1
     assert via_tableau == r
+
+
+def test_before_after():
+    before = stim.PauliString("XXXYYYZZZ")
+    after = stim.PauliString("XYXYZYXZZ")
+    assert before.after(stim.Circuit("C_XYZ 1 4 6")) == after
+    assert before.after(stim.Circuit("C_XYZ 1 4 6")[0]) == after
+    assert before.after(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == after
+    assert after.before(stim.Circuit("C_XYZ 1 4 6")) == before
+    assert after.before(stim.Circuit("C_XYZ 1 4 6")[0]) == before
+    assert after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before
