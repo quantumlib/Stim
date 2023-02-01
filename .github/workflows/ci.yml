@@ -297,7 +297,7 @@ jobs:
       - uses: bazelbuild/setup-bazelisk@v1
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 16.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
@@ -376,7 +376,7 @@ jobs:
           actions-cache-folder: 'emsdk-cache'
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 16.x
       - run: npm install
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
