@@ -58,10 +58,13 @@ void do_obj(TableauSimulator &self, const pybind11::object &obj) {
 
 struct TempViewableData {
     std::vector<GateTarget> targets;
-    TempViewableData(std::vector<GateTarget> targets) : targets(std::move(targets)) {
+    std::vector<double> args;
+    TempViewableData(std::vector<GateTarget> targets) : targets(std::move(targets)), args() {
+    }
+    TempViewableData(std::vector<GateTarget> targets, std::vector<double> args) : targets(std::move(targets)), args(std::move(args)) {
     }
     operator OperationData() {
-        return {{}, targets};
+        return {args, targets};
     }
 };
 
@@ -94,34 +97,39 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pyb
     return arguments;
 }
 
-TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args) {
-    std::vector<GateTarget> arguments;
+TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
+    std::vector<GateTarget> targets;
     uint32_t max_q = 0;
     try {
         for (const auto &e : args) {
             if (pybind11::isinstance<GateTarget>(e)) {
-                arguments.push_back(pybind11::cast<GateTarget>(e));
+                targets.push_back(pybind11::cast<GateTarget>(e));
             } else {
                 uint32_t q = e.cast<uint32_t>();
                 max_q = std::max(max_q, q & TARGET_VALUE_MASK);
-                arguments.push_back(GateTarget{q});
+                targets.push_back(GateTarget{q});
             }
         }
     } catch (const pybind11::cast_error &) {
         throw std::out_of_range("Target qubits must be non-negative integers.");
     }
 
+    std::vector<double> gate_args_vec;
+    for (const auto &e : gate_args) {
+        gate_args_vec.push_back(e);
+    }
+
     // Note: quadratic behavior.
     self.ensure_large_enough_for_qubits(max_q + 1);
 
-    return TempViewableData(arguments);
+    return TempViewableData(targets, gate_args_vec);
 }
 
-TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::args &args) {
+TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }
-    auto result = args_to_targets(self, args);
+    auto result = args_to_targets(self, args, gate_args);
     for (size_t k = 0; k < result.targets.size(); k += 2) {
         if (result.targets[k] == result.targets[k + 1]) {
             throw std::invalid_argument("Two qubit operation can't target the same qubit twice.");
@@ -573,6 +581,108 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "depolarize1",
+        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+            double p = pybind11::cast<double>(kwargs["p"]);
+            if (kwargs.size() != 1) {
+                throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
+            }
+            self.DEPOLARIZE1(args_to_targets(self, args, &p));
+        },
+        clean_doc_string(R"DOC(
+            @signature def depolarize1(self, *targets: int, p: float):
+            Probabilistically applies single-qubit depolarization to targets.
+
+            Args:
+                *targets: The indices of the qubits to target with the noise.
+                p: The chance of the error being applied,
+                    independently, to each qubit.
+        )DOC")
+            .data());
+
+    c.def(
+        "depolarize2",
+        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+            double p = pybind11::cast<double>(kwargs["p"]);
+            if (kwargs.size() != 1) {
+                throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
+            }
+            self.DEPOLARIZE2(args_to_target_pairs(self, args, &p));
+        },
+        clean_doc_string(R"DOC(
+            @signature def depolarize2(self, *targets: int, p: float):
+            Probabilistically applies two-qubit depolarization to targets.
+
+            Args:
+                *targets: The indices of the qubits to target with the noise.
+                    The pairs of qubits are formed by
+                    zip(targets[::1], targets[1::2]).
+                p: The chance of the error being applied,
+                    independently, to each qubit pair.
+        )DOC")
+            .data());
+
+    c.def(
+        "x_error",
+        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+            double p = pybind11::cast<double>(kwargs["p"]);
+            if (kwargs.size() != 1) {
+                throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
+            }
+            self.X_ERROR(args_to_targets(self, args, {&p}));
+        },
+        clean_doc_string(R"DOC(
+            @signature def x_error(self, *targets: int, p: float):
+            Probabilistically applies X errors to targets.
+
+            Args:
+                *targets: The indices of the qubits to target with the noise.
+                p: The chance of the X error being applied,
+                    independently, to each qubit.
+        )DOC")
+            .data());
+
+    c.def(
+        "y_error",
+        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+            double p = pybind11::cast<double>(kwargs["p"]);
+            if (kwargs.size() != 1) {
+                throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
+            }
+            self.Y_ERROR(args_to_targets(self, args, &p));
+        },
+        clean_doc_string(R"DOC(
+            @signature def y_error(self, *targets: int, p: float):
+            Probabilistically applies Y errors to targets.
+
+            Args:
+                *targets: The indices of the qubits to target with the noise.
+                p: The chance of the Y error being applied,
+                    independently, to each qubit.
+        )DOC")
+            .data());
+
+    c.def(
+        "z_error",
+        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+            double p = pybind11::cast<double>(kwargs["p"]);
+            if (kwargs.size() != 1) {
+                throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
+            }
+            self.Z_ERROR(args_to_targets(self, args, &p));
+        },
+        clean_doc_string(R"DOC(
+            @signature def y_error(self, *targets: int, p: float):
+            Probabilistically applies Z errors to targets.
+
+            Args:
+                *targets: The indices of the qubits to target with the noise.
+                p: The chance of the Z error being applied,
+                    independently, to each qubit.
         )DOC")
             .data());
 

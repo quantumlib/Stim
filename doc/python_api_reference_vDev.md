@@ -250,10 +250,13 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
     - [`stim.Tableau.x_output_pauli`](#stim.Tableau.x_output_pauli)
+    - [`stim.Tableau.x_sign`](#stim.Tableau.x_sign)
     - [`stim.Tableau.y_output`](#stim.Tableau.y_output)
     - [`stim.Tableau.y_output_pauli`](#stim.Tableau.y_output_pauli)
+    - [`stim.Tableau.y_sign`](#stim.Tableau.y_sign)
     - [`stim.Tableau.z_output`](#stim.Tableau.z_output)
     - [`stim.Tableau.z_output_pauli`](#stim.Tableau.z_output_pauli)
+    - [`stim.Tableau.z_sign`](#stim.Tableau.z_sign)
 - [`stim.TableauIterator`](#stim.TableauIterator)
     - [`stim.TableauIterator.__iter__`](#stim.TableauIterator.__iter__)
     - [`stim.TableauIterator.__next__`](#stim.TableauIterator.__next__)
@@ -269,6 +272,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.cx`](#stim.TableauSimulator.cx)
     - [`stim.TableauSimulator.cy`](#stim.TableauSimulator.cy)
     - [`stim.TableauSimulator.cz`](#stim.TableauSimulator.cz)
+    - [`stim.TableauSimulator.depolarize1`](#stim.TableauSimulator.depolarize1)
+    - [`stim.TableauSimulator.depolarize2`](#stim.TableauSimulator.depolarize2)
     - [`stim.TableauSimulator.do`](#stim.TableauSimulator.do)
     - [`stim.TableauSimulator.do_circuit`](#stim.TableauSimulator.do_circuit)
     - [`stim.TableauSimulator.do_pauli_string`](#stim.TableauSimulator.do_pauli_string)
@@ -309,14 +314,17 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.state_vector`](#stim.TableauSimulator.state_vector)
     - [`stim.TableauSimulator.swap`](#stim.TableauSimulator.swap)
     - [`stim.TableauSimulator.x`](#stim.TableauSimulator.x)
+    - [`stim.TableauSimulator.x_error`](#stim.TableauSimulator.x_error)
     - [`stim.TableauSimulator.xcx`](#stim.TableauSimulator.xcx)
     - [`stim.TableauSimulator.xcy`](#stim.TableauSimulator.xcy)
     - [`stim.TableauSimulator.xcz`](#stim.TableauSimulator.xcz)
     - [`stim.TableauSimulator.y`](#stim.TableauSimulator.y)
+    - [`stim.TableauSimulator.y_error`](#stim.TableauSimulator.y_error)
     - [`stim.TableauSimulator.ycx`](#stim.TableauSimulator.ycx)
     - [`stim.TableauSimulator.ycy`](#stim.TableauSimulator.ycy)
     - [`stim.TableauSimulator.ycz`](#stim.TableauSimulator.ycz)
     - [`stim.TableauSimulator.z`](#stim.TableauSimulator.z)
+    - [`stim.TableauSimulator.z_error`](#stim.TableauSimulator.z_error)
     - [`stim.TableauSimulator.zcx`](#stim.TableauSimulator.zcx)
     - [`stim.TableauSimulator.zcy`](#stim.TableauSimulator.zcy)
     - [`stim.TableauSimulator.zcz`](#stim.TableauSimulator.zcz)
@@ -8494,6 +8502,31 @@ def x_output_pauli(
     """
 ```
 
+<a name="stim.Tableau.x_sign"></a>
+```python
+# stim.Tableau.x_sign
+
+# (in class stim.Tableau)
+def x_sign(
+    self,
+    target: int,
+) -> int:
+    """Returns just the sign of the result of conjugating an X generator.
+
+    This operation runs in constant time.
+
+    Args:
+        target: The qubit the X generator applies to.
+
+    Examples:
+        >>> import stim
+        >>> stim.Tableau.from_named_gate("S_DAG").x_sign(0)
+        -1
+        >>> stim.Tableau.from_named_gate("S").x_sign(0)
+        1
+    """
+```
+
 <a name="stim.Tableau.y_output"></a>
 ```python
 # stim.Tableau.y_output
@@ -8565,6 +8598,33 @@ def y_output_pauli(
     """
 ```
 
+<a name="stim.Tableau.y_sign"></a>
+```python
+# stim.Tableau.y_sign
+
+# (in class stim.Tableau)
+def y_sign(
+    self,
+    target: int,
+) -> int:
+    """Returns just the sign of the result of conjugating a Y generator.
+
+    Unlike x_sign and z_sign, this operation runs in linear time.
+    The Y generator has to be computed by multiplying the X and Z
+    outputs and the sign depends on all terms.
+
+    Args:
+        target: The qubit the Y generator applies to.
+
+    Examples:
+        >>> import stim
+        >>> stim.Tableau.from_named_gate("S_DAG").y_sign(0)
+        1
+        >>> stim.Tableau.from_named_gate("S").y_sign(0)
+        -1
+    """
+```
+
 <a name="stim.Tableau.z_output"></a>
 ```python
 # stim.Tableau.z_output
@@ -8633,6 +8693,31 @@ def z_output_pauli(
         2
         >>> t.z_output_pauli(1, 1)
         1
+    """
+```
+
+<a name="stim.Tableau.z_sign"></a>
+```python
+# stim.Tableau.z_sign
+
+# (in class stim.Tableau)
+def z_sign(
+    self,
+    target: int,
+) -> int:
+    """Returns just the sign of the result of conjugating a Z generator.
+
+    This operation runs in constant time.
+
+    Args:
+        target: The qubit the Z generator applies to.
+
+    Examples:
+        >>> import stim
+        >>> stim.Tableau.from_named_gate("SQRT_X_DAG").z_sign(0)
+        1
+        >>> stim.Tableau.from_named_gate("SQRT_X").z_sign(0)
+        -1
     """
 ```
 
@@ -9085,6 +9170,46 @@ def cz(
         *targets: The indices of the qubits to target with the gate.
             Applies the gate to the first two targets, then the next two targets,
             and so forth. There must be an even number of targets.
+    """
+```
+
+<a name="stim.TableauSimulator.depolarize1"></a>
+```python
+# stim.TableauSimulator.depolarize1
+
+# (in class stim.TableauSimulator)
+def depolarize1(
+    self,
+    *targets: int,
+    p: float,
+):
+    """Probabilistically applies single-qubit depolarization to targets.
+
+    Args:
+        *targets: The indices of the qubits to target with the noise.
+        p: The chance of the error being applied,
+            independently, to each qubit.
+    """
+```
+
+<a name="stim.TableauSimulator.depolarize2"></a>
+```python
+# stim.TableauSimulator.depolarize2
+
+# (in class stim.TableauSimulator)
+def depolarize2(
+    self,
+    *targets: int,
+    p: float,
+):
+    """Probabilistically applies two-qubit depolarization to targets.
+
+    Args:
+        *targets: The indices of the qubits to target with the noise.
+            The pairs of qubits are formed by
+            zip(targets[::1], targets[1::2]).
+        p: The chance of the error being applied,
+            independently, to each qubit pair.
     """
 ```
 
@@ -10338,6 +10463,25 @@ def x(
     """
 ```
 
+<a name="stim.TableauSimulator.x_error"></a>
+```python
+# stim.TableauSimulator.x_error
+
+# (in class stim.TableauSimulator)
+def x_error(
+    self,
+    *targets: int,
+    p: float,
+):
+    """Probabilistically applies X errors to targets.
+
+    Args:
+        *targets: The indices of the qubits to target with the noise.
+        p: The chance of the X error being applied,
+            independently, to each qubit.
+    """
+```
+
 <a name="stim.TableauSimulator.xcx"></a>
 ```python
 # stim.TableauSimulator.xcx
@@ -10408,6 +10552,25 @@ def y(
     """
 ```
 
+<a name="stim.TableauSimulator.y_error"></a>
+```python
+# stim.TableauSimulator.y_error
+
+# (in class stim.TableauSimulator)
+def y_error(
+    self,
+    *targets: int,
+    p: float,
+):
+    """Probabilistically applies Y errors to targets.
+
+    Args:
+        *targets: The indices of the qubits to target with the noise.
+        p: The chance of the Y error being applied,
+            independently, to each qubit.
+    """
+```
+
 <a name="stim.TableauSimulator.ycx"></a>
 ```python
 # stim.TableauSimulator.ycx
@@ -10475,6 +10638,25 @@ def z(
 
     Args:
         *targets: The indices of the qubits to target with the gate.
+    """
+```
+
+<a name="stim.TableauSimulator.z_error"></a>
+```python
+# stim.TableauSimulator.z_error
+
+# (in class stim.TableauSimulator)
+def y_error(
+    self,
+    *targets: int,
+    p: float,
+):
+    """Probabilistically applies Z errors to targets.
+
+    Args:
+        *targets: The indices of the qubits to target with the noise.
+        p: The chance of the Z error being applied,
+            independently, to each qubit.
     """
 ```
 
