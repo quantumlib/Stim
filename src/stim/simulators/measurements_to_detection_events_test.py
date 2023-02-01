@@ -144,10 +144,20 @@ def test_convert_bit_packed():
         assert result.shape == (2, 100)
         np.testing.assert_array_equal(result, expected_detections)
 
+        # Check legacy argument name `bit_pack_result`.
         result = converter.convert(
             measurements=m,
             append_observables=False,
             bit_pack_result=True,
+        )
+        assert result.dtype == np.uint8
+        assert result.shape == (2, 13)
+        np.testing.assert_array_equal(result, expected_detections_packed)
+
+        result = converter.convert(
+            measurements=m,
+            append_observables=False,
+            bit_packed=True,
         )
         assert result.dtype == np.uint8
         assert result.shape == (2, 13)

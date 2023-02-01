@@ -492,6 +492,19 @@ Tableau stim::stabilizers_to_tableau(
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
+    for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
+        for (size_t k2 = 0; k2 < stabilizers.size(); k2++) {
+            if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
+                std::stringstream ss;
+                ss << "Some of the given stabilizers anticommute.\n";
+                ss << "For example:\n    ";
+                ss << stabilizers[k1];
+                ss << "\nanticommutes with\n";
+                ss << stabilizers[k2] << "\n";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+    }
     Tableau inverted(num_qubits);
 
     PauliString cur(num_qubits);
