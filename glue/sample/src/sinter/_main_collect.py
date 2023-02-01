@@ -2,6 +2,7 @@ import argparse
 import math
 import sys
 from typing import Iterator, Any, Tuple, List, Callable, FrozenSet, Optional
+from typing import cast
 
 import numpy as np
 import stim
@@ -9,32 +10,34 @@ import stim
 import sinter
 from sinter._printer import ThrottledProgressPrinter
 from sinter._task import Task
-from sinter._collection import collect, Progress, post_selection_mask_from_4th_coord
+from sinter._collection import collect, Progress, post_selection_mask_from_predicate
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 from sinter._main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
                                metadata_func: Callable,
-                               postselect_4th_coord: bool,
-                               postselected_observables_predicate: Callable[[int, Any], FrozenSet[int]],
+                               postselected_detectors_predicate: Optional[Callable[[int, Any, Tuple[float, ...]], bool]],
+                               postselected_observables_predicate: Callable[[int, Any], bool],
                                ) -> Iterator[Task]:
     for path in circuit_paths:
         with open(path) as f:
             circuit_text = f.read()
         circuit = stim.Circuit(circuit_text)
 
-        if postselect_4th_coord:
-            post_mask = post_selection_mask_from_4th_coord(circuit)
+        metadata = metadata_func(path=path, circuit=circuit)
+        if postselected_detectors_predicate is not None:
+            post_mask = post_selection_mask_from_predicate(circuit, metadata=metadata, postselected_detectors_predicate=postselected_detectors_predicate)
+            if not np.any(post_mask):
+                post_mask = None
         else:
             post_mask = None
-        metadata = metadata_func(path=path, circuit=circuit)
         postselected_observables = [
             k
             for k in range(circuit.num_observables)
             if postselected_observables_predicate(k, metadata)
         ]
-        if postselected_observables:
+        if any(postselected_observables):
             postselected_observables_mask = np.zeros(shape=math.ceil(circuit.num_observables / 8), dtype=np.uint8)
             for k in postselected_observables:
                 postselected_observables_mask[k // 8] |= 1 << (k % 8)
@@ -110,6 +113,21 @@ def parse_args(args: List[str]) -> Any:
                         help='Turns on detector postselection. '
                              'If any detector with a non-zero 4th coordinate fires, the shot is discarded.',
                         action='store_true')
+    parser.add_argument('--postselected_detectors_predicate',
+                        type=str,
+                        default='''False''',
+                        help='Specifies a predicate used to decide which detectors to postselect. '
+                             'When a postselected detector produces a detection event, the shot is discarded instead of being given to the decoder.'
+                             'The number of discarded shots is tracked as a statistic.'
+                             'Available values:\n'
+                             '    index: The unique number identifying the detector, determined by the order of detectors in the circuit file.\n'
+                             '    coords: The coordinate data associated with the detector. An empty tuple, if the circuit file did not specify detector coordinates.\n'
+                             '    metadata: The metadata associated with the task being sampled.\n'
+                             'Expected expression type:\n'
+                             '    Something that can be given to `bool` to get False (do not postselect) or True (yes postselect).\n'
+                             'Examples:\n'
+                             '''    --postselected_detectors_predicate "coords[2] == 0"\n'''
+                             '''    --postselected_observables_predicate "coords[3] < metadata['postselection_level']"\n''')
     parser.add_argument('--postselected_observables_predicate',
                         type=str,
                         default='''False''',
@@ -138,7 +156,7 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--metadata_func',
                         type=str,
                         default="{'path': path}",
-                        help='A python expression that determines whether a case is kept or not.\n'
+                        help='A python expression that associates json metadata with a circuit\'s results.\n'
                              'Set to "auto" to use "sinter.comma_separated_key_values(path)"\n'
                              'Values available to the expression:\n'
                              '    path: Relative path to the circuit file, from the command line arguments.\n'
@@ -150,9 +168,9 @@ def parse_args(args: List[str]) -> Any:
                              '    it in the metadata as well would be redundant. But something like\n'
                              '    decoder version could be usefully added.\n'
                              'Examples:\n'
-                             '''    -metadata_func "{'path': path}"\n'''
-                             '''    -metadata_func "auto"\n'''
-                             '''    -metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
+                             '''    --metadata_func "{'path': path}"\n'''
+                             '''    --metadata_func "auto"\n'''
+                             '''    --metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
                         )
     a = parser.parse_args(args=args)
     if a.metadata_func == 'auto':
@@ -165,6 +183,18 @@ def parse_args(args: List[str]) -> Any:
         'lambda index, metadata: ' + a.postselected_observables_predicate,
         filename='postselected_observables_predicate:command_line_arg',
         mode='eval'))
+    if a.postselected_detectors_predicate == 'False':
+        if a.postselect_detectors_with_non_zero_4th_coord:
+            a.postselected_detectors_predicate = lambda index, metadata, coords: coords[3]
+        else:
+            a.postselected_detectors_predicate = None
+    else:
+        if a.postselect_detectors_with_non_zero_4th_coord:
+            raise ValueError("Can't specify both --postselect_detectors_with_non_zero_4th_coord and --postselected_detectors_predicate")
+        a.postselected_detectors_predicate = eval(compile(
+            'lambda index, metadata, coords: ' + cast(str, a.postselected_detectors_predicate),
+            filename='postselected_detectors_predicate:command_line_arg',
+            mode='eval'))
     if a.custom_decoders_module_function is not None:
         terms = a.custom_decoders_module_function.split(':')
         if len(terms) != 2:
@@ -206,7 +236,7 @@ def main_collect(*, command_line_args: List[str]):
     iter_tasks = iter_file_paths_into_goals(
         circuit_paths=args.circuits,
         metadata_func=args.metadata_func,
-        postselect_4th_coord=args.postselect_detectors_with_non_zero_4th_coord,
+        postselected_detectors_predicate=args.postselected_detectors_predicate,
         postselected_observables_predicate=args.postselected_observables_predicate,
     )
     num_tasks = len(args.circuits) * len(args.decoders)
@@ -230,7 +260,11 @@ def main_collect(*, command_line_args: List[str]):
                 did_work = True
             printer.print_out(stats.to_csv_line())
 
-        printer.show_latest_progress(sample.status_message)
+        msg = sample.status_message
+        if msg == 'KeyboardInterrupt':
+            msg = '\nInterrupted. Output is flushed. Cleaning up workers...'
+        printer.show_latest_progress(msg)
+        printer.flush()
 
     try:
         collect(
@@ -250,5 +284,4 @@ def main_collect(*, command_line_args: List[str]):
             custom_decoders=args.custom_decoders,
         )
     except KeyboardInterrupt:
-        printer.show_latest_progress('')
-        print("\033[33m\nInterrupted\033[0m")
+        pass

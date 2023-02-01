@@ -15,8 +15,8 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
+#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -352,7 +352,8 @@ Pauli Mixture:
             &FrameSimulator::CORRELATED_ERROR,
             &ErrorAnalyzer::CORRELATED_ERROR,
             &SparseUnsignedRevFrameTracker::undo_I,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+                        GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -396,7 +397,8 @@ Example:
             &FrameSimulator::ELSE_CORRELATED_ERROR,
             &ErrorAnalyzer::ELSE_CORRELATED_ERROR,
             &SparseUnsignedRevFrameTracker::undo_I,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+                        GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",

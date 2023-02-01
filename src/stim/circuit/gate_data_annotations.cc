@@ -15,8 +15,8 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
+#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 

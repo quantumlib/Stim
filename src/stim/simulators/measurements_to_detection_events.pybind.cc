@@ -91,7 +91,10 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
     const pybind11::object &sweep_bits,
     const pybind11::object &separate_observables_obj,
     const pybind11::object &append_observables_obj,
+    bool bit_pack_result_old_compat,
     bool bit_pack_result) {
+    bit_pack_result |= bit_pack_result_old_compat;
+
     if (separate_observables_obj.is_none() && append_observables_obj.is_none()) {
         throw std::invalid_argument(
             "To ignore observable flip data, you must explicitly specify either separate_observables=False or "
@@ -292,12 +295,13 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("sweep_bits") = pybind11::none(),
         pybind11::arg("separate_observables") = pybind11::none(),
         pybind11::arg("append_observables") = pybind11::none(),
-        pybind11::arg("bit_pack_result") = false,
+        pybind11::arg("bit_packed") = false,
+        pybind11::arg("bit_pack_result") = false,  // deprecated variant
         clean_doc_string(R"DOC(
             Converts measurement data into detection event data.
-            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_pack_result: bool = False) -> np.ndarray:
-            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: 'Literal[True]', append_observables: bool = False, bit_pack_result: bool = False) -> Tuple[np.ndarray, np.ndarray]:
-            @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: 'Literal[True]', append_observables: bool = False, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+            @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_packed: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:
                 measurements: A numpy array containing measurement data.
@@ -321,7 +325,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 append_observables: Defaults to False. When set to True, the observables in
                     the circuit are treated as if they were additional detectors. Their
                     results are appended to the end of the detection event data.
-                bit_pack_result: Defaults to False. When set to True, the returned numpy
+                bit_packed: Defaults to False. When set to True, the returned numpy
                     array contains bit packed data (dtype=np.uint8 with 8 bits per item)
                     instead of unpacked data (dtype=np.bool8).
 
@@ -333,7 +337,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 When returning two numpy arrays, the first array is the detection event data
                 and the second is the observable flip data.
 
-                The dtype of the returned arrays is np.bool8 if bit_pack_result is false,
+                The dtype of the returned arrays is np.bool8 if bit_packed is false,
                 otherwise they're np.uint8 arrays.
 
                 shape[0] of the array(s) is the number of shots.

@@ -57,12 +57,29 @@ def test_plotting_does_not_crash():
         plot_args_func=lambda k, e: {'marker': "ov*sp^<>8PhH+xXDd|"[k]},
         failure_units_per_shot_func=lambda stats: stats.json_metadata['d'] * 3,
     )
+    sinter.plot_error_rate(
+        ax=ax,
+        stats=stats,
+        group_func=lambda e: f"Rotated Surface Code d={e.json_metadata['d']}",
+        x_func=lambda e: e.json_metadata['p'],
+        plot_args_func=lambda k, e: {'marker': "ov*sp^<>8PhH+xXDd|"[k]},
+        failure_units_per_shot_func=lambda stats: stats.json_metadata['d'] * 3,
+        highlight_max_likelihood_factor=None,
+    )
     sinter.plot_discard_rate(
         ax=ax,
         stats=stats,
         group_func=lambda e: f"Rotated Surface Code d={e.json_metadata['d']}",
         x_func=lambda e: e.json_metadata['p'],
         plot_args_func=lambda k, e: {'marker': "ov*sp^<>8PhH+xXDd|"[k]},
+    )
+    sinter.plot_discard_rate(
+        ax=ax,
+        stats=stats,
+        group_func=lambda e: f"Rotated Surface Code d={e.json_metadata['d']}",
+        x_func=lambda e: e.json_metadata['p'],
+        plot_args_func=lambda k, e: {'marker': "ov*sp^<>8PhH+xXDd|"[k]},
+        highlight_max_likelihood_factor=None,
     )
     sinter.plot_discard_rate(
         ax=ax,

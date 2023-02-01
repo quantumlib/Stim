@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import pathlib
+from typing import Any
 from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
 
 import math
@@ -103,32 +104,39 @@ def iter_collect(*,
             decoders=decoders,
             additional_existing_data=additional_existing_data,
             custom_decoders=custom_decoders) as manager:
-        yield Progress(
-            new_stats=(),
-            status_message="Starting workers..."
-        )
-        manager.start_workers(num_workers)
-
-        yield Progress(
-            new_stats=(),
-            status_message="Finding work..."
-        )
-        manager.fill_work_queue()
-        yield Progress(
-            new_stats=(),
-            status_message=manager.status(num_circuits=hint_num_tasks)
-        )
-
-        while manager.fill_work_queue():
-            # Wait for a worker to finish a job.
-            sample = manager.wait_for_next_sample()
-            manager.fill_work_queue()
-
-            # Report the incremental results.
+        try:
             yield Progress(
-                new_stats=(sample,) if sample.shots > 0 else (),
-                status_message=manager.status(num_circuits=hint_num_tasks),
+                new_stats=(),
+                status_message="Starting workers..."
             )
+            manager.start_workers(num_workers)
+
+            yield Progress(
+                new_stats=(),
+                status_message="Finding work..."
+            )
+            manager.fill_work_queue()
+            yield Progress(
+                new_stats=(),
+                status_message=manager.status(num_circuits=hint_num_tasks)
+            )
+
+            while manager.fill_work_queue():
+                # Wait for a worker to finish a job.
+                sample = manager.wait_for_next_sample()
+                manager.fill_work_queue()
+
+                # Report the incremental results.
+                yield Progress(
+                    new_stats=(sample,) if sample.shots > 0 else (),
+                    status_message=manager.status(num_circuits=hint_num_tasks),
+                )
+        except KeyboardInterrupt:
+            yield Progress(
+                new_stats=(),
+                status_message='KeyboardInterrupt',
+            )
+            raise
 
 
 def collect(*,
@@ -259,6 +267,20 @@ def collect(*,
         if print_progress:
             progress_printer.flush()
         return list(result.data.values())
+
+
+def post_selection_mask_from_predicate(
+    circuit_or_dem: Union[stim.Circuit, stim.DetectorErrorModel],
+    *,
+    postselected_detectors_predicate: Callable[[int, Any, Tuple[float, ...]], bool],
+    metadata: Any,
+) -> np.ndarray:
+    num_dets = circuit_or_dem.num_detectors
+    post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
+    for k, coord in circuit_or_dem.get_detector_coordinates().items():
+        if postselected_detectors_predicate(k, metadata, coord):
+            post_selection_mask[k // 8] |= 1 << (k % 8)
+    return post_selection_mask
 
 
 def post_selection_mask_from_4th_coord(dem: Union[stim.Circuit, stim.DetectorErrorModel]) -> np.ndarray:

@@ -31,9 +31,7 @@ struct WithoutFeedbackHelper {
     std::map<uint64_t, SparseXorVec<uint64_t>> det_changes;
 
     WithoutFeedbackHelper(const Circuit &circuit)
-        : tracker(circuit.count_qubits(),
-                  circuit.count_measurements(),
-                  circuit.count_detectors()) {
+        : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors()) {
     }
 
     const SparseXorVec<DemTarget> &anticommuting_sensitivity_at(uint32_t qubit, bool x, bool z) {
@@ -63,7 +61,8 @@ struct WithoutFeedbackHelper {
     void undo_feedback_capable_operation(const Operation &op) {
         for (size_t k = op.target_data.targets.size(); k > 0;) {
             k -= 2;
-            Operation op_piece = {op.gate, {op.target_data.args, {&op.target_data.targets[k], &op.target_data.targets[k + 2]}}};
+            Operation op_piece = {
+                op.gate, {op.target_data.args, {&op.target_data.targets[k], &op.target_data.targets[k + 2]}}};
             auto t1 = op.target_data.targets[k];
             auto t2 = op.target_data.targets[k + 1];
             auto b1 = t1.is_measurement_record_target();
@@ -145,8 +144,7 @@ struct WithoutFeedbackHelper {
 
             if (op.gate->id == gate_name_to_id("REPEAT")) {
                 result.append_repeat_block(
-                    op_data_rep_count(op.target_data),
-                    build_output(op_data_block_body(reversed, op.target_data)));
+                    op_data_rep_count(op.target_data), build_output(op_data_block_body(reversed, op.target_data)));
                 continue;
             }
 
@@ -161,7 +159,8 @@ struct WithoutFeedbackHelper {
 
                     // Build new targets at tail of reversed_semi_flattened_output.
                     for (const auto &m : changes) {
-                        reversed_semi_flattened_output.target_buf.append_tail(GateTarget::rec((int64_t)m - (int64_t)tracker.num_measurements_in_past));
+                        reversed_semi_flattened_output.target_buf.append_tail(
+                            GateTarget::rec((int64_t)m - (int64_t)tracker.num_measurements_in_past));
                     }
                     result.safe_append(*op.gate, reversed_semi_flattened_output.target_buf.tail, op.target_data.args);
                     reversed_semi_flattened_output.target_buf.discard_tail();

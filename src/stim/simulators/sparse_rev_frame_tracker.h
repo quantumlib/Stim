@@ -18,10 +18,10 @@
 #define _STIM_SIMULATORS_SPARSE_REV_FRAME_TRACKER_H
 
 #include "stim/circuit/circuit.h"
+#include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
-#include "stim/dem/detector_error_model.h"
 
 namespace stim {
 
@@ -39,9 +39,7 @@ struct SparseUnsignedRevFrameTracker {
     uint64_t num_detectors_in_past;
 
     SparseUnsignedRevFrameTracker(
-        uint64_t num_qubits,
-        uint64_t num_measurements_in_past,
-        uint64_t num_detectors_in_past);
+        uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
 
     PauliString current_error_sensitivity_for(DemTarget target) const;
 
@@ -93,6 +91,8 @@ struct SparseUnsignedRevFrameTracker {
     void undo_SQRT_ZZ(const OperationData &dat);
     void undo_SWAP(const OperationData &dat);
     void undo_ISWAP(const OperationData &dat);
+    void undo_CXSWAP(const OperationData &dat);
+    void undo_SWAPCX(const OperationData &dat);
     void undo_tableau(const Tableau &tableau, ConstPointerRange<uint32_t> targets);
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
@@ -103,6 +103,6 @@ struct SparseUnsignedRevFrameTracker {
 };
 std::ostream &operator<<(std::ostream &out, const SparseUnsignedRevFrameTracker &tracker);
 
-}
+}  // namespace stim
 
 #endif

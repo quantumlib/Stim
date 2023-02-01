@@ -708,6 +708,19 @@ def test_from_unitary_matrix():
         [[-1, 0], [0, 1]]
     ) == stim.PauliString("-Z")
 
+    assert stim.PauliString.from_unitary_matrix(
+        [[1]], unsigned=True
+    ) == stim.PauliString("")
+    assert stim.PauliString.from_unitary_matrix(
+        [[-1]], unsigned=True
+    ) == stim.PauliString("")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, 1], [-1, 0]], unsigned=True
+    ) == stim.PauliString("Y")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, +1 * 1j**0.1], [-1 * 1j**0.1, 0]], unsigned=True
+    ) == stim.PauliString("Y")
+
     assert stim.PauliString.from_unitary_matrix([
         [0, 0, 0, -1j, 0, 0, 0, 0],
         [0, 0, -1j, 0, 0, 0, 0, 0],
@@ -728,6 +741,26 @@ def test_from_unitary_matrix():
         [0, 0, 0, 0, 0, -1j, 0, 0],
         [0, 0, 0, 0, -1j, 0, 0, 0],
     ], endian="big") == stim.PauliString("ZYX")
+    assert stim.PauliString.from_unitary_matrix(np.array([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ]) * 1j**0.1, endian="big", unsigned=True) == stim.PauliString("ZYX")
+    assert stim.PauliString.from_unitary_matrix(np.array([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ]) * -1, endian="big", unsigned=True) == stim.PauliString("ZYX")
 
 
 def test_from_unitary_matrix_detect_bad_matrix():
@@ -789,3 +822,14 @@ def test_fuzz_to_from_unitary_matrix(n: int, endian: str):
     via_tableau = stim.Tableau.from_unitary_matrix(u, endian=endian).to_pauli_string()
     r.sign = +1
     assert via_tableau == r
+
+
+def test_before_after():
+    before = stim.PauliString("XXXYYYZZZ")
+    after = stim.PauliString("XYXYZYXZZ")
+    assert before.after(stim.Circuit("C_XYZ 1 4 6")) == after
+    assert before.after(stim.Circuit("C_XYZ 1 4 6")[0]) == after
+    assert before.after(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == after
+    assert after.before(stim.Circuit("C_XYZ 1 4 6")) == before
+    assert after.before(stim.Circuit("C_XYZ 1 4 6")[0]) == before
+    assert after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before

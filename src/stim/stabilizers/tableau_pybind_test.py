@@ -877,3 +877,48 @@ def test_to_from_numpy_fuzz(n: int):
     x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
     t2 = stim.Tableau.from_numpy(x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs)
     assert t2 == t
+
+
+def test_signs():
+    t = stim.Tableau.from_named_gate("S")
+    assert t.x_sign(0) == +1
+    assert t.y_sign(0) == -1
+    assert t.z_sign(0) == +1
+    t = stim.Tableau.from_named_gate("S_DAG")
+    assert t.x_sign(0) == -1
+    assert t.y_sign(0) == +1
+    assert t.z_sign(0) == +1
+    t = stim.Tableau.from_named_gate("SQRT_X")
+    assert t.x_sign(0) == +1
+    assert t.y_sign(0) == +1
+    assert t.z_sign(0) == -1
+
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-XX"),
+            stim.PauliString("-ZZ"),
+        ],
+        zs=[
+            stim.PauliString("+IZ"),
+            stim.PauliString("-XI"),
+        ],
+    )
+    assert t.x_sign(0) == -1 == t.x_output(0).sign
+    assert t.x_sign(1) == -1 == t.x_output(1).sign
+    assert t.y_sign(0) == -1 == t.y_output(0).sign
+    assert t.y_sign(1) == -1 == t.y_output(1).sign
+    assert t.z_sign(0) == +1 == t.z_output(0).sign
+    assert t.z_sign(1) == -1 == t.z_output(1).sign
+
+    with pytest.raises(ValueError, match="target"):
+        _ = t.x_sign(-1)
+    with pytest.raises(ValueError, match="target"):
+        _ = t.y_sign(-1)
+    with pytest.raises(ValueError, match="target"):
+        _ = t.z_sign(-1)
+    with pytest.raises(ValueError, match="target"):
+        _ = t.x_sign(2)
+    with pytest.raises(ValueError, match="target"):
+        _ = t.y_sign(2)
+    with pytest.raises(ValueError, match="target"):
+        _ = t.z_sign(2)

@@ -41,6 +41,8 @@ class FusionBlossomDecoder(Decoder):
             with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
                 for _ in range(num_shots):
                     dets_bit_packed = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
+                    if dets_bit_packed.shape != (num_det_bytes,):
+                        raise IOError('Missing dets data.')
                     dets_sparse = np.flatnonzero(np.unpackbits(dets_bit_packed, count=num_dets, bitorder='little'))
                     syndrome = fusion_blossom.SyndromePattern(syndrome_vertices=dets_sparse)
                     solver.solve(syndrome)

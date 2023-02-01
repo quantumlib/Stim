@@ -90,6 +90,9 @@ class CollectionWorkManager:
             # This is supposed to be safe because all state on disk was put
             # in the specified tmp directory which we will handle deleting.
             w.kill()
+        # Wait for them to be done.
+        for w in removed_workers:
+            w.join()
 
     def fill_work_queue(self) -> bool:
         while len(self.deployed_jobs) < len(self.workers):

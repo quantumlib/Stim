@@ -135,8 +135,8 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                     has the performance benefit of the data never being expanded into an
                     unpacked form.
                 return_errors: Defaults to False.
-                    False: the first entry of the returned tuple is None.
-                    True: the first entry of the returned tuple is a numpy array recording
+                    False: the third entry of the returned tuple is None.
+                    True: the third entry of the returned tuple is a numpy array recording
                     which errors were sampled.
                 recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
                     If not None, this is expected to be a 2d numpy array specifying which

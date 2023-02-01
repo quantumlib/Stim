@@ -14,6 +14,7 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
+#include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
@@ -102,7 +103,7 @@ PyPauliString &PyPauliString::operator+=(const PyPauliString &rhs) {
     }
 
     size_t n = value.num_qubits;
-    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits);
+    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits, 1.1);
     for (size_t k = 0; k < rhs.value.num_qubits; k++) {
         value.xs[k + n] = rhs.value.xs[k];
         value.zs[k + n] = rhs.value.zs[k];
@@ -281,10 +282,10 @@ PyPauliString PyPauliString::operator*(const PyPauliString &rhs) const {
 }
 
 PyPauliString &PyPauliString::operator*=(const PyPauliString &rhs) {
-    value.ensure_num_qubits(rhs.value.num_qubits);
+    value.ensure_num_qubits(rhs.value.num_qubits, 1.1);
     if (rhs.value.num_qubits < value.num_qubits) {
         PyPauliString copy = rhs;
-        copy.value.ensure_num_qubits(value.num_qubits);
+        copy.value.ensure_num_qubits(value.num_qubits, 1.0);
         *this *= copy;
         return *this;
     }
@@ -326,7 +327,8 @@ PyPauliString PyPauliString::from_text(const char *text) {
     value *= factor;
     return value;
 }
-PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian) {
+PyPauliString PyPauliString::from_unitary_matrix(
+    const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -336,6 +338,7 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
         throw std::invalid_argument("endian not in ['little', 'big']");
     }
 
+    std::complex<float> unphase = 0;
     auto row_index_phase = [&](const pybind11::handle &row) -> std::tuple<uint64_t, uint8_t, uint64_t> {
         size_t num_cells = 0;
         size_t non_zero_index = SIZE_MAX;
@@ -346,6 +349,15 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
                 num_cells++;
                 continue;
             }
+            if (unphase == std::complex<float>{0}) {
+                if (ignore_sign) {
+                    unphase = conj(c);
+                } else {
+                    unphase = 1;
+                }
+            }
+            c *= unphase;
+
             if (abs(c - std::complex<float>{1, 0}) < 1e-2) {
                 phase = 0;
             } else if (abs(c - std::complex<float>{0, 1}) < 1e-2) {
@@ -355,9 +367,14 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             } else if (abs(c - std::complex<float>{0, -1}) < 1e-2) {
                 phase = 3;
             } else {
-                throw std::invalid_argument(
-                    "The given unitary matrix isn't a Pauli string matrix. It has values besides 0, 1, -1, 1j, and "
-                    "-1j.");
+                std::stringstream ss;
+                ss << "The given unitary matrix isn't a Pauli string matrix. ";
+                ss << "It has values besides 0, 1, -1, 1j, and -1j";
+                if (ignore_sign) {
+                    ss << " (up to global phase)";
+                }
+                ss << '.';
+                throw std::invalid_argument(ss.str());
             }
             if (non_zero_index != SIZE_MAX) {
                 throw std::invalid_argument(
@@ -441,6 +458,10 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             x >>= 1;
             z >>= 1;
         }
+    }
+    if (ignore_sign) {
+        result.imag = false;
+        result.value.sign = false;
     }
     return result;
 }
@@ -698,8 +719,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("matrix"),
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
+        pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.PauliString:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
             Args:
@@ -711,6 +733,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         qubits correspond to larger changes in row/col indices.
                     "big": matrix entries are in big endian order, where higher index
                         qubits correspond to smaller changes in row/col indices.
+                unsigned: When False, the input must only contain the values
+                    [0, 1, -1, 1j, -1j] and the output will have the correct global phase.
+                    When True, the input is permitted to be scaled by an arbitrary unit
+                    complex value and the output will always have positive sign.
+                    False is stricter but provides more information, while True is more
+                    flexible but provides less information.
 
             Returns:
                 The pauli string equal to the given unitary matrix.
@@ -725,6 +753,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 ...     [0, -1j],
                 ... ], endian='little')
                 stim.PauliString("+iZ")
+
+                >>> stim.PauliString.from_unitary_matrix([
+                ...     [1j**0.1, 0],
+                ...     [0, -(1j**0.1)],
+                ... ], endian='little', unsigned=True)
+                stim.PauliString("+Z")
 
                 >>> stim.PauliString.from_unitary_matrix([
                 ...     [0, 1, 0, 0],
@@ -800,7 +834,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 self.value.sign = true;
                 self.imag = true;
             } else {
-                throw std::invalid_argument("new_sign not in [1, -1, 1, 1j]");
+                throw std::invalid_argument("new_sign not in [1, -1, 1j, -1j]");
             }
         },
         clean_doc_string(R"DOC(
@@ -1363,6 +1397,146 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                >>> p[-1] = 'Y'
                >>> print(p)
                +_XYY
+        )DOC")
+            .data());
+
+    c.def(
+        "after",
+        [](const PyPauliString &self,
+           const pybind11::object &operation,
+           const pybind11::object &targets) -> PyPauliString {
+            PauliString result(0);
+            if (pybind11::isinstance<Circuit>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
+                }
+                result = self.value.ref().after(pybind11::cast<Circuit>(operation));
+            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument(
+                        "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                }
+                result = self.value.ref().after(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+            } else if (pybind11::isinstance<Tableau>(operation)) {
+                if (targets.is_none()) {
+                    throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
+                }
+                std::vector<size_t> raw_targets;
+                for (const auto &e : targets) {
+                    raw_targets.push_back(pybind11::cast<size_t>(e));
+                }
+                result = self.value.ref().after(pybind11::cast<Tableau>(operation), raw_targets);
+            } else {
+                throw std::invalid_argument(
+                    "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+            }
+            return PyPauliString(result, self.imag);
+        },
+        pybind11::arg("operation"),
+        pybind11::arg("targets") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            Returns the result of conjugating the Pauli string by an operation.
+
+            Args:
+                operation: A circuit, tableau, or circuit instruction to
+                    conjugate the Pauli string by. Must be Clifford (e.g.
+                    if it's a circuit, the circuit can't have noise or
+                    measurements).
+                targets: Required if and only if the operation is a tableau.
+                    Specifies which qubits to target.
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("_XYZ")
+
+                >>> p.after(stim.CircuitInstruction("H", [1]))
+                stim.PauliString("+_ZYZ")
+
+                >>> p.after(stim.Circuit('''
+                ...     C_XYZ 1 2 3
+                ... '''))
+                stim.PauliString("+_YZX")
+
+                >>> p.after(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+                stim.PauliString("+ZXYZ")
+
+            Returns:
+                The conjugated Pauli string. The Pauli string after the
+                operation that is exactly equivalent to the given Pauli
+                string before the operation.
+        )DOC")
+            .data());
+
+    c.def(
+        "before",
+        [](const PyPauliString &self,
+           const pybind11::object &operation,
+           const pybind11::object &targets) -> PyPauliString {
+            PauliString result(0);
+            if (pybind11::isinstance<Circuit>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
+                }
+                result = self.value.ref().before(pybind11::cast<Circuit>(operation));
+            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument(
+                        "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                }
+                result = self.value.ref().before(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+            } else if (pybind11::isinstance<Tableau>(operation)) {
+                if (targets.is_none()) {
+                    throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
+                }
+                std::vector<size_t> raw_targets;
+                for (const auto &e : targets) {
+                    raw_targets.push_back(pybind11::cast<size_t>(e));
+                }
+                result = self.value.ref().before(pybind11::cast<Tableau>(operation), raw_targets);
+            } else {
+                throw std::invalid_argument(
+                    "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+            }
+            return PyPauliString(result, self.imag);
+        },
+        pybind11::arg("operation"),
+        pybind11::arg("targets") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            Returns the result of conjugating the Pauli string by an operation.
+
+            Args:
+                operation: A circuit, tableau, or circuit instruction to
+                    anti-conjugate the Pauli string by. Must be Clifford (e.g.
+                    if it's a circuit, the circuit can't have noise or
+                    measurements).
+                targets: Required if and only if the operation is a tableau.
+                    Specifies which qubits to target.
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("_XYZ")
+
+                >>> p.before(stim.CircuitInstruction("H", [1]))
+                stim.PauliString("+_ZYZ")
+
+                >>> p.before(stim.Circuit('''
+                ...     C_XYZ 1 2 3
+                ... '''))
+                stim.PauliString("+_ZXY")
+
+                >>> p.before(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+                stim.PauliString("+ZXYZ")
+
+            Returns:
+                The conjugated Pauli string. The Pauli string before the
+                operation that is exactly equivalent to the given Pauli
+                string after the operation.
         )DOC")
             .data());
 

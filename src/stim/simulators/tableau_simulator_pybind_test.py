@@ -640,3 +640,60 @@ def test_measure_observable():
     assert not s.measure_observable(stim.PauliString(5))
     n = sum(s.measure_observable(stim.PauliString(0), flip_probability=0.1) for _ in range(1000))
     assert 25 <= n <= 300
+
+
+def test_x_error():
+    s = stim.TableauSimulator()
+    assert s.peek_bloch(0) == stim.PauliString("+Z")
+    s.x_error(0, 1, 2, p=0)
+    assert s.peek_bloch(0) == stim.PauliString("+Z")
+    s.x_error(0, p=1)
+    assert s.peek_bloch(0) == stim.PauliString("-Z")
+
+
+def test_z_error():
+    s = stim.TableauSimulator()
+    s.reset_x(0)
+    assert s.peek_bloch(0) == stim.PauliString("+X")
+    s.z_error(0, p=0)
+    assert s.peek_bloch(0) == stim.PauliString("+X")
+    s.z_error(0, p=1)
+    assert s.peek_bloch(0) == stim.PauliString("-X")
+
+
+def test_y_error():
+    s = stim.TableauSimulator()
+    s.reset_y(0)
+    assert s.peek_bloch(0) == stim.PauliString("+Y")
+    s.x_error(0, p=0)
+    assert s.peek_bloch(0) == stim.PauliString("+Y")
+    s.x_error(0, p=1)
+    assert s.peek_bloch(0) == stim.PauliString("-Y")
+
+
+def test_depolarize1_error():
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.cnot(0, 1)
+    t = s.current_inverse_tableau()
+    s.depolarize1(0, p=0)
+    assert s.current_inverse_tableau() == t
+    s.depolarize1(0, p=1)
+    assert s.current_inverse_tableau() != t
+
+
+def test_depolarize2_error():
+    s = stim.TableauSimulator()
+    s.h(0, 1)
+    s.cnot(0, 2, 1, 3)
+    t = s.current_inverse_tableau()
+    s.depolarize2(0, 1, p=0)
+    assert s.current_inverse_tableau() == t
+    with pytest.raises(ValueError, match='Two qubit'):
+        s.depolarize2(1, p=1)
+    assert s.current_inverse_tableau() == t
+    s.depolarize2(0, 1, p=1)
+    assert s.current_inverse_tableau() != t
+
+    with pytest.raises(ValueError, match='Unexpected argument'):
+        s.depolarize2(1, p=1, q=2)

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "stim/mem/pointer_range.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -57,7 +58,21 @@ struct Tableau {
     PauliString eval_y_obs(size_t qubit) const;
 
     std::string str() const;
-    void expand(size_t new_num_qubits);
+
+    /// Grows the size of the tableau (or leaves it the same) by adding
+    /// new rows and columns with identity elements along the diagonal.
+    ///
+    /// Requires:
+    ///     new_num_qubits >= this.num_qubits
+    ///     resize_pad_factor >= 1
+    ///
+    /// Args:
+    ///     new_num_qubits: The new number of qubits the tableau represents.
+    ///     resize_pad_factor: When resizing, memory will be overallocated
+    ///          so that the tableau can be expanded to at least this many
+    ///          times the number of requested qubits. Use this to avoid
+    ///          quadratic overheads from constant slight expansions.
+    void expand(size_t new_num_qubits, double resize_pad_factor);
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
@@ -121,7 +136,7 @@ struct Tableau {
     Tableau then(const Tableau &second) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const;
+    void apply_within(PauliStringRef &target, ConstPointerRange<size_t> target_qubits) const;
 
     /// Appends a smaller operation into this tableau's operation.
     ///

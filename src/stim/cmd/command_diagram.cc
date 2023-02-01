@@ -16,6 +16,7 @@
 
 #include "command_help.h"
 #include "stim/arg_parse.h"
+#include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -29,6 +30,7 @@ using namespace stim;
 using namespace stim_draw_internal;
 
 enum DiagramTypes {
+    INTERACTIVE_HTML,
     TIMELINE_TEXT,
     TIMELINE_SVG,
     TIMELINE_3D,
@@ -92,6 +94,7 @@ int stim::command_diagram(int argc, const char **argv) {
         {"match-graph-svg", MATCH_GRAPH_SVG},
         {"match-graph-3d", MATCH_GRAPH_3D},
         {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
+        {"interactive-html", INTERACTIVE_HTML},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
@@ -151,19 +154,22 @@ int stim::command_diagram(int argc, const char **argv) {
         case TIMELINE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
             break;
         }
         case TIME_SLICE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
             break;
         }
         case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
             break;
         }
         case TIMELINE_3D: {
@@ -176,6 +182,11 @@ int stim::command_diagram(int argc, const char **argv) {
             std::stringstream tmp_out;
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
             write_html_viewer_for_gltf_data(tmp_out.str(), out);
+            break;
+        }
+        case INTERACTIVE_HTML: {
+            auto circuit = read_circuit();
+            write_crumble_html_with_preloaded_circuit(circuit, out);
             break;
         }
         case MATCH_GRAPH_3D: {

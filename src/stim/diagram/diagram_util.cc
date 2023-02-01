@@ -23,6 +23,10 @@ std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(co
         return {"Y", "Y"};
     } else if (name == "YCZ") {
         return {"Y", "Z"};
+    } else if (name == "CXSWAP") {
+        return {"ZSWAP", "XSWAP"};
+    } else if (name == "SWAPCX") {
+        return {"XSWAP", "ZSWAP"};
     } else {
         return {name, name};
     }
@@ -37,4 +41,17 @@ size_t stim_draw_internal::utf8_char_count(const std::string &s) {
         }
     }
     return t;
+}
+
+void stim_draw_internal::add_coord_summary_to_ss(std::ostream &ss, std::vector<double> vec) {
+    bool first = true;
+    for (const auto &c : vec) {
+        if (first) {
+            ss << ":";
+        } else {
+            ss << "_";
+        }
+        ss << c;
+        first = false;
+    }
 }

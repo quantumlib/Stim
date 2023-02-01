@@ -16,6 +16,8 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.h"
+#include "stim/stabilizers/tableau.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -153,9 +155,9 @@ TEST(pauli_string, identity) {
 TEST(pauli_string, gather) {
     auto p = PauliString::from_str("-____XXXXYYYYZZZZ");
     auto p2 = PauliString(4);
-    p.ref().gather_into(p2, {0, 1, 2, 3});
+    p.ref().gather_into(p2, std::vector<size_t>{0, 1, 2, 3});
     ASSERT_EQ(p2, PauliString::from_str("+IIII"));
-    p.ref().gather_into(p2, {4, 7, 8, 9});
+    p.ref().gather_into(p2, std::vector<size_t>{4, 7, 8, 9});
     ASSERT_EQ(p2, PauliString::from_str("+XXYY"));
 }
 
@@ -182,13 +184,13 @@ TEST(pauli_string, scatter) {
     auto s1 = PauliString::from_str("-_XYZ");
     auto s2 = PauliString::from_str("+XXZZ");
     auto p = PauliString(8);
-    s1.ref().scatter_into(p, {1, 3, 5, 7});
+    s1.ref().scatter_into(p, std::vector<size_t>{1, 3, 5, 7});
     ASSERT_EQ(p, PauliString::from_str("-___X_Y_Z"));
-    s1.ref().scatter_into(p, {1, 3, 5, 7});
+    s1.ref().scatter_into(p, std::vector<size_t>{1, 3, 5, 7});
     ASSERT_EQ(p, PauliString::from_str("+___X_Y_Z"));
-    s2.ref().scatter_into(p, {1, 3, 5, 7});
+    s2.ref().scatter_into(p, std::vector<size_t>{1, 3, 5, 7});
     ASSERT_EQ(p, PauliString::from_str("+_X_X_Z_Z"));
-    s2.ref().scatter_into(p, {4, 5, 6, 7});
+    s2.ref().scatter_into(p, std::vector<size_t>{4, 5, 6, 7});
     ASSERT_EQ(p, PauliString::from_str("+_X_XXXZZ"));
 }
 
@@ -217,10 +219,12 @@ TEST(pauli_string, foreign_memory) {
     size_t bits = 2048;
     auto buffer = simd_bits<MAX_BITWORD_WIDTH>::random(bits, SHARED_TEST_RNG());
     bool signs = false;
+    size_t num_qubits = MAX_BITWORD_WIDTH * 2 - 12;
 
-    auto p1 = PauliStringRef(500, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
-    auto p1b = new PauliStringRef(500, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
-    auto p2 = PauliStringRef(500, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
+    auto p1 = PauliStringRef(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p1b =
+        new PauliStringRef(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p2 = PauliStringRef(num_qubits, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
     PauliString copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
@@ -298,18 +302,27 @@ TEST(PauliStringPtr, sparse_str) {
 
 TEST(PauliString, ensure_num_qubits) {
     auto p = PauliString::from_str("IXYZ_I");
-    p.ensure_num_qubits(1);
+    p.ensure_num_qubits(1, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
-    p.ensure_num_qubits(6);
+    p.ensure_num_qubits(6, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
-    p.ensure_num_qubits(7);
+    p.ensure_num_qubits(7, 1.0);
     ASSERT_EQ(p, PauliString::from_str("IXYZ_I_"));
-    p.ensure_num_qubits(1000);
+    p.ensure_num_qubits(1000, 1.0);
     PauliString p2(1000);
     p2.xs[1] = true;
     p2.xs[2] = true;
     p2.zs[2] = true;
     p2.zs[3] = true;
+    ASSERT_EQ(p, p2);
+}
+
+TEST(PauliString, ensure_num_qubits_padded) {
+    auto p = PauliString::from_str("IXYZ_I");
+    auto p2 = p;
+    p.ensure_num_qubits(1121, 10.0);
+    p2.ensure_num_qubits(1121, 1.0);
+    ASSERT_GT(p.xs.num_simd_words, p2.xs.num_simd_words);
     ASSERT_EQ(p, p2);
 }
 
@@ -357,4 +370,114 @@ TEST(PauliString, py_get_slice) {
     ASSERT_EQ(p.py_get_slice(1, 2, 2), PauliString::from_str("Y_"));
     ASSERT_EQ(p.py_get_slice(5, 1, 4), PauliString::from_str("YZ_Y"));
     ASSERT_EQ(p.py_get_slice(5, -1, 4), PauliString::from_str("YX_Z"));
+}
+
+TEST(PauliString, after_circuit) {
+    auto actual = PauliString::from_str("+_XYZ").ref().after(Circuit(R"CIRCUIT(
+        H 1
+        CNOT 1 2
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("-__XZ"));
+
+    actual = PauliString::from_str("+X___").ref().after(Circuit(R"CIRCUIT(
+        CX 0 1 1 2 2 3
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("+XXXX"));
+
+    actual = PauliString::from_str("+X___").ref().after(Circuit(R"CIRCUIT(
+        REPEAT 6 {
+            CX 0 1 1 2 2 3
+        }
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("+X_X_"));
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X___").ref().after(Circuit(R"CIRCUIT(
+            M(0.1) 0
+        )CIRCUIT"));
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X").ref().after(Circuit(R"CIRCUIT(
+            H 9
+        )CIRCUIT"));
+        },
+        std::invalid_argument);
+}
+
+TEST(PauliString, before_circuit) {
+    auto actual = PauliString::from_str("-__XZ").ref().before(Circuit(R"CIRCUIT(
+        H 1
+        CNOT 1 2
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("+_XYZ"));
+
+    actual = PauliString::from_str("+XXXX").ref().before(Circuit(R"CIRCUIT(
+        CX 0 1 1 2 2 3
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("+X___"));
+
+    actual = PauliString::from_str("+X_X_").ref().after(Circuit(R"CIRCUIT(
+        REPEAT 6 {
+            CX 0 1 1 2 2 3
+        }
+    )CIRCUIT"));
+    ASSERT_EQ(actual, PauliString::from_str("+X___"));
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X___").ref().before(Circuit(R"CIRCUIT(
+            M(0.1) 0
+        )CIRCUIT"));
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X").ref().before(Circuit(R"CIRCUIT(
+            H 9
+        )CIRCUIT"));
+        },
+        std::invalid_argument);
+}
+
+TEST(PauliString, after_tableau) {
+    auto actual =
+        PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
+    ASSERT_EQ(actual, PauliString::from_str("-YYX"));
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
+        },
+        std::invalid_argument);
+}
+
+TEST(PauliString, before_tableau) {
+    auto actual =
+        PauliString::from_str("-YYX").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
+    ASSERT_EQ(actual, PauliString::from_str("+XZ_"));
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
+        },
+        std::invalid_argument);
 }

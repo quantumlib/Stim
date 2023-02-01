@@ -815,6 +815,13 @@ class Circuit:
         filter_coords: Optional[Iterable[Iterable[float]]] = None,
     ) -> 'stim._DiagramHelper':
         pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["interactive"]',
+    ) -> 'stim._DiagramHelper':
+        pass
     def diagram(
         self,
         type: str = 'timeline-text',
@@ -867,6 +874,10 @@ class Circuit:
                     and detector-slice-svg, with the operations overlaid
                     over the detector slices taken from the TICK after the
                     operations were applied.
+                "interactive": An HTML web page containing Crumble (an
+                    interactive editor for 2D stabilizer circuits)
+                    initialized with the given circuit as its default
+                    contents.
             tick: Required for detector and time slice diagrams. Specifies
                 which TICK instruction, or range of TICK instructions, to
                 slice at. Note that the first TICK instruction in the
@@ -2016,8 +2027,8 @@ class CompiledDemSampler:
                 has the performance benefit of the data never being expanded into an
                 unpacked form.
             return_errors: Defaults to False.
-                False: the first entry of the returned tuple is None.
-                True: the first entry of the returned tuple is a numpy array recording
+                False: the third entry of the returned tuple is None.
+                True: the third entry of the returned tuple is a numpy array recording
                 which errors were sampled.
             recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
                 If not None, this is expected to be a 2d numpy array specifying which
@@ -2694,7 +2705,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> np.ndarray:
         pass
     @overload
@@ -2705,7 +2716,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         sweep_bits: Optional[np.ndarray] = None,
         separate_observables: 'Literal[True]',
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
     def convert(
@@ -2715,7 +2726,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         sweep_bits: Optional[np.ndarray] = None,
         separate_observables: bool = False,
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Converts measurement data into detection event data.
 
@@ -2741,7 +2752,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             append_observables: Defaults to False. When set to True, the observables in
                 the circuit are treated as if they were additional detectors. Their
                 results are appended to the end of the detection event data.
-            bit_pack_result: Defaults to False. When set to True, the returned numpy
+            bit_packed: Defaults to False. When set to True, the returned numpy
                 array contains bit packed data (dtype=np.uint8 with 8 bits per item)
                 instead of unpacked data (dtype=np.bool8).
 
@@ -2753,7 +2764,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             When returning two numpy arrays, the first array is the detection event data
             and the second is the observable flip data.
 
-            The dtype of the returned arrays is np.bool8 if bit_pack_result is false,
+            The dtype of the returned arrays is np.bool8 if bit_packed is false,
             otherwise they're np.uint8 arrays.
 
             shape[0] of the array(s) is the number of shots.
@@ -4771,6 +4782,102 @@ class PauliString:
         Raises:
             ValueError: The divisor isn't 1, -1, 1j, or -1j.
         """
+    @overload
+    def after(
+        self,
+        operation: Union[stim.Circuit, stim.CircuitInstruction],
+    ) -> stim.PauliString:
+        pass
+    @overload
+    def after(
+        self,
+        operation: stim.Tableau,
+        targets: Iterable[int],
+    ) -> stim.PauliString:
+        pass
+    def after(
+        self,
+        operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
+        targets: Optional[Iterable[int]] = None,
+    ) -> stim.PauliString:
+        """Returns the result of conjugating the Pauli string by an operation.
+
+        Args:
+            operation: A circuit, tableau, or circuit instruction to
+                conjugate the Pauli string by. Must be Clifford (e.g.
+                if it's a circuit, the circuit can't have noise or
+                measurements).
+            targets: Required if and only if the operation is a tableau.
+                Specifies which qubits to target.
+
+        Examples:
+            >>> import stim
+            >>> p = stim.PauliString("_XYZ")
+
+            >>> p.after(stim.CircuitInstruction("H", [1]))
+            stim.PauliString("+_ZYZ")
+
+            >>> p.after(stim.Circuit('''
+            ...     C_XYZ 1 2 3
+            ... '''))
+            stim.PauliString("+_YZX")
+
+            >>> p.after(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+            stim.PauliString("+ZXYZ")
+
+        Returns:
+            The conjugated Pauli string. The Pauli string after the
+            operation that is exactly equivalent to the given Pauli
+            string before the operation.
+        """
+    @overload
+    def after(
+        self,
+        operation: Union[stim.Circuit, stim.CircuitInstruction],
+    ) -> stim.PauliString:
+        pass
+    @overload
+    def after(
+        self,
+        operation: stim.Tableau,
+        targets: Iterable[int],
+    ) -> stim.PauliString:
+        pass
+    def after(
+        self,
+        operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
+        targets: Optional[Iterable[int]] = None,
+    ) -> stim.PauliString:
+        """Returns the result of conjugating the Pauli string by an operation.
+
+        Args:
+            operation: A circuit, tableau, or circuit instruction to
+                anti-conjugate the Pauli string by. Must be Clifford (e.g.
+                if it's a circuit, the circuit can't have noise or
+                measurements).
+            targets: Required if and only if the operation is a tableau.
+                Specifies which qubits to target.
+
+        Examples:
+            >>> import stim
+            >>> p = stim.PauliString("_XYZ")
+
+            >>> p.before(stim.CircuitInstruction("H", [1]))
+            stim.PauliString("+_ZYZ")
+
+            >>> p.before(stim.Circuit('''
+            ...     C_XYZ 1 2 3
+            ... '''))
+            stim.PauliString("+_ZXY")
+
+            >>> p.before(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+            stim.PauliString("+ZXYZ")
+
+        Returns:
+            The conjugated Pauli string. The Pauli string before the
+            operation that is exactly equivalent to the given Pauli
+            string after the operation.
+        """
     def commutes(
         self,
         other: stim.PauliString,
@@ -4881,6 +4988,7 @@ class PauliString:
         matrix: Iterable[Iterable[float]],
         *,
         endian: str = 'little',
+        unsigned: bool = False,
     ) -> stim.PauliString:
         """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
@@ -4893,6 +5001,12 @@ class PauliString:
                     qubits correspond to larger changes in row/col indices.
                 "big": matrix entries are in big endian order, where higher index
                     qubits correspond to smaller changes in row/col indices.
+            unsigned: When False, the input must only contain the values
+                [0, 1, -1, 1j, -1j] and the output will have the correct global phase.
+                When True, the input is permitted to be scaled by an arbitrary unit
+                complex value and the output will always have positive sign.
+                False is stricter but provides more information, while True is more
+                flexible but provides less information.
 
         Returns:
             The pauli string equal to the given unitary matrix.
@@ -4907,6 +5021,12 @@ class PauliString:
             ...     [0, -1j],
             ... ], endian='little')
             stim.PauliString("+iZ")
+
+            >>> stim.PauliString.from_unitary_matrix([
+            ...     [1j**0.1, 0],
+            ...     [0, -(1j**0.1)],
+            ... ], endian='little', unsigned=True)
+            stim.PauliString("+Z")
 
             >>> stim.PauliString.from_unitary_matrix([
             ...     [0, 1, 0, 0],
@@ -5297,7 +5417,7 @@ class Tableau:
     def append(
         self,
         gate: stim.Tableau,
-        targets: List[int],
+        targets: Sequence[int],
     ) -> None:
         """Appends an operation's effect into this tableau, mutating this tableau.
 
@@ -6058,7 +6178,7 @@ class Tableau:
     def prepend(
         self,
         gate: stim.Tableau,
-        targets: List[int],
+        targets: Sequence[int],
     ) -> None:
         """Prepends an operation's effect into this tableau, mutating this tableau.
 
@@ -6516,6 +6636,24 @@ class Tableau:
             >>> t.x_output_pauli(1, 1)
             3
         """
+    def x_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating an X generator.
+
+        This operation runs in constant time.
+
+        Args:
+            target: The qubit the X generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("S_DAG").x_sign(0)
+            -1
+            >>> stim.Tableau.from_named_gate("S").x_sign(0)
+            1
+        """
     def y_output(
         self,
         target: int,
@@ -6573,6 +6711,26 @@ class Tableau:
             >>> t.y_output_pauli(1, 1)
             2
         """
+    def y_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating a Y generator.
+
+        Unlike x_sign and z_sign, this operation runs in linear time.
+        The Y generator has to be computed by multiplying the X and Z
+        outputs and the sign depends on all terms.
+
+        Args:
+            target: The qubit the Y generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("S_DAG").y_sign(0)
+            1
+            >>> stim.Tableau.from_named_gate("S").y_sign(0)
+            -1
+        """
     def z_output(
         self,
         target: int,
@@ -6629,6 +6787,24 @@ class Tableau:
             2
             >>> t.z_output_pauli(1, 1)
             1
+        """
+    def z_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating a Z generator.
+
+        This operation runs in constant time.
+
+        Args:
+            target: The qubit the Z generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("SQRT_X_DAG").z_sign(0)
+            1
+            >>> stim.Tableau.from_named_gate("SQRT_X").z_sign(0)
+            -1
         """
 class TableauIterator:
     """Iterates over all stabilizer tableaus of a specified size.
@@ -6976,6 +7152,32 @@ class TableauSimulator:
             *targets: The indices of the qubits to target with the gate.
                 Applies the gate to the first two targets, then the next two targets,
                 and so forth. There must be an even number of targets.
+        """
+    def depolarize1(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies single-qubit depolarization to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the error being applied,
+                independently, to each qubit.
+        """
+    def depolarize2(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies two-qubit depolarization to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+                The pairs of qubits are formed by
+                zip(targets[::1], targets[1::2]).
+            p: The chance of the error being applied,
+                independently, to each qubit pair.
         """
     def do(
         self,
@@ -7947,6 +8149,18 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
+    def x_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies X errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the X error being applied,
+                independently, to each qubit.
+        """
     def xcx(
         self,
         *targets,
@@ -7989,6 +8203,18 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
+    def y_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies Y errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the Y error being applied,
+                independently, to each qubit.
+        """
     def ycx(
         self,
         *targets,
@@ -8030,6 +8256,18 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
+        """
+    def y_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies Z errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the Z error being applied,
+                independently, to each qubit.
         """
     def zcx(
         self,
@@ -8137,6 +8375,7 @@ def main(
         DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
         OBSERVABLE_INCLUDE(0) rec[-1]
     """
+@overload
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
@@ -8146,6 +8385,29 @@ def read_shot_data_file(
     num_detectors: int = 0,
     num_observables: int = 0,
 ) -> np.ndarray:
+    pass
+@overload
+def read_shot_data_file(
+    *,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
+    separate_observables: 'Literal[True]',
+) -> Tuple[np.ndarray, np.ndarray]:
+    pass
+def read_shot_data_file(
+    *,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
+    separate_observables: bool = False,
+) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
     """Reads shot data, such as measurement samples, from a file.
 
     Args:
@@ -8160,19 +8422,43 @@ def read_shot_data_file(
         num_observables: How many observables there are per shot.
             Note that this only refers to observables *stored in the file*, not to
             observables from the original circuit that was sampled.
+        separate_observables: When set to True, the result is a tuple of two arrays,
+            one containing the detection event data and the other containing the
+            observable data, instead of a single array.
 
     Returns:
-        A numpy array containing the loaded data.
+        If separate_observables=True:
+            A tuple (dets, obs) of numpy arrays containing the loaded data.
 
-        If bit_packed=False:
-            dtype = np.bool8
-            shape = (num_shots, num_measurements + num_detectors + num_observables)
-            bit b from shot s is at result[s, b]
-        If bit_packed=True:
-            dtype = np.uint8
-            shape = (num_shots, math.ceil(
-                (num_measurements + num_detectors + num_observables) / 8))
-            bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
+            If bit_packed=False:
+                dets.dtype = np.bool8
+                dets.shape = (num_shots, num_measurements + num_detectors)
+                det bit b from shot s is at dets[s, b]
+                obs.dtype = np.bool8
+                obs.shape = (num_shots, num_observables)
+                obs bit b from shot s is at dets[s, b]
+            If bit_packed=True:
+                dets.dtype = np.uint8
+                dets.shape = (num_shots, math.ceil(
+                    (num_measurements + num_detectors) / 8))
+                obs.dtype = np.uint8
+                obs.shape = (num_shots, math.ceil(num_observables / 8))
+                det bit b from shot s is at dets[s, b // 8] & (1 << (b % 8))
+                obs bit b from shot s is at obs[s, b // 8] & (1 << (b % 8))
+
+        If separate_observables=False:
+            A numpy array containing the loaded data.
+
+            If bit_packed=False:
+                dtype = np.bool8
+                shape = (num_shots,
+                         num_measurements + num_detectors + num_observables)
+                bit b from shot s is at result[s, b]
+            If bit_packed=True:
+                dtype = np.uint8
+                shape = (num_shots, math.ceil(
+                    (num_measurements + num_detectors + num_observables) / 8))
+                bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
 
     Examples:
         >>> import stim

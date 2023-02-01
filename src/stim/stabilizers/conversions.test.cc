@@ -471,7 +471,7 @@ TEST(conversions, tableau_to_circuit) {
 TEST(conversions, unitary_to_tableau_vs_gate_data) {
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            ASSERT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
+            EXPECT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
         }
     }
 }
@@ -644,4 +644,11 @@ TEST(conversions, stabilizers_to_tableau_bell_pair) {
     input_stabilizers[2] = PauliString::from_str("+Z_");
     // Anticommutes!
     ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, true, true, false); }, std::invalid_argument);
+}
+
+TEST(conversions, stabilizer_to_tableau_detect_anticommutation) {
+    std::vector<stim::PauliString> input_stabilizers;
+    input_stabilizers.push_back(PauliString::from_str("YY"));
+    input_stabilizers.push_back(PauliString::from_str("YX"));
+    ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, false, false, false); }, std::invalid_argument);
 }

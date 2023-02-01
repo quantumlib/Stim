@@ -15,6 +15,7 @@ from typing import (
 import cirq
 import stim
 
+from ._cx_swap_gate import CXSwapGate
 from ._det_annotation import DetAnnotation
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
@@ -367,6 +368,8 @@ class CircuitTranslationTracker:
                     measure=False, reset=True, basis='X', invert_measure=False, key=''
                 )
             ),
+            "CXSWAP": gate(CXSwapGate(inverted=False)),
+            "SWAPCX": gate(CXSwapGate(inverted=True)),
             "RY": gate(
                 MeasureAndOrResetGate(
                     measure=False, reset=True, basis='Y', invert_measure=False, key=''

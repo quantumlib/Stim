@@ -102,7 +102,6 @@ def test_read_shot_data_file_dets():
             num_detectors=10,
             num_observables=2,
         )
-
         assert result.dtype == np.bool8
         assert result.shape == (2, 12)
         np.testing.assert_array_equal(
@@ -110,6 +109,59 @@ def test_read_shot_data_file_dets():
             [
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            ])
+
+        # Separate observables
+        result_dets, result_obs = stim.read_shot_data_file(
+            path=path,
+            format='dets',
+            num_measurements=0,
+            num_detectors=10,
+            num_observables=2,
+            separate_observables=True,
+        )
+        assert result_dets.dtype == np.bool8
+        assert result_dets.shape == (2, 10)
+        np.testing.assert_array_equal(
+            result_dets,
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+            ])
+        assert result_obs.dtype == np.bool8
+        assert result_obs.shape == (2, 2)
+        np.testing.assert_array_equal(
+            result_obs,
+            [
+                [0, 0],
+                [1, 0],
+            ])
+
+        # Separate observables bit packed.
+        result_dets, result_obs = stim.read_shot_data_file(
+            path=path,
+            format='dets',
+            num_measurements=0,
+            num_detectors=10,
+            num_observables=2,
+            separate_observables=True,
+            bit_packed=True,
+        )
+        assert result_dets.dtype == np.uint8
+        assert result_dets.shape == (2, 2)
+        np.testing.assert_array_equal(
+            result_dets,
+            [
+                [0, 0],
+                [0b00100001, 0],
+            ])
+        assert result_obs.dtype == np.uint8
+        assert result_obs.shape == (2, 1)
+        np.testing.assert_array_equal(
+            result_obs,
+            [
+                [0],
+                [1],
             ])
 
 

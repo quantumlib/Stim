@@ -16,6 +16,7 @@
 
 #include "stim/cmd/command_help.h"
 #include "stim/diagram/base64.h"
+#include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -150,15 +151,18 @@ DiagramHelper stim_pybind::circuit_diagram(
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "timeline-svg") {
         std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "time-slice-svg") {
         std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "time+detector-slice-svg") {
         std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "timeline-3d") {
         std::stringstream out;
@@ -175,17 +179,19 @@ DiagramHelper stim_pybind::circuit_diagram(
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
-            .write_text_diagram_to(out);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_text_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "detector-slice-svg") {
         if (tick.is_none()) {
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
-            .write_svg_diagram_to(out);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "interactive") {
+        std::stringstream out;
+        write_crumble_html_with_preloaded_circuit(circuit, out);
+        return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
     } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, type);

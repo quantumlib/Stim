@@ -132,11 +132,7 @@ struct SparseXorVec {
     void xor_sorted_items(ConstPointerRange<T> sorted) {
         xor_merge_sort_temp_buffer_callback(range(), sorted, [&](ConstPointerRange<T> result) {
             sorted_items.clear();
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-            // Warnings ignored to work around https://stackoverflow.com/a/72867356/52239
             sorted_items.insert(sorted_items.end(), result.begin(), result.end());
-#pragma GCC diagnostic pop
         });
     }
 

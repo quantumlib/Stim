@@ -61,3 +61,62 @@ shot D0
 shot D0 D1
             )output"));
 }
+
+TEST(command_m2d, m2d_without_feedback) {
+    RaiiTempNamedFile tmp;
+    tmp.write_contents(R"CIRCUIT(
+        CX 0 2 1 2
+        M 2
+        CX rec[-1] 2
+        DETECTOR rec[-1]
+        TICK
+
+        CX 0 2 1 2
+        M 2
+        CX rec[-1] 2
+        DETECTOR rec[-1] rec[-2]
+        TICK
+
+        CX 0 2 1 2
+        M 2
+        CX rec[-1] 2
+        DETECTOR rec[-1] rec[-2]
+        TICK
+
+        M 0 1
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )CIRCUIT");
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.data()},
+            "00000\n10000\n01000\n00100\n00010\n00001\n")),
+        trim(R"output(
+shot
+shot D0 D1
+shot D1 D2
+shot D2 D3
+shot D3
+shot D3 L0
+            )output"));
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"m2d",
+             "--in_format=01",
+             "--append_observables",
+             "--out_format=dets",
+             "--circuit",
+             tmp.path.data(),
+             "--ran_without_feedback"},
+            "00000\n11100\n01100\n00100\n00010\n00001\n")),
+        trim(R"output(
+shot
+shot D0 D1
+shot D1 D2
+shot D2 D3
+shot D3
+shot D3 L0
+            )output"));
+}
