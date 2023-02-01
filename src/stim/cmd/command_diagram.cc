@@ -14,6 +14,8 @@
 
 #include "stim/cmd/command_diagram.h"
 
+#include <limits>
+
 #include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/diagram/crumble.h"
@@ -30,6 +32,7 @@ using namespace stim;
 using namespace stim_draw_internal;
 
 enum DiagramTypes {
+    NOT_A_DIAGRAM,
     INTERACTIVE_HTML,
     TIMELINE_TEXT,
     TIMELINE_SVG,
@@ -43,6 +46,114 @@ enum DiagramTypes {
     DETECTOR_SLICE_TEXT,
     DETECTOR_SLICE_SVG,
 };
+
+stim::Circuit _read_circuit(RaiiFile &in, int argc, const char **argv) {
+    auto circuit = Circuit::from_file(in.f);
+    in.done();
+    if (find_bool_argument("--remove_noise", argc, argv)) {
+        circuit = circuit.without_noise();
+    }
+    return circuit;
+}
+
+stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
+    std::string content;
+    while (true) {
+        int c = getc(in.f);
+        if (c == EOF) {
+            break;
+        }
+        content.push_back(c);
+    }
+    in.done();
+
+    try {
+        return DetectorErrorModel(content.data());
+    } catch (const std::exception &_) {
+    }
+
+    auto circuit = Circuit(content.data());
+    if (find_bool_argument("--remove_noise", argc, argv)) {
+        circuit = circuit.without_noise();
+    }
+    return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+}
+
+std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
+    const char *arg = find_argument("--filter_coords", argc, argv);
+    if (arg == nullptr) {
+        return std::vector<CoordFilter>{CoordFilter{}};
+    }
+
+    std::vector<CoordFilter> result;
+    for (const auto &term : split(':', arg)) {
+        result.push_back(CoordFilter::parse_from(term));
+    }
+    return result;
+}
+
+DiagramTypes _read_diagram_type(int argc, const char **argv) {
+    std::map<std::string, DiagramTypes> diagram_types{
+        {"timeline-text", TIMELINE_TEXT},
+        {"timeline-svg", TIMELINE_SVG},
+        {"timeline-3d", TIMELINE_3D},
+        {"timeline-3d-html", TIMELINE_3D_HTML},
+        {"timeslice-svg", TIME_SLICE_SVG},
+        {"detslice-with-ops-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"matchgraph-svg", MATCH_GRAPH_SVG},
+        {"matchgraph-3d", MATCH_GRAPH_3D},
+        {"matchgraph-3d-html", MATCH_GRAPH_3D_HTML},
+        {"interactive-html", INTERACTIVE_HTML},
+        {"detslice-text", DETECTOR_SLICE_TEXT},
+        {"detslice-svg", DETECTOR_SLICE_SVG},
+    };
+    std::map<std::string, DiagramTypes> quietly_allowed_diagram_types{
+        {"time-slice-svg", TIME_SLICE_SVG},
+        {"time+detector-slice-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"interactive", INTERACTIVE_HTML},
+        {"detector-slice-text", DETECTOR_SLICE_TEXT},
+        {"detector-slice-svg", DETECTOR_SLICE_SVG},
+        {"match-graph-svg", MATCH_GRAPH_SVG},
+        {"match-graph-3d", MATCH_GRAPH_3D},
+        {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
+    };
+    DiagramTypes type = NOT_A_DIAGRAM;
+    try {
+        type = find_enum_argument("--type", nullptr, quietly_allowed_diagram_types, argc, argv);
+    } catch (const std::invalid_argument &_) {
+    }
+    if (type == NOT_A_DIAGRAM) {
+        type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
+        assert(type != NOT_A_DIAGRAM);
+    }
+    return type;
+}
+
+bool _read_tick(int argc, const char **argv, uint64_t *tick, uint64_t *tick_start, uint64_t *tick_num) {
+    *tick = 0;
+    *tick_start = 0;
+    *tick_num = UINT64_MAX;
+    if (find_argument("--tick", argc, argv) == nullptr) {
+        return false;
+    }
+
+    std::string tick_str = find_argument("--tick", argc, argv);
+    auto t = tick_str.find(':');
+    if (t != 0 && t != std::string::npos) {
+        *tick_start = parse_exact_uint64_t_from_string(tick_str.substr(0, t));
+        uint64_t tick_end = parse_exact_uint64_t_from_string(tick_str.substr(t + 1));
+        if (tick_end <= *tick_start) {
+            throw std::invalid_argument("tick_end <= tick_start");
+        }
+        *tick_num = tick_end - *tick_start;
+        *tick = *tick_start;
+    } else {
+        *tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
+        *tick_num = 1;
+        *tick_start = *tick;
+    }
+    return true;
+}
 
 int stim::command_diagram(int argc, const char **argv) {
     check_for_unknown_arguments(
@@ -62,171 +173,66 @@ int stim::command_diagram(int argc, const char **argv) {
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     auto &out = out_stream.stream();
 
-    bool has_tick_arg = false;
+    DiagramTypes type = _read_diagram_type(argc, argv);
+
     uint64_t tick = 0;
     uint64_t tick_start = 0;
     uint64_t tick_num = UINT64_MAX;
-    if (find_argument("--tick", argc, argv) != nullptr) {
-        has_tick_arg = true;
-        std::string tick_str = find_argument("--tick", argc, argv);
-        auto t = tick_str.find(':');
-        if (t != 0 && t != std::string::npos) {
-            tick_start = parse_exact_uint64_t_from_string(tick_str.substr(0, t));
-            uint64_t tick_end = parse_exact_uint64_t_from_string(tick_str.substr(t + 1));
-            if (tick_end <= tick_start) {
-                throw std::invalid_argument("tick_end <= tick_start");
-            }
-            tick_num = tick_end - tick_start;
-            tick = tick_start;
-        } else {
-            tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
-            tick_num = 1;
-            tick_start = tick;
-        }
-    }
-    std::map<std::string, DiagramTypes> diagram_types{
-        {"timeline-text", TIMELINE_TEXT},
-        {"timeline-svg", TIMELINE_SVG},
-        {"timeline-3d", TIMELINE_3D},
-        {"timeline-3d-html", TIMELINE_3D_HTML},
-        {"time-slice-svg", TIME_SLICE_SVG},
-        {"time+detector-slice-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
-        {"match-graph-svg", MATCH_GRAPH_SVG},
-        {"match-graph-3d", MATCH_GRAPH_3D},
-        {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
-        {"interactive-html", INTERACTIVE_HTML},
-        {"detector-slice-text", DETECTOR_SLICE_TEXT},
-        {"detector-slice-svg", DETECTOR_SLICE_SVG},
-    };
-    DiagramTypes type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
+    bool has_tick_arg = _read_tick(argc, argv, &tick, &tick_start, &tick_num);
 
-    auto read_circuit = [&]() {
-        auto circuit = Circuit::from_file(in.f);
-        in.done();
-        if (find_bool_argument("--remove_noise", argc, argv)) {
-            circuit = circuit.without_noise();
+    if (type == TIMELINE_TEXT) {
+        auto circuit = _read_circuit(in, argc, argv);
+        out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
+    } else if (type == TIMELINE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+    } else if (type == TIME_SLICE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+    } else if (type == TIME_SLICE_PLUS_DETECTOR_SLICE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+    } else if (type == TIMELINE_3D) {
+        auto circuit = _read_circuit(in, argc, argv);
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+    } else if (type == TIMELINE_3D_HTML) {
+        auto circuit = _read_circuit(in, argc, argv);
+        std::stringstream tmp_out;
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
+        write_html_viewer_for_gltf_data(tmp_out.str(), out);
+    } else if (type == INTERACTIVE_HTML) {
+        auto circuit = _read_circuit(in, argc, argv);
+        write_crumble_html_with_preloaded_circuit(circuit, out);
+    } else if (type == MATCH_GRAPH_3D) {
+        auto dem = _read_dem(in, argc, argv);
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
+    } else if (type == MATCH_GRAPH_3D_HTML) {
+        auto dem = _read_dem(in, argc, argv);
+        std::stringstream tmp_out;
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
+        write_html_viewer_for_gltf_data(tmp_out.str(), out);
+    } else if (type == MATCH_GRAPH_SVG) {
+        auto dem = _read_dem(in, argc, argv);
+        dem_match_graph_to_svg_diagram_write_to(dem, out);
+    } else if (type == DETECTOR_SLICE_TEXT) {
+        if (!has_tick_arg) {
+            throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
         }
-        return circuit;
-    };
-    auto read_dem = [&]() {
-        std::string content;
-        while (true) {
-            int c = getc(in.f);
-            if (c == EOF) {
-                break;
-            }
-            content.push_back(c);
-        }
-        in.done();
-
-        try {
-            return DetectorErrorModel(content.data());
-        } catch (const std::exception &_) {
-        }
-
-        auto circuit = Circuit(content.data());
-        if (find_bool_argument("--remove_noise", argc, argv)) {
-            circuit = circuit.without_noise();
-        }
-        return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
-    };
-    auto read_coords = [&]() -> std::vector<std::vector<double>> {
-        const char *arg = find_argument("--filter_coords", argc, argv);
-        if (arg == nullptr) {
-            return {{}};
-        }
-
-        std::vector<std::vector<double>> result;
-        for (const auto &term : split(':', arg)) {
-            result.push_back({});
-            for (const auto &v : split(',', term)) {
-                result.back().push_back(parse_exact_double_from_string(v));
-            }
-        }
-        return result;
-    };
-    switch (type) {
-        case TIMELINE_TEXT: {
-            auto circuit = read_circuit();
-            out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
-            break;
-        }
-        case TIMELINE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(
-                circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
-            break;
-        }
-        case TIME_SLICE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(
-                circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
-            break;
-        }
-        case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(
-                circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
-            break;
-        }
-        case TIMELINE_3D: {
-            auto circuit = read_circuit();
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-            break;
-        }
-        case TIMELINE_3D_HTML: {
-            auto circuit = read_circuit();
-            std::stringstream tmp_out;
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case INTERACTIVE_HTML: {
-            auto circuit = read_circuit();
-            write_crumble_html_with_preloaded_circuit(circuit, out);
-            break;
-        }
-        case MATCH_GRAPH_3D: {
-            auto dem = read_dem();
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
-            break;
-        }
-        case MATCH_GRAPH_3D_HTML: {
-            auto dem = read_dem();
-            std::stringstream tmp_out;
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case MATCH_GRAPH_SVG: {
-            auto dem = read_dem();
-            dem_match_graph_to_svg_diagram_write_to(dem, out);
-            break;
-        }
-        case DETECTOR_SLICE_TEXT: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
-            }
-            auto coord_filter = read_coords();
-            auto circuit = read_circuit();
-            out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
-            break;
-        }
-        case DETECTOR_SLICE_SVG: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
-            }
-            auto coord_filter = read_coords();
-            auto circuit = read_circuit();
-            DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
-            break;
-        }
-        default: {
-            throw std::invalid_argument("Unknown type");
-        }
+        auto coord_filter = _read_coord_filter(argc, argv);
+        auto circuit = _read_circuit(in, argc, argv);
+        out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
+    } else if (type == DETECTOR_SLICE_SVG) {
+        auto coord_filter = _read_coord_filter(argc, argv);
+        auto circuit = _read_circuit(in, argc, argv);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
+    } else {
+        throw std::invalid_argument("Unknown type");
     }
     out << '\n';
 
@@ -330,9 +336,9 @@ SubCommandHelp stim::command_diagram_help() {
 
     result.flags.push_back(SubCommandHelpFlag{
         "--filter_coords",
-        "float.seperatedby(',').seperatedby(':')",
+        "(float.seperatedby(',') | L# | D#).seperatedby(':')",
         "",
-        {"[none]", "float.seperatedby(',').seperatedby(':')"},
+        {"[none]", "(float.seperatedby(',') | L# | D#).seperatedby(':')"},
         clean_doc_string(R"PARAGRAPH(
             Specifies coordinate filters that determine what appears in the diagram.
 
@@ -342,12 +348,19 @@ SubCommandHelp stim::command_diagram_help() {
             A filter is a set of points.
             Points are separated by colons (':').
 
-            For example, in a detector slice diagram, specifying
-            "--filter-coords 2,3:4,5,6" means that only detectors whose
-            first two coordinates are (2,3), or whose first three coordinate
-            are (4,5,6), should be included in the diagram. Note that the
-            filters are always prefix matches, so a detector with coordinates
-            (2,3,4) matches the filter 2,3.
+            Filters can also be set to specific detector or observable indices,
+            like D0 or L0.
+            targets like L0
+
+            Example:
+                --filter-coords 2,3:4,5,6
+                    In a detector slice diagram this means that only detectors whose
+                    first two coordinates are (2,3), or whose first three coordinate
+                    are (4,5,6), should be included in the diagram.
+                --filter-coords L0
+                    In a detector slice diagram this means that logical observable 0
+                    should be included. Logical observables are only included if
+                    explicitly filtered in.
         )PARAGRAPH"),
     });
 
@@ -390,12 +403,12 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
-            "match-graph-svg": An image of the decoding graph of a detector
+            "matchgraph-svg": An image of the decoding graph of a detector
                 error model. Red lines are errors crossing a logical observable.
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "match-graph-3d": A 3d model, in GLTF format, of the
+            "matchgraph-3d": A 3d model, in GLTF format, of the
                 decoding graph of a detector error model. Red lines are
                 errors crossing a logical observable.
 
@@ -405,20 +418,20 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "match-graph-3d-html": A web page containing a 3d model
+            "matchgraph-3d-html": A web page containing a 3d model
                 viewer of the decoding graph of a detector error
                 model or circuit.
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-            "detector-slice-text": An ASCII diagram of the stabilizers
+            "detslice-text": An ASCII diagram of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument.
 
                 INPUT MUST BE A CIRCUIT.
 
-            "detector-slice-svg": An SVG image of the stabilizers
+            "detslice-svg": An SVG image of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument. For example, a detector slice diagram of a
@@ -429,12 +442,12 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
-            "time-slice-svg": An SVG image of the operations that a circuit
+            "timeslice-svg": An SVG image of the operations that a circuit
                 applies during the specified tick or range of ticks.
 
                 INPUT MUST BE A CIRCUIT.
 
-            "time+detector-slice-svg": An SVG image of the operations that a
+            "timeslice-with-ops-svg": An SVG image of the operations that a
                 circuit applies during the specified tick or range of ticks,
                 combined with the detector slices after those operations are
                 applied.
