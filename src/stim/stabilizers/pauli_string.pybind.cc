@@ -326,7 +326,8 @@ PyPauliString PyPauliString::from_text(const char *text) {
     value *= factor;
     return value;
 }
-PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
+PyPauliString PyPauliString::from_unitary_matrix(
+    const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -369,7 +370,7 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
                 ss << "The given unitary matrix isn't a Pauli string matrix. ";
                 ss << "It has values besides 0, 1, -1, 1j, and -1j";
                 if (ignore_sign) {
-                    ss <<" (up to global phase)";
+                    ss << " (up to global phase)";
                 }
                 ss << '.';
                 throw std::invalid_argument(ss.str());

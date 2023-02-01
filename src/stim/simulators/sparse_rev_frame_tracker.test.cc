@@ -176,15 +176,11 @@ TEST(SparseUnsignedRevFrameTracker, RX) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IXI"));
 
     actual = _tracker_from_pauli_string("XIZ");
-    ASSERT_THROW({
-        actual.undo_RX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIZ"));
 
     actual = _tracker_from_pauli_string("YIX");
-    ASSERT_THROW({
-        actual.undo_RX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIX"));
 }
 
@@ -201,15 +197,11 @@ TEST(SparseUnsignedRevFrameTracker, RY) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IYI"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_RY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("XIY");
-    ASSERT_THROW({
-        actual.undo_RY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIY"));
 }
 
@@ -226,15 +218,11 @@ TEST(SparseUnsignedRevFrameTracker, RZ) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IZI"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_RZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("ZIX");
-    ASSERT_THROW({
-        actual.undo_RZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("ZIX"));
 }
 
@@ -253,15 +241,11 @@ TEST(SparseUnsignedRevFrameTracker, MX) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("XXX"));
 
     actual = _tracker_from_pauli_string("XIZ");
-    ASSERT_THROW({
-        actual.undo_MX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIZ"));
 
     actual = _tracker_from_pauli_string("YIX");
-    ASSERT_THROW({
-        actual.undo_MX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIX"));
 }
 
@@ -280,15 +264,11 @@ TEST(SparseUnsignedRevFrameTracker, MY) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("YYY"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_MY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("XIY");
-    ASSERT_THROW({
-        actual.undo_MY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIY"));
 }
 
@@ -307,15 +287,11 @@ TEST(SparseUnsignedRevFrameTracker, MZ) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("ZZZ"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_MZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("ZIX");
-    ASSERT_THROW({
-        actual.undo_MZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("ZIX"));
 }
 
@@ -334,15 +310,11 @@ TEST(SparseUnsignedRevFrameTracker, MRX) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IXI"));
 
     actual = _tracker_from_pauli_string("XIZ");
-    ASSERT_THROW({
-        actual.undo_MRX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIZ"));
 
     actual = _tracker_from_pauli_string("YIX");
-    ASSERT_THROW({
-        actual.undo_MRX(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRX(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIX"));
 }
 
@@ -361,15 +333,11 @@ TEST(SparseUnsignedRevFrameTracker, MRY) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IYI"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_MRY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("XIY");
-    ASSERT_THROW({
-        actual.undo_MRY(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRY(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("XIY"));
 }
 
@@ -388,15 +356,11 @@ TEST(SparseUnsignedRevFrameTracker, MRZ) {
     ASSERT_EQ(actual, _tracker_from_pauli_string("IZI"));
 
     actual = _tracker_from_pauli_string("YIZ");
-    ASSERT_THROW({
-        actual.undo_MRZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("YIZ"));
 
     actual = _tracker_from_pauli_string("ZIX");
-    ASSERT_THROW({
-        actual.undo_MRZ(OpDat{targets});
-    }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRZ(OpDat{targets}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string("ZIX"));
 }
 
@@ -499,7 +463,6 @@ TEST(SparseUnsignedRevFrameTracker, feedback_into_measurement) {
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
     ASSERT_EQ(actual, expected);
 
-
     actual = _tracker_from_pauli_string("XII");
     actual.num_measurements_in_past = 12;
     actual.undo_ZCY({{}, targets});
@@ -522,7 +485,6 @@ TEST(SparseUnsignedRevFrameTracker, feedback_into_measurement) {
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
     ASSERT_EQ(actual, expected);
-
 
     actual = _tracker_from_pauli_string("XII");
     actual.num_measurements_in_past = 12;

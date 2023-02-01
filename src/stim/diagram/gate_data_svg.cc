@@ -19,7 +19,7 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
 
     result.insert({"SQRT_X_DAG", {1, "√X", "", "†", "white", "black", 18, 14}});
     result.insert({"SQRT_Y_DAG", {1, "√Y", "", "†", "white", "black", 18, 14}});
-        result.insert({"S_DAG", {1, "S", "", "†", "white", "black", 26, 14}});
+    result.insert({"S_DAG", {1, "S", "", "†", "white", "black", 26, 14}});
 
     result.insert({"MX", {1, "M", "X", "", "black", "white", 26, 16}});
     result.insert({"MY", {1, "M", "Y", "", "black", "white", 26, 16}});

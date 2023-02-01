@@ -296,7 +296,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("separate_observables") = pybind11::none(),
         pybind11::arg("append_observables") = pybind11::none(),
         pybind11::arg("bit_packed") = false,
-        pybind11::arg("bit_pack_result") = false, // deprecated variant
+        pybind11::arg("bit_pack_result") = false,  // deprecated variant
         clean_doc_string(R"DOC(
             Converts measurement data into detection event data.
             @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:

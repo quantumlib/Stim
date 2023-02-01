@@ -46,7 +46,6 @@ pybind11::object buffer_slice_to_numpy(
     size_t shot_bit_copy_length,
     bool bit_packed,
     ConstPointerRange<uint8_t> immovable_buffer) {
-
     size_t num_bytes_copied_per_shot = (shot_bit_copy_length + 7) / 8;
     if (bit_packed) {
         uint8_t *buffer = new uint8_t[num_bytes_copied_per_shot * num_shots];
@@ -134,30 +133,14 @@ pybind11::object read_shot_data_file(
     }
 
     if (separate_observables) {
-        pybind11::object dets = buffer_slice_to_numpy(
-            num_shots,
-            num_bytes_per_shot,
-            0,
-            num_bits_per_shot - no,
-            bit_packed,
-            full_buffer);
-        pybind11::object obs = buffer_slice_to_numpy(
-            num_shots,
-            num_bytes_per_shot,
-            num_bits_per_shot - no,
-            no,
-            bit_packed,
-            full_buffer);
+        pybind11::object dets =
+            buffer_slice_to_numpy(num_shots, num_bytes_per_shot, 0, num_bits_per_shot - no, bit_packed, full_buffer);
+        pybind11::object obs =
+            buffer_slice_to_numpy(num_shots, num_bytes_per_shot, num_bits_per_shot - no, no, bit_packed, full_buffer);
         return pybind11::make_tuple(dets, obs);
     }
 
-    return buffer_slice_to_numpy(
-        num_shots,
-        num_bytes_per_shot,
-        0,
-        num_bits_per_shot,
-        bit_packed,
-        full_buffer);
+    return buffer_slice_to_numpy(num_shots, num_bytes_per_shot, 0, num_bits_per_shot, bit_packed, full_buffer);
 }
 
 void write_shot_data_file(

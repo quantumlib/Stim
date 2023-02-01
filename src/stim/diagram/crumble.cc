@@ -1,4 +1,5 @@
 #include "stim/diagram/crumble.h"
+
 #include "stim/diagram/crumble_data.h"
 
 using namespace stim;

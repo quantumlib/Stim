@@ -271,7 +271,8 @@ TEST(circuit_diagram_time_detector_slice_svg, surface_code_full) {
     CoordFilter filter;
     filter.coordinates.push_back(1);
     std::stringstream ss;
-    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_full_time_detector_slice.svg");
 }
 
@@ -310,7 +311,8 @@ TEST(circuit_diagram_timeline_svg, chained_loops) {
 
     CoordFilter empty_filter;
     std::stringstream ss;
-    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "circuit_diagram_timeline_svg_chained_loops.svg");
 }
 
@@ -320,11 +322,6 @@ TEST(diagram_timeline_svg_drawer, make_diagram_write_to) {
     std::vector<CoordFilter> coord_filter{CoordFilter{}};
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(
-        circuit,
-        ss,
-        0,
-        circuit.count_ticks(),
-        SVG_MODE_TIME_DETECTOR_SLICE,
-        coord_filter);
+        circuit, ss, 0, circuit.count_ticks(), SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
     expect_string_is_identical_to_saved_file(ss.str(), "detslice-with-ops_surface_code.svg");
 }
