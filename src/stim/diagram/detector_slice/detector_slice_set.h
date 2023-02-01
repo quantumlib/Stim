@@ -25,6 +25,15 @@
 
 namespace stim_draw_internal {
 
+struct CoordFilter {
+    std::vector<double> coordinates{};
+    bool use_target = false;
+    stim::DemTarget exact_target{};
+
+    bool matches(stim::ConstPointerRange<double> coords, stim::DemTarget target) const;
+    static CoordFilter parse_from(const std::string &data);
+};
+
 struct DetectorSliceSet {
     uint64_t num_qubits;
     uint64_t min_tick;
@@ -47,7 +56,7 @@ struct DetectorSliceSet {
         const stim::Circuit &circuit,
         uint64_t start_tick,
         uint64_t num_ticks,
-        stim::ConstPointerRange<std::vector<double>> coord_filter);
+        stim::ConstPointerRange<CoordFilter> coord_filter);
 
     std::set<uint64_t> used_qubits() const;
     std::string str() const;
@@ -55,10 +64,15 @@ struct DetectorSliceSet {
     void write_text_diagram_to(std::ostream &out) const;
     void write_svg_diagram_to(std::ostream &out) const;
     void write_svg_contents_to(
-        std::ostream &out, const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords, size_t scale) const;
+        std::ostream &out,
+        const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t end_tick,
+        size_t scale) const;
 };
 
 struct FlattenedCoords {
+    std::vector<Coord<2>> unscaled_qubit_coords;
     std::vector<Coord<2>> qubit_coords;
     std::map<uint64_t, Coord<2>> det_coords;
     Coord<2> size;

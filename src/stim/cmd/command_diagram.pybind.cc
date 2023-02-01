@@ -149,51 +149,51 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
-    } else if (type == "timeline-svg") {
-        std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "time-slice-svg") {
-        std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "time+detector-slice-svg") {
-        std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "timeline-3d") {
-        std::stringstream out;
-        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
-    } else if (type == "timeline-3d-html") {
-        std::stringstream out;
-        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-        std::stringstream out_html;
-        write_html_viewer_for_gltf_data(out.str(), out_html);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
-    } else if (type == "detector-slice-text") {
-        if (tick.is_none()) {
-            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
-        }
-        std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
-            .write_text_diagram_to(out);
-        return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
-    } else if (type == "detector-slice-svg") {
-        if (tick.is_none()) {
-            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
-        }
-        std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
-            .write_svg_diagram_to(out);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "interactive") {
-        std::stringstream out;
-        write_crumble_html_with_preloaded_circuit(circuit, out);
-        return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
-    } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
-        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
-        return dem_diagram(dem, type);
+//    } else if (type == "timeline-svg") {
+//        std::stringstream out;
+//        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
+//        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+//    } else if (type == "time-slice-svg") {
+//        std::stringstream out;
+//        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
+//        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+//    } else if (type == "time+detector-slice-svg") {
+//        std::stringstream out;
+//        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
+//        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+//    } else if (type == "timeline-3d") {
+//        std::stringstream out;
+//        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+//        return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+//    } else if (type == "timeline-3d-html") {
+//        std::stringstream out;
+//        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+//        std::stringstream out_html;
+//        write_html_viewer_for_gltf_data(out.str(), out_html);
+//        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
+//    } else if (type == "detector-slice-text") {
+//        if (tick.is_none()) {
+//            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
+//        }
+//        std::stringstream out;
+//        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
+//            .write_text_diagram_to(out);
+//        return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
+//    } else if (type == "detector-slice-svg") {
+//        if (tick.is_none()) {
+//            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
+//        }
+//        std::stringstream out;
+//        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
+//            .write_svg_diagram_to(out);
+//        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+//    } else if (type == "interactive") {
+//        std::stringstream out;
+//        write_crumble_html_with_preloaded_circuit(circuit, out);
+//        return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
+//    } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
+//        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+//        return dem_diagram(dem, type);
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }
