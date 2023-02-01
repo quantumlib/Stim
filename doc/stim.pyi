@@ -4817,9 +4817,9 @@ class PauliString:
             >>> p.after(stim.CircuitInstruction("H", [1]))
             stim.PauliString("+_ZYZ")
 
-            >>> p.after(stim.Circuit("""
+            >>> p.after(stim.Circuit('''
             ...     C_XYZ 1 2 3
-            ... """))
+            ... '''))
             stim.PauliString("+_YZX")
 
             >>> p.after(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
@@ -4865,9 +4865,9 @@ class PauliString:
             >>> p.before(stim.CircuitInstruction("H", [1]))
             stim.PauliString("+_ZYZ")
 
-            >>> p.before(stim.Circuit("""
+            >>> p.before(stim.Circuit('''
             ...     C_XYZ 1 2 3
-            ... """))
+            ... '''))
             stim.PauliString("+_ZXY")
 
             >>> p.before(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
