@@ -295,6 +295,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
       - uses: bazelbuild/setup-bazelisk@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
@@ -303,8 +306,9 @@ jobs:
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
-      - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc
       - run: python doc/stim.pyi
+      - run: npm install -g rollup uglify-js
+      - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
     steps:
