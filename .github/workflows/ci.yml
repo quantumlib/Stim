@@ -60,7 +60,7 @@ jobs:
             ./output/sinter/*.tar.gz
             ./output/stim/*
   build_windows:
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
