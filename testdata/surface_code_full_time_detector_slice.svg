@@ -1,23 +1,155 @@
 <svg viewBox="0 0 2704 2704"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<g id="slice:6:1_0_1:4">
-<path d="M1516.8,80 L1580.8,80 L1516.8,144 L1516.8,80" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1516.8,80 L1580.8,80 L1516.8,144 L1516.8,80" stroke="black" fill="none"/>
+<g id="slice:11:1_2_1:5">
+<path d="M1974.4,144 L2038.4,144 C2032 176,2032 176,2038.4 208 C2032 240,2032 240,2038.4 272 L1974.4,272 C1980.8 240,1980.8 240,1974.4 208 C1980.8 176,1980.8 176,1974.4 144" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1974.4,144 L2038.4,144 C2032 176,2032 176,2038.4 208 C2032 240,2032 240,2038.4 272 L1974.4,272 C1980.8 240,1980.8 240,1974.4 208 C1980.8 176,1980.8 176,1974.4 144" stroke="black" fill="none"/>
+</g>
+<g id="slice:11:1_2_1:10">
+<path d="M1452.8,665.6 C1459.2 633.6,1459.2 633.6,1452.8 601.6 L1516.8,601.6 C1510.4 633.6,1510.4 633.6,1516.8 665.6 C1510.4 697.6,1510.4 697.6,1516.8 729.6 L1452.8,729.6 C1459.2 697.6,1459.2 697.6,1452.8 665.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1452.8,665.6 C1459.2 633.6,1459.2 633.6,1452.8 601.6 L1516.8,601.6 C1510.4 633.6,1510.4 633.6,1516.8 665.6 C1510.4 697.6,1510.4 697.6,1516.8 729.6 L1452.8,729.6 C1459.2 697.6,1459.2 697.6,1452.8 665.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:12">
+<path d="M2432,665.6 C2438.4 633.6,2438.4 633.6,2432 601.6 L2496,601.6 C2489.6 633.6,2489.6 633.6,2496 665.6 C2489.6 697.6,2489.6 697.6,2496 729.6 L2432,729.6 C2438.4 697.6,2438.4 697.6,2432 665.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2432,665.6 C2438.4 633.6,2438.4 633.6,2432 601.6 L2496,601.6 C2489.6 633.6,2489.6 633.6,2496 665.6 C2489.6 697.6,2489.6 697.6,2496 729.6 L2432,729.6 C2438.4 697.6,2438.4 697.6,2432 665.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:17">
+<path d="M1910.4,1123.2 C1916.8 1091.2,1916.8 1091.2,1910.4 1059.2 L1974.4,1059.2 C1968 1091.2,1968 1091.2,1974.4 1123.2 C1968 1155.2,1968 1155.2,1974.4 1187.2 L1910.4,1187.2 C1916.8 1155.2,1916.8 1155.2,1910.4 1123.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1910.4,1123.2 C1916.8 1091.2,1916.8 1091.2,1910.4 1059.2 L1974.4,1059.2 C1968 1091.2,1968 1091.2,1974.4 1123.2 C1968 1155.2,1968 1155.2,1974.4 1187.2 L1910.4,1187.2 C1916.8 1155.2,1916.8 1155.2,1910.4 1123.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:19">
+<path d="M144,1516.8 L208,1516.8 C201.6 1548.8,201.6 1548.8,208 1580.8 C201.6 1612.8,201.6 1612.8,208 1644.8 L144,1644.8 C150.4 1612.8,150.4 1612.8,144 1580.8 C150.4 1548.8,150.4 1548.8,144 1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M144,1516.8 L208,1516.8 C201.6 1548.8,201.6 1548.8,208 1580.8 C201.6 1612.8,201.6 1612.8,208 1644.8 L144,1644.8 C150.4 1612.8,150.4 1612.8,144 1580.8 C150.4 1548.8,150.4 1548.8,144 1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:24">
+<path d="M2368,1516.8 L2432,1516.8 C2425.6 1548.8,2425.6 1548.8,2432 1580.8 C2425.6 1612.8,2425.6 1612.8,2432 1644.8 L2368,1644.8 C2374.4 1612.8,2374.4 1612.8,2368 1580.8 C2374.4 1548.8,2374.4 1548.8,2368 1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2368,1516.8 L2432,1516.8 C2425.6 1548.8,2425.6 1548.8,2432 1580.8 C2425.6 1612.8,2425.6 1612.8,2432 1644.8 L2368,1644.8 C2374.4 1612.8,2374.4 1612.8,2368 1580.8 C2374.4 1548.8,2374.4 1548.8,2368 1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:26">
+<path d="M601.6,1974.4 L665.6,1974.4 C659.2 2006.4,659.2 2006.4,665.6 2038.4 C659.2 2070.4,659.2 2070.4,665.6 2102.4 L601.6,2102.4 C608 2070.4,608 2070.4,601.6 2038.4 C608 2006.4,608 2006.4,601.6 1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M601.6,1974.4 L665.6,1974.4 C659.2 2006.4,659.2 2006.4,665.6 2038.4 C659.2 2070.4,659.2 2070.4,665.6 2102.4 L601.6,2102.4 C608 2070.4,608 2070.4,601.6 2038.4 C608 2006.4,608 2006.4,601.6 1974.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:31">
+<path d="M80,2432 L144,2432 C137.6 2464,137.6 2464,144 2496 C137.6 2528,137.6 2528,144 2560 L80,2560 C86.4 2528,86.4 2528,80 2496 C86.4 2464,86.4 2464,80 2432" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M80,2432 L144,2432 C137.6 2464,137.6 2464,144 2496 C137.6 2528,137.6 2528,144 2560 L80,2560 C86.4 2528,86.4 2528,80 2496 C86.4 2464,86.4 2464,80 2432" stroke="black" fill="none"/>
+</g>
+<g id="slice:11:1_2_1:6">
+<path d="M2432,144 L2432,208 L2496,208 L2432,272 L2368,208 L2432,144" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2432,144 L2432,208 L2496,208 L2432,272 L2368,208 L2432,144" stroke="black" fill="none"/>
+</g>
+<g id="slice:11:1_2_1:7">
+<path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip0"><path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6"/></clipPath>
+<circle clip-path="url(#clip0)" cx="144" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip0)" cx="80" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip0)" cx="144" cy="665.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip0)" cx="208" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip0)" cx="144" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:11:1_2_1:8">
+<path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip1"><path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6"/></clipPath>
+<circle clip-path="url(#clip1)" cx="601.6" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip1)" cx="537.6" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip1)" cx="601.6" cy="665.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip1)" cx="665.6" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip1)" cx="601.6" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:11:1_2_1:9">
+<path d="M1059.2,601.6 L1059.2,665.6 L1123.2,665.6 L1059.2,729.6 L995.2,665.6 L1059.2,601.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1059.2,601.6 L1059.2,665.6 L1123.2,665.6 L1059.2,729.6 L995.2,665.6 L1059.2,601.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:13">
+<path d="M144,1059.2 L144,1123.2 L208,1123.2 L144,1187.2 L80,1123.2 L144,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M144,1059.2 L144,1123.2 L208,1123.2 L144,1187.2 L80,1123.2 L144,1059.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:14">
+<path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip2"><path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2"/></clipPath>
+<circle clip-path="url(#clip2)" cx="601.6" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip2)" cx="537.6" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip2)" cx="601.6" cy="1123.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip2)" cx="665.6" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip2)" cx="601.6" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:15">
+<path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip3"><path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2"/></clipPath>
+<circle clip-path="url(#clip3)" cx="1059.2" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip3)" cx="995.2" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip3)" cx="1059.2" cy="1123.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip3)" cx="1123.2" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip3)" cx="1059.2" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:23:1_2_2:16">
+<path d="M1516.8,1059.2 L1516.8,1123.2 L1580.8,1123.2 L1516.8,1187.2 L1452.8,1123.2 L1516.8,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1516.8,1059.2 L1516.8,1123.2 L1580.8,1123.2 L1516.8,1187.2 L1452.8,1123.2 L1516.8,1059.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:20">
+<path d="M601.6,1516.8 L601.6,1580.8 L665.6,1580.8 L601.6,1644.8 L537.6,1580.8 L601.6,1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M601.6,1516.8 L601.6,1580.8 L665.6,1580.8 L601.6,1644.8 L537.6,1580.8 L601.6,1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:21">
+<path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip4"><path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8"/></clipPath>
+<circle clip-path="url(#clip4)" cx="1059.2" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip4)" cx="995.2" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip4)" cx="1059.2" cy="1580.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip4)" cx="1123.2" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip4)" cx="1059.2" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:22">
+<path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip5"><path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8"/></clipPath>
+<circle clip-path="url(#clip5)" cx="1516.8" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip5)" cx="1452.8" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip5)" cx="1516.8" cy="1580.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip5)" cx="1580.8" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip5)" cx="1516.8" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:35:1_2_3:23">
+<path d="M1974.4,1516.8 L1974.4,1580.8 L2038.4,1580.8 L1974.4,1644.8 L1910.4,1580.8 L1974.4,1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1974.4,1516.8 L1974.4,1580.8 L2038.4,1580.8 L1974.4,1644.8 L1910.4,1580.8 L1974.4,1516.8" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:27">
+<path d="M1059.2,1974.4 L1059.2,2038.4 L1123.2,2038.4 L1059.2,2102.4 L995.2,2038.4 L1059.2,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1059.2,1974.4 L1059.2,2038.4 L1123.2,2038.4 L1059.2,2102.4 L995.2,2038.4 L1059.2,1974.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:28">
+<path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip6"><path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4"/></clipPath>
+<circle clip-path="url(#clip6)" cx="1516.8" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip6)" cx="1452.8" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip6)" cx="1516.8" cy="2038.4" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip6)" cx="1580.8" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip6)" cx="1516.8" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:29">
+<path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
+<clipPath id="clip7"><path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4"/></clipPath>
+<circle clip-path="url(#clip7)" cx="1974.4" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip7)" cx="1910.4" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip7)" cx="1974.4" cy="2038.4" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip7)" cx="2038.4" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip7)" cx="1974.4" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:47:1_2_4:30">
+<path d="M2432,1974.4 L2432,2038.4 L2496,2038.4 L2432,2102.4 L2368,2038.4 L2432,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2432,1974.4 L2432,2038.4 L2496,2038.4 L2432,2102.4 L2368,2038.4 L2432,1974.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:11:1_2_1:4">
 <path d="M1580.8,144 L1580.8,208 L1516.8,272 L1516.8,208 L1580.8,144" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1580.8,144 L1580.8,208 L1516.8,272 L1516.8,208 L1580.8,144" stroke="black" fill="none"/>
 </g>
-<g id="slice:16:1_4_1:4">
-<path d="M1580.8,272 L1580.8,336 L1516.8,336 L1580.8,272" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1580.8,272 L1580.8,336 L1516.8,336 L1580.8,272" stroke="black" fill="none"/>
-</g>
 <g id="slice:6:1_0_1:5">
 <path d="M1974.4,80 L2038.4,80 L2038.4,144 L1974.4,144 L1974.4,80" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1974.4,80 L2038.4,80 L2038.4,144 L1974.4,144 L1974.4,80" stroke="black" fill="none"/>
-</g>
-<g id="slice:11:1_2_1:5">
-<path d="M1974.4,144 L2038.4,144 C2032 176,2032 176,2038.4 208 C2032 240,2032 240,2038.4 272 L1974.4,272 C1980.8 240,1980.8 240,1974.4 208 C1980.8 176,1980.8 176,1974.4 144" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1974.4,144 L2038.4,144 C2032 176,2032 176,2038.4 208 C2032 240,2032 240,2038.4 272 L1974.4,272 C1980.8 240,1980.8 240,1974.4 208 C1980.8 176,1980.8 176,1974.4 144" stroke="black" fill="none"/>
 </g>
 <g id="slice:16:1_4_1:5">
 <path d="M1974.4,272 L2038.4,272 L2038.4,336 L1974.4,336 L1974.4,272" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -27,77 +159,49 @@
 <path d="M2368,80 C2400 86.4,2400 86.4,2432 80 C2464 86.4,2464 86.4,2496 80 L2432,144 L2368,80" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2368,80 C2400 86.4,2400 86.4,2432 80 C2464 86.4,2464 86.4,2496 80 L2432,144 L2368,80" stroke="black" fill="none"/>
 </g>
-<g id="slice:11:1_2_1:6">
-<path d="M2432,144 L2432,208 L2496,208 L2432,272 L2368,208 L2432,144" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2432,144 L2432,208 L2496,208 L2432,272 L2368,208 L2432,144" stroke="black" fill="none"/>
-</g>
 <g id="slice:16:1_4_1:6">
 <path d="M2432,272 L2496,336 C2464 329.6,2464 329.6,2432 336 C2400 329.6,2400 329.6,2368 336 L2432,272" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2432,272 L2496,336 C2464 329.6,2464 329.6,2432 336 C2400 329.6,2400 329.6,2368 336 L2432,272" stroke="black" fill="none"/>
 </g>
 <g id="slice:6:1_0_1:7">
 <path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip0"><path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6"/></clipPath>
-<circle clip-path="url(#clip0)" cx="80" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip0)" cx="144" cy="537.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip0)" cx="208" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip0)" cx="144" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip8"><path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6"/></clipPath>
+<circle clip-path="url(#clip8)" cx="80" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip8)" cx="144" cy="537.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip8)" cx="208" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip8)" cx="144" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:11:1_2_1:7">
-<path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip1"><path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6"/></clipPath>
-<circle clip-path="url(#clip1)" cx="144" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip1)" cx="80" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip1)" cx="144" cy="665.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip1)" cx="208" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip1)" cx="144" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M144,601.6 L144,665.6 L208,665.6 L144,729.6 L80,665.6 L144,601.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:16:1_4_1:7">
 <path d="M144,729.6 L208,793.6 C176 787.2,176 787.2,144 793.6 C112 787.2,112 787.2,80 793.6 L144,729.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip2"><path d="M144,729.6 L208,793.6 C176 787.2,176 787.2,144 793.6 C112 787.2,112 787.2,80 793.6 L144,729.6"/></clipPath>
-<circle clip-path="url(#clip2)" cx="144" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip2)" cx="80" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip2)" cx="144" cy="793.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip2)" cx="208" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip9"><path d="M144,729.6 L208,793.6 C176 787.2,176 787.2,144 793.6 C112 787.2,112 787.2,80 793.6 L144,729.6"/></clipPath>
+<circle clip-path="url(#clip9)" cx="144" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip9)" cx="80" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip9)" cx="144" cy="793.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip9)" cx="208" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M144,729.6 L208,793.6 C176 787.2,176 787.2,144 793.6 C112 787.2,112 787.2,80 793.6 L144,729.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:6:1_0_1:8">
 <path d="M537.6,537.6 C569.6 544,569.6 544,601.6 537.6 C633.6 544,633.6 544,665.6 537.6 L601.6,601.6 L537.6,537.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip3"><path d="M537.6,537.6 C569.6 544,569.6 544,601.6 537.6 C633.6 544,633.6 544,665.6 537.6 L601.6,601.6 L537.6,537.6"/></clipPath>
-<circle clip-path="url(#clip3)" cx="537.6" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip3)" cx="601.6" cy="537.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip3)" cx="665.6" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip3)" cx="601.6" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip10"><path d="M537.6,537.6 C569.6 544,569.6 544,601.6 537.6 C633.6 544,633.6 544,665.6 537.6 L601.6,601.6 L537.6,537.6"/></clipPath>
+<circle clip-path="url(#clip10)" cx="537.6" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip10)" cx="601.6" cy="537.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip10)" cx="665.6" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip10)" cx="601.6" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M537.6,537.6 C569.6 544,569.6 544,601.6 537.6 C633.6 544,633.6 544,665.6 537.6 L601.6,601.6 L537.6,537.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:11:1_2_1:8">
-<path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip4"><path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6"/></clipPath>
-<circle clip-path="url(#clip4)" cx="601.6" cy="601.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip4)" cx="537.6" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip4)" cx="601.6" cy="665.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip4)" cx="665.6" cy="665.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip4)" cx="601.6" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M601.6,601.6 L601.6,665.6 L665.6,665.6 L601.6,729.6 L537.6,665.6 L601.6,601.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:16:1_4_1:8">
 <path d="M601.6,729.6 L665.6,793.6 C633.6 787.2,633.6 787.2,601.6 793.6 C569.6 787.2,569.6 787.2,537.6 793.6 L601.6,729.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip5"><path d="M601.6,729.6 L665.6,793.6 C633.6 787.2,633.6 787.2,601.6 793.6 C569.6 787.2,569.6 787.2,537.6 793.6 L601.6,729.6"/></clipPath>
-<circle clip-path="url(#clip5)" cx="601.6" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip5)" cx="537.6" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip5)" cx="601.6" cy="793.6" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip5)" cx="665.6" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip11"><path d="M601.6,729.6 L665.6,793.6 C633.6 787.2,633.6 787.2,601.6 793.6 C569.6 787.2,569.6 787.2,537.6 793.6 L601.6,729.6"/></clipPath>
+<circle clip-path="url(#clip11)" cx="601.6" cy="729.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip11)" cx="537.6" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip11)" cx="601.6" cy="793.6" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip11)" cx="665.6" cy="793.6" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M601.6,729.6 L665.6,793.6 C633.6 787.2,633.6 787.2,601.6 793.6 C569.6 787.2,569.6 787.2,537.6 793.6 L601.6,729.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:6:1_0_1:9">
 <path d="M995.2,537.6 C1027.2 544,1027.2 544,1059.2 537.6 C1091.2 544,1091.2 544,1123.2 537.6 L1059.2,601.6 L995.2,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M995.2,537.6 C1027.2 544,1027.2 544,1059.2 537.6 C1091.2 544,1091.2 544,1123.2 537.6 L1059.2,601.6 L995.2,537.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:11:1_2_1:9">
-<path d="M1059.2,601.6 L1059.2,665.6 L1123.2,665.6 L1059.2,729.6 L995.2,665.6 L1059.2,601.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1059.2,601.6 L1059.2,665.6 L1123.2,665.6 L1059.2,729.6 L995.2,665.6 L1059.2,601.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:16:1_4_1:9">
 <path d="M1059.2,729.6 L1123.2,793.6 C1091.2 787.2,1091.2 787.2,1059.2 793.6 C1027.2 787.2,1027.2 787.2,995.2 793.6 L1059.2,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -107,45 +211,21 @@
 <path d="M1452.8,537.6 L1516.8,537.6 L1516.8,601.6 L1452.8,601.6 L1452.8,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1452.8,537.6 L1516.8,537.6 L1516.8,601.6 L1452.8,601.6 L1452.8,537.6" stroke="black" fill="none"/>
 </g>
-<g id="slice:11:1_2_1:10">
-<path d="M1452.8,665.6 C1459.2 633.6,1459.2 633.6,1452.8 601.6 L1516.8,601.6 C1510.4 633.6,1510.4 633.6,1516.8 665.6 C1510.4 697.6,1510.4 697.6,1516.8 729.6 L1452.8,729.6 C1459.2 697.6,1459.2 697.6,1452.8 665.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1452.8,665.6 C1459.2 633.6,1459.2 633.6,1452.8 601.6 L1516.8,601.6 C1510.4 633.6,1510.4 633.6,1516.8 665.6 C1510.4 697.6,1510.4 697.6,1516.8 729.6 L1452.8,729.6 C1459.2 697.6,1459.2 697.6,1452.8 665.6" stroke="black" fill="none"/>
-</g>
 <g id="slice:16:1_4_1:10">
 <path d="M1452.8,729.6 L1516.8,729.6 L1516.8,793.6 L1452.8,793.6 L1452.8,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1452.8,729.6 L1516.8,729.6 L1516.8,793.6 L1452.8,793.6 L1452.8,729.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:6:1_0_1:11">
-<path d="M1910.4,537.6 L1974.4,537.6 L1910.4,601.6 L1910.4,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1910.4,537.6 L1974.4,537.6 L1910.4,601.6 L1910.4,537.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:11:1_2_1:11">
 <path d="M1974.4,601.6 L1974.4,665.6 L1910.4,729.6 L1910.4,665.6 L1974.4,601.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1974.4,601.6 L1974.4,665.6 L1910.4,729.6 L1910.4,665.6 L1974.4,601.6" stroke="black" fill="none"/>
 </g>
-<g id="slice:16:1_4_1:11">
-<path d="M1974.4,729.6 L1974.4,793.6 L1910.4,793.6 L1974.4,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1974.4,729.6 L1974.4,793.6 L1910.4,793.6 L1974.4,729.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:18:1_0_2:11">
-<path d="M1974.4,537.6 L2038.4,537.6 L1974.4,601.6 L1974.4,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1974.4,537.6 L2038.4,537.6 L1974.4,601.6 L1974.4,537.6" stroke="black" fill="none"/>
-</g>
 <g id="slice:23:1_2_2:11">
 <path d="M2038.4,601.6 L2038.4,665.6 L1974.4,729.6 L1974.4,665.6 L2038.4,601.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2038.4,601.6 L2038.4,665.6 L1974.4,729.6 L1974.4,665.6 L2038.4,601.6" stroke="black" fill="none"/>
 </g>
-<g id="slice:28:1_4_2:11">
-<path d="M2038.4,729.6 L2038.4,793.6 L1974.4,793.6 L2038.4,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2038.4,729.6 L2038.4,793.6 L1974.4,793.6 L2038.4,729.6" stroke="black" fill="none"/>
-</g>
 <g id="slice:18:1_0_2:12">
 <path d="M2432,537.6 L2496,537.6 L2496,601.6 L2432,601.6 L2432,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2432,537.6 L2496,537.6 L2496,601.6 L2432,601.6 L2432,537.6" stroke="black" fill="none"/>
-</g>
-<g id="slice:23:1_2_2:12">
-<path d="M2432,665.6 C2438.4 633.6,2438.4 633.6,2432 601.6 L2496,601.6 C2489.6 633.6,2489.6 633.6,2496 665.6 C2489.6 697.6,2489.6 697.6,2496 729.6 L2432,729.6 C2438.4 697.6,2438.4 697.6,2432 665.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2432,665.6 C2438.4 633.6,2438.4 633.6,2432 601.6 L2496,601.6 C2489.6 633.6,2489.6 633.6,2496 665.6 C2489.6 697.6,2489.6 697.6,2496 729.6 L2432,729.6 C2438.4 697.6,2438.4 697.6,2432 665.6" stroke="black" fill="none"/>
 </g>
 <g id="slice:28:1_4_2:12">
 <path d="M2432,729.6 L2496,729.6 L2496,793.6 L2432,793.6 L2432,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -155,77 +235,49 @@
 <path d="M80,995.2 C112 1001.6,112 1001.6,144 995.2 C176 1001.6,176 1001.6,208 995.2 L144,1059.2 L80,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M80,995.2 C112 1001.6,112 1001.6,144 995.2 C176 1001.6,176 1001.6,208 995.2 L144,1059.2 L80,995.2" stroke="black" fill="none"/>
 </g>
-<g id="slice:23:1_2_2:13">
-<path d="M144,1059.2 L144,1123.2 L208,1123.2 L144,1187.2 L80,1123.2 L144,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M144,1059.2 L144,1123.2 L208,1123.2 L144,1187.2 L80,1123.2 L144,1059.2" stroke="black" fill="none"/>
-</g>
 <g id="slice:28:1_4_2:13">
 <path d="M144,1187.2 L208,1251.2 C176 1244.8,176 1244.8,144 1251.2 C112 1244.8,112 1244.8,80 1251.2 L144,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M144,1187.2 L208,1251.2 C176 1244.8,176 1244.8,144 1251.2 C112 1244.8,112 1244.8,80 1251.2 L144,1187.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:18:1_0_2:14">
 <path d="M537.6,995.2 C569.6 1001.6,569.6 1001.6,601.6 995.2 C633.6 1001.6,633.6 1001.6,665.6 995.2 L601.6,1059.2 L537.6,995.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip6"><path d="M537.6,995.2 C569.6 1001.6,569.6 1001.6,601.6 995.2 C633.6 1001.6,633.6 1001.6,665.6 995.2 L601.6,1059.2 L537.6,995.2"/></clipPath>
-<circle clip-path="url(#clip6)" cx="537.6" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip6)" cx="601.6" cy="995.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip6)" cx="665.6" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip6)" cx="601.6" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip12"><path d="M537.6,995.2 C569.6 1001.6,569.6 1001.6,601.6 995.2 C633.6 1001.6,633.6 1001.6,665.6 995.2 L601.6,1059.2 L537.6,995.2"/></clipPath>
+<circle clip-path="url(#clip12)" cx="537.6" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip12)" cx="601.6" cy="995.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip12)" cx="665.6" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip12)" cx="601.6" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M537.6,995.2 C569.6 1001.6,569.6 1001.6,601.6 995.2 C633.6 1001.6,633.6 1001.6,665.6 995.2 L601.6,1059.2 L537.6,995.2" stroke="black" fill="none"/>
-</g>
-<g id="slice:23:1_2_2:14">
-<path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip7"><path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2"/></clipPath>
-<circle clip-path="url(#clip7)" cx="601.6" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip7)" cx="537.6" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip7)" cx="601.6" cy="1123.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip7)" cx="665.6" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip7)" cx="601.6" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M601.6,1059.2 L601.6,1123.2 L665.6,1123.2 L601.6,1187.2 L537.6,1123.2 L601.6,1059.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:28:1_4_2:14">
 <path d="M601.6,1187.2 L665.6,1251.2 C633.6 1244.8,633.6 1244.8,601.6 1251.2 C569.6 1244.8,569.6 1244.8,537.6 1251.2 L601.6,1187.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip8"><path d="M601.6,1187.2 L665.6,1251.2 C633.6 1244.8,633.6 1244.8,601.6 1251.2 C569.6 1244.8,569.6 1244.8,537.6 1251.2 L601.6,1187.2"/></clipPath>
-<circle clip-path="url(#clip8)" cx="601.6" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip8)" cx="537.6" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip8)" cx="601.6" cy="1251.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip8)" cx="665.6" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip13"><path d="M601.6,1187.2 L665.6,1251.2 C633.6 1244.8,633.6 1244.8,601.6 1251.2 C569.6 1244.8,569.6 1244.8,537.6 1251.2 L601.6,1187.2"/></clipPath>
+<circle clip-path="url(#clip13)" cx="601.6" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip13)" cx="537.6" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip13)" cx="601.6" cy="1251.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip13)" cx="665.6" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M601.6,1187.2 L665.6,1251.2 C633.6 1244.8,633.6 1244.8,601.6 1251.2 C569.6 1244.8,569.6 1244.8,537.6 1251.2 L601.6,1187.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:18:1_0_2:15">
 <path d="M995.2,995.2 C1027.2 1001.6,1027.2 1001.6,1059.2 995.2 C1091.2 1001.6,1091.2 1001.6,1123.2 995.2 L1059.2,1059.2 L995.2,995.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip9"><path d="M995.2,995.2 C1027.2 1001.6,1027.2 1001.6,1059.2 995.2 C1091.2 1001.6,1091.2 1001.6,1123.2 995.2 L1059.2,1059.2 L995.2,995.2"/></clipPath>
-<circle clip-path="url(#clip9)" cx="995.2" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip9)" cx="1059.2" cy="995.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip9)" cx="1123.2" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip9)" cx="1059.2" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip14"><path d="M995.2,995.2 C1027.2 1001.6,1027.2 1001.6,1059.2 995.2 C1091.2 1001.6,1091.2 1001.6,1123.2 995.2 L1059.2,1059.2 L995.2,995.2"/></clipPath>
+<circle clip-path="url(#clip14)" cx="995.2" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip14)" cx="1059.2" cy="995.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip14)" cx="1123.2" cy="995.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip14)" cx="1059.2" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M995.2,995.2 C1027.2 1001.6,1027.2 1001.6,1059.2 995.2 C1091.2 1001.6,1091.2 1001.6,1123.2 995.2 L1059.2,1059.2 L995.2,995.2" stroke="black" fill="none"/>
-</g>
-<g id="slice:23:1_2_2:15">
-<path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip10"><path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2"/></clipPath>
-<circle clip-path="url(#clip10)" cx="1059.2" cy="1059.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip10)" cx="995.2" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip10)" cx="1059.2" cy="1123.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip10)" cx="1123.2" cy="1123.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip10)" cx="1059.2" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1059.2,1059.2 L1059.2,1123.2 L1123.2,1123.2 L1059.2,1187.2 L995.2,1123.2 L1059.2,1059.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:28:1_4_2:15">
 <path d="M1059.2,1187.2 L1123.2,1251.2 C1091.2 1244.8,1091.2 1244.8,1059.2 1251.2 C1027.2 1244.8,1027.2 1244.8,995.2 1251.2 L1059.2,1187.2" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip11"><path d="M1059.2,1187.2 L1123.2,1251.2 C1091.2 1244.8,1091.2 1244.8,1059.2 1251.2 C1027.2 1244.8,1027.2 1244.8,995.2 1251.2 L1059.2,1187.2"/></clipPath>
-<circle clip-path="url(#clip11)" cx="1059.2" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip11)" cx="995.2" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip11)" cx="1059.2" cy="1251.2" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip11)" cx="1123.2" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip15"><path d="M1059.2,1187.2 L1123.2,1251.2 C1091.2 1244.8,1091.2 1244.8,1059.2 1251.2 C1027.2 1244.8,1027.2 1244.8,995.2 1251.2 L1059.2,1187.2"/></clipPath>
+<circle clip-path="url(#clip15)" cx="1059.2" cy="1187.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip15)" cx="995.2" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip15)" cx="1059.2" cy="1251.2" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip15)" cx="1123.2" cy="1251.2" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1059.2,1187.2 L1123.2,1251.2 C1091.2 1244.8,1091.2 1244.8,1059.2 1251.2 C1027.2 1244.8,1027.2 1244.8,995.2 1251.2 L1059.2,1187.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:18:1_0_2:16">
 <path d="M1452.8,995.2 C1484.8 1001.6,1484.8 1001.6,1516.8 995.2 C1548.8 1001.6,1548.8 1001.6,1580.8 995.2 L1516.8,1059.2 L1452.8,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1452.8,995.2 C1484.8 1001.6,1484.8 1001.6,1516.8 995.2 C1548.8 1001.6,1548.8 1001.6,1580.8 995.2 L1516.8,1059.2 L1452.8,995.2" stroke="black" fill="none"/>
-</g>
-<g id="slice:23:1_2_2:16">
-<path d="M1516.8,1059.2 L1516.8,1123.2 L1580.8,1123.2 L1516.8,1187.2 L1452.8,1123.2 L1516.8,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1516.8,1059.2 L1516.8,1123.2 L1580.8,1123.2 L1516.8,1187.2 L1452.8,1123.2 L1516.8,1059.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:28:1_4_2:16">
 <path d="M1516.8,1187.2 L1580.8,1251.2 C1548.8 1244.8,1548.8 1244.8,1516.8 1251.2 C1484.8 1244.8,1484.8 1244.8,1452.8 1251.2 L1516.8,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -235,45 +287,21 @@
 <path d="M1910.4,995.2 L1974.4,995.2 L1974.4,1059.2 L1910.4,1059.2 L1910.4,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1910.4,995.2 L1974.4,995.2 L1974.4,1059.2 L1910.4,1059.2 L1910.4,995.2" stroke="black" fill="none"/>
 </g>
-<g id="slice:23:1_2_2:17">
-<path d="M1910.4,1123.2 C1916.8 1091.2,1916.8 1091.2,1910.4 1059.2 L1974.4,1059.2 C1968 1091.2,1968 1091.2,1974.4 1123.2 C1968 1155.2,1968 1155.2,1974.4 1187.2 L1910.4,1187.2 C1916.8 1155.2,1916.8 1155.2,1910.4 1123.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1910.4,1123.2 C1916.8 1091.2,1916.8 1091.2,1910.4 1059.2 L1974.4,1059.2 C1968 1091.2,1968 1091.2,1974.4 1123.2 C1968 1155.2,1968 1155.2,1974.4 1187.2 L1910.4,1187.2 C1916.8 1155.2,1916.8 1155.2,1910.4 1123.2" stroke="black" fill="none"/>
-</g>
 <g id="slice:28:1_4_2:17">
 <path d="M1910.4,1187.2 L1974.4,1187.2 L1974.4,1251.2 L1910.4,1251.2 L1910.4,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1910.4,1187.2 L1974.4,1187.2 L1974.4,1251.2 L1910.4,1251.2 L1910.4,1187.2" stroke="black" fill="none"/>
-</g>
-<g id="slice:18:1_0_2:18">
-<path d="M2368,995.2 L2432,995.2 L2368,1059.2 L2368,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2368,995.2 L2432,995.2 L2368,1059.2 L2368,995.2" stroke="black" fill="none"/>
 </g>
 <g id="slice:23:1_2_2:18">
 <path d="M2432,1059.2 L2432,1123.2 L2368,1187.2 L2368,1123.2 L2432,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2432,1059.2 L2432,1123.2 L2368,1187.2 L2368,1123.2 L2432,1059.2" stroke="black" fill="none"/>
 </g>
-<g id="slice:28:1_4_2:18">
-<path d="M2432,1187.2 L2432,1251.2 L2368,1251.2 L2432,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2432,1187.2 L2432,1251.2 L2368,1251.2 L2432,1187.2" stroke="black" fill="none"/>
-</g>
-<g id="slice:30:1_0_3:18">
-<path d="M2432,995.2 L2496,995.2 L2432,1059.2 L2432,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2432,995.2 L2496,995.2 L2432,1059.2 L2432,995.2" stroke="black" fill="none"/>
-</g>
 <g id="slice:35:1_2_3:18">
 <path d="M2496,1059.2 L2496,1123.2 L2432,1187.2 L2432,1123.2 L2496,1059.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2496,1059.2 L2496,1123.2 L2432,1187.2 L2432,1123.2 L2496,1059.2" stroke="black" fill="none"/>
 </g>
-<g id="slice:40:1_4_3:18">
-<path d="M2496,1187.2 L2496,1251.2 L2432,1251.2 L2496,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2496,1187.2 L2496,1251.2 L2432,1251.2 L2496,1187.2" stroke="black" fill="none"/>
-</g>
 <g id="slice:30:1_0_3:19">
 <path d="M144,1452.8 L208,1452.8 L208,1516.8 L144,1516.8 L144,1452.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M144,1452.8 L208,1452.8 L208,1516.8 L144,1516.8 L144,1452.8" stroke="black" fill="none"/>
-</g>
-<g id="slice:35:1_2_3:19">
-<path d="M144,1516.8 L208,1516.8 C201.6 1548.8,201.6 1548.8,208 1580.8 C201.6 1612.8,201.6 1612.8,208 1644.8 L144,1644.8 C150.4 1612.8,150.4 1612.8,144 1580.8 C150.4 1548.8,150.4 1548.8,144 1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M144,1516.8 L208,1516.8 C201.6 1548.8,201.6 1548.8,208 1580.8 C201.6 1612.8,201.6 1612.8,208 1644.8 L144,1644.8 C150.4 1612.8,150.4 1612.8,144 1580.8 C150.4 1548.8,150.4 1548.8,144 1516.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:40:1_4_3:19">
 <path d="M144,1644.8 L208,1644.8 L208,1708.8 L144,1708.8 L144,1644.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -283,77 +311,49 @@
 <path d="M537.6,1452.8 C569.6 1459.2,569.6 1459.2,601.6 1452.8 C633.6 1459.2,633.6 1459.2,665.6 1452.8 L601.6,1516.8 L537.6,1452.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M537.6,1452.8 C569.6 1459.2,569.6 1459.2,601.6 1452.8 C633.6 1459.2,633.6 1459.2,665.6 1452.8 L601.6,1516.8 L537.6,1452.8" stroke="black" fill="none"/>
 </g>
-<g id="slice:35:1_2_3:20">
-<path d="M601.6,1516.8 L601.6,1580.8 L665.6,1580.8 L601.6,1644.8 L537.6,1580.8 L601.6,1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M601.6,1516.8 L601.6,1580.8 L665.6,1580.8 L601.6,1644.8 L537.6,1580.8 L601.6,1516.8" stroke="black" fill="none"/>
-</g>
 <g id="slice:40:1_4_3:20">
 <path d="M601.6,1644.8 L665.6,1708.8 C633.6 1702.4,633.6 1702.4,601.6 1708.8 C569.6 1702.4,569.6 1702.4,537.6 1708.8 L601.6,1644.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M601.6,1644.8 L665.6,1708.8 C633.6 1702.4,633.6 1702.4,601.6 1708.8 C569.6 1702.4,569.6 1702.4,537.6 1708.8 L601.6,1644.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:30:1_0_3:21">
 <path d="M995.2,1452.8 C1027.2 1459.2,1027.2 1459.2,1059.2 1452.8 C1091.2 1459.2,1091.2 1459.2,1123.2 1452.8 L1059.2,1516.8 L995.2,1452.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip12"><path d="M995.2,1452.8 C1027.2 1459.2,1027.2 1459.2,1059.2 1452.8 C1091.2 1459.2,1091.2 1459.2,1123.2 1452.8 L1059.2,1516.8 L995.2,1452.8"/></clipPath>
-<circle clip-path="url(#clip12)" cx="995.2" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip12)" cx="1059.2" cy="1452.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip12)" cx="1123.2" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip12)" cx="1059.2" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip16"><path d="M995.2,1452.8 C1027.2 1459.2,1027.2 1459.2,1059.2 1452.8 C1091.2 1459.2,1091.2 1459.2,1123.2 1452.8 L1059.2,1516.8 L995.2,1452.8"/></clipPath>
+<circle clip-path="url(#clip16)" cx="995.2" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip16)" cx="1059.2" cy="1452.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip16)" cx="1123.2" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip16)" cx="1059.2" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M995.2,1452.8 C1027.2 1459.2,1027.2 1459.2,1059.2 1452.8 C1091.2 1459.2,1091.2 1459.2,1123.2 1452.8 L1059.2,1516.8 L995.2,1452.8" stroke="black" fill="none"/>
-</g>
-<g id="slice:35:1_2_3:21">
-<path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip13"><path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8"/></clipPath>
-<circle clip-path="url(#clip13)" cx="1059.2" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip13)" cx="995.2" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip13)" cx="1059.2" cy="1580.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip13)" cx="1123.2" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip13)" cx="1059.2" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1059.2,1516.8 L1059.2,1580.8 L1123.2,1580.8 L1059.2,1644.8 L995.2,1580.8 L1059.2,1516.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:40:1_4_3:21">
 <path d="M1059.2,1644.8 L1123.2,1708.8 C1091.2 1702.4,1091.2 1702.4,1059.2 1708.8 C1027.2 1702.4,1027.2 1702.4,995.2 1708.8 L1059.2,1644.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip14"><path d="M1059.2,1644.8 L1123.2,1708.8 C1091.2 1702.4,1091.2 1702.4,1059.2 1708.8 C1027.2 1702.4,1027.2 1702.4,995.2 1708.8 L1059.2,1644.8"/></clipPath>
-<circle clip-path="url(#clip14)" cx="1059.2" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip14)" cx="995.2" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip14)" cx="1059.2" cy="1708.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip14)" cx="1123.2" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip17"><path d="M1059.2,1644.8 L1123.2,1708.8 C1091.2 1702.4,1091.2 1702.4,1059.2 1708.8 C1027.2 1702.4,1027.2 1702.4,995.2 1708.8 L1059.2,1644.8"/></clipPath>
+<circle clip-path="url(#clip17)" cx="1059.2" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip17)" cx="995.2" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip17)" cx="1059.2" cy="1708.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip17)" cx="1123.2" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1059.2,1644.8 L1123.2,1708.8 C1091.2 1702.4,1091.2 1702.4,1059.2 1708.8 C1027.2 1702.4,1027.2 1702.4,995.2 1708.8 L1059.2,1644.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:30:1_0_3:22">
 <path d="M1452.8,1452.8 C1484.8 1459.2,1484.8 1459.2,1516.8 1452.8 C1548.8 1459.2,1548.8 1459.2,1580.8 1452.8 L1516.8,1516.8 L1452.8,1452.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip15"><path d="M1452.8,1452.8 C1484.8 1459.2,1484.8 1459.2,1516.8 1452.8 C1548.8 1459.2,1548.8 1459.2,1580.8 1452.8 L1516.8,1516.8 L1452.8,1452.8"/></clipPath>
-<circle clip-path="url(#clip15)" cx="1452.8" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip15)" cx="1516.8" cy="1452.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip15)" cx="1580.8" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip15)" cx="1516.8" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip18"><path d="M1452.8,1452.8 C1484.8 1459.2,1484.8 1459.2,1516.8 1452.8 C1548.8 1459.2,1548.8 1459.2,1580.8 1452.8 L1516.8,1516.8 L1452.8,1452.8"/></clipPath>
+<circle clip-path="url(#clip18)" cx="1452.8" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip18)" cx="1516.8" cy="1452.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip18)" cx="1580.8" cy="1452.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip18)" cx="1516.8" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1452.8,1452.8 C1484.8 1459.2,1484.8 1459.2,1516.8 1452.8 C1548.8 1459.2,1548.8 1459.2,1580.8 1452.8 L1516.8,1516.8 L1452.8,1452.8" stroke="black" fill="none"/>
-</g>
-<g id="slice:35:1_2_3:22">
-<path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip16"><path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8"/></clipPath>
-<circle clip-path="url(#clip16)" cx="1516.8" cy="1516.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip16)" cx="1452.8" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip16)" cx="1516.8" cy="1580.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip16)" cx="1580.8" cy="1580.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip16)" cx="1516.8" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1516.8,1516.8 L1516.8,1580.8 L1580.8,1580.8 L1516.8,1644.8 L1452.8,1580.8 L1516.8,1516.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:40:1_4_3:22">
 <path d="M1516.8,1644.8 L1580.8,1708.8 C1548.8 1702.4,1548.8 1702.4,1516.8 1708.8 C1484.8 1702.4,1484.8 1702.4,1452.8 1708.8 L1516.8,1644.8" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip17"><path d="M1516.8,1644.8 L1580.8,1708.8 C1548.8 1702.4,1548.8 1702.4,1516.8 1708.8 C1484.8 1702.4,1484.8 1702.4,1452.8 1708.8 L1516.8,1644.8"/></clipPath>
-<circle clip-path="url(#clip17)" cx="1516.8" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip17)" cx="1452.8" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip17)" cx="1516.8" cy="1708.8" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip17)" cx="1580.8" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip19"><path d="M1516.8,1644.8 L1580.8,1708.8 C1548.8 1702.4,1548.8 1702.4,1516.8 1708.8 C1484.8 1702.4,1484.8 1702.4,1452.8 1708.8 L1516.8,1644.8"/></clipPath>
+<circle clip-path="url(#clip19)" cx="1516.8" cy="1644.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip19)" cx="1452.8" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip19)" cx="1516.8" cy="1708.8" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip19)" cx="1580.8" cy="1708.8" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1516.8,1644.8 L1580.8,1708.8 C1548.8 1702.4,1548.8 1702.4,1516.8 1708.8 C1484.8 1702.4,1484.8 1702.4,1452.8 1708.8 L1516.8,1644.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:30:1_0_3:23">
 <path d="M1910.4,1452.8 C1942.4 1459.2,1942.4 1459.2,1974.4 1452.8 C2006.4 1459.2,2006.4 1459.2,2038.4 1452.8 L1974.4,1516.8 L1910.4,1452.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1910.4,1452.8 C1942.4 1459.2,1942.4 1459.2,1974.4 1452.8 C2006.4 1459.2,2006.4 1459.2,2038.4 1452.8 L1974.4,1516.8 L1910.4,1452.8" stroke="black" fill="none"/>
-</g>
-<g id="slice:35:1_2_3:23">
-<path d="M1974.4,1516.8 L1974.4,1580.8 L2038.4,1580.8 L1974.4,1644.8 L1910.4,1580.8 L1974.4,1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1974.4,1516.8 L1974.4,1580.8 L2038.4,1580.8 L1974.4,1644.8 L1910.4,1580.8 L1974.4,1516.8" stroke="black" fill="none"/>
 </g>
 <g id="slice:40:1_4_3:23">
 <path d="M1974.4,1644.8 L2038.4,1708.8 C2006.4 1702.4,2006.4 1702.4,1974.4 1708.8 C1942.4 1702.4,1942.4 1702.4,1910.4 1708.8 L1974.4,1644.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -363,45 +363,21 @@
 <path d="M2368,1452.8 L2432,1452.8 L2432,1516.8 L2368,1516.8 L2368,1452.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2368,1452.8 L2432,1452.8 L2432,1516.8 L2368,1516.8 L2368,1452.8" stroke="black" fill="none"/>
 </g>
-<g id="slice:35:1_2_3:24">
-<path d="M2368,1516.8 L2432,1516.8 C2425.6 1548.8,2425.6 1548.8,2432 1580.8 C2425.6 1612.8,2425.6 1612.8,2432 1644.8 L2368,1644.8 C2374.4 1612.8,2374.4 1612.8,2368 1580.8 C2374.4 1548.8,2374.4 1548.8,2368 1516.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2368,1516.8 L2432,1516.8 C2425.6 1548.8,2425.6 1548.8,2432 1580.8 C2425.6 1612.8,2425.6 1612.8,2432 1644.8 L2368,1644.8 C2374.4 1612.8,2374.4 1612.8,2368 1580.8 C2374.4 1548.8,2374.4 1548.8,2368 1516.8" stroke="black" fill="none"/>
-</g>
 <g id="slice:40:1_4_3:24">
 <path d="M2368,1644.8 L2432,1644.8 L2432,1708.8 L2368,1708.8 L2368,1644.8" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2368,1644.8 L2432,1644.8 L2432,1708.8 L2368,1708.8 L2368,1644.8" stroke="black" fill="none"/>
-</g>
-<g id="slice:30:1_0_3:25">
-<path d="M80,1910.4 L144,1910.4 L80,1974.4 L80,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M80,1910.4 L144,1910.4 L80,1974.4 L80,1910.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:35:1_2_3:25">
 <path d="M144,1974.4 L144,2038.4 L80,2102.4 L80,2038.4 L144,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M144,1974.4 L144,2038.4 L80,2102.4 L80,2038.4 L144,1974.4" stroke="black" fill="none"/>
 </g>
-<g id="slice:40:1_4_3:25">
-<path d="M144,2102.4 L144,2166.4 L80,2166.4 L144,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M144,2102.4 L144,2166.4 L80,2166.4 L144,2102.4" stroke="black" fill="none"/>
-</g>
-<g id="slice:42:1_0_4:25">
-<path d="M144,1910.4 L208,1910.4 L144,1974.4 L144,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M144,1910.4 L208,1910.4 L144,1974.4 L144,1910.4" stroke="black" fill="none"/>
-</g>
 <g id="slice:47:1_2_4:25">
 <path d="M208,1974.4 L208,2038.4 L144,2102.4 L144,2038.4 L208,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M208,1974.4 L208,2038.4 L144,2102.4 L144,2038.4 L208,1974.4" stroke="black" fill="none"/>
 </g>
-<g id="slice:52:1_4_4:25">
-<path d="M208,2102.4 L208,2166.4 L144,2166.4 L208,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M208,2102.4 L208,2166.4 L144,2166.4 L208,2102.4" stroke="black" fill="none"/>
-</g>
 <g id="slice:42:1_0_4:26">
 <path d="M601.6,1910.4 L665.6,1910.4 L665.6,1974.4 L601.6,1974.4 L601.6,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M601.6,1910.4 L665.6,1910.4 L665.6,1974.4 L601.6,1974.4 L601.6,1910.4" stroke="black" fill="none"/>
-</g>
-<g id="slice:47:1_2_4:26">
-<path d="M601.6,1974.4 L665.6,1974.4 C659.2 2006.4,659.2 2006.4,665.6 2038.4 C659.2 2070.4,659.2 2070.4,665.6 2102.4 L601.6,2102.4 C608 2070.4,608 2070.4,601.6 2038.4 C608 2006.4,608 2006.4,601.6 1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M601.6,1974.4 L665.6,1974.4 C659.2 2006.4,659.2 2006.4,665.6 2038.4 C659.2 2070.4,659.2 2070.4,665.6 2102.4 L601.6,2102.4 C608 2070.4,608 2070.4,601.6 2038.4 C608 2006.4,608 2006.4,601.6 1974.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:52:1_4_4:26">
 <path d="M601.6,2102.4 L665.6,2102.4 L665.6,2166.4 L601.6,2166.4 L601.6,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
@@ -411,60 +387,36 @@
 <path d="M995.2,1910.4 C1027.2 1916.8,1027.2 1916.8,1059.2 1910.4 C1091.2 1916.8,1091.2 1916.8,1123.2 1910.4 L1059.2,1974.4 L995.2,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M995.2,1910.4 C1027.2 1916.8,1027.2 1916.8,1059.2 1910.4 C1091.2 1916.8,1091.2 1916.8,1123.2 1910.4 L1059.2,1974.4 L995.2,1910.4" stroke="black" fill="none"/>
 </g>
-<g id="slice:47:1_2_4:27">
-<path d="M1059.2,1974.4 L1059.2,2038.4 L1123.2,2038.4 L1059.2,2102.4 L995.2,2038.4 L1059.2,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M1059.2,1974.4 L1059.2,2038.4 L1123.2,2038.4 L1059.2,2102.4 L995.2,2038.4 L1059.2,1974.4" stroke="black" fill="none"/>
-</g>
 <g id="slice:52:1_4_4:27">
 <path d="M1059.2,2102.4 L1123.2,2166.4 C1091.2 2160,1091.2 2160,1059.2 2166.4 C1027.2 2160,1027.2 2160,995.2 2166.4 L1059.2,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M1059.2,2102.4 L1123.2,2166.4 C1091.2 2160,1091.2 2160,1059.2 2166.4 C1027.2 2160,1027.2 2160,995.2 2166.4 L1059.2,2102.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:42:1_0_4:28">
 <path d="M1452.8,1910.4 C1484.8 1916.8,1484.8 1916.8,1516.8 1910.4 C1548.8 1916.8,1548.8 1916.8,1580.8 1910.4 L1516.8,1974.4 L1452.8,1910.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip18"><path d="M1452.8,1910.4 C1484.8 1916.8,1484.8 1916.8,1516.8 1910.4 C1548.8 1916.8,1548.8 1916.8,1580.8 1910.4 L1516.8,1974.4 L1452.8,1910.4"/></clipPath>
-<circle clip-path="url(#clip18)" cx="1452.8" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip18)" cx="1516.8" cy="1910.4" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip18)" cx="1580.8" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip18)" cx="1516.8" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip20"><path d="M1452.8,1910.4 C1484.8 1916.8,1484.8 1916.8,1516.8 1910.4 C1548.8 1916.8,1548.8 1916.8,1580.8 1910.4 L1516.8,1974.4 L1452.8,1910.4"/></clipPath>
+<circle clip-path="url(#clip20)" cx="1452.8" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip20)" cx="1516.8" cy="1910.4" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip20)" cx="1580.8" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip20)" cx="1516.8" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1452.8,1910.4 C1484.8 1916.8,1484.8 1916.8,1516.8 1910.4 C1548.8 1916.8,1548.8 1916.8,1580.8 1910.4 L1516.8,1974.4 L1452.8,1910.4" stroke="black" fill="none"/>
-</g>
-<g id="slice:47:1_2_4:28">
-<path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip19"><path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4"/></clipPath>
-<circle clip-path="url(#clip19)" cx="1516.8" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip19)" cx="1452.8" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip19)" cx="1516.8" cy="2038.4" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip19)" cx="1580.8" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip19)" cx="1516.8" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1516.8,1974.4 L1516.8,2038.4 L1580.8,2038.4 L1516.8,2102.4 L1452.8,2038.4 L1516.8,1974.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:52:1_4_4:28">
 <path d="M1516.8,2102.4 L1580.8,2166.4 C1548.8 2160,1548.8 2160,1516.8 2166.4 C1484.8 2160,1484.8 2160,1452.8 2166.4 L1516.8,2102.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip20"><path d="M1516.8,2102.4 L1580.8,2166.4 C1548.8 2160,1548.8 2160,1516.8 2166.4 C1484.8 2160,1484.8 2160,1452.8 2166.4 L1516.8,2102.4"/></clipPath>
-<circle clip-path="url(#clip20)" cx="1516.8" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip20)" cx="1452.8" cy="2166.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip20)" cx="1516.8" cy="2166.4" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip20)" cx="1580.8" cy="2166.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<clipPath id="clip21"><path d="M1516.8,2102.4 L1580.8,2166.4 C1548.8 2160,1548.8 2160,1516.8 2166.4 C1484.8 2160,1484.8 2160,1452.8 2166.4 L1516.8,2102.4"/></clipPath>
+<circle clip-path="url(#clip21)" cx="1516.8" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip21)" cx="1452.8" cy="2166.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip21)" cx="1516.8" cy="2166.4" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip21)" cx="1580.8" cy="2166.4" r="43" stroke="none" fill="url('#xgrad')"/>
 <path d="M1516.8,2102.4 L1580.8,2166.4 C1548.8 2160,1548.8 2160,1516.8 2166.4 C1484.8 2160,1484.8 2160,1452.8 2166.4 L1516.8,2102.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:42:1_0_4:29">
 <path d="M1910.4,1910.4 C1942.4 1916.8,1942.4 1916.8,1974.4 1910.4 C2006.4 1916.8,2006.4 1916.8,2038.4 1910.4 L1974.4,1974.4 L1910.4,1910.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip21"><path d="M1910.4,1910.4 C1942.4 1916.8,1942.4 1916.8,1974.4 1910.4 C2006.4 1916.8,2006.4 1916.8,2038.4 1910.4 L1974.4,1974.4 L1910.4,1910.4"/></clipPath>
-<circle clip-path="url(#clip21)" cx="1910.4" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip21)" cx="1974.4" cy="1910.4" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip21)" cx="2038.4" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip21)" cx="1974.4" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1910.4,1910.4 C1942.4 1916.8,1942.4 1916.8,1974.4 1910.4 C2006.4 1916.8,2006.4 1916.8,2038.4 1910.4 L1974.4,1974.4 L1910.4,1910.4" stroke="black" fill="none"/>
-</g>
-<g id="slice:47:1_2_4:29">
-<path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<clipPath id="clip22"><path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4"/></clipPath>
+<clipPath id="clip22"><path d="M1910.4,1910.4 C1942.4 1916.8,1942.4 1916.8,1974.4 1910.4 C2006.4 1916.8,2006.4 1916.8,2038.4 1910.4 L1974.4,1974.4 L1910.4,1910.4"/></clipPath>
+<circle clip-path="url(#clip22)" cx="1910.4" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
+<circle clip-path="url(#clip22)" cx="1974.4" cy="1910.4" r="43" stroke="none" fill="url('#zgrad')"/>
+<circle clip-path="url(#clip22)" cx="2038.4" cy="1910.4" r="43" stroke="none" fill="url('#xgrad')"/>
 <circle clip-path="url(#clip22)" cx="1974.4" cy="1974.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip22)" cx="1910.4" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip22)" cx="1974.4" cy="2038.4" r="43" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip22)" cx="2038.4" cy="2038.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip22)" cx="1974.4" cy="2102.4" r="43" stroke="none" fill="url('#xgrad')"/>
-<path d="M1974.4,1974.4 L1974.4,2038.4 L2038.4,2038.4 L1974.4,2102.4 L1910.4,2038.4 L1974.4,1974.4" stroke="black" fill="none"/>
+<path d="M1910.4,1910.4 C1942.4 1916.8,1942.4 1916.8,1974.4 1910.4 C2006.4 1916.8,2006.4 1916.8,2038.4 1910.4 L1974.4,1974.4 L1910.4,1910.4" stroke="black" fill="none"/>
 </g>
 <g id="slice:52:1_4_4:29">
 <path d="M1974.4,2102.4 L2038.4,2166.4 C2006.4 2160,2006.4 2160,1974.4 2166.4 C1942.4 2160,1942.4 2160,1910.4 2166.4 L1974.4,2102.4" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
@@ -479,10 +431,6 @@
 <path d="M2368,1910.4 C2400 1916.8,2400 1916.8,2432 1910.4 C2464 1916.8,2464 1916.8,2496 1910.4 L2432,1974.4 L2368,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2368,1910.4 C2400 1916.8,2400 1916.8,2432 1910.4 C2464 1916.8,2464 1916.8,2496 1910.4 L2432,1974.4 L2368,1910.4" stroke="black" fill="none"/>
 </g>
-<g id="slice:47:1_2_4:30">
-<path d="M2432,1974.4 L2432,2038.4 L2496,2038.4 L2432,2102.4 L2368,2038.4 L2432,1974.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M2432,1974.4 L2432,2038.4 L2496,2038.4 L2432,2102.4 L2368,2038.4 L2432,1974.4" stroke="black" fill="none"/>
-</g>
 <g id="slice:52:1_4_4:30">
 <path d="M2432,2102.4 L2496,2166.4 C2464 2160,2464 2160,2432 2166.4 C2400 2160,2400 2160,2368 2166.4 L2432,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2432,2102.4 L2496,2166.4 C2464 2160,2464 2160,2432 2166.4 C2400 2160,2400 2160,2368 2166.4 L2432,2102.4" stroke="black" fill="none"/>
@@ -491,21 +439,73 @@
 <path d="M80,2368 L144,2368 L144,2432 L80,2432 L80,2368" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M80,2368 L144,2368 L144,2432 L80,2432 L80,2368" stroke="black" fill="none"/>
 </g>
-<g id="slice:47:1_2_4:31">
-<path d="M80,2432 L144,2432 C137.6 2464,137.6 2464,144 2496 C137.6 2528,137.6 2528,144 2560 L80,2560 C86.4 2528,86.4 2528,80 2496 C86.4 2464,86.4 2464,80 2432" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M80,2432 L144,2432 C137.6 2464,137.6 2464,144 2496 C137.6 2528,137.6 2528,144 2560 L80,2560 C86.4 2528,86.4 2528,80 2496 C86.4 2464,86.4 2464,80 2432" stroke="black" fill="none"/>
-</g>
 <g id="slice:52:1_4_4:31">
 <path d="M80,2560 L144,2560 L144,2624 L80,2624 L80,2560" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M80,2560 L144,2560 L144,2624 L80,2624 L80,2560" stroke="black" fill="none"/>
 </g>
-<g id="slice:42:1_0_4:32">
-<path d="M537.6,2368 L601.6,2368 L537.6,2432 L537.6,2368" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
-<path d="M537.6,2368 L601.6,2368 L537.6,2432 L537.6,2368" stroke="black" fill="none"/>
-</g>
 <g id="slice:47:1_2_4:32">
 <path d="M601.6,2432 L601.6,2496 L537.6,2560 L537.6,2496 L601.6,2432" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M601.6,2432 L601.6,2496 L537.6,2560 L537.6,2496 L601.6,2432" stroke="black" fill="none"/>
+</g>
+<g id="slice:6:1_0_1:4">
+<path d="M1516.8,80 L1580.8,80 L1516.8,144 L1516.8,80" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1516.8,80 L1580.8,80 L1516.8,144 L1516.8,80" stroke="black" fill="none"/>
+</g>
+<g id="slice:16:1_4_1:4">
+<path d="M1580.8,272 L1580.8,336 L1516.8,336 L1580.8,272" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1580.8,272 L1580.8,336 L1516.8,336 L1580.8,272" stroke="black" fill="none"/>
+</g>
+<g id="slice:6:1_0_1:11">
+<path d="M1910.4,537.6 L1974.4,537.6 L1910.4,601.6 L1910.4,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1910.4,537.6 L1974.4,537.6 L1910.4,601.6 L1910.4,537.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:16:1_4_1:11">
+<path d="M1974.4,729.6 L1974.4,793.6 L1910.4,793.6 L1974.4,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1974.4,729.6 L1974.4,793.6 L1910.4,793.6 L1974.4,729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:18:1_0_2:11">
+<path d="M1974.4,537.6 L2038.4,537.6 L1974.4,601.6 L1974.4,537.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M1974.4,537.6 L2038.4,537.6 L1974.4,601.6 L1974.4,537.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:28:1_4_2:11">
+<path d="M2038.4,729.6 L2038.4,793.6 L1974.4,793.6 L2038.4,729.6" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2038.4,729.6 L2038.4,793.6 L1974.4,793.6 L2038.4,729.6" stroke="black" fill="none"/>
+</g>
+<g id="slice:18:1_0_2:18">
+<path d="M2368,995.2 L2432,995.2 L2368,1059.2 L2368,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2368,995.2 L2432,995.2 L2368,1059.2 L2368,995.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:28:1_4_2:18">
+<path d="M2432,1187.2 L2432,1251.2 L2368,1251.2 L2432,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2432,1187.2 L2432,1251.2 L2368,1251.2 L2432,1187.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:30:1_0_3:18">
+<path d="M2432,995.2 L2496,995.2 L2432,1059.2 L2432,995.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2432,995.2 L2496,995.2 L2432,1059.2 L2432,995.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:40:1_4_3:18">
+<path d="M2496,1187.2 L2496,1251.2 L2432,1251.2 L2496,1187.2" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M2496,1187.2 L2496,1251.2 L2432,1251.2 L2496,1187.2" stroke="black" fill="none"/>
+</g>
+<g id="slice:30:1_0_3:25">
+<path d="M80,1910.4 L144,1910.4 L80,1974.4 L80,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M80,1910.4 L144,1910.4 L80,1974.4 L80,1910.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:40:1_4_3:25">
+<path d="M144,2102.4 L144,2166.4 L80,2166.4 L144,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M144,2102.4 L144,2166.4 L80,2166.4 L144,2102.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:42:1_0_4:25">
+<path d="M144,1910.4 L208,1910.4 L144,1974.4 L144,1910.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M144,1910.4 L208,1910.4 L144,1974.4 L144,1910.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:52:1_4_4:25">
+<path d="M208,2102.4 L208,2166.4 L144,2166.4 L208,2102.4" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M208,2102.4 L208,2166.4 L144,2166.4 L208,2102.4" stroke="black" fill="none"/>
+</g>
+<g id="slice:42:1_0_4:32">
+<path d="M537.6,2368 L601.6,2368 L537.6,2432 L537.6,2368" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
+<path d="M537.6,2368 L601.6,2368 L537.6,2432 L537.6,2368" stroke="black" fill="none"/>
 </g>
 <g id="slice:52:1_4_4:32">
 <path d="M601.6,2560 L601.6,2624 L537.6,2624 L601.6,2560" stroke="none" fill-opacity="0.75" fill="#FF4040"/>

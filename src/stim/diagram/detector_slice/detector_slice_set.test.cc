@@ -27,7 +27,7 @@ using namespace stim;
 using namespace stim_draw_internal;
 
 TEST(detector_slice_set, from_circuit) {
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
     auto slice_set = DetectorSliceSet::from_circuit_ticks(
         stim::Circuit(R"CIRCUIT(
         QUBIT_COORDS(3, 5) 1
@@ -88,7 +88,10 @@ TEST(detector_slice_set, big_loop_seeking) {
     )CIRCUIT");
 
     uint64_t inner = 10 * 100 * 1000 + 1;
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
+    CoordFilter obs5_filter;
+    obs5_filter.use_target = true;
+    obs5_filter.exact_target = DemTarget::observable_id(5);
     auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, inner * 10000ULL * 50ULL + 2ULL, 1, {&empty_filter});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
@@ -99,7 +102,7 @@ TEST(detector_slice_set, big_loop_seeking) {
         }));
 
     slice_set = DetectorSliceSet::from_circuit_ticks(
-        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 1, {&empty_filter});
+        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 1, std::vector<CoordFilter>{empty_filter, obs5_filter});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
@@ -112,7 +115,7 @@ TEST(detector_slice_set, big_loop_seeking) {
         }));
 
     slice_set = DetectorSliceSet::from_circuit_ticks(
-        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 2, {&empty_filter});
+        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 2, std::vector<CoordFilter>{empty_filter, obs5_filter});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
@@ -129,10 +132,13 @@ TEST(detector_slice_set, big_loop_seeking) {
 }
 
 TEST(detector_slice_set_text_diagram, repetition_code) {
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
+    CoordFilter obs_filter;
+    obs_filter.use_target = true;
+    obs_filter.exact_target = DemTarget::observable_id(0);
     CircuitGenParameters params(10, 5, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 9, 1, {&empty_filter});
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 9, 1, std::vector<CoordFilter>{empty_filter, obs_filter});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0: --------Z:D12----------------------------
@@ -154,7 +160,7 @@ q7: -Z:D11-----------------------Z:D15-------
 q8: -----------------------------Z:D15--Z:L0-
 )DIAGRAM");
 
-    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, {&empty_filter}).str() + "\n", R"DIAGRAM(
+    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, std::vector<CoordFilter>{empty_filter, obs_filter}).str() + "\n", R"DIAGRAM(
 q0: --------Z:D16-
             |
 q1: -Z:D12--Z:D16-
@@ -176,10 +182,13 @@ q8: -Z:D15--Z:L0--
 }
 
 TEST(detector_slice_set_text_diagram, surface_code) {
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
+    CoordFilter obs_filter;
+    obs_filter.use_target = true;
+    obs_filter.exact_target = DemTarget::observable_id(0);
     CircuitGenParameters params(10, 2, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, {&empty_filter});
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, std::vector<CoordFilter>{empty_filter, obs_filter});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0:(0, 0) -X:D2--Z:D3--------------------------------Z:L0-
@@ -203,13 +212,37 @@ q8:(2, 2) -------------------------------------Z:D8--X:D9-
 }
 
 TEST(detector_slice_set_svg_diagram, surface_code) {
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
     CircuitGenParameters params(10, 2, "rotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
     auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 8, 1, {&empty_filter});
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "rotated_memory_z_detector_slice.svg");
+}
+
+TEST(detector_slice_set_svg_diagram, long_range_detector) {
+    Circuit circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 1) 1
+        QUBIT_COORDS(2, 2) 2
+        QUBIT_COORDS(3, 3) 3
+        QUBIT_COORDS(4, 4) 4
+        QUBIT_COORDS(5, 5) 5
+        QUBIT_COORDS(6, 6) 6
+        QUBIT_COORDS(7, 7) 7
+        QUBIT_COORDS(8, 8) 8
+        QUBIT_COORDS(9, 9) 9
+        H 0 1 2 3 4 5 6 7 8 9
+        TICK
+        MX 0 9
+        DETECTOR(0) rec[-1] rec[-2]
+    )CIRCUIT");
+    CoordFilter empty_filter;
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
+    std::stringstream ss;
+    slice_set.write_svg_diagram_to(ss);
+    expect_string_is_identical_to_saved_file(ss.str(), "long_range_detector.svg");
 }
 
 TEST(detector_slice_set, pick_polygon_center) {
@@ -257,7 +290,7 @@ TEST(detector_slice_set_svg_diagram, colinear_polygon) {
         DETECTOR rec[-1] rec[-2] rec[-3]
         DETECTOR rec[-4] rec[-5] rec[-6] rec[-7]
     )CIRCUIT");
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
     auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
@@ -274,13 +307,43 @@ TEST(detector_slice_set_svg_diagram, svg_ids) {
         TICK
         M 0 1 2 3
         DETECTOR rec[-1]
-        DETECTOR(1) rec[-1] rec[-2] 
+        DETECTOR(1) rec[-1] rec[-2]
         DETECTOR(2, 2) rec[-1] rec[-2] rec[-3]
         DETECTOR(3, 3, 3) rec[-1] rec[-2] rec[-3] rec[-4]
     )CIRCUIT");
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
     auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "svg_ids.svg");
+}
+
+
+TEST(coord_filter, parse_from) {
+    auto c = CoordFilter::parse_from("");
+    ASSERT_TRUE(c.coordinates.empty());
+    ASSERT_FALSE(c.use_target);
+
+    c = CoordFilter::parse_from("D5");
+    ASSERT_TRUE(c.coordinates.empty());
+    ASSERT_TRUE(c.use_target);
+    ASSERT_EQ(c.exact_target, DemTarget::relative_detector_id(5));
+
+    c = CoordFilter::parse_from("L7");
+    ASSERT_TRUE(c.coordinates.empty());
+    ASSERT_TRUE(c.use_target);
+    ASSERT_EQ(c.exact_target, DemTarget::observable_id(7));
+
+    c = CoordFilter::parse_from("2,3,*,5");
+    ASSERT_TRUE(c.coordinates.size() == 4);
+    ASSERT_TRUE(c.coordinates[0] == 2);
+    ASSERT_TRUE(c.coordinates[1] == 3);
+    ASSERT_TRUE(std::isnan(c.coordinates[2]));
+    ASSERT_TRUE(c.coordinates[3] == 5);
+    ASSERT_FALSE(c.use_target);
+}
+
+TEST(inv_space_fill_transform, inv_space_fill_transform) {
+    ASSERT_EQ(inv_space_fill_transform({0, 0}), 0);
+    ASSERT_EQ(inv_space_fill_transform({4, 55.5}), 339946);
 }

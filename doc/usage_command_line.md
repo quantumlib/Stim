@@ -557,7 +557,7 @@ NAME
 
 SYNOPSIS
     stim diagram \
-        [--filter_coords float.seperatedby(',').seperatedby(':')] \
+        [--filter_coords (float.seperatedby(',') | L# | D#).seperatedby(':')] \
         [--in filepath] \
         [--out filepath] \
         [--remove_noise] \
@@ -578,12 +578,19 @@ OPTIONS
         A filter is a set of points.
         Points are separated by colons (':').
 
-        For example, in a detector slice diagram, specifying
-        "--filter-coords 2,3:4,5,6" means that only detectors whose
-        first two coordinates are (2,3), or whose first three coordinate
-        are (4,5,6), should be included in the diagram. Note that the
-        filters are always prefix matches, so a detector with coordinates
-        (2,3,4) matches the filter 2,3.
+        Filters can also be set to specific detector or observable indices,
+        like D0 or L0.
+        targets like L0
+
+        Example:
+            --filter-coords 2,3:4,5,6
+                In a detector slice diagram this means that only detectors whose
+                first two coordinates are (2,3), or whose first three coordinate
+                are (4,5,6), should be included in the diagram.
+            --filter-coords L0
+                In a detector slice diagram this means that logical observable 0
+                should be included. Logical observables are only included if
+                explicitly filtered in.
 
 
     --in
@@ -661,12 +668,12 @@ OPTIONS
 
             INPUT MUST BE A CIRCUIT.
 
-        "match-graph-svg": An image of the decoding graph of a detector
+        "matchgraph-svg": An image of the decoding graph of a detector
             error model. Red lines are errors crossing a logical observable.
 
             INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-        "match-graph-3d": A 3d model, in GLTF format, of the
+        "matchgraph-3d": A 3d model, in GLTF format, of the
             decoding graph of a detector error model. Red lines are
             errors crossing a logical observable.
 
@@ -676,20 +683,20 @@ OPTIONS
 
             INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-        "match-graph-3d-html": A web page containing a 3d model
+        "matchgraph-3d-html": A web page containing a 3d model
             viewer of the decoding graph of a detector error
             model or circuit.
 
             INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
-        "detector-slice-text": An ASCII diagram of the stabilizers
+        "detslice-text": An ASCII diagram of the stabilizers
             that detectors declared by the circuit correspond to
             during the TICK instruction identified by the `tick`
             argument.
 
             INPUT MUST BE A CIRCUIT.
 
-        "detector-slice-svg": An SVG image of the stabilizers
+        "detslice-svg": An SVG image of the stabilizers
             that detectors declared by the circuit correspond to
             during the TICK instruction identified by the `tick`
             argument. For example, a detector slice diagram of a
@@ -700,12 +707,12 @@ OPTIONS
 
             INPUT MUST BE A CIRCUIT.
 
-        "time-slice-svg": An SVG image of the operations that a circuit
+        "timeslice-svg": An SVG image of the operations that a circuit
             applies during the specified tick or range of ticks.
 
             INPUT MUST BE A CIRCUIT.
 
-        "time+detector-slice-svg": An SVG image of the operations that a
+        "timeslice-with-ops-svg": An SVG image of the operations that a
             circuit applies during the specified tick or range of ticks,
             combined with the detector slices after those operations are
             applied.

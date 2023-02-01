@@ -28,7 +28,7 @@ using namespace stim_draw_internal;
 
 void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, const std::string &key) {
     std::stringstream ss;
-    std::vector<double> filter;
+    CoordFilter filter;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIMELINE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), key);
 }
@@ -204,7 +204,7 @@ TEST(circuit_diagram_timeline_svg, tick) {
     )CIRCUIT");
 
     std::stringstream ss;
-    std::vector<double> filter;
+    CoordFilter filter;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIMELINE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "tick.svg");
 }
@@ -258,7 +258,8 @@ TEST(circuit_diagram_timeline_svg, surface_code) {
 TEST(circuit_diagram_time_detector_slice_svg, surface_code_partial) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit.flattened();
-    std::vector<double> filter{2};
+    CoordFilter filter;
+    filter.coordinates.push_back(2);
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_detector_slice.svg");
@@ -267,7 +268,8 @@ TEST(circuit_diagram_time_detector_slice_svg, surface_code_partial) {
 TEST(circuit_diagram_time_detector_slice_svg, surface_code_full) {
     CircuitGenParameters params(5, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    std::vector<double> filter{1};
+    CoordFilter filter;
+    filter.coordinates.push_back(1);
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_full_time_detector_slice.svg");
@@ -276,7 +278,7 @@ TEST(circuit_diagram_time_detector_slice_svg, surface_code_full) {
 TEST(circuit_diagram_time_slice_svg, surface_code) {
     CircuitGenParameters params(10, 3, "rotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    std::vector<double> filter{};
+    CoordFilter filter;
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_slice.svg");
@@ -306,8 +308,23 @@ TEST(circuit_diagram_timeline_svg, chained_loops) {
         TICK
     )CIRCUIT");
 
-    std::vector<double> empty_filter;
+    CoordFilter empty_filter;
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "circuit_diagram_timeline_svg_chained_loops.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, make_diagram_write_to) {
+    CircuitGenParameters params(2, 3, "rotated_memory_x");
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    std::vector<CoordFilter> coord_filter{CoordFilter{}};
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit,
+        ss,
+        0,
+        circuit.count_ticks(),
+        SVG_MODE_TIME_DETECTOR_SLICE,
+        coord_filter);
+    expect_string_is_identical_to_saved_file(ss.str(), "detslice-with-ops_surface_code.svg");
 }
