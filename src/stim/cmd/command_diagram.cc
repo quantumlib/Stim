@@ -91,7 +91,7 @@ __declspec(noinline)
 std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
     const char *arg = find_argument("--filter_coords", argc, argv);
     if (arg == nullptr) {
-        return {{}};
+        return std::vector<CoordFilter>{CoordFilter{}};
     }
 
     std::vector<CoordFilter> result;
