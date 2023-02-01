@@ -20,9 +20,15 @@
 #include <iostream>
 
 #include "stim/mem/bit_ref.h"
+#include "stim/mem/pointer_range.h"
 #include "stim/mem/simd_bits_range_ref.h"
 
 namespace stim {
+
+struct PauliString;
+struct Circuit;
+struct Tableau;
+struct Operation;
 
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
@@ -92,7 +98,7 @@ struct PauliStringRef {
     ///     out: The Pauli string to overwrite.
     ///     in_indices: For each qubit position in the output Pauli string, which qubit positions is read from in this
     ///         Pauli string.
-    void gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const;
+    void gather_into(PauliStringRef out, ConstPointerRange<size_t> in_indices) const;
 
     /// Overwrites part of the given Pauli string with the contents of this Pauli string.
     /// Also multiplies this Pauli string's sign into the given Pauli string's sign.
@@ -101,7 +107,7 @@ struct PauliStringRef {
     ///     out: The Pauli string to partially overwrite.
     ///     out_indices: For each qubit position in this Pauli string, which qubit position is overwritten in the output
     ///         Pauli string.
-    void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
+    void scatter_into(PauliStringRef out, ConstPointerRange<size_t> out_indices) const;
 
     /// Determines if this Pauli string commutes with the given Pauli string.
     bool commutes(const PauliStringRef &other) const noexcept;
@@ -110,6 +116,16 @@ struct PauliStringRef {
     std::string str() const;
     /// Returns a string describing the given Pauli string, indexing the Paulis so that identities can be omitted.
     std::string sparse_str() const;
+
+    void after_inplace_broadcast(const Tableau &tableau, ConstPointerRange<size_t> targets, bool inverse);
+    void after_inplace(const Circuit &Circuit);
+    void after_inplace(const Operation &operation, bool inverse);
+    PauliString after(const Circuit &circuit) const;
+    PauliString after(const Tableau &tableau, ConstPointerRange<size_t> indices) const;
+    PauliString after(const Operation &operation) const;
+    PauliString before(const Circuit &circuit) const;
+    PauliString before(const Tableau &tableau, ConstPointerRange<size_t> indices) const;
+    PauliString before(const Operation &operation) const;
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

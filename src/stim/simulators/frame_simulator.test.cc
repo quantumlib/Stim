@@ -68,10 +68,14 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         sim.set_frame(k, test_value);
         (sim.*bulk_func)(op_data);
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
+            size_t target_buf[2];
             if (num_targets == 1) {
-                tableau.apply_within(test_value_ref, {targets[k2].data});
+                target_buf[0] = targets[k2].data;
+                tableau.apply_within(test_value_ref, {&target_buf[0]});
             } else {
-                tableau.apply_within(test_value_ref, {targets[k2].data, targets[k2 + 1].data});
+                target_buf[0] = targets[k2].data;
+                target_buf[1] = targets[k2 + 1].data;
+                tableau.apply_within(test_value_ref, {&target_buf[0], &target_buf[2]});
             }
         }
         test_value.sign = false;

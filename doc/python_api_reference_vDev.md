@@ -202,6 +202,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.__setitem__`](#stim.PauliString.__setitem__)
     - [`stim.PauliString.__str__`](#stim.PauliString.__str__)
     - [`stim.PauliString.__truediv__`](#stim.PauliString.__truediv__)
+    - [`stim.PauliString.after`](#stim.PauliString.after)
+    - [`stim.PauliString.before`](#stim.PauliString.before)
     - [`stim.PauliString.commutes`](#stim.PauliString.commutes)
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
     - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
@@ -6409,6 +6411,116 @@ def __truediv__(
     """
 ```
 
+<a name="stim.PauliString.after"></a>
+```python
+# stim.PauliString.after
+
+# (in class stim.PauliString)
+@overload
+def after(
+    self,
+    operation: Union[stim.Circuit, stim.CircuitInstruction],
+) -> stim.PauliString:
+    pass
+@overload
+def after(
+    self,
+    operation: stim.Tableau,
+    targets: Iterable[int],
+) -> stim.PauliString:
+    pass
+def after(
+    self,
+    operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
+    targets: Optional[Iterable[int]] = None,
+) -> stim.PauliString:
+    """Returns the result of conjugating the Pauli string by an operation.
+
+    Args:
+        operation: A circuit, tableau, or circuit instruction to
+            conjugate the Pauli string by. Must be Clifford (e.g.
+            if it's a circuit, the circuit can't have noise or
+            measurements).
+        targets: Required if and only if the operation is a tableau.
+            Specifies which qubits to target.
+
+    Examples:
+        >>> import stim
+        >>> p = stim.PauliString("_XYZ")
+
+        >>> p.after(stim.CircuitInstruction("H", [1]))
+        stim.PauliString("+_ZYZ")
+
+        >>> p.after(stim.Circuit('''
+        ...     C_XYZ 1 2 3
+        ... '''))
+        stim.PauliString("+_YZX")
+
+        >>> p.after(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+        stim.PauliString("+ZXYZ")
+
+    Returns:
+        The conjugated Pauli string. The Pauli string after the
+        operation that is exactly equivalent to the given Pauli
+        string before the operation.
+    """
+```
+
+<a name="stim.PauliString.before"></a>
+```python
+# stim.PauliString.before
+
+# (in class stim.PauliString)
+@overload
+def after(
+    self,
+    operation: Union[stim.Circuit, stim.CircuitInstruction],
+) -> stim.PauliString:
+    pass
+@overload
+def after(
+    self,
+    operation: stim.Tableau,
+    targets: Iterable[int],
+) -> stim.PauliString:
+    pass
+def after(
+    self,
+    operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
+    targets: Optional[Iterable[int]] = None,
+) -> stim.PauliString:
+    """Returns the result of conjugating the Pauli string by an operation.
+
+    Args:
+        operation: A circuit, tableau, or circuit instruction to
+            anti-conjugate the Pauli string by. Must be Clifford (e.g.
+            if it's a circuit, the circuit can't have noise or
+            measurements).
+        targets: Required if and only if the operation is a tableau.
+            Specifies which qubits to target.
+
+    Examples:
+        >>> import stim
+        >>> p = stim.PauliString("_XYZ")
+
+        >>> p.before(stim.CircuitInstruction("H", [1]))
+        stim.PauliString("+_ZYZ")
+
+        >>> p.before(stim.Circuit('''
+        ...     C_XYZ 1 2 3
+        ... '''))
+        stim.PauliString("+_ZXY")
+
+        >>> p.before(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+        stim.PauliString("+ZXYZ")
+
+    Returns:
+        The conjugated Pauli string. The Pauli string before the
+        operation that is exactly equivalent to the given Pauli
+        string after the operation.
+    """
+```
+
 <a name="stim.PauliString.commutes"></a>
 ```python
 # stim.PauliString.commutes
@@ -7094,7 +7206,7 @@ def __str__(
 def append(
     self,
     gate: stim.Tableau,
-    targets: List[int],
+    targets: Sequence[int],
 ) -> None:
     """Appends an operation's effect into this tableau, mutating this tableau.
 
@@ -7974,7 +8086,7 @@ def iter_all(
 def prepend(
     self,
     gate: stim.Tableau,
-    targets: List[int],
+    targets: Sequence[int],
 ) -> None:
     """Prepends an operation's effect into this tableau, mutating this tableau.
 

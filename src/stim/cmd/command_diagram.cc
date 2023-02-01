@@ -228,9 +228,6 @@ int stim::command_diagram(int argc, const char **argv) {
         auto circuit = _read_circuit(in, argc, argv);
         out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
     } else if (type == DETECTOR_SLICE_SVG) {
-        if (!has_tick_arg) {
-            throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
-        }
         auto coord_filter = _read_coord_filter(argc, argv);
         auto circuit = _read_circuit(in, argc, argv);
         DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
