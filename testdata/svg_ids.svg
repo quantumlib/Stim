@@ -1,11 +1,11 @@
 <svg viewBox="0 0 79.1878 71.3231" xmlns="http://www.w3.org/2000/svg">
-<g id="slice:2:2_2:1">
-<path d="M26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L26.4862,16" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
-<path d="M26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L26.4862,16" stroke="black" fill="none"/>
-</g>
 <g id="slice:3:3_3_3:1">
 <path d="M16,16 L26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L16,16" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
 <path d="M16,16 L26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L16,16" stroke="black" fill="none"/>
+</g>
+<g id="slice:2:2_2:1">
+<path d="M26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L26.4862,16" stroke="none" fill-opacity="0.75" fill="#4DA6FF"/>
+<path d="M26.4862,16 L63.1878,55.3231 L36.9723,36.9723 L26.4862,16" stroke="black" fill="none"/>
 </g>
 <g id="slice:1:1:1">
 <path d="M36.9723,36.9723 C41.1668 47.7207, 51.653 55.061, 63.1878 55.3231 C58.9933 44.5748, 48.5071 37.2345, 36.9723 36.9723" stroke="none" fill="#4DA6FF"/>
