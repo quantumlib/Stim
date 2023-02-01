@@ -708,6 +708,19 @@ def test_from_unitary_matrix():
         [[-1, 0], [0, 1]]
     ) == stim.PauliString("-Z")
 
+    assert stim.PauliString.from_unitary_matrix(
+        [[1]], unsigned=True
+    ) == stim.PauliString("")
+    assert stim.PauliString.from_unitary_matrix(
+        [[-1]], unsigned=True
+    ) == stim.PauliString("")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, 1], [-1, 0]], unsigned=True
+    ) == stim.PauliString("Y")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, +1 * 1j**0.1], [-1 * 1j**0.1, 0]], unsigned=True
+    ) == stim.PauliString("Y")
+
     assert stim.PauliString.from_unitary_matrix([
         [0, 0, 0, -1j, 0, 0, 0, 0],
         [0, 0, -1j, 0, 0, 0, 0, 0],
@@ -728,6 +741,26 @@ def test_from_unitary_matrix():
         [0, 0, 0, 0, 0, -1j, 0, 0],
         [0, 0, 0, 0, -1j, 0, 0, 0],
     ], endian="big") == stim.PauliString("ZYX")
+    assert stim.PauliString.from_unitary_matrix(np.array([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ]) * 1j**0.1, endian="big", unsigned=True) == stim.PauliString("ZYX")
+    assert stim.PauliString.from_unitary_matrix(np.array([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ]) * -1, endian="big", unsigned=True) == stim.PauliString("ZYX")
 
 
 def test_from_unitary_matrix_detect_bad_matrix():

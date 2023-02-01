@@ -39,12 +39,69 @@ std::string path_to_string(const pybind11::object &path_obj) {
     throw std::invalid_argument("Not a str or pathlib.Path: " + pybind11::cast<std::string>(pybind11::str(path_obj)));
 }
 
+pybind11::object buffer_slice_to_numpy(
+    size_t num_shots,
+    size_t shot_num_stride_bytes,
+    size_t shot_bit_copy_offset,
+    size_t shot_bit_copy_length,
+    bool bit_packed,
+    ConstPointerRange<uint8_t> immovable_buffer) {
+
+    size_t num_bytes_copied_per_shot = (shot_bit_copy_length + 7) / 8;
+    if (bit_packed) {
+        uint8_t *buffer = new uint8_t[num_bytes_copied_per_shot * num_shots];
+        memset(buffer, 0, num_bytes_copied_per_shot * num_shots);
+        for (size_t s = 0; s < num_shots; s++) {
+            size_t t = s * num_bytes_copied_per_shot * 8;
+            for (size_t k = 0; k < shot_bit_copy_length; k++) {
+                auto k2 = k + shot_bit_copy_offset;
+                auto bi = s * shot_num_stride_bytes + k2 / 8;
+                bool bit = (immovable_buffer[bi] >> (k2 % 8)) & 1;
+                buffer[t / 8] |= bit << (t & 7);
+                t++;
+            }
+        }
+
+        pybind11::capsule free_when_done(buffer, [](void *f) {
+            delete[] reinterpret_cast<uint8_t *>(f);
+        });
+
+        return pybind11::array_t<uint8_t>(
+            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bytes_copied_per_shot},
+            {(pybind11::ssize_t)num_bytes_copied_per_shot, (pybind11::ssize_t)1},
+            buffer,
+            free_when_done);
+    } else {
+        bool *buffer = new bool[shot_bit_copy_length * num_shots];
+        size_t t = 0;
+        for (size_t s = 0; s < num_shots; s++) {
+            for (size_t k = 0; k < shot_bit_copy_length; k++) {
+                auto k2 = k + shot_bit_copy_offset;
+                auto bi = s * shot_num_stride_bytes + k2 / 8;
+                bool bit = (immovable_buffer[bi] >> (k2 % 8)) & 1;
+                buffer[t++] = bit;
+            }
+        }
+
+        pybind11::capsule free_when_done(buffer, [](void *f) {
+            delete[] reinterpret_cast<bool *>(f);
+        });
+
+        return pybind11::array_t<bool>(
+            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)shot_bit_copy_length},
+            {(pybind11::ssize_t)shot_bit_copy_length, (pybind11::ssize_t)1},
+            buffer,
+            free_when_done);
+    }
+}
+
 pybind11::object read_shot_data_file(
     const pybind11::object &path_obj,
     const char *format,
     const pybind11::handle &num_measurements,
     const pybind11::handle &num_detectors,
     const pybind11::handle &num_observables,
+    bool separate_observables,
     bool bit_packed,
     bool _legacy_bit_pack) {
     auto path = path_to_string(path_obj);
@@ -76,40 +133,31 @@ pybind11::object read_shot_data_file(
         }
     }
 
-    if (bit_packed) {
-        size_t num_bytes = full_buffer.size();
-        uint8_t *buffer = new uint8_t[num_bytes];
-        memcpy(buffer, full_buffer.data(), num_bytes);
-
-        pybind11::capsule free_when_done(buffer, [](void *f) {
-            delete[] reinterpret_cast<uint8_t *>(f);
-        });
-
-        return pybind11::array_t<uint8_t>(
-            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bytes_per_shot},
-            {(pybind11::ssize_t)num_bytes_per_shot, (pybind11::ssize_t)1},
-            buffer,
-            free_when_done);
-    } else {
-        bool *buffer = new bool[num_bits_per_shot * num_shots];
-        size_t t = 0;
-        for (size_t s = 0; s < num_shots; s++) {
-            for (size_t k = 0; k < num_bits_per_shot; k++) {
-                auto bi = s * num_bytes_per_shot + k / 8;
-                buffer[t++] = (full_buffer[bi] >> (k % 8)) & 1;
-            }
-        }
-
-        pybind11::capsule free_when_done(buffer, [](void *f) {
-            delete[] reinterpret_cast<bool *>(f);
-        });
-
-        return pybind11::array_t<bool>(
-            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bits_per_shot},
-            {(pybind11::ssize_t)num_bits_per_shot, (pybind11::ssize_t)1},
-            buffer,
-            free_when_done);
+    if (separate_observables) {
+        pybind11::object dets = buffer_slice_to_numpy(
+            num_shots,
+            num_bytes_per_shot,
+            0,
+            num_bits_per_shot - no,
+            bit_packed,
+            full_buffer);
+        pybind11::object obs = buffer_slice_to_numpy(
+            num_shots,
+            num_bytes_per_shot,
+            num_bits_per_shot - no,
+            no,
+            bit_packed,
+            full_buffer);
+        return pybind11::make_tuple(dets, obs);
     }
+
+    return buffer_slice_to_numpy(
+        num_shots,
+        num_bytes_per_shot,
+        0,
+        num_bits_per_shot,
+        bit_packed,
+        full_buffer);
 }
 
 void write_shot_data_file(
@@ -160,11 +208,14 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_measurements") = pybind11::none(),
         pybind11::arg("num_detectors") = pybind11::none(),
         pybind11::arg("num_observables") = pybind11::none(),
+        pybind11::arg("separate_observables") = false,
         pybind11::arg("bit_packed") = false,
         pybind11::arg("bit_pack") = false,  // Legacy argument for backwards compat.
         clean_doc_string(R"DOC(
             Reads shot data, such as measurement samples, from a file.
-            @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
+            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
+            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: 'Literal[True]') -> Tuple[np.ndarray, np.ndarray]:
+            @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: bool = False) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
 
             Args:
                 path: The path to the file to read the data from.
@@ -178,19 +229,43 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 num_observables: How many observables there are per shot.
                     Note that this only refers to observables *stored in the file*, not to
                     observables from the original circuit that was sampled.
+                separate_observables: When set to True, the result is a tuple of two arrays,
+                    one containing the detection event data and the other containing the
+                    observable data, instead of a single array.
 
             Returns:
-                A numpy array containing the loaded data.
+                If separate_observables=True:
+                    A tuple (dets, obs) of numpy arrays containing the loaded data.
 
-                If bit_packed=False:
-                    dtype = np.bool8
-                    shape = (num_shots, num_measurements + num_detectors + num_observables)
-                    bit b from shot s is at result[s, b]
-                If bit_packed=True:
-                    dtype = np.uint8
-                    shape = (num_shots, math.ceil(
-                        (num_measurements + num_detectors + num_observables) / 8))
-                    bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
+                    If bit_packed=False:
+                        dets.dtype = np.bool8
+                        dets.shape = (num_shots, num_measurements + num_detectors)
+                        det bit b from shot s is at dets[s, b]
+                        obs.dtype = np.bool8
+                        obs.shape = (num_shots, num_observables)
+                        obs bit b from shot s is at dets[s, b]
+                    If bit_packed=True:
+                        dets.dtype = np.uint8
+                        dets.shape = (num_shots, math.ceil(
+                            (num_measurements + num_detectors) / 8))
+                        obs.dtype = np.uint8
+                        obs.shape = (num_shots, math.ceil(num_observables / 8))
+                        det bit b from shot s is at dets[s, b // 8] & (1 << (b % 8))
+                        obs bit b from shot s is at obs[s, b // 8] & (1 << (b % 8))
+
+                If separate_observables=False:
+                    A numpy array containing the loaded data.
+
+                    If bit_packed=False:
+                        dtype = np.bool8
+                        shape = (num_shots,
+                                 num_measurements + num_detectors + num_observables)
+                        bit b from shot s is at result[s, b]
+                    If bit_packed=True:
+                        dtype = np.uint8
+                        shape = (num_shots, math.ceil(
+                            (num_measurements + num_detectors + num_observables) / 8))
+                        bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
 
             Examples:
                 >>> import stim

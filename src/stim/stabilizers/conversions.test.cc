@@ -645,3 +645,10 @@ TEST(conversions, stabilizers_to_tableau_bell_pair) {
     // Anticommutes!
     ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, true, true, false); }, std::invalid_argument);
 }
+
+TEST(conversions, stabilizer_to_tableau_detect_anticommutation) {
+    std::vector<stim::PauliString> input_stabilizers;
+    input_stabilizers.push_back(PauliString::from_str("YY"));
+    input_stabilizers.push_back(PauliString::from_str("YX"));
+    ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, false, false, false); }, std::invalid_argument);
+}

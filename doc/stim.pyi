@@ -2027,8 +2027,8 @@ class CompiledDemSampler:
                 has the performance benefit of the data never being expanded into an
                 unpacked form.
             return_errors: Defaults to False.
-                False: the first entry of the returned tuple is None.
-                True: the first entry of the returned tuple is a numpy array recording
+                False: the third entry of the returned tuple is None.
+                True: the third entry of the returned tuple is a numpy array recording
                 which errors were sampled.
             recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
                 If not None, this is expected to be a 2d numpy array specifying which
@@ -2705,7 +2705,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> np.ndarray:
         pass
     @overload
@@ -2716,7 +2716,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         sweep_bits: Optional[np.ndarray] = None,
         separate_observables: 'Literal[True]',
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
     def convert(
@@ -2726,7 +2726,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         sweep_bits: Optional[np.ndarray] = None,
         separate_observables: bool = False,
         append_observables: bool = False,
-        bit_pack_result: bool = False,
+        bit_packed: bool = False,
     ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Converts measurement data into detection event data.
 
@@ -2752,7 +2752,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             append_observables: Defaults to False. When set to True, the observables in
                 the circuit are treated as if they were additional detectors. Their
                 results are appended to the end of the detection event data.
-            bit_pack_result: Defaults to False. When set to True, the returned numpy
+            bit_packed: Defaults to False. When set to True, the returned numpy
                 array contains bit packed data (dtype=np.uint8 with 8 bits per item)
                 instead of unpacked data (dtype=np.bool8).
 
@@ -2764,7 +2764,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             When returning two numpy arrays, the first array is the detection event data
             and the second is the observable flip data.
 
-            The dtype of the returned arrays is np.bool8 if bit_pack_result is false,
+            The dtype of the returned arrays is np.bool8 if bit_packed is false,
             otherwise they're np.uint8 arrays.
 
             shape[0] of the array(s) is the number of shots.
@@ -4892,6 +4892,7 @@ class PauliString:
         matrix: Iterable[Iterable[float]],
         *,
         endian: str = 'little',
+        unsigned: bool = False,
     ) -> stim.PauliString:
         """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
@@ -4904,6 +4905,12 @@ class PauliString:
                     qubits correspond to larger changes in row/col indices.
                 "big": matrix entries are in big endian order, where higher index
                     qubits correspond to smaller changes in row/col indices.
+            unsigned: When False, the input must only contain the values
+                [0, 1, -1, 1j, -1j] and the output will have the correct global phase.
+                When True, the input is permitted to be scaled by an arbitrary unit
+                complex value and the output will always have positive sign.
+                False is stricter but provides more information, while True is more
+                flexible but provides less information.
 
         Returns:
             The pauli string equal to the given unitary matrix.
@@ -4918,6 +4925,12 @@ class PauliString:
             ...     [0, -1j],
             ... ], endian='little')
             stim.PauliString("+iZ")
+
+            >>> stim.PauliString.from_unitary_matrix([
+            ...     [1j**0.1, 0],
+            ...     [0, -(1j**0.1)],
+            ... ], endian='little', unsigned=True)
+            stim.PauliString("+Z")
 
             >>> stim.PauliString.from_unitary_matrix([
             ...     [0, 1, 0, 0],
@@ -8148,6 +8161,7 @@ def main(
         DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
         OBSERVABLE_INCLUDE(0) rec[-1]
     """
+@overload
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
@@ -8157,6 +8171,29 @@ def read_shot_data_file(
     num_detectors: int = 0,
     num_observables: int = 0,
 ) -> np.ndarray:
+    pass
+@overload
+def read_shot_data_file(
+    *,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
+    separate_observables: 'Literal[True]',
+) -> Tuple[np.ndarray, np.ndarray]:
+    pass
+def read_shot_data_file(
+    *,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
+    separate_observables: bool = False,
+) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
     """Reads shot data, such as measurement samples, from a file.
 
     Args:
@@ -8171,19 +8208,43 @@ def read_shot_data_file(
         num_observables: How many observables there are per shot.
             Note that this only refers to observables *stored in the file*, not to
             observables from the original circuit that was sampled.
+        separate_observables: When set to True, the result is a tuple of two arrays,
+            one containing the detection event data and the other containing the
+            observable data, instead of a single array.
 
     Returns:
-        A numpy array containing the loaded data.
+        If separate_observables=True:
+            A tuple (dets, obs) of numpy arrays containing the loaded data.
 
-        If bit_packed=False:
-            dtype = np.bool8
-            shape = (num_shots, num_measurements + num_detectors + num_observables)
-            bit b from shot s is at result[s, b]
-        If bit_packed=True:
-            dtype = np.uint8
-            shape = (num_shots, math.ceil(
-                (num_measurements + num_detectors + num_observables) / 8))
-            bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
+            If bit_packed=False:
+                dets.dtype = np.bool8
+                dets.shape = (num_shots, num_measurements + num_detectors)
+                det bit b from shot s is at dets[s, b]
+                obs.dtype = np.bool8
+                obs.shape = (num_shots, num_observables)
+                obs bit b from shot s is at dets[s, b]
+            If bit_packed=True:
+                dets.dtype = np.uint8
+                dets.shape = (num_shots, math.ceil(
+                    (num_measurements + num_detectors) / 8))
+                obs.dtype = np.uint8
+                obs.shape = (num_shots, math.ceil(num_observables / 8))
+                det bit b from shot s is at dets[s, b // 8] & (1 << (b % 8))
+                obs bit b from shot s is at obs[s, b // 8] & (1 << (b % 8))
+
+        If separate_observables=False:
+            A numpy array containing the loaded data.
+
+            If bit_packed=False:
+                dtype = np.bool8
+                shape = (num_shots,
+                         num_measurements + num_detectors + num_observables)
+                bit b from shot s is at result[s, b]
+            If bit_packed=True:
+                dtype = np.uint8
+                shape = (num_shots, math.ceil(
+                    (num_measurements + num_detectors + num_observables) / 8))
+                bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
 
     Examples:
         >>> import stim

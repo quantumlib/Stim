@@ -326,7 +326,7 @@ PyPauliString PyPauliString::from_text(const char *text) {
     value *= factor;
     return value;
 }
-PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian) {
+PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -336,6 +336,7 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
         throw std::invalid_argument("endian not in ['little', 'big']");
     }
 
+    std::complex<float> unphase = 0;
     auto row_index_phase = [&](const pybind11::handle &row) -> std::tuple<uint64_t, uint8_t, uint64_t> {
         size_t num_cells = 0;
         size_t non_zero_index = SIZE_MAX;
@@ -346,6 +347,15 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
                 num_cells++;
                 continue;
             }
+            if (unphase == std::complex<float>{0}) {
+                if (ignore_sign) {
+                    unphase = conj(c);
+                } else {
+                    unphase = 1;
+                }
+            }
+            c *= unphase;
+
             if (abs(c - std::complex<float>{1, 0}) < 1e-2) {
                 phase = 0;
             } else if (abs(c - std::complex<float>{0, 1}) < 1e-2) {
@@ -355,9 +365,14 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             } else if (abs(c - std::complex<float>{0, -1}) < 1e-2) {
                 phase = 3;
             } else {
-                throw std::invalid_argument(
-                    "The given unitary matrix isn't a Pauli string matrix. It has values besides 0, 1, -1, 1j, and "
-                    "-1j.");
+                std::stringstream ss;
+                ss << "The given unitary matrix isn't a Pauli string matrix. ";
+                ss << "It has values besides 0, 1, -1, 1j, and -1j";
+                if (ignore_sign) {
+                    ss <<" (up to global phase)";
+                }
+                ss << '.';
+                throw std::invalid_argument(ss.str());
             }
             if (non_zero_index != SIZE_MAX) {
                 throw std::invalid_argument(
@@ -441,6 +456,10 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             x >>= 1;
             z >>= 1;
         }
+    }
+    if (ignore_sign) {
+        result.imag = false;
+        result.value.sign = false;
     }
     return result;
 }
@@ -698,8 +717,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("matrix"),
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
+        pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.PauliString:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
             Args:
@@ -711,6 +731,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         qubits correspond to larger changes in row/col indices.
                     "big": matrix entries are in big endian order, where higher index
                         qubits correspond to smaller changes in row/col indices.
+                unsigned: When False, the input must only contain the values
+                    [0, 1, -1, 1j, -1j] and the output will have the correct global phase.
+                    When True, the input is permitted to be scaled by an arbitrary unit
+                    complex value and the output will always have positive sign.
+                    False is stricter but provides more information, while True is more
+                    flexible but provides less information.
 
             Returns:
                 The pauli string equal to the given unitary matrix.
@@ -725,6 +751,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 ...     [0, -1j],
                 ... ], endian='little')
                 stim.PauliString("+iZ")
+
+                >>> stim.PauliString.from_unitary_matrix([
+                ...     [1j**0.1, 0],
+                ...     [0, -(1j**0.1)],
+                ... ], endian='little', unsigned=True)
+                stim.PauliString("+Z")
 
                 >>> stim.PauliString.from_unitary_matrix([
                 ...     [0, 1, 0, 0],

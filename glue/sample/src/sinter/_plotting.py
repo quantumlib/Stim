@@ -137,6 +137,9 @@ def plot_discard_rate(
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
     """
+    if highlight_max_likelihood_factor is None:
+        highlight_max_likelihood_factor = 1
+
     def y_func(stat: 'sinter.TaskStats') -> Union[float, 'sinter.Fit']:
         result = fit_binomial(
             num_shots=stat.shots,
@@ -210,6 +213,8 @@ def plot_error_rate(
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
     """
+    if highlight_max_likelihood_factor is None:
+        highlight_max_likelihood_factor = 1
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
