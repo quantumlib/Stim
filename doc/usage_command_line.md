@@ -1112,6 +1112,7 @@ SYNOPSIS
         [--obs_out_format 01|b8|r8|ptb64|hits|dets] \
         [--out filepath] \
         [--out_format 01|b8|r8|ptb64|hits|dets] \
+        [--ran_without_feedback] \
         [--skip_reference_sample] \
         --sweep filepath \
         [--sweep_format 01|b8|r8|ptb64|hits|dets]
@@ -1247,6 +1248,22 @@ OPTIONS
         For a detailed description of each result format, see the result
         format reference:
         https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --ran_without_feedback
+        Converts the results assuming all feedback operations were skipped.
+
+        Pauli feedback operations don't need to be performed on the quantum
+        computer. They can be performed within the classical control system.
+        As such, it often makes sense to skip them when sampling from the
+        circuit on hardware, and then account for this later during data
+        analysis. Turning on this flag means that the quantum computer
+        didn't apply the feedback operations, and it's the job of the m2d
+        conversion to read the measurement data, rewrite it to account for
+        feedback effects, then convert to detection events.
+
+        In the python API, the same effect can be achieved by using
+        stim.Circuit.with_inlined_feedback().compile_m2d_converter().
 
 
     --skip_reference_sample

@@ -18,6 +18,7 @@
 #include "stim/arg_parse.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/simulators/measurements_to_detection_events.h"
+#include "stim/simulators/transform_without_feedback.h"
 
 using namespace stim;
 
@@ -35,6 +36,7 @@ int stim::command_m2d(int argc, const char **argv) {
             "--sweep_format",
             "--obs_out",
             "--obs_out_format",
+            "--ran_without_feedback",
         },
         {
             "--m2d",
@@ -48,9 +50,13 @@ int stim::command_m2d(int argc, const char **argv) {
     const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
+    bool ran_without_feedback = find_bool_argument("--ran_without_feedback", argc, argv);
     FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "rb", argc, argv);
     auto circuit = Circuit::from_file(circuit_file);
     fclose(circuit_file);
+    if (ran_without_feedback) {
+        circuit = circuit_with_inlined_feedback(circuit);
+    }
 
     FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "wb", argc, argv);
@@ -342,6 +348,28 @@ SubCommandHelp stim::command_m2d_help() {
             circuit. For example, if there are 100 detectors and 10 observables
             in the circuit, then the output will contain 110 detectors and the
             last 10 are the observables.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--ran_without_feedback",
+        "bool",
+        "false",
+        {"[none]", "[switch]"},
+        clean_doc_string(R"PARAGRAPH(
+            Converts the results assuming all feedback operations were skipped.
+
+            Pauli feedback operations don't need to be performed on the quantum
+            computer. They can be performed within the classical control system.
+            As such, it often makes sense to skip them when sampling from the
+            circuit on hardware, and then account for this later during data
+            analysis. Turning on this flag means that the quantum computer
+            didn't apply the feedback operations, and it's the job of the m2d
+            conversion to read the measurement data, rewrite it to account for
+            feedback effects, then convert to detection events.
+
+            In the python API, the same effect can be achieved by using
+            stim.Circuit.with_inlined_feedback().compile_m2d_converter().
         )PARAGRAPH"),
     });
 

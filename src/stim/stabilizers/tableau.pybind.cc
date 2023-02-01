@@ -1041,6 +1041,86 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             .data());
 
     c.def(
+        "x_sign",
+        [](Tableau &self, pybind11::ssize_t target) -> int {
+            if (target < 0 || (size_t)target >= self.num_qubits) {
+                throw std::invalid_argument("not 0 <= target < len(tableau)");
+            }
+            return self.xs.signs[target] ? -1 : +1;
+        },
+        pybind11::arg("target"),
+        clean_doc_string(R"DOC(
+            Returns just the sign of the result of conjugating an X generator.
+
+            This operation runs in constant time.
+
+            Args:
+                target: The qubit the X generator applies to.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_named_gate("S_DAG").x_sign(0)
+                -1
+                >>> stim.Tableau.from_named_gate("S").x_sign(0)
+                1
+        )DOC")
+            .data());
+
+    c.def(
+        "z_sign",
+        [](Tableau &self, pybind11::ssize_t target) -> int {
+            if (target < 0 || (size_t)target >= self.num_qubits) {
+                throw std::invalid_argument("not 0 <= target < len(tableau)");
+            }
+            return self.zs.signs[target] ? -1 : +1;
+        },
+        pybind11::arg("target"),
+        clean_doc_string(R"DOC(
+            Returns just the sign of the result of conjugating a Z generator.
+
+            This operation runs in constant time.
+
+            Args:
+                target: The qubit the Z generator applies to.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_named_gate("SQRT_X_DAG").z_sign(0)
+                1
+                >>> stim.Tableau.from_named_gate("SQRT_X").z_sign(0)
+                -1
+        )DOC")
+            .data());
+
+    c.def(
+        "y_sign",
+        [](Tableau &self, pybind11::ssize_t target) -> int {
+            if (target < 0 || (size_t)target >= self.num_qubits) {
+                throw std::invalid_argument("not 0 <= target < len(tableau)");
+            }
+            return self.y_output(target).sign ? -1 : +1;
+        },
+        pybind11::arg("target"),
+        clean_doc_string(R"DOC(
+            Returns just the sign of the result of conjugating a Y generator.
+
+            Unlike x_sign and z_sign, this operation runs in linear time.
+            The Y generator has to be computed by multiplying the X and Z
+            outputs and the sign depends on all terms.
+
+            Args:
+                target: The qubit the Y generator applies to.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_named_gate("S_DAG").y_sign(0)
+                1
+                >>> stim.Tableau.from_named_gate("S").y_sign(0)
+                -1
+        )DOC")
+            .data());
+
+    c.def(
         "y_output",
         [](Tableau &self, size_t target) {
             if (target >= self.num_qubits) {
