@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
@@ -297,6 +298,34 @@ TEST(detector_slice_set_svg_diagram, colinear_polygon) {
     expect_string_is_identical_to_saved_file(ss.str(), "colinear_detector_slice.svg");
 }
 
+TEST(detector_slice_set_svg_diagram, observable) {
+    Circuit circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(2, 0) 1
+        QUBIT_COORDS(1, 1) 2
+        REPEAT 3 {
+            C_XYZ 0 1
+            TICK
+            CX 0 2
+            TICK
+            CX 1 2
+            TICK
+            M 2
+            TICK
+            R 2
+        }
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+    )CIRCUIT");
+    CoordFilter obs_filter;
+    obs_filter.use_target = true;
+    obs_filter.exact_target = DemTarget::observable_id(0);
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, circuit.count_ticks() + 1, SVG_MODE_TIME_DETECTOR_SLICE, {&obs_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "observable_slices.svg");
+}
+
 TEST(detector_slice_set_svg_diagram, svg_ids) {
     Circuit circuit(R"CIRCUIT(
         QUBIT_COORDS 0
@@ -317,7 +346,6 @@ TEST(detector_slice_set_svg_diagram, svg_ids) {
     slice_set.write_svg_diagram_to(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "svg_ids.svg");
 }
-
 
 TEST(coord_filter, parse_from) {
     auto c = CoordFilter::parse_from("");

@@ -583,8 +583,8 @@ void _draw_observable(
         pts_workspace.push_back(coords(tick, term.qubit_value()));
     }
 
+    // TODO: CURRENTLY DISABLED BECAUSE IT'S UNCLEAR IF IT HELPS OR HURTS.
 //    // Draw a semi-janky path connecting the observable together.
-//    // CURRENTLY DISABLED BECAUSE IT'S UNCLEAR IF IT HELPS OR HURTS.
 //    out << "<path d=\"";
 //    out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
 //    size_t n = pts_workspace.size();
@@ -634,6 +634,7 @@ void _draw_observable(
             write_key_val(out, "cy", c.xyz[1]);
             write_key_val(out, "r", scale * 1.1f);
             write_key_val(out, "stroke", t.is_x_target() ? X_RED : t.is_y_target() ? Y_GREEN : Z_BLUE);
+            write_key_val(out, "stroke-width", 3);
             write_key_val(out, "fill", "none");
             out << "/>\n";
         }
