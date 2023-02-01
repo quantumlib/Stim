@@ -71,19 +71,13 @@ void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
 PauliStringRef TableauHalf::operator[](size_t input_qubit) {
     size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
     return PauliStringRef(
-        num_qubits,
-        signs[input_qubit],
-        xt[input_qubit].word_range_ref(0, nw),
-        zt[input_qubit].word_range_ref(0, nw));
+        num_qubits, signs[input_qubit], xt[input_qubit].word_range_ref(0, nw), zt[input_qubit].word_range_ref(0, nw));
 }
 
 const PauliStringRef TableauHalf::operator[](size_t input_qubit) const {
     size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
     return PauliStringRef(
-        num_qubits,
-        signs[input_qubit],
-        xt[input_qubit].word_range_ref(0, nw),
-        zt[input_qubit].word_range_ref(0, nw));
+        num_qubits, signs[input_qubit], xt[input_qubit].word_range_ref(0, nw), zt[input_qubit].word_range_ref(0, nw));
 }
 
 PauliString Tableau::eval_y_obs(size_t qubit) const {
@@ -201,13 +195,12 @@ bool truncated_tableau_equals(size_t n, const simd_bit_table<W> &t1, const simd_
 
 bool Tableau::operator==(const Tableau &other) const {
     size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return num_qubits == other.num_qubits
-           && truncated_tableau_equals(num_qubits, xs.xt, other.xs.xt)
-           && truncated_tableau_equals(num_qubits, xs.zt, other.xs.zt)
-           && truncated_tableau_equals(num_qubits, zs.xt, other.zs.xt)
-           && truncated_tableau_equals(num_qubits, zs.zt, other.zs.zt)
-           && xs.signs.word_range_ref(0, nw) == other.xs.signs.word_range_ref(0, nw)
-           && zs.signs.word_range_ref(0, nw) == other.zs.signs.word_range_ref(0, nw);
+    return num_qubits == other.num_qubits && truncated_tableau_equals(num_qubits, xs.xt, other.xs.xt) &&
+           truncated_tableau_equals(num_qubits, xs.zt, other.xs.zt) &&
+           truncated_tableau_equals(num_qubits, zs.xt, other.zs.xt) &&
+           truncated_tableau_equals(num_qubits, zs.zt, other.zs.zt) &&
+           xs.signs.word_range_ref(0, nw) == other.xs.signs.word_range_ref(0, nw) &&
+           zs.signs.word_range_ref(0, nw) == other.zs.signs.word_range_ref(0, nw);
 }
 
 bool Tableau::operator!=(const Tableau &other) const {

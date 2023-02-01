@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
 #include "stim/test_util.test.h"
+
+#include <fstream>
 
 #include "stim/probability_util.h"
 
@@ -65,9 +66,9 @@ void expect_string_is_identical_to_saved_file(const std::string &actual, const s
         out << actual;
         out.close();
         EXPECT_TRUE(false) << "Diagram didn't agree.\n"
-            << "    key=" << key << "\n"
-            << "    expected: file://" << path << "\n"
-            << "    actual: file://" << new_path << "\n";
+                           << "    key=" << key << "\n"
+                           << "    expected: file://" << path << "\n"
+                           << "    actual: file://" << new_path << "\n";
     }
 }
 

@@ -61,7 +61,8 @@ struct TempViewableData {
     std::vector<double> args;
     TempViewableData(std::vector<GateTarget> targets) : targets(std::move(targets)), args() {
     }
-    TempViewableData(std::vector<GateTarget> targets, std::vector<double> args) : targets(std::move(targets)), args(std::move(args)) {
+    TempViewableData(std::vector<GateTarget> targets, std::vector<double> args)
+        : targets(std::move(targets)), args(std::move(args)) {
     }
     operator OperationData() {
         return {args, targets};
@@ -97,7 +98,8 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pyb
     return arguments;
 }
 
-TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
+TempViewableData args_to_targets(
+    TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
     std::vector<GateTarget> targets;
     uint32_t max_q = 0;
     try {
@@ -125,7 +127,8 @@ TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &a
     return TempViewableData(targets, gate_args_vec);
 }
 
-TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
+TempViewableData args_to_target_pairs(
+    TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }

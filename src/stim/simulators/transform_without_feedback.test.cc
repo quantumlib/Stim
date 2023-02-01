@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "stim/simulators/transform_without_feedback.h"
-#include "stim/simulators/error_analyzer.h"
 
 #include "gtest/gtest.h"
+
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 
@@ -41,8 +42,7 @@ TEST(circuit_with_inlined_feedback, basic) {
             M 0
             DETECTOR rec[-2] rec[-1]
             OBSERVABLE_INCLUDE(2) rec[-1]
-        )CIRCUIT")
-    );
+        )CIRCUIT"));
 }
 
 TEST(circuit_with_inlined_feedback, demolition_feedback) {

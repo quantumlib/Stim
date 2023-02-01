@@ -148,16 +148,10 @@ void AsciiDiagram::render(std::ostream &out) const {
         return c0 + (int)floor(align * cn);
     };
     auto x_align = [&](AsciiDiagramPos pos) {
-        return p_align(
-            layout.x_offsets[pos.x],
-            layout.x_spans[pos.x],
-            pos.align_x);
+        return p_align(layout.x_offsets[pos.x], layout.x_spans[pos.x], pos.align_x);
     };
     auto y_align = [&](AsciiDiagramPos pos) {
-        return p_align(
-            layout.y_offsets[pos.y],
-            layout.y_spans[pos.y],
-            pos.align_y);
+        return p_align(layout.y_offsets[pos.y], layout.y_spans[pos.y], pos.align_y);
     };
 
     for (const auto &line : lines) {

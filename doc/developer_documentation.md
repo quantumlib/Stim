@@ -649,7 +649,7 @@ firefox out/all_stim_tests.html
 Run the following command from the repo root to auto-format all C++ code:
 
 ```bash
-find src | grep "\.\(cc\|h\)$" | xargs clang-format -i
+find src | grep "\.\(cc\|h\)$" | grep -v "crumble_data.cc" | xargs clang-format -i
 ```
 
 # <a name="newfile"></a>Adding new C++ files

@@ -103,7 +103,13 @@ shot D3 L0
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.data(), "--ran_without_feedback"},
+            {"m2d",
+             "--in_format=01",
+             "--append_observables",
+             "--out_format=dets",
+             "--circuit",
+             tmp.path.data(),
+             "--ran_without_feedback"},
             "00000\n11100\n01100\n00100\n00010\n00001\n")),
         trim(R"output(
 shot

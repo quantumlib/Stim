@@ -845,8 +845,9 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
 
             // Rewrite state to look like it would if loop had executed all but the last iteration.
             uint64_t skipped_periods = period_iterations - 1;
-            tracker.shift(-(int64_t)(skipped_periods * measurements_per_period),
-                          -(int64_t)(skipped_periods * detectors_per_period));
+            tracker.shift(
+                -(int64_t)(skipped_periods * measurements_per_period),
+                -(int64_t)(skipped_periods * detectors_per_period));
             num_ticks_in_past -= skipped_periods * ticks_per_period;
             tortoise_iter += skipped_periods * period;
 

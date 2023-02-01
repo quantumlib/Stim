@@ -5417,7 +5417,7 @@ class Tableau:
     def append(
         self,
         gate: stim.Tableau,
-        targets: List[int],
+        targets: Sequence[int],
     ) -> None:
         """Appends an operation's effect into this tableau, mutating this tableau.
 
@@ -6178,7 +6178,7 @@ class Tableau:
     def prepend(
         self,
         gate: stim.Tableau,
-        targets: List[int],
+        targets: Sequence[int],
     ) -> None:
         """Prepends an operation's effect into this tableau, mutating this tableau.
 

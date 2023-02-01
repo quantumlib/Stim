@@ -7211,7 +7211,7 @@ def __str__(
 def append(
     self,
     gate: stim.Tableau,
-    targets: List[int],
+    targets: Sequence[int],
 ) -> None:
     """Appends an operation's effect into this tableau, mutating this tableau.
 
@@ -8091,7 +8091,7 @@ def iter_all(
 def prepend(
     self,
     gate: stim.Tableau,
-    targets: List[int],
+    targets: Sequence[int],
 ) -> None:
     """Prepends an operation's effect into this tableau, mutating this tableau.
 

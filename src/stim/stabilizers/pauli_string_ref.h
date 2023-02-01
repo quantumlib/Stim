@@ -20,8 +20,8 @@
 #include <iostream>
 
 #include "stim/mem/bit_ref.h"
-#include "stim/mem/simd_bits_range_ref.h"
 #include "stim/mem/pointer_range.h"
+#include "stim/mem/simd_bits_range_ref.h"
 
 namespace stim {
 

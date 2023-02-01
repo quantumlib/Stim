@@ -16,6 +16,7 @@
 
 #include "command_help.h"
 #include "stim/arg_parse.h"
+#include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -24,7 +25,6 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/diagram/crumble.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -154,19 +154,22 @@ int stim::command_diagram(int argc, const char **argv) {
         case TIMELINE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
             break;
         }
         case TIME_SLICE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
             break;
         }
         case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
             auto circuit = read_circuit();
             auto coord_filter = read_coords();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+            DiagramTimelineSvgDrawer::make_diagram_write_to(
+                circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
             break;
         }
         case TIMELINE_3D: {

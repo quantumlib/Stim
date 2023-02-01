@@ -327,7 +327,8 @@ PyPauliString PyPauliString::from_text(const char *text) {
     value *= factor;
     return value;
 }
-PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
+PyPauliString PyPauliString::from_unitary_matrix(
+    const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -370,7 +371,7 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
                 ss << "The given unitary matrix isn't a Pauli string matrix. ";
                 ss << "It has values besides 0, 1, -1, 1j, and -1j";
                 if (ignore_sign) {
-                    ss <<" (up to global phase)";
+                    ss << " (up to global phase)";
                 }
                 ss << '.';
                 throw std::invalid_argument(ss.str());
@@ -1401,7 +1402,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "after",
-        [](const PyPauliString &self, const pybind11::object &operation, const pybind11::object &targets) -> PyPauliString {
+        [](const PyPauliString &self,
+           const pybind11::object &operation,
+           const pybind11::object &targets) -> PyPauliString {
             PauliString result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
@@ -1410,7 +1413,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 result = self.value.ref().after(pybind11::cast<Circuit>(operation));
             } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
                 if (!targets.is_none()) {
-                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                    throw std::invalid_argument(
+                        "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
                 result = self.value.ref().after(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
             } else if (pybind11::isinstance<Tableau>(operation)) {
@@ -1423,7 +1427,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 }
                 result = self.value.ref().after(pybind11::cast<Tableau>(operation), raw_targets);
             } else {
-                throw std::invalid_argument("Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+                throw std::invalid_argument(
+                    "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
             }
             return PyPauliString(result, self.imag);
         },
@@ -1467,7 +1472,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "before",
-        [](const PyPauliString &self, const pybind11::object &operation, const pybind11::object &targets) -> PyPauliString {
+        [](const PyPauliString &self,
+           const pybind11::object &operation,
+           const pybind11::object &targets) -> PyPauliString {
             PauliString result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
@@ -1476,7 +1483,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 result = self.value.ref().before(pybind11::cast<Circuit>(operation));
             } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
                 if (!targets.is_none()) {
-                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                    throw std::invalid_argument(
+                        "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
                 result = self.value.ref().before(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
             } else if (pybind11::isinstance<Tableau>(operation)) {
@@ -1489,7 +1497,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 }
                 result = self.value.ref().before(pybind11::cast<Tableau>(operation), raw_targets);
             } else {
-                throw std::invalid_argument("Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+                throw std::invalid_argument(
+                    "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
             }
             return PyPauliString(result, self.imag);
         },
