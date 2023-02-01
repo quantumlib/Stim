@@ -891,6 +891,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("gate"),
         pybind11::arg("targets"),
         clean_doc_string(R"DOC(
+            @signature def append(self, gate: stim.Tableau, targets: Sequence[int]) -> None:
             Appends an operation's effect into this tableau, mutating this tableau.
 
             Time cost is O(n*m*m) where n=len(self) and m=len(gate).
@@ -994,6 +995,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("gate"),
         pybind11::arg("targets"),
         clean_doc_string(R"DOC(
+            @signature def prepend(self, gate: stim.Tableau, targets: Sequence[int]) -> None:
             Prepends an operation's effect into this tableau, mutating this tableau.
 
             Time cost is O(n*m*m) where n=len(self) and m=len(gate).
