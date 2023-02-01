@@ -14,6 +14,7 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
+#include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
@@ -1396,6 +1397,138 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                >>> p[-1] = 'Y'
                >>> print(p)
                +_XYY
+        )DOC")
+            .data());
+
+    c.def(
+        "after",
+        [](const PyPauliString &self, const pybind11::object &operation, const pybind11::object &targets) -> PyPauliString {
+            PauliString result(0);
+            if (pybind11::isinstance<Circuit>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
+                }
+                result = self.value.ref().after(pybind11::cast<Circuit>(operation));
+            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                }
+                result = self.value.ref().after(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+            } else if (pybind11::isinstance<Tableau>(operation)) {
+                if (targets.is_none()) {
+                    throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
+                }
+                std::vector<size_t> raw_targets;
+                for (const auto &e : targets) {
+                    raw_targets.push_back(pybind11::cast<size_t>(e));
+                }
+                result = self.value.ref().after(pybind11::cast<Tableau>(operation), raw_targets);
+            } else {
+                throw std::invalid_argument("Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+            }
+            return PyPauliString(result, self.imag);
+        },
+        pybind11::arg("operation"),
+        pybind11::arg("targets") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            Returns the result of conjugating the Pauli string by an operation.
+
+            Args:
+                operation: A circuit, tableau, or circuit instruction to
+                    conjugate the Pauli string by. Must be Clifford (e.g.
+                    if it's a circuit, the circuit can't have noise or
+                    measurements).
+                targets: Required if and only if the operation is a tableau.
+                    Specifies which qubits to target.
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("_XYZ")
+
+                >>> p.after(stim.CircuitInstruction("H", [1]))
+                stim.PauliString("+_ZYZ")
+
+                >>> p.after(stim.Circuit('''
+                ...     C_XYZ 1 2 3
+                ... '''))
+                stim.PauliString("+_YZX")
+
+                >>> p.after(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+                stim.PauliString("+ZXYZ")
+
+            Returns:
+                The conjugated Pauli string. The Pauli string after the
+                operation that is exactly equivalent to the given Pauli
+                string before the operation.
+        )DOC")
+            .data());
+
+    c.def(
+        "before",
+        [](const PyPauliString &self, const pybind11::object &operation, const pybind11::object &targets) -> PyPauliString {
+            PauliString result(0);
+            if (pybind11::isinstance<Circuit>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
+                }
+                result = self.value.ref().before(pybind11::cast<Circuit>(operation));
+            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+                if (!targets.is_none()) {
+                    throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.CircuitInstruction");
+                }
+                result = self.value.ref().before(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+            } else if (pybind11::isinstance<Tableau>(operation)) {
+                if (targets.is_none()) {
+                    throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
+                }
+                std::vector<size_t> raw_targets;
+                for (const auto &e : targets) {
+                    raw_targets.push_back(pybind11::cast<size_t>(e));
+                }
+                result = self.value.ref().before(pybind11::cast<Tableau>(operation), raw_targets);
+            } else {
+                throw std::invalid_argument("Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
+            }
+            return PyPauliString(result, self.imag);
+        },
+        pybind11::arg("operation"),
+        pybind11::arg("targets") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            Returns the result of conjugating the Pauli string by an operation.
+
+            Args:
+                operation: A circuit, tableau, or circuit instruction to
+                    anti-conjugate the Pauli string by. Must be Clifford (e.g.
+                    if it's a circuit, the circuit can't have noise or
+                    measurements).
+                targets: Required if and only if the operation is a tableau.
+                    Specifies which qubits to target.
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("_XYZ")
+
+                >>> p.before(stim.CircuitInstruction("H", [1]))
+                stim.PauliString("+_ZYZ")
+
+                >>> p.before(stim.Circuit('''
+                ...     C_XYZ 1 2 3
+                ... '''))
+                stim.PauliString("+_ZXY")
+
+                >>> p.before(stim.Tableau.from_named_gate('CZ'), targets=[0, 1])
+                stim.PauliString("+ZXYZ")
+
+            Returns:
+                The conjugated Pauli string. The Pauli string before the
+                operation that is exactly equivalent to the given Pauli
+                string after the operation.
         )DOC")
             .data());
 
