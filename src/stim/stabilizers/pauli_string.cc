@@ -115,9 +115,15 @@ PauliString PauliString::random(size_t num_qubits, std::mt19937_64 &rng) {
 bool PauliString::operator==(const PauliStringRef &other) const {
     return ref() == other;
 }
+bool PauliString::operator==(const PauliString &other) const {
+    return ref() == other.ref();
+}
 
 bool PauliString::operator!=(const PauliStringRef &other) const {
     return ref() != other;
+}
+bool PauliString::operator!=(const PauliString &other) const {
+    return ref() != other.ref();
 }
 
 void PauliString::ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor) {
