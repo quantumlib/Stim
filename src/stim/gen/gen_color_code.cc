@@ -191,11 +191,11 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     auto full_circuit = head + body * (params.rounds - 2) + tail;
 
     // Make 2d layout.
-    std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
+    std::map<std::pair<uint32_t, uint32_t>, std::pair<char, uint32_t>> layout;
     for (auto q : data_coords) {
-        layout[{(uint32_t)(q.x * 2), (uint32_t)q.y}] = {q.y == 0 ? "L" : "d", p2q[q]};
+        layout[{(uint32_t)(q.x * 2), (uint32_t)q.y}] = {q.y == 0 ? 'L' : 'd', p2q[q]};
     }
-    std::array<const char *, 3> rgb{"R", "G", "B"};
+    std::array<char, 3> rgb{'R', 'G', 'B'};
     for (auto q : measure_coords) {
         auto x = (uint32_t)(q.x * 2);
         auto y = (uint32_t)q.y;

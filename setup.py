@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
 
 from setuptools import setup, Extension
 import glob
@@ -26,13 +27,27 @@ RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FIL
 
 version = '1.11.dev0'
 
-common_compile_args = [
-    '-std=c++11',
-    '-fno-strict-aliasing',
-    '-O3',
-    '-g0',
-    f'-DVERSION_INFO={version}',
-]
+if sys.platform.startswith('win'):
+    common_compile_args = [
+        '/std:c++11',
+        '/O2',
+        f'/DVERSION_INFO={version}',
+    ]
+    arch_avx = ['/arch:AVX2']
+    arch_sse = ['/arch:SSE2']
+    arch_basic = []
+else:
+    common_compile_args = [
+        '-std=c++11',
+        '-fno-strict-aliasing',
+        '-O3',
+        '-g0',
+        f'-DVERSION_INFO={version}',
+    ]
+    arch_avx = ['-mavx2']
+    arch_sse = ['-msse2', '-mno-avx2']
+    arch_basic = []
+
 stim_detect_machine_architecture = Extension(
     'stim._detect_machine_architecture',
     sources=MUX_SOURCE_FILES,
@@ -40,8 +55,7 @@ stim_detect_machine_architecture = Extension(
     language='c++',
     extra_compile_args=[
         *common_compile_args,
-        '-mno-sse2',
-        '-mno-avx2',
+        *arch_basic,
     ],
 )
 stim_polyfill = Extension(
@@ -51,8 +65,7 @@ stim_polyfill = Extension(
     language='c++',
     extra_compile_args=[
         *common_compile_args,
-        # I would specify -mno-sse2 but that causes build failures in non-stim code...?
-        '-mno-avx2',
+        *arch_basic,
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_polyfill',
     ],
 )
@@ -63,8 +76,7 @@ stim_sse2 = Extension(
     language='c++',
     extra_compile_args=[
         *common_compile_args,
-        '-msse2',
-        '-mno-avx2',
+        *arch_sse,
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_sse2',
     ],
 )
@@ -77,8 +89,7 @@ stim_sse2 = Extension(
 #     language='c++',
 #     extra_compile_args=[
 #         *common_compile_args,
-#         '-msse2',
-#         '-mavx2',
+#         *arch_avx,
 #         '-DSTIM_PYBIND11_MODULE_NAME=_stim_avx2',
 #     ],
 # )

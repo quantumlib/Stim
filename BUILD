@@ -93,7 +93,7 @@ cc_binary(
         "-fvisibility=hidden",
         "-march=native",
         "-DSTIM_PYBIND11_MODULE_NAME=stim",
-        "-DVERSION_INFO=0.0.dev"
+        "-DVERSION_INFO=0.0.dev",
     ],
     includes = ["src/"],
     linkopts = ["-lpthread"],

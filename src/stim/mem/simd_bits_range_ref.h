@@ -70,9 +70,9 @@ struct simd_bits_range_ref {
     void swap_with(simd_bits_range_ref other);
 
     /// Equality.
-    bool operator==(const simd_bits_range_ref other) const;
+    bool operator==(const simd_bits_range_ref<W> &other) const;
     /// Inequality.
-    bool operator!=(const simd_bits_range_ref other) const;
+    bool operator!=(const simd_bits_range_ref<W> &other) const;
     /// Determines whether or not any of the bits in the referenced range are non-zero.
     bool not_zero() const;
 
