@@ -1,7 +1,6 @@
-#include "stim/dem/detector_error_model.h"
-
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
+#include "stim/dem/detector_error_model.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
@@ -23,10 +22,7 @@ struct DetectorSliceSetComputer {
     uint64_t num_yield_ticks;
     std::set<uint32_t> used_qubits;
     std::function<void(void)> on_tick_callback;
-    DetectorSliceSetComputer(
-        const Circuit &circuit,
-        uint64_t first_yield_tick,
-        uint64_t num_yield_ticks);
+    DetectorSliceSetComputer(const Circuit &circuit, uint64_t first_yield_tick, uint64_t num_yield_ticks);
     bool process_block_rev(const Circuit &block);
     bool process_op_rev(const Circuit &parent, const Operation &op);
     bool process_tick();
@@ -83,9 +79,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
     }
 }
 DetectorSliceSetComputer::DetectorSliceSetComputer(
-    const Circuit &circuit,
-    uint64_t first_yield_tick,
-    uint64_t num_yield_ticks)
+    const Circuit &circuit, uint64_t first_yield_tick, uint64_t num_yield_ticks)
     : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors()),
       first_yield_tick(first_yield_tick),
       num_yield_ticks(num_yield_ticks) {
@@ -489,11 +483,11 @@ bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
 }
 
 void _start_many_body_svg_path(
-        std::ostream &out,
-        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
-        uint64_t tick,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace) {
+    std::ostream &out,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t tick,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace) {
     pts_workspace.clear();
     for (const auto &term : terms) {
         pts_workspace.push_back(coords(tick, term.qubit_value()));
@@ -528,11 +522,11 @@ void _start_many_body_svg_path(
 }
 
 void _start_two_body_svg_path(
-        std::ostream &out,
-        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
-        uint64_t tick,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace) {
+    std::ostream &out,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t tick,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace) {
     auto a = coords(tick, terms[0].qubit_value());
     auto b = coords(tick, terms[1].qubit_value());
     auto dif = b - a;
@@ -557,11 +551,11 @@ void _start_two_body_svg_path(
 }
 
 void _start_one_body_svg_path(
-        std::ostream &out,
-        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
-        uint64_t tick,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace,
+    std::ostream &out,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t tick,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     auto c = coords(tick, terms[0].qubit_value());
     out << "<circle";
@@ -619,14 +613,14 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
     for (size_t k = 0; k < num_ticks; k++) {
         for (auto q : used_qubits()) {
             auto t = min_tick + k;
-            
+
             std::stringstream id_ss;
             id_ss << "qubit_dot";
             id_ss << ":" << q;
-            add_coord_summary_to_ss(id_ss, coordinates.at(q)); // the raw qubit coordinates, not projected to 2D
-            id_ss << ":" << t; // the absolute tick
-            
-            auto sc = coords(t, q); // the svg coordinates, offset to the correct slice plot
+            add_coord_summary_to_ss(id_ss, coordinates.at(q));  // the raw qubit coordinates, not projected to 2D
+            id_ss << ":" << t;                                  // the absolute tick
+
+            auto sc = coords(t, q);  // the svg coordinates, offset to the correct slice plot
 
             out << "<circle";
             write_key_val(out, "id", id_ss.str());
@@ -648,12 +642,12 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             for (uint64_t row = 0; row < num_rows && row * num_cols + col < num_ticks; row++) {
                 auto sw = coordsys.size.xyz[0];
                 auto sh = coordsys.size.xyz[1];
-                   
+
                 std::stringstream id_ss;
                 id_ss << "tick_border:" << k;
                 id_ss << ":" << row << "_" << col;
-                id_ss << ":" << k+min_tick;
-                
+                id_ss << ":" << k + min_tick;
+
                 out << "<rect";
                 write_key_val(out, "id", id_ss.str());
                 write_key_val(out, "x", sw * col * SLICE_WINDOW_GAP);
@@ -716,12 +710,7 @@ void DetectorSliceSet::write_svg_contents_to(
             add_coord_summary_to_ss(out, detector_coordinates.at(target.val()));
             out << ":" << tick << "\">\n";
 
-            _start_slice_shape_command(out,
-                                       coords,
-                                       tick,
-                                       terms,
-                                       pts_workspace,
-                                       scale);
+            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
             write_key_val(out, "stroke", "none");
             if (terms.size() > 2) {
                 write_key_val(out, "fill-opacity", 0.75);
@@ -734,12 +723,7 @@ void DetectorSliceSet::write_svg_contents_to(
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
                 out << "\">";
-                _start_slice_shape_command(out,
-                                           coords,
-                                           tick,
-                                           terms,
-                                           pts_workspace,
-                                           scale);
+                _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
                 out << "/></clipPath>\n";
 
                 size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
@@ -766,12 +750,7 @@ void DetectorSliceSet::write_svg_contents_to(
             }
 
             // Draw outline
-            _start_slice_shape_command(out,
-                                       coords,
-                                       tick,
-                                       terms,
-                                       pts_workspace,
-                                       scale);
+            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
             write_key_val(out, "stroke", "black");
             write_key_val(out, "fill", "none");
             out << "/>\n";
@@ -783,8 +762,8 @@ void DetectorSliceSet::write_svg_contents_to(
     if (haveDrawnCorners) {
         // write out the universal radialGradients that all corners reference
         out << "<defs>\n";
-        static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
-        static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
+        static const char *const names[] = {"xgrad", "ygrad", "zgrad"};
+        static const char *const colors[] = {X_RED, Y_GREEN, Z_BLUE};
         for (int i = 0; i < 3; ++i) {
             out << "<radialGradient";
             write_key_val(out, "id", names[i]);

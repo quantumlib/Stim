@@ -48,7 +48,8 @@ struct PyPauliString {
     PyPauliString &operator/=(const std::complex<float> &divisor);
 
     pybind11::object to_unitary_matrix(const std::string &endian) const;
-    static PyPauliString from_unitary_matrix(const pybind11::object &matrix, const std::string &endian, bool ignore_sign);
+    static PyPauliString from_unitary_matrix(
+        const pybind11::object &matrix, const std::string &endian, bool ignore_sign);
 
     bool operator==(const PyPauliString &other) const;
     bool operator!=(const PyPauliString &other) const;

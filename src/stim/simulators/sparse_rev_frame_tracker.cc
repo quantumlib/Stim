@@ -16,7 +16,8 @@
 
 using namespace stim;
 
-SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past)
+SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
+    uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past)
     : xs(num_qubits),
       zs(num_qubits),
       rec_bits(),
@@ -33,7 +34,8 @@ PauliString SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarg
     return result;
 }
 
-void SparseUnsignedRevFrameTracker::handle_xor_gauge(ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2) {
+void SparseUnsignedRevFrameTracker::handle_xor_gauge(
+    ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2) {
     if (sorted1 == sorted2) {
         return;
     }
@@ -75,8 +77,7 @@ void SparseUnsignedRevFrameTracker::undo_ZCX_single(GateTarget c, GateTarget t) 
         zs[c.data] ^= zs[t.data];
         xs[t.data] ^= xs[c.data];
     } else if (!t.is_qubit_target()) {
-        throw std::invalid_argument(
-            "CX gate had '" + t.str() + "' as its target, but its target must be a qubit.");
+        throw std::invalid_argument("CX gate had '" + t.str() + "' as its target, but its target must be a qubit.");
     } else {
         undo_classical_pauli(c, GateTarget::x(t.data));
     }
@@ -90,8 +91,7 @@ void SparseUnsignedRevFrameTracker::undo_ZCY_single(GateTarget c, GateTarget t) 
         xs[t.data] ^= xs[c.data];
         zs[t.data] ^= xs[c.data];
     } else if (!t.is_qubit_target()) {
-        throw std::invalid_argument(
-            "CY gate had '" + t.str() + "' as its target, but its target must be a qubit.");
+        throw std::invalid_argument("CY gate had '" + t.str() + "' as its target, but its target must be a qubit.");
     } else {
         undo_classical_pauli(c, GateTarget::y(t.data));
     }
@@ -575,7 +575,8 @@ void SparseUnsignedRevFrameTracker::undo_loop_by_unrolling(const Circuit &loop, 
     }
 }
 
-bool _det_vec_is_equal_to_after_shift(ConstPointerRange<DemTarget> unshifted, ConstPointerRange<DemTarget> expected, int64_t detector_shift) {
+bool _det_vec_is_equal_to_after_shift(
+    ConstPointerRange<DemTarget> unshifted, ConstPointerRange<DemTarget> expected, int64_t detector_shift) {
     if (unshifted.size() != expected.size()) {
         return false;
     }
@@ -603,7 +604,8 @@ bool _rec_to_det_is_equal_to_after_shift(
         if (shifted_entry == expected.end()) {
             return false;
         }
-        if (!_det_vec_is_equal_to_after_shift(unshifted_entry.second.range(), shifted_entry->second.range(), detector_offset)) {
+        if (!_det_vec_is_equal_to_after_shift(
+                unshifted_entry.second.range(), shifted_entry->second.range(), detector_offset)) {
             return false;
         }
     }
@@ -623,23 +625,20 @@ bool _vec_to_det_is_equal_to_after_shift(
         }
     }
     return true;
-
 }
 
 bool SparseUnsignedRevFrameTracker::is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const {
     int64_t measurement_offset = (int64_t)other.num_measurements_in_past - (int64_t)num_measurements_in_past;
     int64_t detector_offset = (int64_t)other.num_detectors_in_past - (int64_t)num_detectors_in_past;
-    return _rec_to_det_is_equal_to_after_shift(rec_bits, other.rec_bits, measurement_offset, detector_offset)
-        && _vec_to_det_is_equal_to_after_shift(xs, other.xs, detector_offset)
-        && _vec_to_det_is_equal_to_after_shift(zs, other.zs, detector_offset);
+    return _rec_to_det_is_equal_to_after_shift(rec_bits, other.rec_bits, measurement_offset, detector_offset) &&
+           _vec_to_det_is_equal_to_after_shift(xs, other.xs, detector_offset) &&
+           _vec_to_det_is_equal_to_after_shift(zs, other.zs, detector_offset);
 }
 
 bool SparseUnsignedRevFrameTracker::operator==(const SparseUnsignedRevFrameTracker &other) const {
-    return xs == other.xs
-        && zs == other.zs
-        && rec_bits == other.rec_bits
-        && num_measurements_in_past == other.num_measurements_in_past
-        && num_detectors_in_past == other.num_detectors_in_past;
+    return xs == other.xs && zs == other.zs && rec_bits == other.rec_bits &&
+           num_measurements_in_past == other.num_measurements_in_past &&
+           num_detectors_in_past == other.num_detectors_in_past;
 }
 bool SparseUnsignedRevFrameTracker::operator!=(const SparseUnsignedRevFrameTracker &other) const {
     return !(*this == other);

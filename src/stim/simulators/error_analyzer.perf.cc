@@ -31,7 +31,12 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100) {
             circuit.count_detectors(),
             circuit.count_qubits(),
             circuit.count_ticks(),
-            false, false, false, 0.0, false, true);
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true);
         analyzer.run_circuit(circuit);
     }).goal_millis(320);
 }
@@ -47,7 +52,13 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100_find_reducible_er
             circuit.count_measurements(),
             circuit.count_detectors(),
             circuit.count_qubits(),
-            circuit.count_ticks(), true, false, false, 0.0, false, true);
+            circuit.count_ticks(),
+            true,
+            false,
+            false,
+            0.0,
+            false,
+            true);
         analyzer.run_circuit(circuit);
     }).goal_millis(450);
 }
@@ -63,7 +74,13 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100000000_find_loops)
             circuit.count_measurements(),
             circuit.count_detectors(),
             circuit.count_qubits(),
-            circuit.count_ticks(), false, true, false, 0.0, false, true);
+            circuit.count_ticks(),
+            false,
+            true,
+            false,
+            0.0,
+            false,
+            true);
         analyzer.run_circuit(circuit);
     }).goal_millis(15);
 }
