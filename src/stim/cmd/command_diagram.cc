@@ -175,10 +175,10 @@ int stim::command_diagram(int argc, const char **argv) {
 
     DiagramTypes type = _read_diagram_type(argc, argv);
 
-    uint64_t tick = 0;
-    uint64_t tick_start = 0;
-    uint64_t tick_num = UINT64_MAX;
-    bool has_tick_arg = _read_tick(argc, argv, &tick, &tick_start, &tick_num);
+//    uint64_t tick = 0;
+//    uint64_t tick_start = 0;
+//    uint64_t tick_num = UINT64_MAX;
+//    bool has_tick_arg = _read_tick(argc, argv, &tick, &tick_start, &tick_num);
 
     if (type == TIMELINE_TEXT) {
         auto circuit = _read_circuit(in, argc, argv);
@@ -227,10 +227,10 @@ int stim::command_diagram(int argc, const char **argv) {
 //        auto coord_filter = _read_coord_filter(argc, argv);
 //        auto circuit = _read_circuit(in, argc, argv);
 //        out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
-    } else if (type == DETECTOR_SLICE_SVG) {
-        auto coord_filter = _read_coord_filter(argc, argv);
-        auto circuit = _read_circuit(in, argc, argv);
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
+//    } else if (type == DETECTOR_SLICE_SVG) {
+//        auto coord_filter = _read_coord_filter(argc, argv);
+//        auto circuit = _read_circuit(in, argc, argv);
+//        DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
     } else {
         throw std::invalid_argument("Unknown type");
     }
