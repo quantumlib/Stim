@@ -59,3 +59,11 @@ jobs:
             ./output/stimcirq/*.tar.gz
             ./output/sinter/*.tar.gz
             ./output/stim/*
+  build_windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim
+      - run: bazel build :stim_dev_wheel
