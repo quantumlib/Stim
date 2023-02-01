@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/circuit.h"
 #include "stim/stabilizers/pauli_string.h"
-#include "stim/stabilizers/tableau.h"
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.h"
+#include "stim/stabilizers/tableau.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -392,17 +392,21 @@ TEST(PauliString, after_circuit) {
     )CIRCUIT"));
     ASSERT_EQ(actual, PauliString::from_str("+X_X_"));
 
-    ASSERT_THROW({
-        PauliString::from_str("+X___").ref().after(Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X___").ref().after(Circuit(R"CIRCUIT(
             M(0.1) 0
         )CIRCUIT"));
-    }, std::invalid_argument);
+        },
+        std::invalid_argument);
 
-    ASSERT_THROW({
-        PauliString::from_str("+X").ref().after(Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X").ref().after(Circuit(R"CIRCUIT(
             H 9
         )CIRCUIT"));
-    }, std::invalid_argument);
+        },
+        std::invalid_argument);
 }
 
 TEST(PauliString, before_circuit) {
@@ -425,41 +429,55 @@ TEST(PauliString, before_circuit) {
     )CIRCUIT"));
     ASSERT_EQ(actual, PauliString::from_str("+X___"));
 
-    ASSERT_THROW({
-        PauliString::from_str("+X___").ref().before(Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X___").ref().before(Circuit(R"CIRCUIT(
             M(0.1) 0
         )CIRCUIT"));
-    }, std::invalid_argument);
+        },
+        std::invalid_argument);
 
-    ASSERT_THROW({
-        PauliString::from_str("+X").ref().before(Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+X").ref().before(Circuit(R"CIRCUIT(
             H 9
         )CIRCUIT"));
-    }, std::invalid_argument);
+        },
+        std::invalid_argument);
 }
 
 TEST(PauliString, after_tableau) {
-    auto actual = PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
+    auto actual =
+        PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
     ASSERT_EQ(actual, PauliString::from_str("-YYX"));
 
-    ASSERT_THROW({
-        PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
+        },
+        std::invalid_argument);
 
-    ASSERT_THROW({
-        PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
+        },
+        std::invalid_argument);
 }
 
 TEST(PauliString, before_tableau) {
-    auto actual = PauliString::from_str("-YYX").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
+    auto actual =
+        PauliString::from_str("-YYX").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1, 2});
     ASSERT_EQ(actual, PauliString::from_str("+XZ_"));
 
-    ASSERT_THROW({
-        PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 1, 1});
+        },
+        std::invalid_argument);
 
-    ASSERT_THROW({
-        PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            PauliString::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau(), std::vector<size_t>{0, 5});
+        },
+        std::invalid_argument);
 }

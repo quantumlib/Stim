@@ -16,9 +16,9 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
-#include "stim/stabilizers/tableau.h"
 #include "stim/mem/simd_util.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/tableau.h"
 
 using namespace stim;
 
