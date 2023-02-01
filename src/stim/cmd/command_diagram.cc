@@ -18,6 +18,7 @@
 
 #include "command_help.h"
 #include "stim/arg_parse.h"
+#include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -26,7 +27,6 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/diagram/crumble.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -180,85 +180,62 @@ int stim::command_diagram(int argc, const char **argv) {
     uint64_t tick_num = UINT64_MAX;
     bool has_tick_arg = _read_tick(argc, argv, &tick, &tick_start, &tick_num);
 
-    switch (type) {
-        case TIMELINE_TEXT: {
-            auto circuit = _read_circuit(in, argc, argv);
-            out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
-            break;
+    if (type == TIMELINE_TEXT) {
+        auto circuit = _read_circuit(in, argc, argv);
+        out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
+    } else if (type == TIMELINE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+    } else if (type == TIME_SLICE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+    } else if (type == TIME_SLICE_PLUS_DETECTOR_SLICE_SVG) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(
+            circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+    } else if (type == TIMELINE_3D) {
+        auto circuit = _read_circuit(in, argc, argv);
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+    } else if (type == TIMELINE_3D_HTML) {
+        auto circuit = _read_circuit(in, argc, argv);
+        std::stringstream tmp_out;
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
+        write_html_viewer_for_gltf_data(tmp_out.str(), out);
+    } else if (type == INTERACTIVE_HTML) {
+        auto circuit = _read_circuit(in, argc, argv);
+        write_crumble_html_with_preloaded_circuit(circuit, out);
+    } else if (type == MATCH_GRAPH_3D) {
+        auto dem = _read_dem(in, argc, argv);
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
+    } else if (type == MATCH_GRAPH_3D_HTML) {
+        auto dem = _read_dem(in, argc, argv);
+        std::stringstream tmp_out;
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
+        write_html_viewer_for_gltf_data(tmp_out.str(), out);
+    } else if (type == MATCH_GRAPH_SVG) {
+        auto dem = _read_dem(in, argc, argv);
+        dem_match_graph_to_svg_diagram_write_to(dem, out);
+    } else if (type == DETECTOR_SLICE_TEXT) {
+        if (!has_tick_arg) {
+            throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
         }
-        case TIMELINE_SVG: {
-            auto circuit = _read_circuit(in, argc, argv);
-            auto coord_filter = _read_coord_filter(argc, argv);
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
-            break;
+        auto coord_filter = _read_coord_filter(argc, argv);
+        auto circuit = _read_circuit(in, argc, argv);
+        out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
+    } else if (type == DETECTOR_SLICE_SVG) {
+        if (!has_tick_arg) {
+            throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
         }
-        case TIME_SLICE_SVG: {
-            auto circuit = _read_circuit(in, argc, argv);
-            auto coord_filter = _read_coord_filter(argc, argv);
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
-            break;
-        }
-        case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
-            auto circuit = _read_circuit(in, argc, argv);
-            auto coord_filter = _read_coord_filter(argc, argv);
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
-            break;
-        }
-        case TIMELINE_3D: {
-            auto circuit = _read_circuit(in, argc, argv);
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-            break;
-        }
-        case TIMELINE_3D_HTML: {
-            auto circuit = _read_circuit(in, argc, argv);
-            std::stringstream tmp_out;
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case INTERACTIVE_HTML: {
-            auto circuit = _read_circuit(in, argc, argv);
-            write_crumble_html_with_preloaded_circuit(circuit, out);
-            break;
-        }
-        case MATCH_GRAPH_3D: {
-            auto dem = _read_dem(in, argc, argv);
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
-            break;
-        }
-        case MATCH_GRAPH_3D_HTML: {
-            auto dem = _read_dem(in, argc, argv);
-            std::stringstream tmp_out;
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case MATCH_GRAPH_SVG: {
-            auto dem = _read_dem(in, argc, argv);
-            dem_match_graph_to_svg_diagram_write_to(dem, out);
-            break;
-        }
-        case DETECTOR_SLICE_TEXT: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
-            }
-            auto coord_filter = _read_coord_filter(argc, argv);
-            auto circuit = _read_circuit(in, argc, argv);
-            out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
-            break;
-        }
-        case DETECTOR_SLICE_SVG: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
-            }
-            auto coord_filter = _read_coord_filter(argc, argv);
-            auto circuit = _read_circuit(in, argc, argv);
-            DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
-            break;
-        }
-        default: {
-            throw std::invalid_argument("Unknown type");
-        }
+        auto coord_filter = _read_coord_filter(argc, argv);
+        auto circuit = _read_circuit(in, argc, argv);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
+    } else {
+        throw std::invalid_argument("Unknown type");
     }
     out << '\n';
 
