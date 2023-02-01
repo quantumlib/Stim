@@ -516,44 +516,6 @@ bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
     return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
 }
 
-//double stim_draw_internal::inv_space_fill_transform(Coord<2> a) {
-//    double dx = ldexp((double)a.xyz[0], 4);
-//    double dy = ldexp((double)a.xyz[1], 4);
-//    uint64_t x = (uint64_t)std::min((double)(1ULL << 31), std::max(dx, 0.0));
-//    uint64_t y = (uint64_t)std::min((double)(1ULL << 31), std::max(dy, 0.0));
-//
-//    for (size_t k = 64; k-- > 0;) {
-//        uint64_t b = 1ULL << k;
-//        uint64_t m = b - 1;
-//        if ((x ^ y) & b) {
-//            x ^= m;
-//        }
-//        if (!(y & b)) {
-//            x ^= y & m;
-//            y ^= x & m;
-//            x ^= y & m;
-//        }
-//    }
-//    y ^= x;
-//
-//    uint64_t gray = 0;
-//    for (size_t k = 64; k--;) {
-//        uint64_t b = 1ULL << k;
-//        if (y & b) {
-//            gray ^= b - 1;
-//        }
-//    }
-//    x ^= gray;
-//    y ^= gray;
-//
-//    uint64_t interleave = 0;
-//    for (size_t k = 32; k--;) {
-//        interleave |= ((x >> k) & 1ULL) << (2 * k + 1);
-//        interleave |= ((y >> k) & 1ULL) << (2 * k);
-//    }
-//
-//    return interleave;
-//}
 void _start_many_body_svg_path(
         std::ostream &out,
         const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,

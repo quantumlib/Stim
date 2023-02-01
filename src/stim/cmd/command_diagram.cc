@@ -129,64 +129,64 @@ int stim::command_diagram(int argc, const char **argv) {
         }
         return circuit;
     };
-    auto read_dem = [&]() {
-        std::string content;
-        while (true) {
-            int c = getc(in.f);
-            if (c == EOF) {
-                break;
-            }
-            content.push_back(c);
-        }
-        in.done();
-
-        try {
-            return DetectorErrorModel(content.data());
-        } catch (const std::exception &_) {
-        }
-
-        auto circuit = Circuit(content.data());
-        if (find_bool_argument("--remove_noise", argc, argv)) {
-            circuit = circuit.without_noise();
-        }
-        return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
-    };
-    auto read_coord_filter = [&]() -> std::vector<CoordFilter> {
-        const char *arg = find_argument("--filter_coords", argc, argv);
-        if (arg == nullptr) {
-            return {{}};
-        }
-
-        std::vector<CoordFilter> result;
-        for (const auto &term : split(':', arg)) {
-            result.push_back(CoordFilter::parse_from(term));
-        }
-        return result;
-    };
+//    auto read_dem = [&]() {
+//        std::string content;
+//        while (true) {
+//            int c = getc(in.f);
+//            if (c == EOF) {
+//                break;
+//            }
+//            content.push_back(c);
+//        }
+//        in.done();
+//
+//        try {
+//            return DetectorErrorModel(content.data());
+//        } catch (const std::exception &_) {
+//        }
+//
+//        auto circuit = Circuit(content.data());
+//        if (find_bool_argument("--remove_noise", argc, argv)) {
+//            circuit = circuit.without_noise();
+//        }
+//        return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+//    };
+//    auto read_coord_filter = [&]() -> std::vector<CoordFilter> {
+//        const char *arg = find_argument("--filter_coords", argc, argv);
+//        if (arg == nullptr) {
+//            return {{}};
+//        }
+//
+//        std::vector<CoordFilter> result;
+//        for (const auto &term : split(':', arg)) {
+//            result.push_back(CoordFilter::parse_from(term));
+//        }
+//        return result;
+//    };
     switch (type) {
         case TIMELINE_TEXT: {
             auto circuit = read_circuit();
             out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
             break;
         }
-        case TIMELINE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coord_filter();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
-            break;
-        }
-        case TIME_SLICE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coord_filter();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
-            break;
-        }
-        case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
-            auto circuit = read_circuit();
-            auto coord_filter = read_coord_filter();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
-            break;
-        }
+//        case TIMELINE_SVG: {
+//            auto circuit = read_circuit();
+//            auto coord_filter = read_coord_filter();
+//            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+//            break;
+//        }
+//        case TIME_SLICE_SVG: {
+//            auto circuit = read_circuit();
+//            auto coord_filter = read_coord_filter();
+//            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+//            break;
+//        }
+//        case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
+//            auto circuit = read_circuit();
+//            auto coord_filter = read_coord_filter();
+//            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+//            break;
+//        }
 //        case TIMELINE_3D: {
 //            auto circuit = read_circuit();
 //            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
@@ -204,11 +204,11 @@ int stim::command_diagram(int argc, const char **argv) {
 //            write_crumble_html_with_preloaded_circuit(circuit, out);
 //            break;
 //        }
-        case MATCH_GRAPH_3D: {
-            auto dem = read_dem();
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
-            break;
-        }
+//        case MATCH_GRAPH_3D: {
+//            auto dem = read_dem();
+//            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
+//            break;
+//        }
 //        case MATCH_GRAPH_3D_HTML: {
 //            auto dem = read_dem();
 //            std::stringstream tmp_out;
@@ -221,15 +221,15 @@ int stim::command_diagram(int argc, const char **argv) {
 //            dem_match_graph_to_svg_diagram_write_to(dem, out);
 //            break;
 //        }
-        case DETECTOR_SLICE_TEXT: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
-            }
-            auto coord_filter = read_coord_filter();
-            auto circuit = read_circuit();
-            out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
-            break;
-        }
+//        case DETECTOR_SLICE_TEXT: {
+//            if (!has_tick_arg) {
+//                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
+//            }
+//            auto coord_filter = read_coord_filter();
+//            auto circuit = read_circuit();
+//            out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
+//            break;
+//        }
 //        case DETECTOR_SLICE_SVG: {
 //            if (!has_tick_arg) {
 //                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
