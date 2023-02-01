@@ -274,7 +274,7 @@ PauliString Tableau::operator()(const PauliStringRef &p) const {
     return scatter_eval(p, indices);
 }
 
-void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const {
+void Tableau::apply_within(PauliStringRef &target, ConstPointerRange<size_t> target_qubits) const {
     assert(num_qubits == target_qubits.size());
     auto inp = PauliString(num_qubits);
     target.gather_into(inp, target_qubits);

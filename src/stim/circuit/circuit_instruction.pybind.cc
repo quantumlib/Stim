@@ -62,6 +62,15 @@ std::string CircuitInstruction::str() const {
     return result.str();
 }
 
+Operation CircuitInstruction::as_operation_ref() const {
+    return Operation{
+        &gate,
+        OperationData{
+            gate_args,
+            targets,
+        },
+    };
+}
 std::string CircuitInstruction::name() const {
     return gate.name;
 }
