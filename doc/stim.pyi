@@ -6540,6 +6540,24 @@ class Tableau:
             >>> t.x_output_pauli(1, 1)
             3
         """
+    def x_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating an X generator.
+
+        This operation runs in constant time.
+
+        Args:
+            target: The qubit the X generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("S_DAG").x_sign(0)
+            -1
+            >>> stim.Tableau.from_named_gate("S").x_sign(0)
+            1
+        """
     def y_output(
         self,
         target: int,
@@ -6597,6 +6615,26 @@ class Tableau:
             >>> t.y_output_pauli(1, 1)
             2
         """
+    def y_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating a Y generator.
+
+        Unlike x_sign and z_sign, this operation runs in linear time.
+        The Y generator has to be computed by multiplying the X and Z
+        outputs and the sign depends on all terms.
+
+        Args:
+            target: The qubit the Y generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("S_DAG").y_sign(0)
+            1
+            >>> stim.Tableau.from_named_gate("S").y_sign(0)
+            -1
+        """
     def z_output(
         self,
         target: int,
@@ -6653,6 +6691,24 @@ class Tableau:
             2
             >>> t.z_output_pauli(1, 1)
             1
+        """
+    def z_sign(
+        self,
+        target: int,
+    ) -> int:
+        """Returns just the sign of the result of conjugating a Z generator.
+
+        This operation runs in constant time.
+
+        Args:
+            target: The qubit the Z generator applies to.
+
+        Examples:
+            >>> import stim
+            >>> stim.Tableau.from_named_gate("SQRT_X_DAG").z_sign(0)
+            1
+            >>> stim.Tableau.from_named_gate("SQRT_X").z_sign(0)
+            -1
         """
 class TableauIterator:
     """Iterates over all stabilizer tableaus of a specified size.
@@ -7000,6 +7056,32 @@ class TableauSimulator:
             *targets: The indices of the qubits to target with the gate.
                 Applies the gate to the first two targets, then the next two targets,
                 and so forth. There must be an even number of targets.
+        """
+    def depolarize1(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies single-qubit depolarization to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the error being applied,
+                independently, to each qubit.
+        """
+    def depolarize2(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies two-qubit depolarization to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+                The pairs of qubits are formed by
+                zip(targets[::1], targets[1::2]).
+            p: The chance of the error being applied,
+                independently, to each qubit pair.
         """
     def do(
         self,
@@ -7971,6 +8053,18 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
+    def x_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies X errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the X error being applied,
+                independently, to each qubit.
+        """
     def xcx(
         self,
         *targets,
@@ -8013,6 +8107,18 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
+    def y_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies Y errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the Y error being applied,
+                independently, to each qubit.
+        """
     def ycx(
         self,
         *targets,
@@ -8054,6 +8160,18 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
+        """
+    def y_error(
+        self,
+        *targets: int,
+        p: float,
+    ):
+        """Probabilistically applies Z errors to targets.
+
+        Args:
+            *targets: The indices of the qubits to target with the noise.
+            p: The chance of the Z error being applied,
+                independently, to each qubit.
         """
     def zcx(
         self,
