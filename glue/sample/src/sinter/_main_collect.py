@@ -247,7 +247,7 @@ def main_collect(*, command_line_args: List[str]):
     printer = ThrottledProgressPrinter(
         outs=[],
         print_progress=not args.quiet,
-        min_progress_delay=0.03 if args.also_print_results_to_stdout else 1,
+        min_progress_delay=0.03 if args.also_print_results_to_stdout else 0.2,
     )
     if print_to_stdout:
         printer.outs.append(sys.stdout)
@@ -262,9 +262,10 @@ def main_collect(*, command_line_args: List[str]):
 
         msg = sample.status_message
         if msg == 'KeyboardInterrupt':
-            msg = '\nInterrupted. Output is flushed. Cleaning up workers...'
-        printer.show_latest_progress(msg)
-        printer.flush()
+            printer.show_latest_progress('\nInterrupted. Output is flushed. Cleaning up workers...')
+            printer.flush()
+        else:
+            printer.show_latest_progress(msg)
 
     try:
         collect(

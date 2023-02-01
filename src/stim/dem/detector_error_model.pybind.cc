@@ -1137,19 +1137,19 @@ void stim_pybind::pybind_detector_error_model_methods(
         &dem_diagram,
         pybind11::arg("type"),
         clean_doc_string(R"DOC(
-            @overload def diagram(self, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-3d-html"]') -> 'stim._DiagramHelper':
             @signature def diagram(self, type: str) -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
                 type: The type of diagram. Available types are:
-                    "match-graph-svg": An image of the decoding graph of the
+                    "matchgraph-svg": An image of the decoding graph of the
                         detector error model. Red lines are errors crossing a
                         logical observable. Blue lines are undecomposed hyper
                         errors.
-                    "match-graph-3d": A 3d model of the decoding graph of the
+                    "matchgraph-3d": A 3d model of the decoding graph of the
                         detector error model. Red lines are errors crossing a
                         logical observable. Blue lines are undecomposed hyper
                         errors.
@@ -1158,7 +1158,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                         opened online in viewers such as
                         https://gltf-viewer.donmccurdy.com/ . Red lines are
                         errors crossing a logical observable.
-                    "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                    "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
                         embedded into an HTML web page containing an interactive
                         THREE.js viewer for the 3d model.
 

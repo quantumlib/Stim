@@ -82,15 +82,15 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
 }
 
 DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std::string &type) {
-    if (type == "match-graph-svg") {
+    if (type == "matchgraph-svg" || type == "match-graph-svg") {
         std::stringstream out;
         dem_match_graph_to_svg_diagram_write_to(dem, out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "match-graph-3d") {
+    } else if (type == "matchgraph-3d" || type == "match-graph-3d") {
         std::stringstream out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
-    } else if (type == "match-graph-3d-html") {
+    } else if (type == "matchgraph-3d-html" || type == "match-graph-3d-html") {
         std::stringstream out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
         std::stringstream out_html;
@@ -105,16 +105,22 @@ DiagramHelper stim_pybind::circuit_diagram(
     const std::string &type,
     const pybind11::object &tick,
     const pybind11::object &filter_coords_obj) {
-    std::vector<std::vector<double>> filter_coords;
+    std::vector<CoordFilter> filter_coords;
     try {
         if (filter_coords_obj.is_none()) {
             filter_coords.push_back({});
         } else {
-            for (const auto &e : filter_coords_obj) {
-                filter_coords.push_back({});
-                for (const auto &c : e) {
-                    filter_coords.back().push_back(pybind11::cast<double>(c));
+            for (const auto &filter_case : filter_coords_obj) {
+                CoordFilter filter;
+                if (pybind11::isinstance<DemTarget>(filter_case)) {
+                    filter.exact_target = pybind11::cast<DemTarget>(filter_case);
+                    filter.use_target = true;
+                } else {
+                    for (const auto &c : filter_case) {
+                        filter.coordinates.push_back(pybind11::cast<double>(c));
+                    }
                 }
+                filter_coords.push_back(std::move(filter));
             }
         }
     } catch (const std::exception &_) {
@@ -154,12 +160,16 @@ DiagramHelper stim_pybind::circuit_diagram(
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "time-slice-svg") {
+    } else if (type == "time-slice-svg" || type == "timeslice-svg") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "time+detector-slice-svg") {
+    } else if (type == "detslice-svg" || type == "detector-slice-svg") {
+        std::stringstream out;
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
+        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "detslice-with-ops-svg" || type == "time+detector-slice-svg") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
@@ -174,27 +184,23 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out_html;
         write_html_viewer_for_gltf_data(out.str(), out_html);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
-    } else if (type == "detector-slice-text") {
-        if (tick.is_none()) {
-            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
-        }
+    } else if (type == "detslice-text" || type == "detector-slice-text") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_text_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
-    } else if (type == "detector-slice-svg") {
-        if (tick.is_none()) {
-            throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
-        }
-        std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "interactive") {
+    } else if (type == "interactive" || type == "interactive-html") {
         std::stringstream out;
         write_crumble_html_with_preloaded_circuit(circuit, out);
         return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
-    } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
+    } else if (type == "match-graph-svg" || type == "matchgraph-svg") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
-        return dem_diagram(dem, type);
+        return dem_diagram(dem, "matchgraph-svg");
+    } else if (type == "match-graph-3d" || type == "matchgraph-3d") {
+        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+        return dem_diagram(dem, "matchgraph-3d");
+    } else if (type == "match-graph-3d-html" || type == "matchgraph-3d-html") {
+        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+        return dem_diagram(dem, "matchgraph-3d-html");
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }

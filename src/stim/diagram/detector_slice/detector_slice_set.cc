@@ -1,5 +1,6 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
+#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/diagram_util.h"
@@ -165,11 +166,49 @@ std::set<uint64_t> DetectorSliceSet::used_qubits() const {
     return result;
 }
 
+bool CoordFilter::matches(stim::ConstPointerRange<double> coords, stim::DemTarget target) const {
+    if (use_target) {
+        return target == exact_target;
+    }
+    if (!target.is_relative_detector_id()) {
+        return false;
+    }
+    for (size_t k = 0; k < coordinates.size(); k++) {
+        if (!std::isnan(coordinates[k])) {
+            if (coords.size() <= k || coords[k] != coordinates[k]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+CoordFilter CoordFilter::parse_from(const std::string &data) {
+    CoordFilter filter;
+    if (data.empty()) {
+        // no filter
+    } else if (data[0] == 'D') {
+        filter.use_target = true;
+        filter.exact_target = DemTarget::relative_detector_id(parse_exact_double_from_string(data.substr(1)));
+    } else if (data[0] == 'L') {
+        filter.use_target = true;
+        filter.exact_target = DemTarget::observable_id(parse_exact_double_from_string(data.substr(1)));
+    } else {
+        for (const auto &v : split(',', data)) {
+            if (v == "*") {
+                filter.coordinates.push_back(std::numeric_limits<double>::quiet_NaN());
+            } else {
+                filter.coordinates.push_back(parse_exact_double_from_string(v));
+            }
+        }
+    }
+    return filter;
+}
+
 DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     const stim::Circuit &circuit,
     uint64_t start_tick,
     uint64_t num_ticks,
-    ConstPointerRange<std::vector<double>> coord_filter) {
+    ConstPointerRange<CoordFilter> coord_filter) {
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
     size_t num_qubits = helper.tracker.xs.size();
 
@@ -220,36 +259,23 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
             included_detectors.insert(t.first.second.data);
         }
     }
+    result.detector_coordinates = circuit.get_detector_coordinates(included_detectors);
+
     result.coordinates = circuit.get_final_qubit_coords();
     for (const auto &q : helper.used_qubits) {
         result.coordinates[q];  // Default construct if doesn't exist.
     }
-    result.detector_coordinates = circuit.get_detector_coordinates(included_detectors);
 
-    auto matches_filter = [](ConstPointerRange<double> coord, ConstPointerRange<double> filter) {
-        if (coord.size() < filter.size()) {
-            return false;
-        }
-        for (size_t k = 0; k < filter.size(); k++) {
-            if (filter[k] != coord[k]) {
-                return false;
+    auto keep = [&](DemTarget t) {
+        ConstPointerRange<double> coords{};
+        if (t.is_relative_detector_id()) {
+            auto coords_ptr = result.detector_coordinates.find(t.data);
+            if (coords_ptr != result.detector_coordinates.end()) {
+                coords = coords_ptr->second;
             }
         }
-        return true;
-    };
-    auto keep = [&](DemTarget t) {
-        if (!t.is_relative_detector_id()) {
-            return true;
-        }
-        auto coords_ptr = result.detector_coordinates.find(t.data);
-        ConstPointerRange<double> coords;
-        if (coords_ptr == result.detector_coordinates.end()) {
-            coords = {};
-        } else {
-            coords = coords_ptr->second;
-        }
         for (const auto &filter : coord_filter) {
-            if (matches_filter(coords, filter)) {
+            if (filter.matches(coords, t)) {
                 return true;
             }
         }
@@ -263,7 +289,9 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     }
     for (auto t : removed) {
         result.slices.erase(t);
-        result.detector_coordinates.erase(t.second.raw_id());
+        if (t.second.is_relative_detector_id()) {
+            result.detector_coordinates.erase(t.second.raw_id());
+        }
     }
 
     return result;
@@ -329,6 +357,7 @@ FlattenedCoords FlattenedCoords::from(const DetectorSliceSet &set, float desired
         }
         result.qubit_coords.push_back(c);
     }
+    result.unscaled_qubit_coords = result.qubit_coords;
 
     for (const auto &e : set.detector_coordinates) {
         result.det_coords.insert({e.first, flattened_2d(e.second)});
@@ -482,6 +511,131 @@ bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
     return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
 }
 
+double stim_draw_internal::inv_space_fill_transform(Coord<2> a) {
+    double dx = ldexp((double)a.xyz[0], 4);
+    double dy = ldexp((double)a.xyz[1], 4);
+    uint64_t x = (uint64_t)std::min((double)(1ULL << 31), std::max(dx, 0.0));
+    uint64_t y = (uint64_t)std::min((double)(1ULL << 31), std::max(dy, 0.0));
+
+    for (size_t k = 64; k-- > 0;) {
+        uint64_t b = 1ULL << k;
+        uint64_t m = b - 1;
+        if ((x ^ y) & b) {
+            x ^= m;
+        }
+        if (!(y & b)) {
+            x ^= y & m;
+            y ^= x & m;
+            x ^= y & m;
+        }
+    }
+    y ^= x;
+
+    uint64_t gray = 0;
+    for (size_t k = 64; k--;) {
+        uint64_t b = 1ULL << k;
+        if (y & b) {
+            gray ^= b - 1;
+        }
+    }
+    x ^= gray;
+    y ^= gray;
+
+    uint64_t interleave = 0;
+    for (size_t k = 32; k--;) {
+        interleave |= ((x >> k) & 1ULL) << (2 * k + 1);
+        interleave |= ((y >> k) & 1ULL) << (2 * k);
+    }
+
+    return interleave;
+}
+
+void _draw_observable(
+    std::ostream &out,
+    uint64_t index,
+    const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t tick,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace,
+    bool next_tick_exists,
+    size_t scale) {
+    std::vector<GateTarget> terms_copy;
+    terms_copy.insert(terms_copy.end(), terms.begin(), terms.end());
+    std::sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
+        auto a2 = inv_space_fill_transform(unscaled_coords(a.qubit_value()));
+        auto b2 = inv_space_fill_transform(unscaled_coords(b.qubit_value()));
+        if (a2 != b2) {
+            return a2 < b2;
+        }
+        a2 = inv_space_fill_transform(coords(tick, a.qubit_value()));
+        b2 = inv_space_fill_transform(coords(tick, b.qubit_value()));
+        return a2 < b2;
+    });
+
+    pts_workspace.clear();
+    for (const auto &term : terms_copy) {
+        pts_workspace.push_back(coords(tick, term.qubit_value()));
+    }
+
+    // TODO: CURRENTLY DISABLED BECAUSE IT'S UNCLEAR IF IT HELPS OR HURTS.
+    //    // Draw a semi-janky path connecting the observable together.
+    //    out << "<path d=\"";
+    //    out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
+    //    size_t n = pts_workspace.size();
+    //    for (size_t k = 1; k < n; k++) {
+    //        const auto &p = pts_workspace[(k - 1) % n];
+    //        const auto &a = pts_workspace[k];
+    //
+    //        auto dif = a - p;
+    //        auto average = (a + p) * 0.5;
+    //        if (dif.norm() > 50 * scale) {
+    //            dif /= dif.norm() / 50 / scale;
+    //        }
+    //        Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
+    //        auto c1 = average + perp * 0.1 - dif * 0.1;
+    //        auto c2 = average + perp * 0.1 + dif * 0.1;
+    //
+    //        out << "C";
+    //        out << c1.xyz[0] << " " << c1.xyz[1] << ", ";
+    //        out << c2.xyz[0] << " " << c2.xyz[1] << ", ";
+    //        out << a.xyz[0] << " " << a.xyz[1];
+    //    }
+    //    out << "\" id=\"obs-path:" << index << ":" << tick << "\"";
+    //    write_key_val(out, "stroke", BG_GREY);
+    //    write_key_val(out, "fill", "none");
+    //    write_key_val(out, "stroke-width", scale);
+    //    out << "/>\n";
+
+    for (size_t k = 0; k < terms_copy.size(); k++) {
+        const auto &t = terms_copy[k];
+        out << "<circle";
+        out << " id=\"obs-term:" << index << ":" << tick << ":" << k << "\"";
+        auto c = coords(tick, t.qubit_value());
+        write_key_val(out, "cx", c.xyz[0]);
+        write_key_val(out, "cy", c.xyz[1]);
+        write_key_val(out, "r", scale * 1.1f);
+        write_key_val(out, "stroke", "none");
+        write_key_val(out, "fill", t.is_x_target() ? X_RED : t.is_y_target() ? Y_GREEN : Z_BLUE);
+        out << "/>\n";
+    }
+    if (next_tick_exists) {
+        for (size_t k = 0; k < terms_copy.size(); k++) {
+            const auto &t = terms_copy[k];
+            out << "<circle";
+            out << " id=\"obs-term-shadow:" << index << ":" << tick << ":" << k << "\"";
+            auto c = coords(tick + 1, t.qubit_value());
+            write_key_val(out, "cx", c.xyz[0]);
+            write_key_val(out, "cy", c.xyz[1]);
+            write_key_val(out, "r", scale * 1.1f);
+            write_key_val(out, "stroke", t.is_x_target() ? X_RED : t.is_y_target() ? Y_GREEN : Z_BLUE);
+            write_key_val(out, "stroke-width", 3);
+            write_key_val(out, "fill", "none");
+            out << "/>\n";
+        }
+    }
+}
+
 void _start_many_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
@@ -531,6 +685,9 @@ void _start_two_body_svg_path(
     auto b = coords(tick, terms[1].qubit_value());
     auto dif = b - a;
     auto average = (a + b) * 0.5;
+    if (dif.norm() > 64) {
+        dif /= dif.norm() / 64;
+    }
     Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
     auto ac1 = average + perp * 0.2 - dif * 0.2;
     auto ac2 = average + perp * 0.2 + dif * 0.2;
@@ -607,7 +764,10 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
         result.xyz[1] += coordsys.size.xyz[1] * sy * SLICE_WINDOW_GAP;
         return result;
     };
-    write_svg_contents_to(out, coords, 6);
+    auto unscaled_coords = [&](uint32_t qubit) {
+        return coordsys.unscaled_qubit_coords[qubit];
+    };
+    write_svg_contents_to(out, unscaled_coords, coords, min_tick + num_ticks, 6);
 
     out << "<g id=\"qubit_dots\">\n";
     for (size_t k = 0; k < num_ticks; k++) {
@@ -667,97 +827,100 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
 }
 
 void DetectorSliceSet::write_svg_contents_to(
-    std::ostream &out, const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords, size_t scale) const {
+    std::ostream &out,
+    const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t end_tick,
+    size_t scale) const {
     size_t clip_id = 0;
 
     std::vector<Coord<2>> pts_workspace;
 
     bool haveDrawnCorners = false;
 
+    using tup = std::tuple<uint64_t, stim::DemTarget, ConstPointerRange<GateTarget>>;
+    std::vector<tup> sorted_terms;
+    for (const auto &e : slices) {
+        sorted_terms.push_back({e.first.first, e.first.second, e.second});
+    }
+    std::stable_sort(sorted_terms.begin(), sorted_terms.end(), [](const tup &e1, const tup &e2) -> int {
+        int a = (int)std::get<2>(e1).size();
+        int b = (int)std::get<2>(e2).size();
+        return a > b;
+    });
+
     // Draw detector slices.
-    for (size_t layer = 0; layer < 3; layer++) {
-        for (const auto &e : slices) {
-            uint64_t tick = e.first.first;
-            DemTarget target = e.first.second;
-            if (target.is_observable_id()) {
-                continue;
-            }
-
-            const auto &terms = e.second;
-            if (layer == 0) {
-                if (terms.size() <= 2) {
-                    continue;
-                }
-            } else if (layer == 1) {
-                if (terms.size() != 2) {
-                    continue;
-                }
-            } else {
-                if (terms.size() != 1) {
-                    continue;
-                }
-            }
-
-            const char *color = pick_color(terms);
-            bool drawCorners = false;
-            if (color == nullptr) {
-                drawCorners = true;
-                color = BG_GREY;
-            }
-
-            // Open the group element for this slice
-            out << "<g id=\"slice:" << target.val();
-            add_coord_summary_to_ss(out, detector_coordinates.at(target.val()));
-            out << ":" << tick << "\">\n";
-
-            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
-            write_key_val(out, "stroke", "none");
-            if (terms.size() > 2) {
-                write_key_val(out, "fill-opacity", 0.75);
-            }
-            write_key_val(out, "fill", color);
-            out << "/>\n";
-
-            if (drawCorners) {
-                haveDrawnCorners = true;  // controls later writing out the universal gradients we'll reference here
-                out << R"SVG(<clipPath id="clip)SVG";
-                out << clip_id;
-                out << "\">";
-                _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
-                out << "/></clipPath>\n";
-
-                size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
-                for (const auto &t : terms) {
-                    auto c = coords(tick, t.qubit_value());
-                    out << R"SVG(<circle clip-path="url(#clip)SVG";
-                    out << clip_id;
-                    out << ")\"";
-                    write_key_val(out, "cx", c.xyz[0]);
-                    write_key_val(out, "cy", c.xyz[1]);
-                    write_key_val(out, "r", blur_radius);
-                    write_key_val(out, "stroke", "none");
-                    if (t.is_x_target()) {
-                        write_key_val(out, "fill", "url('#xgrad')");
-                    } else if (t.is_y_target()) {
-                        write_key_val(out, "fill", "url('#ygrad')");
-                    } else {
-                        write_key_val(out, "fill", "url('#zgrad')");
-                    }
-                    out << "/>\n";
-                }
-
-                clip_id++;
-            }
-
-            // Draw outline
-            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
-            write_key_val(out, "stroke", "black");
-            write_key_val(out, "fill", "none");
-            out << "/>\n";
-
-            // Close the group element for this slice
-            out << "</g>\n";
+    for (const auto &e : sorted_terms) {
+        uint64_t tick = std::get<0>(e);
+        DemTarget target = std::get<1>(e);
+        ConstPointerRange<GateTarget> terms = std::get<2>(e);
+        if (target.is_observable_id()) {
+            _draw_observable(
+                out, target.val(), unscaled_coords, coords, tick, terms, pts_workspace, tick < end_tick - 1, scale);
+            continue;
         }
+
+        const char *color = pick_color(terms);
+        bool drawCorners = false;
+        if (color == nullptr) {
+            drawCorners = true;
+            color = BG_GREY;
+        }
+
+        // Open the group element for this slice
+        out << "<g id=\"slice:" << target.val();
+        if (target.is_relative_detector_id()) {
+            add_coord_summary_to_ss(out, detector_coordinates.at(target.val()));
+        }
+        out << ":" << tick << "\">\n";
+
+        _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+        write_key_val(out, "stroke", "none");
+        if (terms.size() > 2) {
+            write_key_val(out, "fill-opacity", 0.75);
+        }
+        write_key_val(out, "fill", color);
+        out << "/>\n";
+
+        if (drawCorners) {
+            haveDrawnCorners = true;  // controls later writing out the universal gradients we'll reference here
+            out << R"SVG(<clipPath id="clip)SVG";
+            out << clip_id;
+            out << "\">";
+            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+            out << "/></clipPath>\n";
+
+            size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
+            for (const auto &t : terms) {
+                auto c = coords(tick, t.qubit_value());
+                out << R"SVG(<circle clip-path="url(#clip)SVG";
+                out << clip_id;
+                out << ")\"";
+                write_key_val(out, "cx", c.xyz[0]);
+                write_key_val(out, "cy", c.xyz[1]);
+                write_key_val(out, "r", blur_radius);
+                write_key_val(out, "stroke", "none");
+                if (t.is_x_target()) {
+                    write_key_val(out, "fill", "url('#xgrad')");
+                } else if (t.is_y_target()) {
+                    write_key_val(out, "fill", "url('#ygrad')");
+                } else {
+                    write_key_val(out, "fill", "url('#zgrad')");
+                }
+                out << "/>\n";
+            }
+
+            clip_id++;
+        }
+
+        // Draw outline
+        _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+        write_key_val(out, "stroke", "black");
+        write_key_val(out, "fill", "none");
+        out << "/>\n";
+
+        // Close the group element for this slice
+        out << "</g>\n";
     }
     if (haveDrawnCorners) {
         // write out the universal radialGradients that all corners reference
