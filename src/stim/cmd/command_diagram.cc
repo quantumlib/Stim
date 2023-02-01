@@ -129,6 +129,9 @@ DiagramTypes _read_diagram_type(int argc, const char **argv) {
     return type;
 }
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
 bool _read_tick(int argc, const char **argv, uint64_t *tick, uint64_t *tick_start, uint64_t *tick_num) {
     *tick = 0;
     *tick_start = 0;
