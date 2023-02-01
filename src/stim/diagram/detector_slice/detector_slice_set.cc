@@ -554,92 +554,6 @@ bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
 //
 //    return interleave;
 //}
-
-void _draw_observable(
-        std::ostream &out,
-        uint64_t index,
-        const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
-        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
-        uint64_t tick,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace,
-        bool next_tick_exists,
-        size_t scale) {
-    std::vector<GateTarget> terms_copy;
-    terms_copy.insert(terms_copy.end(), terms.begin(), terms.end());
-//    std::sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
-//        auto a2 = inv_space_fill_transform(unscaled_coords(a.qubit_value()));
-//        auto b2 = inv_space_fill_transform(unscaled_coords(b.qubit_value()));
-//        if (a2 != b2) {
-//            return a2 < b2;
-//        }
-//        a2 = inv_space_fill_transform(coords(tick, a.qubit_value()));
-//        b2 = inv_space_fill_transform(coords(tick, b.qubit_value()));
-//        return a2 < b2;
-//    });
-
-    pts_workspace.clear();
-    for (const auto &term : terms_copy) {
-        pts_workspace.push_back(coords(tick, term.qubit_value()));
-    }
-
-//    // Draw a semi-janky path connecting the observable together.
-//    // CURRENTLY DISABLED BECAUSE IT'S UNCLEAR IF IT HELPS OR HURTS.
-//    out << "<path d=\"";
-//    out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
-//    size_t n = pts_workspace.size();
-//    for (size_t k = 1; k < n; k++) {
-//        const auto &p = pts_workspace[(k - 1) % n];
-//        const auto &a = pts_workspace[k];
-//
-//        auto dif = a - p;
-//        auto average = (a + p) * 0.5;
-//        if (dif.norm() > 50 * scale) {
-//            dif /= dif.norm() / 50 / scale;
-//        }
-//        Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
-//        auto c1 = average + perp * 0.1 - dif * 0.1;
-//        auto c2 = average + perp * 0.1 + dif * 0.1;
-//
-//        out << "C";
-//        out << c1.xyz[0] << " " << c1.xyz[1] << ", ";
-//        out << c2.xyz[0] << " " << c2.xyz[1] << ", ";
-//        out << a.xyz[0] << " " << a.xyz[1];
-//    }
-//    out << "\" id=\"obs-path:" << index << ":" << tick << "\"";
-//    write_key_val(out, "stroke", BG_GREY);
-//    write_key_val(out, "fill", "none");
-//    write_key_val(out, "stroke-width", scale);
-//    out << "/>\n";
-
-    for (size_t k = 0; k < terms_copy.size(); k++) {
-        const auto &t = terms_copy[k];
-        out << "<circle";
-        out << " id=\"obs-term:" << index << ":" << tick << ":" << k << "\"";
-        auto c = coords(tick, t.qubit_value());
-        write_key_val(out, "cx", c.xyz[0]);
-        write_key_val(out, "cy", c.xyz[1]);
-        write_key_val(out, "r", scale * 1.1f);
-        write_key_val(out, "stroke", "none");
-        write_key_val(out, "fill", t.is_x_target() ? X_RED : t.is_y_target() ? Y_GREEN : Z_BLUE);
-        out << "/>\n";
-    }
-    if (next_tick_exists) {
-        for (size_t k = 0; k < terms_copy.size(); k++) {
-            const auto &t = terms_copy[k];
-            out << "<circle";
-            out << " id=\"obs-term-shadow:" << index << ":" << tick << ":" << k << "\"";
-            auto c = coords(tick + 1, t.qubit_value());
-            write_key_val(out, "cx", c.xyz[0]);
-            write_key_val(out, "cy", c.xyz[1]);
-            write_key_val(out, "r", scale * 1.1f);
-            write_key_val(out, "stroke", t.is_x_target() ? X_RED : t.is_y_target() ? Y_GREEN : Z_BLUE);
-            write_key_val(out, "fill", "none");
-            out << "/>\n";
-        }
-    }
-}
-
 void _start_many_body_svg_path(
         std::ostream &out,
         const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
@@ -860,7 +774,6 @@ void DetectorSliceSet::write_svg_contents_to(
         DemTarget target = std::get<1>(e);
         ConstPointerRange<GateTarget> terms = std::get<2>(e);
         if (target.is_observable_id()) {
-            _draw_observable(out, target.val(), unscaled_coords, coords, tick, terms, pts_workspace, tick < end_tick - 1, scale);
             continue;
         }
 
