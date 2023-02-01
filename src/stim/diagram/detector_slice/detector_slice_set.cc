@@ -516,44 +516,44 @@ bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
     return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
 }
 
-double stim_draw_internal::inv_space_fill_transform(Coord<2> a) {
-    double dx = ldexp((double)a.xyz[0], 4);
-    double dy = ldexp((double)a.xyz[1], 4);
-    uint64_t x = (uint64_t)std::min((double)(1ULL << 31), std::max(dx, 0.0));
-    uint64_t y = (uint64_t)std::min((double)(1ULL << 31), std::max(dy, 0.0));
-
-    for (size_t k = 64; k-- > 0;) {
-        uint64_t b = 1ULL << k;
-        uint64_t m = b - 1;
-        if ((x ^ y) & b) {
-            x ^= m;
-        }
-        if (!(y & b)) {
-            x ^= y & m;
-            y ^= x & m;
-            x ^= y & m;
-        }
-    }
-    y ^= x;
-
-    uint64_t gray = 0;
-    for (size_t k = 64; k--;) {
-        uint64_t b = 1ULL << k;
-        if (y & b) {
-            gray ^= b - 1;
-        }
-    }
-    x ^= gray;
-    y ^= gray;
-
-    uint64_t interleave = 0;
-    for (size_t k = 32; k--;) {
-        interleave |= ((x >> k) & 1ULL) << (2 * k + 1);
-        interleave |= ((y >> k) & 1ULL) << (2 * k);
-    }
-
-    return interleave;
-}
+//double stim_draw_internal::inv_space_fill_transform(Coord<2> a) {
+//    double dx = ldexp((double)a.xyz[0], 4);
+//    double dy = ldexp((double)a.xyz[1], 4);
+//    uint64_t x = (uint64_t)std::min((double)(1ULL << 31), std::max(dx, 0.0));
+//    uint64_t y = (uint64_t)std::min((double)(1ULL << 31), std::max(dy, 0.0));
+//
+//    for (size_t k = 64; k-- > 0;) {
+//        uint64_t b = 1ULL << k;
+//        uint64_t m = b - 1;
+//        if ((x ^ y) & b) {
+//            x ^= m;
+//        }
+//        if (!(y & b)) {
+//            x ^= y & m;
+//            y ^= x & m;
+//            x ^= y & m;
+//        }
+//    }
+//    y ^= x;
+//
+//    uint64_t gray = 0;
+//    for (size_t k = 64; k--;) {
+//        uint64_t b = 1ULL << k;
+//        if (y & b) {
+//            gray ^= b - 1;
+//        }
+//    }
+//    x ^= gray;
+//    y ^= gray;
+//
+//    uint64_t interleave = 0;
+//    for (size_t k = 32; k--;) {
+//        interleave |= ((x >> k) & 1ULL) << (2 * k + 1);
+//        interleave |= ((y >> k) & 1ULL) << (2 * k);
+//    }
+//
+//    return interleave;
+//}
 
 void _draw_observable(
         std::ostream &out,
@@ -567,16 +567,16 @@ void _draw_observable(
         size_t scale) {
     std::vector<GateTarget> terms_copy;
     terms_copy.insert(terms_copy.end(), terms.begin(), terms.end());
-    std::sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
-        auto a2 = inv_space_fill_transform(unscaled_coords(a.qubit_value()));
-        auto b2 = inv_space_fill_transform(unscaled_coords(b.qubit_value()));
-        if (a2 != b2) {
-            return a2 < b2;
-        }
-        a2 = inv_space_fill_transform(coords(tick, a.qubit_value()));
-        b2 = inv_space_fill_transform(coords(tick, b.qubit_value()));
-        return a2 < b2;
-    });
+//    std::sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
+//        auto a2 = inv_space_fill_transform(unscaled_coords(a.qubit_value()));
+//        auto b2 = inv_space_fill_transform(unscaled_coords(b.qubit_value()));
+//        if (a2 != b2) {
+//            return a2 < b2;
+//        }
+//        a2 = inv_space_fill_transform(coords(tick, a.qubit_value()));
+//        b2 = inv_space_fill_transform(coords(tick, b.qubit_value()));
+//        return a2 < b2;
+//    });
 
     pts_workspace.clear();
     for (const auto &term : terms_copy) {

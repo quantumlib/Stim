@@ -71,7 +71,7 @@ struct DetectorSliceSet {
         size_t scale) const;
 };
 
-double inv_space_fill_transform(Coord<2> a);
+//double inv_space_fill_transform(Coord<2> a);
 
 struct FlattenedCoords {
     std::vector<Coord<2>> unscaled_qubit_coords;
