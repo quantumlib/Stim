@@ -187,40 +187,40 @@ int stim::command_diagram(int argc, const char **argv) {
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
             break;
         }
-        case TIMELINE_3D: {
-            auto circuit = read_circuit();
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-            break;
-        }
-        case TIMELINE_3D_HTML: {
-            auto circuit = read_circuit();
-            std::stringstream tmp_out;
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case INTERACTIVE_HTML: {
-            auto circuit = read_circuit();
-            write_crumble_html_with_preloaded_circuit(circuit, out);
-            break;
-        }
+//        case TIMELINE_3D: {
+//            auto circuit = read_circuit();
+//            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+//            break;
+//        }
+//        case TIMELINE_3D_HTML: {
+//            auto circuit = read_circuit();
+//            std::stringstream tmp_out;
+//            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
+//            write_html_viewer_for_gltf_data(tmp_out.str(), out);
+//            break;
+//        }
+//        case INTERACTIVE_HTML: {
+//            auto circuit = read_circuit();
+//            write_crumble_html_with_preloaded_circuit(circuit, out);
+//            break;
+//        }
         case MATCH_GRAPH_3D: {
             auto dem = read_dem();
             dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
             break;
         }
-        case MATCH_GRAPH_3D_HTML: {
-            auto dem = read_dem();
-            std::stringstream tmp_out;
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
-            write_html_viewer_for_gltf_data(tmp_out.str(), out);
-            break;
-        }
-        case MATCH_GRAPH_SVG: {
-            auto dem = read_dem();
-            dem_match_graph_to_svg_diagram_write_to(dem, out);
-            break;
-        }
+//        case MATCH_GRAPH_3D_HTML: {
+//            auto dem = read_dem();
+//            std::stringstream tmp_out;
+//            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
+//            write_html_viewer_for_gltf_data(tmp_out.str(), out);
+//            break;
+//        }
+//        case MATCH_GRAPH_SVG: {
+//            auto dem = read_dem();
+//            dem_match_graph_to_svg_diagram_write_to(dem, out);
+//            break;
+//        }
         case DETECTOR_SLICE_TEXT: {
             if (!has_tick_arg) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
@@ -230,15 +230,15 @@ int stim::command_diagram(int argc, const char **argv) {
             out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
             break;
         }
-        case DETECTOR_SLICE_SVG: {
-            if (!has_tick_arg) {
-                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
-            }
-            auto coord_filter = read_coord_filter();
-            auto circuit = read_circuit();
-            DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
-            break;
-        }
+//        case DETECTOR_SLICE_SVG: {
+//            if (!has_tick_arg) {
+//                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
+//            }
+//            auto coord_filter = read_coord_filter();
+//            auto circuit = read_circuit();
+//            DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
+//            break;
+//        }
         default: {
             throw std::invalid_argument("Unknown type");
         }
