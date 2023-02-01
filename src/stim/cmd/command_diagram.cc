@@ -47,6 +47,9 @@ enum DiagramTypes {
     DETECTOR_SLICE_SVG,
 };
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
 stim::Circuit _read_circuit(RaiiFile &in, int argc, const char **argv) {
     auto circuit = Circuit::from_file(in.f);
     in.done();
@@ -56,6 +59,9 @@ stim::Circuit _read_circuit(RaiiFile &in, int argc, const char **argv) {
     return circuit;
 }
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
 stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
     std::string content;
     while (true) {
@@ -79,6 +85,9 @@ stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
     return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
 }
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
 std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
     const char *arg = find_argument("--filter_coords", argc, argv);
     if (arg == nullptr) {
@@ -92,6 +101,9 @@ std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
     return result;
 }
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
 DiagramTypes _read_diagram_type(int argc, const char **argv) {
     std::map<std::string, DiagramTypes> diagram_types{
         {"timeline-text", TIMELINE_TEXT},
