@@ -8,6 +8,8 @@
 - [How do I use Stim?](#how-use-stim)
 - [How does Stim work?](#how-stim-work)
 - [How do I cite Stim?](#how-cite-stim)
+- [subproject: Sinter decoding sampler](glue/sample)
+- [subproject: Crumble interactive editor](glue/crumble)
 
 # <a name="what-is-stim"></a>What is Stim?
 
