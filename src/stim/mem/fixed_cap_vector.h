@@ -61,10 +61,10 @@ class FixedCapVector {
         return &data[0];
     }
     T *end() {
-        return &data[num_used];
+        return &data[0] + num_used;
     }
     const T *end() const {
-        return &data[num_used];
+        return &data[0] + num_used;
     }
     const T *begin() const {
         return &data[0];

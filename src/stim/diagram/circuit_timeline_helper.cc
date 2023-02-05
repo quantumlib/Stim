@@ -125,7 +125,7 @@ ConstPointerRange<double> CircuitTimelineHelper::shifted_coordinates_in_workspac
             coord_workspace[k] += cur_coord_shift[k];
         }
     }
-    return {&coord_workspace[0], &coord_workspace[coords.size()]};
+    return {coord_workspace.data(), coord_workspace.data() + coords.size()};
 }
 
 void CircuitTimelineHelper::do_detector(const Operation &op) {
