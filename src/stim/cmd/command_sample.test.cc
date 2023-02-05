@@ -161,7 +161,7 @@ TEST(command_sample, basic_distributions) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=1000"}, R"input(
+            run_captured_stim_main({"--sample=10000"}, R"input(
 H 0
 CNOT 0 1
 M 0 1
@@ -171,7 +171,7 @@ M 0 1
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=1000"}, R"input(
+            run_captured_stim_main({"--sample=10000"}, R"input(
 H 0
 CNOT 0 1
 SQRT_X 0 1
@@ -182,7 +182,7 @@ M 0 1
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=1000"}, R"input(
+            run_captured_stim_main({"--sample=10000"}, R"input(
 H 0
 CNOT 0 1
 SQRT_Y 0 1
@@ -195,7 +195,7 @@ TEST(command_sample, sample_x_error) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 X_ERROR(0.1) 0 1
 M 0 1
             )input"),
@@ -217,7 +217,7 @@ TEST(command_sample, sample_z_error) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 H 0 1
 Z_ERROR(0.1) 0 1
 H 0 1
@@ -239,7 +239,7 @@ TEST(command_sample, sample_y_error) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 Y_ERROR(0.1) 0 1
 M 0 1
             )input"),
@@ -261,7 +261,7 @@ TEST(command_sample, sample_depolarize1_error) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 DEPOLARIZE1(0.3) 0 1
 M 0 1
             )input"),
@@ -270,7 +270,7 @@ M 0 1
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 H 0 1
 DEPOLARIZE1(0.3) 0 1
 H 0 1
@@ -281,7 +281,7 @@ M 0 1
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 H_YZ 0 1
 DEPOLARIZE1(0.3) 0 1
 H_YZ 0 1
@@ -294,7 +294,7 @@ TEST(command_sample, sample_depolarize2_error) {
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 DEPOLARIZE2(0.1) 0 1
 M 0 1
             )input"),
@@ -303,7 +303,7 @@ M 0 1
     ASSERT_EQ(
         "",
         deviation(
-            run_captured_stim_main({"--sample=10000"}, R"input(
+            run_captured_stim_main({"--sample=100000"}, R"input(
 H 0
 H_YZ 1
 DEPOLARIZE2(0.3) 0 1

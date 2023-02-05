@@ -562,7 +562,7 @@ void _draw_observable(
     size_t scale) {
     std::vector<GateTarget> terms_copy;
     terms_copy.insert(terms_copy.end(), terms.begin(), terms.end());
-    std::sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
+    std::stable_sort(terms_copy.begin(), terms_copy.end(), [&](GateTarget a, GateTarget b) {
         auto a2 = inv_space_fill_transform(unscaled_coords(a.qubit_value()));
         auto b2 = inv_space_fill_transform(unscaled_coords(b.qubit_value()));
         if (a2 != b2) {
@@ -647,7 +647,7 @@ void _start_many_body_svg_path(
         pts_workspace.push_back(coords(tick, term.qubit_value()));
     }
     auto center = pick_polygon_center(pts_workspace);
-    std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
+    std::stable_sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
         return angle_from_to(center, a) < angle_from_to(center, b);
     });
 

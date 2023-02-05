@@ -608,7 +608,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         }
 
         // Fuse operations.
-        while (ops.size() > 1 && ops[ops.size() - 2].can_fuse(new_op)) {
+        if (ops.size() > 1 && ops[ops.size() - 2].can_fuse(new_op)) {
             fuse_data(ops[ops.size() - 2].target_data.targets, new_op.target_data.targets, circuit.target_buf);
             ops.pop_back();
         }
