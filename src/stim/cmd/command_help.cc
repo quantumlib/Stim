@@ -454,12 +454,12 @@ std::map<std::string, std::string> generate_format_help_markdown() {
     all << "Result data formats supported by Stim\n";
 
     all << "\n# Index\n";
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         all << kv.first << "\n";
     }
     result[std::string("FORMATS")] = all.str();
 
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         result[upper(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
     }
 
@@ -490,11 +490,11 @@ than 0s, so you use a sparse format.
 
 # Index
 )MARKDOWN";
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         all << "- [The **" << kv.first << "** Format](#" << kv.first << ")\n";
     }
     all << "\n\n";
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         all << "# " << generate_per_format_markdown(kv.second, 0, true) << "\n";
     }
     result[std::string("FORMATS_MARKDOWN")] = all.str();

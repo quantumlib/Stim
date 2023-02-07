@@ -30,7 +30,7 @@ int stim::command_sample(int argc, const char **argv) {
         "sample",
         argc,
         argv);
-    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map(), argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
     uint64_t num_shots =
         find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
