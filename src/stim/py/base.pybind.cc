@@ -68,11 +68,11 @@ bool stim_pybind::normalize_index_or_slice(
 }
 
 SampleFormat stim_pybind::format_to_enum(const std::string &format) {
-    auto found_format = format_name_to_enum_map.find(format);
-    if (found_format == format_name_to_enum_map.end()) {
+    auto found_format = format_name_to_enum_map().find(format);
+    if (found_format == format_name_to_enum_map().end()) {
         std::stringstream msg;
         msg << "Unrecognized output format: '" << format << "'. Recognized formats are:\n";
-        for (const auto &kv : format_name_to_enum_map) {
+        for (const auto &kv : format_name_to_enum_map()) {
             msg << "    " << kv.first << "\n";
         }
         throw std::invalid_argument(msg.str());

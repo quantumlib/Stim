@@ -9,27 +9,27 @@
 
 using namespace stim;
 
-std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
-    {"color_code", &generate_color_code_circuit},
-    {"repetition_code", &generate_rep_code_circuit},
-    {"surface_code", &generate_surface_code_circuit}};
-std::vector<const char *> known_flags{
-    "--after_clifford_depolarization",
-    "--after_reset_flip_probability",
-    "--code",
-    "--task",
-    "--before_measure_flip_probability",
-    "--before_round_data_depolarization",
-    "--distance",
-    "--out",
-    "--in",
-    "--rounds",
-};
-std::vector<const char *> known_flags_deprecated{
-    "--gen",
-};
-
 int stim::command_gen(int argc, const char **argv) {
+    std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
+        {"color_code", &generate_color_code_circuit},
+        {"repetition_code", &generate_rep_code_circuit},
+        {"surface_code", &generate_surface_code_circuit}};
+    std::vector<const char *> known_flags{
+        "--after_clifford_depolarization",
+        "--after_reset_flip_probability",
+        "--code",
+        "--task",
+        "--before_measure_flip_probability",
+        "--before_round_data_depolarization",
+        "--distance",
+        "--out",
+        "--in",
+        "--rounds",
+    };
+    std::vector<const char *> known_flags_deprecated{
+        "--gen",
+    };
+
     check_for_unknown_arguments(known_flags, known_flags_deprecated, "gen", argc, argv);
     const char *code_flag_name = find_argument("--gen", argc, argv) ? "--gen" : "--code";
     auto func = find_enum_argument(code_flag_name, nullptr, code_name_to_func_map, argc, argv);

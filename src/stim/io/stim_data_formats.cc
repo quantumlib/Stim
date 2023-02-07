@@ -2,13 +2,15 @@
 
 using namespace stim;
 
-extern const std::map<std::string, stim::FileFormatData> stim::format_name_to_enum_map{
-    {
-        "01",
-        FileFormatData{
+const std::map<std::string, FileFormatData>& stim::format_name_to_enum_map() {
+
+    static const std::map<std::string, stim::FileFormatData> mapping{
+        {
             "01",
-            SAMPLE_FORMAT_01,
-            R"HELP(
+            FileFormatData{
+                "01",
+                SAMPLE_FORMAT_01,
+                R"HELP(
 The 01 format is a dense human readable format that stores shots as lines of '0' and '1' characters.
 
 The data from each shot is terminated by a newline character '\n'. Each character in the line is a '0' (indicating
@@ -40,7 +42,7 @@ This is the default format used by Stim, because it's the easiest to understand.
     00001111001101
     00001111001101
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_01(shots: List[List[bool]]) -> str:
@@ -66,14 +68,14 @@ def parse_01(data: str) -> List[List[bool]]:
         shots.append(shot)
     return shots
 )PYTHON",
+            },
         },
-    },
 
-    {
-        "b8",
-        FileFormatData{
+        {
             "b8",
-            SAMPLE_FORMAT_B8,
+            FileFormatData{
+                "b8",
+                SAMPLE_FORMAT_B8,
             R"HELP(
 The b8 format is a dense binary format that stores shots as bit-packed bytes.
 
@@ -99,7 +101,7 @@ This format requires the reader to know the number of bits in each shot.
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_b8(shots: List[List[bool]]) -> bytes:
@@ -128,15 +130,15 @@ def parse_b8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
         shots.append(shot)
     return shots
 )PYTHON",
+            },
         },
-    },
 
-    {
-        "ptb64",
-        FileFormatData{
+        {
             "ptb64",
-            SAMPLE_FORMAT_PTB64,
-            R"HELP(
+            FileFormatData{
+                "ptb64",
+                SAMPLE_FORMAT_PTB64,
+                R"HELP(
 The ptb64 format is a dense SIMD-focused binary format that stores shots as partially transposed bit-packed data.
 
 Each 64 bit word (8 bytes) of the data contains bits from the same measurement result across 64 separate shots. The next
@@ -168,7 +170,7 @@ where it is possible to parallelize across shots using SIMD instructions.
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     0 0 0 0 0 0 0 0 ff ff ff ff ff ff ff ff
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_ptb64(shots: List[List[bool]]):
@@ -186,7 +188,7 @@ def save_ptb64(shots: List[List[bool]]):
             output.append(v.to_bytes(8, 'little'))
     return b''.join(output)
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
@@ -206,14 +208,14 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
                 result[s][m] = bit
     return result
 )PYTHON",
+            },
         },
-    },
 
-    {
-        "hits",
-        FileFormatData{
+        {
             "hits",
-            SAMPLE_FORMAT_HITS,
+            FileFormatData{
+                "hits",
+                SAMPLE_FORMAT_HITS,
             R"HELP(
 The hits format is a dense human readable format that stores shots as a comma-separated list of integers.
 Each integer indicates the position of a bit that was True.
@@ -253,7 +255,7 @@ events.
     4,5,6,7,10,11,13
     4,5,6,7,10,11,13
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_hits(shots: List[List[bool]]) -> str:
@@ -277,15 +279,15 @@ def parse_hits(data: str, bits_per_shot: int) -> List[List[bool]]:
         shots.append(shot)
     return shots
 )PYTHON",
+            },
         },
-    },
 
-    {
-        "r8",
-        FileFormatData{
+        {
             "r8",
-            SAMPLE_FORMAT_R8,
-            R"HELP(
+            FileFormatData{
+                "r8",
+                SAMPLE_FORMAT_R8,
+                R"HELP(
 The r8 format is a sparse binary format that stores shots as a series of lengths of runs between 1s.
 
 Each byte in the data indicates how many False bits there are before the next True bit. The maximum byte value (255) is
@@ -323,7 +325,7 @@ events.
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_r8(shots: List[List[bool]]) -> bytes:
@@ -341,7 +343,7 @@ def save_r8(shots: List[List[bool]]) -> bytes:
                 gap += 1
     return b''.join(output)
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_r8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
@@ -359,15 +361,15 @@ def parse_r8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
     assert len(shot) == 0
     return shots
 )PYTHON",
+            },
         },
-    },
 
-    {
-        "dets",
-        FileFormatData{
+        {
             "dets",
-            SAMPLE_FORMAT_DETS,
-            R"HELP(
+            FileFormatData{
+                "dets",
+                SAMPLE_FORMAT_DETS,
+                R"HELP(
 The dets format is a sparse human readable format that stores shots as lines starting with the word 'shot'
 and then containing space-separated prefixed values like 'D5' and 'L2'. Each value's prefix indicates whether
 it is a measurement (M), a detector (D), or observable frame change (L) and its integer indicates that
@@ -413,7 +415,7 @@ wants to produce vectors of bits instead of sets.
     shot D1 L5
     shot D1 L5
 )HELP",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def save_dets(shots: List[List[bool]], num_detectors: int, num_observables: int):
@@ -432,7 +434,7 @@ def save_dets(shots: List[List[bool]], num_detectors: int, num_observables: int)
         output += "\n"
     return output
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_dets(data: str, num_detectors: int, num_observables: int) -> List[List[bool]]:
@@ -459,6 +461,8 @@ def parse_dets(data: str, num_detectors: int, num_observables: int) -> List[List
         shots.append(shot)
     return shots
 )PYTHON",
+            },
         },
-    },
-};
+    };
+    return mapping;
+}
