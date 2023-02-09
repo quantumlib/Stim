@@ -55,11 +55,13 @@ Targets:
                      {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
                     {"+XI", "-YX", "+IX", "-XY"},
                     R"CIRCUIT(
-CNOT 0 1
 H 0
+CNOT 0 1
+H 1
 S 0
+S 1
 H 0
-CNOT 0 1
+H 1
 )CIRCUIT",
                 };
             },
@@ -94,11 +96,17 @@ Targets:
                      {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
                     {"+XI", "+YX", "+IX", "+XY"},
                     R"CIRCUIT(
-S 0
-CNOT 0 1
 H 0
-S 0
 CNOT 0 1
+H 1
+S 0
+S 0
+S 0
+S 1
+S 1
+S 1
+H 0
+H 1
 )CIRCUIT",
                 };
             },
@@ -135,12 +143,20 @@ Targets:
                     {"-ZY", "+XY", "-YZ", "+YX"},
                     R"CIRCUIT(
 S 0
-CNOT 1 0
 S 0
 S 0
+S 1
+S 1
+S 1
+H 0
+CNOT 0 1
 H 1
-CNOT 1 0
 S 0
+S 1
+H 0
+H 1
+S 0
+S 1
 )CIRCUIT",
                 };
             },
@@ -175,13 +191,21 @@ Targets:
                      {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
                     {"+ZY", "-XY", "+YZ", "-YX"},
                     R"CIRCUIT(
-CNOT 0 1
+S 0
+S 0
+S 0
 S 1
 H 0
-S 0
-H 0
-CNOT 1 0
 CNOT 0 1
+H 1
+S 0
+S 1
+H 0
+H 1
+S 0
+S 1
+S 1
+S 1
 )CIRCUIT",
                 };
             },
@@ -214,9 +238,11 @@ Targets:
                     {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
                     {"+YZ", "+ZI", "+ZY", "+IZ"},
                     R"CIRCUIT(
+H 1
 CNOT 0 1
+H 1
+S 0
 S 1
-CNOT 0 1
 )CIRCUIT",
                 };
             },
