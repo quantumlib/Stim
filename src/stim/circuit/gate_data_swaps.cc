@@ -88,10 +88,16 @@ Targets:
                     {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
                     {"+ZY", "+IZ", "+YZ", "+ZI"},
                     R"CIRCUIT(
+H 0
+S 0
+S 0
+S 0
 CNOT 0 1
-S 1
+S 0
 CNOT 1 0
-CNOT 0 1
+H 1
+S 1
+S 0
 )CIRCUIT",
                 };
             },
@@ -195,12 +201,20 @@ Targets:
                     {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
                     {"-ZY", "+IZ", "-YZ", "+ZI"},
                     R"CIRCUIT(
-CNOT 0 1
+S 0
+S 0
+S 0
 S 1
 S 1
 S 1
+H 1
 CNOT 1 0
+S 0
+S 0
+S 0
 CNOT 0 1
+S 0
+H 0
 )CIRCUIT",
                 };
             },

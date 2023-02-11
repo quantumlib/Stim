@@ -969,10 +969,16 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `ISWAP 0 1`
+    H 0
+    S 0
+    S 0
+    S 0
     CNOT 0 1
-    S 1
+    S 0
     CNOT 1 0
-    CNOT 0 1
+    H 1
+    S 1
+    S 0
     
 
 <a name="ISWAP_DAG"></a>
@@ -1012,12 +1018,20 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `ISWAP_DAG 0 1`
-    CNOT 0 1
+    S 0
+    S 0
+    S 0
     S 1
     S 1
     S 1
+    H 1
     CNOT 1 0
+    S 0
+    S 0
+    S 0
     CNOT 0 1
+    S 0
+    H 0
     
 
 <a name="SQRT_XX"></a>
@@ -1056,11 +1070,13 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_XX 0 1`
-    CNOT 0 1
     H 0
+    CNOT 0 1
+    H 1
     S 0
+    S 1
     H 0
-    CNOT 0 1
+    H 1
     
 
 <a name="SQRT_XX_DAG"></a>
@@ -1099,11 +1115,17 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_XX_DAG 0 1`
-    S 0
-    CNOT 0 1
     H 0
-    S 0
     CNOT 0 1
+    H 1
+    S 0
+    S 0
+    S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    H 1
     
 
 <a name="SQRT_YY"></a>
@@ -1143,12 +1165,20 @@ Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_YY 0 1`
     S 0
-    CNOT 1 0
     S 0
     S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    CNOT 0 1
     H 1
-    CNOT 1 0
     S 0
+    S 1
+    H 0
+    H 1
+    S 0
+    S 1
     
 
 <a name="SQRT_YY_DAG"></a>
@@ -1187,13 +1217,21 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_YY_DAG 0 1`
-    CNOT 0 1
+    S 0
+    S 0
+    S 0
     S 1
     H 0
-    S 0
-    H 0
-    CNOT 1 0
     CNOT 0 1
+    H 1
+    S 0
+    S 1
+    H 0
+    H 1
+    S 0
+    S 1
+    S 1
+    S 1
     
 
 <a name="SQRT_ZZ"></a>
@@ -1232,9 +1270,11 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_ZZ 0 1`
+    H 1
     CNOT 0 1
+    H 1
+    S 0
     S 1
-    CNOT 0 1
     
 
 <a name="SQRT_ZZ_DAG"></a>
@@ -1453,11 +1493,13 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `XCY 0 1`
-    CNOT 1 0
     H 0
-    S 0
+    S 1
+    S 1
+    S 1
     CNOT 0 1
     H 0
+    S 1
     
 
 <a name="XCZ"></a>
@@ -1547,10 +1589,12 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `YCX 0 1`
-    CX 0 1
+    S 0
+    S 0
+    S 0
     H 1
-    S 1
-    CX 1 0
+    CNOT 1 0
+    S 0
     H 1
     
 
@@ -1595,13 +1639,17 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `YCY 0 1`
+    S 0
+    S 0
+    S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    CNOT 0 1
     H 0
     S 0
-    H 0
-    CX 0 1
-    H 0
-    CX 1 0
-    S 0
+    S 1
     
 
 <a name="YCZ"></a>
