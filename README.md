@@ -78,7 +78,7 @@ See the [Getting Started Notebook](doc/getting_started.ipynb).
 
 Stuck?
 [Get help on the quantum computing stack exchange](https://quantumcomputing.stackexchange.com)
-and use the `stim` tag.
+and use the [`stim`](https://quantumcomputing.stackexchange.com/questions/tagged/stim) tag.
 
 See the reference documentation:
 
