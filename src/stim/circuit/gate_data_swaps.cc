@@ -205,11 +205,7 @@ S 1
 S 1
 H 1
 CNOT 1 0
-S 0
-S 0
-S 0
 CNOT 0 1
-S 0
 H 0
 )CIRCUIT",
                 };
