@@ -970,11 +970,7 @@ Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `ISWAP 0 1`
     H 0
-    S 0
-    S 0
-    S 0
     CNOT 0 1
-    S 0
     CNOT 1 0
     H 1
     S 1
