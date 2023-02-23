@@ -377,6 +377,7 @@ class CirqToStimHelper:
         t2f = gate_type_to_stim_append_func()
         for op in operations:
             assert isinstance(op, cirq.Operation)
+            op = op.untagged
             gate = op.gate
             targets = [self.q2i[q] for q in op.qubits]
 
