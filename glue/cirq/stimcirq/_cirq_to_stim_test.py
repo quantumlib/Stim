@@ -336,10 +336,24 @@ def test_on_loop():
                 cirq.measure(b, key="b"),
             ),
             repetitions=3,
-        ).with_tags('my_tag')
+        )
     )
     result = stimcirq.StimSampler().run(c)
     assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}
+
+def test_on_tagged_loop():
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.X(a),
+                cirq.X(b),
+                cirq.measure(a, key="a"),
+                cirq.measure(b, key="b"),
+            ),
+            repetitions=3,
+        ).with_tags('my_tag')
+    )
     
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
     assert stim.CircuitRepeatBlock in {type(instr) for instr in stim_circuit}
