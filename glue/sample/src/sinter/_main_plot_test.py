@@ -5,6 +5,7 @@ import tempfile
 
 import pytest
 from sinter._main import main
+from sinter._main_plot import _log_ticks, _sqrt_ticks
 
 
 def test_main_plot():
@@ -173,3 +174,49 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
                 "test axis"
             ])
         assert (d / "output.png").exists()
+
+
+def test_log_ticks():
+    assert _log_ticks(12, 499) == (
+        10,
+        1000,
+        [10, 100, 1000],
+        [20, 30, 40, 50, 60, 70, 80, 90, 200, 300, 400, 500, 600, 700, 800, 900],
+    )
+
+    assert _log_ticks(1.2, 4.9) == (
+        1,
+        10,
+        [1, 10],
+        [2, 3, 4, 5, 6, 7, 8, 9],
+    )
+
+
+def test_sqrt_ticks():
+    assert _sqrt_ticks(12, 499) == (
+        0,
+        500,
+        [0, 100, 200, 300, 400, 500],
+        [10*k for k in range(51)],
+    )
+
+    assert _sqrt_ticks(105, 499) == (
+        100,
+        500,
+        [100, 200, 300, 400, 500],
+        [10*k for k in range(10, 51)],
+    )
+
+    assert _sqrt_ticks(305, 590) == (
+        300,
+        600,
+        [300, 350, 400, 450, 500, 550, 600],
+        [10*k for k in range(30, 61)],
+    )
+
+    assert _sqrt_ticks(305000, 590000) == (
+        300000,
+        600000,
+        [300000, 350000, 400000, 450000, 500000, 550000, 600000],
+        [10000*k for k in range(30, 61)],
+    )
