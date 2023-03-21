@@ -117,13 +117,19 @@ class CircuitTranslationTracker:
         child.qubit_coords = self.qubit_coords.copy()
         child.have_seen_loop = True
         child.process_circuit(1, block.body_copy())
-        self.append_operation(
+
+        # Circuit operation will always be in their own cirq.Moment
+        if len(self.tick_circuit):
+            self.full_circuit += self.tick_circuit
+        self.full_circuit += cirq.Moment(
             cirq.CircuitOperation(
                 cirq.FrozenCircuit(child.full_circuit + child.tick_circuit),
                 repetitions=block.repeat_count,
                 use_repetition_ids=False,
             )
         )
+        self.tick_circuit = cirq.Circuit()
+
         self.qubit_coords = child.qubit_coords
         self.num_measurements_seen += (
             child.num_measurements_seen - self.num_measurements_seen
