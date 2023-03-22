@@ -601,3 +601,5 @@ def test_circuit_operations_always_in_isolated_moment():
     )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     assert len(cirq_circuit) == 2 # 1 moment would mean overlap of circuit operation
+    assert len(cirq_circuit[0].operations) == 1
+    assert isinstance(cirq_circuit[0].operations[0].untagged, cirq.CircuitOperation)
