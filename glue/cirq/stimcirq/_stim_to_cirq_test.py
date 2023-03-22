@@ -589,3 +589,15 @@ def test_single_repeat_loops_always_flattened():
             repetitions=1,
         ),
     )) == stim.Circuit("H 0\nTICK")
+
+def test_circuit_operations_always_in_isolated_moment():
+    stim_circuit = stim.Circuit(
+        """
+        REPEAT 2 {
+            H 0 1
+        }
+        H 2 3
+        """
+    )
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert len(cirq_circuit) == 2 # 1 moment would mean overlap of circuit operation
