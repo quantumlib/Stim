@@ -1227,51 +1227,46 @@ def detector_error_model(
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["timeline-text"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["timeline-svg"]',
+    *,
     tick: Union[None, int, range] = None,
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["timeline-3d", "timeline-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["matchgraph-svg"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["matchgraph-3d"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["matchgraph-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["detslice-text"]',
+    *,
     tick: int,
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
@@ -1279,8 +1274,8 @@ def diagram(
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["detslice-svg"]',
+    *,
     tick: Union[int, range],
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
@@ -1288,8 +1283,8 @@ def diagram(
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["detslice-with-ops-svg"]',
+    *,
     tick: Union[int, range],
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
@@ -1297,8 +1292,8 @@ def diagram(
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["timeslice-svg"]',
+    *,
     tick: Union[int, range],
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
 ) -> 'stim._DiagramHelper':
@@ -1306,7 +1301,6 @@ def diagram(
 @overload
 def diagram(
     self,
-    *,
     type: 'Literal["interactive", "interactive-html"]',
 ) -> 'stim._DiagramHelper':
     pass
