@@ -159,13 +159,13 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
             Args:
                 shots: The number of times to sample every measurement in the circuit.
                 bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
-                    a bool8 numpy array with 1 bit per byte. Uses little endian packing.
+                    a bool_ numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
                 A numpy array containing the samples.
 
                 If bit_packed=False:
-                    dtype=bool8
+                    dtype=bool_
                     shape=(shots, circuit.num_measurements)
                     The bit for measurement `m` in shot `s` is at
                         result[s, m]

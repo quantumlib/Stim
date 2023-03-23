@@ -467,7 +467,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...    DETECTOR rec[-1]
                 ... ''').compile_m2d_converter()
                 >>> converter.convert(
-                ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+                ...     measurements=np.array([[0], [1]], dtype=np.bool_),
                 ...     append_observables=False,
                 ... )
                 array([[ True],

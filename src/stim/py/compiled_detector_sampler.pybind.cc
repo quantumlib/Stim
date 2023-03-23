@@ -197,14 +197,14 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                 append_observables: Defaults to false. When set, observables are included
                     with the detectors and are placed at the end of the results.
                 bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
-                    a bool8 numpy array with 1 bit per byte. Uses little endian packing.
+                    a bool_ numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
                 A numpy array or tuple of numpy arrays containing the samples.
 
                 if separate_observables=False and bit_packed=False:
                     A single numpy array.
-                    dtype=bool8
+                    dtype=bool_
                     shape=(
                         shots,
                         num_detectors + num_observables * (
@@ -226,9 +226,9 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
                 if separate_observables=True and bit_packed=False:
                     A (dets, obs) tuple.
-                    dets.dtype=bool8
+                    dets.dtype=bool_
                     dets.shape=(shots, num_detectors)
-                    obs.dtype=bool8
+                    obs.dtype=bool_
                     obs.shape=(shots, num_observables)
                     The bit for detection event `m` in shot `s` is at
                         dets[s, m]

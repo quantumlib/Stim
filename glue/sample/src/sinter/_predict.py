@@ -192,7 +192,7 @@ def predict_discards_bit_packed(
             will be postselected.
 
     Returns:
-        A numpy bool8 array with shape (num_shots,) where False means not discarded and
+        A numpy bool_ array with shape (num_shots,) where False means not discarded and
         True means yes discarded.
     """
     if not postselect_detectors_with_non_zero_4th_coord:
@@ -228,7 +228,7 @@ def predict_observables(
             This is also where coordinate data is read from, in order to determine
             which detectors to postselect as not having fired.
         dets: The detection event data. Can be bit packed or not bit packed.
-            If dtype=np.bool8 then shape=(num_shots, num_detectors).
+            If dtype=np.bool_ then shape=(num_shots, num_detectors).
             If dtype=np.uint8 then shape=(num_shots, math.ceil(num_detectors / 8)).
         decoder: The decoder to use for decoding, e.g. "pymatching".
         bit_pack_result: Defaults to False. Determines if the result is bit packed
@@ -236,14 +236,14 @@ def predict_observables(
 
     Returns:
         If bit_packed_result=False (default):
-            dtype=np.bool8
+            dtype=np.bool_
             shape=(num_shots, num_observables)
         If bit_packed_result=True:
             dtype=np.uint8
             shape=(num_shots, math.ceil(num_observables / 8))
     """
 
-    if dets.dtype == np.bool8:
+    if dets.dtype == np.bool_:
         dets = np.packbits(dets, axis=1, bitorder='little')
     result = predict_observables_bit_packed(dem=dem, dets_bit_packed=dets, decoder=decoder)
     if not bit_pack_result:
