@@ -25,6 +25,7 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
         failed,
         Gate{
             "DEPOLARIZE1",
+            "DEPOLARIZE1",
             1,
             &TableauSimulator::DEPOLARIZE1,
             &FrameSimulator::DEPOLARIZE1,
@@ -64,6 +65,7 @@ Pauli Mixture:
     add_gate(
         failed,
         Gate{
+            "DEPOLARIZE2",
             "DEPOLARIZE2",
             1,
             &TableauSimulator::DEPOLARIZE2,
@@ -117,6 +119,7 @@ Pauli Mixture:
         failed,
         Gate{
             "X_ERROR",
+            "X_ERROR",
             1,
             &TableauSimulator::X_ERROR,
             &FrameSimulator::X_ERROR,
@@ -152,6 +155,7 @@ Pauli Mixture:
     add_gate(
         failed,
         Gate{
+            "Y_ERROR",
             "Y_ERROR",
             1,
             &TableauSimulator::Y_ERROR,
@@ -189,6 +193,7 @@ Pauli Mixture:
         failed,
         Gate{
             "Z_ERROR",
+            "Z_ERROR",
             1,
             &TableauSimulator::Z_ERROR,
             &FrameSimulator::Z_ERROR,
@@ -224,6 +229,7 @@ Pauli Mixture:
     add_gate(
         failed,
         Gate{
+            "PAULI_CHANNEL_1",
             "PAULI_CHANNEL_1",
             3,
             &TableauSimulator::PAULI_CHANNEL_1,
@@ -271,6 +277,7 @@ Pauli Mixture:
     add_gate(
         failed,
         Gate{
+            "PAULI_CHANNEL_2",
             "PAULI_CHANNEL_2",
             15,
             &TableauSimulator::PAULI_CHANNEL_2,
@@ -347,6 +354,7 @@ Pauli Mixture:
         failed,
         Gate{
             "E",
+            "E",
             1,
             &TableauSimulator::CORRELATED_ERROR,
             &FrameSimulator::CORRELATED_ERROR,
@@ -391,6 +399,7 @@ Example:
     add_gate(
         failed,
         Gate{
+            "ELSE_CORRELATED_ERROR",
             "ELSE_CORRELATED_ERROR",
             1,
             &TableauSimulator::ELSE_CORRELATED_ERROR,

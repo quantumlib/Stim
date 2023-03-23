@@ -188,8 +188,72 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
             indices.push_back(t.qubit_value());
         }
         after_inplace_broadcast(operation.gate->tableau(), indices, inverse);
+    } else if (operation.gate->flags & GATE_HAS_NO_EFFECT_ON_QUBITS) {
+        // Gate can be ignored.
+    } else if (operation.gate->flags & GATE_IS_RESET) {
+        // Only fail if the pauli string actually touches the reset.
+        for (const auto &t : operation.target_data.targets) {
+            assert(t.is_qubit_target());
+            auto q = t.qubit_value();
+            if (q < num_qubits && (xs[q] || zs[q])) {
+                std::stringstream ss;
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation
+                   << "' because the reset discards information.";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+    } else if (operation.gate->id == gate_name_to_id("MPP")) {
+        size_t start = 0;
+        const auto &targets = operation.target_data.targets;
+        while (start < targets.size()) {
+            size_t end = start + 1;
+            bool anticommutes = false;
+            while (true) {
+                auto t = targets[end - 1];
+                auto q = t.qubit_value();
+                if (q < num_qubits) {
+                    anticommutes ^= zs[q] && (t.data & TARGET_PAULI_X_BIT);
+                    anticommutes ^= xs[q] && (t.data & TARGET_PAULI_Z_BIT);
+                }
+                if (end >= targets.size() || !targets[end].is_combiner()) {
+                    break;
+                }
+                end += 2;
+            }
+            if (anticommutes) {
+                std::stringstream ss;
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                throw std::invalid_argument(ss.str());
+            }
+            start = end;
+        }
+    } else if (operation.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+        bool x_dep, z_dep;
+        if (operation.gate->id == gate_name_to_id("M")) {
+            x_dep = true;
+            z_dep = false;
+        } else if (operation.gate->id == gate_name_to_id("MX")) {
+            x_dep = false;
+            z_dep = true;
+        } else if (operation.gate->id == gate_name_to_id("MY")) {
+            x_dep = true;
+            z_dep = true;
+        } else {
+            throw std::invalid_argument("Unrecognized measurement type: " + operation.str());
+        }
+        for (const auto &t : operation.target_data.targets) {
+            assert(t.is_qubit_target());
+            auto q = t.qubit_value();
+            if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
+                std::stringstream ss;
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                throw std::invalid_argument(ss.str());
+            }
+        }
     } else {
-        throw std::invalid_argument("Operation isn't unitary: " + operation.str());
+        std::stringstream ss;
+        ss << "The pauli string '" << *this << "' doesn't have a well defined deterministic value after '" << operation << "'.";
+        throw std::invalid_argument(ss.str());
     }
 }
 
@@ -212,7 +276,7 @@ PauliString PauliStringRef::after(const Operation &operation) const {
 
 PauliString PauliStringRef::before(const Circuit &circuit) const {
     // TODO: use hand-optimized methods instead of the generic circuit inverse method.
-    return after(circuit.inverse());
+    return after(circuit.inverse(true));
 }
 PauliString PauliStringRef::before(const Operation &operation) const {
     PauliString result = *this;
