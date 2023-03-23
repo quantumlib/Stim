@@ -70,26 +70,10 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 
 const Gate &Gate::inverse() const {
     std::string inv_name = name;
-    if (!(flags & GATE_IS_UNITARY)) {
-        throw std::out_of_range(inv_name + " has no inverse.");
+    if ((flags & GATE_IS_UNITARY) || id == gate_name_to_id("TICK")) {
+        return GATE_DATA.items[best_candidate_inverse_id];
     }
-
-    if (GATE_DATA.has(inv_name + "_DAG")) {
-        inv_name += "_DAG";
-    } else if (inv_name.size() > 4 && inv_name.substr(inv_name.size() - 4) == "_DAG") {
-        inv_name = inv_name.substr(0, inv_name.size() - 4);
-    } else if (id == gate_name_to_id("C_XYZ")) {
-        inv_name = "C_ZYX";
-    } else if (id == gate_name_to_id("C_ZYX")) {
-        inv_name = "C_XYZ";
-    } else if (id == gate_name_to_id("CXSWAP")) {
-        inv_name = "SWAPCX";
-    } else if (id == gate_name_to_id("SWAPCX")) {
-        inv_name = "CXSWAP";
-    } else {
-        // Self inverse.
-    }
-    return GATE_DATA.at(inv_name);
+    throw std::out_of_range(inv_name + " has no inverse.");
 }
 
 Gate::Gate() : name(nullptr) {
@@ -97,6 +81,7 @@ Gate::Gate() : name(nullptr) {
 
 Gate::Gate(
     const char *name,
+    const char *best_inverse_name,
     uint8_t arg_count,
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
@@ -113,7 +98,8 @@ Gate::Gate(
       flags(flags),
       arg_count(arg_count),
       name_len((uint8_t)strlen(name)),
-      id(gate_name_to_id(name)) {
+      id(gate_name_to_id(name)),
+      best_candidate_inverse_id(gate_name_to_id(best_inverse_name)) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {

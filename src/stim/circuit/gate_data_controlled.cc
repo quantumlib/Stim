@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
         failed,
         Gate{
             "XCX",
+            "XCX",
             0,
             &TableauSimulator::XCX,
             &FrameSimulator::XCX,
@@ -71,6 +72,7 @@ H 0
     add_gate(
         failed,
         Gate{
+            "XCY",
             "XCY",
             0,
             &TableauSimulator::XCY,
@@ -118,6 +120,7 @@ S 1
     add_gate(
         failed,
         Gate{
+            "XCZ",
             "XCZ",
             0,
             &TableauSimulator::XCZ,
@@ -176,6 +179,7 @@ CNOT 1 0
         failed,
         Gate{
             "YCX",
+            "YCX",
             0,
             &TableauSimulator::YCX,
             &FrameSimulator::YCX,
@@ -222,6 +226,7 @@ H 1
     add_gate(
         failed,
         Gate{
+            "YCY",
             "YCY",
             0,
             &TableauSimulator::YCY,
@@ -273,6 +278,7 @@ S 1
     add_gate(
         failed,
         Gate{
+            "YCZ",
             "YCZ",
             0,
             &TableauSimulator::YCZ,
@@ -335,6 +341,7 @@ S 0
         failed,
         Gate{
             "CX",
+            "CX",
             0,
             &TableauSimulator::ZCX,
             &FrameSimulator::ZCX,
@@ -392,6 +399,7 @@ CNOT 0 1
     add_gate(
         failed,
         Gate{
+            "CY",
             "CY",
             0,
             &TableauSimulator::ZCY,
@@ -453,6 +461,7 @@ S 1
     add_gate(
         failed,
         Gate{
+            "CZ",
             "CZ",
             0,
             &TableauSimulator::ZCZ,

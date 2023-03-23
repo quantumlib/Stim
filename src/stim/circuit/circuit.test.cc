@@ -1512,6 +1512,70 @@ TEST(circuit, inverse) {
             S 0
         )CIRCUIT"));
 
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            SHIFT_COORDS(-2, 3)
+            TICK
+            TICK
+            SHIFT_COORDS(4)
+            TICK
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            TICK
+            SHIFT_COORDS(-4)
+            TICK
+            TICK
+            SHIFT_COORDS(2, -3)
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            X_ERROR(0.125) 0 1
+            Y_ERROR(0.125) 1 2
+            Z_ERROR(0.125) 2 3
+            PAULI_CHANNEL_1(0.125, 0.25, 0) 0 1 0 0
+            PAULI_CHANNEL_2(0, 0.125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) 5 7 2 3
+            DEPOLARIZE1(0.25) 4 5 6
+            DEPOLARIZE2(0.25) 1 2 3 4
+            REPEAT 2 {
+                MX(0.125) 3 4
+                MY(0.125) 5 6
+                M(0.125) 7 8
+            }
+            MRX(0.125) 9 10
+            MRY(0.125) 11 12
+            MR(0.125) 13 14
+            RX 15 16
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+            RY 17 18
+            R 19 20
+            MPP(0.125) X0*X1 Y2*Y3*Y4 Z5*Y6
+        )CIRCUIT")
+            .inverse(true),
+        Circuit(R"CIRCUIT(
+            MPP(0.125) Y6*Z5 Y4*Y3*Y2 X1*X0
+            MR 20 19
+            MRY 18 17
+            MRX 16 15
+            MR(0.125) 14 13
+            MRY(0.125) 12 11
+            MRX(0.125) 10 9
+            REPEAT 2 {
+                M(0.125) 8 7
+                MY(0.125) 6 5
+                MX(0.125) 4 3
+            }
+            DEPOLARIZE2(0.25) 3 4 1 2
+            DEPOLARIZE1(0.25) 6 5 4
+            PAULI_CHANNEL_2(0, 0.125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) 2 3 5 7
+            PAULI_CHANNEL_1(0.125, 0.25, 0) 0 0 1 0
+            Z_ERROR(0.125) 3 2
+            Y_ERROR(0.125) 2 1
+            X_ERROR(0.125) 1 0
+        )CIRCUIT"));
+
     ASSERT_THROW({ Circuit("X_ERROR(0.125) 0").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("M(0.125) 0").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("M 0").inverse(); }, std::invalid_argument);
@@ -1520,4 +1584,5 @@ TEST(circuit, inverse) {
     ASSERT_THROW({ Circuit("MPP X0*X1").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("DETECTOR").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("OBSERVABLE_INCLUDE").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("ELSE_CORRELATED_ERROR(0.125) X0").inverse(true); }, std::invalid_argument);
 }
