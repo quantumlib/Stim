@@ -29,7 +29,7 @@ def test_compiled_measurement_sampler_sample():
             [0, 1, 0, 0],
             [0, 1, 0, 0],
             [0, 1, 0, 0],
-        ], dtype=np.bool8))
+        ], dtype=np.bool_))
     np.testing.assert_array_equal(
         c.compile_sampler().sample(5, bit_packed=True),
         np.array([

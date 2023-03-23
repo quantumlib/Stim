@@ -210,7 +210,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 ...    DETECTOR rec[-1]
                 ... ''').compile_m2d_converter()
                 >>> converter.convert(
-                ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+                ...     measurements=np.array([[0], [1]], dtype=np.bool_),
                 ...     append_observables=False,
                 ... )
                 array([[ True],
@@ -307,7 +307,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 measurements: A numpy array containing measurement data.
 
                     The dtype of the array is used to determine if it is bit packed or not.
-                    dtype=np.bool8 (unpacked data):
+                    dtype=np.bool_ (unpacked data):
                         shape=(num_shots, circuit.num_measurements)
                     dtype=np.uint8 (bit packed data):
                         shape=(num_shots, math.ceil(circuit.num_measurements / 8))
@@ -315,7 +315,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                     controls in the circuit.
 
                     The dtype of the array is used to determine if it is bit packed or not.
-                    dtype=np.bool8 (unpacked data):
+                    dtype=np.bool_ (unpacked data):
                         shape=(num_shots, circuit.num_sweep_bits)
                     dtype=np.uint8 (bit packed data):
                         shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
@@ -327,7 +327,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                     results are appended to the end of the detection event data.
                 bit_packed: Defaults to False. When set to True, the returned numpy
                     array contains bit packed data (dtype=np.uint8 with 8 bits per item)
-                    instead of unpacked data (dtype=np.bool8).
+                    instead of unpacked data (dtype=np.bool_).
 
             Returns:
                 The detection event data and (optionally) observable data. The result is a
@@ -337,7 +337,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 When returning two numpy arrays, the first array is the detection event data
                 and the second is the observable flip data.
 
-                The dtype of the returned arrays is np.bool8 if bit_packed is false,
+                The dtype of the returned arrays is np.bool_ if bit_packed is false,
                 otherwise they're np.uint8 arrays.
 
                 shape[0] of the array(s) is the number of shots.
@@ -360,7 +360,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 ...                            [1, 0],
                 ...                            [1, 0],
                 ...                            [0, 0],
-                ...                            [1, 0]], dtype=np.bool8),
+                ...                            [1, 0]], dtype=np.bool_),
                 ...     separate_observables=True,
                 ... )
                 >>> dets

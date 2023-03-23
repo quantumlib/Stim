@@ -241,16 +241,16 @@ size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) 
             size_t num_bits = arr.shape(0);
             if (expected_size != SIZE_MAX && num_bits != expected_size) {
                 std::stringstream ss;
-                ss << "Numpy array has dtype=bool8 and shape=" << num_bits
+                ss << "Numpy array has dtype=bool_ and shape=" << num_bits
                    << " which is different from the given len=" << expected_size;
-                ss << ".\nEither don't specify len (as it is not needed when using bool8 arrays) or ensure the given "
+                ss << ".\nEither don't specify len (as it is not needed when using bool_ arrays) or ensure the given "
                       "len agrees with the given array shapes.";
                 throw std::invalid_argument(ss.str());
             }
             return num_bits;
         }
     }
-    throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+    throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
 }
 
 size_t numpy_pair_to_size(
@@ -1200,7 +1200,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
             Args:
                 bit_packed: Defaults to False. Determines whether the output numpy arrays
-                    use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
             Returns:
                 An (xs, zs) tuple encoding the paulis from the string. The k'th Pauli from
@@ -1216,7 +1216,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                 If bit_packed=False:
                     Each bit gets its own byte.
-                    xs.dtype = zs.dtype = np.bool8
+                    xs.dtype = zs.dtype = np.bool_
                     xs.shape = zs.shape = len(self)
                     xs_k = xs[k]
                     zs_k = zs[k]
@@ -1275,13 +1275,13 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
             Args:
                 xs: The X bits of the pauli string. This array can either be a 1-dimensional
-                    numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                    numpy array with dtype=np.bool_, or a bit packed 1-dimensional numpy
                     array with dtype=np.uint8. If the dtype is np.uint8 then the array is
                     assumed to be bit packed in little endian order and the "num_qubits"
                     argument must be specified. When bit packed, the x bit with offset k is
                     stored at (xs[k // 8] >> (k % 8)) & 1.
                 zs: The Z bits of the pauli string. This array can either be a 1-dimensional
-                    numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                    numpy array with dtype=np.bool_, or a bit packed 1-dimensional numpy
                     array with dtype=np.uint8. If the dtype is np.uint8 then the array is
                     assumed to be bit packed in little endian order and the "num_qubits"
                     argument must be specified. When bit packed, the x bit with offset k is
@@ -1298,8 +1298,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 >>> import stim
                 >>> import numpy as np
 
-                >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool8)
-                >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool8)
+                >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool_)
+                >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool_)
                 >>> stim.PauliString.from_numpy(xs=xs, zs=zs, sign=-1)
                 stim.PauliString("-XXXXYYYZZ")
 
