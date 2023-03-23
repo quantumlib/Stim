@@ -554,7 +554,7 @@ class Circuit:
             ...    DETECTOR rec[-1]
             ... ''').compile_m2d_converter()
             >>> converter.convert(
-            ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+            ...     measurements=np.array([[0], [1]], dtype=np.bool_),
             ...     append_observables=False,
             ... )
             array([[ True],
@@ -2013,7 +2013,7 @@ class CompiledDemSampler:
         Args:
             shots: The number of times to sample from the model.
             bit_packed: Defaults to false.
-                False: the returned numpy arrays have dtype=np.bool8.
+                False: the returned numpy arrays have dtype=np.bool_.
                 True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into
                     each byte.
 
@@ -2028,7 +2028,7 @@ class CompiledDemSampler:
             recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
                 If not None, this is expected to be a 2d numpy array specifying which
                 errors to apply (e.g. one returned from a previous call to the sample
-                method). The array must have dtype=np.bool8 and
+                method). The array must have dtype=np.bool_ and
                 shape=(num_shots, num_errors) or dtype=np.uint8 and
                 shape=(num_shots, math.ceil(num_errors / 8)).
 
@@ -2056,12 +2056,12 @@ class CompiledDemSampler:
                         error_data is None
                 else:
                     detector_data.shape == (num_shots, num_detectors)
-                    detector_data.dtype == np.bool8
+                    detector_data.dtype == np.bool_
                     obs_data.shape == (num_shots, num_observables)
-                    obs_data.dtype == np.bool8
+                    obs_data.dtype == np.bool_
                     if return_errors:
                         error_data.shape = (num_shots, num_errors)
-                        error_data.dtype = np.bool8
+                        error_data.dtype = np.bool_
                     else:
                         error_data is None
 
@@ -2331,14 +2331,14 @@ class CompiledDetectorSampler:
             append_observables: Defaults to false. When set, observables are included
                 with the detectors and are placed at the end of the results.
             bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
-                a bool8 numpy array with 1 bit per byte. Uses little endian packing.
+                a bool_ numpy array with 1 bit per byte. Uses little endian packing.
 
         Returns:
             A numpy array or tuple of numpy arrays containing the samples.
 
             if separate_observables=False and bit_packed=False:
                 A single numpy array.
-                dtype=bool8
+                dtype=bool_
                 shape=(
                     shots,
                     num_detectors + num_observables * (
@@ -2360,9 +2360,9 @@ class CompiledDetectorSampler:
 
             if separate_observables=True and bit_packed=False:
                 A (dets, obs) tuple.
-                dets.dtype=bool8
+                dets.dtype=bool_
                 dets.shape=(shots, num_detectors)
-                obs.dtype=bool8
+                obs.dtype=bool_
                 obs.shape=(shots, num_observables)
                 The bit for detection event `m` in shot `s` is at
                     dets[s, m]
@@ -2551,13 +2551,13 @@ class CompiledMeasurementSampler:
         Args:
             shots: The number of times to sample every measurement in the circuit.
             bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
-                a bool8 numpy array with 1 bit per byte. Uses little endian packing.
+                a bool_ numpy array with 1 bit per byte. Uses little endian packing.
 
         Returns:
             A numpy array containing the samples.
 
             If bit_packed=False:
-                dtype=bool8
+                dtype=bool_
                 shape=(shots, circuit.num_measurements)
                 The bit for measurement `m` in shot `s` is at
                     result[s, m]
@@ -2682,7 +2682,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             ...    DETECTOR rec[-1]
             ... ''').compile_m2d_converter()
             >>> converter.convert(
-            ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+            ...     measurements=np.array([[0], [1]], dtype=np.bool_),
             ...     append_observables=False,
             ... )
             array([[ True],
@@ -2729,7 +2729,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             measurements: A numpy array containing measurement data.
 
                 The dtype of the array is used to determine if it is bit packed or not.
-                dtype=np.bool8 (unpacked data):
+                dtype=np.bool_ (unpacked data):
                     shape=(num_shots, circuit.num_measurements)
                 dtype=np.uint8 (bit packed data):
                     shape=(num_shots, math.ceil(circuit.num_measurements / 8))
@@ -2737,7 +2737,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
                 controls in the circuit.
 
                 The dtype of the array is used to determine if it is bit packed or not.
-                dtype=np.bool8 (unpacked data):
+                dtype=np.bool_ (unpacked data):
                     shape=(num_shots, circuit.num_sweep_bits)
                 dtype=np.uint8 (bit packed data):
                     shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
@@ -2749,7 +2749,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
                 results are appended to the end of the detection event data.
             bit_packed: Defaults to False. When set to True, the returned numpy
                 array contains bit packed data (dtype=np.uint8 with 8 bits per item)
-                instead of unpacked data (dtype=np.bool8).
+                instead of unpacked data (dtype=np.bool_).
 
         Returns:
             The detection event data and (optionally) observable data. The result is a
@@ -2759,7 +2759,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             When returning two numpy arrays, the first array is the detection event data
             and the second is the observable flip data.
 
-            The dtype of the returned arrays is np.bool8 if bit_packed is false,
+            The dtype of the returned arrays is np.bool_ if bit_packed is false,
             otherwise they're np.uint8 arrays.
 
             shape[0] of the array(s) is the number of shots.
@@ -2782,7 +2782,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             ...                            [1, 0],
             ...                            [1, 0],
             ...                            [0, 0],
-            ...                            [1, 0]], dtype=np.bool8),
+            ...                            [1, 0]], dtype=np.bool_),
             ...     separate_observables=True,
             ... )
             >>> dets
@@ -4945,13 +4945,13 @@ class PauliString:
 
         Args:
             xs: The X bits of the pauli string. This array can either be a 1-dimensional
-                numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                numpy array with dtype=np.bool_, or a bit packed 1-dimensional numpy
                 array with dtype=np.uint8. If the dtype is np.uint8 then the array is
                 assumed to be bit packed in little endian order and the "num_qubits"
                 argument must be specified. When bit packed, the x bit with offset k is
                 stored at (xs[k // 8] >> (k % 8)) & 1.
             zs: The Z bits of the pauli string. This array can either be a 1-dimensional
-                numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                numpy array with dtype=np.bool_, or a bit packed 1-dimensional numpy
                 array with dtype=np.uint8. If the dtype is np.uint8 then the array is
                 assumed to be bit packed in little endian order and the "num_qubits"
                 argument must be specified. When bit packed, the x bit with offset k is
@@ -4968,8 +4968,8 @@ class PauliString:
             >>> import stim
             >>> import numpy as np
 
-            >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool8)
-            >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool8)
+            >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool_)
+            >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool_)
             >>> stim.PauliString.from_numpy(xs=xs, zs=zs, sign=-1)
             stim.PauliString("-XXXXYYYZZ")
 
@@ -5091,7 +5091,7 @@ class PauliString:
 
         Args:
             bit_packed: Defaults to False. Determines whether the output numpy arrays
-                use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+                use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
         Returns:
             An (xs, zs) tuple encoding the paulis from the string. The k'th Pauli from
@@ -5107,7 +5107,7 @@ class PauliString:
 
             If bit_packed=False:
                 Each bit gets its own byte.
-                xs.dtype = zs.dtype = np.bool8
+                xs.dtype = zs.dtype = np.bool_
                 xs.shape = zs.shape = len(self)
                 xs_k = xs[k]
                 zs_k = zs[k]
@@ -5579,34 +5579,34 @@ class Tableau:
 
         Args:
             x2x: A 2d numpy array containing the x-to-x coupling bits. The bits can be
-                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                 result will satisfy result.x_output_pauli(i, j) in [1, 2] == x2x[i, j].
                 Bit packing must be in little endian order and only applies to the
                 second axis.
             x2z: A 2d numpy array containing the x-to-z coupling bits. The bits can be
-                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                 result will satisfy result.x_output_pauli(i, j) in [2, 3] == x2z[i, j].
                 Bit packing must be in little endian order and only applies to the
                 second axis.
             z2x: A 2d numpy array containing the z-to-x coupling bits. The bits can be
-                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                 result will satisfy result.z_output_pauli(i, j) in [1, 2] == z2x[i, j].
                 Bit packing must be in little endian order and only applies to the
                 second axis.
             z2z: A 2d numpy array containing the z-to-z coupling bits. The bits can be
-                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                 result will satisfy result.z_output_pauli(i, j) in [2, 3] == z2z[i, j].
                 Bit packing must be in little endian order and only applies to the
                 second axis.
             x_signs: Defaults to all-positive if not specified. A 1d numpy array
                 containing the sign bits for the X generator outputs. False means
                 positive and True means negative. The bits can be bit packed
-                (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                (dtype=uint8) or not (dtype=bool_). Bit packing must be in little endian
                 order.
             z_signs: Defaults to all-positive if not specified. A 1d numpy array
                 containing the sign bits for the Z generator outputs. False means
                 positive and True means negative. The bits can be bit packed
-                (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                (dtype=uint8) or not (dtype=bool_). Bit packing must be in little endian
                 order.
 
         Returns:
@@ -5617,10 +5617,10 @@ class Tableau:
             >>> import numpy as np
 
             >>> tableau = stim.Tableau.from_numpy(
-            ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool8),
-            ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool8),
-            ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool8),
-            ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool8),
+            ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool_),
+            ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool_),
+            ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool_),
+            ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool_),
             ... )
             >>> print(repr(tableau))
             stim.Tableau.from_conjugated_generators(
@@ -6306,7 +6306,7 @@ class Tableau:
 
         Args:
             bit_packed: Defaults to False. Determines whether the output numpy arrays
-                use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+                use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
         Returns:
             An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
@@ -6319,12 +6319,12 @@ class Tableau:
             z_signs: A vector of whether tableau(Z_i) is negative.
 
             If bit_packed=False then:
-                x2x.dtype = np.bool8
-                x2z.dtype = np.bool8
-                z2x.dtype = np.bool8
-                z2z.dtype = np.bool8
-                x_signs.dtype = np.bool8
-                z_signs.dtype = np.bool8
+                x2x.dtype = np.bool_
+                x2z.dtype = np.bool_
+                z2x.dtype = np.bool_
+                z2z.dtype = np.bool_
+                x_signs.dtype = np.bool_
+                z_signs.dtype = np.bool_
                 x2x.shape = (len(tableau), len(tableau))
                 x2z.shape = (len(tableau), len(tableau))
                 z2x.shape = (len(tableau), len(tableau))
@@ -8409,7 +8409,7 @@ def read_shot_data_file(
         path: The path to the file to read the data from.
         format: The format that the data is stored in, such as 'b8'.
             See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-        bit_packed: Defaults to false. Determines whether the result is a bool8
+        bit_packed: Defaults to false. Determines whether the result is a bool_
             numpy array with one bit per byte, or a uint8 numpy array with 8 bits
             per byte.
         num_measurements: How many measurements there are per shot.
@@ -8426,10 +8426,10 @@ def read_shot_data_file(
             A tuple (dets, obs) of numpy arrays containing the loaded data.
 
             If bit_packed=False:
-                dets.dtype = np.bool8
+                dets.dtype = np.bool_
                 dets.shape = (num_shots, num_measurements + num_detectors)
                 det bit b from shot s is at dets[s, b]
-                obs.dtype = np.bool8
+                obs.dtype = np.bool_
                 obs.shape = (num_shots, num_observables)
                 obs bit b from shot s is at dets[s, b]
             If bit_packed=True:
@@ -8445,7 +8445,7 @@ def read_shot_data_file(
             A numpy array containing the loaded data.
 
             If bit_packed=False:
-                dtype = np.bool8
+                dtype = np.bool_
                 shape = (num_shots,
                          num_measurements + num_detectors + num_observables)
                 bit b from shot s is at result[s, b]
@@ -8713,7 +8713,7 @@ def write_shot_data_file(
             of the array determines whether or not the data is bit packed, and the
             shape must match the bits per shot.
 
-            dtype=np.bool8: Not bit packed. Shape must be
+            dtype=np.bool_: Not bit packed. Shape must be
                 (num_shots, num_measurements + num_detectors + num_observables).
             dtype=np.uint8: Yes bit packed. Shape must be
                 (num_shots, math.ceil(
@@ -8737,7 +8737,7 @@ def write_shot_data_file(
         ...     shot_data = np.array([
         ...         [0, 1, 0],
         ...         [0, 1, 1],
-        ...     ], dtype=np.bool8)
+        ...     ], dtype=np.bool_)
         ...
         ...     stim.write_shot_data_file(
         ...         path=str(path),
