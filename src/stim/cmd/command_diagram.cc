@@ -350,7 +350,6 @@ SubCommandHelp stim::command_diagram_help() {
 
             Filters can also be set to specific detector or observable indices,
             like D0 or L0.
-            targets like L0
 
             Example:
                 --filter-coords 2,3:4,5,6
@@ -447,7 +446,7 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
-            "timeslice-with-ops-svg": An SVG image of the operations that a
+            "detslice-with-ops-svg": An SVG image of the operations that a
                 circuit applies during the specified tick or range of ticks,
                 combined with the detector slices after those operations are
                 applied.
