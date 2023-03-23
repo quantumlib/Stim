@@ -133,12 +133,16 @@ S 1
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 The X-controlled Z gate.
-First qubit is the control, second qubit is the target.
-The second qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |-> state.
+Equivalently: negates the amplitude of the |->|1> state.
+Same as a CX gate, but with reversed qubit order.
+The first qubit is the control, and the second qubit is the target.
 
-Negates the amplitude of the |->|1> state.
+To perform a classically controlled X, replace the Z target with a `rec`
+target like rec[-2].
+
+To perform an I or X gate as configured by sweep data, replace the
+Z target with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -147,6 +151,20 @@ Parens Arguments:
 Targets:
 
     Qubit pairs to operate on.
+
+Example:
+
+    # Bit flip qubit 5 controlled by qubit 2.
+    XCZ 5 2
+
+    # Perform CX 2 5 then CX 4 2.
+    XCZ 5 2 2 4
+
+    # Bit flip qubit 6 if the most recent measurement result was TRUE.
+    XCZ 6 rec[-1]
+
+    # Bit flip qubits 7 and 8 conditioned on sweep configuration data.
+    XCZ 7 sweep[5] 8 sweep[5]
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},
                     {"+XI", "+ZZ", "+XX", "+IZ"},
@@ -273,12 +291,16 @@ S 1
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 The Y-controlled Z gate.
-First qubit is the control, second qubit is the target.
-The second qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |-i> state.
+Equivalently: negates the amplitude of the |-i>|1> state.
+Same as a CY gate, but with reversed qubit order.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |-i>|1> state.
+To perform a classically controlled Y, replace the Z target with a `rec`
+target like rec[-2].
+
+To perform an I or Y gate as configured by sweep data, replace the
+Z target with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -287,6 +309,20 @@ Parens Arguments:
 Targets:
 
     Qubit pairs to operate on.
+
+Example:
+
+    # Apply Y to qubit 5 controlled by qubit 2.
+    YCZ 5 2
+
+    # Perform CY 2 5 then CY 4 2.
+    YCZ 5 2 2 4
+
+    # Apply Y to qubit 6 if the most recent measurement result was TRUE.
+    YCZ 6 rec[-1]
+
+    # Apply Y to qubits 7 and 8 conditioned on sweep configuration data.
+    YCZ 7 sweep[5] 8 sweep[5]
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}},
                     {"+XZ", "+ZZ", "+YX", "+IZ"},
@@ -317,12 +353,15 @@ S 0
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 The Z-controlled X gate.
-First qubit is the control, second qubit is the target.
-The first qubit can be replaced by a measurement record.
-
 Applies an X gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|-> state.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|-> state.
+To perform a classically controlled X, replace the control with a `rec`
+target like rec[-2].
+
+To perform an I or X gate as configured by sweep data, replace the
+control with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -331,6 +370,20 @@ Parens Arguments:
 Targets:
 
     Qubit pairs to operate on.
+
+Example:
+
+    # Bit flip qubit 5 controlled by qubit 2.
+    CX 2 5
+
+    # Perform CX 2 5 then CX 4 2.
+    CX 2 5 4 2
+
+    # Bit flip qubit 6 if the most recent measurement result was TRUE.
+    CX rec[-1] 6
+
+    # Bit flip qubits 7 and 8 conditioned on sweep configuration data.
+    CX sweep[5] 7 sweep[5] 8
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}},
                     {"+XX", "+ZI", "+IX", "+ZZ"},
@@ -359,12 +412,15 @@ CNOT 0 1
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 The Z-controlled Y gate.
-First qubit is the control, second qubit is the target.
-The first qubit can be replaced by a measurement record.
-
 Applies a Y gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|-i> state.
+The first qubit is the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|-i> state.
+To perform a classically controlled Y, replace the control with a `rec`
+target like rec[-2].
+
+To perform an I or Y gate as configured by sweep data, replace the
+control with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -373,6 +429,20 @@ Parens Arguments:
 Targets:
 
     Qubit pairs to operate on.
+
+Example:
+
+    # Apply Y to qubit 5 controlled by qubit 2.
+    CY 2 5
+
+    # Perform CY 2 5 then CX 4 2.
+    CY 2 5 4 2
+
+    # Apply Y to qubit 6 if the most recent measurement result was TRUE.
+    CY rec[-1] 6
+
+    # Apply Y to qubits 7 and 8 conditioned on sweep configuration data.
+    CY sweep[5] 7 sweep[5] 8
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}},
                     {"+XY", "+ZI", "+ZX", "+ZZ"},
@@ -404,12 +474,15 @@ S 1
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 The Z-controlled Z gate.
-First qubit is the control, second qubit is the target.
-Either qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|1> state.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|1> state.
+To perform a classically controlled Z, replace either qubit with a `rec`
+target like rec[-2].
+
+To perform an I or Z gate as configured by sweep data, replace either qubit
+with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -418,6 +491,23 @@ Parens Arguments:
 Targets:
 
     Qubit pairs to operate on.
+
+Example:
+
+    # Apply Z to qubit 5 controlled by qubit 2.
+    CZ 2 5
+
+    # Perform CZ 2 5 then CZ 4 2.
+    CZ 2 5 4 2
+
+    # Apply Z to qubit 6 if the most recent measurement result was TRUE.
+    CZ rec[-1] 6
+
+    # Apply Z to qubit 7 if the 3rd most recent measurement result was TRUE.
+    CZ 7 rec[-3]
+
+    # Apply Z to qubits 7 and 8 conditioned on sweep configuration data.
+    CZ sweep[5] 7 8 sweep[5]
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}},
                     {"+XZ", "+ZI", "+ZX", "+IZ"},

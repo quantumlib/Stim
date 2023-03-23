@@ -209,6 +209,8 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     uint64_t start_tick,
     uint64_t num_ticks,
     ConstPointerRange<CoordFilter> coord_filter) {
+    num_ticks = std::max(uint64_t{1}, std::min(num_ticks, circuit.count_ticks() - start_tick + 1));
+
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
     size_t num_qubits = helper.tracker.xs.size();
 

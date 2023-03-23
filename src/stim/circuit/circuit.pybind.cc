@@ -1939,17 +1939,17 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("tick") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @overload def diagram(self, *, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["timeline-svg"]', tick: Union[None, int, range] = None) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["timeline-3d", "timeline-3d-html"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["matchgraph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["matchgraph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["matchgraph-3d-html"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["detslice-text"]', tick: int, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["detslice-svg"]', tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["detslice-with-ops-svg"]', tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["timeslice-svg"]', tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["interactive", "interactive-html"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["timeline-svg"]', *, tick: Union[None, int, range] = None) -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["timeline-3d", "timeline-3d-html"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["matchgraph-3d-html"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["detslice-text"]', *, tick: int, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["detslice-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["detslice-with-ops-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["timeslice-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["interactive", "interactive-html"]') -> 'stim._DiagramHelper':
             @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
