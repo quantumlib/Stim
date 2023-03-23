@@ -83,7 +83,7 @@ def test_predict_discards_bit_packed_none_postselected():
         dets_bit_packed=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         postselect_detectors_with_non_zero_4th_coord=True,
     )
     np.testing.assert_array_equal(
@@ -102,7 +102,7 @@ def test_predict_discards_bit_packed_some_postselected():
         dets_bit_packed=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         postselect_detectors_with_non_zero_4th_coord=True,
     )
     np.testing.assert_array_equal(
@@ -121,7 +121,7 @@ def test_predict_observables_bit_packed():
         dets_bit_packed=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         decoder='pymatching',
     )
     np.testing.assert_array_equal(
@@ -143,7 +143,7 @@ def test_predict_observables():
         dets=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         decoder='pymatching',
         bit_pack_result=True,
     )
@@ -160,7 +160,7 @@ def test_predict_observables():
         dets=np.array([
             [False],
             [True],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         decoder='pymatching',
         bit_pack_result=True,
     )
@@ -177,7 +177,7 @@ def test_predict_observables():
         dets=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         decoder='pymatching',
         bit_pack_result=False,
     )
@@ -191,7 +191,7 @@ def test_predict_observables():
         dets=np.array([
             [False],
             [True],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         decoder='pymatching',
         bit_pack_result=False,
     )
@@ -205,7 +205,7 @@ def test_predict_observables():
         dets=np.packbits(np.array([
             [False],
             [True],
-        ], dtype=np.bool8), bitorder='little', axis=1),
+        ], dtype=np.bool_), bitorder='little', axis=1),
         decoder='pymatching',
     )
     np.testing.assert_array_equal(
@@ -218,7 +218,7 @@ def test_predict_observables():
         dets=np.array([
             [False],
             [True],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         decoder='pymatching',
     )
     np.testing.assert_array_equal(

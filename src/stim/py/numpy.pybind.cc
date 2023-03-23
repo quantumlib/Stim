@@ -154,14 +154,14 @@ void stim_pybind::memcpy_bits_from_numpy_to_simd_bit_table(
             }
         }
     } else {
-        throw std::invalid_argument("Expected a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+        throw std::invalid_argument("Expected a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
     }
 }
 
 simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_uint8_array_to_transposed_simd_table(
     const pybind11::array_t<uint8_t> &data_u8, size_t expected_bits_per_shot, size_t *num_shots_out) {
     if (data_u8.ndim() != 2) {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
     }
 
     size_t num_shots = data_u8.shape(0);
@@ -199,14 +199,14 @@ simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_bool8_array_to_transposed_sim
     *num_shots_out = num_shots;
 
     if (data_bool8.ndim() != 2) {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
     }
 
     size_t actual_bits_per_shot = data_bool8.shape(1);
     if (actual_bits_per_shot != expected_bits_per_shot) {
         std::stringstream ss;
         ss << "Expected " << expected_bits_per_shot << " bits per shot. ";
-        ss << "Got unpacked boolean data (dtype=np.bool8) but data.shape[1]=" << actual_bits_per_shot;
+        ss << "Got unpacked boolean data (dtype=np.bool_) but data.shape[1]=" << actual_bits_per_shot;
         throw std::invalid_argument(ss.str());
     }
     simd_bit_table<MAX_BITWORD_WIDTH> result(actual_bits_per_shot, num_shots);
@@ -230,7 +230,7 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim_pybind::numpy_array_to_transposed_simd_ta
         return bit_packed_numpy_bool8_array_to_transposed_simd_table(
             pybind11::cast<pybind11::array_t<bool>>(data), bits_per_shot, num_shots_out);
     } else {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
     }
 }
 
@@ -296,5 +296,5 @@ void stim_pybind::memcpy_bits_from_numpy_to_simd(
         }
     }
 
-    throw std::invalid_argument("Expected a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+    throw std::invalid_argument("Expected a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
 }

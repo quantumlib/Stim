@@ -126,7 +126,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
             Args:
                 shots: The number of times to sample from the model.
                 bit_packed: Defaults to false.
-                    False: the returned numpy arrays have dtype=np.bool8.
+                    False: the returned numpy arrays have dtype=np.bool_.
                     True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into
                         each byte.
 
@@ -141,7 +141,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                 recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
                     If not None, this is expected to be a 2d numpy array specifying which
                     errors to apply (e.g. one returned from a previous call to the sample
-                    method). The array must have dtype=np.bool8 and
+                    method). The array must have dtype=np.bool_ and
                     shape=(num_shots, num_errors) or dtype=np.uint8 and
                     shape=(num_shots, math.ceil(num_errors / 8)).
 
@@ -169,12 +169,12 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                             error_data is None
                     else:
                         detector_data.shape == (num_shots, num_detectors)
-                        detector_data.dtype == np.bool8
+                        detector_data.dtype == np.bool_
                         obs_data.shape == (num_shots, num_observables)
-                        obs_data.dtype == np.bool8
+                        obs_data.dtype == np.bool_
                         if return_errors:
                             error_data.shape = (num_shots, num_errors)
-                            error_data.dtype = np.bool8
+                            error_data.dtype = np.bool_
                         else:
                             error_data is None
 

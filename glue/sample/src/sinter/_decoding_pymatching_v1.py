@@ -26,7 +26,7 @@ def decode_using_pymatching_v1(*,
     num_det_bytes = math.ceil(num_dets / 8)
 
     # note: extra 2 are the boundary node and the invincible-observable-boundary-edge node
-    det_bits_buffer = np.zeros(num_dets + 2, dtype=np.bool8)
+    det_bits_buffer = np.zeros(num_dets + 2, dtype=np.bool_)
     with open(dets_b8_in_path, 'rb') as dets_in_f:
         with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
             for _ in range(num_shots):

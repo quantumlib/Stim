@@ -46,7 +46,7 @@ void check_tableau_signs_shape(const pybind11::object &numpy_array, size_t n, co
             size_t minor = arr.shape(0);
             if (minor != n) {
                 std::stringstream ss;
-                ss << name << " had dtype=bool8 ";
+                ss << name << " had dtype=bool_ ";
                 ss << "but its shape was " << minor << " instead of ";
                 ss << n << ".";
                 throw std::invalid_argument(ss.str());
@@ -56,7 +56,7 @@ void check_tableau_signs_shape(const pybind11::object &numpy_array, size_t n, co
     }
 
     std::stringstream ss;
-    ss << name << " wasn't a 1d numpy array with dtype=bool8 or dtype=uint8";
+    ss << name << " wasn't a 1d numpy array with dtype=bool_ or dtype=uint8";
     throw std::invalid_argument(ss.str());
 }
 
@@ -82,7 +82,7 @@ void check_tableau_shape(const pybind11::object &numpy_array, size_t n, const ch
             size_t minor = arr.shape(1);
             if (major != n || minor != n) {
                 std::stringstream ss;
-                ss << name << " had dtype=bool8 ";
+                ss << name << " had dtype=bool_ ";
                 ss << "but its shape was (" << major << ", " << minor << ") instead of (";
                 ss << n << ", " << n << ").";
                 throw std::invalid_argument(ss.str());
@@ -92,7 +92,7 @@ void check_tableau_shape(const pybind11::object &numpy_array, size_t n, const ch
     }
 
     std::stringstream ss;
-    ss << name << " wasn't a 2d numpy array with dtype=bool8 or dtype=uint8";
+    ss << name << " wasn't a 2d numpy array with dtype=bool_ or dtype=uint8";
     throw std::invalid_argument(ss.str());
 }
 
@@ -330,7 +330,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
             Args:
                 bit_packed: Defaults to False. Determines whether the output numpy arrays
-                    use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
             Returns:
                 An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
@@ -343,12 +343,12 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 z_signs: A vector of whether tableau(Z_i) is negative.
 
                 If bit_packed=False then:
-                    x2x.dtype = np.bool8
-                    x2z.dtype = np.bool8
-                    z2x.dtype = np.bool8
-                    z2z.dtype = np.bool8
-                    x_signs.dtype = np.bool8
-                    z_signs.dtype = np.bool8
+                    x2x.dtype = np.bool_
+                    x2z.dtype = np.bool_
+                    z2x.dtype = np.bool_
+                    z2z.dtype = np.bool_
+                    x_signs.dtype = np.bool_
+                    z_signs.dtype = np.bool_
                     x2x.shape = (len(tableau), len(tableau))
                     x2z.shape = (len(tableau), len(tableau))
                     z2x.shape = (len(tableau), len(tableau))
@@ -539,34 +539,34 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
             Args:
                 x2x: A 2d numpy array containing the x-to-x coupling bits. The bits can be
-                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                     result will satisfy result.x_output_pauli(i, j) in [1, 2] == x2x[i, j].
                     Bit packing must be in little endian order and only applies to the
                     second axis.
                 x2z: A 2d numpy array containing the x-to-z coupling bits. The bits can be
-                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                     result will satisfy result.x_output_pauli(i, j) in [2, 3] == x2z[i, j].
                     Bit packing must be in little endian order and only applies to the
                     second axis.
                 z2x: A 2d numpy array containing the z-to-x coupling bits. The bits can be
-                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                     result will satisfy result.z_output_pauli(i, j) in [1, 2] == z2x[i, j].
                     Bit packing must be in little endian order and only applies to the
                     second axis.
                 z2z: A 2d numpy array containing the z-to-z coupling bits. The bits can be
-                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    bit packed (dtype=uint8) or not (dtype=bool_). When not bit packed, the
                     result will satisfy result.z_output_pauli(i, j) in [2, 3] == z2z[i, j].
                     Bit packing must be in little endian order and only applies to the
                     second axis.
                 x_signs: Defaults to all-positive if not specified. A 1d numpy array
                     containing the sign bits for the X generator outputs. False means
                     positive and True means negative. The bits can be bit packed
-                    (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                    (dtype=uint8) or not (dtype=bool_). Bit packing must be in little endian
                     order.
                 z_signs: Defaults to all-positive if not specified. A 1d numpy array
                     containing the sign bits for the Z generator outputs. False means
                     positive and True means negative. The bits can be bit packed
-                    (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                    (dtype=uint8) or not (dtype=bool_). Bit packing must be in little endian
                     order.
 
             Returns:
@@ -577,10 +577,10 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 >>> import numpy as np
 
                 >>> tableau = stim.Tableau.from_numpy(
-                ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool8),
-                ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool8),
-                ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool8),
-                ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool8),
+                ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool_),
+                ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool_),
+                ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool_),
+                ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool_),
                 ... )
                 >>> print(repr(tableau))
                 stim.Tableau.from_conjugated_generators(

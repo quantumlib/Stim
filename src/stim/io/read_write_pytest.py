@@ -47,7 +47,7 @@ def test_read_shot_data_file_01():
             format='01',
             num_measurements=10,
         )
-        assert result.dtype == np.bool8
+        assert result.dtype == np.bool_
         assert result.shape == (2, 10)
         np.testing.assert_array_equal(
             result,
@@ -102,7 +102,7 @@ def test_read_shot_data_file_dets():
             num_detectors=10,
             num_observables=2,
         )
-        assert result.dtype == np.bool8
+        assert result.dtype == np.bool_
         assert result.shape == (2, 12)
         np.testing.assert_array_equal(
             result,
@@ -120,7 +120,7 @@ def test_read_shot_data_file_dets():
             num_observables=2,
             separate_observables=True,
         )
-        assert result_dets.dtype == np.bool8
+        assert result_dets.dtype == np.bool_
         assert result_dets.shape == (2, 10)
         np.testing.assert_array_equal(
             result_dets,
@@ -128,7 +128,7 @@ def test_read_shot_data_file_dets():
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
             ])
-        assert result_obs.dtype == np.bool8
+        assert result_obs.dtype == np.bool_
         assert result_obs.shape == (2, 2)
         np.testing.assert_array_equal(
             result_obs,
@@ -169,12 +169,12 @@ def test_write_shot_data_file_01():
     with tempfile.TemporaryDirectory() as d:
         path = str(pathlib.Path(d) / 'file.01')
 
-        with pytest.raises(ValueError, match='4 bits per shot.+bool8'):
+        with pytest.raises(ValueError, match='4 bits per shot.+bool_'):
             stim.write_shot_data_file(
                 data=np.array([
                     [0, 1, 0],
                     [0, 1, 1],
-                ], dtype=np.bool8),
+                ], dtype=np.bool_),
                 path=path,
                 format='01',
                 num_measurements=4,
@@ -196,7 +196,7 @@ def test_write_shot_data_file_01():
                 data=np.array([
                     [0, 1, 0],
                     [0, 1, 1],
-                ], dtype=np.bool8),
+                ], dtype=np.bool_),
                 path=path,
                 format='01',
                 num_measurements=1,
@@ -207,7 +207,7 @@ def test_write_shot_data_file_01():
             data=np.array([
                 [0, 1, 0],
                 [0, 1, 1],
-            ], dtype=np.bool8),
+            ], dtype=np.bool_),
             path=path,
             format='01',
             num_measurements=3,
@@ -281,7 +281,7 @@ def test_read_write_shots_fuzzing(data_format: str, bit_packed: bool, path_type:
         file_path = pathlib.Path(d) / 'shots'
         num_shots = 320
         num_measurements = 500
-        data = np.random.randint(2, size=(num_shots, num_measurements), dtype=np.bool8)
+        data = np.random.randint(2, size=(num_shots, num_measurements), dtype=np.bool_)
         if bit_packed:
             packed_data = np.packbits(data, axis=1, bitorder='little')
         else:
@@ -316,7 +316,7 @@ def test_read_write_shots_fuzzing_vs_python_references(data_format: str, num_bit
     with tempfile.TemporaryDirectory() as d:
         path = pathlib.Path(d) / 'shots'
         num_shots = 320
-        data = np.random.randint(2, size=(num_shots, num_bits_per_shot), dtype=np.bool8)
+        data = np.random.randint(2, size=(num_shots, num_bits_per_shot), dtype=np.bool_)
         stim.write_shot_data_file(
             data=data,
             path=path,

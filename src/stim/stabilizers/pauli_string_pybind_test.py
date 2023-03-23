@@ -495,8 +495,8 @@ def test_to_numpy():
     p = stim.PauliString("_XYZ___XYXZYZ")
 
     xs, zs = p.to_numpy()
-    assert xs.dtype == np.bool8
-    assert zs.dtype == np.bool8
+    assert xs.dtype == np.bool_
+    assert zs.dtype == np.bool_
     np.testing.assert_array_equal(xs, [0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0])
     np.testing.assert_array_equal(zs, [0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1])
 
@@ -509,8 +509,8 @@ def test_to_numpy():
 
 def test_from_numpy():
     p = stim.PauliString.from_numpy(
-        xs=np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8),
-        zs=np.array([0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1], dtype=np.bool8))
+        xs=np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool_),
+        zs=np.array([0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1], dtype=np.bool_))
     assert p == stim.PauliString("_XYZ___XYXZYZ")
 
     p = stim.PauliString.from_numpy(
@@ -562,8 +562,8 @@ def test_from_numpy_bad_bit_packed_len():
 
 
 def test_from_numpy_bad_bool_len():
-    xs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8)
-    zs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8)
+    xs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool_)
+    zs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool_)
     with pytest.raises(ValueError, match="shape=13"):
         stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=12)
 
