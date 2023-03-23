@@ -30,6 +30,7 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
         failed,
         Gate{
             "H",
+            "H",
             0,
             &TableauSimulator::H_XZ,
             &FrameSimulator::H_XZ,
@@ -64,6 +65,7 @@ H 0
     add_gate(
         failed,
         Gate{
+            "H_XY",
             "H_XY",
             0,
             &TableauSimulator::H_XY,
@@ -101,6 +103,7 @@ S 0
     add_gate(
         failed,
         Gate{
+            "H_YZ",
             "H_YZ",
             0,
             &TableauSimulator::H_YZ,

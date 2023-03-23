@@ -192,7 +192,20 @@ struct Circuit {
     Circuit flattened() const;
 
     /// Returns a circuit that implements the inverse Clifford operation.
-    Circuit inverse() const;
+    ///
+    /// Args:
+    ///     allow_weak_inverse: When this is set to true, the inverse of the circuit doesn't need
+    ///         to be exact. In particular, noise and measurement becomes self-inverse. Examples:
+    ///             - The weak inverse of MX is MX.
+    ///             - The weak inverse of MRX is MRX.
+    ///             - The weak inverse of RX is MRX.
+    ///             - The weak inverse of X_ERROR(0.1) is X_ERROR(0.1).
+    ///             - The weak inverse of DETECTOR is [discard the operation].
+    ///             - The weak inverse of OBSERVABLE_INCLUDE is [discard the operation].
+    ///
+    /// Returns:
+    ///     The inverted circuit.
+    Circuit inverse(bool allow_weak_inverse = false) const;
 
     /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>

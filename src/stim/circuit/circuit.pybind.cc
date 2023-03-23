@@ -1877,7 +1877,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "inverse",
-        &Circuit::inverse,
+        [](const Circuit &self) -> Circuit {
+            return self.inverse();
+        },
         clean_doc_string(R"DOC(
             Returns a circuit that applies the same operations but inverted and in reverse.
 

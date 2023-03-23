@@ -1131,7 +1131,7 @@ Circuit Circuit::flattened() const {
     return result;
 }
 
-Circuit Circuit::inverse() const {
+Circuit Circuit::inverse(bool allow_weak_inverse) const {
     Circuit result;
     result.operations.reserve(operations.size());
     result.target_buf.ensure_available(target_buf.total_allocated());
@@ -1139,53 +1139,84 @@ Circuit Circuit::inverse() const {
     size_t skip_reversing = 0;
 
     std::vector<GateTarget> reversed_targets_buf;
+    std::vector<double> args_buf;
     for (size_t k = 0; k < operations.size(); k++) {
         const auto &op = operations[k];
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             const auto &block = op_data_block_body(*this, op.target_data);
             uint64_t reps = op_data_rep_count(op.target_data);
-            result.append_repeat_block(reps, block.inverse());
-        } else if (op.gate->flags & GATE_IS_UNITARY) {
-            reversed_targets_buf.clear();
-            auto src = op.target_data.targets;
-            if (op.gate->flags & GATE_TARGETS_PAIRS) {
-                assert(op.target_data.targets.size() % 2 == 0);
-                for (size_t j = src.size(); j > 0;) {
-                    j -= 2;
-                    reversed_targets_buf.push_back(src[j]);
-                    reversed_targets_buf.push_back(src[j + 1]);
-                }
-            } else {
-                for (size_t j = src.size(); j--;) {
-                    reversed_targets_buf.push_back(src[j]);
-                }
-            }
-            result.safe_append(op.gate->inverse(), reversed_targets_buf, op.target_data.args);
+            result.append_repeat_block(reps, block.inverse(allow_weak_inverse));
+            continue;
+        }
+
+        ConstPointerRange<double> args = op.target_data.args;
+        if (op.gate->flags & GATE_IS_UNITARY) {
+            // Unitary gates always have an inverse.
         } else if (op.gate->id == gate_name_to_id("TICK")) {
-            result.safe_append(*op.gate, op.target_data.targets, op.target_data.args);
+            // Ticks are self-inverse.
         } else if (op.gate->flags & GATE_IS_NOISE) {
-            throw std::invalid_argument(
-                "The circuit has no well-defined inverse because it contains noise.\n"
-                "For example it contains a '" +
-                op.str() + "' instruction.");
+            // Noise isn't invertible, but it is weakly invertible.
+            // ELSE_CORRELATED_ERROR isn't implemented due to complex order dependencies.
+            if (!allow_weak_inverse || op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+                throw std::invalid_argument(
+                    "The circuit has no well-defined inverse because it contains noise.\n"
+                    "For example it contains a '" + op.str() + "' instruction.");
+            }
         } else if (op.gate->flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
-            throw std::invalid_argument(
-                "The circuit has no well-defined inverse because it contains resets or measurements.\n"
-                "For example it contains a '" +
-                op.str() + "' instruction.");
+            // Dissipative operations aren't invertible, but they are weakly invertible.
+            if (!allow_weak_inverse) {
+                throw std::invalid_argument(
+                    "The circuit has no well-defined inverse because it contains resets or measurements.\n"
+                    "For example it contains a '" +
+                    op.str() + "' instruction.");
+            }
         } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+            // Qubit coordinate headers are kept at the beginning.
             if (k > skip_reversing) {
                 throw std::invalid_argument(
                     "Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
             }
             skip_reversing++;
-            result.safe_append(op);
+        } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+            // Coordinate shifts reverse.
+            args_buf.clear();
+            for (const auto &a : op.target_data.args) {
+                args_buf.push_back(-a);
+            }
+            args = args_buf;
+        } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+            if (allow_weak_inverse) {
+                // If strong inverse for these gets implemented, they should be included in the weak inverse.
+                // But for now it's sufficient to just drop them for the weak inverse.
+                continue;
+            }
+            throw std::invalid_argument("Inverse not implemented: " + op.str());
         } else {
             throw std::invalid_argument("Inverse not implemented: " + op.str());
         }
+
+        // Add inverse operation to inverse circuit.
+        reversed_targets_buf.clear();
+        auto src = op.target_data.targets;
+        if (op.gate->flags & GATE_TARGETS_PAIRS) {
+            assert(op.target_data.targets.size() % 2 == 0);
+            for (size_t j = src.size(); j > 0;) {
+                j -= 2;
+                reversed_targets_buf.push_back(src[j]);
+                reversed_targets_buf.push_back(src[j + 1]);
+            }
+        } else {
+            for (size_t j = src.size(); j--;) {
+                reversed_targets_buf.push_back(src[j]);
+            }
+        }
+        const auto &best_inverse_gate = GATE_DATA.items[op.gate->best_candidate_inverse_id];
+        result.safe_append(best_inverse_gate, reversed_targets_buf, args);
     }
 
+    // Put the qubit coordinates in the original order.
     std::reverse(result.operations.begin() + skip_reversing, result.operations.end());
+
     return result;
 }
 

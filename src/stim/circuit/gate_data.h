@@ -111,6 +111,9 @@ enum GateFlags : uint16_t {
     GATE_TARGETS_COMBINERS = 1 << 12,
     // Measurements and resets are dissipative operations.
     GATE_IS_RESET = 1 << 13,
+    // Annotations like DETECTOR aren't strictly speaking identity operations, but they can be ignored by code that only
+    // cares about effects that happen to qubits (as opposed to in the classical control system).
+    GATE_HAS_NO_EFFECT_ON_QUBITS = 1 << 14,
 };
 
 struct ExtraGateData {
@@ -144,10 +147,12 @@ struct Gate {
     uint8_t arg_count;
     uint8_t name_len;
     uint8_t id;
+    uint8_t best_candidate_inverse_id;
 
     Gate();
     Gate(
         const char *name,
+        const char *best_inverse_name,
         uint8_t arg_count,
         void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
         void (FrameSimulator::*frame_simulator_function)(const OperationData &),
@@ -245,7 +250,6 @@ inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const 
 
 struct GateDataMap {
    private:
-    std::array<Gate, 256> items;
     void add_gate(bool &failed, const Gate &data);
     void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
     void add_gate_data_annotations(bool &failed);
@@ -261,6 +265,7 @@ struct GateDataMap {
     void add_gate_data_swaps(bool &failed);
 
    public:
+    std::array<Gate, 256> items;
     GateDataMap();
 
     std::vector<Gate> gates() const;
