@@ -44,7 +44,46 @@ struct ErrorAnalyzer;
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
-inline uint8_t gate_name_to_id(const char *v, size_t n) {
+enum class Gates : uint8_t {
+    // From gate_data_annotations.cc
+    DETECTOR, OBSERVABLE_INCLUDE, TICK, QUBIT_COORDS, SHIFT_COORDS,
+    // Frome gate_data_blocks.cc
+    REPEAT,
+    // From gate_data_collapsing.cc
+    MX, MY, M, MRX, MRY, MR, RX, RY, R, MPP,
+    // From gate_data_controlled.cc
+    XCX, XCY, XCZ, YCX, YCY, YCZ, CX, CY, CZ,
+    // From gate_data_hada.cc
+    H, H_XY, H_YZ,
+    // From gate_data_noisy.cc
+    DEPOLARIZE1, DEPOLARIZE2, X_ERROR, Y_ERROR, Z_ERROR,
+    PAULI_CHANNEL_1, PAULI_CHANNEL_2,
+    E, ELSE_CORRELATED_ERROR,
+    // From gate_data_pauli.cc
+    I, X, Y, Z,
+    // From gate_data_period_3.cc
+    C_XYZ, C_ZYX,
+    // From gate_data_period_4.cc
+    SQRT_X, SQRT_X_DAG, SQRT_Y, SQRT_Y_DAG, S, S_DAG,
+    // From gate_data_pp.cc
+    SQRT_XX, SQRT_XX_DAG, SQRT_YY, SQRT_YY_DAG, SQRT_ZZ, SQRT_ZZ_DAG,
+    // From gate_data_swaps.cc
+    SWAP, ISWAP, CXSWAP, SWAPCX, ISWAP_DAG,
+
+    /// GATE ALIASES
+
+    // From gate_data_collapsing.cc
+    MZ, MRZ, RZ, ZCX, CNOT, ZCY, ZCZ,
+    // From gate_data_noisy.cc
+    CORRELATED_ERROR,
+    // From gate_data_hada.cc
+    H_XZ,
+    // From gate_data_period_4.cc
+    SQRT_Z, SQRT_Z_DAG,
+};
+
+
+inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
@@ -76,8 +115,162 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
     return result;
 }
 
+inline uint8_t gate_hash_to_id(uint8_t hash) noexcept {
+    switch (hash) {
+        case 1:
+            return static_cast<int>(Gates::DEPOLARIZE2);
+        case 13:
+            return static_cast<int>(Gates::SQRT_YY_DAG);
+        case 14:
+            return static_cast<int>(Gates::SQRT_ZZ_DAG);
+        case 16:
+            return static_cast<int>(Gates::SQRT_XX_DAG);
+        case 27:
+            return static_cast<int>(Gates::DEPOLARIZE1);
+        case 29:
+            return static_cast<int>(Gates::SHIFT_COORDS);
+        case 40:
+            return static_cast<int>(Gates::X);
+        case 43:
+            return static_cast<int>(Gates::Y);
+        case 46:
+            return static_cast<int>(Gates::Z);
+        case 47:
+            return static_cast<int>(Gates::E);
+        case 48:
+            return static_cast<int>(Gates::QUBIT_COORDS);
+        case 53:
+            return static_cast<int>(Gates::S);
+        case 54:
+            return static_cast<int>(Gates::R);
+        case 55:
+            return static_cast<int>(Gates::M);
+        case 56:
+            return static_cast<int>(Gates::H);
+        case 59:
+            return static_cast<int>(Gates::I);
+        case 64:
+            return static_cast<int>(Gates::RY);
+        case 65:
+            return static_cast<int>(Gates::ELSE_CORRELATED_ERROR);
+        case 66:
+            return static_cast<int>(Gates::RX);
+        case 70:
+            return static_cast<int>(Gates::RZ);
+        case 73:
+            return static_cast<int>(Gates::MR);
+        case 81:
+            return static_cast<int>(Gates::CY);
+        case 83:
+            return static_cast<int>(Gates::CX);
+        case 87:
+            return static_cast<int>(Gates::CZ);
+        case 89:
+            return static_cast<int>(Gates::MZ);
+        case 93:
+            return static_cast<int>(Gates::MX);
+        case 95:
+            return static_cast<int>(Gates::MY);
+        case 97:
+            return static_cast<int>(Gates::ZCX);
+        case 98:
+            return static_cast<int>(Gates::YCX);
+        case 99:
+            return static_cast<int>(Gates::XCX);
+        case 103:
+            return static_cast<int>(Gates::MRX);
+        case 105:
+            return static_cast<int>(Gates::YCY);
+        case 106:
+            return static_cast<int>(Gates::XCY);
+        case 108:
+            return static_cast<int>(Gates::ZCY);
+        case 109:
+            return static_cast<int>(Gates::MPP);
+        case 110:
+            return static_cast<int>(Gates::MRY);
+        case 117:
+            return static_cast<int>(Gates::MRZ);
+        case 119:
+            return static_cast<int>(Gates::ZCZ);
+        case 120:
+            return static_cast<int>(Gates::YCZ);
+        case 121:
+            return static_cast<int>(Gates::XCZ);
+        case 127:
+            return static_cast<int>(Gates::SQRT_ZZ);
+        case 132:
+            return static_cast<int>(Gates::H_YZ);
+        case 134:
+            return static_cast<int>(Gates::TICK);
+        case 136:
+            return static_cast<int>(Gates::X_ERROR);
+        case 137:
+            return static_cast<int>(Gates::PAULI_CHANNEL_1);
+        case 139:
+            return static_cast<int>(Gates::PAULI_CHANNEL_2);
+        case 140:
+            return static_cast<int>(Gates::CNOT);
+        case 141:
+            return static_cast<int>(Gates::SWAP);
+        case 146:
+            return static_cast<int>(Gates::Z_ERROR);
+        case 147:
+            return static_cast<int>(Gates::Y_ERROR);
+        case 149:
+            return static_cast<int>(Gates::SQRT_XX);
+        case 154:
+            return static_cast<int>(Gates::SQRT_YY);
+        case 155:
+            return static_cast<int>(Gates::H_XZ);
+        case 157:
+            return static_cast<int>(Gates::H_XY);
+        case 160:
+            return static_cast<int>(Gates::C_XYZ);
+        case 166:
+            return static_cast<int>(Gates::S_DAG);
+        case 169:
+            return static_cast<int>(Gates::ISWAP);
+        case 178:
+            return static_cast<int>(Gates::DETECTOR);
+        case 179:
+            return static_cast<int>(Gates::CORRELATED_ERROR);
+        case 182:
+            return static_cast<int>(Gates::C_ZYX);
+        case 194:
+            return static_cast<int>(Gates::SQRT_Z);
+        case 202:
+            return static_cast<int>(Gates::REPEAT);
+        case 205:
+            return static_cast<int>(Gates::CXSWAP);
+        case 213:
+            return static_cast<int>(Gates::SWAPCX);
+        case 216:
+            return static_cast<int>(Gates::SQRT_X);
+        case 219:
+            return static_cast<int>(Gates::ISWAP_DAG);
+        case 221:
+            return static_cast<int>(Gates::SQRT_Y);
+        case 236:
+            return static_cast<int>(Gates::OBSERVABLE_INCLUDE);
+        case 237:
+            return static_cast<int>(Gates::SQRT_Y_DAG);
+        case 238:
+            return static_cast<int>(Gates::SQRT_Z_DAG);
+        case 240:
+            return static_cast<int>(Gates::SQRT_X_DAG);
+        default:
+            std::cerr << "Gate hash not mapped to Gate ID\n";
+            return 0;
+    }
+}
+
+inline uint8_t gate_name_to_id(const char *c, size_t n) {
+    return gate_hash_to_id(gate_name_to_hash(c, n));
+}
+
 inline uint8_t gate_name_to_id(const char *c) {
-    return gate_name_to_id(c, strlen(c));
+    return gate_hash_to_id(gate_name_to_hash(c, strlen(c)));
 }
 
 enum GateFlags : uint16_t {

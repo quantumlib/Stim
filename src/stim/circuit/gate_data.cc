@@ -103,6 +103,7 @@ Gate::Gate(
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
+    // items[gate.id] = gate;
     const char *c = gate.name;
     uint8_t h = gate_name_to_id(c);
     Gate &loc = items[h];
