@@ -29,7 +29,8 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
         failed,
         Gate{
             "I",
-            "I",
+            Gates::I,
+            Gates::I,
             0,
             &TableauSimulator::I,
             &FrameSimulator::I,
@@ -64,7 +65,8 @@ Targets:
         failed,
         Gate{
             "X",
-            "X",
+            Gates::X,
+            Gates::X,
             0,
             &TableauSimulator::X,
             &FrameSimulator::I,
@@ -102,7 +104,8 @@ H 0
         failed,
         Gate{
             "Y",
-            "Y",
+            Gates::Y,
+            Gates::Y,
             0,
             &TableauSimulator::Y,
             &FrameSimulator::I,
@@ -141,7 +144,8 @@ H 0
         failed,
         Gate{
             "Z",
-            "Z",
+            Gates::Z,
+            Gates::Z,
             0,
             &TableauSimulator::Z,
             &FrameSimulator::I,

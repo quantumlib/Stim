@@ -71,9 +71,9 @@ bool is_decomposition_correct(const Gate &gate) {
     Circuit circuit2 = epr + Circuit(decomposition);
     auto v2 = circuit_output_eq_val(circuit2);
     for (const auto &op : circuit2.operations) {
-        if (op.gate->id != gate_name_to_id("CX") && op.gate->id != gate_name_to_id("H") &&
-            op.gate->id != gate_name_to_id("S") && op.gate->id != gate_name_to_id("M") &&
-            op.gate->id != gate_name_to_id("R")) {
+        if (op.gate->id != static_cast<uint8_t>(Gates::CX) && op.gate->id != static_cast<uint8_t>(Gates::H) &&
+            op.gate->id != static_cast<uint8_t>(Gates::S) && op.gate->id != static_cast<uint8_t>(Gates::M) &&
+            op.gate->id != static_cast<uint8_t>(Gates::R)) {
             return false;
         }
     }

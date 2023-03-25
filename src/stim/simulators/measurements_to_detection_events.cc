@@ -68,8 +68,8 @@ void stim::measurements_to_detection_events_helper(
 
     uint64_t measure_count_so_far = 0;
     uint64_t detector_offset = 0;
-    const auto det_id = gate_name_to_id("DETECTOR");
-    const auto obs_id = gate_name_to_id("OBSERVABLE_INCLUDE");
+    const auto det_id = static_cast<uint8_t>(Gates::DETECTOR);
+    const auto obs_id = static_cast<uint8_t>(Gates::OBSERVABLE_INCLUDE);
     noiseless_circuit.for_each_operation([&](const Operation &op) {
         uint64_t out_index;
         if (op.gate->id == det_id) {

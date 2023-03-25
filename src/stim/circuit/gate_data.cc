@@ -70,7 +70,7 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 
 const Gate &Gate::inverse() const {
     std::string inv_name = name;
-    if ((flags & GATE_IS_UNITARY) || id == gate_name_to_id("TICK")) {
+    if ((flags & GATE_IS_UNITARY) || id == static_cast<uint8_t>(Gates::TICK)) {
         return GATE_DATA.items[best_candidate_inverse_id];
     }
     throw std::out_of_range(inv_name + " has no inverse.");
@@ -81,7 +81,8 @@ Gate::Gate() : name(nullptr) {
 
 Gate::Gate(
     const char *name,
-    const char *best_inverse_name,
+    Gates gate_id,
+    Gates best_inverse_gate,
     uint8_t arg_count,
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
@@ -98,8 +99,8 @@ Gate::Gate(
       flags(flags),
       arg_count(arg_count),
       name_len((uint8_t)strlen(name)),
-      id(gate_name_to_id(name)),
-      best_candidate_inverse_id(gate_name_to_id(best_inverse_name)) {
+      id(static_cast<uint8_t>(gate_id)),
+      best_candidate_inverse_id(static_cast<uint8_t>(best_inverse_gate)) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {

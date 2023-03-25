@@ -29,7 +29,8 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
         failed,
         Gate{
             "XCX",
-            "XCX",
+            Gates::XCX,
+            Gates::XCX,
             0,
             &TableauSimulator::XCX,
             &FrameSimulator::XCX,
@@ -73,7 +74,8 @@ H 0
         failed,
         Gate{
             "XCY",
-            "XCY",
+            Gates::XCY,
+            Gates::XCY,
             0,
             &TableauSimulator::XCY,
             &FrameSimulator::XCY,
@@ -121,7 +123,8 @@ S 1
         failed,
         Gate{
             "XCZ",
-            "XCZ",
+            Gates::XCZ,
+            Gates::XCZ,
             0,
             &TableauSimulator::XCZ,
             &FrameSimulator::XCZ,
@@ -179,7 +182,8 @@ CNOT 1 0
         failed,
         Gate{
             "YCX",
-            "YCX",
+            Gates::YCX,
+            Gates::YCX,
             0,
             &TableauSimulator::YCX,
             &FrameSimulator::YCX,
@@ -227,7 +231,8 @@ H 1
         failed,
         Gate{
             "YCY",
-            "YCY",
+            Gates::YCY,
+            Gates::YCY,
             0,
             &TableauSimulator::YCY,
             &FrameSimulator::YCY,
@@ -279,7 +284,8 @@ S 1
         failed,
         Gate{
             "YCZ",
-            "YCZ",
+            Gates::YCZ,
+            Gates::YCZ,
             0,
             &TableauSimulator::YCZ,
             &FrameSimulator::YCZ,
@@ -341,7 +347,8 @@ S 0
         failed,
         Gate{
             "CX",
-            "CX",
+            Gates::CX,
+            Gates::CX,
             0,
             &TableauSimulator::ZCX,
             &FrameSimulator::ZCX,
@@ -400,7 +407,8 @@ CNOT 0 1
         failed,
         Gate{
             "CY",
-            "CY",
+            Gates::CY,
+            Gates::CY,
             0,
             &TableauSimulator::ZCY,
             &FrameSimulator::ZCY,
@@ -462,7 +470,8 @@ S 1
         failed,
         Gate{
             "CZ",
-            "CZ",
+            Gates::CZ,
+            Gates::CZ,
             0,
             &TableauSimulator::ZCZ,
             &FrameSimulator::ZCZ,

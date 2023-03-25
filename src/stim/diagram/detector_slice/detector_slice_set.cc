@@ -47,9 +47,9 @@ bool DetectorSliceSetComputer::process_tick() {
 }
 
 bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Operation &op) {
-    if (op.gate->id == gate_name_to_id("TICK")) {
+    if (op.gate->id == static_cast<uint8_t>(Gates::TICK)) {
         return process_tick();
-    } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
         uint64_t stop_iter = first_yield_tick + num_yield_ticks;
         uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;

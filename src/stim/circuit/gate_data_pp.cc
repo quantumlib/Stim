@@ -29,7 +29,8 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
         failed,
         Gate{
             "SQRT_XX",
-            "SQRT_XX_DAG",
+            Gates::SQRT_XX,
+            Gates::SQRT_XX_DAG,
             0,
             &TableauSimulator::SQRT_XX,
             &FrameSimulator::SQRT_XX,
@@ -71,7 +72,8 @@ H 1
         failed,
         Gate{
             "SQRT_XX_DAG",
-            "SQRT_XX",
+            Gates::SQRT_XX_DAG,
+            Gates::SQRT_XX,
             0,
             &TableauSimulator::SQRT_XX_DAG,
             &FrameSimulator::SQRT_XX,
@@ -118,7 +120,8 @@ H 1
         failed,
         Gate{
             "SQRT_YY",
-            "SQRT_YY_DAG",
+            Gates::SQRT_YY,
+            Gates::SQRT_YY_DAG,
             0,
             &TableauSimulator::SQRT_YY,
             &FrameSimulator::SQRT_YY,
@@ -168,7 +171,8 @@ S 1
         failed,
         Gate{
             "SQRT_YY_DAG",
-            "SQRT_YY",
+            Gates::SQRT_YY_DAG,
+            Gates::SQRT_YY,
             0,
             &TableauSimulator::SQRT_YY_DAG,
             &FrameSimulator::SQRT_YY,
@@ -219,7 +223,8 @@ S 1
         failed,
         Gate{
             "SQRT_ZZ",
-            "SQRT_ZZ_DAG",
+            Gates::SQRT_ZZ,
+            Gates::SQRT_ZZ_DAG,
             0,
             &TableauSimulator::SQRT_ZZ,
             &FrameSimulator::SQRT_ZZ,
@@ -256,7 +261,8 @@ S 1
         failed,
         Gate{
             "SQRT_ZZ_DAG",
-            "SQRT_ZZ",
+            Gates::SQRT_ZZ_DAG,
+            Gates::SQRT_ZZ,
             0,
             &TableauSimulator::SQRT_ZZ_DAG,
             &FrameSimulator::SQRT_ZZ,

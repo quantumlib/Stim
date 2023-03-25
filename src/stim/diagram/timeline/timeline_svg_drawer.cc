@@ -313,7 +313,7 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
     }
 
     auto pieces = two_qubit_gate_pieces(op.gate->name);
-    if (op.gate->id == gate_name_to_id("PAULI_CHANNEL_2")) {
+    if (op.gate->id == static_cast<uint8_t>(Gates::PAULI_CHANNEL_2)) {
         pieces.first.append("[0]");
         pieces.second.append("[1]");
     }
@@ -743,19 +743,19 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
     if (resolver.num_ticks_seen < min_tick || resolver.num_ticks_seen > max_tick) {
         return;
     }
-    if (op.gate->id == gate_name_to_id("MPP")) {
+    if (op.gate->id == static_cast<uint8_t>(Gates::MPP)) {
         do_mpp(op);
-    } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::DETECTOR)) {
         do_detector(op);
-    } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::OBSERVABLE_INCLUDE)) {
         do_observable_include(op);
-    } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::QUBIT_COORDS)) {
         do_qubit_coords(op);
-    } else if (op.gate->id == gate_name_to_id("E")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::E)) {
         do_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR)) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("TICK")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::TICK)) {
         do_tick();
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
@@ -782,7 +782,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     std::stringstream buffer;
     DiagramTimelineSvgDrawer obj(buffer, num_qubits, circuit_has_ticks);
     tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start + 1);
-    if (!circuit.operations.empty() && circuit.operations.back().gate->id == gate_name_to_id("TICK")) {
+    if (!circuit.operations.empty() && circuit.operations.back().gate->id == static_cast<uint8_t>(Gates::TICK)) {
         tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start);
     }
     if (mode != SVG_MODE_TIMELINE) {

@@ -214,7 +214,7 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
     cur_loc.tick_offset = error_analyzer.num_ticks_in_past;
     cur_op = &op;
 
-    if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    if (op.gate->id == static_cast<uint8_t>(Gates::DETECTOR)) {
         error_analyzer.DETECTOR(op.target_data);
         if (!op.target_data.args.empty()) {
             auto id = error_analyzer.tracker.num_detectors_in_past;
@@ -227,44 +227,44 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
                 entry->second.push_back(d);
             }
         }
-    } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::SHIFT_COORDS)) {
         error_analyzer.SHIFT_COORDS(op.target_data);
         for (size_t k = 0; k < op.target_data.args.size(); k++) {
             cur_coord_offset[k] -= op.target_data.args[k];
         }
     } else if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
         (error_analyzer.*op.gate->reverse_error_analyzer_function)(op.target_data);
-    } else if (op.gate->id == gate_name_to_id("E") || op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::E) || op.gate->id == static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR)) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();
         resolve_paulis_into(op.target_data.targets, 0, cur_loc.flipped_pauli_product);
         err_atom(op);
         cur_loc.flipped_pauli_product.clear();
-    } else if (op.gate->id == gate_name_to_id("X_ERROR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::X_ERROR)) {
         err_xyz(op, TARGET_PAULI_X_BIT);
-    } else if (op.gate->id == gate_name_to_id("Y_ERROR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::Y_ERROR)) {
         err_xyz(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-    } else if (op.gate->id == gate_name_to_id("Z_ERROR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::Z_ERROR)) {
         err_xyz(op, TARGET_PAULI_Z_BIT);
-    } else if (op.gate->id == gate_name_to_id("PAULI_CHANNEL_1")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::PAULI_CHANNEL_1)) {
         err_pauli_channel_1(op);
-    } else if (op.gate->id == gate_name_to_id("DEPOLARIZE1")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::DEPOLARIZE1)) {
         float p = op.target_data.args[0];
         std::array<double, 3> spread{p, p, p};
         err_pauli_channel_1({op.gate, {spread, op.target_data.targets}});
-    } else if (op.gate->id == gate_name_to_id("PAULI_CHANNEL_2")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::PAULI_CHANNEL_2)) {
         err_pauli_channel_2(op);
-    } else if (op.gate->id == gate_name_to_id("DEPOLARIZE2")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::DEPOLARIZE2)) {
         float p = op.target_data.args[0];
         std::array<double, 15> spread{p, p, p, p, p, p, p, p, p, p, p, p, p, p, p};
         err_pauli_channel_2({op.gate, {spread, op.target_data.targets}});
-    } else if (op.gate->id == gate_name_to_id("MPP")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::MPP)) {
         err_m(op, 0);
-    } else if (op.gate->id == gate_name_to_id("MX") || op.gate->id == gate_name_to_id("MRX")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::MX) || op.gate->id == static_cast<uint8_t>(Gates::MRX)) {
         err_m(op, TARGET_PAULI_X_BIT);
-    } else if (op.gate->id == gate_name_to_id("MY") || op.gate->id == gate_name_to_id("MRY")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::MY) || op.gate->id == static_cast<uint8_t>(Gates::MRY)) {
         err_m(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-    } else if (op.gate->id == gate_name_to_id("M") || op.gate->id == gate_name_to_id("MR")) {
+    } else if (op.gate->id == static_cast<uint8_t>(Gates::M) || op.gate->id == static_cast<uint8_t>(Gates::MR)) {
         err_m(op, TARGET_PAULI_Z_BIT);
     } else {
         throw std::invalid_argument("Not implemented: " + std::string(op.gate->name));
@@ -280,7 +280,7 @@ void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
             cur_loc.stack_frames.back().instruction_offset = k;
 
             const auto &op = block.operations[k];
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
                 auto rep_count = op_data_rep_count(op.target_data);
                 cur_loc.stack_frames.back().instruction_repetitions_arg = op_data_rep_count(op.target_data);
                 rev_process_circuit(rep_count, op_data_block_body(block, op.target_data));

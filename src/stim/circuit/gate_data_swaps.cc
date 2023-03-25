@@ -29,7 +29,8 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
         failed,
         Gate{
             "SWAP",
-            "SWAP",
+            Gates::SWAP,
+            Gates::SWAP,
             0,
             &TableauSimulator::SWAP,
             &FrameSimulator::SWAP,
@@ -65,7 +66,8 @@ CNOT 0 1
         failed,
         Gate{
             "ISWAP",
-            "ISWAP_DAG",
+            Gates::ISWAP,
+            Gates::ISWAP_DAG,
             0,
             &TableauSimulator::ISWAP,
             &FrameSimulator::ISWAP,
@@ -105,7 +107,8 @@ S 0
         failed,
         Gate{
             "ISWAP_DAG",
-            "ISWAP",
+            Gates::ISWAP_DAG,
+            Gates::ISWAP,
             0,
             &TableauSimulator::ISWAP_DAG,
             &FrameSimulator::ISWAP,
@@ -149,7 +152,8 @@ H 0
         failed,
         Gate{
             "CXSWAP",
-            "SWAPCX",
+            Gates::CXSWAP,
+            Gates::SWAPCX,
             0,
             &TableauSimulator::CXSWAP,
             &FrameSimulator::CXSWAP,
@@ -185,7 +189,8 @@ CNOT 0 1
         failed,
         Gate{
             "SWAPCX",
-            "CXSWAP",
+            Gates::SWAPCX,
+            Gates::CXSWAP,
             0,
             &TableauSimulator::SWAPCX,
             &FrameSimulator::SWAPCX,

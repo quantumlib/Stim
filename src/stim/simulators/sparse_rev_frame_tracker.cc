@@ -549,7 +549,7 @@ void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const OperationData 
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Circuit &parent) {
-    if (op.gate->id == gate_name_to_id("REPEAT")) {
+    if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
         uint64_t repeats = op_data_rep_count(op.target_data);
         undo_loop(loop_body, repeats);
@@ -559,7 +559,7 @@ void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Ci
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op) {
-    assert(op.gate->id != gate_name_to_id("REPEAT"));
+    assert(op.gate->id != static_cast<uint8_t>(Gates::REPEAT));
     (this->*op.gate->sparse_unsigned_rev_frame_tracker_function)(op.target_data);
 }
 

@@ -25,7 +25,8 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
         failed,
         Gate{
             "DETECTOR",
-            "DETECTOR",
+            Gates::DETECTOR,
+            Gates::DETECTOR,
             ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,
@@ -116,7 +117,8 @@ Example:
         failed,
         Gate{
             "OBSERVABLE_INCLUDE",
-            "OBSERVABLE_INCLUDE",
+            Gates::OBSERVABLE_INCLUDE,
+            Gates::OBSERVABLE_INCLUDE,
             1,
             &TableauSimulator::I,
             &FrameSimulator::I,
@@ -193,7 +195,8 @@ Example:
         failed,
         Gate{
             "TICK",
-            "TICK",
+            Gates::TICK,
+            Gates::TICK,
             0,
             &TableauSimulator::I,
             &FrameSimulator::I,
@@ -246,7 +249,8 @@ Example:
         failed,
         Gate{
             "QUBIT_COORDS",
-            "QUBIT_COORDS",
+            Gates::QUBIT_COORDS,
+            Gates::QUBIT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,
@@ -298,7 +302,8 @@ Example:
         failed,
         Gate{
             "SHIFT_COORDS",
-            "SHIFT_COORDS",
+            Gates::SHIFT_COORDS,
+            Gates::SHIFT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,

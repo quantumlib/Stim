@@ -26,7 +26,8 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
         failed,
         Gate{
             "MX",
-            "MX",
+            Gates::MX,
+            Gates::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_x,
             &FrameSimulator::measure_x,
@@ -82,7 +83,8 @@ H 0
         failed,
         Gate{
             "MY",
-            "MY",
+            Gates::MY,
+            Gates::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_y,
             &FrameSimulator::measure_y,
@@ -142,7 +144,8 @@ S 0
         failed,
         Gate{
             "M",
-            "M",
+            Gates::M,
+            Gates::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_z,
             &FrameSimulator::measure_z,
@@ -202,7 +205,8 @@ M 0
         failed,
         Gate{
             "MRX",
-            "MRX",
+            Gates::MRX,
+            Gates::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
@@ -260,7 +264,8 @@ H 0
         failed,
         Gate{
             "MRY",
-            "MRY",
+            Gates::MRY,
+            Gates::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
@@ -322,7 +327,8 @@ S 0
         failed,
         Gate{
             "MR",
-            "MR",
+            Gates::MR,
+            Gates::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
@@ -384,7 +390,8 @@ R 0
         failed,
         Gate{
             "RX",
-            "MRX",
+            Gates::RX,
+            Gates::MRX,
             0,
             &TableauSimulator::reset_x,
             &FrameSimulator::reset_x,
@@ -428,7 +435,8 @@ H 0
         failed,
         Gate{
             "RY",
-            "MRY",
+            Gates::RY,
+            Gates::MRY,
             0,
             &TableauSimulator::reset_y,
             &FrameSimulator::reset_y,
@@ -476,7 +484,8 @@ S 0
         failed,
         Gate{
             "R",
-            "MR",
+            Gates::R,
+            Gates::MR,
             0,
             &TableauSimulator::reset_z,
             &FrameSimulator::reset_z,
@@ -523,7 +532,8 @@ R 0
         failed,
         Gate{
             "MPP",
-            "MPP",
+            Gates::MPP,
+            Gates::MPP,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::MPP,
             &FrameSimulator::MPP,
