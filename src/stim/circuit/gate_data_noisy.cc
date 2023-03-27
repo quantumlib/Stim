@@ -28,10 +28,6 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             Gates::DEPOLARIZE1,
             Gates::DEPOLARIZE1,
             1,
-            &TableauSimulator::DEPOLARIZE1,
-            &FrameSimulator::DEPOLARIZE1,
-            &ErrorAnalyzer::DEPOLARIZE1,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -70,10 +66,6 @@ Pauli Mixture:
             Gates::DEPOLARIZE2,
             Gates::DEPOLARIZE2,
             1,
-            &TableauSimulator::DEPOLARIZE2,
-            &FrameSimulator::DEPOLARIZE2,
-            &ErrorAnalyzer::DEPOLARIZE2,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -124,10 +116,6 @@ Pauli Mixture:
             Gates::X_ERROR,
             Gates::X_ERROR,
             1,
-            &TableauSimulator::X_ERROR,
-            &FrameSimulator::X_ERROR,
-            &ErrorAnalyzer::X_ERROR,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -162,10 +150,6 @@ Pauli Mixture:
             Gates::Y_ERROR,
             Gates::Y_ERROR,
             1,
-            &TableauSimulator::Y_ERROR,
-            &FrameSimulator::Y_ERROR,
-            &ErrorAnalyzer::Y_ERROR,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -200,10 +184,6 @@ Pauli Mixture:
             Gates::Z_ERROR,
             Gates::Z_ERROR,
             1,
-            &TableauSimulator::Z_ERROR,
-            &FrameSimulator::Z_ERROR,
-            &ErrorAnalyzer::Z_ERROR,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -238,10 +218,6 @@ Pauli Mixture:
             Gates::PAULI_CHANNEL_1,
             Gates::PAULI_CHANNEL_1,
             3,
-            &TableauSimulator::PAULI_CHANNEL_1,
-            &FrameSimulator::PAULI_CHANNEL_1,
-            &ErrorAnalyzer::PAULI_CHANNEL_1,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -287,10 +263,6 @@ Pauli Mixture:
             Gates::PAULI_CHANNEL_2,
             Gates::PAULI_CHANNEL_2,
             15,
-            &TableauSimulator::PAULI_CHANNEL_2,
-            &FrameSimulator::PAULI_CHANNEL_2,
-            &ErrorAnalyzer::PAULI_CHANNEL_2,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -364,10 +336,6 @@ Pauli Mixture:
             Gates::E,
             Gates::E,
             1,
-            &TableauSimulator::CORRELATED_ERROR,
-            &FrameSimulator::CORRELATED_ERROR,
-            &ErrorAnalyzer::CORRELATED_ERROR,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
@@ -411,10 +379,6 @@ Example:
             Gates::ELSE_CORRELATED_ERROR,
             Gates::ELSE_CORRELATED_ERROR,
             1,
-            &TableauSimulator::ELSE_CORRELATED_ERROR,
-            &FrameSimulator::ELSE_CORRELATED_ERROR,
-            &ErrorAnalyzer::ELSE_CORRELATED_ERROR,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {

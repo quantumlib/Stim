@@ -97,6 +97,10 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
+    inline void invoke(uint8_t gate_id, const OperationData& data) {
+        (this->*(FRAME_SIM_VTABLE[gate_id]))(data);
+    }
+
     void measure_x(const OperationData &target_data);
     void measure_y(const OperationData &target_data);
     void measure_z(const OperationData &target_data);

@@ -82,7 +82,7 @@ void stim::measurements_to_detection_events_helper(
             out_index = num_detectors + (uint64_t)op.target_data.args[0];
         } else {
             measure_count_so_far += op.count_measurement_results();
-            (frame_sim.*op.gate->frame_simulator_function)(op.target_data);
+            frame_sim.invoke(op.gate->id, op.target_data);
             return;
         }
 

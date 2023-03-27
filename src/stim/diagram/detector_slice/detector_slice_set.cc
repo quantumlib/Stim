@@ -75,7 +75,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
                 used_qubits.insert(t.qubit_value());
             }
         }
-        (tracker.*(op.gate->sparse_unsigned_rev_frame_tracker_function))(op.target_data);
+        tracker.invoke(op.gate->id, op.target_data);
         return false;
     }
 }

@@ -260,7 +260,6 @@ inline uint8_t gate_hash_to_id(uint8_t hash) noexcept {
         case 240:
             return static_cast<uint8_t>(Gates::SQRT_X_DAG);
         default:
-            std::cerr << "Gate hash not mapped to Gate ID\n";
             return 0;
     }
 }
@@ -329,12 +328,33 @@ struct ExtraGateData {
         const char *h_s_cx_m_r_decomposition);
 };
 
+template <typename SIMULATOR>
+struct GateVTable {
+   private:
+    using sim_func_ptr_t = void (SIMULATOR::*)(const OperationData&);
+    std::array<sim_func_ptr_t, 256> funcs;
+    constexpr void add_simulator_function(Gates gate_id, sim_func_ptr_t simulator_function);
+    constexpr void add_simulator_function_annotations();
+    constexpr void add_simulator_function_blocks();
+    constexpr void add_simulator_function_collapsing();
+    constexpr void add_simulator_function_controlled();
+    constexpr void add_simulator_function_hada();
+    constexpr void add_simulator_function_noisy();
+    constexpr void add_simulator_function_pauli();
+    constexpr void add_simulator_function_period_3();
+    constexpr void add_simulator_function_period_4();
+    constexpr void add_simulator_function_pp();
+    constexpr void add_simulator_function_swaps();
+
+   public:
+    sim_func_ptr_t operator[](int index) const {
+        return funcs[index];
+    }
+    constexpr GateVTable();
+};
+
 struct Gate {
     const char *name;
-    void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
-    void (FrameSimulator::*frame_simulator_function)(const OperationData &);
-    void (ErrorAnalyzer::*reverse_error_analyzer_function)(const OperationData &);
-    void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &);
     ExtraGateData (*extra_data_func)(void);
     GateFlags flags;
     uint8_t arg_count;
@@ -348,10 +368,6 @@ struct Gate {
         Gates gate_id,
         Gates best_inverse_gate,
         uint8_t arg_count,
-        void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
-        void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-        void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
-        void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &),
         GateFlags flags,
         ExtraGateData (*extra_data_func)(void));
 
@@ -494,6 +510,10 @@ struct GateDataMap {
 };
 
 extern const GateDataMap GATE_DATA;
+extern const GateVTable<FrameSimulator> FRAME_SIM_VTABLE;
+extern const GateVTable<TableauSimulator> TABLEAU_SIM_VTABLE;
+extern const GateVTable<ErrorAnalyzer> ERROR_ANALYZER_VTABLE;
+extern const GateVTable<SparseUnsignedRevFrameTracker> SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE;
 
 void decompose_mpp_operation(
     const OperationData &target_data,

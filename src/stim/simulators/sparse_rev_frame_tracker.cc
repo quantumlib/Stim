@@ -554,13 +554,13 @@ void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Ci
         uint64_t repeats = op_data_rep_count(op.target_data);
         undo_loop(loop_body, repeats);
     } else {
-        (this->*op.gate->sparse_unsigned_rev_frame_tracker_function)(op.target_data);
+        invoke(op.gate->id, op.target_data);
     }
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op) {
     assert(op.gate->id != static_cast<uint8_t>(Gates::REPEAT));
-    (this->*op.gate->sparse_unsigned_rev_frame_tracker_function)(op.target_data);
+    invoke(op.gate->id, op.target_data);
 }
 
 void SparseUnsignedRevFrameTracker::undo_circuit(const Circuit &circuit) {

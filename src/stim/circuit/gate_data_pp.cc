@@ -32,10 +32,6 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
             Gates::SQRT_XX,
             Gates::SQRT_XX_DAG,
             0,
-            &TableauSimulator::SQRT_XX,
-            &FrameSimulator::SQRT_XX,
-            &ErrorAnalyzer::SQRT_XX,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -75,10 +71,6 @@ H 1
             Gates::SQRT_XX_DAG,
             Gates::SQRT_XX,
             0,
-            &TableauSimulator::SQRT_XX_DAG,
-            &FrameSimulator::SQRT_XX,
-            &ErrorAnalyzer::SQRT_XX,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -123,10 +115,6 @@ H 1
             Gates::SQRT_YY,
             Gates::SQRT_YY_DAG,
             0,
-            &TableauSimulator::SQRT_YY,
-            &FrameSimulator::SQRT_YY,
-            &ErrorAnalyzer::SQRT_YY,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -174,10 +162,6 @@ S 1
             Gates::SQRT_YY_DAG,
             Gates::SQRT_YY,
             0,
-            &TableauSimulator::SQRT_YY_DAG,
-            &FrameSimulator::SQRT_YY,
-            &ErrorAnalyzer::SQRT_YY,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -226,10 +210,6 @@ S 1
             Gates::SQRT_ZZ,
             Gates::SQRT_ZZ_DAG,
             0,
-            &TableauSimulator::SQRT_ZZ,
-            &FrameSimulator::SQRT_ZZ,
-            &ErrorAnalyzer::SQRT_ZZ,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -264,10 +244,6 @@ S 1
             Gates::SQRT_ZZ_DAG,
             Gates::SQRT_ZZ,
             0,
-            &TableauSimulator::SQRT_ZZ_DAG,
-            &FrameSimulator::SQRT_ZZ,
-            &ErrorAnalyzer::SQRT_ZZ,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

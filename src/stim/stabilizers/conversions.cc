@@ -178,7 +178,7 @@ Tableau stim::circuit_to_tableau(
 
     circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->flags & GATE_IS_UNITARY) {
-            (sim.*op.gate->tableau_simulator_function)(op.target_data);
+            sim.invoke(op.gate->id, op.target_data);
         } else if (op.gate->flags & GATE_IS_NOISE) {
             if (!ignore_noise) {
                 throw std::invalid_argument(
@@ -217,7 +217,7 @@ std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circ
 
     circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->flags & GATE_IS_UNITARY) {
-            (sim.*op.gate->tableau_simulator_function)(op.target_data);
+            sim.invoke(op.gate->id, op.target_data);
         } else if (op.gate->flags & (GATE_IS_NOISE | GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
             throw std::invalid_argument(
                 "The circuit has no well-defined tableau because it contains noisy or dissipative operations.\n"

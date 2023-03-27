@@ -62,7 +62,7 @@ ErrorMatcher::ErrorMatcher(
 
 void ErrorMatcher::err_atom(const Operation &effect) {
     assert(error_analyzer.error_class_probabilities.empty());
-    (error_analyzer.*effect.gate->reverse_error_analyzer_function)(effect.target_data);
+    error_analyzer.invoke(effect.gate->id, effect.target_data);
     if (error_analyzer.error_class_probabilities.empty()) {
         /// Maybe there were no detectors or observables nearby? Or the noise probability was zero?
         return;
@@ -233,7 +233,7 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
             cur_coord_offset[k] -= op.target_data.args[k];
         }
     } else if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
-        (error_analyzer.*op.gate->reverse_error_analyzer_function)(op.target_data);
+        error_analyzer.invoke(op.gate->id, op.target_data);
     } else if (op.gate->id == static_cast<uint8_t>(Gates::E) || op.gate->id == static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR)) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();

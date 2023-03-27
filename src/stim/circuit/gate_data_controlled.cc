@@ -32,10 +32,6 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
             Gates::XCX,
             Gates::XCX,
             0,
-            &TableauSimulator::XCX,
-            &FrameSimulator::XCX,
-            &ErrorAnalyzer::XCX,
-            &SparseUnsignedRevFrameTracker::undo_XCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -77,10 +73,6 @@ H 0
             Gates::XCY,
             Gates::XCY,
             0,
-            &TableauSimulator::XCY,
-            &FrameSimulator::XCY,
-            &ErrorAnalyzer::XCY,
-            &SparseUnsignedRevFrameTracker::undo_XCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -126,10 +118,6 @@ S 1
             Gates::XCZ,
             Gates::XCZ,
             0,
-            &TableauSimulator::XCZ,
-            &FrameSimulator::XCZ,
-            &ErrorAnalyzer::XCZ,
-            &SparseUnsignedRevFrameTracker::undo_XCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -185,10 +173,6 @@ CNOT 1 0
             Gates::YCX,
             Gates::YCX,
             0,
-            &TableauSimulator::YCX,
-            &FrameSimulator::YCX,
-            &ErrorAnalyzer::YCX,
-            &SparseUnsignedRevFrameTracker::undo_YCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -234,10 +218,6 @@ H 1
             Gates::YCY,
             Gates::YCY,
             0,
-            &TableauSimulator::YCY,
-            &FrameSimulator::YCY,
-            &ErrorAnalyzer::YCY,
-            &SparseUnsignedRevFrameTracker::undo_YCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -287,10 +267,6 @@ S 1
             Gates::YCZ,
             Gates::YCZ,
             0,
-            &TableauSimulator::YCZ,
-            &FrameSimulator::YCZ,
-            &ErrorAnalyzer::YCZ,
-            &SparseUnsignedRevFrameTracker::undo_YCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -350,10 +326,6 @@ S 0
             Gates::CX,
             Gates::CX,
             0,
-            &TableauSimulator::ZCX,
-            &FrameSimulator::ZCX,
-            &ErrorAnalyzer::ZCX,
-            &SparseUnsignedRevFrameTracker::undo_ZCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -410,10 +382,6 @@ CNOT 0 1
             Gates::CY,
             Gates::CY,
             0,
-            &TableauSimulator::ZCY,
-            &FrameSimulator::ZCY,
-            &ErrorAnalyzer::ZCY,
-            &SparseUnsignedRevFrameTracker::undo_ZCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -473,10 +441,6 @@ S 1
             Gates::CZ,
             Gates::CZ,
             0,
-            &TableauSimulator::ZCZ,
-            &FrameSimulator::ZCZ,
-            &ErrorAnalyzer::ZCZ,
-            &SparseUnsignedRevFrameTracker::undo_ZCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {

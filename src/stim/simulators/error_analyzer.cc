@@ -411,7 +411,7 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
                 uint64_t repeats = op_data_rep_count(op.target_data);
                 run_loop(loop_body, repeats);
             } else {
-                (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
+                invoke(op.gate->id, op.target_data);
             }
         } catch (std::invalid_argument &ex) {
             std::stringstream error_msg;

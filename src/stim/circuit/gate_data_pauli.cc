@@ -32,10 +32,6 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
             Gates::I,
             Gates::I,
             0,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -68,10 +64,6 @@ Targets:
             Gates::X,
             Gates::X,
             0,
-            &TableauSimulator::X,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -107,10 +99,6 @@ H 0
             Gates::Y,
             Gates::Y,
             0,
-            &TableauSimulator::Y,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -147,10 +135,6 @@ H 0
             Gates::Z,
             Gates::Z,
             0,
-            &TableauSimulator::Z,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

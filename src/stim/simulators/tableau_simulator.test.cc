@@ -295,13 +295,12 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
         }
         sim.inv_state = t;
 
-        const auto &action = gate.tableau_simulator_function;
         const auto &inverse_op_tableau = gate.inverse().tableau();
         if (inverse_op_tableau.num_qubits == 2) {
-            (sim.*action)(OpDat({7, 4}));
+            sim.invoke(gate.id, OpDat({7, 4}));
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
-            (sim.*action)(OpDat(5));
+            sim.invoke(gate.id, OpDat(5));
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
         EXPECT_EQ(sim.inv_state, t) << gate.name;
@@ -387,7 +386,7 @@ TEST(TableauSimulator, to_vector_sim) {
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    (sim_tab.*GATE_DATA.at("XCX").tableau_simulator_function)(OpDat({4, 7}));
+    sim_tab.invoke(static_cast<uint8_t>(Gates::XCX), OpDat({4, 7}));
     sim_vec.apply("XCX", 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }

@@ -43,6 +43,10 @@ struct SparseUnsignedRevFrameTracker {
 
     PauliString current_error_sensitivity_for(DemTarget target) const;
 
+    inline void invoke(uint8_t gate_id, const OperationData& data) {
+        (this->*(SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE[gate_id]))(data);
+    }
+
     void handle_xor_gauge(ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2);
     void handle_gauge(ConstPointerRange<DemTarget> sorted);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);

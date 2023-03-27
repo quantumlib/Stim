@@ -228,6 +228,10 @@ struct ErrorAnalyzer {
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
 
+    inline void invoke(uint8_t gate_id, const OperationData& data) {
+        (this->*(ERROR_ANALYZER_VTABLE[gate_id]))(data);
+    }
+
     /// Returns a PauliString indicating the current error sensitivity of a detector or observable.
     ///
     /// The observable or detector is sensitive to the Pauli error P at q if the Pauli sensitivity

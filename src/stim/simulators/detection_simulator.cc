@@ -111,7 +111,7 @@ void detector_sample_out_helper_stream(
                 }
             }
         } else {
-            (sim.*op.gate->frame_simulator_function)(op.target_data);
+            sim.invoke(op.gate->id, op.target_data);
             sim.m_record.mark_all_as_written();
         }
     });

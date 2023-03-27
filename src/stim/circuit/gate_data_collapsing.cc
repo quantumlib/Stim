@@ -29,10 +29,6 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             Gates::MX,
             Gates::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_x,
-            &FrameSimulator::measure_x,
-            &ErrorAnalyzer::MX,
-            &SparseUnsignedRevFrameTracker::undo_MX,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -86,10 +82,6 @@ H 0
             Gates::MY,
             Gates::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_y,
-            &FrameSimulator::measure_y,
-            &ErrorAnalyzer::MY,
-            &SparseUnsignedRevFrameTracker::undo_MY,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -147,10 +139,6 @@ S 0
             Gates::M,
             Gates::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_z,
-            &FrameSimulator::measure_z,
-            &ErrorAnalyzer::MZ,
-            &SparseUnsignedRevFrameTracker::undo_MZ,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -208,10 +196,6 @@ M 0
             Gates::MRX,
             Gates::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_reset_x,
-            &FrameSimulator::measure_reset_x,
-            &ErrorAnalyzer::MRX,
-            &SparseUnsignedRevFrameTracker::undo_MRX,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
@@ -267,10 +251,6 @@ H 0
             Gates::MRY,
             Gates::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_reset_y,
-            &FrameSimulator::measure_reset_y,
-            &ErrorAnalyzer::MRY,
-            &SparseUnsignedRevFrameTracker::undo_MRY,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
@@ -330,10 +310,6 @@ S 0
             Gates::MR,
             Gates::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::measure_reset_z,
-            &FrameSimulator::measure_reset_z,
-            &ErrorAnalyzer::MRZ,
-            &SparseUnsignedRevFrameTracker::undo_MRZ,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
@@ -393,10 +369,6 @@ R 0
             Gates::RX,
             Gates::MRX,
             0,
-            &TableauSimulator::reset_x,
-            &FrameSimulator::reset_x,
-            &ErrorAnalyzer::RX,
-            &SparseUnsignedRevFrameTracker::undo_RX,
             GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
@@ -438,10 +410,6 @@ H 0
             Gates::RY,
             Gates::MRY,
             0,
-            &TableauSimulator::reset_y,
-            &FrameSimulator::reset_y,
-            &ErrorAnalyzer::RY,
-            &SparseUnsignedRevFrameTracker::undo_RY,
             GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
@@ -487,10 +455,6 @@ S 0
             Gates::R,
             Gates::MR,
             0,
-            &TableauSimulator::reset_z,
-            &FrameSimulator::reset_z,
-            &ErrorAnalyzer::RZ,
-            &SparseUnsignedRevFrameTracker::undo_RZ,
             GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
@@ -535,10 +499,6 @@ R 0
             Gates::MPP,
             Gates::MPP,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            &TableauSimulator::MPP,
-            &FrameSimulator::MPP,
-            &ErrorAnalyzer::MPP,
-            &SparseUnsignedRevFrameTracker::undo_MPP,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
