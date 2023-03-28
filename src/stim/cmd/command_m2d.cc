@@ -44,10 +44,10 @@ int stim::command_m2d(int argc, const char **argv) {
         "m2d",
         argc,
         argv);
-    const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map, argc, argv);
-    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &sweep_format = find_enum_argument("--sweep_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map(), argc, argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map(), argc, argv);
+    const auto &sweep_format = find_enum_argument("--sweep_format", "01", format_name_to_enum_map(), argc, argv);
+    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map(), argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
     bool ran_without_feedback = find_bool_argument("--ran_without_feedback", argc, argv);

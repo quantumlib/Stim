@@ -119,7 +119,7 @@ pybind11::dict raw_gate_data() {
 
 pybind11::dict raw_format_data() {
     pybind11::dict result;
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         result[kv.first.data()] = raw_format_data_solo(kv.second);
     }
     return result;

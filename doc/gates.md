@@ -744,12 +744,15 @@ Alternate name: <a name="ZCX"></a>`ZCX`
 Alternate name: <a name="CNOT"></a>`CNOT`
 
 The Z-controlled X gate.
-First qubit is the control, second qubit is the target.
-The first qubit can be replaced by a measurement record.
-
 Applies an X gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|-> state.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|-> state.
+To perform a classically controlled X, replace the control with a `rec`
+target like rec[-2].
+
+To perform an I or X gate as configured by sweep data, replace the
+control with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -761,11 +764,17 @@ Targets:
 
 Example:
 
-    CX 5 6
-    CX 42 43
-    CX 5 6 42 43
-    CX rec[-1] 111
-    
+    # Bit flip qubit 5 controlled by qubit 2.
+    CX 2 5
+
+    # Perform CX 2 5 then CX 4 2.
+    CX 2 5 4 2
+
+    # Bit flip qubit 6 if the most recent measurement result was TRUE.
+    CX rec[-1] 6
+
+    # Bit flip qubits 7 and 8 conditioned on sweep configuration data.
+    CX sweep[5] 7 sweep[5] 8
 Stabilizer Generators:
 
     X_ -> +XX
@@ -835,12 +844,15 @@ Decomposition (into H, S, CX, M, R):
 Alternate name: <a name="ZCY"></a>`ZCY`
 
 The Z-controlled Y gate.
-First qubit is the control, second qubit is the target.
-The first qubit can be replaced by a measurement record.
-
 Applies a Y gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|-i> state.
+The first qubit is the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|-i> state.
+To perform a classically controlled Y, replace the control with a `rec`
+target like rec[-2].
+
+To perform an I or Y gate as configured by sweep data, replace the
+control with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -852,11 +864,17 @@ Targets:
 
 Example:
 
-    CY 5 6
-    CY 42 43
-    CY 5 6 42 43
-    CY rec[-1] 111
-    
+    # Apply Y to qubit 5 controlled by qubit 2.
+    CY 2 5
+
+    # Perform CY 2 5 then CX 4 2.
+    CY 2 5 4 2
+
+    # Apply Y to qubit 6 if the most recent measurement result was TRUE.
+    CY rec[-1] 6
+
+    # Apply Y to qubits 7 and 8 conditioned on sweep configuration data.
+    CY sweep[5] 7 sweep[5] 8
 Stabilizer Generators:
 
     X_ -> +XY
@@ -887,12 +905,15 @@ Decomposition (into H, S, CX, M, R):
 Alternate name: <a name="ZCZ"></a>`ZCZ`
 
 The Z-controlled Z gate.
-First qubit is the control, second qubit is the target.
-Either qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |1> state.
+Equivalently: negates the amplitude of the |1>|1> state.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |1>|1> state.
+To perform a classically controlled Z, replace either qubit with a `rec`
+target like rec[-2].
+
+To perform an I or Z gate as configured by sweep data, replace either qubit
+with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -904,12 +925,20 @@ Targets:
 
 Example:
 
-    CZ 5 6
-    CZ 42 43
-    CZ 5 6 42 43
-    CZ rec[-1] 111
-    CZ 111 rec[-1]
-    
+    # Apply Z to qubit 5 controlled by qubit 2.
+    CZ 2 5
+
+    # Perform CZ 2 5 then CZ 4 2.
+    CZ 2 5 4 2
+
+    # Apply Z to qubit 6 if the most recent measurement result was TRUE.
+    CZ rec[-1] 6
+
+    # Apply Z to qubit 7 if the 3rd most recent measurement result was TRUE.
+    CZ 7 rec[-3]
+
+    # Apply Z to qubits 7 and 8 conditioned on sweep configuration data.
+    CZ sweep[5] 7 8 sweep[5]
 Stabilizer Generators:
 
     X_ -> +XZ
@@ -969,10 +998,12 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `ISWAP 0 1`
+    H 0
     CNOT 0 1
-    S 1
     CNOT 1 0
-    CNOT 0 1
+    H 1
+    S 1
+    S 0
     
 
 <a name="ISWAP_DAG"></a>
@@ -1012,12 +1043,16 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `ISWAP_DAG 0 1`
-    CNOT 0 1
+    S 0
+    S 0
+    S 0
     S 1
     S 1
     S 1
+    H 1
     CNOT 1 0
     CNOT 0 1
+    H 0
     
 
 <a name="SQRT_XX"></a>
@@ -1056,11 +1091,13 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_XX 0 1`
-    CNOT 0 1
     H 0
+    CNOT 0 1
+    H 1
     S 0
+    S 1
     H 0
-    CNOT 0 1
+    H 1
     
 
 <a name="SQRT_XX_DAG"></a>
@@ -1099,11 +1136,17 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_XX_DAG 0 1`
-    S 0
-    CNOT 0 1
     H 0
-    S 0
     CNOT 0 1
+    H 1
+    S 0
+    S 0
+    S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    H 1
     
 
 <a name="SQRT_YY"></a>
@@ -1143,12 +1186,20 @@ Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_YY 0 1`
     S 0
-    CNOT 1 0
     S 0
     S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    CNOT 0 1
     H 1
-    CNOT 1 0
     S 0
+    S 1
+    H 0
+    H 1
+    S 0
+    S 1
     
 
 <a name="SQRT_YY_DAG"></a>
@@ -1187,13 +1238,21 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_YY_DAG 0 1`
-    CNOT 0 1
+    S 0
+    S 0
+    S 0
     S 1
     H 0
-    S 0
-    H 0
-    CNOT 1 0
     CNOT 0 1
+    H 1
+    S 0
+    S 1
+    H 0
+    H 1
+    S 0
+    S 1
+    S 1
+    S 1
     
 
 <a name="SQRT_ZZ"></a>
@@ -1232,9 +1291,11 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `SQRT_ZZ 0 1`
+    H 1
     CNOT 0 1
+    H 1
+    S 0
     S 1
-    CNOT 0 1
     
 
 <a name="SQRT_ZZ_DAG"></a>
@@ -1453,23 +1514,29 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `XCY 0 1`
-    CNOT 1 0
     H 0
-    S 0
+    S 1
+    S 1
+    S 1
     CNOT 0 1
     H 0
+    S 1
     
 
 <a name="XCZ"></a>
 ### The 'XCZ' Gate
 
 The X-controlled Z gate.
-First qubit is the control, second qubit is the target.
-The second qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |-> state.
+Equivalently: negates the amplitude of the |->|1> state.
+Same as a CX gate, but with reversed qubit order.
+The first qubit is the control, and the second qubit is the target.
 
-Negates the amplitude of the |->|1> state.
+To perform a classically controlled X, replace the Z target with a `rec`
+target like rec[-2].
+
+To perform an I or X gate as configured by sweep data, replace the
+Z target with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -1481,11 +1548,17 @@ Targets:
 
 Example:
 
-    XCZ 5 6
-    XCZ 42 43
-    XCZ 5 6 42 43
-    XCZ 111 rec[-1]
-    
+    # Bit flip qubit 5 controlled by qubit 2.
+    XCZ 5 2
+
+    # Perform CX 2 5 then CX 4 2.
+    XCZ 5 2 2 4
+
+    # Bit flip qubit 6 if the most recent measurement result was TRUE.
+    XCZ 6 rec[-1]
+
+    # Bit flip qubits 7 and 8 conditioned on sweep configuration data.
+    XCZ 7 sweep[5] 8 sweep[5]
 Stabilizer Generators:
 
     X_ -> +X_
@@ -1547,10 +1620,12 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `YCX 0 1`
-    CX 0 1
+    S 0
+    S 0
+    S 0
     H 1
-    S 1
-    CX 1 0
+    CNOT 1 0
+    S 0
     H 1
     
 
@@ -1595,25 +1670,33 @@ Unitary Matrix (little endian):
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `YCY 0 1`
+    S 0
+    S 0
+    S 0
+    S 1
+    S 1
+    S 1
+    H 0
+    CNOT 0 1
     H 0
     S 0
-    H 0
-    CX 0 1
-    H 0
-    CX 1 0
-    S 0
+    S 1
     
 
 <a name="YCZ"></a>
 ### The 'YCZ' Gate
 
 The Y-controlled Z gate.
-First qubit is the control, second qubit is the target.
-The second qubit can be replaced by a measurement record.
-
 Applies a Z gate to the target if the control is in the |-i> state.
+Equivalently: negates the amplitude of the |-i>|1> state.
+Same as a CY gate, but with reversed qubit order.
+The first qubit is called the control, and the second qubit is the target.
 
-Negates the amplitude of the |-i>|1> state.
+To perform a classically controlled Y, replace the Z target with a `rec`
+target like rec[-2].
+
+To perform an I or Y gate as configured by sweep data, replace the
+Z target with a `sweep` target like sweep[3].
 
 Parens Arguments:
 
@@ -1625,11 +1708,17 @@ Targets:
 
 Example:
 
-    YCZ 5 6
-    YCZ 42 43
-    YCZ 5 6 42 43
-    YCZ 111 rec[-1]
-    
+    # Apply Y to qubit 5 controlled by qubit 2.
+    YCZ 5 2
+
+    # Perform CY 2 5 then CY 4 2.
+    YCZ 5 2 2 4
+
+    # Apply Y to qubit 6 if the most recent measurement result was TRUE.
+    YCZ 6 rec[-1]
+
+    # Apply Y to qubits 7 and 8 conditioned on sweep configuration data.
+    YCZ 7 sweep[5] 8 sweep[5]
 Stabilizer Generators:
 
     X_ -> +XZ

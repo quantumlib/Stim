@@ -163,7 +163,9 @@ std::vector<std::vector<std::complex<float>>> stim::tableau_to_unitary(const Tab
     size_t n = 1 << tableau.num_qubits;
     for (size_t row = 0; row < n; row++) {
         result.push_back({});
-        result.back().insert(result.back().end(), &flat[row * n], &flat[row * n + n]);
+        auto &back = result.back();
+        std::complex<float> *start = &flat[row * n];
+        back.insert(back.end(), start, start + n);
     }
     return result;
 }

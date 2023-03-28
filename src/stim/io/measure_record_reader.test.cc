@@ -429,7 +429,7 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
     simd_bit_table<MAX_BITWORD_WIDTH> shot_maj_data =
         simd_bit_table<MAX_BITWORD_WIDTH>::random(n_shots, n_results, SHARED_TEST_RNG());
     simd_bit_table<MAX_BITWORD_WIDTH> shot_min_data = shot_maj_data.transposed();
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
         if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
             // TODO: support this format.
@@ -549,7 +549,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
         }
     }
 
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
         if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
             continue;
@@ -597,7 +597,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
     simd_bits<MAX_BITWORD_WIDTH> test_data(256);
     SparseShot sparse_test_data;
 
-    for (const auto &kv : format_name_to_enum_map) {
+    for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
         if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
             continue;
@@ -692,7 +692,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
 }
 
 TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
-    for (const auto &format_data : format_name_to_enum_map) {
+    for (const auto &format_data : format_name_to_enum_map()) {
         SampleFormat format = format_data.second.id;
         size_t num_shots = 500;
         if (format == SAMPLE_FORMAT_PTB64) {

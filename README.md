@@ -8,6 +8,8 @@
 - [How do I use Stim?](#how-use-stim)
 - [How does Stim work?](#how-stim-work)
 - [How do I cite Stim?](#how-cite-stim)
+- [subproject: Sinter decoding sampler](glue/sample)
+- [subproject: Crumble interactive editor](glue/crumble)
 
 # <a name="what-is-stim"></a>What is Stim?
 
@@ -76,7 +78,7 @@ See the [Getting Started Notebook](doc/getting_started.ipynb).
 
 Stuck?
 [Get help on the quantum computing stack exchange](https://quantumcomputing.stackexchange.com)
-and use the `stim` tag.
+and use the [`stim`](https://quantumcomputing.stackexchange.com/questions/tagged/stim) tag.
 
 See the reference documentation:
 

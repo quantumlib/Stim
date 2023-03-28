@@ -30,8 +30,8 @@ int stim::command_detect(int argc, const char **argv) {
         "detect",
         argc,
         argv);
-    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map(), argc, argv);
+    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map(), argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
     if (prepend_observables) {
         std::cerr << "[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, "

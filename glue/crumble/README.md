@@ -22,9 +22,9 @@ Crumble is not polished.**
 <a name="accessing-crumble"></a>
 # Accessing Crumble
 
-Crumble can be accessed by [building it](#building-crumble).
+Crumble can be accessed by installing stim `1.11` or later (e.g. by `pip install stim~=1.11`), printing the output of `stim.Circuit().diagram("interactive")` to an HTML file, and then opening the HTML file in a browser.
 
-Crumble can also be accessed by installing stim `1.11.dev1674763846` or later (e.g. by `pip install stim~=1.11.dev1674763846`), printing the output of `stim.Circuit().diagram("interactive")` to an HTML file, and then opening the HTML file in a browser.
+Crumble can also be accessed by [building it](#building-crumble).
 
 <a name="using-crumble"></a>
 # Using Crumble

@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
         failed,
         Gate{
             "SWAP",
+            "SWAP",
             0,
             &TableauSimulator::SWAP,
             &FrameSimulator::SWAP,
@@ -64,6 +65,7 @@ CNOT 0 1
         failed,
         Gate{
             "ISWAP",
+            "ISWAP_DAG",
             0,
             &TableauSimulator::ISWAP,
             &FrameSimulator::ISWAP,
@@ -88,10 +90,56 @@ Targets:
                     {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
                     {"+ZY", "+IZ", "+YZ", "+ZI"},
                     R"CIRCUIT(
+H 0
 CNOT 0 1
+CNOT 1 0
+H 1
 S 1
+S 0
+)CIRCUIT",
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            "ISWAP_DAG",
+            "ISWAP",
+            0,
+            &TableauSimulator::ISWAP_DAG,
+            &FrameSimulator::ISWAP,
+            &ErrorAnalyzer::ISWAP,
+            &SparseUnsignedRevFrameTracker::undo_ISWAP,
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
+Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+                    {"-ZY", "+IZ", "-YZ", "+ZI"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+S 1
+S 1
+S 1
+H 1
 CNOT 1 0
 CNOT 0 1
+H 0
 )CIRCUIT",
                 };
             },
@@ -101,6 +149,7 @@ CNOT 0 1
         failed,
         Gate{
             "CXSWAP",
+            "SWAPCX",
             0,
             &TableauSimulator::CXSWAP,
             &FrameSimulator::CXSWAP,
@@ -136,6 +185,7 @@ CNOT 0 1
         failed,
         Gate{
             "SWAPCX",
+            "CXSWAP",
             0,
             &TableauSimulator::SWAPCX,
             &FrameSimulator::SWAPCX,
@@ -162,45 +212,6 @@ Targets:
                     R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
-)CIRCUIT",
-                };
-            },
-        });
-
-    add_gate(
-        failed,
-        Gate{
-            "ISWAP_DAG",
-            0,
-            &TableauSimulator::ISWAP_DAG,
-            &FrameSimulator::ISWAP,
-            &ErrorAnalyzer::ISWAP,
-            &SparseUnsignedRevFrameTracker::undo_ISWAP,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
-Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
-Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
-
-Parens Arguments:
-
-    This instruction takes no parens arguments.
-
-Targets:
-
-    Qubit pairs to operate on.
-)MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
-                    {"-ZY", "+IZ", "-YZ", "+ZI"},
-                    R"CIRCUIT(
-CNOT 0 1
-S 1
-S 1
-S 1
-CNOT 1 0
-CNOT 0 1
 )CIRCUIT",
                 };
             },

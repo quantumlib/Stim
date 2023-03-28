@@ -94,3 +94,13 @@ TEST(gate_data, decompositions_are_correct) {
         }
     }
 }
+
+TEST(gate_data, unitary_inverses_are_correct) {
+    for (const auto &g : GATE_DATA.gates()) {
+        if (g.flags & GATE_IS_UNITARY) {
+            auto g_t_inv = g.tableau().inverse(false);
+            auto g_inv_t = GATE_DATA.items[g.best_candidate_inverse_id].tableau();
+            EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
+        }
+    }
+}

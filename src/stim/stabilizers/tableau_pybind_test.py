@@ -839,32 +839,32 @@ def test_from_numpy():
     )
 
     assert stim.Tableau.from_numpy(
-        x_signs=np.array([0, 0, 0, 1], dtype=np.bool8),
-        z_signs=np.array([0, 0, 1, 1], dtype=np.bool8),
+        x_signs=np.array([0, 0, 0, 1], dtype=np.bool_),
+        z_signs=np.array([0, 0, 1, 1], dtype=np.bool_),
         x2x=np.array([
             [0, 1, 1, 1],
             [1, 0, 0, 1],
             [0, 1, 0, 0],
             [1, 1, 1, 1],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         x2z=np.array([
             [0, 0, 0, 1],
             [0, 0, 1, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 1],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         z2x=np.array([
             [0, 0, 0, 1],
             [0, 1, 0, 1],
             [0, 0, 1, 0],
             [1, 0, 1, 0],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
         z2z=np.array([
             [1, 0, 1, 1],
             [0, 0, 0, 1],
             [0, 1, 0, 1],
             [1, 0, 0, 0],
-        ], dtype=np.bool8),
+        ], dtype=np.bool_),
     ) == expected
 
 
