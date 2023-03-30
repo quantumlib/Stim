@@ -824,7 +824,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
         sim.ensure_large_enough_for_qubits(unprocessed.count_qubits());
 
         unprocessed.for_each_operation([&](const Operation &op) {
-            sim.invoke(op.gate->id, op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
             sim.measurement_record.write_unwritten_results_to(*writer);
             if (interactive && op.count_measurement_results()) {
                 putc('\n', out);
@@ -1013,7 +1013,7 @@ void TableauSimulator::expand_do_circuit(const Circuit &circuit, uint64_t reps) 
     ensure_large_enough_for_qubits(circuit.count_qubits());
     for (uint64_t k = 0; k < reps; k++) {
         circuit.for_each_operation([&](const Operation &op) {
-            invoke(op.gate->id, op.target_data);
+            do_gate(op.gate->id, op.target_data);
         });
     }
 }
@@ -1037,7 +1037,7 @@ void TableauSimulator::do_operation_ensure_size(const Operation &operation) {
         }
     }
     ensure_large_enough_for_qubits(n);
-    invoke(operation.gate->id, operation.target_data);
+    do_gate(operation.gate->id, operation.target_data);
 }
 
 void TableauSimulator::set_num_qubits(size_t new_num_qubits) {

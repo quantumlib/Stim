@@ -43,7 +43,7 @@ struct SparseUnsignedRevFrameTracker {
 
     PauliString current_error_sensitivity_for(DemTarget target) const;
 
-    inline void invoke(uint8_t gate_id, const OperationData& data) {
+    inline void do_gate(GateType gate_id, const OperationData& data) {
         (this->*(SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE[gate_id]))(data);
     }
 

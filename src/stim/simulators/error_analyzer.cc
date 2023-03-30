@@ -397,21 +397,21 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
         const auto &op = circuit.operations[k];
         assert(op.gate != nullptr);
         try {
-            if (op.gate->id == static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR)) {
+            if (op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
                 stacked_else_correlated_errors.push_back(op.target_data);
-            } else if (op.gate->id == static_cast<uint8_t>(Gates::E)) {
+            } else if (op.gate->id == GateType::E) {
                 stacked_else_correlated_errors.push_back(op.target_data);
                 correlated_error_block(stacked_else_correlated_errors);
                 stacked_else_correlated_errors.clear();
             } else if (!stacked_else_correlated_errors.empty()) {
                 throw std::invalid_argument(
                     "ELSE_CORRELATED_ERROR wasn't preceded by ELSE_CORRELATED_ERROR or CORRELATED_ERROR (E)");
-            } else if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
+            } else if (op.gate->id == GateType::REPEAT) {
                 const auto &loop_body = op_data_block_body(circuit, op.target_data);
                 uint64_t repeats = op_data_rep_count(op.target_data);
                 run_loop(loop_body, repeats);
             } else {
-                invoke(op.gate->id, op.target_data);
+                rev_do_gate(op.gate->id, op.target_data);
             }
         } catch (std::invalid_argument &ex) {
             std::stringstream error_msg;

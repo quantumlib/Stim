@@ -29,8 +29,8 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
         failed,
         Gate{
             "XCX",
-            Gates::XCX,
-            Gates::XCX,
+            GateType::XCX,
+            GateType::XCX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -70,8 +70,8 @@ H 0
         failed,
         Gate{
             "XCY",
-            Gates::XCY,
-            Gates::XCY,
+            GateType::XCY,
+            GateType::XCY,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -115,8 +115,8 @@ S 1
         failed,
         Gate{
             "XCZ",
-            Gates::XCZ,
-            Gates::XCZ,
+            GateType::XCZ,
+            GateType::XCZ,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
@@ -170,8 +170,8 @@ CNOT 1 0
         failed,
         Gate{
             "YCX",
-            Gates::YCX,
-            Gates::YCX,
+            GateType::YCX,
+            GateType::YCX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -215,8 +215,8 @@ H 1
         failed,
         Gate{
             "YCY",
-            Gates::YCY,
-            Gates::YCY,
+            GateType::YCY,
+            GateType::YCY,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -264,8 +264,8 @@ S 1
         failed,
         Gate{
             "YCZ",
-            Gates::YCZ,
-            Gates::YCZ,
+            GateType::YCZ,
+            GateType::YCZ,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
@@ -323,8 +323,8 @@ S 0
         failed,
         Gate{
             "CX",
-            Gates::CX,
-            Gates::CX,
+            GateType::CX,
+            GateType::CX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
@@ -379,8 +379,8 @@ CNOT 0 1
         failed,
         Gate{
             "CY",
-            Gates::CY,
-            Gates::CY,
+            GateType::CY,
+            GateType::CY,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
@@ -438,8 +438,8 @@ S 1
         failed,
         Gate{
             "CZ",
-            Gates::CZ,
-            Gates::CZ,
+            GateType::CZ,
+            GateType::CZ,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {

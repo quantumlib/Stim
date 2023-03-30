@@ -162,7 +162,7 @@ void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, ConstPointe
 
 void PauliStringRef::after_inplace(const Circuit &circuit) {
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
+        if (op.gate->id == GateType::REPEAT) {
             const auto &body = op_data_block_body(circuit, op.target_data);
             auto reps = op_data_rep_count(op.target_data);
             for (size_t k = 0; k < reps; k++) {
@@ -202,7 +202,7 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
                 throw std::invalid_argument(ss.str());
             }
         }
-    } else if (operation.gate->id == static_cast<uint8_t>(Gates::MPP)) {
+    } else if (operation.gate->id == GateType::MPP) {
         size_t start = 0;
         const auto &targets = operation.target_data.targets;
         while (start < targets.size()) {
@@ -229,13 +229,13 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
         }
     } else if (operation.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
         bool x_dep, z_dep;
-        if (operation.gate->id == static_cast<uint8_t>(Gates::M)) {
+        if (operation.gate->id == GateType::M) {
             x_dep = true;
             z_dep = false;
-        } else if (operation.gate->id == static_cast<uint8_t>(Gates::MX)) {
+        } else if (operation.gate->id == GateType::MX) {
             x_dep = false;
             z_dep = true;
-        } else if (operation.gate->id == static_cast<uint8_t>(Gates::MY)) {
+        } else if (operation.gate->id == GateType::MY) {
             x_dep = true;
             z_dep = true;
         } else {

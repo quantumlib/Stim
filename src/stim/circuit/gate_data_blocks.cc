@@ -25,8 +25,8 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
         failed,
         Gate{
             "REPEAT",
-            Gates::REPEAT,
-            Gates::REPEAT,
+            GateType::REPEAT,
+            GateType::REPEAT,
             0,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {

@@ -29,8 +29,8 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
         failed,
         Gate{
             "SWAP",
-            Gates::SWAP,
-            Gates::SWAP,
+            GateType::SWAP,
+            GateType::SWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -62,8 +62,8 @@ CNOT 0 1
         failed,
         Gate{
             "ISWAP",
-            Gates::ISWAP,
-            Gates::ISWAP_DAG,
+            GateType::ISWAP,
+            GateType::ISWAP_DAG,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -99,8 +99,8 @@ S 0
         failed,
         Gate{
             "ISWAP_DAG",
-            Gates::ISWAP_DAG,
-            Gates::ISWAP,
+            GateType::ISWAP_DAG,
+            GateType::ISWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -140,8 +140,8 @@ H 0
         failed,
         Gate{
             "CXSWAP",
-            Gates::CXSWAP,
-            Gates::SWAPCX,
+            GateType::CXSWAP,
+            GateType::SWAPCX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -173,8 +173,8 @@ CNOT 0 1
         failed,
         Gate{
             "SWAPCX",
-            Gates::SWAPCX,
-            Gates::CXSWAP,
+            GateType::SWAPCX,
+            GateType::CXSWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {

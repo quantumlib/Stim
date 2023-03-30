@@ -25,8 +25,8 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
         failed,
         Gate{
             "DETECTOR",
-            Gates::DETECTOR,
-            Gates::DETECTOR,
+            GateType::DETECTOR,
+            GateType::DETECTOR,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
@@ -113,8 +113,8 @@ Example:
         failed,
         Gate{
             "OBSERVABLE_INCLUDE",
-            Gates::OBSERVABLE_INCLUDE,
-            Gates::OBSERVABLE_INCLUDE,
+            GateType::OBSERVABLE_INCLUDE,
+            GateType::OBSERVABLE_INCLUDE,
             1,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
@@ -187,8 +187,8 @@ Example:
         failed,
         Gate{
             "TICK",
-            Gates::TICK,
-            Gates::TICK,
+            GateType::TICK,
+            GateType::TICK,
             0,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
@@ -237,8 +237,8 @@ Example:
         failed,
         Gate{
             "QUBIT_COORDS",
-            Gates::QUBIT_COORDS,
-            Gates::QUBIT_COORDS,
+            GateType::QUBIT_COORDS,
+            GateType::QUBIT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
@@ -286,8 +286,8 @@ Example:
         failed,
         Gate{
             "SHIFT_COORDS",
-            Gates::SHIFT_COORDS,
-            Gates::SHIFT_COORDS,
+            GateType::SHIFT_COORDS,
+            GateType::SHIFT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {

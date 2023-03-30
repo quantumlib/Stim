@@ -97,7 +97,7 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    inline void invoke(uint8_t gate_id, const OperationData& data) {
+    inline void do_gate(GateType gate_id, const OperationData& data) {
         (this->*(FRAME_SIM_VTABLE[gate_id]))(data);
     }
 

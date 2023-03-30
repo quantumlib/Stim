@@ -156,7 +156,7 @@ struct TableauSimulator {
 
     std::vector<PauliString> canonical_stabilizers() const;
 
-    inline void invoke(uint8_t gate_id, const OperationData& data) {
+    inline void do_gate(GateType gate_id, const OperationData& data) {
         (this->*(TABLEAU_SIM_VTABLE[gate_id]))(data);
     }
 

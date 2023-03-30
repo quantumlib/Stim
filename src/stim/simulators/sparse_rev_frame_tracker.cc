@@ -549,18 +549,18 @@ void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const OperationData 
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Circuit &parent) {
-    if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
+    if (op.gate->id == GateType::REPEAT) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
         uint64_t repeats = op_data_rep_count(op.target_data);
         undo_loop(loop_body, repeats);
     } else {
-        invoke(op.gate->id, op.target_data);
+        do_gate(op.gate->id, op.target_data);
     }
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op) {
-    assert(op.gate->id != static_cast<uint8_t>(Gates::REPEAT));
-    invoke(op.gate->id, op.target_data);
+    assert(op.gate->id != GateType::REPEAT);
+    do_gate(op.gate->id, op.target_data);
 }
 
 void SparseUnsignedRevFrameTracker::undo_circuit(const Circuit &circuit) {

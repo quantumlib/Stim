@@ -84,7 +84,7 @@ void FrameSimulator::reset_all() {
 void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     reset_all();
     circuit.for_each_operation([&](const Operation &op) {
-        invoke(op.gate->id, op.target_data);
+        do_gate(op.gate->id, op.target_data);
     });
 }
 
@@ -603,14 +603,14 @@ void sample_out_helper(
         // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
         MeasureRecordBatchWriter writer(out, num_shots, format);
         circuit.for_each_operation([&](const Operation &op) {
-            sim.invoke(op.gate->id, op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
             sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
         });
         sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
     } else {
         // Small case. Just do everything in memory.
         circuit.for_each_operation([&](const Operation &op) {
-            sim.invoke(op.gate->id, op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
         });
         write_table_data(
             out, num_shots, circuit.count_measurements(), ref_sample, sim.m_record.storage, format, 'M', 'M', 0);

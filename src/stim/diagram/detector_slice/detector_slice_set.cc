@@ -47,9 +47,9 @@ bool DetectorSliceSetComputer::process_tick() {
 }
 
 bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Operation &op) {
-    if (op.gate->id == static_cast<uint8_t>(Gates::TICK)) {
+    if (op.gate->id == GateType::TICK) {
         return process_tick();
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::REPEAT)) {
+    } else if (op.gate->id == GateType::REPEAT) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
         uint64_t stop_iter = first_yield_tick + num_yield_ticks;
         uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;
@@ -75,7 +75,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
                 used_qubits.insert(t.qubit_value());
             }
         }
-        tracker.invoke(op.gate->id, op.target_data);
+        tracker.do_gate(op.gate->id, op.target_data);
         return false;
     }
 }

@@ -29,8 +29,8 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
         failed,
         Gate{
             "SQRT_X",
-            Gates::SQRT_X,
-            Gates::SQRT_X_DAG,
+            GateType::SQRT_X,
+            GateType::SQRT_X_DAG,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -63,8 +63,8 @@ H 0
         failed,
         Gate{
             "SQRT_X_DAG",
-            Gates::SQRT_X_DAG,
-            Gates::SQRT_X,
+            GateType::SQRT_X_DAG,
+            GateType::SQRT_X,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -97,8 +97,8 @@ S 0
         failed,
         Gate{
             "SQRT_Y",
-            Gates::SQRT_Y,
-            Gates::SQRT_Y_DAG,
+            GateType::SQRT_Y,
+            GateType::SQRT_Y_DAG,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -131,8 +131,8 @@ H 0
         failed,
         Gate{
             "SQRT_Y_DAG",
-            Gates::SQRT_Y_DAG,
-            Gates::SQRT_Y,
+            GateType::SQRT_Y_DAG,
+            GateType::SQRT_Y,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -165,8 +165,8 @@ S 0
         failed,
         Gate{
             "S",
-            Gates::S,
-            Gates::S_DAG,
+            GateType::S,
+            GateType::S_DAG,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -198,8 +198,8 @@ S 0
         failed,
         Gate{
             "S_DAG",
-            Gates::S_DAG,
-            Gates::S,
+            GateType::S_DAG,
+            GateType::S,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {

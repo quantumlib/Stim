@@ -25,8 +25,8 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
         failed,
         Gate{
             "DEPOLARIZE1",
-            Gates::DEPOLARIZE1,
-            Gates::DEPOLARIZE1,
+            GateType::DEPOLARIZE1,
+            GateType::DEPOLARIZE1,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -63,8 +63,8 @@ Pauli Mixture:
         failed,
         Gate{
             "DEPOLARIZE2",
-            Gates::DEPOLARIZE2,
-            Gates::DEPOLARIZE2,
+            GateType::DEPOLARIZE2,
+            GateType::DEPOLARIZE2,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -113,8 +113,8 @@ Pauli Mixture:
         failed,
         Gate{
             "X_ERROR",
-            Gates::X_ERROR,
-            Gates::X_ERROR,
+            GateType::X_ERROR,
+            GateType::X_ERROR,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -147,8 +147,8 @@ Pauli Mixture:
         failed,
         Gate{
             "Y_ERROR",
-            Gates::Y_ERROR,
-            Gates::Y_ERROR,
+            GateType::Y_ERROR,
+            GateType::Y_ERROR,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -181,8 +181,8 @@ Pauli Mixture:
         failed,
         Gate{
             "Z_ERROR",
-            Gates::Z_ERROR,
-            Gates::Z_ERROR,
+            GateType::Z_ERROR,
+            GateType::Z_ERROR,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -215,8 +215,8 @@ Pauli Mixture:
         failed,
         Gate{
             "PAULI_CHANNEL_1",
-            Gates::PAULI_CHANNEL_1,
-            Gates::PAULI_CHANNEL_1,
+            GateType::PAULI_CHANNEL_1,
+            GateType::PAULI_CHANNEL_1,
             3,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -260,8 +260,8 @@ Pauli Mixture:
         failed,
         Gate{
             "PAULI_CHANNEL_2",
-            Gates::PAULI_CHANNEL_2,
-            Gates::PAULI_CHANNEL_2,
+            GateType::PAULI_CHANNEL_2,
+            GateType::PAULI_CHANNEL_2,
             15,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
@@ -333,8 +333,8 @@ Pauli Mixture:
         failed,
         Gate{
             "E",
-            Gates::E,
-            Gates::E,
+            GateType::E,
+            GateType::E,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
@@ -376,8 +376,8 @@ Example:
         failed,
         Gate{
             "ELSE_CORRELATED_ERROR",
-            Gates::ELSE_CORRELATED_ERROR,
-            Gates::ELSE_CORRELATED_ERROR,
+            GateType::ELSE_CORRELATED_ERROR,
+            GateType::ELSE_CORRELATED_ERROR,
             1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),

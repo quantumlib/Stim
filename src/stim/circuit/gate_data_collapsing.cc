@@ -26,8 +26,8 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
         failed,
         Gate{
             "MX",
-            Gates::MX,
-            Gates::MX,
+            GateType::MX,
+            GateType::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -79,8 +79,8 @@ H 0
         failed,
         Gate{
             "MY",
-            Gates::MY,
-            Gates::MY,
+            GateType::MY,
+            GateType::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -136,8 +136,8 @@ S 0
         failed,
         Gate{
             "M",
-            Gates::M,
-            Gates::M,
+            GateType::M,
+            GateType::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
@@ -193,8 +193,8 @@ M 0
         failed,
         Gate{
             "MRX",
-            Gates::MRX,
-            Gates::MRX,
+            GateType::MRX,
+            GateType::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
@@ -248,8 +248,8 @@ H 0
         failed,
         Gate{
             "MRY",
-            Gates::MRY,
-            Gates::MRY,
+            GateType::MRY,
+            GateType::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
@@ -307,8 +307,8 @@ S 0
         failed,
         Gate{
             "MR",
-            Gates::MR,
-            Gates::MR,
+            GateType::MR,
+            GateType::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
@@ -366,8 +366,8 @@ R 0
         failed,
         Gate{
             "RX",
-            Gates::RX,
-            Gates::MRX,
+            GateType::RX,
+            GateType::MRX,
             0,
             GATE_IS_RESET,
             []() -> ExtraGateData {
@@ -407,8 +407,8 @@ H 0
         failed,
         Gate{
             "RY",
-            Gates::RY,
-            Gates::MRY,
+            GateType::RY,
+            GateType::MRY,
             0,
             GATE_IS_RESET,
             []() -> ExtraGateData {
@@ -452,8 +452,8 @@ S 0
         failed,
         Gate{
             "R",
-            Gates::R,
-            Gates::MR,
+            GateType::R,
+            GateType::MR,
             0,
             GATE_IS_RESET,
             []() -> ExtraGateData {
@@ -496,8 +496,8 @@ R 0
         failed,
         Gate{
             "MPP",
-            Gates::MPP,
-            Gates::MPP,
+            GateType::MPP,
+            GateType::MPP,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),

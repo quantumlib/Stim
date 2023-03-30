@@ -29,8 +29,8 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
         failed,
         Gate{
             "C_XYZ",
-            Gates::C_XYZ,
-            Gates::C_ZYX,
+            GateType::C_XYZ,
+            GateType::C_ZYX,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -63,8 +63,8 @@ H 0
         failed,
         Gate{
             "C_ZYX",
-            Gates::C_ZYX,
-            Gates::C_XYZ,
+            GateType::C_ZYX,
+            GateType::C_XYZ,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {

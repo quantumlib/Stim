@@ -58,7 +58,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
     first << (ends.first == "Z" ? "@" : ends.first);
     second << (ends.second == "Z" ? "@" : ends.second);
     if (!op.args.empty()) {
-        if (op.gate->id == static_cast<uint8_t>(Gates::PAULI_CHANNEL_2)) {
+        if (op.gate->id == GateType::PAULI_CHANNEL_2) {
             first << "[0]";
             second << "[1]";
         }
@@ -430,19 +430,19 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate->id == static_cast<uint8_t>(Gates::MPP)) {
+    if (op.gate->id == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::DETECTOR)) {
+    } else if (op.gate->id == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::OBSERVABLE_INCLUDE)) {
+    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::QUBIT_COORDS)) {
+    } else if (op.gate->id == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::E)) {
+    } else if (op.gate->id == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR)) {
+    } else if (op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == static_cast<uint8_t>(Gates::TICK)) {
+    } else if (op.gate->id == GateType::TICK) {
         do_tick();
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);

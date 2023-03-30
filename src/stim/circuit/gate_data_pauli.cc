@@ -29,8 +29,8 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
         failed,
         Gate{
             "I",
-            Gates::I,
-            Gates::I,
+            GateType::I,
+            GateType::I,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -61,8 +61,8 @@ Targets:
         failed,
         Gate{
             "X",
-            Gates::X,
-            Gates::X,
+            GateType::X,
+            GateType::X,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -96,8 +96,8 @@ H 0
         failed,
         Gate{
             "Y",
-            Gates::Y,
-            Gates::Y,
+            GateType::Y,
+            GateType::Y,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -132,8 +132,8 @@ H 0
         failed,
         Gate{
             "Z",
-            Gates::Z,
-            Gates::Z,
+            GateType::Z,
+            GateType::Z,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {

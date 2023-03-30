@@ -85,7 +85,7 @@ void detector_sample_out_helper_stream(
     simd_bit_table<MAX_BITWORD_WIDTH> detector_buffer(1024, num_samples);
     size_t buffered_detectors = 0;
     circuit.for_each_operation([&](const Operation &op) {
-        if (op.gate->id == static_cast<uint8_t>(Gates::DETECTOR)) {
+        if (op.gate->id == GateType::DETECTOR) {
             simd_bits_range_ref<MAX_BITWORD_WIDTH> result = detector_buffer[buffered_detectors];
             result.clear();
             for (auto t : op.target_data.targets) {
@@ -97,7 +97,7 @@ void detector_sample_out_helper_stream(
                 writer.batch_write_bytes(detector_buffer, 1024 >> 6);
                 buffered_detectors = 0;
             }
-        } else if (op.gate->id == static_cast<uint8_t>(Gates::OBSERVABLE_INCLUDE)) {
+        } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
             if (append_observables) {
                 size_t id = (size_t)op.target_data.args[0];
                 while (observables.size() <= id) {
@@ -111,7 +111,7 @@ void detector_sample_out_helper_stream(
                 }
             }
         } else {
-            sim.invoke(op.gate->id, op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
             sim.m_record.mark_all_as_written();
         }
     });

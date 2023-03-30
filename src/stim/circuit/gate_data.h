@@ -44,46 +44,8 @@ struct ErrorAnalyzer;
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
-enum class Gates : uint8_t {
-    // From gate_data_annotations.cc
-    DETECTOR, OBSERVABLE_INCLUDE, TICK, QUBIT_COORDS, SHIFT_COORDS,
-    // Frome gate_data_blocks.cc
-    REPEAT,
-    // From gate_data_collapsing.cc
-    MX, MY, M, MRX, MRY, MR, RX, RY, R, MPP,
-    // From gate_data_controlled.cc
-    XCX, XCY, XCZ, YCX, YCY, YCZ, CX, CY, CZ,
-    // From gate_data_hada.cc
-    H, H_XY, H_YZ,
-    // From gate_data_noisy.cc
-    DEPOLARIZE1, DEPOLARIZE2, X_ERROR, Y_ERROR, Z_ERROR,
-    PAULI_CHANNEL_1, PAULI_CHANNEL_2,
-    E, ELSE_CORRELATED_ERROR,
-    // From gate_data_pauli.cc
-    I, X, Y, Z,
-    // From gate_data_period_3.cc
-    C_XYZ, C_ZYX,
-    // From gate_data_period_4.cc
-    SQRT_X, SQRT_X_DAG, SQRT_Y, SQRT_Y_DAG, S, S_DAG,
-    // From gate_data_pp.cc
-    SQRT_XX, SQRT_XX_DAG, SQRT_YY, SQRT_YY_DAG, SQRT_ZZ, SQRT_ZZ_DAG,
-    // From gate_data_swaps.cc
-    SWAP, ISWAP, CXSWAP, SWAPCX, ISWAP_DAG,
 
-    /// GATE ALIASES
-
-    // From gate_data_collapsing.cc
-    MZ, MRZ, RZ, ZCX, CNOT, ZCY, ZCZ,
-    // From gate_data_noisy.cc
-    CORRELATED_ERROR,
-    // From gate_data_hada.cc
-    H_XZ,
-    // From gate_data_period_4.cc
-    SQRT_Z, SQRT_Z_DAG,
-};
-
-
-inline uint8_t gate_name_to_hash(const char *v, size_t n) {
+constexpr inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
@@ -115,162 +77,101 @@ inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     return result;
 }
 
-inline uint8_t gate_hash_to_id(uint8_t hash) noexcept {
-    switch (hash) {
-        case 1:
-            return static_cast<uint8_t>(Gates::DEPOLARIZE2);
-        case 13:
-            return static_cast<uint8_t>(Gates::SQRT_YY_DAG);
-        case 14:
-            return static_cast<uint8_t>(Gates::SQRT_ZZ_DAG);
-        case 16:
-            return static_cast<uint8_t>(Gates::SQRT_XX_DAG);
-        case 27:
-            return static_cast<uint8_t>(Gates::DEPOLARIZE1);
-        case 29:
-            return static_cast<uint8_t>(Gates::SHIFT_COORDS);
-        case 40:
-            return static_cast<uint8_t>(Gates::X);
-        case 43:
-            return static_cast<uint8_t>(Gates::Y);
-        case 46:
-            return static_cast<uint8_t>(Gates::Z);
-        case 47:
-            return static_cast<uint8_t>(Gates::E);
-        case 48:
-            return static_cast<uint8_t>(Gates::QUBIT_COORDS);
-        case 53:
-            return static_cast<uint8_t>(Gates::S);
-        case 54:
-            return static_cast<uint8_t>(Gates::R);
-        case 55:
-            return static_cast<uint8_t>(Gates::M);
-        case 56:
-            return static_cast<uint8_t>(Gates::H);
-        case 59:
-            return static_cast<uint8_t>(Gates::I);
-        case 64:
-            return static_cast<uint8_t>(Gates::RY);
-        case 65:
-            return static_cast<uint8_t>(Gates::ELSE_CORRELATED_ERROR);
-        case 66:
-            return static_cast<uint8_t>(Gates::RX);
-        case 70:
-            return static_cast<uint8_t>(Gates::RZ);
-        case 73:
-            return static_cast<uint8_t>(Gates::MR);
-        case 81:
-            return static_cast<uint8_t>(Gates::CY);
-        case 83:
-            return static_cast<uint8_t>(Gates::CX);
-        case 87:
-            return static_cast<uint8_t>(Gates::CZ);
-        case 89:
-            return static_cast<uint8_t>(Gates::MZ);
-        case 93:
-            return static_cast<uint8_t>(Gates::MX);
-        case 95:
-            return static_cast<uint8_t>(Gates::MY);
-        case 97:
-            return static_cast<uint8_t>(Gates::ZCX);
-        case 98:
-            return static_cast<uint8_t>(Gates::YCX);
-        case 99:
-            return static_cast<uint8_t>(Gates::XCX);
-        case 103:
-            return static_cast<uint8_t>(Gates::MRX);
-        case 105:
-            return static_cast<uint8_t>(Gates::YCY);
-        case 106:
-            return static_cast<uint8_t>(Gates::XCY);
-        case 108:
-            return static_cast<uint8_t>(Gates::ZCY);
-        case 109:
-            return static_cast<uint8_t>(Gates::MPP);
-        case 110:
-            return static_cast<uint8_t>(Gates::MRY);
-        case 117:
-            return static_cast<uint8_t>(Gates::MRZ);
-        case 119:
-            return static_cast<uint8_t>(Gates::ZCZ);
-        case 120:
-            return static_cast<uint8_t>(Gates::YCZ);
-        case 121:
-            return static_cast<uint8_t>(Gates::XCZ);
-        case 127:
-            return static_cast<uint8_t>(Gates::SQRT_ZZ);
-        case 132:
-            return static_cast<uint8_t>(Gates::H_YZ);
-        case 134:
-            return static_cast<uint8_t>(Gates::TICK);
-        case 136:
-            return static_cast<uint8_t>(Gates::X_ERROR);
-        case 137:
-            return static_cast<uint8_t>(Gates::PAULI_CHANNEL_1);
-        case 139:
-            return static_cast<uint8_t>(Gates::PAULI_CHANNEL_2);
-        case 140:
-            return static_cast<uint8_t>(Gates::CNOT);
-        case 141:
-            return static_cast<uint8_t>(Gates::SWAP);
-        case 146:
-            return static_cast<uint8_t>(Gates::Z_ERROR);
-        case 147:
-            return static_cast<uint8_t>(Gates::Y_ERROR);
-        case 149:
-            return static_cast<uint8_t>(Gates::SQRT_XX);
-        case 154:
-            return static_cast<uint8_t>(Gates::SQRT_YY);
-        case 155:
-            return static_cast<uint8_t>(Gates::H_XZ);
-        case 157:
-            return static_cast<uint8_t>(Gates::H_XY);
-        case 160:
-            return static_cast<uint8_t>(Gates::C_XYZ);
-        case 166:
-            return static_cast<uint8_t>(Gates::S_DAG);
-        case 169:
-            return static_cast<uint8_t>(Gates::ISWAP);
-        case 178:
-            return static_cast<uint8_t>(Gates::DETECTOR);
-        case 179:
-            return static_cast<uint8_t>(Gates::CORRELATED_ERROR);
-        case 182:
-            return static_cast<uint8_t>(Gates::C_ZYX);
-        case 194:
-            return static_cast<uint8_t>(Gates::SQRT_Z);
-        case 202:
-            return static_cast<uint8_t>(Gates::REPEAT);
-        case 205:
-            return static_cast<uint8_t>(Gates::CXSWAP);
-        case 213:
-            return static_cast<uint8_t>(Gates::SWAPCX);
-        case 216:
-            return static_cast<uint8_t>(Gates::SQRT_X);
-        case 219:
-            return static_cast<uint8_t>(Gates::ISWAP_DAG);
-        case 221:
-            return static_cast<uint8_t>(Gates::SQRT_Y);
-        case 236:
-            return static_cast<uint8_t>(Gates::OBSERVABLE_INCLUDE);
-        case 237:
-            return static_cast<uint8_t>(Gates::SQRT_Y_DAG);
-        case 238:
-            return static_cast<uint8_t>(Gates::SQRT_Z_DAG);
-        case 240:
-            return static_cast<uint8_t>(Gates::SQRT_X_DAG);
-        default:
-            return 0;
-    }
+constexpr inline uint8_t gate_name_to_hash(const char *c) {
+    return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-inline uint8_t gate_name_to_id(const char *c, size_t n) {
-    return gate_hash_to_id(gate_name_to_hash(c, n));
-}
+enum class GateType : uint8_t {
+    // Annotations
+    DETECTOR = gate_name_to_hash("DETECTOR"),
+    OBSERVABLE_INCLUDE = gate_name_to_hash("OBSERVABLE_INCLUDE"),
+    TICK = gate_name_to_hash("TICK"),
+    QUBIT_COORDS = gate_name_to_hash("QUBIT_COORDS"),
+    SHIFT_COORDS = gate_name_to_hash("SHIFT_COORDS"),
+    // Control flow
+    REPEAT = gate_name_to_hash("REPEAT"),
+    // Collapsing gates
+    MX = gate_name_to_hash("MX"),
+    MY = gate_name_to_hash("MY"),
+    M = gate_name_to_hash("M"),
+    MRX = gate_name_to_hash("MRX"),
+    MRY = gate_name_to_hash("MRY"),
+    MR = gate_name_to_hash("MR"),
+    RX = gate_name_to_hash("RX"),
+    RY = gate_name_to_hash("RY"),
+    R = gate_name_to_hash("R"),
+    MPP = gate_name_to_hash("MPP"),
+    // Controlled gates
+    XCX = gate_name_to_hash("XCX"),
+    XCY = gate_name_to_hash("XCY"),
+    XCZ = gate_name_to_hash("XCZ"),
+    YCX = gate_name_to_hash("YCX"),
+    YCY = gate_name_to_hash("YCY"),
+    YCZ = gate_name_to_hash("YCZ"),
+    CX = gate_name_to_hash("CX"),
+    CY = gate_name_to_hash("CY"),
+    CZ = gate_name_to_hash("CZ"),
+    // Hadamard-like gates
+    H = gate_name_to_hash("H"),
+    H_XY = gate_name_to_hash("H_XY"),
+    H_YZ = gate_name_to_hash("H_YZ"),
+    // Noise channels
+    DEPOLARIZE1 = gate_name_to_hash("DEPOLARIZE1"),
+    DEPOLARIZE2 = gate_name_to_hash("DEPOLARIZE2"),
+    X_ERROR = gate_name_to_hash("X_ERROR"),
+    Y_ERROR = gate_name_to_hash("Y_ERROR"),
+    Z_ERROR = gate_name_to_hash("Z_ERROR"),
+    PAULI_CHANNEL_1 = gate_name_to_hash("PAULI_CHANNEL_1"),
+    PAULI_CHANNEL_2 = gate_name_to_hash("PAULI_CHANNEL_2"),
+    E = gate_name_to_hash("E"),
+    ELSE_CORRELATED_ERROR = gate_name_to_hash("ELSE_CORRELATED_ERROR"),
+    // Pauli gates
+    I = gate_name_to_hash("I"),
+    X = gate_name_to_hash("X"),
+    Y = gate_name_to_hash("Y"),
+    Z = gate_name_to_hash("Z"),
+    // Period 3 gates
+    C_XYZ = gate_name_to_hash("C_XYZ"),
+    C_ZYX = gate_name_to_hash("C_ZYX"),
+    // Period 4 gates
+    SQRT_X = gate_name_to_hash("SQRT_X"),
+    SQRT_X_DAG = gate_name_to_hash("SQRT_X_DAG"),
+    SQRT_Y = gate_name_to_hash("SQRT_Y"),
+    SQRT_Y_DAG = gate_name_to_hash("SQRT_Y_DAG"),
+    S = gate_name_to_hash("S"),
+    S_DAG = gate_name_to_hash("S_DAG"),
+    // Pauli product gates
+    SQRT_XX = gate_name_to_hash("SQRT_XX"),
+    SQRT_XX_DAG = gate_name_to_hash("SQRT_XX_DAG"),
+    SQRT_YY = gate_name_to_hash("SQRT_YY"),
+    SQRT_YY_DAG = gate_name_to_hash("SQRT_YY_DAG"),
+    SQRT_ZZ = gate_name_to_hash("SQRT_ZZ"),
+    SQRT_ZZ_DAG = gate_name_to_hash("SQRT_ZZ_DAG"),
+    // Swap gates
+    SWAP = gate_name_to_hash("SWAP"),
+    ISWAP = gate_name_to_hash("ISWAP"),
+    CXSWAP = gate_name_to_hash("CXSWAP"),
+    SWAPCX = gate_name_to_hash("SWAPCX"),
+    ISWAP_DAG = gate_name_to_hash("ISWAP_DAG"),
 
-inline uint8_t gate_name_to_id(const char *c) {
-    return gate_hash_to_id(gate_name_to_hash(c, strlen(c)));
-}
+    /// GATE ALIASES
+
+    // Collapsing gates
+    MZ = gate_name_to_hash("MZ"),
+    MRZ = gate_name_to_hash("MRZ"),
+    RZ = gate_name_to_hash("RZ"),
+    ZCX = gate_name_to_hash("ZCX"),
+    CNOT = gate_name_to_hash("CNOT"),
+    ZCY = gate_name_to_hash("ZCY"),
+    ZCZ = gate_name_to_hash("ZCZ"),
+    // Noise channels
+    CORRELATED_ERROR = gate_name_to_hash("CORRELATED_ERROR"),
+    // Hadamard-like gates
+    H_XZ = gate_name_to_hash("H_XZ"),
+    // Period 4 gates
+    SQRT_Z = gate_name_to_hash("SQRT_Z"),
+    SQRT_Z_DAG = gate_name_to_hash("SQRT_Z_DAG"),
+};
 
 enum GateFlags : uint16_t {
     GATE_NO_FLAGS = 0,
@@ -333,7 +234,7 @@ struct GateVTable {
    private:
     using sim_func_ptr_t = void (SIMULATOR::*)(const OperationData&);
     std::array<sim_func_ptr_t, 256> funcs;
-    constexpr void add_simulator_function(Gates gate_id, sim_func_ptr_t simulator_function);
+    constexpr void add_simulator_function(GateType gate_id, sim_func_ptr_t simulator_function);
     constexpr void add_simulator_function_annotations();
     constexpr void add_simulator_function_blocks();
     constexpr void add_simulator_function_collapsing();
@@ -347,8 +248,8 @@ struct GateVTable {
     constexpr void add_simulator_function_swaps();
 
    public:
-    sim_func_ptr_t operator[](int index) const {
-        return funcs[index];
+    sim_func_ptr_t operator[](GateType gate_id) const {
+        return funcs[static_cast<uint8_t>(gate_id)];
     }
     constexpr GateVTable();
 };
@@ -359,14 +260,14 @@ struct Gate {
     GateFlags flags;
     uint8_t arg_count;
     uint8_t name_len;
-    uint8_t id;
-    uint8_t best_candidate_inverse_id;
+    GateType id;
+    GateType best_candidate_inverse_id;
 
     Gate();
     Gate(
         const char *name,
-        Gates gate_id,
-        Gates best_inverse_gate,
+        GateType gate_id,
+        GateType best_inverse_gate,
         uint8_t arg_count,
         GateFlags flags,
         ExtraGateData (*extra_data_func)(void));
@@ -481,13 +382,13 @@ struct GateDataMap {
     std::vector<Gate> gates() const;
 
     inline const Gate &at(const char *text, size_t text_len) const {
-        uint8_t h = gate_name_to_id(text, text_len);
+        uint8_t h = gate_name_to_hash(text, text_len);
         const Gate &gate = items[h];
         if (_case_insensitive_mismatch(text, text_len, gate.name, gate.name_len)) {
             throw std::out_of_range("Gate not found: '" + std::string(text, text_len) + "'");
         }
         // Canonicalize.
-        return items[gate.id];
+        return items[static_cast<uint8_t>(gate.id)];
     }
 
     inline const Gate &at(const char *text) const {
@@ -503,7 +404,7 @@ struct GateDataMap {
     }
 
     inline bool has(const std::string &text) const {
-        uint8_t h = gate_name_to_id(text.data(), text.size());
+        uint8_t h = gate_name_to_hash(text.data(), text.size());
         const Gate &gate = items[h];
         return !_case_insensitive_mismatch(text.data(), text.size(), gate.name, gate.name_len);
     }

@@ -30,8 +30,8 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
         failed,
         Gate{
             "H",
-            Gates::H,
-            Gates::H,
+            GateType::H,
+            GateType::H,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -63,8 +63,8 @@ H 0
         failed,
         Gate{
             "H_XY",
-            Gates::H_XY,
-            Gates::H_XY,
+            GateType::H_XY,
+            GateType::H_XY,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
@@ -98,8 +98,8 @@ S 0
         failed,
         Gate{
             "H_YZ",
-            Gates::H_YZ,
-            Gates::H_YZ,
+            GateType::H_YZ,
+            GateType::H_YZ,
             0,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
