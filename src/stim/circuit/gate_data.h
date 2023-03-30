@@ -153,24 +153,6 @@ enum class GateType : uint8_t {
     CXSWAP = gate_name_to_hash("CXSWAP"),
     SWAPCX = gate_name_to_hash("SWAPCX"),
     ISWAP_DAG = gate_name_to_hash("ISWAP_DAG"),
-
-    /// GATE ALIASES
-
-    // Collapsing gates
-    MZ = gate_name_to_hash("MZ"),
-    MRZ = gate_name_to_hash("MRZ"),
-    RZ = gate_name_to_hash("RZ"),
-    ZCX = gate_name_to_hash("ZCX"),
-    CNOT = gate_name_to_hash("CNOT"),
-    ZCY = gate_name_to_hash("ZCY"),
-    ZCZ = gate_name_to_hash("ZCZ"),
-    // Noise channels
-    CORRELATED_ERROR = gate_name_to_hash("CORRELATED_ERROR"),
-    // Hadamard-like gates
-    H_XZ = gate_name_to_hash("H_XZ"),
-    // Period 4 gates
-    SQRT_Z = gate_name_to_hash("SQRT_Z"),
-    SQRT_Z_DAG = gate_name_to_hash("SQRT_Z_DAG"),
 };
 
 enum GateFlags : uint16_t {
