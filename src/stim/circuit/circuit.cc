@@ -1091,20 +1091,16 @@ Circuit Circuit::without_noise() const {
 
 void flattened_helper(
     const Circuit &body, std::vector<double> &cur_coordinate_shift, std::vector<double> &coord_buffer, Circuit &out) {
-    const GateType shift = GateType::SHIFT_COORDS;
-    const GateType rep = GateType::REPEAT;
-    const GateType qubit_coords = GateType::QUBIT_COORDS;
-    const GateType detector = GateType::DETECTOR;
     for (const auto &op : body.operations) {
         GateType id = op.gate->id;
-        if (id == shift) {
+        if (id == GateType::SHIFT_COORDS) {
             while (cur_coordinate_shift.size() < op.target_data.args.size()) {
                 cur_coordinate_shift.push_back(0);
             }
             for (size_t k = 0; k < op.target_data.args.size(); k++) {
                 cur_coordinate_shift[k] += op.target_data.args[k];
             }
-        } else if (id == rep) {
+        } else if (id == GateType::REPEAT) {
             uint64_t reps = op_data_rep_count(op.target_data);
             const auto &loop_body = op_data_block_body(body, op.target_data);
             for (uint64_t k = 0; k < reps; k++) {
@@ -1113,7 +1109,7 @@ void flattened_helper(
         } else {
             coord_buffer.clear();
             coord_buffer.insert(coord_buffer.end(), op.target_data.args.begin(), op.target_data.args.end());
-            if (id == qubit_coords || op.gate->id == detector) {
+            if (id == GateType::QUBIT_COORDS || op.gate->id == GateType::DETECTOR) {
                 for (size_t k = 0; k < coord_buffer.size() && k < cur_coordinate_shift.size(); k++) {
                     coord_buffer[k] += cur_coordinate_shift[k];
                 }

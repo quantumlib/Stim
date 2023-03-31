@@ -96,273 +96,11 @@ Gate::Gate(
 }
 
 template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_annotations() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value) {
-        add_simulator_function(GateType::DETECTOR, &SIMULATOR::I);
-        add_simulator_function(GateType::OBSERVABLE_INCLUDE, &SIMULATOR::I);
-        add_simulator_function(GateType::TICK, &SIMULATOR::I);
-        add_simulator_function(GateType::QUBIT_COORDS, &SIMULATOR::I);
-        add_simulator_function(GateType::SHIFT_COORDS, &SIMULATOR::I);
-    } else if constexpr (std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::DETECTOR, &SIMULATOR::DETECTOR);
-        add_simulator_function(GateType::OBSERVABLE_INCLUDE, &SIMULATOR::OBSERVABLE_INCLUDE);
-        add_simulator_function(GateType::TICK, &SIMULATOR::TICK);
-        add_simulator_function(GateType::QUBIT_COORDS, &SIMULATOR::I);
-        add_simulator_function(GateType::SHIFT_COORDS, &SIMULATOR::SHIFT_COORDS);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::DETECTOR, &SIMULATOR::undo_DETECTOR);
-        add_simulator_function(GateType::OBSERVABLE_INCLUDE, &SIMULATOR::undo_OBSERVABLE_INCLUDE);
-        add_simulator_function(GateType::TICK, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::QUBIT_COORDS, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::SHIFT_COORDS, &SIMULATOR::undo_I);
+constexpr GateVTable<SIMULATOR>::GateVTable(
+    std::vector<std::pair<GateType, sim_func_ptr_t>> simulator_functions) {
+    for (const auto [gate_type, sim_func] : simulator_functions) {
+        add_simulator_function(gate_type, sim_func);
     }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_blocks() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value ||
-                  std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::REPEAT, &SIMULATOR::I);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::REPEAT, &SIMULATOR::undo_I);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_collapsing() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value) {
-        add_simulator_function(GateType::MX, &SIMULATOR::measure_x);
-        add_simulator_function(GateType::MY, &SIMULATOR::measure_y);
-        add_simulator_function(GateType::M, &SIMULATOR::measure_z);
-        add_simulator_function(GateType::MRX, &SIMULATOR::measure_reset_x);
-        add_simulator_function(GateType::MRY, &SIMULATOR::measure_reset_y);
-        add_simulator_function(GateType::MR, &SIMULATOR::measure_reset_z);
-        add_simulator_function(GateType::RX, &SIMULATOR::reset_x);
-        add_simulator_function(GateType::RY, &SIMULATOR::reset_y);
-        add_simulator_function(GateType::R, &SIMULATOR::reset_z);
-        add_simulator_function(GateType::MPP, &SIMULATOR::MPP);
-    } else if constexpr (std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::MX, &SIMULATOR::MX);
-        add_simulator_function(GateType::MY, &SIMULATOR::MY);
-        add_simulator_function(GateType::M, &SIMULATOR::MZ);
-        add_simulator_function(GateType::MRX, &SIMULATOR::MRX);
-        add_simulator_function(GateType::MRY, &SIMULATOR::MRY);
-        add_simulator_function(GateType::MR, &SIMULATOR::MRZ);
-        add_simulator_function(GateType::RX, &SIMULATOR::RX);
-        add_simulator_function(GateType::RY, &SIMULATOR::RY);
-        add_simulator_function(GateType::R, &SIMULATOR::RZ);
-        add_simulator_function(GateType::MPP, &SIMULATOR::MPP);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::MX, &SIMULATOR::undo_MX);
-        add_simulator_function(GateType::MY, &SIMULATOR::undo_MY);
-        add_simulator_function(GateType::M, &SIMULATOR::undo_MZ);
-        add_simulator_function(GateType::MRX, &SIMULATOR::undo_MRX);
-        add_simulator_function(GateType::MRY, &SIMULATOR::undo_MRY);
-        add_simulator_function(GateType::MR, &SIMULATOR::undo_MRZ);
-        add_simulator_function(GateType::RX, &SIMULATOR::undo_RX);
-        add_simulator_function(GateType::RY, &SIMULATOR::undo_RY);
-        add_simulator_function(GateType::R, &SIMULATOR::undo_RZ);
-        add_simulator_function(GateType::MPP, &SIMULATOR::undo_MPP);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_controlled() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value ||
-                  std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::XCX, &SIMULATOR::XCX);
-        add_simulator_function(GateType::XCY, &SIMULATOR::XCY);
-        add_simulator_function(GateType::XCZ, &SIMULATOR::XCZ);
-        add_simulator_function(GateType::YCX, &SIMULATOR::YCX);
-        add_simulator_function(GateType::YCY, &SIMULATOR::YCY);
-        add_simulator_function(GateType::YCZ, &SIMULATOR::YCZ);
-        add_simulator_function(GateType::CX, &SIMULATOR::ZCX);
-        add_simulator_function(GateType::CY, &SIMULATOR::ZCY);
-        add_simulator_function(GateType::CZ, &SIMULATOR::ZCZ);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::XCX, &SIMULATOR::undo_XCX);
-        add_simulator_function(GateType::XCY, &SIMULATOR::undo_XCY);
-        add_simulator_function(GateType::XCZ, &SIMULATOR::undo_XCZ);
-        add_simulator_function(GateType::YCX, &SIMULATOR::undo_YCX);
-        add_simulator_function(GateType::YCY, &SIMULATOR::undo_YCY);
-        add_simulator_function(GateType::YCZ, &SIMULATOR::undo_YCZ);
-        add_simulator_function(GateType::CX, &SIMULATOR::undo_ZCX);
-        add_simulator_function(GateType::CY, &SIMULATOR::undo_ZCY);
-        add_simulator_function(GateType::CZ, &SIMULATOR::undo_ZCZ);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_hada() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value ||
-                  std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::H, &SIMULATOR::H_XZ);
-        add_simulator_function(GateType::H_XY, &SIMULATOR::H_XY);
-        add_simulator_function(GateType::H_YZ, &SIMULATOR::H_YZ);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::H, &SIMULATOR::undo_H_XZ);
-        add_simulator_function(GateType::H_XY, &SIMULATOR::undo_H_XY);
-        add_simulator_function(GateType::H_YZ, &SIMULATOR::undo_H_YZ);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_noisy() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value ||
-                  std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::DEPOLARIZE1, &SIMULATOR::DEPOLARIZE1);
-        add_simulator_function(GateType::DEPOLARIZE2, &SIMULATOR::DEPOLARIZE2);
-        add_simulator_function(GateType::X_ERROR, &SIMULATOR::X_ERROR);
-        add_simulator_function(GateType::Y_ERROR, &SIMULATOR::Y_ERROR);
-        add_simulator_function(GateType::Z_ERROR, &SIMULATOR::Z_ERROR);
-        add_simulator_function(GateType::PAULI_CHANNEL_1, &SIMULATOR::PAULI_CHANNEL_1);
-        add_simulator_function(GateType::PAULI_CHANNEL_2, &SIMULATOR::PAULI_CHANNEL_2);
-        add_simulator_function(GateType::E, &SIMULATOR::CORRELATED_ERROR);
-        add_simulator_function(GateType::ELSE_CORRELATED_ERROR, &SIMULATOR::ELSE_CORRELATED_ERROR);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::DEPOLARIZE1, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::DEPOLARIZE2, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::X_ERROR, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::Y_ERROR, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::Z_ERROR, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::PAULI_CHANNEL_1, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::PAULI_CHANNEL_2, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::E, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::ELSE_CORRELATED_ERROR, &SIMULATOR::undo_I);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_pauli() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value) {
-        add_simulator_function(GateType::I, &SIMULATOR::I);
-        add_simulator_function(GateType::X, &SIMULATOR::X);
-        add_simulator_function(GateType::Y, &SIMULATOR::Y);
-        add_simulator_function(GateType::Z, &SIMULATOR::Z);
-    } else if constexpr (std::is_same<SIMULATOR, FrameSimulator>::value ||
-                         std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::I, &SIMULATOR::I);
-        add_simulator_function(GateType::X, &SIMULATOR::I);
-        add_simulator_function(GateType::Y, &SIMULATOR::I);
-        add_simulator_function(GateType::Z, &SIMULATOR::I);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::I, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::X, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::Y, &SIMULATOR::undo_I);
-        add_simulator_function(GateType::Z, &SIMULATOR::undo_I);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_period_3() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value ||
-                  std::is_same<SIMULATOR, FrameSimulator>::value ||
-                  std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::C_XYZ, &SIMULATOR::C_XYZ);
-        add_simulator_function(GateType::C_ZYX, &SIMULATOR::C_ZYX);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::C_XYZ, &SIMULATOR::undo_C_XYZ);
-        add_simulator_function(GateType::C_ZYX, &SIMULATOR::undo_C_ZYX);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_period_4() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value) {
-        add_simulator_function(GateType::SQRT_X, &SIMULATOR::SQRT_X);
-        add_simulator_function(GateType::SQRT_X_DAG, &SIMULATOR::SQRT_X_DAG);
-        add_simulator_function(GateType::SQRT_Y, &SIMULATOR::SQRT_Y);
-        add_simulator_function(GateType::SQRT_Y_DAG, &SIMULATOR::SQRT_Y_DAG);
-        add_simulator_function(GateType::S, &SIMULATOR::SQRT_Z);
-        add_simulator_function(GateType::S_DAG, &SIMULATOR::SQRT_Z_DAG);
-    } else if constexpr (std::is_same<SIMULATOR, FrameSimulator>::value ||
-                         std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::SQRT_X, &SIMULATOR::H_YZ);
-        add_simulator_function(GateType::SQRT_X_DAG, &SIMULATOR::H_YZ);
-        add_simulator_function(GateType::SQRT_Y, &SIMULATOR::H_XZ);
-        add_simulator_function(GateType::SQRT_Y_DAG, &SIMULATOR::H_XZ);
-        add_simulator_function(GateType::S, &SIMULATOR::H_XY);
-        add_simulator_function(GateType::S_DAG, &SIMULATOR::H_XY);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::SQRT_X, &SIMULATOR::undo_H_YZ);
-        add_simulator_function(GateType::SQRT_X_DAG, &SIMULATOR::undo_H_YZ);
-        add_simulator_function(GateType::SQRT_Y, &SIMULATOR::undo_H_XZ);
-        add_simulator_function(GateType::SQRT_Y_DAG, &SIMULATOR::undo_H_XZ);
-        add_simulator_function(GateType::S, &SIMULATOR::undo_H_XY);
-        add_simulator_function(GateType::S_DAG, &SIMULATOR::undo_H_XY);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_pp() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value) {
-        add_simulator_function(GateType::SQRT_XX, &SIMULATOR::SQRT_XX);
-        add_simulator_function(GateType::SQRT_XX_DAG, &SIMULATOR::SQRT_XX_DAG);
-        add_simulator_function(GateType::SQRT_YY, &SIMULATOR::SQRT_YY);
-        add_simulator_function(GateType::SQRT_YY_DAG, &SIMULATOR::SQRT_YY_DAG);
-        add_simulator_function(GateType::SQRT_ZZ, &SIMULATOR::SQRT_ZZ);
-        add_simulator_function(GateType::SQRT_ZZ_DAG, &SIMULATOR::SQRT_ZZ_DAG);
-    } else if constexpr (std::is_same<SIMULATOR, FrameSimulator>::value ||
-                         std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::SQRT_XX, &SIMULATOR::SQRT_XX);
-        add_simulator_function(GateType::SQRT_XX_DAG, &SIMULATOR::SQRT_XX);
-        add_simulator_function(GateType::SQRT_YY, &SIMULATOR::SQRT_YY);
-        add_simulator_function(GateType::SQRT_YY_DAG, &SIMULATOR::SQRT_YY);
-        add_simulator_function(GateType::SQRT_ZZ, &SIMULATOR::SQRT_ZZ);
-        add_simulator_function(GateType::SQRT_ZZ_DAG, &SIMULATOR::SQRT_ZZ);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::SQRT_XX, &SIMULATOR::undo_SQRT_XX);
-        add_simulator_function(GateType::SQRT_XX_DAG, &SIMULATOR::undo_SQRT_XX);
-        add_simulator_function(GateType::SQRT_YY, &SIMULATOR::undo_SQRT_YY);
-        add_simulator_function(GateType::SQRT_YY_DAG, &SIMULATOR::undo_SQRT_YY);
-        add_simulator_function(GateType::SQRT_ZZ, &SIMULATOR::undo_SQRT_ZZ);
-        add_simulator_function(GateType::SQRT_ZZ_DAG, &SIMULATOR::undo_SQRT_ZZ);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr void GateVTable<SIMULATOR>::add_simulator_function_swaps() {
-    if constexpr (std::is_same<SIMULATOR, TableauSimulator>::value) {
-        add_simulator_function(GateType::SWAP, &SIMULATOR::SWAP);
-        add_simulator_function(GateType::ISWAP, &SIMULATOR::ISWAP);
-        add_simulator_function(GateType::ISWAP_DAG, &SIMULATOR::ISWAP_DAG);
-        add_simulator_function(GateType::CXSWAP, &SIMULATOR::CXSWAP);
-        add_simulator_function(GateType::SWAPCX, &SIMULATOR::SWAPCX);
-    } else if constexpr (std::is_same<SIMULATOR, FrameSimulator>::value ||
-                         std::is_same<SIMULATOR, ErrorAnalyzer>::value) {
-        add_simulator_function(GateType::SWAP, &SIMULATOR::SWAP);
-        add_simulator_function(GateType::ISWAP, &SIMULATOR::ISWAP);
-        add_simulator_function(GateType::ISWAP_DAG, &SIMULATOR::ISWAP);
-        add_simulator_function(GateType::CXSWAP, &SIMULATOR::CXSWAP);
-        add_simulator_function(GateType::SWAPCX, &SIMULATOR::SWAPCX);
-    } else if constexpr (std::is_same<SIMULATOR, SparseUnsignedRevFrameTracker>::value) {
-        add_simulator_function(GateType::SWAP, &SIMULATOR::undo_SWAP);
-        add_simulator_function(GateType::ISWAP, &SIMULATOR::undo_ISWAP);
-        add_simulator_function(GateType::ISWAP_DAG, &SIMULATOR::undo_ISWAP);
-        add_simulator_function(GateType::CXSWAP, &SIMULATOR::undo_CXSWAP);
-        add_simulator_function(GateType::SWAPCX, &SIMULATOR::undo_SWAPCX);
-    }
-}
-
-template <typename SIMULATOR>
-constexpr GateVTable<SIMULATOR>::GateVTable() {
-    add_simulator_function_annotations();
-    add_simulator_function_blocks();
-    add_simulator_function_collapsing();
-    add_simulator_function_controlled();
-    add_simulator_function_hada();
-    add_simulator_function_noisy();
-    add_simulator_function_pauli();
-    add_simulator_function_period_3();
-    add_simulator_function_period_4();
-    add_simulator_function_pp();
-    add_simulator_function_swaps();
 }
 
 template <typename SIMULATOR>
@@ -427,8 +165,260 @@ ExtraGateData::ExtraGateData(
 }
 
 extern const GateDataMap stim::GATE_DATA = GateDataMap();
-extern const GateVTable<FrameSimulator> stim::FRAME_SIM_VTABLE = GateVTable<FrameSimulator>();
-extern const GateVTable<TableauSimulator> stim::TABLEAU_SIM_VTABLE = GateVTable<TableauSimulator>();
-extern const GateVTable<ErrorAnalyzer> stim::ERROR_ANALYZER_VTABLE = GateVTable<ErrorAnalyzer>();
+extern const GateVTable<FrameSimulator> stim::FRAME_SIM_VTABLE = GateVTable<FrameSimulator>({
+    {GateType::DETECTOR, &FrameSimulator::I},
+    {GateType::OBSERVABLE_INCLUDE, &FrameSimulator::I},
+    {GateType::TICK, &FrameSimulator::I},
+    {GateType::QUBIT_COORDS, &FrameSimulator::I},
+    {GateType::SHIFT_COORDS, &FrameSimulator::I},
+    {GateType::REPEAT, &FrameSimulator::I},
+    {GateType::MX, &FrameSimulator::measure_x},
+    {GateType::MY, &FrameSimulator::measure_y},
+    {GateType::M, &FrameSimulator::measure_z},
+    {GateType::MRX, &FrameSimulator::measure_reset_x},
+    {GateType::MRY, &FrameSimulator::measure_reset_y},
+    {GateType::MR, &FrameSimulator::measure_reset_z},
+    {GateType::RX, &FrameSimulator::reset_x},
+    {GateType::RY, &FrameSimulator::reset_y},
+    {GateType::R, &FrameSimulator::reset_z},
+    {GateType::MPP, &FrameSimulator::MPP},
+    {GateType::XCX, &FrameSimulator::XCX},
+    {GateType::XCY, &FrameSimulator::XCY},
+    {GateType::XCZ, &FrameSimulator::XCZ},
+    {GateType::YCX, &FrameSimulator::YCX},
+    {GateType::YCY, &FrameSimulator::YCY},
+    {GateType::YCZ, &FrameSimulator::YCZ},
+    {GateType::CX, &FrameSimulator::ZCX},
+    {GateType::CY, &FrameSimulator::ZCY},
+    {GateType::CZ, &FrameSimulator::ZCZ},
+    {GateType::H, &FrameSimulator::H_XZ},
+    {GateType::H_XY, &FrameSimulator::H_XY},
+    {GateType::H_YZ, &FrameSimulator::H_YZ},
+    {GateType::DEPOLARIZE1, &FrameSimulator::DEPOLARIZE1},
+    {GateType::DEPOLARIZE2, &FrameSimulator::DEPOLARIZE2},
+    {GateType::X_ERROR, &FrameSimulator::X_ERROR},
+    {GateType::Y_ERROR, &FrameSimulator::Y_ERROR},
+    {GateType::Z_ERROR, &FrameSimulator::Z_ERROR},
+    {GateType::PAULI_CHANNEL_1, &FrameSimulator::PAULI_CHANNEL_1},
+    {GateType::PAULI_CHANNEL_2, &FrameSimulator::PAULI_CHANNEL_2},
+    {GateType::E, &FrameSimulator::CORRELATED_ERROR},
+    {GateType::ELSE_CORRELATED_ERROR, &FrameSimulator::ELSE_CORRELATED_ERROR},
+    {GateType::I, &FrameSimulator::I},
+    {GateType::X, &FrameSimulator::I},
+    {GateType::Y, &FrameSimulator::I},
+    {GateType::Z, &FrameSimulator::I},
+    {GateType::C_XYZ, &FrameSimulator::C_XYZ},
+    {GateType::C_ZYX, &FrameSimulator::C_ZYX},
+    {GateType::SQRT_X, &FrameSimulator::H_YZ},
+    {GateType::SQRT_X_DAG, &FrameSimulator::H_YZ},
+    {GateType::SQRT_Y, &FrameSimulator::H_XZ},
+    {GateType::SQRT_Y_DAG, &FrameSimulator::H_XZ},
+    {GateType::S, &FrameSimulator::H_XY},
+    {GateType::S_DAG, &FrameSimulator::H_XY},
+    {GateType::SQRT_XX, &FrameSimulator::SQRT_XX},
+    {GateType::SQRT_XX_DAG, &FrameSimulator::SQRT_XX},
+    {GateType::SQRT_YY, &FrameSimulator::SQRT_YY},
+    {GateType::SQRT_YY_DAG, &FrameSimulator::SQRT_YY},
+    {GateType::SQRT_ZZ, &FrameSimulator::SQRT_ZZ},
+    {GateType::SQRT_ZZ_DAG, &FrameSimulator::SQRT_ZZ},
+    {GateType::SWAP, &FrameSimulator::SWAP},
+    {GateType::ISWAP, &FrameSimulator::ISWAP},
+    {GateType::ISWAP_DAG, &FrameSimulator::ISWAP},
+    {GateType::CXSWAP, &FrameSimulator::CXSWAP},
+    {GateType::SWAPCX, &FrameSimulator::SWAPCX},
+
+});
+
+extern const GateVTable<TableauSimulator> stim::TABLEAU_SIM_VTABLE = GateVTable<TableauSimulator>({
+    {GateType::DETECTOR, &TableauSimulator::I},
+    {GateType::OBSERVABLE_INCLUDE, &TableauSimulator::I},
+    {GateType::TICK, &TableauSimulator::I},
+    {GateType::QUBIT_COORDS, &TableauSimulator::I},
+    {GateType::SHIFT_COORDS, &TableauSimulator::I},
+    {GateType::REPEAT, &TableauSimulator::I},
+    {GateType::MX, &TableauSimulator::measure_x},
+    {GateType::MY, &TableauSimulator::measure_y},
+    {GateType::M, &TableauSimulator::measure_z},
+    {GateType::MRX, &TableauSimulator::measure_reset_x},
+    {GateType::MRY, &TableauSimulator::measure_reset_y},
+    {GateType::MR, &TableauSimulator::measure_reset_z},
+    {GateType::RX, &TableauSimulator::reset_x},
+    {GateType::RY, &TableauSimulator::reset_y},
+    {GateType::R, &TableauSimulator::reset_z},
+    {GateType::MPP, &TableauSimulator::MPP},
+    {GateType::XCX, &TableauSimulator::XCX},
+    {GateType::XCY, &TableauSimulator::XCY},
+    {GateType::XCZ, &TableauSimulator::XCZ},
+    {GateType::YCX, &TableauSimulator::YCX},
+    {GateType::YCY, &TableauSimulator::YCY},
+    {GateType::YCZ, &TableauSimulator::YCZ},
+    {GateType::CX, &TableauSimulator::ZCX},
+    {GateType::CY, &TableauSimulator::ZCY},
+    {GateType::CZ, &TableauSimulator::ZCZ},
+    {GateType::H, &TableauSimulator::H_XZ},
+    {GateType::H_XY, &TableauSimulator::H_XY},
+    {GateType::H_YZ, &TableauSimulator::H_YZ},
+    {GateType::DEPOLARIZE1, &TableauSimulator::DEPOLARIZE1},
+    {GateType::DEPOLARIZE2, &TableauSimulator::DEPOLARIZE2},
+    {GateType::X_ERROR, &TableauSimulator::X_ERROR},
+    {GateType::Y_ERROR, &TableauSimulator::Y_ERROR},
+    {GateType::Z_ERROR, &TableauSimulator::Z_ERROR},
+    {GateType::PAULI_CHANNEL_1, &TableauSimulator::PAULI_CHANNEL_1},
+    {GateType::PAULI_CHANNEL_2, &TableauSimulator::PAULI_CHANNEL_2},
+    {GateType::E, &TableauSimulator::CORRELATED_ERROR},
+    {GateType::ELSE_CORRELATED_ERROR, &TableauSimulator::ELSE_CORRELATED_ERROR},
+    {GateType::I, &TableauSimulator::I},
+    {GateType::X, &TableauSimulator::X},
+    {GateType::Y, &TableauSimulator::Y},
+    {GateType::Z, &TableauSimulator::Z},
+    {GateType::C_XYZ, &TableauSimulator::C_XYZ},
+    {GateType::C_ZYX, &TableauSimulator::C_ZYX},
+    {GateType::SQRT_X, &TableauSimulator::SQRT_X},
+    {GateType::SQRT_X_DAG, &TableauSimulator::SQRT_X_DAG},
+    {GateType::SQRT_Y, &TableauSimulator::SQRT_Y},
+    {GateType::SQRT_Y_DAG, &TableauSimulator::SQRT_Y_DAG},
+    {GateType::S, &TableauSimulator::SQRT_Z},
+    {GateType::S_DAG, &TableauSimulator::SQRT_Z_DAG},
+    {GateType::SQRT_XX, &TableauSimulator::SQRT_XX},
+    {GateType::SQRT_XX_DAG, &TableauSimulator::SQRT_XX_DAG},
+    {GateType::SQRT_YY, &TableauSimulator::SQRT_YY},
+    {GateType::SQRT_YY_DAG, &TableauSimulator::SQRT_YY_DAG},
+    {GateType::SQRT_ZZ, &TableauSimulator::SQRT_ZZ},
+    {GateType::SQRT_ZZ_DAG, &TableauSimulator::SQRT_ZZ_DAG},
+    {GateType::SWAP, &TableauSimulator::SWAP},
+    {GateType::ISWAP, &TableauSimulator::ISWAP},
+    {GateType::ISWAP_DAG, &TableauSimulator::ISWAP_DAG},
+    {GateType::CXSWAP, &TableauSimulator::CXSWAP},
+    {GateType::SWAPCX, &TableauSimulator::SWAPCX},
+
+
+
+
+});
+
+extern const GateVTable<ErrorAnalyzer> stim::ERROR_ANALYZER_VTABLE = GateVTable<ErrorAnalyzer>({
+    {GateType::DETECTOR, &ErrorAnalyzer::DETECTOR},
+    {GateType::OBSERVABLE_INCLUDE, &ErrorAnalyzer::OBSERVABLE_INCLUDE},
+    {GateType::TICK, &ErrorAnalyzer::TICK},
+    {GateType::QUBIT_COORDS, &ErrorAnalyzer::I},
+    {GateType::SHIFT_COORDS, &ErrorAnalyzer::SHIFT_COORDS},
+    {GateType::REPEAT, &ErrorAnalyzer::I},
+    {GateType::MX, &ErrorAnalyzer::MX},
+    {GateType::MY, &ErrorAnalyzer::MY},
+    {GateType::M, &ErrorAnalyzer::MZ},
+    {GateType::MRX, &ErrorAnalyzer::MRX},
+    {GateType::MRY, &ErrorAnalyzer::MRY},
+    {GateType::MR, &ErrorAnalyzer::MRZ},
+    {GateType::RX, &ErrorAnalyzer::RX},
+    {GateType::RY, &ErrorAnalyzer::RY},
+    {GateType::R, &ErrorAnalyzer::RZ},
+    {GateType::MPP, &ErrorAnalyzer::MPP},
+    {GateType::XCX, &ErrorAnalyzer::XCX},
+    {GateType::XCY, &ErrorAnalyzer::XCY},
+    {GateType::XCZ, &ErrorAnalyzer::XCZ},
+    {GateType::YCX, &ErrorAnalyzer::YCX},
+    {GateType::YCY, &ErrorAnalyzer::YCY},
+    {GateType::YCZ, &ErrorAnalyzer::YCZ},
+    {GateType::CX, &ErrorAnalyzer::ZCX},
+    {GateType::CY, &ErrorAnalyzer::ZCY},
+    {GateType::CZ, &ErrorAnalyzer::ZCZ},
+    {GateType::H, &ErrorAnalyzer::H_XZ},
+    {GateType::H_XY, &ErrorAnalyzer::H_XY},
+    {GateType::H_YZ, &ErrorAnalyzer::H_YZ},
+    {GateType::DEPOLARIZE1, &ErrorAnalyzer::DEPOLARIZE1},
+    {GateType::DEPOLARIZE2, &ErrorAnalyzer::DEPOLARIZE2},
+    {GateType::X_ERROR, &ErrorAnalyzer::X_ERROR},
+    {GateType::Y_ERROR, &ErrorAnalyzer::Y_ERROR},
+    {GateType::Z_ERROR, &ErrorAnalyzer::Z_ERROR},
+    {GateType::PAULI_CHANNEL_1, &ErrorAnalyzer::PAULI_CHANNEL_1},
+    {GateType::PAULI_CHANNEL_2, &ErrorAnalyzer::PAULI_CHANNEL_2},
+    {GateType::E, &ErrorAnalyzer::CORRELATED_ERROR},
+    {GateType::ELSE_CORRELATED_ERROR, &ErrorAnalyzer::ELSE_CORRELATED_ERROR},
+    {GateType::I, &ErrorAnalyzer::I},
+    {GateType::X, &ErrorAnalyzer::I},
+    {GateType::Y, &ErrorAnalyzer::I},
+    {GateType::Z, &ErrorAnalyzer::I},
+    {GateType::C_XYZ, &ErrorAnalyzer::C_XYZ},
+    {GateType::C_ZYX, &ErrorAnalyzer::C_ZYX},
+    {GateType::SQRT_X, &ErrorAnalyzer::H_YZ},
+    {GateType::SQRT_X_DAG, &ErrorAnalyzer::H_YZ},
+    {GateType::SQRT_Y, &ErrorAnalyzer::H_XZ},
+    {GateType::SQRT_Y_DAG, &ErrorAnalyzer::H_XZ},
+    {GateType::S, &ErrorAnalyzer::H_XY},
+    {GateType::S_DAG, &ErrorAnalyzer::H_XY},
+    {GateType::SQRT_XX, &ErrorAnalyzer::SQRT_XX},
+    {GateType::SQRT_XX_DAG, &ErrorAnalyzer::SQRT_XX},
+    {GateType::SQRT_YY, &ErrorAnalyzer::SQRT_YY},
+    {GateType::SQRT_YY_DAG, &ErrorAnalyzer::SQRT_YY},
+    {GateType::SQRT_ZZ, &ErrorAnalyzer::SQRT_ZZ},
+    {GateType::SQRT_ZZ_DAG, &ErrorAnalyzer::SQRT_ZZ},
+    {GateType::SWAP, &ErrorAnalyzer::SWAP},
+    {GateType::ISWAP, &ErrorAnalyzer::ISWAP},
+    {GateType::ISWAP_DAG, &ErrorAnalyzer::ISWAP},
+    {GateType::CXSWAP, &ErrorAnalyzer::CXSWAP},
+    {GateType::SWAPCX, &ErrorAnalyzer::SWAPCX},
+});
+
 extern const GateVTable<SparseUnsignedRevFrameTracker>
-stim::SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE = GateVTable<SparseUnsignedRevFrameTracker>();
+stim::SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE = GateVTable<SparseUnsignedRevFrameTracker>({
+    {GateType::DETECTOR, &SparseUnsignedRevFrameTracker::undo_DETECTOR},
+    {GateType::OBSERVABLE_INCLUDE, &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE},
+    {GateType::TICK, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::QUBIT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::SHIFT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::REPEAT, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::MX, &SparseUnsignedRevFrameTracker::undo_MX},
+    {GateType::MY, &SparseUnsignedRevFrameTracker::undo_MY},
+    {GateType::M, &SparseUnsignedRevFrameTracker::undo_MZ},
+    {GateType::MRX, &SparseUnsignedRevFrameTracker::undo_MRX},
+    {GateType::MRY, &SparseUnsignedRevFrameTracker::undo_MRY},
+    {GateType::MR, &SparseUnsignedRevFrameTracker::undo_MRZ},
+    {GateType::RX, &SparseUnsignedRevFrameTracker::undo_RX},
+    {GateType::RY, &SparseUnsignedRevFrameTracker::undo_RY},
+    {GateType::R, &SparseUnsignedRevFrameTracker::undo_RZ},
+    {GateType::MPP, &SparseUnsignedRevFrameTracker::undo_MPP},
+    {GateType::XCX, &SparseUnsignedRevFrameTracker::undo_XCX},
+    {GateType::XCY, &SparseUnsignedRevFrameTracker::undo_XCY},
+    {GateType::XCZ, &SparseUnsignedRevFrameTracker::undo_XCZ},
+    {GateType::YCX, &SparseUnsignedRevFrameTracker::undo_YCX},
+    {GateType::YCY, &SparseUnsignedRevFrameTracker::undo_YCY},
+    {GateType::YCZ, &SparseUnsignedRevFrameTracker::undo_YCZ},
+    {GateType::CX, &SparseUnsignedRevFrameTracker::undo_ZCX},
+    {GateType::CY, &SparseUnsignedRevFrameTracker::undo_ZCY},
+    {GateType::CZ, &SparseUnsignedRevFrameTracker::undo_ZCZ},
+    {GateType::H, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+    {GateType::H_XY, &SparseUnsignedRevFrameTracker::undo_H_XY},
+    {GateType::H_YZ, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+    {GateType::DEPOLARIZE1, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::DEPOLARIZE2, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::X_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::Y_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::Z_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::PAULI_CHANNEL_1, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::PAULI_CHANNEL_2, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::E, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::ELSE_CORRELATED_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::I, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::X, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::Y, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::Z, &SparseUnsignedRevFrameTracker::undo_I},
+    {GateType::C_XYZ, &SparseUnsignedRevFrameTracker::undo_C_XYZ},
+    {GateType::C_ZYX, &SparseUnsignedRevFrameTracker::undo_C_ZYX},
+    {GateType::SQRT_X, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+    {GateType::SQRT_X_DAG, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+    {GateType::SQRT_Y, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+    {GateType::SQRT_Y_DAG, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+    {GateType::S, &SparseUnsignedRevFrameTracker::undo_H_XY},
+    {GateType::S_DAG, &SparseUnsignedRevFrameTracker::undo_H_XY},
+    {GateType::SQRT_XX, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
+    {GateType::SQRT_XX_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
+    {GateType::SQRT_YY, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
+    {GateType::SQRT_YY_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
+    {GateType::SQRT_ZZ, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
+    {GateType::SQRT_ZZ_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
+    {GateType::SWAP, &SparseUnsignedRevFrameTracker::undo_SWAP},
+    {GateType::ISWAP, &SparseUnsignedRevFrameTracker::undo_ISWAP},
+    {GateType::ISWAP_DAG, &SparseUnsignedRevFrameTracker::undo_ISWAP},
+    {GateType::CXSWAP, &SparseUnsignedRevFrameTracker::undo_CXSWAP},
+    {GateType::SWAPCX, &SparseUnsignedRevFrameTracker::undo_SWAPCX},
+});

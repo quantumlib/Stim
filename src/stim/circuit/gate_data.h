@@ -217,23 +217,12 @@ struct GateVTable {
     using sim_func_ptr_t = void (SIMULATOR::*)(const OperationData&);
     std::array<sim_func_ptr_t, 256> funcs;
     constexpr void add_simulator_function(GateType gate_id, sim_func_ptr_t simulator_function);
-    constexpr void add_simulator_function_annotations();
-    constexpr void add_simulator_function_blocks();
-    constexpr void add_simulator_function_collapsing();
-    constexpr void add_simulator_function_controlled();
-    constexpr void add_simulator_function_hada();
-    constexpr void add_simulator_function_noisy();
-    constexpr void add_simulator_function_pauli();
-    constexpr void add_simulator_function_period_3();
-    constexpr void add_simulator_function_period_4();
-    constexpr void add_simulator_function_pp();
-    constexpr void add_simulator_function_swaps();
 
    public:
     sim_func_ptr_t operator[](GateType gate_id) const {
         return funcs[static_cast<uint8_t>(gate_id)];
     }
-    constexpr GateVTable();
+    constexpr GateVTable(std::vector<std::pair<GateType, sim_func_ptr_t>> simulator_functions);
 };
 
 struct Gate {
