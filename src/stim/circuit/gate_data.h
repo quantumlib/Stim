@@ -216,13 +216,19 @@ struct GateVTable {
    private:
     using sim_func_ptr_t = void (SIMULATOR::*)(const OperationData&);
     std::array<sim_func_ptr_t, 256> funcs;
-    constexpr void add_simulator_function(GateType gate_id, sim_func_ptr_t simulator_function);
+    constexpr void add_simulator_function(GateType gate_id, sim_func_ptr_t simulator_function) {
+        funcs[static_cast<uint8_t>(gate_id)] = simulator_function;
+    }
 
    public:
     sim_func_ptr_t operator[](GateType gate_id) const {
         return funcs[static_cast<uint8_t>(gate_id)];
     }
-    constexpr GateVTable(std::vector<std::pair<GateType, sim_func_ptr_t>> simulator_functions);
+    constexpr GateVTable(std::vector<std::pair<GateType, sim_func_ptr_t>> simulator_functions) {
+        for (const auto [gate_type, sim_func] : simulator_functions) {
+            add_simulator_function(gate_type, sim_func);
+        }
+    }
 };
 
 struct Gate {
@@ -382,10 +388,6 @@ struct GateDataMap {
 };
 
 extern const GateDataMap GATE_DATA;
-extern const GateVTable<FrameSimulator> FRAME_SIM_VTABLE;
-extern const GateVTable<TableauSimulator> TABLEAU_SIM_VTABLE;
-extern const GateVTable<ErrorAnalyzer> ERROR_ANALYZER_VTABLE;
-extern const GateVTable<SparseUnsignedRevFrameTracker> SPARSE_UNSIGNED_REV_FRAME_TRACKER_VTABLE;
 
 void decompose_mpp_operation(
     const OperationData &target_data,

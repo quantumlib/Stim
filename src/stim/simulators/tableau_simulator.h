@@ -38,6 +38,68 @@ struct TableauSimulator {
     int8_t sign_bias;
     MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
+    const GateVTable<TableauSimulator> gate_vtable = GateVTable<TableauSimulator>({
+        {GateType::DETECTOR, &TableauSimulator::I},
+        {GateType::OBSERVABLE_INCLUDE, &TableauSimulator::I},
+        {GateType::TICK, &TableauSimulator::I},
+        {GateType::QUBIT_COORDS, &TableauSimulator::I},
+        {GateType::SHIFT_COORDS, &TableauSimulator::I},
+        {GateType::REPEAT, &TableauSimulator::I},
+        {GateType::MX, &TableauSimulator::measure_x},
+        {GateType::MY, &TableauSimulator::measure_y},
+        {GateType::M, &TableauSimulator::measure_z},
+        {GateType::MRX, &TableauSimulator::measure_reset_x},
+        {GateType::MRY, &TableauSimulator::measure_reset_y},
+        {GateType::MR, &TableauSimulator::measure_reset_z},
+        {GateType::RX, &TableauSimulator::reset_x},
+        {GateType::RY, &TableauSimulator::reset_y},
+        {GateType::R, &TableauSimulator::reset_z},
+        {GateType::MPP, &TableauSimulator::MPP},
+        {GateType::XCX, &TableauSimulator::XCX},
+        {GateType::XCY, &TableauSimulator::XCY},
+        {GateType::XCZ, &TableauSimulator::XCZ},
+        {GateType::YCX, &TableauSimulator::YCX},
+        {GateType::YCY, &TableauSimulator::YCY},
+        {GateType::YCZ, &TableauSimulator::YCZ},
+        {GateType::CX, &TableauSimulator::ZCX},
+        {GateType::CY, &TableauSimulator::ZCY},
+        {GateType::CZ, &TableauSimulator::ZCZ},
+        {GateType::H, &TableauSimulator::H_XZ},
+        {GateType::H_XY, &TableauSimulator::H_XY},
+        {GateType::H_YZ, &TableauSimulator::H_YZ},
+        {GateType::DEPOLARIZE1, &TableauSimulator::DEPOLARIZE1},
+        {GateType::DEPOLARIZE2, &TableauSimulator::DEPOLARIZE2},
+        {GateType::X_ERROR, &TableauSimulator::X_ERROR},
+        {GateType::Y_ERROR, &TableauSimulator::Y_ERROR},
+        {GateType::Z_ERROR, &TableauSimulator::Z_ERROR},
+        {GateType::PAULI_CHANNEL_1, &TableauSimulator::PAULI_CHANNEL_1},
+        {GateType::PAULI_CHANNEL_2, &TableauSimulator::PAULI_CHANNEL_2},
+        {GateType::E, &TableauSimulator::CORRELATED_ERROR},
+        {GateType::ELSE_CORRELATED_ERROR, &TableauSimulator::ELSE_CORRELATED_ERROR},
+        {GateType::I, &TableauSimulator::I},
+        {GateType::X, &TableauSimulator::X},
+        {GateType::Y, &TableauSimulator::Y},
+        {GateType::Z, &TableauSimulator::Z},
+        {GateType::C_XYZ, &TableauSimulator::C_XYZ},
+        {GateType::C_ZYX, &TableauSimulator::C_ZYX},
+        {GateType::SQRT_X, &TableauSimulator::SQRT_X},
+        {GateType::SQRT_X_DAG, &TableauSimulator::SQRT_X_DAG},
+        {GateType::SQRT_Y, &TableauSimulator::SQRT_Y},
+        {GateType::SQRT_Y_DAG, &TableauSimulator::SQRT_Y_DAG},
+        {GateType::S, &TableauSimulator::SQRT_Z},
+        {GateType::S_DAG, &TableauSimulator::SQRT_Z_DAG},
+        {GateType::SQRT_XX, &TableauSimulator::SQRT_XX},
+        {GateType::SQRT_XX_DAG, &TableauSimulator::SQRT_XX_DAG},
+        {GateType::SQRT_YY, &TableauSimulator::SQRT_YY},
+        {GateType::SQRT_YY_DAG, &TableauSimulator::SQRT_YY_DAG},
+        {GateType::SQRT_ZZ, &TableauSimulator::SQRT_ZZ},
+        {GateType::SQRT_ZZ_DAG, &TableauSimulator::SQRT_ZZ_DAG},
+        {GateType::SWAP, &TableauSimulator::SWAP},
+        {GateType::ISWAP, &TableauSimulator::ISWAP},
+        {GateType::ISWAP_DAG, &TableauSimulator::ISWAP_DAG},
+        {GateType::CXSWAP, &TableauSimulator::CXSWAP},
+        {GateType::SWAPCX, &TableauSimulator::SWAPCX},
+    });
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
@@ -156,8 +218,8 @@ struct TableauSimulator {
 
     std::vector<PauliString> canonical_stabilizers() const;
 
-    inline void do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(TABLEAU_SIM_VTABLE[gate_id]))(data);
+    inline void do_gate(GateType gate_id, const OperationData &data) {
+        (this->*(gate_vtable[gate_id]))(data);
     }
 
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===
