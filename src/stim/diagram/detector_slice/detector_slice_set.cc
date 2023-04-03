@@ -424,12 +424,19 @@ const char *pick_color(ConstPointerRange<GateTarget> terms) {
     }
 }
 
-float angle_from_to(Coord<2> origin, Coord<2> dst) {
+float offset_angle_from_to(Coord<2> origin, Coord<2> dst) {
     auto d = dst - origin;
     if (d.xyz[0] * d.xyz[0] + d.xyz[1] * d.xyz[1] < 1e-6) {
         return 0;
     }
-    return atan2f(d.xyz[1], d.xyz[0]);
+    float offset_angle = atan2f(d.xyz[1], d.xyz[0]);
+    offset_angle += 2.0f * M_PI;
+    offset_angle = fmodf(offset_angle, 2.0f * M_PI);
+    // The -0.01f is to move the wraparound float error away from the common angle PI.
+    if (offset_angle > M_PI - 0.01f) {
+        offset_angle -= 2.0f * M_PI;
+    }
+    return offset_angle;
 }
 
 float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
@@ -650,7 +657,7 @@ void _start_many_body_svg_path(
     }
     auto center = pick_polygon_center(pts_workspace);
     std::stable_sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
-        return angle_from_to(center, a) < angle_from_to(center, b);
+        return offset_angle_from_to(center, a) < offset_angle_from_to(center, b);
     });
 
     out << "<path d=\"";
