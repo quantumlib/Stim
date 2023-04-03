@@ -81,7 +81,7 @@ constexpr inline uint8_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-enum class GateType : uint8_t {
+enum GateType : uint8_t {
     // Annotations
     DETECTOR = gate_name_to_hash("DETECTOR"),
     OBSERVABLE_INCLUDE = gate_name_to_hash("OBSERVABLE_INCLUDE"),
@@ -93,13 +93,13 @@ enum class GateType : uint8_t {
     // Collapsing gates
     MX = gate_name_to_hash("MX"),
     MY = gate_name_to_hash("MY"),
-    M = gate_name_to_hash("M"),
+    M = gate_name_to_hash("M"),  // alias when parsing: MZ
     MRX = gate_name_to_hash("MRX"),
     MRY = gate_name_to_hash("MRY"),
-    MR = gate_name_to_hash("MR"),
+    MR = gate_name_to_hash("MR"),  // alias when parsing: MRZ
     RX = gate_name_to_hash("RX"),
     RY = gate_name_to_hash("RY"),
-    R = gate_name_to_hash("R"),
+    R = gate_name_to_hash("R"),  // alias when parsing: RZ
     MPP = gate_name_to_hash("MPP"),
     // Controlled gates
     XCX = gate_name_to_hash("XCX"),
@@ -108,11 +108,11 @@ enum class GateType : uint8_t {
     YCX = gate_name_to_hash("YCX"),
     YCY = gate_name_to_hash("YCY"),
     YCZ = gate_name_to_hash("YCZ"),
-    CX = gate_name_to_hash("CX"),
-    CY = gate_name_to_hash("CY"),
-    CZ = gate_name_to_hash("CZ"),
+    CX = gate_name_to_hash("CX"),  // alias when parsing: CNOT, ZCX
+    CY = gate_name_to_hash("CY"),  // alias when parsing: ZCY
+    CZ = gate_name_to_hash("CZ"),  // alias when parsing: ZCZ
     // Hadamard-like gates
-    H = gate_name_to_hash("H"),
+    H = gate_name_to_hash("H"),  // alias when parsing: H_XZ
     H_XY = gate_name_to_hash("H_XY"),
     H_YZ = gate_name_to_hash("H_YZ"),
     // Noise channels
@@ -123,7 +123,7 @@ enum class GateType : uint8_t {
     Z_ERROR = gate_name_to_hash("Z_ERROR"),
     PAULI_CHANNEL_1 = gate_name_to_hash("PAULI_CHANNEL_1"),
     PAULI_CHANNEL_2 = gate_name_to_hash("PAULI_CHANNEL_2"),
-    E = gate_name_to_hash("E"),
+    E = gate_name_to_hash("E"),  // alias when parsing: CORRELATED_ERROR
     ELSE_CORRELATED_ERROR = gate_name_to_hash("ELSE_CORRELATED_ERROR"),
     // Pauli gates
     I = gate_name_to_hash("I"),
@@ -138,8 +138,8 @@ enum class GateType : uint8_t {
     SQRT_X_DAG = gate_name_to_hash("SQRT_X_DAG"),
     SQRT_Y = gate_name_to_hash("SQRT_Y"),
     SQRT_Y_DAG = gate_name_to_hash("SQRT_Y_DAG"),
-    S = gate_name_to_hash("S"),
-    S_DAG = gate_name_to_hash("S_DAG"),
+    S = gate_name_to_hash("S"),  // alias when parsing: SQRT_Z
+    S_DAG = gate_name_to_hash("S_DAG"),  // alias when parsing: SQRT_Z_DAG
     // Pauli product gates
     SQRT_XX = gate_name_to_hash("SQRT_XX"),
     SQRT_XX_DAG = gate_name_to_hash("SQRT_XX_DAG"),
@@ -209,26 +209,6 @@ struct ExtraGateData {
         FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
         FixedCapVector<const char *, 4> tableau_data,
         const char *h_s_cx_m_r_decomposition);
-};
-
-template <typename SIMULATOR>
-struct GateVTable {
-   private:
-    using sim_func_ptr_t = void (SIMULATOR::*)(const OperationData&);
-    std::array<sim_func_ptr_t, 256> funcs;
-    constexpr void add_simulator_function(GateType gate_id, sim_func_ptr_t simulator_function) {
-        funcs[static_cast<uint8_t>(gate_id)] = simulator_function;
-    }
-
-   public:
-    sim_func_ptr_t operator[](GateType gate_id) const {
-        return funcs[static_cast<uint8_t>(gate_id)];
-    }
-    constexpr GateVTable(std::vector<std::pair<GateType, sim_func_ptr_t>> simulator_functions) {
-        for (const auto [gate_type, sim_func] : simulator_functions) {
-            add_simulator_function(gate_type, sim_func);
-        }
-    }
 };
 
 struct Gate {

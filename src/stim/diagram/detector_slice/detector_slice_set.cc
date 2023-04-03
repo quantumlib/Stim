@@ -75,7 +75,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
                 used_qubits.insert(t.qubit_value());
             }
         }
-        tracker.do_gate(op.gate->id, op.target_data);
+        tracker.undo_gate(op.gate->id, op.target_data);
         return false;
     }
 }
@@ -466,8 +466,8 @@ float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
     if (left.size() != right.size()) {
         return INFINITY;
     }
-    std::sort(left.begin(), left.end());
-    std::sort(right.begin(), right.end());
+    std::stable_sort(left.begin(), left.end());
+    std::stable_sort(right.begin(), right.end());
     for (size_t k = 0; k < left.size(); k++) {
         if ((left[k] - right[k]).norm2() > 1e-2) {
             return INFINITY;

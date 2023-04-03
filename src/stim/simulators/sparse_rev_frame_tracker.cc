@@ -16,6 +16,71 @@
 
 using namespace stim;
 
+constexpr GateVTable<void (SparseUnsignedRevFrameTracker::*)(const OperationData&)> rev_tracker_vtable_data() {
+    return {{{
+        {GateType::DETECTOR, &SparseUnsignedRevFrameTracker::undo_DETECTOR},
+        {GateType::OBSERVABLE_INCLUDE, &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE},
+        {GateType::TICK, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::QUBIT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::SHIFT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::REPEAT, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::MX, &SparseUnsignedRevFrameTracker::undo_MX},
+        {GateType::MY, &SparseUnsignedRevFrameTracker::undo_MY},
+        {GateType::M, &SparseUnsignedRevFrameTracker::undo_MZ},
+        {GateType::MRX, &SparseUnsignedRevFrameTracker::undo_MRX},
+        {GateType::MRY, &SparseUnsignedRevFrameTracker::undo_MRY},
+        {GateType::MR, &SparseUnsignedRevFrameTracker::undo_MRZ},
+        {GateType::RX, &SparseUnsignedRevFrameTracker::undo_RX},
+        {GateType::RY, &SparseUnsignedRevFrameTracker::undo_RY},
+        {GateType::R, &SparseUnsignedRevFrameTracker::undo_RZ},
+        {GateType::MPP, &SparseUnsignedRevFrameTracker::undo_MPP},
+        {GateType::XCX, &SparseUnsignedRevFrameTracker::undo_XCX},
+        {GateType::XCY, &SparseUnsignedRevFrameTracker::undo_XCY},
+        {GateType::XCZ, &SparseUnsignedRevFrameTracker::undo_XCZ},
+        {GateType::YCX, &SparseUnsignedRevFrameTracker::undo_YCX},
+        {GateType::YCY, &SparseUnsignedRevFrameTracker::undo_YCY},
+        {GateType::YCZ, &SparseUnsignedRevFrameTracker::undo_YCZ},
+        {GateType::CX, &SparseUnsignedRevFrameTracker::undo_ZCX},
+        {GateType::CY, &SparseUnsignedRevFrameTracker::undo_ZCY},
+        {GateType::CZ, &SparseUnsignedRevFrameTracker::undo_ZCZ},
+        {GateType::H, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+        {GateType::H_XY, &SparseUnsignedRevFrameTracker::undo_H_XY},
+        {GateType::H_YZ, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+        {GateType::DEPOLARIZE1, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::DEPOLARIZE2, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::X_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::Y_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::Z_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::PAULI_CHANNEL_1, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::PAULI_CHANNEL_2, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::E, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::ELSE_CORRELATED_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::I, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::X, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::Y, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::Z, &SparseUnsignedRevFrameTracker::undo_I},
+        {GateType::C_XYZ, &SparseUnsignedRevFrameTracker::undo_C_XYZ},
+        {GateType::C_ZYX, &SparseUnsignedRevFrameTracker::undo_C_ZYX},
+        {GateType::SQRT_X, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+        {GateType::SQRT_X_DAG, &SparseUnsignedRevFrameTracker::undo_H_YZ},
+        {GateType::SQRT_Y, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+        {GateType::SQRT_Y_DAG, &SparseUnsignedRevFrameTracker::undo_H_XZ},
+        {GateType::S, &SparseUnsignedRevFrameTracker::undo_H_XY},
+        {GateType::S_DAG, &SparseUnsignedRevFrameTracker::undo_H_XY},
+        {GateType::SQRT_XX, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
+        {GateType::SQRT_XX_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
+        {GateType::SQRT_YY, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
+        {GateType::SQRT_YY_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
+        {GateType::SQRT_ZZ, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
+        {GateType::SQRT_ZZ_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
+        {GateType::SWAP, &SparseUnsignedRevFrameTracker::undo_SWAP},
+        {GateType::ISWAP, &SparseUnsignedRevFrameTracker::undo_ISWAP},
+        {GateType::ISWAP_DAG, &SparseUnsignedRevFrameTracker::undo_ISWAP},
+        {GateType::CXSWAP, &SparseUnsignedRevFrameTracker::undo_CXSWAP},
+        {GateType::SWAPCX, &SparseUnsignedRevFrameTracker::undo_SWAPCX},
+    }}};
+}
+
 SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
     uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past)
     : xs(num_qubits),
@@ -23,68 +88,7 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       rec_bits(),
       num_measurements_in_past(num_measurements_in_past),
       num_detectors_in_past(num_detectors_in_past),
-      gate_vtable(GateVTable<SparseUnsignedRevFrameTracker>({
-          {GateType::DETECTOR, &SparseUnsignedRevFrameTracker::undo_DETECTOR},
-          {GateType::OBSERVABLE_INCLUDE, &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE},
-          {GateType::TICK, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::QUBIT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::SHIFT_COORDS, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::REPEAT, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::MX, &SparseUnsignedRevFrameTracker::undo_MX},
-          {GateType::MY, &SparseUnsignedRevFrameTracker::undo_MY},
-          {GateType::M, &SparseUnsignedRevFrameTracker::undo_MZ},
-          {GateType::MRX, &SparseUnsignedRevFrameTracker::undo_MRX},
-          {GateType::MRY, &SparseUnsignedRevFrameTracker::undo_MRY},
-          {GateType::MR, &SparseUnsignedRevFrameTracker::undo_MRZ},
-          {GateType::RX, &SparseUnsignedRevFrameTracker::undo_RX},
-          {GateType::RY, &SparseUnsignedRevFrameTracker::undo_RY},
-          {GateType::R, &SparseUnsignedRevFrameTracker::undo_RZ},
-          {GateType::MPP, &SparseUnsignedRevFrameTracker::undo_MPP},
-          {GateType::XCX, &SparseUnsignedRevFrameTracker::undo_XCX},
-          {GateType::XCY, &SparseUnsignedRevFrameTracker::undo_XCY},
-          {GateType::XCZ, &SparseUnsignedRevFrameTracker::undo_XCZ},
-          {GateType::YCX, &SparseUnsignedRevFrameTracker::undo_YCX},
-          {GateType::YCY, &SparseUnsignedRevFrameTracker::undo_YCY},
-          {GateType::YCZ, &SparseUnsignedRevFrameTracker::undo_YCZ},
-          {GateType::CX, &SparseUnsignedRevFrameTracker::undo_ZCX},
-          {GateType::CY, &SparseUnsignedRevFrameTracker::undo_ZCY},
-          {GateType::CZ, &SparseUnsignedRevFrameTracker::undo_ZCZ},
-          {GateType::H, &SparseUnsignedRevFrameTracker::undo_H_XZ},
-          {GateType::H_XY, &SparseUnsignedRevFrameTracker::undo_H_XY},
-          {GateType::H_YZ, &SparseUnsignedRevFrameTracker::undo_H_YZ},
-          {GateType::DEPOLARIZE1, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::DEPOLARIZE2, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::X_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::Y_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::Z_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::PAULI_CHANNEL_1, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::PAULI_CHANNEL_2, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::E, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::ELSE_CORRELATED_ERROR, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::I, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::X, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::Y, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::Z, &SparseUnsignedRevFrameTracker::undo_I},
-          {GateType::C_XYZ, &SparseUnsignedRevFrameTracker::undo_C_XYZ},
-          {GateType::C_ZYX, &SparseUnsignedRevFrameTracker::undo_C_ZYX},
-          {GateType::SQRT_X, &SparseUnsignedRevFrameTracker::undo_H_YZ},
-          {GateType::SQRT_X_DAG, &SparseUnsignedRevFrameTracker::undo_H_YZ},
-          {GateType::SQRT_Y, &SparseUnsignedRevFrameTracker::undo_H_XZ},
-          {GateType::SQRT_Y_DAG, &SparseUnsignedRevFrameTracker::undo_H_XZ},
-          {GateType::S, &SparseUnsignedRevFrameTracker::undo_H_XY},
-          {GateType::S_DAG, &SparseUnsignedRevFrameTracker::undo_H_XY},
-          {GateType::SQRT_XX, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
-          {GateType::SQRT_XX_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_XX},
-          {GateType::SQRT_YY, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
-          {GateType::SQRT_YY_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_YY},
-          {GateType::SQRT_ZZ, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
-          {GateType::SQRT_ZZ_DAG, &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ},
-          {GateType::SWAP, &SparseUnsignedRevFrameTracker::undo_SWAP},
-          {GateType::ISWAP, &SparseUnsignedRevFrameTracker::undo_ISWAP},
-          {GateType::ISWAP_DAG, &SparseUnsignedRevFrameTracker::undo_ISWAP},
-          {GateType::CXSWAP, &SparseUnsignedRevFrameTracker::undo_CXSWAP},
-          {GateType::SWAPCX, &SparseUnsignedRevFrameTracker::undo_SWAPCX},
-      })) {
+      gate_vtable(rev_tracker_vtable_data()) {
 }
 
 PauliString SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarget target) const {
@@ -616,13 +620,13 @@ void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Ci
         uint64_t repeats = op_data_rep_count(op.target_data);
         undo_loop(loop_body, repeats);
     } else {
-        do_gate(op.gate->id, op.target_data);
+        undo_gate(op.gate->id, op.target_data);
     }
 }
 
 void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op) {
     assert(op.gate->id != GateType::REPEAT);
-    do_gate(op.gate->id, op.target_data);
+    undo_gate(op.gate->id, op.target_data);
 }
 
 void SparseUnsignedRevFrameTracker::undo_circuit(const Circuit &circuit) {

@@ -1201,7 +1201,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             }
 
             auto &op = self.operations[index];
-            if (op.gate->id == Gates::REPEAT) {
+            if (op.gate->id == GateType::REPEAT) {
                 return pybind11::cast(
                     CircuitRepeatBlock{op_data_rep_count(op.target_data), op_data_block_body(self, op.target_data)});
             }

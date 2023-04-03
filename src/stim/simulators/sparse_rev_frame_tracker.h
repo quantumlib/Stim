@@ -18,6 +18,7 @@
 #define _STIM_SIMULATORS_SPARSE_REV_FRAME_TRACKER_H
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -38,15 +39,15 @@ struct SparseUnsignedRevFrameTracker {
     /// Number of detectors that have not yet been processed.
     uint64_t num_detectors_in_past;
     // Function vtable for each gate's simulator function
-    GateVTable<SparseUnsignedRevFrameTracker> gate_vtable;
+    GateVTable<void (SparseUnsignedRevFrameTracker::*)(const OperationData&)> gate_vtable;
 
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
 
     PauliString current_error_sensitivity_for(DemTarget target) const;
 
-    inline void do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(gate_vtable[gate_id]))(data);
+    inline void undo_gate(GateType gate_id, const OperationData& data) {
+        (this->*(gate_vtable.data[gate_id]))(data);
     }
 
     void handle_xor_gauge(ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2);

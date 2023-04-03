@@ -116,7 +116,7 @@ struct ErrorAnalyzer {
     uint64_t num_ticks_in_past = 0;
 
     /// Function vtable for each gate's simulator function
-    const GateVTable<ErrorAnalyzer> gate_vtable;
+    GateVTable<void (ErrorAnalyzer::*)(const OperationData&)> gate_vtable;
 
     /// Used for producing debug information when errors occur.
     const Circuit *current_circuit_being_analyzed = nullptr;
@@ -235,7 +235,7 @@ struct ErrorAnalyzer {
     void post_check_initialization();
 
     inline void rev_do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(gate_vtable[gate_id]))(data);
+        (this->*(gate_vtable.data[gate_id]))(data);
     }
 
     /// Returns a PauliString indicating the current error sensitivity of a detector or observable.

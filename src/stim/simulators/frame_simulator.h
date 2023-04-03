@@ -20,6 +20,7 @@
 #include <random>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record_batch.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -44,7 +45,7 @@ struct FrameSimulator {
     simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
     std::mt19937_64 &rng;  // Random number generator used for generating entropy.
-    const GateVTable<FrameSimulator> gate_vtable; // Function vtable for each gate's simulator function
+    const GateVTable<void (FrameSimulator::*)(const OperationData&)> gate_vtable; // Function vtable for each gate's simulator function
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -99,7 +100,7 @@ struct FrameSimulator {
     void reset_all();
 
     inline void do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(gate_vtable[gate_id]))(data);
+        (this->*(gate_vtable.data[gate_id]))(data);
     }
 
     void measure_x(const OperationData &target_data);
