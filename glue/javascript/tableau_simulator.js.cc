@@ -82,7 +82,7 @@ emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
 void ExposedTableauSimulator::do_circuit(const ExposedCircuit &circuit) {
     sim.ensure_large_enough_for_qubits(circuit.circuit.count_qubits());
     circuit.circuit.for_each_operation([&](const Operation &op) {
-        (sim.*op.gate->tableau_simulator_function)(op.target_data);
+        sim.do_gate(op.gate->id, op.target_data);
     });
 }
 void ExposedTableauSimulator::do_pauli_string(const ExposedPauliString &pauli_string) {
