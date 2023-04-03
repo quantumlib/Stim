@@ -45,6 +45,6 @@ struct GateVTable {
     }
 };
 
-};
+}
 
 #endif
