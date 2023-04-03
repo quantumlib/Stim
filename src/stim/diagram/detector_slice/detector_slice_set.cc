@@ -427,14 +427,14 @@ const char *pick_color(ConstPointerRange<GateTarget> terms) {
 float offset_angle_from_to(Coord<2> origin, Coord<2> dst) {
     auto d = dst - origin;
     if (d.xyz[0] * d.xyz[0] + d.xyz[1] * d.xyz[1] < 1e-6) {
-        return 0;
+        return 0.0f;
     }
     float offset_angle = atan2f(d.xyz[1], d.xyz[0]);
-    offset_angle += 2.0f * M_PI;
-    offset_angle = fmodf(offset_angle, 2.0f * M_PI);
+    offset_angle += 2.0f * (float)M_PI;
+    offset_angle = fmodf(offset_angle, 2.0f * (float)M_PI);
     // The -0.01f is to move the wraparound float error away from the common angle PI.
-    if (offset_angle > M_PI - 0.01f) {
-        offset_angle -= 2.0f * M_PI;
+    if (offset_angle > (float)M_PI - 0.01f) {
+        offset_angle -= 2.0f * (float)M_PI;
     }
     return offset_angle;
 }
