@@ -430,11 +430,11 @@ float offset_angle_from_to(Coord<2> origin, Coord<2> dst) {
         return 0.0f;
     }
     float offset_angle = atan2f(d.xyz[1], d.xyz[0]);
-    offset_angle += 2.0f * (float)M_PI;
-    offset_angle = fmodf(offset_angle, 2.0f * (float)M_PI);
+    offset_angle += 2.0f * 3.14159265359f;
+    offset_angle = fmodf(offset_angle, 2.0f * 3.14159265359f);
     // The -0.01f is to move the wraparound float error away from the common angle PI.
-    if (offset_angle > (float)M_PI - 0.01f) {
-        offset_angle -= 2.0f * (float)M_PI;
+    if (offset_angle > 3.14159265359f - 0.01f) {
+        offset_angle -= 2.0f * 3.14159265359f;
     }
     return offset_angle;
 }
