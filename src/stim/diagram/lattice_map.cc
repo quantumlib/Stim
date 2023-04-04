@@ -5,8 +5,8 @@ using namespace stim_draw_internal;
 
 void LatticeMap::set(
     uint64_t index,
-    stim::ConstPointerRange<uint64_t> offsets_per_iteration,
-    stim::ConstPointerRange<uint64_t> iteration_counts,
+    stim::SpanRef<const uint64_t> offsets_per_iteration,
+    stim::SpanRef<const uint64_t> iteration_counts,
     uint32_t value) {
     if (offsets_per_iteration.empty()) {
         if (index >= brute_force_data.size()) {

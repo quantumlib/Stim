@@ -72,7 +72,7 @@ void CommutingPauliStringIterator::restart_iter_same_constraints() {
 }
 
 void CommutingPauliStringIterator::restart_iter(
-    ConstPointerRange<PauliStringRef> commutators, ConstPointerRange<PauliStringRef> anticommutators) {
+    SpanRef<const PauliStringRef> commutators, SpanRef<const PauliStringRef> anticommutators) {
     restart_iter_same_constraints();
     cur_desired_commutators = commutators;
     cur_desired_anticommutators = anticommutators;
@@ -176,11 +176,11 @@ TableauIterator &TableauIterator::operator=(const TableauIterator &other) {
     return *this;
 }
 
-std::pair<ConstPointerRange<PauliStringRef>, ConstPointerRange<PauliStringRef>>
+std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>>
 TableauIterator::constraints_for_pauli_iterator(size_t k) const {
     const PauliStringRef *tab_obs_start = &tableau_column_refs[0];
-    ConstPointerRange<PauliStringRef> commute_rng = {tab_obs_start, tab_obs_start + k};
-    ConstPointerRange<PauliStringRef> anticommute_rng;
+    SpanRef<const PauliStringRef> commute_rng = {tab_obs_start, tab_obs_start + k};
+    SpanRef<const PauliStringRef> anticommute_rng;
     if (k & 1) {
         anticommute_rng.ptr_end = commute_rng.ptr_end;
         commute_rng.ptr_end--;

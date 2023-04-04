@@ -143,7 +143,7 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
     diagram_out.elements.push_back({op.gate->name, center});
 }
 
-void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
+void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
     bool already_used = false;
     for (auto t : targets) {
         if (t.is_x_target() || t.is_y_target() || t.is_z_target() || t.is_qubit_target()) {

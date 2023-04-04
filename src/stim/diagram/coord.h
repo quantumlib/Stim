@@ -5,7 +5,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim_draw_internal {
 
@@ -85,7 +85,7 @@ struct Coord {
         return xyz == other.xyz;
     }
 
-    static std::pair<Coord<DIM>, Coord<DIM>> min_max(stim::ConstPointerRange<Coord<DIM>> coords) {
+    static std::pair<Coord<DIM>, Coord<DIM>> min_max(stim::SpanRef<const Coord<DIM>> coords) {
         if (coords.empty()) {
             throw std::invalid_argument("coords.empty()");
         }

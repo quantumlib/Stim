@@ -187,7 +187,7 @@ void DiagramTimelineAsciiDrawer::write_rec_index(std::ostream &out, int64_t look
     out << ']';
 }
 
-void DiagramTimelineAsciiDrawer::write_coords(std::ostream &out, ConstPointerRange<double> relative_coordinates) {
+void DiagramTimelineAsciiDrawer::write_coords(std::ostream &out, SpanRef<const double> relative_coordinates) {
     out.put('(');
     for (size_t k = 0; k < relative_coordinates.size(); k++) {
         if (k) {
@@ -214,7 +214,7 @@ void DiagramTimelineAsciiDrawer::write_coord(std::ostream &out, size_t coord_ind
     }
 }
 
-void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
+void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
     size_t min_q = SIZE_MAX;
     size_t max_q = 0;
     for (const auto &t : targets) {
@@ -370,7 +370,7 @@ void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation
 void DiagramTimelineAsciiDrawer::do_detector(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     std::stringstream ss;
@@ -404,7 +404,7 @@ void DiagramTimelineAsciiDrawer::do_detector(const ResolvedTimelineOperation &op
 void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     std::stringstream ss;

@@ -3,7 +3,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-Coord<3> flattened_3d(ConstPointerRange<double> c) {
+Coord<3> flattened_3d(SpanRef<const double> c) {
     float x = 0;
     float y = 0;
     float z = 0;
@@ -80,7 +80,7 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
     auto center = (minmax.first + minmax.second) * 0.5;
 
     std::vector<Coord<3>> det_coords;
-    auto handle_contiguous_targets = [&](ConstPointerRange<DemTarget> targets) {
+    auto handle_contiguous_targets = [&](SpanRef<const DemTarget> targets) {
         bool has_observables = false;
         det_coords.clear();
         for (const auto &t : targets) {

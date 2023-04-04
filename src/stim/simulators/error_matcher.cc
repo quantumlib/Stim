@@ -69,7 +69,7 @@ void ErrorMatcher::err_atom(const Operation &effect) {
     }
 
     assert(error_analyzer.error_class_probabilities.size() == 1);
-    ConstPointerRange<DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
+    SpanRef<const DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
     auto entry = output_map.find(dem_error_terms);
     if (!dem_error_terms.empty() && (allow_adding_new_dem_errors_to_output_map || entry != output_map.end())) {
         // We have a desired match! Record it.
@@ -97,7 +97,7 @@ void ErrorMatcher::err_atom(const Operation &effect) {
 }
 
 void ErrorMatcher::resolve_paulis_into(
-    ConstPointerRange<GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out) {
+    SpanRef<const GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out) {
     for (const auto &t : targets) {
         if (t.is_combiner()) {
             continue;
@@ -195,7 +195,7 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
             start -= std::min(start, size_t{2});
         }
 
-        ConstPointerRange<GateTarget> slice{t.begin() + start, t.begin() + end};
+        SpanRef<const GateTarget> slice{t.begin() + start, t.begin() + end};
 
         cur_loc.instruction_targets.target_range_start = start;
         cur_loc.instruction_targets.target_range_end = end;

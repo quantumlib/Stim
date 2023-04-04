@@ -37,7 +37,7 @@ namespace stim {
 /// \param out: Where to write the output. Must have size of at least sorted_in1.size() + sorted_in2.size().
 /// \return: A pointer to the end of the output (one past the last place written).
 template <typename T>
-inline T *xor_merge_sort(ConstPointerRange<T> sorted_in1, ConstPointerRange<T> sorted_in2, T *out) {
+inline T *xor_merge_sort(SpanRef<const T> sorted_in1, SpanRef<const T> sorted_in2, T *out) {
     // Interleave sorted src and dst into a sorted work buffer.
     const T *p1 = sorted_in1.ptr_start;
     const T *p2 = sorted_in2.ptr_start;
@@ -61,7 +61,7 @@ inline T *xor_merge_sort(ConstPointerRange<T> sorted_in1, ConstPointerRange<T> s
 }
 
 template <typename T>
-bool is_subset_of_sorted(ConstPointerRange<T> subset, ConstPointerRange<T> superset) {
+bool is_subset_of_sorted(SpanRef<const T> subset, SpanRef<const T> superset) {
     const T *p_sub = subset.ptr_start;
     const T *p_sup = superset.ptr_start;
     const T *end_sub = subset.ptr_end;
@@ -82,15 +82,19 @@ bool is_subset_of_sorted(ConstPointerRange<T> subset, ConstPointerRange<T> super
 
 template <typename T, typename CALLBACK>
 inline void xor_merge_sort_temp_buffer_callback(
-    ConstPointerRange<T> sorted_items_1, ConstPointerRange<T> sorted_items_2, CALLBACK handler) {
+    SpanRef<const T> sorted_items_1, SpanRef<const T> sorted_items_2, CALLBACK handler) {
     constexpr size_t STACK_SIZE = 64;
-    T data[STACK_SIZE];
     size_t max = sorted_items_1.size() + sorted_items_2.size();
-    T *begin = max > STACK_SIZE ? new T[max] : &data[0];
-    T *end = xor_merge_sort(sorted_items_1, sorted_items_2, begin);
-    handler(ConstPointerRange<T>(begin, end));
     if (max > STACK_SIZE) {
+        T *begin = new T[max];
+        T *end = xor_merge_sort(sorted_items_1, sorted_items_2, begin);
+        handler(SpanRef<const T>(begin, end));
         delete[] begin;
+    } else {
+        T data[STACK_SIZE];
+        T *begin = &data[0];
+        T *end = xor_merge_sort(sorted_items_1, sorted_items_2, begin);
+        handler(SpanRef<const T>(begin, end));
     }
 }
 
@@ -115,22 +119,22 @@ struct SparseXorVec {
         return sorted_items.empty();
     }
 
-    void set_to_xor_merge_sort(ConstPointerRange<T> sorted_items1, ConstPointerRange<T> sorted_items2) {
+    void set_to_xor_merge_sort(SpanRef<const T> sorted_items1, SpanRef<const T> sorted_items2) {
         sorted_items.resize(sorted_items1.size() + sorted_items2.size());
         auto written = xor_merge_sort(sorted_items, sorted_items1, sorted_items2);
         sorted_items.resize(written.size());
     }
 
-    bool is_superset_of(ConstPointerRange<T> subset) const {
-        return is_subset_of_sorted(subset, (ConstPointerRange<T>)sorted_items);
+    bool is_superset_of(SpanRef<const T> subset) const {
+        return is_subset_of_sorted(subset, (SpanRef<const T>)sorted_items);
     }
 
     bool contains(const T &item) const {
         return std::find(sorted_items.begin(), sorted_items.end(), item) != sorted_items.end();
     }
 
-    void xor_sorted_items(ConstPointerRange<T> sorted) {
-        xor_merge_sort_temp_buffer_callback(range(), sorted, [&](ConstPointerRange<T> result) {
+    void xor_sorted_items(SpanRef<const T> sorted) {
+        xor_merge_sort_temp_buffer_callback(range(), sorted, [&](SpanRef<const T> result) {
             sorted_items.clear();
             sorted_items.insert(sorted_items.end(), result.begin(), result.end());
         });
@@ -141,7 +145,7 @@ struct SparseXorVec {
     }
 
     void xor_item(const T &item) {
-        xor_sorted_items({&item});
+        xor_sorted_items(&item);
     }
 
     SparseXorVec &operator^=(const SparseXorVec<T> &other) {
@@ -193,7 +197,7 @@ struct SparseXorVec {
         return sorted_items != other.sorted_items;
     }
 
-    ConstPointerRange<T> range() const {
+    SpanRef<const T> range() const {
         return {begin(), end()};
     }
 

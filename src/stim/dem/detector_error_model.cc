@@ -242,17 +242,17 @@ void DemInstruction::validate() const {
     }
 }
 
-void DetectorErrorModel::append_error_instruction(double probability, ConstPointerRange<DemTarget> targets) {
+void DetectorErrorModel::append_error_instruction(double probability, SpanRef<const DemTarget> targets) {
     append_dem_instruction(DemInstruction{&probability, targets, DEM_ERROR});
 }
 
 void DetectorErrorModel::append_shift_detectors_instruction(
-    ConstPointerRange<double> coord_shift, uint64_t detector_shift) {
+    SpanRef<const double> coord_shift, uint64_t detector_shift) {
     DemTarget shift{detector_shift};
     append_dem_instruction(DemInstruction{coord_shift, &shift, DEM_SHIFT_DETECTORS});
 }
 
-void DetectorErrorModel::append_detector_instruction(ConstPointerRange<double> coords, DemTarget target) {
+void DetectorErrorModel::append_detector_instruction(SpanRef<const double> coords, DemTarget target) {
     append_dem_instruction(DemInstruction{coords, &target, DEM_DETECTOR});
 }
 
@@ -859,7 +859,7 @@ bool get_detector_coordinates_helper(
 
     // Fills in data for a detector that was found while iterating.
     // Returns true if all data has been filled in.
-    auto fill_in_data = [&](uint64_t fill_index, ConstPointerRange<double> fill_data) {
+    auto fill_in_data = [&](uint64_t fill_index, SpanRef<const double> fill_data) {
         if (included_detector_indices.find(fill_index) == included_detector_indices.end()) {
             // Not interested in the index for this data.
             return false;

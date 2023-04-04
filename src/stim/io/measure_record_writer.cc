@@ -50,7 +50,7 @@ void MeasureRecordWriter::write_bits(uint8_t *data, size_t num_bits) {
     }
 }
 
-void MeasureRecordWriter::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriter::write_bytes(SpanRef<const uint8_t> data) {
     for (uint8_t b : data) {
         for (size_t k = 0; k < 8; k++) {
             write_bit((b >> k) & 1);
@@ -72,7 +72,7 @@ void MeasureRecordWriterFormat01::write_end() {
 MeasureRecordWriterFormatB8::MeasureRecordWriterFormatB8(FILE *out) : out(out) {
 }
 
-void MeasureRecordWriterFormatB8::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatB8::write_bytes(SpanRef<const uint8_t> data) {
     if (count == 0) {
         fwrite(data.ptr_start, sizeof(uint8_t), data.ptr_end - data.ptr_start, out);
     } else {
@@ -101,7 +101,7 @@ void MeasureRecordWriterFormatB8::write_end() {
 MeasureRecordWriterFormatHits::MeasureRecordWriterFormatHits(FILE *out) : out(out) {
 }
 
-void MeasureRecordWriterFormatHits::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatHits::write_bytes(SpanRef<const uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
             position += 8;
@@ -134,7 +134,7 @@ void MeasureRecordWriterFormatHits::write_end() {
 MeasureRecordWriterFormatR8::MeasureRecordWriterFormatR8(FILE *out) : out(out) {
 }
 
-void MeasureRecordWriterFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatR8::write_bytes(SpanRef<const uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
             run_length += 8;
@@ -176,7 +176,7 @@ void MeasureRecordWriterFormatDets::begin_result_type(char new_result_type) {
     position = 0;
 }
 
-void MeasureRecordWriterFormatDets::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatDets::write_bytes(SpanRef<const uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
             position += 8;

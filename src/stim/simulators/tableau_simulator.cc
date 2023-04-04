@@ -135,7 +135,7 @@ void TableauSimulator::MPP(const OperationData &target_data) {
 }
 
 void TableauSimulator::postselect_helper(
-    ConstPointerRange<GateTarget> targets,
+    SpanRef<const GateTarget> targets,
     bool desired_result,
     void (TableauSimulator::*basis_change)(const OperationData &),
     const char *false_name,
@@ -180,14 +180,14 @@ void TableauSimulator::postselect_helper(
     }
 }
 
-void TableauSimulator::postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result) {
+void TableauSimulator::postselect_x(SpanRef<const GateTarget> targets, bool desired_result) {
     postselect_helper(targets, desired_result, &TableauSimulator::H_XZ, "+", "-");
 }
 
-void TableauSimulator::postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result) {
+void TableauSimulator::postselect_y(SpanRef<const GateTarget> targets, bool desired_result) {
     postselect_helper(targets, desired_result, &TableauSimulator::H_YZ, "i", "-i");
 }
-void TableauSimulator::postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result) {
+void TableauSimulator::postselect_z(SpanRef<const GateTarget> targets, bool desired_result) {
     postselect_helper(targets, desired_result, &TableauSimulator::I, "0", "1");
 }
 
@@ -926,7 +926,7 @@ std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_e
     return sim.state;
 }
 
-void TableauSimulator::collapse_x(ConstPointerRange<GateTarget> targets) {
+void TableauSimulator::collapse_x(SpanRef<const GateTarget> targets) {
     // Find targets that need to be collapsed.
     std::set<GateTarget> unique_collapse_targets;
     for (GateTarget t : targets) {
@@ -950,7 +950,7 @@ void TableauSimulator::collapse_x(ConstPointerRange<GateTarget> targets) {
     }
 }
 
-void TableauSimulator::collapse_y(ConstPointerRange<GateTarget> targets) {
+void TableauSimulator::collapse_y(SpanRef<const GateTarget> targets) {
     // Find targets that need to be collapsed.
     std::set<GateTarget> unique_collapse_targets;
     for (GateTarget t : targets) {
@@ -974,7 +974,7 @@ void TableauSimulator::collapse_y(ConstPointerRange<GateTarget> targets) {
     }
 }
 
-void TableauSimulator::collapse_z(ConstPointerRange<GateTarget> targets) {
+void TableauSimulator::collapse_z(SpanRef<const GateTarget> targets) {
     // Find targets that need to be collapsed.
     std::vector<GateTarget> collapse_targets;
     collapse_targets.reserve(targets.size());

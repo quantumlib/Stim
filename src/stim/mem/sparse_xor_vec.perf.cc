@@ -14,8 +14,6 @@
 
 #include "stim/mem/sparse_xor_vec.h"
 
-#include <unordered_set>
-
 #include "stim/benchmark_util.perf.h"
 
 using namespace stim;

@@ -30,8 +30,8 @@ struct LatticeMap {
     /// Write to a lattice of indices.
     void set(
         uint64_t index,
-        stim::ConstPointerRange<uint64_t> offsets_per_iteration,
-        stim::ConstPointerRange<uint64_t> iteration_counts,
+        stim::SpanRef<const uint64_t> offsets_per_iteration,
+        stim::SpanRef<const uint64_t> iteration_counts,
         uint32_t value);
     /// Read the latest value written to an index, defaulting to 0 if no writes yet.
     uint32_t get(uint64_t index);

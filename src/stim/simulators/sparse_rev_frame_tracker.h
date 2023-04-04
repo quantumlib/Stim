@@ -50,8 +50,8 @@ struct SparseUnsignedRevFrameTracker {
         (this->*(gate_vtable.data[gate_id]))(data);
     }
 
-    void handle_xor_gauge(ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2);
-    void handle_gauge(ConstPointerRange<DemTarget> sorted);
+    void handle_xor_gauge(SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2);
+    void handle_gauge(SpanRef<const DemTarget> sorted);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);
     void undo_ZCX_single(GateTarget c, GateTarget t);
     void undo_ZCY_single(GateTarget c, GateTarget t);
@@ -100,7 +100,7 @@ struct SparseUnsignedRevFrameTracker {
     void undo_ISWAP(const OperationData &dat);
     void undo_CXSWAP(const OperationData &dat);
     void undo_SWAPCX(const OperationData &dat);
-    void undo_tableau(const Tableau &tableau, ConstPointerRange<uint32_t> targets);
+    void undo_tableau(const Tableau &tableau, SpanRef<const uint32_t> targets);
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
     void shift(int64_t measurement_offset, int64_t detector_offset);

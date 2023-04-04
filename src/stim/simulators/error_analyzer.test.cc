@@ -2934,7 +2934,7 @@ Circuit stack trace:
 
 TEST(ErrorAnalyzer, brute_force_decomp_simple) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),
@@ -2977,7 +2977,7 @@ TEST(ErrorAnalyzer, brute_force_decomp_simple) {
 
 TEST(ErrorAnalyzer, brute_force_decomp_introducing_obs_pair) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),
@@ -3029,7 +3029,7 @@ TEST(ErrorAnalyzer, brute_force_decomp_introducing_obs_pair) {
 
 TEST(ErrorAnalyzer, brute_force_decomp_with_obs) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),

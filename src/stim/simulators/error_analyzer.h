@@ -108,7 +108,7 @@ struct ErrorAnalyzer {
     DetectorErrorModel flushed_reversed_model;
 
     /// Recorded errors. Independent probabilities of flipping various sets of detectors.
-    std::map<ConstPointerRange<DemTarget>, double> error_class_probabilities;
+    std::map<SpanRef<const DemTarget>, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 
@@ -251,9 +251,9 @@ struct ErrorAnalyzer {
    private:
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
-    void remove_gauge(ConstPointerRange<DemTarget> sorted);
+    void remove_gauge(SpanRef<const DemTarget> sorted);
     /// Sorts the targets coming out of the measurement queue, then optionally inserts a measurement error.
-    void xor_sorted_measurement_error(ConstPointerRange<DemTarget> targets, const OperationData &dat);
+    void xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const OperationData &dat);
     /// Checks if the given sparse vector is empty. If it isn't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
@@ -271,20 +271,20 @@ struct ErrorAnalyzer {
     /// Empties error_class_probabilities into flushed_reversed_model.
     void flush();
     /// Adds (or folds) an error mechanism into error_class_probabilities.
-    ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> flipped_sorted);
+    SpanRef<const DemTarget> add_error(double probability, SpanRef<const DemTarget> flipped_sorted);
     /// Adds (or folds) an error mechanism equal into error_class_probabilities.
     /// The error is defined as the xor of two sparse vectors, because this is a common situation.
     /// Deals with the details of efficiently computing the xor of the vectors with minimal allocations.
-    ConstPointerRange<DemTarget> add_xored_error(
-        double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2);
+    SpanRef<const DemTarget> add_xored_error(
+        double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2);
     /// Adds an error mechanism into error_class_probabilities.
     /// The error mechanism is not passed as an argument but is instead the current tail of `this->mono_buf`.
-    ConstPointerRange<DemTarget> add_error_in_sorted_jagged_tail(double probability);
+    SpanRef<const DemTarget> add_error_in_sorted_jagged_tail(double probability);
     /// Saves the current tail of the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<DemTarget> mono_dedupe_store_tail();
+    SpanRef<const DemTarget> mono_dedupe_store_tail();
     /// Saves data to the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Args:
@@ -292,7 +292,7 @@ struct ErrorAnalyzer {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<DemTarget> mono_dedupe_store(ConstPointerRange<DemTarget> sorted);
+    SpanRef<const DemTarget> mono_dedupe_store(SpanRef<const DemTarget> sorted);
 
     /// Adds each given error, and also each possible combination of the given errors, to the possible errors.
     ///
@@ -304,7 +304,7 @@ struct ErrorAnalyzer {
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
     void add_error_combinations(
-        std::array<double, 1 << s> independent_probabilities, std::array<ConstPointerRange<DemTarget>, s> basis_errors);
+        std::array<double, 1 << s> independent_probabilities, std::array<SpanRef<const DemTarget>, s> basis_errors);
 
     /// Handles local decomposition of errors.
     /// When an error has multiple channels, eg. a DEPOLARIZE2 error, this method attempts to express the more complex
@@ -313,14 +313,14 @@ struct ErrorAnalyzer {
     template <size_t s>
     void decompose_helper_add_error_combinations(
         const std::array<uint64_t, 1 << s> &detector_masks,
-        std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids);
+        std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
 
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as
     /// components of this error, so that it is decomposed into graphlike components.
     bool decompose_and_append_component_to_tail(
-        ConstPointerRange<DemTarget> component,
-        const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms);
+        SpanRef<const DemTarget> component,
+        const std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> &known_symptoms);
 
     /// Performs a final check that all errors are decomposed.
     /// If any aren't, attempts to decompose them using other errors in the system.
@@ -331,7 +331,7 @@ struct ErrorAnalyzer {
 
    private:
     void check_can_approximate_disjoint(const char *op_name);
-    void add_composite_error(double probability, ConstPointerRange<GateTarget> targets);
+    void add_composite_error(double probability, SpanRef<const GateTarget> targets);
     void correlated_error_block(const std::vector<OperationData> &dats);
 };
 
@@ -339,11 +339,11 @@ struct ErrorAnalyzer {
 ///
 /// An error is graphlike if it has at most two symptoms (two detectors) per component.
 /// For example, error(0.1) D0 D1 ^ D2 D3 L55 is graphlike but error(0.1) D0 D1 ^ D2 D3 D55 is not.
-bool is_graphlike(const ConstPointerRange<DemTarget> &components);
+bool is_graphlike(const SpanRef<const DemTarget> &components);
 
 bool brute_force_decomposition_into_known_graphlike_errors(
-    ConstPointerRange<DemTarget> problem,
-    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_graphlike_errors,
+    SpanRef<const DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> &known_graphlike_errors,
     MonotonicBuffer<DemTarget> &output);
 
 }  // namespace stim

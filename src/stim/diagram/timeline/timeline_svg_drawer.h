@@ -63,21 +63,21 @@ struct DiagramTimelineSvgDrawer {
         uint64_t tick_slice_start,
         uint64_t tick_slice_num,
         DiagramTimelineSvgDrawerMode mode,
-        stim::ConstPointerRange<CoordFilter> det_coord_filter);
+        stim::SpanRef<const CoordFilter> det_coord_filter);
 
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);
     void start_next_moment();
-    void reserve_drawing_room_for_targets(stim::ConstPointerRange<stim::GateTarget> targets);
+    void reserve_drawing_room_for_targets(stim::SpanRef<const stim::GateTarget> targets);
     void write_rec_index(std::ostream &out, int64_t lookback_shift = -1);
     void write_det_index(std::ostream &out);
     void write_coord(std::ostream &out, size_t coord_index, double relative_coordinate);
-    void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
+    void write_coords(std::ostream &out, stim::SpanRef<const double> relative_coordinates);
     size_t m2x(size_t m) const;
     size_t q2y(size_t q) const;
     Coord<2> q2xy(size_t q) const;
     Coord<2> qt2xy(uint64_t tick, uint64_t moment_delta, size_t q) const;
-    void draw_annotated_gate(float cx, float cy, const SvgGateData &data, stim::ConstPointerRange<double> end_args);
+    void draw_annotated_gate(float cx, float cy, const SvgGateData &data, stim::SpanRef<const double> end_args);
 
     void draw_xswap_control(float cx, float cy);
     void draw_zswap_control(float cx, float cy);
@@ -86,9 +86,9 @@ struct DiagramTimelineSvgDrawer {
     void draw_z_control(float cx, float cy);
     void draw_swap_control(float cx, float cy);
     void draw_iswap_control(float cx, float cy, bool inverse);
-    void draw_generic_box(float cx, float cy, const std::string &text, stim::ConstPointerRange<double> end_args);
+    void draw_generic_box(float cx, float cy, const std::string &text, stim::SpanRef<const double> end_args);
     void draw_two_qubit_gate_end_point(
-        float cx, float cy, const std::string &type, stim::ConstPointerRange<double> args);
+        float cx, float cy, const std::string &type, stim::SpanRef<const double> args);
     void draw_rec(float cx, float cy);
 
     void do_resolved_operation(const ResolvedTimelineOperation &op);

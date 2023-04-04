@@ -207,7 +207,7 @@ TEST(circuit, parse_combiners) {
         GateTarget::z(4),
         GateTarget::z(5),
     };
-    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
+    ASSERT_EQ(c.operations[0].target_data.targets, (SpanRef<GateTarget>)expected);
 
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations[0].target_data.args.size(), 1);
@@ -225,7 +225,7 @@ TEST(circuit, parse_sweep_bits) {
 
     Circuit c("CNOT sweep[2] 5");
     ASSERT_EQ(c.operations.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
+    ASSERT_EQ(c.operations[0].target_data.targets, (SpanRef<GateTarget>)expected);
     ASSERT_TRUE(c.operations[0].target_data.args.empty());
 }
 

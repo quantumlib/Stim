@@ -35,7 +35,7 @@ struct ErrorMatcher {
     // Tracks discovered pairings keyed by their detector-error-model error terms.
     //
     // Pointed-to key data is owned by `dem_targets_buf``.
-    std::map<ConstPointerRange<DemTarget>, ExplainedError> output_map;
+    std::map<SpanRef<const DemTarget>, ExplainedError> output_map;
     bool allow_adding_new_dem_errors_to_output_map;
     bool reduce_to_one_representative_error;
 
@@ -72,7 +72,7 @@ struct ErrorMatcher {
 
     /// Looks up the coordinates of qubit/pauli terms, and appends into an output vector.
     void resolve_paulis_into(
-        ConstPointerRange<GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out);
+        SpanRef<const GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out);
 
     /// Base case for processing a single-term error mechanism.
     void err_atom(const Operation &effect);

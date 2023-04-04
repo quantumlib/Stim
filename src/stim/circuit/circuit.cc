@@ -35,7 +35,7 @@ enum READ_CONDITION {
 /// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
 /// the start and end of the destination range move.
 void fuse_data(
-    ConstPointerRange<GateTarget> &dst, ConstPointerRange<GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
+    SpanRef<const GateTarget> &dst, SpanRef<const GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
     if (dst.ptr_end != src.ptr_start) {
         buf.ensure_available(src.size() + dst.size());
         dst = buf.take_copy(dst);
@@ -51,7 +51,7 @@ std::string target_str(GateTarget t) {
     return out.str();
 }
 
-void write_targets(std::ostream &out, ConstPointerRange<GateTarget> targets) {
+void write_targets(std::ostream &out, SpanRef<const GateTarget> targets) {
     bool skip_space = false;
     for (auto t : targets) {
         if (t.is_combiner()) {
@@ -65,7 +65,7 @@ void write_targets(std::ostream &out, ConstPointerRange<GateTarget> targets) {
     }
 }
 
-std::string targets_str(ConstPointerRange<GateTarget> targets) {
+std::string targets_str(SpanRef<const GateTarget> targets) {
     std::stringstream out;
     write_targets(out, targets);
     return out.str();
@@ -77,7 +77,7 @@ uint64_t stim::op_data_rep_count(const OperationData &data) {
     return low | (high << 32);
 }
 
-void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
+void validate_gate(const Gate &gate, SpanRef<const GateTarget> targets, SpanRef<const double> args) {
     if (gate.flags & GATE_TARGETS_PAIRS) {
         if (targets.size() & 1) {
             throw std::invalid_argument(
@@ -654,7 +654,7 @@ void Circuit::safe_append_u(
     safe_append(gate, converted, args);
 }
 
-void Circuit::safe_append(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
+void Circuit::safe_append(const Gate &gate, SpanRef<const GateTarget> targets, SpanRef<const double> args) {
     if (gate.flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");
     }
@@ -790,8 +790,8 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
 /// that point to the old location (since they will write data that is no longer read by
 /// other parts of the code).
 template <typename T>
-ConstPointerRange<T> mono_extend(
-    MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {
+SpanRef<const T> mono_extend(
+    MonotonicBuffer<T> &cur, SpanRef<const T> original, SpanRef<const T> additional) {
     if (original.ptr_end == cur.tail.ptr_start) {
         // Try to append new data right after the original data.
         cur.ensure_available(additional.size());
@@ -810,7 +810,7 @@ ConstPointerRange<T> mono_extend(
 }
 
 Circuit &Circuit::operator+=(const Circuit &other) {
-    ConstPointerRange<Operation> ops_to_add = other.operations;
+    SpanRef<const Operation> ops_to_add = other.operations;
     if (!operations.empty() && !ops_to_add.empty() && operations.back().can_fuse(ops_to_add[0])) {
         operations.back().target_data.targets =
             mono_extend(target_buf, operations.back().target_data.targets, ops_to_add[0].target_data.targets);
@@ -825,7 +825,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
     uint32_t block_offset = (uint32_t)blocks.size();
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
     for (const auto &op : ops_to_add) {
-        PointerRange<stim::GateTarget> target_data = target_buf.take_copy(op.target_data.targets);
+        SpanRef<stim::GateTarget> target_data = target_buf.take_copy(op.target_data.targets);
         OperationData op_data{arg_buf.take_copy(op.target_data.args), target_data};
         operations.push_back({op.gate, op_data});
         if (op.gate->id == GateType::REPEAT) {
@@ -878,7 +878,7 @@ DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other
       detectors(std::move(other.detectors)),
       observables(std::move(other.observables)) {
     // Keep a local copy of the detector data.
-    for (PointerRange<uint64_t> &e : detectors) {
+    for (SpanRef<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 }
@@ -889,7 +889,7 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(DetectorsAndObservab
 
     // Keep a local copy of the detector data.
     jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint64_t> &e : detectors) {
+    for (SpanRef<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 
@@ -901,7 +901,7 @@ DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &
       detectors(other.detectors),
       observables(other.observables) {
     // Keep a local copy of the detector data.
-    for (PointerRange<uint64_t> &e : detectors) {
+    for (SpanRef<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 }
@@ -916,7 +916,7 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
 
     // Keep a local copy of the detector data.
     jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint64_t> &e : detectors) {
+    for (SpanRef<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 
@@ -1145,7 +1145,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
             continue;
         }
 
-        ConstPointerRange<double> args = op.target_data.args;
+        SpanRef<const double> args = op.target_data.args;
         if (op.gate->flags & GATE_IS_UNITARY) {
             // Unitary gates always have an inverse.
         } else if (op.gate->id == GateType::TICK) {
@@ -1218,7 +1218,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
     return result;
 }
 
-void stim::vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul) {
+void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
     while (target.size() < offset.size()) {
         target.push_back(0);
     }

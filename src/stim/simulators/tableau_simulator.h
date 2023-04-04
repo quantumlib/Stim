@@ -220,11 +220,11 @@ struct TableauSimulator {
     int8_t peek_z(uint32_t target) const;
 
     /// Forces a desired X basis measurement result, or raises an exception if it was impossible.
-    void postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_x(SpanRef<const GateTarget> targets, bool desired_result);
     /// Forces a desired Y basis measurement result, or raises an exception if it was impossible.
-    void postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_y(SpanRef<const GateTarget> targets, bool desired_result);
     /// Forces a desired Z basis measurement result, or raises an exception if it was impossible.
-    void postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_z(SpanRef<const GateTarget> targets, bool desired_result);
 
     /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
     void paulis(const PauliString &paulis);
@@ -262,19 +262,19 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_x(ConstPointerRange<GateTarget> targets);
+    void collapse_x(SpanRef<const GateTarget> targets);
 
     /// Collapses the given qubits into the Y basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_y(ConstPointerRange<GateTarget> targets);
+    void collapse_y(SpanRef<const GateTarget> targets);
 
     /// Collapses the given qubits into the Z basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_z(ConstPointerRange<GateTarget> targets);
+    void collapse_z(SpanRef<const GateTarget> targets);
 
     /// Completely isolates a qubit from the other qubits tracked by the simulator, so it can be safely discarded.
     ///
@@ -300,7 +300,7 @@ struct TableauSimulator {
    private:
     void noisify_new_measurements(const OperationData &target_data);
     void postselect_helper(
-        ConstPointerRange<GateTarget> targets,
+        SpanRef<const GateTarget> targets,
         bool desired_result,
         void (TableauSimulator::*basis_change)(const OperationData &),
         const char *false_name,

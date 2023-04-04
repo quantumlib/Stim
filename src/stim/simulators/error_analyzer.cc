@@ -87,7 +87,7 @@ constexpr GateVTable<void (ErrorAnalyzer::*)(const OperationData&)> error_analyz
     }}};
 }
 
-void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
+void ErrorAnalyzer::remove_gauge(SpanRef<const DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
@@ -310,7 +310,7 @@ PauliString ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
     return result;
 }
 
-void ErrorAnalyzer::xor_sorted_measurement_error(ConstPointerRange<DemTarget> targets, const OperationData &dat) {
+void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const OperationData &dat) {
     // Measurement error.
     if (!dat.args.empty() && dat.args[0] > 0) {
         add_error(dat.args[0], targets);
@@ -546,15 +546,15 @@ void ErrorAnalyzer::Z_ERROR(const OperationData &dat) {
 
 template <typename T>
 inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src) {
-    ConstPointerRange<T> in1 = dst.tail;
-    ConstPointerRange<T> in2 = src.range();
-    xor_merge_sort_temp_buffer_callback(in1, in2, [&](ConstPointerRange<T> result) {
+    SpanRef<const T> in1 = dst.tail;
+    SpanRef<const T> in2 = src.range();
+    xor_merge_sort_temp_buffer_callback(in1, in2, [&](SpanRef<const T> result) {
         dst.discard_tail();
         dst.append_tail(result);
     });
 }
 
-void ErrorAnalyzer::add_composite_error(double probability, ConstPointerRange<GateTarget> targets) {
+void ErrorAnalyzer::add_composite_error(double probability, SpanRef<const GateTarget> targets) {
     if (!accumulate_errors) {
         return;
     }
@@ -661,7 +661,7 @@ void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name) {
 }
 void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
     check_can_approximate_disjoint("PAULI_CHANNEL_1");
-    ConstPointerRange<double> args = dat.args;
+    SpanRef<const double> args = dat.args;
     std::array<double, 4> probabilities;
     for (size_t k = 0; k < 3; k++) {
         if (args[k] > approximate_disjoint_errors_threshold) {
@@ -689,7 +689,7 @@ void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
 
 void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
     check_can_approximate_disjoint("PAULI_CHANNEL_2");
-    ConstPointerRange<double> args = dat.args;
+    SpanRef<const double> args = dat.args;
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
         if (args[k] > approximate_disjoint_errors_threshold) {
@@ -806,14 +806,14 @@ void ErrorAnalyzer::flush() {
     error_class_probabilities.clear();
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::add_xored_error(
-    double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2) {
+SpanRef<const DemTarget> ErrorAnalyzer::add_xored_error(
+    double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
     mono_buf.tail.ptr_end = xor_merge_sort(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
+SpanRef<const DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
     auto v = error_class_probabilities.find(mono_buf.tail);
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
@@ -824,7 +824,7 @@ ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<DemTarget> sorted) {
+SpanRef<const DemTarget> ErrorAnalyzer::mono_dedupe_store(SpanRef<const DemTarget> sorted) {
     auto v = error_class_probabilities.find(sorted);
     if (v != error_class_probabilities.end()) {
         return v->first;
@@ -835,14 +835,14 @@ ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::add_error(double probability, ConstPointerRange<DemTarget> flipped_sorted) {
+SpanRef<const DemTarget> ErrorAnalyzer::add_error(double probability, SpanRef<const DemTarget> flipped_sorted) {
     auto key = mono_dedupe_store(flipped_sorted);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability) {
+SpanRef<const DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability) {
     auto key = mono_dedupe_store_tail();
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
@@ -959,7 +959,7 @@ void ErrorAnalyzer::SHIFT_COORDS(const OperationData &dat) {
 
 template <size_t s>
 void ErrorAnalyzer::decompose_helper_add_error_combinations(
-    const std::array<uint64_t, 1 << s> &detector_masks, std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids) {
+    const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids) {
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {
@@ -1051,7 +1051,7 @@ void ErrorAnalyzer::decompose_helper_add_error_combinations(
     }
 }
 
-bool stim::is_graphlike(const ConstPointerRange<DemTarget> &components) {
+bool stim::is_graphlike(const SpanRef<const DemTarget> &components) {
     size_t symptom_count = 0;
     for (const auto &t : components) {
         if (t.is_separator()) {
@@ -1077,8 +1077,8 @@ bool ErrorAnalyzer::has_unflushed_ungraphlike_errors() const {
 }
 
 bool ErrorAnalyzer::decompose_and_append_component_to_tail(
-    ConstPointerRange<DemTarget> component,
-    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms) {
+    SpanRef<const DemTarget> component,
+    const std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> &known_symptoms) {
     std::vector<bool> done(component.size(), false);
 
     size_t num_component_detectors = 0;
@@ -1142,7 +1142,7 @@ bool ErrorAnalyzer::decompose_and_append_component_to_tail(
     return false;
 }
 
-std::pair<uint64_t, uint64_t> obs_mask_of_targets(ConstPointerRange<DemTarget> targets) {
+std::pair<uint64_t, uint64_t> obs_mask_of_targets(SpanRef<const DemTarget> targets) {
     uint64_t obs_mask = 0;
     uint64_t used_mask = 0;
     for (size_t k = 0; k < targets.size(); k++) {
@@ -1162,9 +1162,9 @@ bool brute_force_decomp_helper(
     size_t start,
     uint64_t used_term_mask,
     uint64_t remaining_obs_mask,
-    ConstPointerRange<DemTarget> problem,
-    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms,
-    std::vector<ConstPointerRange<DemTarget>> &out_result) {
+    SpanRef<const DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> &known_symptoms,
+    std::vector<SpanRef<const DemTarget>> &out_result) {
     while (true) {
         if (start >= problem.size()) {
             return remaining_obs_mask == 0;
@@ -1205,14 +1205,14 @@ bool brute_force_decomp_helper(
 }
 
 bool stim::brute_force_decomposition_into_known_graphlike_errors(
-    ConstPointerRange<DemTarget> problem,
-    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_graphlike_errors,
+    SpanRef<const DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> &known_graphlike_errors,
     MonotonicBuffer<DemTarget> &output) {
     if (problem.size() >= 64) {
         throw std::invalid_argument("Not implemented: decomposing errors with more than 64 terms.");
     }
 
-    std::vector<ConstPointerRange<DemTarget>> out;
+    std::vector<SpanRef<const DemTarget>> out;
     out.reserve(problem.size());
     auto prob_masks = obs_mask_of_targets(problem);
 
@@ -1235,7 +1235,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
     std::vector<DemTarget> component_symptoms;
 
     // Make a map from all known symptoms singlets and pairs to actual components including frame changes.
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known_symptoms;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known_symptoms;
     for (const auto &kv : error_class_probabilities) {
         if (kv.second == 0 || kv.first.empty()) {
             continue;
@@ -1258,7 +1258,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
     }
 
     // Find how to rewrite hyper errors into graphlike errors.
-    std::vector<std::pair<ConstPointerRange<DemTarget>, ConstPointerRange<DemTarget>>> rewrites;
+    std::vector<std::pair<SpanRef<const DemTarget>, SpanRef<const DemTarget>>> rewrites;
     for (const auto &kv : error_class_probabilities) {
         if (kv.second == 0 || kv.first.empty()) {
             continue;
@@ -1272,7 +1272,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
         size_t start = 0;
         for (size_t k = 0; k <= targets.size(); k++) {
             if (k == targets.size() || targets[k].is_separator()) {
-                ConstPointerRange<DemTarget> problem{&targets[start], &targets[k]};
+                SpanRef<const DemTarget> problem{&targets[start], &targets[k]};
                 if (brute_force_decomposition_into_known_graphlike_errors(problem, known_symptoms, mono_buf)) {
                     // Solved using only existing edges.
                 } else if (
@@ -1324,10 +1324,10 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
 
 template <size_t s>
 void ErrorAnalyzer::add_error_combinations(
-    std::array<double, 1 << s> independent_probabilities, std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
+    std::array<double, 1 << s> independent_probabilities, std::array<SpanRef<const DemTarget>, s> basis_errors) {
     std::array<uint64_t, 1 << s> detector_masks{};
     FixedCapVector<DemTarget, 16> involved_detectors{};
-    std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
+    std::array<SpanRef<const DemTarget>, 1 << s> stored_ids;
 
     for (size_t k = 0; k < s; k++) {
         stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
