@@ -2,6 +2,7 @@
 #define _STIM_CIRCUIT_GATE_DATA_TABLE_H
 
 #include <array>
+
 #include "gate_data.h"
 
 namespace stim {
@@ -27,7 +28,8 @@ struct GateVTable {
     GateVTable &operator=(GateVTable &&) = default;
 
     // Construct from gate-value pairs.
-    constexpr GateVTable(const std::array<std::pair<GateType, GATE_VALUE_TYPE>, NUM_DEFINED_GATES> &gate_data_pairs) : data({}) {
+    constexpr GateVTable(const std::array<std::pair<GateType, GATE_VALUE_TYPE>, NUM_DEFINED_GATES> &gate_data_pairs)
+        : data({}) {
         for (const auto &[gate_id, value] : gate_data_pairs) {
             data[gate_id] = value;
         }
@@ -38,13 +40,14 @@ struct GateVTable {
         }
         for (const auto &gate : GATE_DATA.gates()) {
             if (!seen[gate.id]) {
-                throw std::invalid_argument("Missing gate data! A value was not defined for '" + std::string(gate.name) + "'.");
+                throw std::invalid_argument(
+                    "Missing gate data! A value was not defined for '" + std::string(gate.name) + "'.");
             }
         }
 #endif
     }
 };
 
-}
+}  // namespace stim
 
 #endif

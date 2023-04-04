@@ -116,7 +116,7 @@ struct ErrorAnalyzer {
     uint64_t num_ticks_in_past = 0;
 
     /// Function vtable for each gate's simulator function
-    GateVTable<void (ErrorAnalyzer::*)(const OperationData&)> gate_vtable;
+    GateVTable<void (ErrorAnalyzer::*)(const CircuitInstruction &)> gate_vtable;
 
     /// Used for producing debug information when errors occur.
     const Circuit *current_circuit_being_analyzed = nullptr;
@@ -175,58 +175,58 @@ struct ErrorAnalyzer {
     /// ======================================================================================
     /// These are pointed to by the `reverse_error_analyzer_function` field in gate data.
     /// ======================================================================================
-    void SHIFT_COORDS(const OperationData &dat);
-    void RX(const OperationData &dat);
-    void RY(const OperationData &dat);
-    void RZ(const OperationData &dat);
-    void MX(const OperationData &dat);
-    void MY(const OperationData &dat);
-    void MZ(const OperationData &dat);
-    void MPP(const OperationData &dat);
-    void MRX(const OperationData &dat);
-    void MRY(const OperationData &dat);
-    void MRZ(const OperationData &dat);
-    void H_XZ(const OperationData &dat);
-    void H_XY(const OperationData &dat);
-    void H_YZ(const OperationData &dat);
-    void C_XYZ(const OperationData &dat);
-    void C_ZYX(const OperationData &dat);
-    void XCX(const OperationData &dat);
-    void XCY(const OperationData &dat);
-    void XCZ(const OperationData &dat);
-    void YCX(const OperationData &dat);
-    void YCY(const OperationData &dat);
-    void YCZ(const OperationData &dat);
-    void ZCX(const OperationData &dat);
-    void ZCY(const OperationData &dat);
-    void ZCZ(const OperationData &dat);
-    void I(const OperationData &dat);
-    void TICK(const OperationData &dat);
-    void SQRT_XX(const OperationData &dat);
-    void SQRT_YY(const OperationData &dat);
-    void SQRT_ZZ(const OperationData &dat);
-    void SWAP(const OperationData &dat);
-    void DETECTOR(const OperationData &dat);
-    void OBSERVABLE_INCLUDE(const OperationData &dat);
-    void X_ERROR(const OperationData &dat);
-    void Y_ERROR(const OperationData &dat);
-    void Z_ERROR(const OperationData &dat);
-    void CORRELATED_ERROR(const OperationData &dat);
-    void DEPOLARIZE1(const OperationData &dat);
-    void DEPOLARIZE2(const OperationData &dat);
-    void ELSE_CORRELATED_ERROR(const OperationData &dat);
-    void PAULI_CHANNEL_1(const OperationData &dat);
-    void PAULI_CHANNEL_2(const OperationData &dat);
-    void ISWAP(const OperationData &dat);
-    void CXSWAP(const OperationData &dat);
-    void SWAPCX(const OperationData &dat);
+    void SHIFT_COORDS(const CircuitInstruction &dat);
+    void RX(const CircuitInstruction &dat);
+    void RY(const CircuitInstruction &dat);
+    void RZ(const CircuitInstruction &dat);
+    void MX(const CircuitInstruction &dat);
+    void MY(const CircuitInstruction &dat);
+    void MZ(const CircuitInstruction &dat);
+    void MPP(const CircuitInstruction &dat);
+    void MRX(const CircuitInstruction &dat);
+    void MRY(const CircuitInstruction &dat);
+    void MRZ(const CircuitInstruction &dat);
+    void H_XZ(const CircuitInstruction &dat);
+    void H_XY(const CircuitInstruction &dat);
+    void H_YZ(const CircuitInstruction &dat);
+    void C_XYZ(const CircuitInstruction &dat);
+    void C_ZYX(const CircuitInstruction &dat);
+    void XCX(const CircuitInstruction &dat);
+    void XCY(const CircuitInstruction &dat);
+    void XCZ(const CircuitInstruction &dat);
+    void YCX(const CircuitInstruction &dat);
+    void YCY(const CircuitInstruction &dat);
+    void YCZ(const CircuitInstruction &dat);
+    void ZCX(const CircuitInstruction &dat);
+    void ZCY(const CircuitInstruction &dat);
+    void ZCZ(const CircuitInstruction &dat);
+    void I(const CircuitInstruction &dat);
+    void TICK(const CircuitInstruction &dat);
+    void SQRT_XX(const CircuitInstruction &dat);
+    void SQRT_YY(const CircuitInstruction &dat);
+    void SQRT_ZZ(const CircuitInstruction &dat);
+    void SWAP(const CircuitInstruction &dat);
+    void DETECTOR(const CircuitInstruction &dat);
+    void OBSERVABLE_INCLUDE(const CircuitInstruction &dat);
+    void X_ERROR(const CircuitInstruction &dat);
+    void Y_ERROR(const CircuitInstruction &dat);
+    void Z_ERROR(const CircuitInstruction &dat);
+    void CORRELATED_ERROR(const CircuitInstruction &dat);
+    void DEPOLARIZE1(const CircuitInstruction &dat);
+    void DEPOLARIZE2(const CircuitInstruction &dat);
+    void ELSE_CORRELATED_ERROR(const CircuitInstruction &dat);
+    void PAULI_CHANNEL_1(const CircuitInstruction &dat);
+    void PAULI_CHANNEL_2(const CircuitInstruction &dat);
+    void ISWAP(const CircuitInstruction &dat);
+    void CXSWAP(const CircuitInstruction &dat);
+    void SWAPCX(const CircuitInstruction &dat);
 
-    void RX_with_context(const OperationData &dat, const char *context_op);
-    void RY_with_context(const OperationData &dat, const char *context_op);
-    void RZ_with_context(const OperationData &dat, const char *context_op);
-    void MX_with_context(const OperationData &dat, const char *context_op);
-    void MY_with_context(const OperationData &dat, const char *context_op);
-    void MZ_with_context(const OperationData &dat, const char *context_op);
+    void RX_with_context(const CircuitInstruction &dat, const char *context_op);
+    void RY_with_context(const CircuitInstruction &dat, const char *context_op);
+    void RZ_with_context(const CircuitInstruction &dat, const char *context_op);
+    void MX_with_context(const CircuitInstruction &dat, const char *context_op);
+    void MY_with_context(const CircuitInstruction &dat, const char *context_op);
+    void MZ_with_context(const CircuitInstruction &dat, const char *context_op);
 
     /// Processes each of the instructions in the circuit, in reverse order.
     void run_circuit(const Circuit &circuit);
@@ -234,8 +234,8 @@ struct ErrorAnalyzer {
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
 
-    inline void rev_do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(gate_vtable.data[gate_id]))(data);
+    inline void rev_do_gate(const CircuitInstruction &data) {
+        (this->*(gate_vtable.data[data.gate_type]))(data);
     }
 
     /// Returns a PauliString indicating the current error sensitivity of a detector or observable.
@@ -253,7 +253,7 @@ struct ErrorAnalyzer {
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(SpanRef<const DemTarget> sorted);
     /// Sorts the targets coming out of the measurement queue, then optionally inserts a measurement error.
-    void xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const OperationData &dat);
+    void xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &dat);
     /// Checks if the given sparse vector is empty. If it isn't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
@@ -312,8 +312,7 @@ struct ErrorAnalyzer {
     /// Works by rewriting the `stored_ids` argument.
     template <size_t s>
     void decompose_helper_add_error_combinations(
-        const std::array<uint64_t, 1 << s> &detector_masks,
-        std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
+        const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
 
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as
@@ -332,7 +331,7 @@ struct ErrorAnalyzer {
    private:
     void check_can_approximate_disjoint(const char *op_name);
     void add_composite_error(double probability, SpanRef<const GateTarget> targets);
-    void correlated_error_block(const std::vector<OperationData> &dats);
+    void correlated_error_block(const std::vector<CircuitInstruction> &dats);
 };
 
 /// Determines if an error's targets are graphlike.

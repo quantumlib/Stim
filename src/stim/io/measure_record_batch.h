@@ -67,7 +67,7 @@ struct MeasureRecordBatch {
     /// Appends a batch measurement result into storage.
     void record_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result);
     /// Reserves space for storing measurement results. Initializes bits to be noisy with the given probability.
-    void reserve_noisy_space_for_results(const OperationData &target_data, std::mt19937_64 &rng);
+    void reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng);
     /// Ensures there is enough space for storing a number of measurement results, without moving memory.
     void reserve_space_for_results(size_t count);
     /// Resets the record to an empty state.

@@ -40,7 +40,7 @@ struct CircuitTimelineHelper;
 ///     All coordinates have the effects SHIFT_COORDS folded in.
 ///     QUBIT_COORDS is treated as a single-qubit gate. Will only have one target.
 struct ResolvedTimelineOperation {
-    const stim::Gate *gate;
+    stim::GateType gate_type;
     stim::SpanRef<const double> args;
     stim::SpanRef<const stim::GateTarget> targets;
 };
@@ -62,25 +62,25 @@ struct CircuitTimelineHelper {
     LatticeMap measure_index_to_qubit;
 
     void do_atomic_operation(
-        const stim::Gate *gate,
+        const stim::GateType gate_type,
         stim::SpanRef<const double> args,
         stim::SpanRef<const stim::GateTarget> targets);
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
-    stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
+    stim::GateTarget pick_pseudo_target_representing_measurements(const stim::CircuitInstruction &op);
     void skip_loop_iterations(CircuitTimelineLoopData loop_data, uint64_t skipped_reps);
     void do_record_measure_result(uint32_t target_qubit);
-    void do_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
-    void do_next_operation(const stim::Circuit &circuit, const stim::Operation &op);
+    void do_repeat_block(const stim::Circuit &circuit, const stim::CircuitInstruction &op);
+    void do_next_operation(const stim::Circuit &circuit, const stim::CircuitInstruction &op);
     void do_circuit(const stim::Circuit &circuit);
-    void do_operation_with_target_combiners(const stim::Operation &op);
-    void do_multi_qubit_atomic_operation(const stim::Operation &op);
-    void do_two_qubit_gate(const stim::Operation &op);
-    void do_single_qubit_gate(const stim::Operation &op);
-    void do_detector(const stim::Operation &op);
-    void do_observable_include(const stim::Operation &op);
-    void do_shift_coords(const stim::Operation &op);
-    void do_qubit_coords(const stim::Operation &op);
+    void do_operation_with_target_combiners(const stim::CircuitInstruction &op);
+    void do_multi_qubit_atomic_operation(const stim::CircuitInstruction &op);
+    void do_two_qubit_gate(const stim::CircuitInstruction &op);
+    void do_single_qubit_gate(const stim::CircuitInstruction &op);
+    void do_detector(const stim::CircuitInstruction &op);
+    void do_observable_include(const stim::CircuitInstruction &op);
+    void do_shift_coords(const stim::CircuitInstruction &op);
+    void do_qubit_coords(const stim::CircuitInstruction &op);
     stim::SpanRef<const double> shifted_coordinates_in_workspace(stim::SpanRef<const double> coords);
 };
 

@@ -33,17 +33,11 @@
 
 namespace stim {
 
-struct TableauSimulator;
-struct SparseUnsignedRevFrameTracker;
-struct FrameSimulator;
-struct OperationData;
+struct CircuitInstruction;
 struct Tableau;
-struct Operation;
-struct ErrorAnalyzer;
 
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
-
 
 constexpr inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
@@ -138,7 +132,7 @@ enum GateType : uint8_t {
     SQRT_X_DAG = gate_name_to_hash("SQRT_X_DAG"),
     SQRT_Y = gate_name_to_hash("SQRT_Y"),
     SQRT_Y_DAG = gate_name_to_hash("SQRT_Y_DAG"),
-    S = gate_name_to_hash("S"),  // alias when parsing: SQRT_Z
+    S = gate_name_to_hash("S"),          // alias when parsing: SQRT_Z
     S_DAG = gate_name_to_hash("S_DAG"),  // alias when parsing: SQRT_Z_DAG
     // Pauli product gates
     SQRT_XX = gate_name_to_hash("SQRT_XX"),
@@ -156,7 +150,9 @@ enum GateType : uint8_t {
 };
 
 enum GateFlags : uint16_t {
-    GATE_NO_FLAGS = 0,
+    // All gates must have at least one flag set.
+    NO_GATE_FLAG = 0,
+
     // Indicates whether unitary and tableau data is available for the gate, so it can be tested more easily.
     GATE_IS_UNITARY = 1 << 0,
     // Determines whether or not the gate is omitted when computing a reference sample.
@@ -336,7 +332,7 @@ struct GateDataMap {
     std::array<Gate, 256> items;
     GateDataMap();
 
-    std::vector<Gate> gates() const;
+    std::vector<Gate> gates(bool include_aliases = false) const;
 
     inline const Gate &at(const char *text, size_t text_len) const {
         uint8_t h = gate_name_to_hash(text, text_len);
@@ -370,11 +366,13 @@ struct GateDataMap {
 extern const GateDataMap GATE_DATA;
 
 void decompose_mpp_operation(
-    const OperationData &target_data,
+    const CircuitInstruction &target_data,
     size_t num_qubits,
     const std::function<void(
-        const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
-        &callback);
+        const CircuitInstruction &h_xz,
+        const CircuitInstruction &h_yz,
+        const CircuitInstruction &cnot,
+        const CircuitInstruction &meas)> &callback);
 
 }  // namespace stim
 

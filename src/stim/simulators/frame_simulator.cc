@@ -22,7 +22,7 @@
 
 using namespace stim;
 
-constexpr GateVTable<void (FrameSimulator::*)(const OperationData&)> frame_simulator_vtable_data() {
+constexpr GateVTable<void (FrameSimulator::*)(const CircuitInstruction &)> frame_simulator_vtable_data() {
     return {{{
         {GateType::DETECTOR, &FrameSimulator::I},
         {GateType::OBSERVABLE_INCLUDE, &FrameSimulator::I},
@@ -103,7 +103,7 @@ bool stim::should_use_streaming_instead_of_memory(uint64_t result_count) {
 //
 // HACK: Templating the body function type makes inlining significantly more likely.
 template <typename FUNC>
-inline void for_each_target_pair(FrameSimulator &sim, const OperationData &target_data, FUNC body) {
+inline void for_each_target_pair(FrameSimulator &sim, const CircuitInstruction &target_data, FUNC body) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -149,12 +149,12 @@ void FrameSimulator::reset_all() {
 
 void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     reset_all();
-    circuit.for_each_operation([&](const Operation &op) {
-        do_gate(op.gate->id, op.target_data);
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        do_gate(op);
     });
 }
 
-void FrameSimulator::measure_x(const OperationData &target_data) {
+void FrameSimulator::measure_x(const CircuitInstruction &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
@@ -165,7 +165,7 @@ void FrameSimulator::measure_x(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::measure_y(const OperationData &target_data) {
+void FrameSimulator::measure_y(const CircuitInstruction &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
@@ -178,7 +178,7 @@ void FrameSimulator::measure_y(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::measure_z(const OperationData &target_data) {
+void FrameSimulator::measure_z(const CircuitInstruction &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
@@ -188,7 +188,7 @@ void FrameSimulator::measure_z(const OperationData &target_data) {
         }
     }
 }
-void FrameSimulator::reset_x(const OperationData &target_data) {
+void FrameSimulator::reset_x(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         if (guarantee_anticommutation_via_frame_randomization) {
@@ -198,7 +198,7 @@ void FrameSimulator::reset_x(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::reset_y(const OperationData &target_data) {
+void FrameSimulator::reset_y(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         if (guarantee_anticommutation_via_frame_randomization) {
@@ -208,7 +208,7 @@ void FrameSimulator::reset_y(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::reset_z(const OperationData &target_data) {
+void FrameSimulator::reset_z(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         x_table[q].clear();
@@ -218,7 +218,7 @@ void FrameSimulator::reset_z(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::measure_reset_x(const OperationData &target_data) {
+void FrameSimulator::measure_reset_x(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
@@ -231,7 +231,7 @@ void FrameSimulator::measure_reset_x(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::measure_reset_y(const OperationData &target_data) {
+void FrameSimulator::measure_reset_y(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
@@ -245,7 +245,7 @@ void FrameSimulator::measure_reset_y(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::measure_reset_z(const OperationData &target_data) {
+void FrameSimulator::measure_reset_z(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto t : target_data.targets) {
@@ -258,7 +258,7 @@ void FrameSimulator::measure_reset_z(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::I(const OperationData &target_data) {
+void FrameSimulator::I(const CircuitInstruction &target_data) {
 }
 
 PauliString FrameSimulator::get_frame(size_t sample_index) const {
@@ -280,28 +280,28 @@ void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef &new_fr
     }
 }
 
-void FrameSimulator::H_XZ(const OperationData &target_data) {
+void FrameSimulator::H_XZ(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         x_table[q].swap_with(z_table[q]);
     }
 }
 
-void FrameSimulator::H_XY(const OperationData &target_data) {
+void FrameSimulator::H_XY(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         z_table[q] ^= x_table[q];
     }
 }
 
-void FrameSimulator::H_YZ(const OperationData &target_data) {
+void FrameSimulator::H_YZ(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         x_table[q] ^= z_table[q];
     }
 }
 
-void FrameSimulator::C_XYZ(const OperationData &target_data) {
+void FrameSimulator::C_XYZ(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         x_table[q] ^= z_table[q];
@@ -309,7 +309,7 @@ void FrameSimulator::C_XYZ(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::C_ZYX(const OperationData &target_data) {
+void FrameSimulator::C_ZYX(const CircuitInstruction &target_data) {
     for (auto t : target_data.targets) {
         auto q = t.data;
         z_table[q] ^= x_table[q];
@@ -349,7 +349,7 @@ void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
     }
 }
 
-void FrameSimulator::ZCX(const OperationData &target_data) {
+void FrameSimulator::ZCX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -357,7 +357,7 @@ void FrameSimulator::ZCX(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::ZCY(const OperationData &target_data) {
+void FrameSimulator::ZCY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -365,7 +365,7 @@ void FrameSimulator::ZCY(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::ZCZ(const OperationData &target_data) {
+void FrameSimulator::ZCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -387,7 +387,7 @@ void FrameSimulator::ZCZ(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::SWAP(const OperationData &target_data) {
+void FrameSimulator::SWAP(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -401,7 +401,7 @@ void FrameSimulator::SWAP(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::ISWAP(const OperationData &target_data) {
+void FrameSimulator::ISWAP(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         auto dx = x1 ^ x2;
         auto t1 = z1 ^ dx;
@@ -412,7 +412,7 @@ void FrameSimulator::ISWAP(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::CXSWAP(const OperationData &target_data) {
+void FrameSimulator::CXSWAP(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z2 ^= z1;
         z1 ^= z2;
@@ -421,7 +421,7 @@ void FrameSimulator::CXSWAP(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::SWAPCX(const OperationData &target_data) {
+void FrameSimulator::SWAPCX(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z1 ^= z2;
         z2 ^= z1;
@@ -430,7 +430,7 @@ void FrameSimulator::SWAPCX(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::SQRT_XX(const OperationData &target_data) {
+void FrameSimulator::SQRT_XX(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         simd_word dz = z1 ^ z2;
         x1 ^= dz;
@@ -438,7 +438,7 @@ void FrameSimulator::SQRT_XX(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::SQRT_YY(const OperationData &target_data) {
+void FrameSimulator::SQRT_YY(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         simd_word d = x1 ^ z1 ^ x2 ^ z2;
         x1 ^= d;
@@ -448,7 +448,7 @@ void FrameSimulator::SQRT_YY(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::SQRT_ZZ(const OperationData &target_data) {
+void FrameSimulator::SQRT_ZZ(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         auto dx = x1 ^ x2;
         z1 ^= dx;
@@ -456,14 +456,14 @@ void FrameSimulator::SQRT_ZZ(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::XCX(const OperationData &target_data) {
+void FrameSimulator::XCX(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x1 ^= z2;
         x2 ^= z1;
     });
 }
 
-void FrameSimulator::XCY(const OperationData &target_data) {
+void FrameSimulator::XCY(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x1 ^= x2 ^ z2;
         x2 ^= z1;
@@ -471,7 +471,7 @@ void FrameSimulator::XCY(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::XCZ(const OperationData &target_data) {
+void FrameSimulator::XCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -479,7 +479,7 @@ void FrameSimulator::XCZ(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::YCX(const OperationData &target_data) {
+void FrameSimulator::YCX(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x2 ^= x1 ^ z1;
         x1 ^= z2;
@@ -487,7 +487,7 @@ void FrameSimulator::YCX(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::YCY(const OperationData &target_data) {
+void FrameSimulator::YCY(const CircuitInstruction &target_data) {
     for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         auto y1 = x1 ^ z1;
         auto y2 = x2 ^ z2;
@@ -498,7 +498,7 @@ void FrameSimulator::YCY(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::YCZ(const OperationData &target_data) {
+void FrameSimulator::YCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -506,7 +506,7 @@ void FrameSimulator::YCZ(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
+void FrameSimulator::DEPOLARIZE1(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto p = 1 + (rng() % 3);
@@ -518,7 +518,7 @@ void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
+void FrameSimulator::DEPOLARIZE2(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     auto n = (targets.size() * batch_size) >> 1;
@@ -535,7 +535,7 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::X_ERROR(const OperationData &target_data) {
+void FrameSimulator::X_ERROR(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
@@ -545,7 +545,7 @@ void FrameSimulator::X_ERROR(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::Y_ERROR(const OperationData &target_data) {
+void FrameSimulator::Y_ERROR(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
@@ -556,7 +556,7 @@ void FrameSimulator::Y_ERROR(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::Z_ERROR(const OperationData &target_data) {
+void FrameSimulator::Z_ERROR(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
@@ -566,14 +566,14 @@ void FrameSimulator::Z_ERROR(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::MPP(const OperationData &target_data) {
+void FrameSimulator::MPP(const CircuitInstruction &target_data) {
     decompose_mpp_operation(
         target_data,
         num_qubits,
-        [&](const OperationData &h_xz,
-            const OperationData &h_yz,
-            const OperationData &cnot,
-            const OperationData &meas) {
+        [&](const CircuitInstruction &h_xz,
+            const CircuitInstruction &h_yz,
+            const CircuitInstruction &cnot,
+            const CircuitInstruction &meas) {
             H_XZ(h_xz);
             H_YZ(h_yz);
             ZCX(cnot);
@@ -584,27 +584,27 @@ void FrameSimulator::MPP(const OperationData &target_data) {
         });
 }
 
-void FrameSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
+void FrameSimulator::PAULI_CHANNEL_1(const CircuitInstruction &target_data) {
     tmp_storage = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<1>(
         target_data,
         [&]() {
             last_correlated_error_occurred.clear();
         },
-        [&](const OperationData &d) {
+        [&](const CircuitInstruction &d) {
             ELSE_CORRELATED_ERROR(d);
         });
     last_correlated_error_occurred = tmp_storage;
 }
 
-void FrameSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
+void FrameSimulator::PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
     tmp_storage = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<2>(
         target_data,
         [&]() {
             last_correlated_error_occurred.clear();
         },
-        [&](const OperationData &d) {
+        [&](const CircuitInstruction &d) {
             ELSE_CORRELATED_ERROR(d);
         });
     last_correlated_error_occurred = tmp_storage;
@@ -626,12 +626,12 @@ simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample(
         num_samples, FrameSimulator::sample_flipped_measurements(circuit, num_samples, rng), reference_sample);
 }
 
-void FrameSimulator::CORRELATED_ERROR(const OperationData &target_data) {
+void FrameSimulator::CORRELATED_ERROR(const CircuitInstruction &target_data) {
     last_correlated_error_occurred.clear();
     ELSE_CORRELATED_ERROR(target_data);
 }
 
-void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
+void FrameSimulator::ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data) {
     // Sample error locations.
     biased_randomize_bits(target_data.args[0], rng_buffer.u64, rng_buffer.u64 + ((batch_size + 63) >> 6), rng);
     if (batch_size & 63) {
@@ -668,15 +668,15 @@ void sample_out_helper(
     if (should_use_streaming_instead_of_memory(std::max(num_shots, size_t{256}) * circuit.count_measurements())) {
         // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
         MeasureRecordBatchWriter writer(out, num_shots, format);
-        circuit.for_each_operation([&](const Operation &op) {
-            sim.do_gate(op.gate->id, op.target_data);
+        circuit.for_each_operation([&](const CircuitInstruction &op) {
+            sim.do_gate(op);
             sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
         });
         sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
     } else {
         // Small case. Just do everything in memory.
-        circuit.for_each_operation([&](const Operation &op) {
-            sim.do_gate(op.gate->id, op.target_data);
+        circuit.for_each_operation([&](const CircuitInstruction &op) {
+            sim.do_gate(op);
         });
         write_table_data(
             out, num_shots, circuit.count_measurements(), ref_sample, sim.m_record.storage, format, 'M', 'M', 0);

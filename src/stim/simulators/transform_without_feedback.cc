@@ -58,31 +58,30 @@ struct WithoutFeedbackHelper {
         }
     }
 
-    void undo_feedback_capable_operation(const Operation &op) {
-        for (size_t k = op.target_data.targets.size(); k > 0;) {
+    void undo_feedback_capable_operation(const CircuitInstruction &op) {
+        for (size_t k = op.targets.size(); k > 0;) {
             k -= 2;
-            Operation op_piece = {
-                op.gate, {op.target_data.args, {&op.target_data.targets[k], &op.target_data.targets[k + 2]}}};
-            auto t1 = op.target_data.targets[k];
-            auto t2 = op.target_data.targets[k + 1];
+            CircuitInstruction op_piece = {op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}};
+            auto t1 = op.targets[k];
+            auto t2 = op.targets[k + 1];
             auto b1 = t1.is_measurement_record_target();
             auto b2 = t2.is_measurement_record_target();
             if (b1 > b2) {
-                if (op.gate->id == GateType::CX) {
+                if (op.gate_type == GateType::CX) {
                     do_single_feedback(t1, t2.qubit_value(), true, false);
-                } else if (op.gate->id == GateType::CY) {
+                } else if (op.gate_type == GateType::CY) {
                     do_single_feedback(t1, t2.qubit_value(), true, true);
-                } else if (op.gate->id == GateType::CZ) {
+                } else if (op.gate_type == GateType::CZ) {
                     do_single_feedback(t1, t2.qubit_value(), false, true);
                 } else {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (b2 > b1) {
-                if (op.gate->id == GateType::CX) {
+                if (op.gate_type == GateType::CX) {
                     do_single_feedback(t2, t1.qubit_value(), true, false);
-                } else if (op.gate->id == GateType::CY) {
+                } else if (op.gate_type == GateType::CY) {
                     do_single_feedback(t2, t1.qubit_value(), true, true);
-                } else if (op.gate->id == GateType::CZ) {
+                } else if (op.gate_type == GateType::CZ) {
                     do_single_feedback(t2, t1.qubit_value(), false, true);
                 } else {
                     throw std::invalid_argument("Unknown feedback gate.");
@@ -90,27 +89,25 @@ struct WithoutFeedbackHelper {
             } else if (!b1 && !b2) {
                 reversed_semi_flattened_output.operations.push_back(op_piece);
             }
-            tracker.undo_operation(op_piece);
+            tracker.undo_gate(op_piece);
         }
 
         for (const auto &e : obs_changes) {
             if (!e.second.empty()) {
                 reversed_semi_flattened_output.arg_buf.append_tail((double)e.first);
-                reversed_semi_flattened_output.operations.push_back(Operation{
-                    &GATE_DATA.at("OBSERVABLE_INCLUDE"),
-                    {
-                        reversed_semi_flattened_output.arg_buf.commit_tail(),
-                        reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
-                    },
+                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
+                    GateType::OBSERVABLE_INCLUDE,
+                    reversed_semi_flattened_output.arg_buf.commit_tail(),
+                    reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
                 });
             }
         }
         obs_changes.clear();
     }
 
-    void undo_repeat_block(const Circuit &circuit, const Operation &op) {
-        const Circuit &loop = op_data_block_body(circuit, op.target_data);
-        uint64_t reps = op_data_rep_count(op.target_data);
+    void undo_repeat_block(const Circuit &circuit, const CircuitInstruction &op) {
+        const Circuit &loop = op.repeat_block_body(circuit);
+        uint64_t reps = op.repeat_block_rep_count();
 
         Circuit tmp = std::move(reversed_semi_flattened_output);
         for (size_t rep = 0; rep < reps; rep++) {
@@ -124,13 +121,13 @@ struct WithoutFeedbackHelper {
     void undo_circuit(const Circuit &circuit) {
         for (size_t k = circuit.operations.size(); k--;) {
             const auto &op = circuit.operations[k];
-            if (op.gate->id == GateType::REPEAT) {
+            if (op.gate_type == GateType::REPEAT) {
                 undo_repeat_block(circuit, op);
-            } else if (op.gate->flags & GATE_CAN_TARGET_BITS) {
+            } else if (GATE_DATA.items[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
                 undo_feedback_capable_operation(op);
             } else {
                 reversed_semi_flattened_output.operations.push_back(op);
-                tracker.undo_operation(op);
+                tracker.undo_gate(op);
             }
         }
     }
@@ -142,18 +139,17 @@ struct WithoutFeedbackHelper {
             const auto &op = reversed.operations[k];
             tracker.num_measurements_in_past += op.count_measurement_results();
 
-            if (op.gate->id == GateType::REPEAT) {
-                result.append_repeat_block(
-                    op_data_rep_count(op.target_data), build_output(op_data_block_body(reversed, op.target_data)));
+            if (op.gate_type == GateType::REPEAT) {
+                result.append_repeat_block(op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)));
                 continue;
             }
 
-            if (op.gate->id == GateType::DETECTOR) {
+            if (op.gate_type == GateType::DETECTOR) {
                 auto p = det_changes.find(tracker.num_detectors_in_past);
                 tracker.num_detectors_in_past++;
                 if (p != det_changes.end()) {
                     auto &changes = p->second;
-                    for (const auto &t : op.target_data.targets) {
+                    for (const auto &t : op.targets) {
                         changes.xor_item(tracker.num_measurements_in_past + t.rec_offset());
                     }
 
@@ -162,7 +158,7 @@ struct WithoutFeedbackHelper {
                         reversed_semi_flattened_output.target_buf.append_tail(
                             GateTarget::rec((int64_t)m - (int64_t)tracker.num_measurements_in_past));
                     }
-                    result.safe_append(*op.gate, reversed_semi_flattened_output.target_buf.tail, op.target_data.args);
+                    result.safe_append(op.gate_type, reversed_semi_flattened_output.target_buf.tail, op.args);
                     reversed_semi_flattened_output.target_buf.discard_tail();
 
                     continue;
@@ -192,12 +188,12 @@ Circuit circuit_with_identical_adjacent_loops_fused(const Circuit &circuit) {
         loop_reps = 0;
     };
     for (const auto &op : circuit.operations) {
-        bool is_loop = op.gate->id == GateType::REPEAT;
+        bool is_loop = op.gate_type == GateType::REPEAT;
 
         // Grow the growing loop or flush it if needed.
         if (loop_reps > 0) {
-            if (is_loop && growing_loop == op_data_block_body(circuit, op.target_data)) {
-                loop_reps += op_data_rep_count(op.target_data);
+            if (is_loop && growing_loop == op.repeat_block_body(circuit)) {
+                loop_reps += op.repeat_block_rep_count();
                 continue;
             }
             flush_loop();
@@ -206,8 +202,8 @@ Circuit circuit_with_identical_adjacent_loops_fused(const Circuit &circuit) {
         // Start a new growing loop if needed.
         assert(loop_reps == 0);
         if (is_loop) {
-            growing_loop = op_data_block_body(circuit, op.target_data);
-            loop_reps = op_data_rep_count(op.target_data);
+            growing_loop = op.repeat_block_body(circuit);
+            loop_reps = op.repeat_block_rep_count();
             continue;
         }
 

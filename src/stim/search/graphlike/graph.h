@@ -32,8 +32,7 @@ struct Graph {
     Graph(std::vector<Node> nodes, uint64_t distance_1_error_mask);
 
     void add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask);
-    void add_edges_from_targets_with_no_separators(
-        SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors);
+    void add_edges_from_targets_with_no_separators(SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors);
     void add_edges_from_separable_targets(SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors);
     static Graph from_dem(const DetectorErrorModel &model, bool ignore_ungraphlike_errors);
     bool operator==(const Graph &other) const;

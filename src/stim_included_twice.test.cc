@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "stim.h"
+#include "stim.h"  // The other include is in stim.test.cc; this is the second one.
 
 TEST(stim, include2) {
     stim::Circuit c("H 0");

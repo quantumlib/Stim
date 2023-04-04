@@ -25,7 +25,7 @@ struct DetectorSliceSetComputer {
     std::function<void(void)> on_tick_callback;
     DetectorSliceSetComputer(const Circuit &circuit, uint64_t first_yield_tick, uint64_t num_yield_ticks);
     bool process_block_rev(const Circuit &block);
-    bool process_op_rev(const Circuit &parent, const Operation &op);
+    bool process_op_rev(const Circuit &parent, const CircuitInstruction &op);
     bool process_tick();
 };
 
@@ -46,14 +46,14 @@ bool DetectorSliceSetComputer::process_tick() {
     return tick_cur < first_yield_tick;
 }
 
-bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Operation &op) {
-    if (op.gate->id == GateType::TICK) {
+bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const CircuitInstruction &op) {
+    if (op.gate_type == GateType::TICK) {
         return process_tick();
-    } else if (op.gate->id == GateType::REPEAT) {
-        const auto &loop_body = op_data_block_body(parent, op.target_data);
+    } else if (op.gate_type == GateType::REPEAT) {
+        const auto &loop_body = op.repeat_block_body(parent);
         uint64_t stop_iter = first_yield_tick + num_yield_ticks;
         uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;
-        uint64_t reps = op_data_rep_count(op.target_data);
+        uint64_t reps = op.repeat_block_rep_count();
         uint64_t ticks_per_iteration = loop_body.count_ticks();
         uint64_t skipped_iterations = std::min(reps, max_skip / ticks_per_iteration);
         if (skipped_iterations) {
@@ -70,12 +70,12 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         }
         return false;
     } else {
-        for (auto t : op.target_data.targets) {
+        for (auto t : op.targets) {
             if (t.has_qubit_value()) {
                 used_qubits.insert(t.qubit_value());
             }
         }
-        tracker.undo_gate(op.gate->id, op.target_data);
+        tracker.undo_gate(op);
         return false;
     }
 }
@@ -205,10 +205,7 @@ CoordFilter CoordFilter::parse_from(const std::string &data) {
 }
 
 DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
-    const stim::Circuit &circuit,
-    uint64_t start_tick,
-    uint64_t num_ticks,
-    SpanRef<const CoordFilter> coord_filter) {
+    const stim::Circuit &circuit, uint64_t start_tick, uint64_t num_ticks, SpanRef<const CoordFilter> coord_filter) {
     num_ticks = std::max(uint64_t{1}, std::min(num_ticks, circuit.count_ticks() - start_tick + 1));
 
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);

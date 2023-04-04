@@ -45,7 +45,8 @@ struct FrameSimulator {
     simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
     std::mt19937_64 &rng;  // Random number generator used for generating entropy.
-    const GateVTable<void (FrameSimulator::*)(const OperationData&)> gate_vtable; // Function vtable for each gate's simulator function
+    const GateVTable<void (FrameSimulator::*)(const CircuitInstruction &)>
+        gate_vtable;  // Function vtable for each gate's simulator function
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -99,54 +100,54 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    inline void do_gate(GateType gate_id, const OperationData& data) {
-        (this->*(gate_vtable.data[gate_id]))(data);
+    inline void do_gate(const CircuitInstruction &data) {
+        (this->*(gate_vtable.data[data.gate_type]))(data);
     }
 
-    void measure_x(const OperationData &target_data);
-    void measure_y(const OperationData &target_data);
-    void measure_z(const OperationData &target_data);
-    void reset_x(const OperationData &target_data);
-    void reset_y(const OperationData &target_data);
-    void reset_z(const OperationData &target_data);
-    void measure_reset_x(const OperationData &target_data);
-    void measure_reset_y(const OperationData &target_data);
-    void measure_reset_z(const OperationData &target_data);
+    void measure_x(const CircuitInstruction &target_data);
+    void measure_y(const CircuitInstruction &target_data);
+    void measure_z(const CircuitInstruction &target_data);
+    void reset_x(const CircuitInstruction &target_data);
+    void reset_y(const CircuitInstruction &target_data);
+    void reset_z(const CircuitInstruction &target_data);
+    void measure_reset_x(const CircuitInstruction &target_data);
+    void measure_reset_y(const CircuitInstruction &target_data);
+    void measure_reset_z(const CircuitInstruction &target_data);
 
-    void I(const OperationData &target_data);
-    void H_XZ(const OperationData &target_data);
-    void H_XY(const OperationData &target_data);
-    void H_YZ(const OperationData &target_data);
-    void C_XYZ(const OperationData &target_data);
-    void C_ZYX(const OperationData &target_data);
-    void ZCX(const OperationData &target_data);
-    void ZCY(const OperationData &target_data);
-    void ZCZ(const OperationData &target_data);
-    void XCX(const OperationData &target_data);
-    void XCY(const OperationData &target_data);
-    void XCZ(const OperationData &target_data);
-    void YCX(const OperationData &target_data);
-    void YCY(const OperationData &target_data);
-    void YCZ(const OperationData &target_data);
-    void SWAP(const OperationData &target_data);
-    void ISWAP(const OperationData &target_data);
-    void CXSWAP(const OperationData &target_data);
-    void SWAPCX(const OperationData &target_data);
-    void MPP(const OperationData &target_data);
+    void I(const CircuitInstruction &target_data);
+    void H_XZ(const CircuitInstruction &target_data);
+    void H_XY(const CircuitInstruction &target_data);
+    void H_YZ(const CircuitInstruction &target_data);
+    void C_XYZ(const CircuitInstruction &target_data);
+    void C_ZYX(const CircuitInstruction &target_data);
+    void ZCX(const CircuitInstruction &target_data);
+    void ZCY(const CircuitInstruction &target_data);
+    void ZCZ(const CircuitInstruction &target_data);
+    void XCX(const CircuitInstruction &target_data);
+    void XCY(const CircuitInstruction &target_data);
+    void XCZ(const CircuitInstruction &target_data);
+    void YCX(const CircuitInstruction &target_data);
+    void YCY(const CircuitInstruction &target_data);
+    void YCZ(const CircuitInstruction &target_data);
+    void SWAP(const CircuitInstruction &target_data);
+    void ISWAP(const CircuitInstruction &target_data);
+    void CXSWAP(const CircuitInstruction &target_data);
+    void SWAPCX(const CircuitInstruction &target_data);
+    void MPP(const CircuitInstruction &target_data);
 
-    void SQRT_XX(const OperationData &target_data);
-    void SQRT_YY(const OperationData &target_data);
-    void SQRT_ZZ(const OperationData &target_data);
+    void SQRT_XX(const CircuitInstruction &target_data);
+    void SQRT_YY(const CircuitInstruction &target_data);
+    void SQRT_ZZ(const CircuitInstruction &target_data);
 
-    void DEPOLARIZE1(const OperationData &target_data);
-    void DEPOLARIZE2(const OperationData &target_data);
-    void X_ERROR(const OperationData &target_data);
-    void Y_ERROR(const OperationData &target_data);
-    void Z_ERROR(const OperationData &target_data);
-    void PAULI_CHANNEL_1(const OperationData &target_data);
-    void PAULI_CHANNEL_2(const OperationData &target_data);
-    void CORRELATED_ERROR(const OperationData &target_data);
-    void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+    void DEPOLARIZE1(const CircuitInstruction &target_data);
+    void DEPOLARIZE2(const CircuitInstruction &target_data);
+    void X_ERROR(const CircuitInstruction &target_data);
+    void Y_ERROR(const CircuitInstruction &target_data);
+    void Z_ERROR(const CircuitInstruction &target_data);
+    void PAULI_CHANNEL_1(const CircuitInstruction &target_data);
+    void PAULI_CHANNEL_2(const CircuitInstruction &target_data);
+    void CORRELATED_ERROR(const CircuitInstruction &target_data);
+    void ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data);
 
    private:
     void xor_control_bit_into(uint32_t control, simd_bits_range_ref<MAX_BITWORD_WIDTH> target);

@@ -16,7 +16,6 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/circuit.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
 
@@ -60,12 +59,11 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
-    OperationData op_data{{}, targets};
     for (size_t k = 7; k < num_samples; k += 101) {
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
-        sim.do_gate(gate.id, op_data);
+        sim.do_gate({gate.id, {}, targets});
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
             size_t target_buf[2];
             if (num_targets == 1) {
@@ -98,18 +96,18 @@ bool is_output_possible_promising_no_bare_resets(
     auto tableau_sim = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
-    circuit.for_each_operation([&](const Operation &op) {
-        if (op.gate->name == std::string("M")) {
-            for (auto qf : op.target_data.targets) {
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        if (op.gate_type == GateType::M) {
+            for (auto qf : op.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure_z(OpDat(qf.data));
+                tableau_sim.measure_z({GateType::M, {}, &qf});
                 if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }
                 out_p++;
             }
         } else {
-            tableau_sim.do_gate(op.gate->id, op.target_data);
+            tableau_sim.do_gate(op);
         }
     });
     return pass;
@@ -786,7 +784,7 @@ TEST(FrameSimulator, record_gets_trimmed) {
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
-        sim.measure_z(c.operations[0].target_data);
+        sim.measure_z(c.operations[0]);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<MAX_BITWORD_WIDTH>(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }

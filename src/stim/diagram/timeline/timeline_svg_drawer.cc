@@ -302,7 +302,7 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
-    auto ends = two_qubit_gate_pieces(op.gate->name);
+    auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
         return;
@@ -312,8 +312,8 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
         return;
     }
 
-    auto pieces = two_qubit_gate_pieces(op.gate->name);
-    if (op.gate->id == GateType::PAULI_CHANNEL_2) {
+    auto pieces = two_qubit_gate_pieces(op.gate_type);
+    if (op.gate_type == GateType::PAULI_CHANNEL_2) {
         pieces.first.append("[0]");
         pieces.second.append("[1]");
     }
@@ -366,11 +366,12 @@ void DiagramTimelineSvgDrawer::do_single_qubit_gate_instance(const ResolvedTimel
     const auto &target = op.targets[0];
 
     std::stringstream ss;
-    ss << op.gate->name;
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    ss << gate_data.name;
 
     auto c = q2xy(target.qubit_value());
     draw_generic_box(c.xyz[0], c.xyz[1], ss.str(), op.args);
-    if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
         draw_rec(c.xyz[0], c.xyz[1]);
     }
 }
@@ -540,7 +541,8 @@ void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_pauli_targets(const Reso
             continue;
         }
         std::stringstream ss;
-        ss << op.gate->name;
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        ss << gate_data.name;
         if (t.is_x_target()) {
             ss << "[X]";
         } else if (t.is_y_target()) {
@@ -551,7 +553,7 @@ void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_pauli_targets(const Reso
         auto c = q2xy(t.qubit_value());
         draw_generic_box(
             c.xyz[0], c.xyz[1], ss.str(), t.qubit_value() == minmax_q.second ? op.args : SpanRef<const double>{});
-        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS && t.qubit_value() == minmax_q.first) {
+        if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS && t.qubit_value() == minmax_q.first) {
             draw_rec(c.xyz[0], c.xyz[1]);
         }
     }
@@ -743,21 +745,21 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
     if (resolver.num_ticks_seen < min_tick || resolver.num_ticks_seen > max_tick) {
         return;
     }
-    if (op.gate->id == GateType::MPP) {
+    if (op.gate_type == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == GateType::DETECTOR) {
+    } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
+    } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == GateType::QUBIT_COORDS) {
+    } else if (op.gate_type == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == GateType::E) {
+    } else if (op.gate_type == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
+    } else if (op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == GateType::TICK) {
+    } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);
@@ -782,7 +784,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     std::stringstream buffer;
     DiagramTimelineSvgDrawer obj(buffer, num_qubits, circuit_has_ticks);
     tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start + 1);
-    if (!circuit.operations.empty() && circuit.operations.back().gate->id == GateType::TICK) {
+    if (!circuit.operations.empty() && circuit.operations.back().gate_type == GateType::TICK) {
         tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start);
     }
     if (mode != SVG_MODE_TIMELINE) {

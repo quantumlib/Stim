@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/gate_data.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
+#include "stim/circuit/circuit.h"
+#include "stim/mem/simd_bits.h"
+#include "stim/mem/simd_word.h"
 
 using namespace stim;
 
@@ -543,11 +541,13 @@ Examples:
 }
 
 void stim::decompose_mpp_operation(
-    const OperationData &target_data,
+    const CircuitInstruction &mpp_op,
     size_t num_qubits,
     const std::function<void(
-        const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
-        &callback) {
+        const CircuitInstruction &h_xz,
+        const CircuitInstruction &h_yz,
+        const CircuitInstruction &cnot,
+        const CircuitInstruction &meas)> &callback) {
     simd_bits<MAX_BITWORD_WIDTH> used(num_qubits);
     simd_bits<MAX_BITWORD_WIDTH> inner_used(num_qubits);
     std::vector<GateTarget> h_xz;
@@ -555,32 +555,33 @@ void stim::decompose_mpp_operation(
     std::vector<GateTarget> cnot;
     std::vector<GateTarget> meas;
 
-    auto op_dat = [](std::vector<GateTarget> &targets, SpanRef<const double> args) {
-        return OperationData{args, targets};
-    };
     size_t start = 0;
-    while (start < target_data.targets.size()) {
+    while (start < mpp_op.targets.size()) {
         size_t end = start + 1;
-        while (end < target_data.targets.size() && target_data.targets[end].is_combiner()) {
+        while (end < mpp_op.targets.size() && mpp_op.targets[end].is_combiner()) {
             end += 2;
         }
 
         // Determine which qubits are being touched by the next group.
         inner_used.clear();
         for (size_t i = start; i < end; i += 2) {
-            auto t = target_data.targets[i];
+            auto t = mpp_op.targets[i];
             if (inner_used[t.qubit_value()]) {
                 throw std::invalid_argument(
                     "A pauli product specified the same qubit twice.\n"
-                    "The operation: MPP" +
-                    target_data.str());
+                    "The operation: " +
+                    mpp_op.str());
             }
             inner_used[t.qubit_value()] = true;
         }
 
         // If there's overlap with previous groups, the previous groups have to be flushed first.
         if (inner_used.intersects(used)) {
-            callback(op_dat(h_xz, {}), op_dat(h_yz, {}), op_dat(cnot, {}), op_dat(meas, target_data.args));
+            callback(
+                CircuitInstruction{GateType::H, {}, h_xz},
+                CircuitInstruction{GateType::H_YZ, {}, h_yz},
+                CircuitInstruction{GateType::CX, {}, cnot},
+                CircuitInstruction{GateType::M, mpp_op.args, meas});
             h_xz.clear();
             h_yz.clear();
             cnot.clear();
@@ -591,7 +592,7 @@ void stim::decompose_mpp_operation(
 
         // Append operations that are equivalent to the desired measurement.
         for (size_t i = start; i < end; i += 2) {
-            auto t = target_data.targets[i];
+            auto t = mpp_op.targets[i];
             auto q = t.qubit_value();
             if (t.data & TARGET_PAULI_X_BIT) {
                 if (t.data & TARGET_PAULI_Z_BIT) {
@@ -613,5 +614,9 @@ void stim::decompose_mpp_operation(
     }
 
     // Flush remaining groups.
-    callback(op_dat(h_xz, {}), op_dat(h_yz, {}), op_dat(cnot, {}), op_dat(meas, target_data.args));
+    callback(
+        CircuitInstruction{GateType::H, {}, h_xz},
+        CircuitInstruction{GateType::H_YZ, {}, h_yz},
+        CircuitInstruction{GateType::CX, {}, cnot},
+        CircuitInstruction{GateType::M, mpp_op.args, meas});
 }

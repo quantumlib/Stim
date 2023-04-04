@@ -3,7 +3,6 @@
 using namespace stim;
 
 const std::map<std::string, FileFormatData>& stim::format_name_to_enum_map() {
-
     static const std::map<std::string, stim::FileFormatData> mapping{
         {
             "01",
@@ -53,7 +52,7 @@ def save_01(shots: List[List[bool]]) -> str:
         output += "\n"
     return output
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_01(data: str) -> List[List[bool]]:
@@ -76,7 +75,7 @@ def parse_01(data: str) -> List[List[bool]]:
             FileFormatData{
                 "b8",
                 SAMPLE_FORMAT_B8,
-            R"HELP(
+                R"HELP(
 The b8 format is a dense binary format that stores shots as bit-packed bytes.
 
 Each shot is stored into ceil(n / 8) bytes, where n is the number of bits in the shot. Effectively, each shot is padded
@@ -115,7 +114,7 @@ def save_b8(shots: List[List[bool]]) -> bytes:
         output += v.to_bytes(bytes_per_shot, 'little')
     return output
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_b8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
@@ -216,7 +215,7 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             FileFormatData{
                 "hits",
                 SAMPLE_FORMAT_HITS,
-            R"HELP(
+                R"HELP(
 The hits format is a dense human readable format that stores shots as a comma-separated list of integers.
 Each integer indicates the position of a bit that was True.
 Positions that aren't mentioned had bits that were False.
@@ -264,7 +263,7 @@ def save_hits(shots: List[List[bool]]) -> str:
         output += ",".join(str(index) for index, bit in enumerate(shot) if bit) + "\n"
     return output
 )PYTHON",
-            R"PYTHON(
+                R"PYTHON(
 from typing import List
 
 def parse_hits(data: str, bits_per_shot: int) -> List[List[bool]]:

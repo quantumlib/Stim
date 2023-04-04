@@ -30,7 +30,7 @@ struct ErrorMatcher {
     // This value is tweaked and adjusted while iterating through the circuit, tracking
     // where we currently are.
     CircuitErrorLocation cur_loc;
-    const Operation *cur_op;
+    const CircuitInstruction *cur_op;
 
     // Tracks discovered pairings keyed by their detector-error-model error terms.
     //
@@ -75,17 +75,17 @@ struct ErrorMatcher {
         SpanRef<const GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out);
 
     /// Base case for processing a single-term error mechanism.
-    void err_atom(const Operation &effect);
+    void err_atom(const CircuitInstruction &effect);
     /// Processes operations with X, Y, Z errors on each target.
-    void err_pauli_channel_1(const Operation &op);
+    void err_pauli_channel_1(const CircuitInstruction &op);
     /// Processes operations with 15 two-qubit Pauli product errors on each target pair.
-    void err_pauli_channel_2(const Operation &op);
+    void err_pauli_channel_2(const CircuitInstruction &op);
     /// Processes measurement operations.
-    void err_m(const Operation &op, uint32_t obs_mask);
-    void err_xyz(const Operation &op, uint32_t target_flags);
+    void err_m(const CircuitInstruction &op, uint32_t obs_mask);
+    void err_xyz(const CircuitInstruction &op, uint32_t target_flags);
 
     /// Processes arbitrary instructions.
-    void rev_process_instruction(const Operation &op);
+    void rev_process_instruction(const CircuitInstruction &op);
     /// Processes entire circuits.
     void rev_process_circuit(uint64_t reps, const Circuit &block);
 };

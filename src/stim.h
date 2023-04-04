@@ -6,6 +6,7 @@
 #include "stim/arg_parse.h"
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/cmd/command_detect.h"

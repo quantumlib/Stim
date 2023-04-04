@@ -7,21 +7,22 @@
 
 using namespace stim;
 
-struct TempArgData {
+struct JsCircuitInstruction {
+    GateType gate_type;
     std::vector<GateTarget> targets;
-    TempArgData(std::vector<GateTarget> targets) : targets(std::move(targets)) {
+    JsCircuitInstruction(GateType gate_type, std::vector<GateTarget> targets) : gate_type(gate_type), targets(std::move(targets)) {
     }
-    TempArgData(std::vector<uint32_t> init_targets) {
+    JsCircuitInstruction(GateType gate_type, std::vector<uint32_t> init_targets) : gate_type(gate_type) {
         for (auto e : init_targets) {
             targets.push_back(GateTarget{e});
         }
     }
-    operator OperationData() {
-        return {{}, targets};
+    operator CircuitInstruction() const {
+        return {gate_type, {}, targets};
     }
 };
 
-static TempArgData args_to_targets(TableauSimulator &self, const emscripten::val &args) {
+static JsCircuitInstruction args_to_targets(TableauSimulator &self, GateType gate_type, const emscripten::val &args) {
     std::vector<uint32_t> result = emscripten::convertJSArrayToNumberVector<uint32_t>(args);
     uint32_t max_q = 0;
     for (uint32_t q : result) {
@@ -31,26 +32,26 @@ static TempArgData args_to_targets(TableauSimulator &self, const emscripten::val
     // Note: quadratic behavior.
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
 
-    return TempArgData(result);
+    return JsCircuitInstruction(gate_type, result);
 }
 
-static TempArgData safe_targets(TableauSimulator &self, uint32_t target) {
+static JsCircuitInstruction safe_targets(TableauSimulator &self, GateType gate_type, uint32_t target) {
     uint32_t max_q = target & TARGET_VALUE_MASK;
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
-    return TempArgData({GateTarget{target}});
+    return JsCircuitInstruction(gate_type, {GateTarget{target}});
 }
 
-static TempArgData safe_targets(TableauSimulator &self, uint32_t target1, uint32_t target2) {
+static JsCircuitInstruction safe_targets(TableauSimulator &self, GateType gate_type, uint32_t target1, uint32_t target2) {
     uint32_t max_q = std::max(target1 & TARGET_VALUE_MASK, target2 & TARGET_VALUE_MASK);
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
     if (target1 == target2) {
         throw std::invalid_argument("target1 == target2");
     }
-    return TempArgData({GateTarget{target1}, GateTarget{target2}});
+    return JsCircuitInstruction(gate_type, {GateTarget{target1}, GateTarget{target2}});
 }
 
-static TempArgData args_to_target_pairs(TableauSimulator &self, const emscripten::val &args) {
-    auto result = args_to_targets(self, args);
+static JsCircuitInstruction args_to_target_pairs(TableauSimulator &self, GateType gate_type, const emscripten::val &args) {
+    auto result = args_to_targets(self, gate_type, args);
     if (result.targets.size() & 1) {
         throw std::out_of_range("Two qubit operation requires an even number of targets.");
     }
@@ -62,12 +63,12 @@ ExposedTableauSimulator::ExposedTableauSimulator() : sim(JS_BIND_SHARED_RNG(), 0
 
 bool ExposedTableauSimulator::measure(size_t target) {
     sim.ensure_large_enough_for_qubits(target + 1);
-    sim.measure_z(TempArgData({GateTarget{target}}));
+    sim.measure_z(JsCircuitInstruction(GateType::M, {GateTarget{target}}));
     return (bool)sim.measurement_record.storage.back();
 }
 
 emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
-    safe_targets(sim, target);
+    sim.ensure_large_enough_for_qubits(target + 1);
     auto result = sim.measure_kickback_z(GateTarget{(uint32_t)target});
     emscripten::val returned = emscripten::val::object();
     returned.set("result", result.first);
@@ -81,8 +82,8 @@ emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
 
 void ExposedTableauSimulator::do_circuit(const ExposedCircuit &circuit) {
     sim.ensure_large_enough_for_qubits(circuit.circuit.count_qubits());
-    circuit.circuit.for_each_operation([&](const Operation &op) {
-        sim.do_gate(op.gate->id, op.target_data);
+    circuit.circuit.for_each_operation([&](const CircuitInstruction &op) {
+        sim.do_gate(op);
     });
 }
 void ExposedTableauSimulator::do_pauli_string(const ExposedPauliString &pauli_string) {
@@ -100,28 +101,28 @@ void ExposedTableauSimulator::do_tableau(const ExposedTableau &tableau, const em
 }
 
 void ExposedTableauSimulator::X(uint32_t target) {
-    sim.X(safe_targets(sim, target));
+    sim.X(safe_targets(sim, GateType::X, target));
 }
 void ExposedTableauSimulator::Y(uint32_t target) {
-    sim.Y(safe_targets(sim, target));
+    sim.Y(safe_targets(sim, GateType::Y, target));
 }
 void ExposedTableauSimulator::Z(uint32_t target) {
-    sim.Z(safe_targets(sim, target));
+    sim.Z(safe_targets(sim, GateType::Z, target));
 }
 void ExposedTableauSimulator::H(uint32_t target) {
-    sim.H_XZ(safe_targets(sim, target));
+    sim.H_XZ(safe_targets(sim, GateType::H, target));
 }
 void ExposedTableauSimulator::CNOT(uint32_t control, uint32_t target) {
-    sim.ZCX(safe_targets(sim, control, target));
+    sim.ZCX(safe_targets(sim, GateType::CX, control, target));
 }
 void ExposedTableauSimulator::SWAP(uint32_t target1, uint32_t target2) {
-    sim.SWAP(safe_targets(sim, target1, target2));
+    sim.SWAP(safe_targets(sim, GateType::SWAP, target1, target2));
 }
 void ExposedTableauSimulator::CY(uint32_t control, uint32_t target) {
-    sim.ZCY(safe_targets(sim, control, target));
+    sim.ZCY(safe_targets(sim, GateType::CY, control, target));
 }
 void ExposedTableauSimulator::CZ(uint32_t control, uint32_t target) {
-    sim.ZCZ(safe_targets(sim, control, target));
+    sim.ZCZ(safe_targets(sim, GateType::CZ, control, target));
 }
 
 ExposedTableau ExposedTableauSimulator::current_inverse_tableau() const {

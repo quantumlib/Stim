@@ -27,8 +27,7 @@ std::string Graph::str() const {
     return result.str();
 }
 
-void Graph::add_edge_from_dem_targets(
-    SpanRef<const DemTarget> targets, size_t dont_explore_edges_with_degree_above) {
+void Graph::add_edge_from_dem_targets(SpanRef<const DemTarget> targets, size_t dont_explore_edges_with_degree_above) {
     Edge edge{{}, 0};
     for (const auto &t : targets) {
         if (t.is_relative_detector_id()) {

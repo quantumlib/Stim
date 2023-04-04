@@ -70,24 +70,24 @@ void stim::measurements_to_detection_events_helper(
     uint64_t detector_offset = 0;
     const auto det_id = GateType::DETECTOR;
     const auto obs_id = GateType::OBSERVABLE_INCLUDE;
-    noiseless_circuit.for_each_operation([&](const Operation &op) {
+    noiseless_circuit.for_each_operation([&](const CircuitInstruction &op) {
         uint64_t out_index;
-        if (op.gate->id == det_id) {
+        if (op.gate_type == det_id) {
             // Detectors go into next slot.
             out_index = detector_offset;
             detector_offset++;
-        } else if (append_observables && op.gate->id == obs_id) {
+        } else if (append_observables && op.gate_type == obs_id) {
             // Observables accumulate at end of output, if desired.
-            assert(!op.target_data.args.empty());  // Circuit validation should guarantee this.
-            out_index = num_detectors + (uint64_t)op.target_data.args[0];
+            assert(!op.args.empty());  // Circuit validation should guarantee this.
+            out_index = num_detectors + (uint64_t)op.args[0];
         } else {
             measure_count_so_far += op.count_measurement_results();
-            frame_sim.do_gate(op.gate->id, op.target_data);
+            frame_sim.do_gate(op);
             return;
         }
 
         // XOR together the appropriate measurement inversions, using the reference sample as a baseline.
-        for (const auto &t : op.target_data.targets) {
+        for (const auto &t : op.targets) {
             assert(t.is_measurement_record_target());  // Circuit validation should guarantee this.
             uint32_t lookback = t.data & TARGET_VALUE_MASK;
             if (lookback > measure_count_so_far) {

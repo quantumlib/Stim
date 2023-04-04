@@ -38,7 +38,7 @@ void MeasureRecordBatch::reserve_space_for_results(size_t count) {
     }
 }
 
-void MeasureRecordBatch::reserve_noisy_space_for_results(const OperationData &target_data, std::mt19937_64 &rng) {
+void MeasureRecordBatch::reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng) {
     size_t count = target_data.targets.size();
     reserve_space_for_results(count);
     float p = target_data.args.empty() ? 0 : target_data.args[0];

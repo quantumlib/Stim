@@ -22,8 +22,6 @@
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/diagram/timeline/timeline_ascii_drawer.h"
-#include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
@@ -118,13 +116,13 @@ void circuit_append(
         } catch (const pybind11::cast_error &ex) {
         }
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
-    } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
+    } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
             throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
         }
 
-        const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
-        self.safe_append(GATE_DATA.at(instruction.gate.name), instruction.targets, instruction.gate_args);
+        const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
+        self.safe_append(instruction.gate_type, instruction.targets, instruction.gate_args);
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
             throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
@@ -545,10 +543,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "flattened_operations",
         [](Circuit &self) {
             pybind11::list result;
-            self.for_each_operation([&](const Operation &op) {
+            self.for_each_operation([&](const CircuitInstruction &op) {
                 pybind11::list args;
                 pybind11::list targets;
-                for (auto t : op.target_data.targets) {
+                for (auto t : op.targets) {
                     auto v = t.qubit_value();
                     if (t.data & TARGET_INVERTED_BIT) {
                         targets.append(pybind11::make_tuple("inv", v));
@@ -568,17 +566,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         targets.append(pybind11::int_(v));
                     }
                 }
-                for (auto t : op.target_data.args) {
+                for (auto t : op.args) {
                     args.append(t);
                 }
-                if (op.target_data.args.empty()) {
+                const auto &gate_data = GATE_DATA.items[op.gate_type];
+                if (op.args.empty()) {
                     // Backwards compatibility.
-                    result.append(pybind11::make_tuple(op.gate->name, targets, 0));
-                } else if (op.target_data.args.size() == 1) {
+                    result.append(pybind11::make_tuple(gate_data.name, targets, 0));
+                } else if (op.args.size() == 1) {
                     // Backwards compatibility.
-                    result.append(pybind11::make_tuple(op.gate->name, targets, op.target_data.args[0]));
+                    result.append(pybind11::make_tuple(gate_data.name, targets, op.args[0]));
                 } else {
-                    result.append(pybind11::make_tuple(op.gate->name, targets, args));
+                    result.append(pybind11::make_tuple(gate_data.name, targets, args));
                 }
             });
             return result;
@@ -1201,19 +1200,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             }
 
             auto &op = self.operations[index];
-            if (op.gate->id == GateType::REPEAT) {
-                return pybind11::cast(
-                    CircuitRepeatBlock{op_data_rep_count(op.target_data), op_data_block_body(self, op.target_data)});
+            if (op.gate_type == GateType::REPEAT) {
+                return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
             }
             std::vector<GateTarget> targets;
-            for (const auto &e : op.target_data.targets) {
+            for (const auto &e : op.targets) {
                 targets.push_back(GateTarget(e));
             }
             std::vector<double> args;
-            for (const auto &e : op.target_data.args) {
+            for (const auto &e : op.args) {
                 args.push_back(e);
             }
-            return pybind11::cast(CircuitInstruction(*op.gate, targets, args));
+            return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args));
         },
         pybind11::arg("index_or_slice"),
         clean_doc_string(R"DOC(

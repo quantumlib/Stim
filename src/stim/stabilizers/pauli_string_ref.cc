@@ -162,9 +162,9 @@ void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, SpanRef<con
 
 void PauliStringRef::after_inplace(const Circuit &circuit) {
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == GateType::REPEAT) {
-            const auto &body = op_data_block_body(circuit, op.target_data);
-            auto reps = op_data_rep_count(op.target_data);
+        if (op.gate_type == GateType::REPEAT) {
+            const auto &body = op.repeat_block_body(circuit);
+            auto reps = op.repeat_block_rep_count();
             for (size_t k = 0; k < reps; k++) {
                 after_inplace(body);
             }
@@ -174,11 +174,12 @@ void PauliStringRef::after_inplace(const Circuit &circuit) {
     }
 }
 
-void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
-    if (operation.gate->flags & GATE_IS_UNITARY) {
+void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inverse) {
+    const auto &gate_data = GATE_DATA.items[operation.gate_type];
+    if (gate_data.flags & GATE_IS_UNITARY) {
         // TODO: use hand-optimized methods instead of the generic tableau method.
         std::vector<size_t> indices;
-        for (auto t : operation.target_data.targets) {
+        for (auto t : operation.targets) {
             if (!t.is_qubit_target()) {
                 throw std::invalid_argument("Operation isn't unitary: " + operation.str());
             }
@@ -187,12 +188,12 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
             }
             indices.push_back(t.qubit_value());
         }
-        after_inplace_broadcast(operation.gate->tableau(), indices, inverse);
-    } else if (operation.gate->flags & GATE_HAS_NO_EFFECT_ON_QUBITS) {
+        after_inplace_broadcast(gate_data.tableau(), indices, inverse);
+    } else if (gate_data.flags & GATE_HAS_NO_EFFECT_ON_QUBITS) {
         // Gate can be ignored.
-    } else if (operation.gate->flags & GATE_IS_RESET) {
+    } else if (gate_data.flags & GATE_IS_RESET) {
         // Only fail if the pauli string actually touches the reset.
-        for (const auto &t : operation.target_data.targets) {
+        for (const auto &t : operation.targets) {
             assert(t.is_qubit_target());
             auto q = t.qubit_value();
             if (q < num_qubits && (xs[q] || zs[q])) {
@@ -202,9 +203,9 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
                 throw std::invalid_argument(ss.str());
             }
         }
-    } else if (operation.gate->id == GateType::MPP) {
+    } else if (operation.gate_type == GateType::MPP) {
         size_t start = 0;
-        const auto &targets = operation.target_data.targets;
+        const auto &targets = operation.targets;
         while (start < targets.size()) {
             size_t end = start + 1;
             bool anticommutes = false;
@@ -222,37 +223,40 @@ void PauliStringRef::after_inplace(const Operation &operation, bool inverse) {
             }
             if (anticommutes) {
                 std::stringstream ss;
-                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation
+                   << "' because it anticommutes with the measurement.";
                 throw std::invalid_argument(ss.str());
             }
             start = end;
         }
-    } else if (operation.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+    } else if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
         bool x_dep, z_dep;
-        if (operation.gate->id == GateType::M) {
+        if (operation.gate_type == GateType::M) {
             x_dep = true;
             z_dep = false;
-        } else if (operation.gate->id == GateType::MX) {
+        } else if (operation.gate_type == GateType::MX) {
             x_dep = false;
             z_dep = true;
-        } else if (operation.gate->id == GateType::MY) {
+        } else if (operation.gate_type == GateType::MY) {
             x_dep = true;
             z_dep = true;
         } else {
             throw std::invalid_argument("Unrecognized measurement type: " + operation.str());
         }
-        for (const auto &t : operation.target_data.targets) {
+        for (const auto &t : operation.targets) {
             assert(t.is_qubit_target());
             auto q = t.qubit_value();
             if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
                 std::stringstream ss;
-                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation
+                   << "' because it anticommutes with the measurement.";
                 throw std::invalid_argument(ss.str());
             }
         }
     } else {
         std::stringstream ss;
-        ss << "The pauli string '" << *this << "' doesn't have a well defined deterministic value after '" << operation << "'.";
+        ss << "The pauli string '" << *this << "' doesn't have a well defined deterministic value after '" << operation
+           << "'.";
         throw std::invalid_argument(ss.str());
     }
 }
@@ -268,7 +272,7 @@ PauliString PauliStringRef::after(const Tableau &tableau, SpanRef<const size_t> 
     result.ref().after_inplace_broadcast(tableau, indices, false);
     return result;
 }
-PauliString PauliStringRef::after(const Operation &operation) const {
+PauliString PauliStringRef::after(const CircuitInstruction &operation) const {
     PauliString result = *this;
     result.ref().after_inplace(operation, false);
     return result;
@@ -278,7 +282,7 @@ PauliString PauliStringRef::before(const Circuit &circuit) const {
     // TODO: use hand-optimized methods instead of the generic circuit inverse method.
     return after(circuit.inverse(true));
 }
-PauliString PauliStringRef::before(const Operation &operation) const {
+PauliString PauliStringRef::before(const CircuitInstruction &operation) const {
     PauliString result = *this;
     result.ref().after_inplace(operation, true);
     return result;

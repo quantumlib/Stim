@@ -87,8 +87,7 @@ struct DiagramTimelineSvgDrawer {
     void draw_swap_control(float cx, float cy);
     void draw_iswap_control(float cx, float cy, bool inverse);
     void draw_generic_box(float cx, float cy, const std::string &text, stim::SpanRef<const double> end_args);
-    void draw_two_qubit_gate_end_point(
-        float cx, float cy, const std::string &type, stim::SpanRef<const double> args);
+    void draw_two_qubit_gate_end_point(float cx, float cy, const std::string &type, stim::SpanRef<const double> args);
     void draw_rec(float cx, float cy);
 
     void do_resolved_operation(const ResolvedTimelineOperation &op);

@@ -14,10 +14,10 @@ void CircuitTimelineHelper::skip_loop_iterations(CircuitTimelineLoopData loop_da
     }
 }
 
-void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operation &op) {
-    const auto &body = op_data_block_body(circuit, op.target_data);
+void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const CircuitInstruction &op) {
+    const auto &body = op.repeat_block_body(circuit);
     CircuitTimelineLoopData loop_data{
-        op_data_rep_count(op.target_data),
+        op.repeat_block_rep_count(),
         body.count_measurements(),
         body.count_detectors(),
         body.count_ticks(),
@@ -40,43 +40,42 @@ void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operat
 }
 
 void CircuitTimelineHelper::do_atomic_operation(
-    const Gate *gate, SpanRef<const double> args, SpanRef<const GateTarget> targets) {
-    resolved_op_callback({gate, args, targets});
+    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets) {
+    resolved_op_callback({gate_type, args, targets});
 }
 
-void CircuitTimelineHelper::do_operation_with_target_combiners(const Operation &op) {
+void CircuitTimelineHelper::do_operation_with_target_combiners(const CircuitInstruction &op) {
     size_t start = 0;
-    while (start < op.target_data.targets.size()) {
+    while (start < op.targets.size()) {
         size_t end = start + 1;
-        while (end < op.target_data.targets.size() && op.target_data.targets[end].is_combiner()) {
+        while (end < op.targets.size() && op.targets[end].is_combiner()) {
             end += 2;
         }
-        if (op.gate->flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
-            do_record_measure_result(op.target_data.targets[start].qubit_value());
+        if (GATE_DATA.items[op.gate_type].flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
+            do_record_measure_result(op.targets[start].qubit_value());
         }
-        do_atomic_operation(
-            op.gate, op.target_data.args, {&op.target_data.targets[start], &op.target_data.targets[end]});
+        do_atomic_operation(op.gate_type, op.args, {&op.targets[start], &op.targets[end]});
         start = end;
     }
 }
 
-void CircuitTimelineHelper::do_multi_qubit_atomic_operation(const Operation &op) {
-    do_atomic_operation(op.gate, op.target_data.args, op.target_data.targets);
+void CircuitTimelineHelper::do_multi_qubit_atomic_operation(const CircuitInstruction &op) {
+    do_atomic_operation(op.gate_type, op.args, op.targets);
 }
 
-void CircuitTimelineHelper::do_two_qubit_gate(const Operation &op) {
-    for (size_t k = 0; k < op.target_data.targets.size(); k += 2) {
-        const GateTarget *p = &op.target_data.targets[k];
-        do_atomic_operation(op.gate, op.target_data.args, {p, p + 2});
+void CircuitTimelineHelper::do_two_qubit_gate(const CircuitInstruction &op) {
+    for (size_t k = 0; k < op.targets.size(); k += 2) {
+        const GateTarget *p = &op.targets[k];
+        do_atomic_operation(op.gate_type, op.args, {p, p + 2});
     }
 }
 
-void CircuitTimelineHelper::do_single_qubit_gate(const Operation &op) {
-    for (const auto &t : op.target_data.targets) {
-        if (op.gate->flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
+void CircuitTimelineHelper::do_single_qubit_gate(const CircuitInstruction &op) {
+    for (const auto &t : op.targets) {
+        if (GATE_DATA.items[op.gate_type].flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
             do_record_measure_result(t.qubit_value());
         }
-        do_atomic_operation(op.gate, op.target_data.args, {&t});
+        do_atomic_operation(op.gate_type, op.args, {&t});
     }
 }
 
@@ -84,10 +83,10 @@ GateTarget CircuitTimelineHelper::rec_to_qubit(const GateTarget &target) {
     return GateTarget::qubit(measure_index_to_qubit.get(measure_offset + (decltype(measure_offset))target.value()));
 }
 
-GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(const Operation &op) {
+GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(const CircuitInstruction &op) {
     // First check if coordinates prefix-match a qubit's coordinates.
-    if (!op.target_data.args.empty()) {
-        auto coords = shifted_coordinates_in_workspace(op.target_data.args);
+    if (!op.args.empty()) {
+        auto coords = shifted_coordinates_in_workspace(op.args);
 
         for (size_t q = 0; q < latest_qubit_coords.size(); q++) {
             SpanRef<const double> v = latest_qubit_coords[q];
@@ -101,11 +100,11 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
     }
 
     // Otherwise fall back to picking the qubit of one of the targeted measurements.
-    if (op.target_data.targets.empty()) {
+    if (op.targets.empty()) {
         return GateTarget::qubit(0);
     }
-    GateTarget pseudo_target = rec_to_qubit(op.target_data.targets[0]);
-    for (const auto &t : op.target_data.targets) {
+    GateTarget pseudo_target = rec_to_qubit(op.targets[0]);
+    for (const auto &t : op.targets) {
         GateTarget q = rec_to_qubit(t);
         if (q.value() < pseudo_target.value()) {
             pseudo_target = q;
@@ -128,26 +127,26 @@ SpanRef<const double> CircuitTimelineHelper::shifted_coordinates_in_workspace(Sp
     return {coord_workspace.data(), coord_workspace.data() + coords.size()};
 }
 
-void CircuitTimelineHelper::do_detector(const Operation &op) {
+void CircuitTimelineHelper::do_detector(const CircuitInstruction &op) {
     GateTarget pseudo_target = pick_pseudo_target_representing_measurements(op);
     targets_workspace.clear();
     targets_workspace.push_back(pseudo_target);
-    targets_workspace.insert(targets_workspace.end(), op.target_data.targets.begin(), op.target_data.targets.end());
-    do_atomic_operation(op.gate, shifted_coordinates_in_workspace(op.target_data.args), targets_workspace);
+    targets_workspace.insert(targets_workspace.end(), op.targets.begin(), op.targets.end());
+    do_atomic_operation(op.gate_type, shifted_coordinates_in_workspace(op.args), targets_workspace);
     detector_offset++;
 }
 
-void CircuitTimelineHelper::do_observable_include(const Operation &op) {
+void CircuitTimelineHelper::do_observable_include(const CircuitInstruction &op) {
     GateTarget pseudo_target = pick_pseudo_target_representing_measurements(op);
     targets_workspace.clear();
     targets_workspace.push_back(pseudo_target);
-    targets_workspace.insert(targets_workspace.end(), op.target_data.targets.begin(), op.target_data.targets.end());
-    do_atomic_operation(op.gate, op.target_data.args, targets_workspace);
+    targets_workspace.insert(targets_workspace.end(), op.targets.begin(), op.targets.end());
+    do_atomic_operation(op.gate_type, op.args, targets_workspace);
 }
 
-void CircuitTimelineHelper::do_qubit_coords(const Operation &op) {
-    for (const auto &target : op.target_data.targets) {
-        auto shifted = shifted_coordinates_in_workspace(op.target_data.args);
+void CircuitTimelineHelper::do_qubit_coords(const CircuitInstruction &op) {
+    for (const auto &target : op.targets) {
+        auto shifted = shifted_coordinates_in_workspace(op.args);
 
         while (target.qubit_value() >= latest_qubit_coords.size()) {
             latest_qubit_coords.push_back({});
@@ -156,12 +155,12 @@ void CircuitTimelineHelper::do_qubit_coords(const Operation &op) {
         store.clear();
         store.insert(store.begin(), shifted.begin(), shifted.end());
 
-        do_atomic_operation(op.gate, shifted, {&target});
+        do_atomic_operation(op.gate_type, shifted, {&target});
     }
 }
 
-void CircuitTimelineHelper::do_shift_coords(const Operation &op) {
-    vec_pad_add_mul(cur_coord_shift, op.target_data.args);
+void CircuitTimelineHelper::do_shift_coords(const CircuitInstruction &op) {
+    vec_pad_add_mul(cur_coord_shift, op.args);
 }
 
 void CircuitTimelineHelper::do_record_measure_result(uint32_t target_qubit) {
@@ -178,25 +177,25 @@ void CircuitTimelineHelper::do_record_measure_result(uint32_t target_qubit) {
     measure_offset++;
 }
 
-void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const Operation &op) {
-    if (op.gate->id == GateType::REPEAT) {
+void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const CircuitInstruction &op) {
+    if (op.gate_type == GateType::REPEAT) {
         do_repeat_block(circuit, op);
-    } else if (op.gate->id == GateType::MPP) {
+    } else if (op.gate_type == GateType::MPP) {
         do_operation_with_target_combiners(op);
-    } else if (op.gate->id == GateType::DETECTOR) {
+    } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
+    } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == GateType::SHIFT_COORDS) {
+    } else if (op.gate_type == GateType::SHIFT_COORDS) {
         do_shift_coords(op);
-    } else if (op.gate->id == GateType::E || op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
+    } else if (op.gate_type == GateType::E || op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         do_multi_qubit_atomic_operation(op);
-    } else if (op.gate->id == GateType::QUBIT_COORDS) {
+    } else if (op.gate_type == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == GateType::TICK) {
-        do_atomic_operation(op.gate, {}, {});
+    } else if (op.gate_type == GateType::TICK) {
+        do_atomic_operation(op.gate_type, {}, {});
         num_ticks_seen += 1;
-    } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate(op);
     } else {
         do_single_qubit_gate(op);
