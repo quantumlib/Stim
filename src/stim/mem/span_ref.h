@@ -48,17 +48,20 @@ struct SpanRef {
     // Implicit conversions.
     SpanRef(T *singleton) : ptr_start(singleton), ptr_end(singleton + 1) {
     }
-    SpanRef(const SpanRef<typename std::remove_const<T>::type> &other) : ptr_start(other.ptr_start), ptr_end(other.ptr_end) {
+    SpanRef(const SpanRef<typename std::remove_const<T>::type> &other)
+        : ptr_start(other.ptr_start), ptr_end(other.ptr_end) {
     }
     SpanRef(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
-    SpanRef(const std::vector<typename std::remove_const<T>::type> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    SpanRef(const std::vector<typename std::remove_const<T>::type> &items)
+        : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
     template <size_t K>
     SpanRef(std::array<T, K> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
     template <size_t K>
-    SpanRef(const std::array<typename std::remove_const<T>::type, K> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    SpanRef(const std::array<typename std::remove_const<T>::type, K> &items)
+        : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
     size_t size() const {

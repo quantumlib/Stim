@@ -77,10 +77,7 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pyb
 }
 
 PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
-    TableauSimulator &self,
-    GateType gate_type,
-    const pybind11::args &args,
-    SpanRef<const double> gate_args = {}) {
+    TableauSimulator &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     std::vector<GateTarget> targets;
     uint32_t max_q = 0;
     try {
@@ -109,10 +106,7 @@ PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
 }
 
 PyCircuitInstruction build_two_qubit_gate_instruction_ensure_size(
-    TableauSimulator &self,
-    GateType gate_type,
-    const pybind11::args &args,
-    SpanRef<const double> gate_args = {}) {
+    TableauSimulator &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }

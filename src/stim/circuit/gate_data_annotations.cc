@@ -116,7 +116,8 @@ Example:
             GateType::OBSERVABLE_INCLUDE,
             GateType::OBSERVABLE_INCLUDE,
             1,
-            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS | GATE_HAS_NO_EFFECT_ON_QUBITS),
+            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS |
+                        GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",

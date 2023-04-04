@@ -452,41 +452,13 @@ TEST(PauliString, before_after_circuit_understands_avoiding_resets) {
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+Z______").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+X______").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+_Z_____").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+__Z____").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+___Z___").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+____Z__").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+_____Z_").ref().after(c);
-        },
-        std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+Z______").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+X______").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+_Z_____").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+__Z____").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+___Z___").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+____Z__").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+_____Z_").ref().after(c); }, std::invalid_argument);
 }
 
 TEST(PauliString, before_after_circuit_understands_commutation_with_m) {
@@ -503,16 +475,8 @@ TEST(PauliString, before_after_circuit_understands_commutation_with_m) {
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+X_").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+Y_").ref().after(c);
-        },
-        std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+X_").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+Y_").ref().after(c); }, std::invalid_argument);
 }
 
 TEST(PauliString, before_after_circuit_understands_commutation_with_mx) {
@@ -529,16 +493,8 @@ TEST(PauliString, before_after_circuit_understands_commutation_with_mx) {
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+Z_").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+Y_").ref().after(c);
-        },
-        std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+Z_").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+Y_").ref().after(c); }, std::invalid_argument);
 }
 
 TEST(PauliString, before_after_circuit_understands_commutation_with_my) {
@@ -555,16 +511,8 @@ TEST(PauliString, before_after_circuit_understands_commutation_with_my) {
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+X_").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+Z_").ref().after(c);
-        },
-        std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+X_").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+Z_").ref().after(c); }, std::invalid_argument);
 }
 
 TEST(PauliString, before_after_circuit_understands_commutation_with_mpp) {
@@ -607,26 +555,10 @@ TEST(PauliString, before_after_circuit_understands_commutation_with_mpp) {
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+__XXYZX").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+_____ZX").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+__Z____").ref().after(c);
-        },
-        std::invalid_argument);
-    ASSERT_THROW(
-        {
-            PauliString::from_str("+__XXYXY").ref().after(c);
-        },
-        std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+__XXYZX").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+_____ZX").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+__Z____").ref().after(c); }, std::invalid_argument);
+    ASSERT_THROW({ PauliString::from_str("+__XXYXY").ref().after(c); }, std::invalid_argument);
 }
 
 TEST(PauliString, before_circuit) {

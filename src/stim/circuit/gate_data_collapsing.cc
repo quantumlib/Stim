@@ -544,8 +544,10 @@ void stim::decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
     const std::function<void(
-        const CircuitInstruction &h_xz, const CircuitInstruction &h_yz, const CircuitInstruction &cnot, const CircuitInstruction &meas)>
-        &callback) {
+        const CircuitInstruction &h_xz,
+        const CircuitInstruction &h_yz,
+        const CircuitInstruction &cnot,
+        const CircuitInstruction &meas)> &callback) {
     simd_bits<MAX_BITWORD_WIDTH> used(num_qubits);
     simd_bits<MAX_BITWORD_WIDTH> inner_used(num_qubits);
     std::vector<GateTarget> h_xz;

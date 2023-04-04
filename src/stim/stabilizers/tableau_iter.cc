@@ -176,8 +176,8 @@ TableauIterator &TableauIterator::operator=(const TableauIterator &other) {
     return *this;
 }
 
-std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>>
-TableauIterator::constraints_for_pauli_iterator(size_t k) const {
+std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>> TableauIterator::constraints_for_pauli_iterator(
+    size_t k) const {
     const PauliStringRef *tab_obs_start = &tableau_column_refs[0];
     SpanRef<const PauliStringRef> commute_rng = {tab_obs_start, tab_obs_start + k};
     SpanRef<const PauliStringRef> anticommute_rng;

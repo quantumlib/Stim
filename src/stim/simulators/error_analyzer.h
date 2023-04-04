@@ -234,7 +234,7 @@ struct ErrorAnalyzer {
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
 
-    inline void rev_do_gate(const CircuitInstruction& data) {
+    inline void rev_do_gate(const CircuitInstruction &data) {
         (this->*(gate_vtable.data[data.gate_type]))(data);
     }
 
@@ -312,8 +312,7 @@ struct ErrorAnalyzer {
     /// Works by rewriting the `stored_ids` argument.
     template <size_t s>
     void decompose_helper_add_error_combinations(
-        const std::array<uint64_t, 1 << s> &detector_masks,
-        std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
+        const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
 
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as

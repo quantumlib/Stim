@@ -61,8 +61,7 @@ struct WithoutFeedbackHelper {
     void undo_feedback_capable_operation(const CircuitInstruction &op) {
         for (size_t k = op.targets.size(); k > 0;) {
             k -= 2;
-            CircuitInstruction op_piece = {
-                op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}};
+            CircuitInstruction op_piece = {op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}};
             auto t1 = op.targets[k];
             auto t2 = op.targets[k + 1];
             auto b1 = t1.is_measurement_record_target();
@@ -141,8 +140,7 @@ struct WithoutFeedbackHelper {
             tracker.num_measurements_in_past += op.count_measurement_results();
 
             if (op.gate_type == GateType::REPEAT) {
-                result.append_repeat_block(
-                    op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)));
+                result.append_repeat_block(op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)));
                 continue;
             }
 

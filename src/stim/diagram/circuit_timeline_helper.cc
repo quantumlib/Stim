@@ -54,8 +54,7 @@ void CircuitTimelineHelper::do_operation_with_target_combiners(const CircuitInst
         if (GATE_DATA.items[op.gate_type].flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
             do_record_measure_result(op.targets[start].qubit_value());
         }
-        do_atomic_operation(
-            op.gate_type, op.args, {&op.targets[start], &op.targets[end]});
+        do_atomic_operation(op.gate_type, op.args, {&op.targets[start], &op.targets[end]});
         start = end;
     }
 }

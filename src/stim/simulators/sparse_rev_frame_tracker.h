@@ -39,7 +39,7 @@ struct SparseUnsignedRevFrameTracker {
     /// Number of detectors that have not yet been processed.
     uint64_t num_detectors_in_past;
     // Function vtable for each gate's simulator function
-    GateVTable<void (SparseUnsignedRevFrameTracker::*)(const CircuitInstruction&)> gate_vtable;
+    GateVTable<void (SparseUnsignedRevFrameTracker::*)(const CircuitInstruction &)> gate_vtable;
 
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);

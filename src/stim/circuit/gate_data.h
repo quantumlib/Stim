@@ -39,7 +39,6 @@ struct Tableau;
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
-
 constexpr inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
@@ -133,7 +132,7 @@ enum GateType : uint8_t {
     SQRT_X_DAG = gate_name_to_hash("SQRT_X_DAG"),
     SQRT_Y = gate_name_to_hash("SQRT_Y"),
     SQRT_Y_DAG = gate_name_to_hash("SQRT_Y_DAG"),
-    S = gate_name_to_hash("S"),  // alias when parsing: SQRT_Z
+    S = gate_name_to_hash("S"),          // alias when parsing: SQRT_Z
     S_DAG = gate_name_to_hash("S_DAG"),  // alias when parsing: SQRT_Z_DAG
     // Pauli product gates
     SQRT_XX = gate_name_to_hash("SQRT_XX"),
@@ -370,8 +369,10 @@ void decompose_mpp_operation(
     const CircuitInstruction &target_data,
     size_t num_qubits,
     const std::function<void(
-        const CircuitInstruction &h_xz, const CircuitInstruction &h_yz, const CircuitInstruction &cnot, const CircuitInstruction &meas)>
-        &callback);
+        const CircuitInstruction &h_xz,
+        const CircuitInstruction &h_yz,
+        const CircuitInstruction &cnot,
+        const CircuitInstruction &meas)> &callback);
 
 }  // namespace stim
 

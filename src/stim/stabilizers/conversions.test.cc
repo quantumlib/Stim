@@ -434,8 +434,7 @@ TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
         ASSERT_EQ(actual, desired);
 
         for (const auto &op : circuit.operations) {
-            ASSERT_TRUE(
-                op.gate_type == GateType::S || op.gate_type == GateType::H || op.gate_type == GateType::CX)
+            ASSERT_TRUE(op.gate_type == GateType::S || op.gate_type == GateType::H || op.gate_type == GateType::CX)
                 << op;
         }
     }

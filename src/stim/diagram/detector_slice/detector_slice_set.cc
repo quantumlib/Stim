@@ -205,10 +205,7 @@ CoordFilter CoordFilter::parse_from(const std::string &data) {
 }
 
 DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
-    const stim::Circuit &circuit,
-    uint64_t start_tick,
-    uint64_t num_ticks,
-    SpanRef<const CoordFilter> coord_filter) {
+    const stim::Circuit &circuit, uint64_t start_tick, uint64_t num_ticks, SpanRef<const CoordFilter> coord_filter) {
     num_ticks = std::max(uint64_t{1}, std::min(num_ticks, circuit.count_ticks() - start_tick + 1));
 
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);

@@ -102,9 +102,8 @@ bool is_decomposition_correct(const Gate &gate) {
     Circuit circuit2 = epr + Circuit(decomposition);
     auto v2 = circuit_output_eq_val(circuit2);
     for (const auto &op : circuit2.operations) {
-        if (op.gate_type != GateType::CX && op.gate_type != GateType::H &&
-            op.gate_type != GateType::S && op.gate_type != GateType::M &&
-            op.gate_type != GateType::R) {
+        if (op.gate_type != GateType::CX && op.gate_type != GateType::H && op.gate_type != GateType::S &&
+            op.gate_type != GateType::M && op.gate_type != GateType::R) {
             return false;
         }
     }
@@ -130,8 +129,7 @@ TEST(gate_data, unitary_inverses_are_correct) {
     for (const auto &g : GATE_DATA.gates()) {
         if (g.flags & GATE_IS_UNITARY) {
             auto g_t_inv = g.tableau().inverse(false);
-            auto g_inv_t = GATE_DATA.items[
-                static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau();
+            auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
         }
     }

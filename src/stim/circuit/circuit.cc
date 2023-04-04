@@ -32,8 +32,7 @@ enum READ_CONDITION {
 /// Typically, the two ranges are contiguous and so this only requires advancing the end of the destination region.
 /// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
 /// the start and end of the destination range move.
-void fuse_data(
-    SpanRef<const GateTarget> &dst, SpanRef<const GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
+void fuse_data(SpanRef<const GateTarget> &dst, SpanRef<const GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
     if (dst.ptr_end != src.ptr_start) {
         buf.ensure_available(src.size() + dst.size());
         dst = buf.take_copy(dst);
@@ -90,9 +89,10 @@ const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const 
     return host.blocks[b];
 }
 
-CircuitInstruction::CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets) : gate_type(gate_type), args(args), targets(targets) {
+CircuitInstruction::CircuitInstruction(
+    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets)
+    : gate_type(gate_type), args(args), targets(targets) {
 }
-
 
 void CircuitInstruction::validate() const {
     const Gate &gate = GATE_DATA.items[gate_type];
@@ -798,8 +798,7 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
 /// that point to the old location (since they will write data that is no longer read by
 /// other parts of the code).
 template <typename T>
-SpanRef<const T> mono_extend(
-    MonotonicBuffer<T> &cur, SpanRef<const T> original, SpanRef<const T> additional) {
+SpanRef<const T> mono_extend(MonotonicBuffer<T> &cur, SpanRef<const T> original, SpanRef<const T> additional) {
     if (original.ptr_end == cur.tail.ptr_start) {
         // Try to append new data right after the original data.
         cur.ensure_available(additional.size());
@@ -820,8 +819,7 @@ SpanRef<const T> mono_extend(
 Circuit &Circuit::operator+=(const Circuit &other) {
     SpanRef<const CircuitInstruction> ops_to_add = other.operations;
     if (!operations.empty() && !ops_to_add.empty() && operations.back().can_fuse(ops_to_add[0])) {
-        operations.back().targets =
-            mono_extend(target_buf, operations.back().targets, ops_to_add[0].targets);
+        operations.back().targets = mono_extend(target_buf, operations.back().targets, ops_to_add[0].targets);
         ops_to_add.ptr_start++;
     }
 

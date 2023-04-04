@@ -223,7 +223,8 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
             }
             if (anticommutes) {
                 std::stringstream ss;
-                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation
+                   << "' because it anticommutes with the measurement.";
                 throw std::invalid_argument(ss.str());
             }
             start = end;
@@ -247,13 +248,15 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
             auto q = t.qubit_value();
             if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
                 std::stringstream ss;
-                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation << "' because it anticommutes with the measurement.";
+                ss << "The pauli observable '" << *this << "' doesn't have a well specified value after '" << operation
+                   << "' because it anticommutes with the measurement.";
                 throw std::invalid_argument(ss.str());
             }
         }
     } else {
         std::stringstream ss;
-        ss << "The pauli string '" << *this << "' doesn't have a well defined deterministic value after '" << operation << "'.";
+        ss << "The pauli string '" << *this << "' doesn't have a well defined deterministic value after '" << operation
+           << "'.";
         throw std::invalid_argument(ss.str());
     }
 }

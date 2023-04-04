@@ -1201,8 +1201,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             auto &op = self.operations[index];
             if (op.gate_type == GateType::REPEAT) {
-                return pybind11::cast(
-                    CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
+                return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
             }
             std::vector<GateTarget> targets;
             for (const auto &e : op.targets) {

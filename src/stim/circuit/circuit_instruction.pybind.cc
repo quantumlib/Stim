@@ -29,7 +29,8 @@ PyCircuitInstruction::PyCircuitInstruction(
         targets.push_back(obj_to_gate_target(obj));
     }
 }
-PyCircuitInstruction::PyCircuitInstruction(GateType gate_type, std::vector<GateTarget> targets, std::vector<double> gate_args)
+PyCircuitInstruction::PyCircuitInstruction(
+    GateType gate_type, std::vector<GateTarget> targets, std::vector<double> gate_args)
     : gate_type(gate_type), targets(targets), gate_args(gate_args) {
 }
 
