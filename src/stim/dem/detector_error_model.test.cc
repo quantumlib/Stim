@@ -51,7 +51,7 @@ TEST(detector_error_model, append_shift_detectors_instruction) {
     ASSERT_EQ(model.blocks.size(), 0);
 
     std::vector<double> arg_data{1.5, 2.5};
-    ConstPointerRange<double> arg_data_ref = arg_data;
+    SpanRef<const double> arg_data_ref = arg_data;
     model.append_shift_detectors_instruction(arg_data_ref, 5);
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.instructions[0].type, DEM_SHIFT_DETECTORS);
@@ -67,7 +67,7 @@ TEST(detector_error_model, append_detector_instruction) {
     ASSERT_EQ(model.blocks.size(), 0);
 
     std::vector<double> arg_data{1.5, 2.5};
-    ConstPointerRange<double> arg_data_ref = arg_data;
+    SpanRef<const double> arg_data_ref = arg_data;
     model.append_detector_instruction(arg_data_ref, DemTarget::relative_detector_id(5));
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.instructions[0].type, DEM_DETECTOR);
@@ -109,7 +109,7 @@ TEST(detector_error_model, append_error_instruction) {
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.blocks.size(), 0);
     ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
-    ASSERT_EQ(model.instructions[0].target_data, (PointerRange<DemTarget>)symptoms);
+    ASSERT_EQ(model.instructions[0].target_data, (SpanRef<DemTarget>)symptoms);
     ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
     ASSERT_EQ(model.instructions[0].arg_data[0], 0.25);
 
@@ -123,7 +123,7 @@ TEST(detector_error_model, append_error_instruction) {
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.blocks.size(), 0);
     ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
-    ASSERT_EQ(model.instructions[0].target_data, (PointerRange<DemTarget>)symptoms);
+    ASSERT_EQ(model.instructions[0].target_data, (SpanRef<DemTarget>)symptoms);
     ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
     ASSERT_EQ(model.instructions[0].arg_data[0], 0.125);
 

@@ -138,7 +138,7 @@ bool PauliStringRef::commutes(const PauliStringRef &other) const noexcept {
     return (cnt1.popcount() & 1) == 0;
 }
 
-void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, ConstPointerRange<size_t> indices, bool inverse) {
+void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, SpanRef<const size_t> indices, bool inverse) {
     if (tableau.num_qubits == 0 || indices.size() % tableau.num_qubits != 0) {
         throw std::invalid_argument("len(tableau) == 0 or len(indices) % len(tableau) != 0");
     }
@@ -263,7 +263,7 @@ PauliString PauliStringRef::after(const Circuit &circuit) const {
     return result;
 }
 
-PauliString PauliStringRef::after(const Tableau &tableau, ConstPointerRange<size_t> indices) const {
+PauliString PauliStringRef::after(const Tableau &tableau, SpanRef<const size_t> indices) const {
     PauliString result = *this;
     result.ref().after_inplace_broadcast(tableau, indices, false);
     return result;
@@ -283,13 +283,13 @@ PauliString PauliStringRef::before(const Operation &operation) const {
     result.ref().after_inplace(operation, true);
     return result;
 }
-PauliString PauliStringRef::before(const Tableau &tableau, ConstPointerRange<size_t> indices) const {
+PauliString PauliStringRef::before(const Tableau &tableau, SpanRef<const size_t> indices) const {
     PauliString result = *this;
     result.ref().after_inplace_broadcast(tableau, indices, true);
     return result;
 }
 
-void PauliStringRef::gather_into(PauliStringRef out, ConstPointerRange<size_t> in_indices) const {
+void PauliStringRef::gather_into(PauliStringRef out, SpanRef<const size_t> in_indices) const {
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
@@ -298,7 +298,7 @@ void PauliStringRef::gather_into(PauliStringRef out, ConstPointerRange<size_t> i
     }
 }
 
-void PauliStringRef::scatter_into(PauliStringRef out, ConstPointerRange<size_t> out_indices) const {
+void PauliStringRef::scatter_into(PauliStringRef out, SpanRef<const size_t> out_indices) const {
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];

@@ -585,7 +585,7 @@ void stim::decompose_mpp_operation(
     std::vector<GateTarget> cnot;
     std::vector<GateTarget> meas;
 
-    auto op_dat = [](std::vector<GateTarget> &targets, ConstPointerRange<double> args) {
+    auto op_dat = [](std::vector<GateTarget> &targets, SpanRef<const double> args) {
         return OperationData{args, targets};
     };
     size_t start = 0;

@@ -41,8 +41,8 @@ struct CircuitTimelineHelper;
 ///     QUBIT_COORDS is treated as a single-qubit gate. Will only have one target.
 struct ResolvedTimelineOperation {
     const stim::Gate *gate;
-    stim::ConstPointerRange<double> args;
-    stim::ConstPointerRange<stim::GateTarget> targets;
+    stim::SpanRef<const double> args;
+    stim::SpanRef<const stim::GateTarget> targets;
 };
 
 struct CircuitTimelineHelper {
@@ -63,8 +63,8 @@ struct CircuitTimelineHelper {
 
     void do_atomic_operation(
         const stim::Gate *gate,
-        stim::ConstPointerRange<double> args,
-        stim::ConstPointerRange<stim::GateTarget> targets);
+        stim::SpanRef<const double> args,
+        stim::SpanRef<const stim::GateTarget> targets);
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
@@ -81,7 +81,7 @@ struct CircuitTimelineHelper {
     void do_observable_include(const stim::Operation &op);
     void do_shift_coords(const stim::Operation &op);
     void do_qubit_coords(const stim::Operation &op);
-    stim::ConstPointerRange<double> shifted_coordinates_in_workspace(stim::ConstPointerRange<double> coords);
+    stim::SpanRef<const double> shifted_coordinates_in_workspace(stim::SpanRef<const double> coords);
 };
 
 }  // namespace stim_draw_internal

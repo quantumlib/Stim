@@ -25,7 +25,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
@@ -49,11 +49,11 @@ namespace stim {
 template <typename T>
 struct MonotonicBuffer {
     /// Contiguous memory that is being appended to, but has not yet been committed.
-    PointerRange<T> tail;
+    SpanRef<T> tail;
     /// The current contiguous memory region with a mix of committed, staged, and unused memory.
-    PointerRange<T> cur;
+    SpanRef<T> cur;
     /// Old contiguous memory regions that have been committed and now need to be kept.
-    std::vector<PointerRange<T>> old_areas;
+    std::vector<SpanRef<T>> old_areas;
 
     /// Constructs an empty monotonic buffer.
     MonotonicBuffer() : tail(), cur(), old_areas() {
@@ -116,7 +116,7 @@ struct MonotonicBuffer {
 
     /// Appends and commits data.
     /// Requires the tail to be empty, to avoid bugs where previously staged data is committed.
-    PointerRange<T> take_copy(ConstPointerRange<T> data) {
+    SpanRef<T> take_copy(SpanRef<const T> data) {
         assert(tail.size() == 0);
         append_tail(data);
         return commit_tail();
@@ -130,7 +130,7 @@ struct MonotonicBuffer {
     }
 
     /// Adds staged data.
-    void append_tail(ConstPointerRange<T> data) {
+    void append_tail(SpanRef<const T> data) {
         ensure_available(data.size());
         std::copy(data.begin(), data.end(), tail.ptr_end);
         tail.ptr_end += data.size();
@@ -142,8 +142,8 @@ struct MonotonicBuffer {
     }
 
     /// Changes staged data into committed data that will be kept until the buffer is cleared or deconstructed.
-    PointerRange<T> commit_tail() {
-        PointerRange<T> result(tail);
+    SpanRef<T> commit_tail() {
+        SpanRef<T> result(tail);
         tail.ptr_start = tail.ptr_end;
         return result;
     }

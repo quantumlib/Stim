@@ -45,7 +45,7 @@ pybind11::object buffer_slice_to_numpy(
     size_t shot_bit_copy_offset,
     size_t shot_bit_copy_length,
     bool bit_packed,
-    ConstPointerRange<uint8_t> immovable_buffer) {
+    SpanRef<const uint8_t> immovable_buffer) {
     size_t num_bytes_copied_per_shot = (shot_bit_copy_length + 7) / 8;
     if (bit_packed) {
         uint8_t *buffer = new uint8_t[num_bytes_copied_per_shot * num_shots];

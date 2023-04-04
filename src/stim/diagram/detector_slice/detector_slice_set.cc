@@ -166,7 +166,7 @@ std::set<uint64_t> DetectorSliceSet::used_qubits() const {
     return result;
 }
 
-bool CoordFilter::matches(stim::ConstPointerRange<double> coords, stim::DemTarget target) const {
+bool CoordFilter::matches(stim::SpanRef<const double> coords, stim::DemTarget target) const {
     if (use_target) {
         return target == exact_target;
     }
@@ -208,7 +208,7 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     const stim::Circuit &circuit,
     uint64_t start_tick,
     uint64_t num_ticks,
-    ConstPointerRange<CoordFilter> coord_filter) {
+    SpanRef<const CoordFilter> coord_filter) {
     num_ticks = std::max(uint64_t{1}, std::min(num_ticks, circuit.count_ticks() - start_tick + 1));
 
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
@@ -269,7 +269,7 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     }
 
     auto keep = [&](DemTarget t) {
-        ConstPointerRange<double> coords{};
+        SpanRef<const double> coords{};
         if (t.is_relative_detector_id()) {
             auto coords_ptr = result.detector_coordinates.find(t.data);
             if (coords_ptr != result.detector_coordinates.end()) {
@@ -299,7 +299,7 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     return result;
 }
 
-Coord<2> flattened_2d(ConstPointerRange<double> c) {
+Coord<2> flattened_2d(SpanRef<const double> c) {
     float x = 0;
     float y = 0;
     if (c.size() >= 1) {
@@ -403,7 +403,7 @@ FlattenedCoords FlattenedCoords::from(const DetectorSliceSet &set, float desired
     return result;
 }
 
-const char *pick_color(ConstPointerRange<GateTarget> terms) {
+const char *pick_color(SpanRef<const GateTarget> terms) {
     bool has_x = false;
     bool has_y = false;
     bool has_z = false;
@@ -439,7 +439,7 @@ float offset_angle_from_to(Coord<2> origin, Coord<2> dst) {
     return offset_angle;
 }
 
-float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
+float _mirror_score(SpanRef<const Coord<2>> coords, size_t i, size_t j) {
     auto para = coords[j] - coords[i];
     float f = para.norm2();
     if (f < 1e-4) {
@@ -482,7 +482,7 @@ float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
     return max_distance;
 }
 
-bool _pick_center_using_mirror_symmetry(ConstPointerRange<Coord<2>> coords, Coord<2> &out) {
+bool _pick_center_using_mirror_symmetry(SpanRef<const Coord<2>> coords, Coord<2> &out) {
     float best_score = INFINITY;
     for (size_t i = 0; i < coords.size(); i++) {
         for (size_t j = i + 1; j < coords.size(); j++) {
@@ -496,7 +496,7 @@ bool _pick_center_using_mirror_symmetry(ConstPointerRange<Coord<2>> coords, Coor
     return best_score < INFINITY;
 }
 
-Coord<2> stim_draw_internal::pick_polygon_center(ConstPointerRange<Coord<2>> coords) {
+Coord<2> stim_draw_internal::pick_polygon_center(SpanRef<const Coord<2>> coords) {
     Coord<2> center{0, 0};
     if (_pick_center_using_mirror_symmetry(coords, center)) {
         return center;
@@ -565,7 +565,7 @@ void _draw_observable(
     const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    ConstPointerRange<GateTarget> terms,
+    SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace,
     bool next_tick_exists,
     size_t scale) {
@@ -649,7 +649,7 @@ void _start_many_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    ConstPointerRange<GateTarget> terms,
+    SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace) {
     pts_workspace.clear();
     for (const auto &term : terms) {
@@ -688,7 +688,7 @@ void _start_two_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    ConstPointerRange<GateTarget> terms,
+    SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace) {
     auto a = coords(tick, terms[0].qubit_value());
     auto b = coords(tick, terms[1].qubit_value());
@@ -720,7 +720,7 @@ void _start_one_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    ConstPointerRange<GateTarget> terms,
+    SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     auto c = coords(tick, terms[0].qubit_value());
@@ -734,7 +734,7 @@ void _start_slice_shape_command(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    ConstPointerRange<GateTarget> terms,
+    SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     if (terms.size() > 2) {
@@ -847,7 +847,7 @@ void DetectorSliceSet::write_svg_contents_to(
 
     bool haveDrawnCorners = false;
 
-    using tup = std::tuple<uint64_t, stim::DemTarget, ConstPointerRange<GateTarget>>;
+    using tup = std::tuple<uint64_t, stim::DemTarget, SpanRef<const GateTarget>>;
     std::vector<tup> sorted_terms;
     for (const auto &e : slices) {
         sorted_terms.push_back({e.first.first, e.first.second, e.second});
@@ -862,7 +862,7 @@ void DetectorSliceSet::write_svg_contents_to(
     for (const auto &e : sorted_terms) {
         uint64_t tick = std::get<0>(e);
         DemTarget target = std::get<1>(e);
-        ConstPointerRange<GateTarget> terms = std::get<2>(e);
+        SpanRef<const GateTarget> terms = std::get<2>(e);
         if (target.is_observable_id()) {
             _draw_observable(
                 out, target.val(), unscaled_coords, coords, tick, terms, pts_workspace, tick < end_tick - 1, scale);

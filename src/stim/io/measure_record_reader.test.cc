@@ -111,7 +111,7 @@ TEST(MeasureRecordReader, FormatR8_LongGap) {
     ASSERT_FALSE(reader->start_and_read_entire_record(sparse));
 }
 
-FILE *write_records(ConstPointerRange<uint8_t> data, SampleFormat format) {
+FILE *write_records(SpanRef<const uint8_t> data, SampleFormat format) {
     FILE *tmp = tmpfile();
     auto writer = MeasureRecordWriter::make(tmp, format);
     writer->write_bytes(data);
@@ -119,7 +119,7 @@ FILE *write_records(ConstPointerRange<uint8_t> data, SampleFormat format) {
     return tmp;
 }
 
-size_t read_records_as_bytes(FILE *in, PointerRange<uint8_t> buf, SampleFormat format, size_t bits_per_record) {
+size_t read_records_as_bytes(FILE *in, SpanRef<uint8_t> buf, SampleFormat format, size_t bits_per_record) {
     auto reader = MeasureRecordReader::make(in, format, bits_per_record);
     if (buf.size() * 8 < reader->bits_per_record()) {
         throw std::invalid_argument("buf too small");

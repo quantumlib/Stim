@@ -30,7 +30,7 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/monotonic_buffer.h"
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
@@ -47,13 +47,13 @@ uint64_t mul_saturate(uint64_t a, uint64_t b);
 /// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
 struct OperationData {
     /// Context-dependent numeric arguments (e.g. probabilities).
-    ConstPointerRange<double> args;
+    SpanRef<const double> args;
     /// Context-dependent data on what to target.
     ///
     /// The bottom 24 bits of each item always refer to a qubit index.
     /// The top 8 bits are used for additional data such as
     /// Pauli basis, record lookback, and measurement inversion.
-    ConstPointerRange<GateTarget> targets;
+    SpanRef<const GateTarget> targets;
 
     bool operator==(const OperationData &other) const;
     bool operator!=(const OperationData &other) const;
@@ -158,7 +158,7 @@ struct Circuit {
     void safe_append_u(
         const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args);
+    void safe_append(const Gate &gate, SpanRef<const GateTarget> targets, SpanRef<const double> args);
     /// Safely copies a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, const Circuit &body);
     /// Safely moves a repeat block to the end of the circuit.
@@ -326,12 +326,12 @@ struct Circuit {
     std::string describe_instruction_location(size_t instruction_offset) const;
 };
 
-void vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul = 1);
+void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
 struct DetectorsAndObservables {
     MonotonicBuffer<uint64_t> jagged_detector_data;
-    std::vector<PointerRange<uint64_t>> detectors;
+    std::vector<SpanRef<uint64_t>> detectors;
     std::vector<std::vector<uint64_t>> observables;
     DetectorsAndObservables(const Circuit &circuit);
 

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -97,7 +97,7 @@ AsciiDiagram AsciiDiagram::transposed() const {
     return result;
 }
 
-void strip_padding_from_lines_and_write_to(PointerRange<std::string> out_lines, std::ostream &out) {
+void strip_padding_from_lines_and_write_to(SpanRef<std::string> out_lines, std::ostream &out) {
     // Strip spacing at end of lines and end of diagram.
     for (auto &line : out_lines) {
         while (!line.empty() && line.back() == ' ') {

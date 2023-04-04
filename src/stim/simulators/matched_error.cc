@@ -99,7 +99,7 @@ void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
 }
 
 void ExplainedError::fill_in_dem_targets(
-    ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
+    SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
     dem_error_terms.clear();
     for (const auto &t : targets) {
         auto entry = dem_coords.find(t.raw_id());
@@ -283,8 +283,8 @@ void CircuitErrorLocation::canonicalize() {
 
 template <typename T>
 bool vec_less_than(const std::vector<T> &vec1, const std::vector<T> &vec2) {
-    ConstPointerRange<T> c1 = vec1;
-    ConstPointerRange<T> c2 = vec2;
+    SpanRef<const T> c1 = vec1;
+    SpanRef<const T> c2 = vec2;
     return c1 < c2;
 }
 bool GateTargetWithCoords::operator<(const GateTargetWithCoords &other) const {

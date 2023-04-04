@@ -99,7 +99,7 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pyb
 }
 
 TempViewableData args_to_targets(
-    TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
+    TableauSimulator &self, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     std::vector<GateTarget> targets;
     uint32_t max_q = 0;
     try {
@@ -128,7 +128,7 @@ TempViewableData args_to_targets(
 }
 
 TempViewableData args_to_target_pairs(
-    TableauSimulator &self, const pybind11::args &args, ConstPointerRange<double> gate_args = {}) {
+    TableauSimulator &self, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }

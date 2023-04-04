@@ -35,14 +35,14 @@ PauliString SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarg
 }
 
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
-    ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2) {
+    SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2) {
     if (sorted1 == sorted2) {
         return;
     }
     throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
 }
 
-void SparseUnsignedRevFrameTracker::handle_gauge(ConstPointerRange<DemTarget> sorted) {
+void SparseUnsignedRevFrameTracker::handle_gauge(SpanRef<const DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
@@ -481,7 +481,7 @@ void SparseUnsignedRevFrameTracker::undo_ISWAP(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau &tableau, ConstPointerRange<uint32_t> targets) {
+void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau &tableau, SpanRef<const uint32_t> targets) {
     size_t n = tableau.num_qubits;
     if (n != targets.size()) {
         throw new std::invalid_argument("tableau.num_qubits != targets.size()");
@@ -576,7 +576,7 @@ void SparseUnsignedRevFrameTracker::undo_loop_by_unrolling(const Circuit &loop, 
 }
 
 bool _det_vec_is_equal_to_after_shift(
-    ConstPointerRange<DemTarget> unshifted, ConstPointerRange<DemTarget> expected, int64_t detector_shift) {
+    SpanRef<const DemTarget> unshifted, SpanRef<const DemTarget> expected, int64_t detector_shift) {
     if (unshifted.size() != expected.size()) {
         return false;
     }

@@ -198,7 +198,7 @@ void DiagramTimelineSvgDrawer::draw_iswap_control(float cx, float cy, bool inver
 }
 
 void DiagramTimelineSvgDrawer::draw_generic_box(
-    float cx, float cy, const std::string &text, ConstPointerRange<double> end_args) {
+    float cx, float cy, const std::string &text, SpanRef<const double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
         throw std::invalid_argument("Unhandled gate case: " + text);
@@ -208,7 +208,7 @@ void DiagramTimelineSvgDrawer::draw_generic_box(
 }
 
 void DiagramTimelineSvgDrawer::draw_annotated_gate(
-    float cx, float cy, const SvgGateData &data, ConstPointerRange<double> end_args) {
+    float cx, float cy, const SvgGateData &data, SpanRef<const double> end_args) {
     cx += (data.span - 1) * GATE_PITCH * 0.5f;
     float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2.0f;
     float h = GATE_RADIUS * 2.0f;
@@ -275,7 +275,7 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
 }
 
 void DiagramTimelineSvgDrawer::draw_two_qubit_gate_end_point(
-    float cx, float cy, const std::string &type, ConstPointerRange<double> args) {
+    float cx, float cy, const std::string &type, SpanRef<const double> args) {
     if (type == "X") {
         draw_x_control(cx, cy);
     } else if (type == "Y") {
@@ -321,8 +321,8 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
     auto c1 = q2xy(target1.qubit_value());
     auto c2 = q2xy(target2.qubit_value());
     bool b = c1.xyz[1] > c2.xyz[1];
-    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], pieces.first, b ? op.args : ConstPointerRange<double>{});
-    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], pieces.second, !b ? op.args : ConstPointerRange<double>{});
+    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], pieces.first, b ? op.args : SpanRef<const double>{});
+    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], pieces.second, !b ? op.args : SpanRef<const double>{});
 }
 
 void DiagramTimelineSvgDrawer::start_next_moment() {
@@ -413,7 +413,7 @@ void DiagramTimelineSvgDrawer::write_rec_index(std::ostream &out, int64_t lookba
     out << ']';
 }
 
-void DiagramTimelineSvgDrawer::write_coords(std::ostream &out, ConstPointerRange<double> relative_coordinates) {
+void DiagramTimelineSvgDrawer::write_coords(std::ostream &out, SpanRef<const double> relative_coordinates) {
     out.put('(');
     for (size_t k = 0; k < relative_coordinates.size(); k++) {
         if (k) {
@@ -440,7 +440,7 @@ void DiagramTimelineSvgDrawer::write_coord(std::ostream &out, size_t coord_index
     }
 }
 
-std::pair<size_t, size_t> compute_minmax_q(ConstPointerRange<GateTarget> targets) {
+std::pair<size_t, size_t> compute_minmax_q(SpanRef<const GateTarget> targets) {
     size_t min_q = SIZE_MAX;
     size_t max_q = 0;
     for (const auto &t : targets) {
@@ -454,7 +454,7 @@ std::pair<size_t, size_t> compute_minmax_q(ConstPointerRange<GateTarget> targets
     return {min_q, max_q};
 }
 
-void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
+void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
     if (mode != SVG_MODE_TIMELINE) {
         for (const auto &t : targets) {
             if (t.has_qubit_value() && cur_moment_used_flags[t.qubit_value()]) {
@@ -550,7 +550,7 @@ void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_pauli_targets(const Reso
         }
         auto c = q2xy(t.qubit_value());
         draw_generic_box(
-            c.xyz[0], c.xyz[1], ss.str(), t.qubit_value() == minmax_q.second ? op.args : ConstPointerRange<double>{});
+            c.xyz[0], c.xyz[1], ss.str(), t.qubit_value() == minmax_q.second ? op.args : SpanRef<const double>{});
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS && t.qubit_value() == minmax_q.first) {
             draw_rec(c.xyz[0], c.xyz[1]);
         }
@@ -661,7 +661,7 @@ void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) 
     }
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     auto c = q2xy(pseudo_target.qubit_value());
@@ -709,7 +709,7 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
     }
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     auto c = q2xy(pseudo_target.qubit_value());
@@ -775,7 +775,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     uint64_t tick_slice_start,
     uint64_t tick_slice_num,
     DiagramTimelineSvgDrawerMode mode,
-    ConstPointerRange<CoordFilter> filter) {
+    SpanRef<const CoordFilter> filter) {
     uint64_t circuit_num_ticks = circuit.count_ticks();
     auto circuit_has_ticks = circuit_num_ticks > 0;
     auto num_qubits = circuit.count_qubits();

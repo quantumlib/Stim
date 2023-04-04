@@ -155,7 +155,7 @@ struct ExplainedError {
     std::vector<CircuitErrorLocation> circuit_error_locations;
 
     void fill_in_dem_targets(
-        ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
+        SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
 
     void canonicalize();
 

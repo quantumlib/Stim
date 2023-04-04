@@ -40,7 +40,7 @@ void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operat
 }
 
 void CircuitTimelineHelper::do_atomic_operation(
-    const Gate *gate, ConstPointerRange<double> args, ConstPointerRange<GateTarget> targets) {
+    const Gate *gate, SpanRef<const double> args, SpanRef<const GateTarget> targets) {
     resolved_op_callback({gate, args, targets});
 }
 
@@ -90,9 +90,9 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
         auto coords = shifted_coordinates_in_workspace(op.target_data.args);
 
         for (size_t q = 0; q < latest_qubit_coords.size(); q++) {
-            ConstPointerRange<double> v = latest_qubit_coords[q];
+            SpanRef<const double> v = latest_qubit_coords[q];
             if (!v.empty() && v.size() <= coords.size()) {
-                ConstPointerRange<double> prefix = {coords.ptr_start, coords.ptr_start + v.size()};
+                SpanRef<const double> prefix = {coords.ptr_start, coords.ptr_start + v.size()};
                 if (prefix == v) {
                     return GateTarget::qubit(q);
                 }
@@ -115,7 +115,7 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
     return pseudo_target;
 }
 
-ConstPointerRange<double> CircuitTimelineHelper::shifted_coordinates_in_workspace(ConstPointerRange<double> coords) {
+SpanRef<const double> CircuitTimelineHelper::shifted_coordinates_in_workspace(SpanRef<const double> coords) {
     while (coord_workspace.size() < coords.size()) {
         coord_workspace.push_back(0);
     }

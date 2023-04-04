@@ -45,7 +45,7 @@ struct DiagramTimeline3DDrawer {
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);
     void start_next_moment();
-    void reserve_drawing_room_for_targets(stim::ConstPointerRange<stim::GateTarget> targets);
+    void reserve_drawing_room_for_targets(stim::SpanRef<const stim::GateTarget> targets);
     Coord<3> mq2xyz(size_t m, size_t q) const;
     void draw_two_qubit_gate_end_point(Coord<3> center, const std::string &type);
     void draw_gate_connecting_line(Coord<3> a, Coord<3> b);
