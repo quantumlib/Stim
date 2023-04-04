@@ -68,7 +68,7 @@ bool ExposedTableauSimulator::measure(size_t target) {
 }
 
 emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
-    safe_targets(sim, target);
+    sim.ensure_large_enough_for_qubits(target + 1);
     auto result = sim.measure_kickback_z(GateTarget{(uint32_t)target});
     emscripten::val returned = emscripten::val::object();
     returned.set("result", result.first);

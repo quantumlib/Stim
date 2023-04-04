@@ -333,7 +333,7 @@ struct GateDataMap {
     std::array<Gate, 256> items;
     GateDataMap();
 
-    std::vector<Gate> gates() const;
+    std::vector<Gate> gates(bool include_aliases = false) const;
 
     inline const Gate &at(const char *text, size_t text_len) const {
         uint8_t h = gate_name_to_hash(text, text_len);

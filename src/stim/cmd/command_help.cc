@@ -377,7 +377,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     } else {
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
-    for (const auto &other : GATE_DATA.gates()) {
+    for (const auto &other : GATE_DATA.gates(true)) {
         if (other.id == alt_gate.id && other.name != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
@@ -557,12 +557,12 @@ Use `stim help [topic]` for help on specific topics. Available topics include:
 
 std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
-    for (const auto &g : GATE_DATA.gates()) {
+    for (const auto &g : GATE_DATA.gates(true)) {
         result[g.name] = generate_per_gate_help_markdown(g, 0, false);
     }
 
     std::map<std::string, std::set<std::string>> categories;
-    for (const auto &g : GATE_DATA.gates()) {
+    for (const auto &g : GATE_DATA.gates(true)) {
         const auto &rep = GATE_DATA.at(g.name);
         categories[std::string(rep.extra_data_func().category)].insert(g.name);
     }

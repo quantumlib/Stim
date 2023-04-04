@@ -87,6 +87,7 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
         f = GATE_DATA.at(gate.name).extra_data_func;
     }
     auto extra = f();
+
     result["name"] = gate.name;
     result["category"] = extra.category;
     result["help"] = extra.help;
@@ -97,6 +98,18 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
     if (extra.h_s_cx_m_r_decomposition != nullptr) {
         result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);
     }
+    std::vector<std::string> aliases;
+    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
+        auto other_id = GATE_DATA.items[k].id;
+        if (other_id == gate.id && other_id != k) {
+            aliases.push_back(GATE_DATA.items[k].name);
+        }
+    }
+    if (!aliases.empty()) {
+        std::sort(aliases.begin(), aliases.end());
+        result["aliases"] = aliases;
+    }
+
     return result;
 }
 

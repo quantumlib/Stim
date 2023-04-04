@@ -129,10 +129,10 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
     g_alt.flags = g_canon.flags;
 }
 
-std::vector<Gate> GateDataMap::gates() const {
+std::vector<Gate> GateDataMap::gates(bool include_aliases) const {
     std::vector<Gate> result;
     for (size_t k = 0; k < items.size(); k++) {
-        if (items[k].name != nullptr && items[k].id == k) {
+        if (items[k].name != nullptr && (include_aliases || items[k].id == k)) {
             result.push_back(items[k]);
         }
     }
