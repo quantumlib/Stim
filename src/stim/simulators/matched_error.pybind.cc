@@ -46,7 +46,7 @@ std::string DemTargetWithCoords_repr(const DemTargetWithCoords &self) {
 pybind11::ssize_t CircuitTargetsInsideInstruction_hash(const CircuitTargetsInsideInstruction &self) {
     return pybind11::hash(pybind11::make_tuple(
         "CircuitTargetsInsideInstruction",
-        self.gate == nullptr ? 0 : self.gate->name,
+        self.gate_type == 0 ? nullptr : GATE_DATA.items[self.gate_type].name,
         self.target_range_start,
         self.target_range_end,
         tuple_tree(self.targets_in_range),
@@ -77,7 +77,7 @@ std::string FlippedMeasurement_repr(const FlippedMeasurement &self) {
 std::string CircuitTargetsInsideInstruction_repr(const CircuitTargetsInsideInstruction &self) {
     std::stringstream out;
     out << "stim.CircuitTargetsInsideInstruction";
-    out << "(gate='" << (self.gate == nullptr ? "NULL" : self.gate->name) << "'";
+    out << "(gate='" << (self.gate_type == 0 ? "NULL" : GATE_DATA.items[self.gate_type].name) << "'";
     out << ", args=[" << comma_sep(self.args) << "]";
     out << ", target_range_start=" << self.target_range_start;
     out << ", target_range_end=" << self.target_range_end;
@@ -242,7 +242,7 @@ void stim_pybind::pybind_gate_target_with_coords_methods(
         "coords",
         &GateTargetWithCoords::coords,
         clean_doc_string(R"DOC(
-            Returns the associated coordinate information as a list of flaots.
+            Returns the associated coordinate information as a list of floats.
 
             If there is no coordinate information, returns an empty list.
         )DOC")
@@ -308,7 +308,7 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
         "coords",
         &DemTargetWithCoords::coords,
         clean_doc_string(R"DOC(
-            Returns the associated coordinate information as a list of flaots.
+            Returns the associated coordinate information as a list of floats.
 
             If there is no coordinate information, returns an empty list.
         )DOC")
@@ -412,10 +412,10 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_property_readonly(
         "gate",
         [](const CircuitTargetsInsideInstruction &self) -> pybind11::object {
-            if (self.gate == nullptr) {
+            if (self.gate_type == 0) {
                 return pybind11::none();
             }
-            return pybind11::str(self.gate->name);
+            return pybind11::str(GATE_DATA.items[self.gate_type].name);
         },
         clean_doc_string(R"DOC(
             Returns the name of the gate / instruction that was being executed.
@@ -470,7 +470,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
                size_t target_range_end,
                const std::vector<GateTargetWithCoords> &targets_in_range) -> CircuitTargetsInsideInstruction {
                 CircuitTargetsInsideInstruction result{
-                    &GATE_DATA.at(gate), args, target_range_start, target_range_end, targets_in_range};
+                    GATE_DATA.at(gate).id, args, target_range_start, target_range_end, targets_in_range};
                 return result;
             }),
         pybind11::kw_only(),

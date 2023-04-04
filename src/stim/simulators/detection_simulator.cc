@@ -84,11 +84,11 @@ void detector_sample_out_helper_stream(
     writer.begin_result_type('D');
     simd_bit_table<MAX_BITWORD_WIDTH> detector_buffer(1024, num_samples);
     size_t buffered_detectors = 0;
-    circuit.for_each_operation([&](const Operation &op) {
-        if (op.gate->id == GateType::DETECTOR) {
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        if (op.gate_type == GateType::DETECTOR) {
             simd_bits_range_ref<MAX_BITWORD_WIDTH> result = detector_buffer[buffered_detectors];
             result.clear();
-            for (auto t : op.target_data.targets) {
+            for (auto t : op.targets) {
                 assert(t.data & TARGET_RECORD_BIT);
                 result ^= sim.m_record.lookback(t.data ^ TARGET_RECORD_BIT);
             }
@@ -97,21 +97,21 @@ void detector_sample_out_helper_stream(
                 writer.batch_write_bytes(detector_buffer, 1024 >> 6);
                 buffered_detectors = 0;
             }
-        } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
+        } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
             if (append_observables) {
-                size_t id = (size_t)op.target_data.args[0];
+                size_t id = (size_t)op.args[0];
                 while (observables.size() <= id) {
                     observables.emplace_back(num_samples);
                 }
                 simd_bits_range_ref<MAX_BITWORD_WIDTH> result = observables[id];
 
-                for (auto t : op.target_data.targets) {
+                for (auto t : op.targets) {
                     assert(t.data & TARGET_RECORD_BIT);
                     result ^= sim.m_record.lookback(t.data ^ TARGET_RECORD_BIT);
                 }
             }
         } else {
-            sim.do_gate(op.gate->id, op.target_data);
+            sim.do_gate(op);
             sim.m_record.mark_all_as_written();
         }
     });

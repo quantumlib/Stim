@@ -22,27 +22,27 @@
 using namespace stim;
 using namespace stim_pybind;
 
-CircuitInstruction::CircuitInstruction(
+PyCircuitInstruction::PyCircuitInstruction(
     const char *name, const std::vector<pybind11::object> &init_targets, const std::vector<double> &gate_args)
-    : gate(GATE_DATA.at(name)), gate_args(gate_args) {
+    : gate_type(GATE_DATA.at(name).id), gate_args(gate_args) {
     for (const auto &obj : init_targets) {
         targets.push_back(obj_to_gate_target(obj));
     }
 }
-CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, std::vector<double> gate_args)
-    : gate(gate), targets(targets), gate_args(gate_args) {
+PyCircuitInstruction::PyCircuitInstruction(GateType gate_type, std::vector<GateTarget> targets, std::vector<double> gate_args)
+    : gate_type(gate_type), targets(targets), gate_args(gate_args) {
 }
 
-bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate.id == other.gate.id && targets == other.targets && gate_args == other.gate_args;
+bool PyCircuitInstruction::operator==(const PyCircuitInstruction &other) const {
+    return gate_type == other.gate_type && targets == other.targets && gate_args == other.gate_args;
 }
-bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
+bool PyCircuitInstruction::operator!=(const PyCircuitInstruction &other) const {
     return !(*this == other);
 }
 
-std::string CircuitInstruction::repr() const {
+std::string PyCircuitInstruction::repr() const {
     std::stringstream result;
-    result << "stim.CircuitInstruction('" << gate.name << "', [";
+    result << "stim.CircuitInstruction('" << name() << "', [";
     bool first = true;
     for (const auto &t : targets) {
         if (first) {
@@ -56,25 +56,26 @@ std::string CircuitInstruction::repr() const {
     return result.str();
 }
 
-std::string CircuitInstruction::str() const {
+std::string PyCircuitInstruction::str() const {
     std::stringstream result;
-    result << Operation{&gate, {gate_args, targets}};
+    result << as_operation_ref();
     return result.str();
 }
 
-Operation CircuitInstruction::as_operation_ref() const {
-    return Operation{
-        &gate,
-        OperationData{
-            gate_args,
-            targets,
-        },
+CircuitInstruction PyCircuitInstruction::as_operation_ref() const {
+    return CircuitInstruction{
+        gate_type,
+        gate_args,
+        targets,
     };
 }
-std::string CircuitInstruction::name() const {
-    return gate.name;
+PyCircuitInstruction::operator CircuitInstruction() const {
+    return as_operation_ref();
 }
-std::vector<uint32_t> CircuitInstruction::raw_targets() const {
+std::string PyCircuitInstruction::name() const {
+    return GATE_DATA.items[gate_type].name;
+}
+std::vector<uint32_t> PyCircuitInstruction::raw_targets() const {
     std::vector<uint32_t> result;
     for (const auto &t : targets) {
         result.push_back(t.data);
@@ -82,15 +83,15 @@ std::vector<uint32_t> CircuitInstruction::raw_targets() const {
     return result;
 }
 
-std::vector<GateTarget> CircuitInstruction::targets_copy() const {
+std::vector<GateTarget> PyCircuitInstruction::targets_copy() const {
     return targets;
 }
-std::vector<double> CircuitInstruction::gate_args_copy() const {
+std::vector<double> PyCircuitInstruction::gate_args_copy() const {
     return gate_args;
 }
 
-pybind11::class_<CircuitInstruction> stim_pybind::pybind_circuit_instruction(pybind11::module &m) {
-    return pybind11::class_<CircuitInstruction>(
+pybind11::class_<PyCircuitInstruction> stim_pybind::pybind_circuit_instruction(pybind11::module &m) {
+    return pybind11::class_<PyCircuitInstruction>(
         m,
         "CircuitInstruction",
         clean_doc_string(R"DOC(
@@ -112,7 +113,7 @@ pybind11::class_<CircuitInstruction> stim_pybind::pybind_circuit_instruction(pyb
         )DOC")
             .data());
 }
-void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<CircuitInstruction> &c) {
+void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<PyCircuitInstruction> &c) {
     c.def(
         pybind11::init<const char *, std::vector<pybind11::object>, std::vector<double>>(),
         pybind11::arg("name"),
@@ -134,7 +135,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
 
     c.def_property_readonly(
         "name",
-        &CircuitInstruction::name,
+        &PyCircuitInstruction::name,
         clean_doc_string(R"DOC(
             The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
         )DOC")
@@ -142,7 +143,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
 
     c.def(
         "targets_copy",
-        &CircuitInstruction::targets_copy,
+        &PyCircuitInstruction::targets_copy,
         clean_doc_string(R"DOC(
             Returns a copy of the targets of the instruction.
         )DOC")
@@ -150,7 +151,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
 
     c.def(
         "gate_args_copy",
-        &CircuitInstruction::gate_args_copy,
+        &PyCircuitInstruction::gate_args_copy,
         clean_doc_string(R"DOC(
             Returns the gate's arguments (numbers parameterizing the instruction).
 
@@ -164,14 +165,14 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.CircuitInstruction`s are different.");
     c.def(
         "__repr__",
-        &CircuitInstruction::repr,
+        &PyCircuitInstruction::repr,
         "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.");
     c.def(
         "__str__",
-        &CircuitInstruction::str,
+        &PyCircuitInstruction::str,
         "Returns a text description of the instruction as a stim circuit file line.");
 
-    c.def("__hash__", [](const CircuitInstruction &self) {
+    c.def("__hash__", [](const PyCircuitInstruction &self) {
         return pybind11::hash(pybind11::str(self.str()));
     });
 }

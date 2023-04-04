@@ -16,7 +16,7 @@
 
 using namespace stim;
 
-constexpr GateVTable<void (SparseUnsignedRevFrameTracker::*)(const OperationData&)> rev_tracker_vtable_data() {
+constexpr GateVTable<void (SparseUnsignedRevFrameTracker::*)(const CircuitInstruction &)> rev_tracker_vtable_data() {
     return {{{
         {GateType::DETECTOR, &SparseUnsignedRevFrameTracker::undo_DETECTOR},
         {GateType::OBSERVABLE_INCLUDE, &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE},
@@ -177,25 +177,25 @@ void SparseUnsignedRevFrameTracker::undo_ZCZ_single(GateTarget c, GateTarget t) 
     }
 }
 
-void SparseUnsignedRevFrameTracker::handle_x_gauges(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::handle_x_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
         handle_gauge(xs[q].range());
     }
 }
-void SparseUnsignedRevFrameTracker::handle_y_gauges(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::handle_y_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
         handle_xor_gauge(xs[q].range(), zs[q].range());
     }
 }
-void SparseUnsignedRevFrameTracker::handle_z_gauges(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::handle_z_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
         handle_gauge(zs[q].range());
     }
 }
-void SparseUnsignedRevFrameTracker::undo_MPP(const OperationData &target_data) {
+void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_data) {
     size_t n = target_data.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
@@ -203,12 +203,12 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const OperationData &target_data) {
         reversed_targets[k] = target_data.targets[n - k - 1];
     }
     decompose_mpp_operation(
-        OperationData{target_data.args, reversed_targets},
+        CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
         xs.size(),
-        [&](const OperationData &h_xz,
-            const OperationData &h_yz,
-            const OperationData &cnot,
-            const OperationData &meas) {
+        [&](const CircuitInstruction &h_xz,
+            const CircuitInstruction &h_yz,
+            const CircuitInstruction &cnot,
+            const CircuitInstruction &meas) {
             undo_H_XZ(h_xz);
             undo_H_YZ(h_yz);
             undo_ZCX(cnot);
@@ -225,14 +225,14 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const OperationData &target_data) {
             for (size_t k = meas.targets.size(); k--;) {
                 reversed_measure_targets.push_back(meas.targets[k]);
             }
-            undo_MZ({meas.args, reversed_measure_targets});
+            undo_MZ({GateType::M, meas.args, reversed_measure_targets});
             undo_ZCX(cnot);
             undo_H_YZ(h_yz);
             undo_H_XZ(h_xz);
         });
 }
 
-void SparseUnsignedRevFrameTracker::clear_qubits(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::clear_qubits(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
         xs[q].clear();
@@ -240,20 +240,20 @@ void SparseUnsignedRevFrameTracker::clear_qubits(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_RX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_RX(const CircuitInstruction &dat) {
     handle_z_gauges(dat);
     clear_qubits(dat);
 }
-void SparseUnsignedRevFrameTracker::undo_RY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_RY(const CircuitInstruction &dat) {
     handle_y_gauges(dat);
     clear_qubits(dat);
 }
-void SparseUnsignedRevFrameTracker::undo_RZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_RZ(const CircuitInstruction &dat) {
     handle_x_gauges(dat);
     clear_qubits(dat);
 }
 
-void SparseUnsignedRevFrameTracker::undo_MX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MX(const CircuitInstruction &dat) {
     handle_z_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -266,7 +266,7 @@ void SparseUnsignedRevFrameTracker::undo_MX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MY(const CircuitInstruction &dat) {
     handle_y_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -280,7 +280,7 @@ void SparseUnsignedRevFrameTracker::undo_MY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MZ(const CircuitInstruction &dat) {
     handle_x_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -293,7 +293,7 @@ void SparseUnsignedRevFrameTracker::undo_MZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MRX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MRX(const CircuitInstruction &dat) {
     handle_z_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -308,7 +308,7 @@ void SparseUnsignedRevFrameTracker::undo_MRX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MRY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MRY(const CircuitInstruction &dat) {
     handle_y_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -324,7 +324,7 @@ void SparseUnsignedRevFrameTracker::undo_MRY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MRZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_MRZ(const CircuitInstruction &dat) {
     handle_x_gauges(dat);
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -339,28 +339,28 @@ void SparseUnsignedRevFrameTracker::undo_MRZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_H_XZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_H_XZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].data;
         std::swap(xs[q], zs[q]);
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_H_XY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_H_XY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].data;
         zs[q] ^= xs[q];
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_H_YZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_H_YZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].data;
         xs[q] ^= zs[q];
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_C_XYZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_C_XYZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].data;
         zs[q] ^= xs[q];
@@ -368,7 +368,7 @@ void SparseUnsignedRevFrameTracker::undo_C_XYZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_C_ZYX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_C_ZYX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].data;
         xs[q] ^= zs[q];
@@ -376,7 +376,7 @@ void SparseUnsignedRevFrameTracker::undo_C_ZYX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_XCX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_XCX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k].data;
         auto q2 = dat.targets[k + 1].data;
@@ -385,7 +385,7 @@ void SparseUnsignedRevFrameTracker::undo_XCX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_XCY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_XCY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k].data;
         auto ty = dat.targets[k + 1].data;
@@ -396,7 +396,7 @@ void SparseUnsignedRevFrameTracker::undo_XCY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_YCX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_YCX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k + 1].data;
         auto ty = dat.targets[k].data;
@@ -407,7 +407,7 @@ void SparseUnsignedRevFrameTracker::undo_YCX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_ZCY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_ZCY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -415,7 +415,7 @@ void SparseUnsignedRevFrameTracker::undo_ZCY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_YCZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_YCZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -423,7 +423,7 @@ void SparseUnsignedRevFrameTracker::undo_YCZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_YCY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_YCY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -439,7 +439,7 @@ void SparseUnsignedRevFrameTracker::undo_YCY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_ZCX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_ZCX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -447,7 +447,7 @@ void SparseUnsignedRevFrameTracker::undo_ZCX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_XCZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_XCZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -455,7 +455,7 @@ void SparseUnsignedRevFrameTracker::undo_XCZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_ZCZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_ZCZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];
         auto q2 = dat.targets[k + 1];
@@ -463,7 +463,7 @@ void SparseUnsignedRevFrameTracker::undo_ZCZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_SQRT_XX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_SQRT_XX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -474,7 +474,7 @@ void SparseUnsignedRevFrameTracker::undo_SQRT_XX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_SQRT_YY(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_SQRT_YY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -489,7 +489,7 @@ void SparseUnsignedRevFrameTracker::undo_SQRT_YY(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_SQRT_ZZ(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_SQRT_ZZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -500,10 +500,10 @@ void SparseUnsignedRevFrameTracker::undo_SQRT_ZZ(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_I(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_I(const CircuitInstruction &dat) {
 }
 
-void SparseUnsignedRevFrameTracker::undo_SWAP(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_SWAP(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -512,7 +512,7 @@ void SparseUnsignedRevFrameTracker::undo_SWAP(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_CXSWAP(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_CXSWAP(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -523,7 +523,7 @@ void SparseUnsignedRevFrameTracker::undo_CXSWAP(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_SWAPCX(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_SWAPCX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -534,7 +534,7 @@ void SparseUnsignedRevFrameTracker::undo_SWAPCX(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_ISWAP(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_ISWAP(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k].data;
         auto b = dat.targets[k + 1].data;
@@ -591,7 +591,7 @@ void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau &tableau, SpanRef
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_DETECTOR(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_DETECTOR(const CircuitInstruction &dat) {
     num_detectors_in_past--;
     auto det = DemTarget::relative_detector_id(num_detectors_in_past);
     for (auto t : dat.targets) {
@@ -603,7 +603,7 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const OperationData &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const OperationData &dat) {
+void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
     auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
         int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
@@ -614,24 +614,19 @@ void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const OperationData 
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op, const Circuit &parent) {
-    if (op.gate->id == GateType::REPEAT) {
-        const auto &loop_body = op_data_block_body(parent, op.target_data);
-        uint64_t repeats = op_data_rep_count(op.target_data);
+void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &op, const Circuit &parent) {
+    if (op.gate_type == GateType::REPEAT) {
+        const auto &loop_body = op.repeat_block_body(parent);
+        uint64_t repeats = op.repeat_block_rep_count();
         undo_loop(loop_body, repeats);
     } else {
-        undo_gate(op.gate->id, op.target_data);
+        undo_gate(op);
     }
-}
-
-void SparseUnsignedRevFrameTracker::undo_operation(const Operation &op) {
-    assert(op.gate->id != GateType::REPEAT);
-    undo_gate(op.gate->id, op.target_data);
 }
 
 void SparseUnsignedRevFrameTracker::undo_circuit(const Circuit &circuit) {
     for (size_t k = circuit.operations.size(); k--;) {
-        undo_operation(circuit.operations[k], circuit);
+        undo_gate(circuit.operations[k], circuit);
     }
 }
 

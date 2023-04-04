@@ -34,7 +34,7 @@ constexpr const char *BG_GREY = "#AAAAAA";
 size_t utf8_char_count(const std::string &s);
 
 /// Splits a two qubit gate into two end pieces, which can be drawn independently.
-std::pair<std::string, std::string> two_qubit_gate_pieces(const std::string &name);
+std::pair<std::string, std::string> two_qubit_gate_pieces(stim::GateType gate_type);
 
 /// Adds each element of a vector to the string stream starting with ':', separated by '_'
 /// adds nothing if the vector is empty

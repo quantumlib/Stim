@@ -43,7 +43,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
-    auto ends = two_qubit_gate_pieces(op.gate->name);
+    auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
         return;
@@ -58,7 +58,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
     first << (ends.first == "Z" ? "@" : ends.first);
     second << (ends.second == "Z" ? "@" : ends.second);
     if (!op.args.empty()) {
-        if (op.gate->id == GateType::PAULI_CHANNEL_2) {
+        if (op.gate_type == GateType::PAULI_CHANNEL_2) {
             first << "[0]";
             second << "[1]";
         }
@@ -128,13 +128,14 @@ void DiagramTimelineAsciiDrawer::do_tick() {
 void DiagramTimelineAsciiDrawer::do_single_qubit_gate_instance(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     const auto &target = op.targets[0];
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
 
     std::stringstream ss;
-    ss << op.gate->name;
+    ss << gate_data.name;
     if (!op.args.empty()) {
         ss << "(" << comma_sep(op.args, ",") << ")";
     }
-    if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
         ss << ':';
         write_rec_index(ss);
     }
@@ -263,7 +264,8 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
             continue;
         }
         std::stringstream ss;
-        ss << op.gate->name;
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        ss << gate_data.name;
         if (t.is_x_target()) {
             ss << "[X]";
         } else if (t.is_y_target()) {
@@ -274,7 +276,7 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
         if (!op.args.empty()) {
             ss << "(" << comma_sep(op.args, ",") << ")";
         }
-        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+        if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
             ss << ':';
             write_rec_index(ss);
         }
@@ -354,7 +356,8 @@ void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation
     const auto &target = op.targets[0];
 
     std::stringstream ss;
-    ss << op.gate->name;
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    ss << gate_data.name;
     write_coords(ss, op.args);
     diagram.add_entry(AsciiDiagramEntry{
         {
@@ -430,21 +433,21 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate->id == GateType::MPP) {
+    if (op.gate_type == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == GateType::DETECTOR) {
+    } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
+    } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == GateType::QUBIT_COORDS) {
+    } else if (op.gate_type == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == GateType::E) {
+    } else if (op.gate_type == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
+    } else if (op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == GateType::TICK) {
+    } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);

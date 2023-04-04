@@ -12,28 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/circuit.test.h"
+#include "stim/circuit/circuit.h"
 
 #include "gtest/gtest.h"
 
 using namespace stim;
-
-OpDat::OpDat(uint32_t target) : targets({{target}}) {
-}
-
-OpDat::OpDat(std::vector<uint32_t> int_targets) {
-    for (auto e : int_targets) {
-        targets.push_back({e});
-    }
-}
-
-OpDat OpDat::flipped(size_t target) {
-    return OpDat(target | TARGET_INVERTED_BIT);
-}
-
-OpDat::operator OperationData() {
-    return {{}, targets};
-}
 
 TEST(circuit, from_text) {
     Circuit expected;
@@ -167,7 +150,7 @@ TEST(circuit, from_text) {
     ASSERT_EQ(parsed.operations.size(), 2);
     ASSERT_EQ(parsed.blocks.size(), 1);
     ASSERT_EQ(parsed.blocks[0].operations.size(), 1);
-    ASSERT_EQ(parsed.blocks[0].operations[0].target_data.targets.size(), 3);
+    ASSERT_EQ(parsed.blocks[0].operations[0].targets.size(), 3);
 
     expected.clear();
     expected.safe_append_ua(
@@ -196,8 +179,8 @@ TEST(circuit, parse_combiners) {
     ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
     auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.args.size(), 0);
-    ASSERT_EQ(c.operations[0].target_data.targets.size(), 7);
+    ASSERT_EQ(c.operations[0].args.size(), 0);
+    ASSERT_EQ(c.operations[0].targets.size(), 7);
     std::vector<GateTarget> expected{
         GateTarget::x(1),
         GateTarget::combiner(),
@@ -207,11 +190,11 @@ TEST(circuit, parse_combiners) {
         GateTarget::z(4),
         GateTarget::z(5),
     };
-    ASSERT_EQ(c.operations[0].target_data.targets, (SpanRef<GateTarget>)expected);
+    ASSERT_EQ(c.operations[0].targets, (SpanRef<GateTarget>)expected);
 
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
-    ASSERT_EQ(c.operations[0].target_data.args.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.args[0], 0.125);
+    ASSERT_EQ(c.operations[0].args.size(), 1);
+    ASSERT_EQ(c.operations[0].args[0], 0.125);
 }
 
 TEST(circuit, parse_sweep_bits) {
@@ -225,8 +208,8 @@ TEST(circuit, parse_sweep_bits) {
 
     Circuit c("CNOT sweep[2] 5");
     ASSERT_EQ(c.operations.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.targets, (SpanRef<GateTarget>)expected);
-    ASSERT_TRUE(c.operations[0].target_data.args.empty());
+    ASSERT_EQ(c.operations[0].targets, (SpanRef<GateTarget>)expected);
+    ASSERT_TRUE(c.operations[0].args.empty());
 }
 
 TEST(circuit, append_circuit) {
@@ -447,8 +430,8 @@ TEST(circuit, for_each_operation) {
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
 
-    std::vector<Operation> ops;
-    c.for_each_operation([&](const Operation &op) {
+    std::vector<CircuitInstruction> ops;
+    c.for_each_operation([&](const CircuitInstruction &op) {
         ops.push_back(op);
     });
     ASSERT_EQ(ops, flat.operations);
@@ -479,8 +462,8 @@ TEST(circuit, for_each_operation_reverse) {
     flat.safe_append_u("M", {0, 1});
     flat.safe_append_u("H", {0});
 
-    std::vector<Operation> ops;
-    c.for_each_operation_reverse([&](const Operation &op) {
+    std::vector<CircuitInstruction> ops;
+    c.for_each_operation_reverse([&](const CircuitInstruction &op) {
         ops.push_back(op);
     });
     ASSERT_EQ(ops, flat.operations);
@@ -923,10 +906,10 @@ TEST(circuit, big_rep_count) {
             M 1
         }
     )CIRCUIT");
-    ASSERT_EQ(c.operations[0].target_data.targets.size(), 3);
-    ASSERT_EQ(c.operations[0].target_data.targets[0].data, 0);
-    ASSERT_EQ(c.operations[0].target_data.targets[1].data, 1234567890123456789ULL & 0xFFFFFFFFULL);
-    ASSERT_EQ(c.operations[0].target_data.targets[2].data, 1234567890123456789ULL >> 32);
+    ASSERT_EQ(c.operations[0].targets.size(), 3);
+    ASSERT_EQ(c.operations[0].targets[0].data, 0);
+    ASSERT_EQ(c.operations[0].targets[1].data, 1234567890123456789ULL & 0xFFFFFFFFULL);
+    ASSERT_EQ(c.operations[0].targets[2].data, 1234567890123456789ULL >> 32);
     ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
     ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
 
@@ -950,13 +933,13 @@ TEST(circuit, negative_float_coordinates) {
         QUBIT_COORDS(1, -2) 1
         QUBIT_COORDS(-3.5) 1
     )CIRCUIT");
-    ASSERT_EQ(c.operations[0].target_data.args[2], -3);
-    ASSERT_EQ(c.operations[2].target_data.args[0], -3.5);
+    ASSERT_EQ(c.operations[0].args[2], -3);
+    ASSERT_EQ(c.operations[2].args[0], -3.5);
     ASSERT_ANY_THROW({ Circuit("M(-0.1) 0"); });
     c = Circuit("QUBIT_COORDS(1e20) 0");
-    ASSERT_EQ(c.operations[0].target_data.args[0], 1e20);
+    ASSERT_EQ(c.operations[0].args[0], 1e20);
     c = Circuit("QUBIT_COORDS(1E+20) 0");
-    ASSERT_EQ(c.operations[0].target_data.args[0], 1E+20);
+    ASSERT_EQ(c.operations[0].args[0], 1E+20);
     ASSERT_ANY_THROW({ Circuit("QUBIT_COORDS(1e10000) 0"); });
 }
 

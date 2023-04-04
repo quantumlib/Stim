@@ -314,11 +314,10 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
     for (size_t k = 0; k < 16; k++) {
         data.push_back(GateTarget::qubit(k));
     }
-    OperationData targets = {{}, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            e.rev_do_gate(gate.id, targets);
-            f.do_gate(gate.inverse().id, targets);
+            e.rev_do_gate({gate.id, {}, data});
+            f.do_gate({gate.inverse().id, {}, data});
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
                 bool zs[2]{};

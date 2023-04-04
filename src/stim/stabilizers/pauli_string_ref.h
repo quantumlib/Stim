@@ -28,7 +28,7 @@ namespace stim {
 struct PauliString;
 struct Circuit;
 struct Tableau;
-struct Operation;
+struct CircuitInstruction;
 
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
@@ -119,13 +119,13 @@ struct PauliStringRef {
 
     void after_inplace_broadcast(const Tableau &tableau, SpanRef<const size_t> targets, bool inverse);
     void after_inplace(const Circuit &Circuit);
-    void after_inplace(const Operation &operation, bool inverse);
+    void after_inplace(const CircuitInstruction &operation, bool inverse);
     PauliString after(const Circuit &circuit) const;
     PauliString after(const Tableau &tableau, SpanRef<const size_t> indices) const;
-    PauliString after(const Operation &operation) const;
+    PauliString after(const CircuitInstruction &operation) const;
     PauliString before(const Circuit &circuit) const;
     PauliString before(const Tableau &tableau, SpanRef<const size_t> indices) const;
-    PauliString before(const Operation &operation) const;
+    PauliString before(const CircuitInstruction &operation) const;
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

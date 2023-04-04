@@ -20,31 +20,32 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
 
-struct CircuitInstruction {
-    const stim::Gate &gate;
+namespace stim_pybind {
+
+struct PyCircuitInstruction {
+    stim::GateType gate_type;
     std::vector<stim::GateTarget> targets;
     std::vector<double> gate_args;
 
-    CircuitInstruction(
+    PyCircuitInstruction(
         const char *name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
-    CircuitInstruction(const stim::Gate &gate, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
+    PyCircuitInstruction(stim::GateType gate_type, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
 
-    stim::Operation as_operation_ref() const;
+    stim::CircuitInstruction as_operation_ref() const;
+    operator stim::CircuitInstruction() const;
     std::string name() const;
     std::vector<stim::GateTarget> targets_copy() const;
     std::vector<double> gate_args_copy() const;
     std::vector<uint32_t> raw_targets() const;
-    bool operator==(const CircuitInstruction &other) const;
-    bool operator!=(const CircuitInstruction &other) const;
+    bool operator==(const PyCircuitInstruction &other) const;
+    bool operator!=(const PyCircuitInstruction &other) const;
 
     std::string repr() const;
     std::string str() const;
 };
 
-namespace stim_pybind {
-
-pybind11::class_<CircuitInstruction> pybind_circuit_instruction(pybind11::module &m);
-void pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<CircuitInstruction> &c);
+pybind11::class_<PyCircuitInstruction> pybind_circuit_instruction(pybind11::module &m);
+void pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<PyCircuitInstruction> &c);
 
 }  // namespace stim_pybind
 
