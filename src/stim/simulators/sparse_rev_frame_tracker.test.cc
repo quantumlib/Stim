@@ -156,7 +156,7 @@ TEST(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau) {
             for (size_t k = 0; k < n; k++) {
                 targets.push_back(n - k + 1);
             }
-            (tracker_gate.*gate.sparse_unsigned_rev_frame_tracker_function)(OpDat{targets});
+            tracker_gate.undo_gate(gate.id, OpDat{targets});
             tracker_tableau.undo_tableau(gate.tableau(), targets);
             EXPECT_EQ(tracker_gate, tracker_tableau) << gate.name;
         }

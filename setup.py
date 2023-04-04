@@ -29,7 +29,7 @@ version = '1.12.dev0'
 
 if sys.platform.startswith('win'):
     common_compile_args = [
-        '/std:c++11',
+        '/std:c++17',
         '/O2',
         f'/DVERSION_INFO={version}',
     ]
@@ -38,7 +38,7 @@ if sys.platform.startswith('win'):
     arch_basic = []
 else:
     common_compile_args = [
-        '-std=c++11',
+        '-std=c++17',
         '-fno-strict-aliasing',
         '-O3',
         '-g0',

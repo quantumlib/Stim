@@ -68,21 +68,21 @@ struct WithoutFeedbackHelper {
             auto b1 = t1.is_measurement_record_target();
             auto b2 = t2.is_measurement_record_target();
             if (b1 > b2) {
-                if (op.gate->id == gate_name_to_id("CX")) {
+                if (op.gate->id == GateType::CX) {
                     do_single_feedback(t1, t2.qubit_value(), true, false);
-                } else if (op.gate->id == gate_name_to_id("CY")) {
+                } else if (op.gate->id == GateType::CY) {
                     do_single_feedback(t1, t2.qubit_value(), true, true);
-                } else if (op.gate->id == gate_name_to_id("CZ")) {
+                } else if (op.gate->id == GateType::CZ) {
                     do_single_feedback(t1, t2.qubit_value(), false, true);
                 } else {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (b2 > b1) {
-                if (op.gate->id == gate_name_to_id("CX")) {
+                if (op.gate->id == GateType::CX) {
                     do_single_feedback(t2, t1.qubit_value(), true, false);
-                } else if (op.gate->id == gate_name_to_id("CY")) {
+                } else if (op.gate->id == GateType::CY) {
                     do_single_feedback(t2, t1.qubit_value(), true, true);
-                } else if (op.gate->id == gate_name_to_id("CZ")) {
+                } else if (op.gate->id == GateType::CZ) {
                     do_single_feedback(t2, t1.qubit_value(), false, true);
                 } else {
                     throw std::invalid_argument("Unknown feedback gate.");
@@ -124,7 +124,7 @@ struct WithoutFeedbackHelper {
     void undo_circuit(const Circuit &circuit) {
         for (size_t k = circuit.operations.size(); k--;) {
             const auto &op = circuit.operations[k];
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == GateType::REPEAT) {
                 undo_repeat_block(circuit, op);
             } else if (op.gate->flags & GATE_CAN_TARGET_BITS) {
                 undo_feedback_capable_operation(op);
@@ -142,13 +142,13 @@ struct WithoutFeedbackHelper {
             const auto &op = reversed.operations[k];
             tracker.num_measurements_in_past += op.count_measurement_results();
 
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == GateType::REPEAT) {
                 result.append_repeat_block(
                     op_data_rep_count(op.target_data), build_output(op_data_block_body(reversed, op.target_data)));
                 continue;
             }
 
-            if (op.gate->id == gate_name_to_id("DETECTOR")) {
+            if (op.gate->id == GateType::DETECTOR) {
                 auto p = det_changes.find(tracker.num_detectors_in_past);
                 tracker.num_detectors_in_past++;
                 if (p != det_changes.end()) {
@@ -192,7 +192,7 @@ Circuit circuit_with_identical_adjacent_loops_fused(const Circuit &circuit) {
         loop_reps = 0;
     };
     for (const auto &op : circuit.operations) {
-        bool is_loop = op.gate->id == gate_name_to_id("REPEAT");
+        bool is_loop = op.gate->id == GateType::REPEAT;
 
         // Grow the growing loop or flush it if needed.
         if (loop_reps > 0) {

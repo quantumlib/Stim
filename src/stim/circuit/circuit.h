@@ -212,7 +212,7 @@ struct Circuit {
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == GateType::REPEAT) {
                 assert(op.target_data.targets.size() == 3);
                 auto b = op.target_data.targets[0].data;
                 assert(b < blocks.size());
@@ -233,7 +233,7 @@ struct Circuit {
         for (size_t p = operations.size(); p-- > 0;) {
             const auto &op = operations[p];
             assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == GateType::REPEAT) {
                 assert(op.target_data.targets.size() == 3);
                 auto b = op.target_data.targets[0].data;
                 assert(b < blocks.size());
@@ -254,7 +254,7 @@ struct Circuit {
         uint64_t n = 0;
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == GateType::REPEAT) {
                 assert(op.target_data.targets.size() == 3);
                 auto b = op.target_data.targets[0].data;
                 assert(b < blocks.size());

@@ -29,12 +29,9 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
         failed,
         Gate{
             "SQRT_X",
-            "SQRT_X_DAG",
+            GateType::SQRT_X,
+            GateType::SQRT_X_DAG,
             0,
-            &TableauSimulator::SQRT_X,
-            &FrameSimulator::H_YZ,
-            &ErrorAnalyzer::H_YZ,
-            &SparseUnsignedRevFrameTracker::undo_H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -66,12 +63,9 @@ H 0
         failed,
         Gate{
             "SQRT_X_DAG",
-            "SQRT_X",
+            GateType::SQRT_X_DAG,
+            GateType::SQRT_X,
             0,
-            &TableauSimulator::SQRT_X_DAG,
-            &FrameSimulator::H_YZ,
-            &ErrorAnalyzer::H_YZ,
-            &SparseUnsignedRevFrameTracker::undo_H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -103,12 +97,9 @@ S 0
         failed,
         Gate{
             "SQRT_Y",
-            "SQRT_Y_DAG",
+            GateType::SQRT_Y,
+            GateType::SQRT_Y_DAG,
             0,
-            &TableauSimulator::SQRT_Y,
-            &FrameSimulator::H_XZ,
-            &ErrorAnalyzer::H_XZ,
-            &SparseUnsignedRevFrameTracker::undo_H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -140,12 +131,9 @@ H 0
         failed,
         Gate{
             "SQRT_Y_DAG",
-            "SQRT_Y",
+            GateType::SQRT_Y_DAG,
+            GateType::SQRT_Y,
             0,
-            &TableauSimulator::SQRT_Y_DAG,
-            &FrameSimulator::H_XZ,
-            &ErrorAnalyzer::H_XZ,
-            &SparseUnsignedRevFrameTracker::undo_H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -177,12 +165,9 @@ S 0
         failed,
         Gate{
             "S",
-            "S_DAG",
+            GateType::S,
+            GateType::S_DAG,
             0,
-            &TableauSimulator::SQRT_Z,
-            &FrameSimulator::H_XY,
-            &ErrorAnalyzer::H_XY,
-            &SparseUnsignedRevFrameTracker::undo_H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -213,12 +198,9 @@ S 0
         failed,
         Gate{
             "S_DAG",
-            "S",
+            GateType::S_DAG,
+            GateType::S,
             0,
-            &TableauSimulator::SQRT_Z_DAG,
-            &FrameSimulator::H_XY,
-            &ErrorAnalyzer::H_XY,
-            &SparseUnsignedRevFrameTracker::undo_H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
