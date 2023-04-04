@@ -49,7 +49,6 @@ TEST(FrameSimulator, get_set_frame) {
 
 bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     Tableau tableau = gate.tableau();
-    const auto &bulk_func = gate.frame_simulator_function;
 
     size_t num_qubits = 500;
     size_t num_samples = 1000;
@@ -66,7 +65,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
-        (sim.*bulk_func)(op_data);
+        sim.do_gate(gate.id, op_data);
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
             size_t target_buf[2];
             if (num_targets == 1) {
@@ -110,7 +109,7 @@ bool is_output_possible_promising_no_bare_resets(
                 out_p++;
             }
         } else {
-            (tableau_sim.*op.gate->tableau_simulator_function)(op.target_data);
+            tableau_sim.do_gate(op.gate->id, op.target_data);
         }
     });
     return pass;

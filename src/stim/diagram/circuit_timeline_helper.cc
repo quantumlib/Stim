@@ -179,21 +179,21 @@ void CircuitTimelineHelper::do_record_measure_result(uint32_t target_qubit) {
 }
 
 void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const Operation &op) {
-    if (op.gate->id == gate_name_to_id("REPEAT")) {
+    if (op.gate->id == GateType::REPEAT) {
         do_repeat_block(circuit, op);
-    } else if (op.gate->id == gate_name_to_id("MPP")) {
+    } else if (op.gate->id == GateType::MPP) {
         do_operation_with_target_combiners(op);
-    } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    } else if (op.gate->id == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+    } else if (op.gate->id == GateType::SHIFT_COORDS) {
         do_shift_coords(op);
-    } else if (op.gate->id == gate_name_to_id("E") || op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate->id == GateType::E || op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
         do_multi_qubit_atomic_operation(op);
-    } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+    } else if (op.gate->id == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == gate_name_to_id("TICK")) {
+    } else if (op.gate->id == GateType::TICK) {
         do_atomic_operation(op.gate, {}, {});
         num_ticks_seen += 1;
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {

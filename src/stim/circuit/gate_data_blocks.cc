@@ -25,12 +25,9 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
         failed,
         Gate{
             "REPEAT",
-            "REPEAT",
+            GateType::REPEAT,
+            GateType::REPEAT,
             0,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

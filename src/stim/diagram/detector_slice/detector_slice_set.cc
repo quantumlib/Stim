@@ -47,9 +47,9 @@ bool DetectorSliceSetComputer::process_tick() {
 }
 
 bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Operation &op) {
-    if (op.gate->id == gate_name_to_id("TICK")) {
+    if (op.gate->id == GateType::TICK) {
         return process_tick();
-    } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+    } else if (op.gate->id == GateType::REPEAT) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
         uint64_t stop_iter = first_yield_tick + num_yield_ticks;
         uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;
@@ -75,7 +75,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
                 used_qubits.insert(t.qubit_value());
             }
         }
-        (tracker.*(op.gate->sparse_unsigned_rev_frame_tracker_function))(op.target_data);
+        tracker.undo_gate(op.gate->id, op.target_data);
         return false;
     }
 }
@@ -466,8 +466,8 @@ float _mirror_score(SpanRef<const Coord<2>> coords, size_t i, size_t j) {
     if (left.size() != right.size()) {
         return INFINITY;
     }
-    std::sort(left.begin(), left.end());
-    std::sort(right.begin(), right.end());
+    std::stable_sort(left.begin(), left.end());
+    std::stable_sort(right.begin(), right.end());
     for (size_t k = 0; k < left.size(); k++) {
         if ((left[k] - right[k]).norm2() > 1e-2) {
             return INFINITY;

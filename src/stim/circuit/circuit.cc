@@ -216,12 +216,12 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     circuit.for_each_operation([&](const Operation &p) {
         if (p.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             tick += p.count_measurement_results();
-        } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
+        } else if (p.gate->id == GateType::DETECTOR) {
             resolve_into(p, [&](uint64_t k) {
                 jagged_detector_data.append_tail(k);
             });
             detectors.push_back(jagged_detector_data.commit_tail());
-        } else if (p.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+        } else if (p.gate->id == GateType::OBSERVABLE_INCLUDE) {
             size_t obs = (size_t)p.target_data.args[0];
             if (obs != p.target_data.args[0]) {
                 throw std::invalid_argument("Observable index must be an integer.");
@@ -584,7 +584,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         circuit_read_single_operation(circuit, c, read_char);
         Operation &new_op = ops.back();
 
-        if (new_op.gate->id == gate_name_to_id("REPEAT")) {
+        if (new_op.gate->id == GateType::REPEAT) {
             if (new_op.target_data.targets.size() != 2) {
                 throw std::invalid_argument("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
@@ -718,7 +718,7 @@ void stim::print_circuit(std::ostream &out, const Circuit &c, const std::string 
         }
 
         // Recurse on repeat blocks.
-        if (op.gate && op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate && op.gate->id == GateType::REPEAT) {
             if (op.target_data.targets.size() == 3 && op.target_data.targets[0].data < c.blocks.size()) {
                 out << indentation << "REPEAT " << op_data_rep_count(op.target_data) << " {\n";
                 print_circuit(out, c.blocks[op.target_data.targets[0].data], indentation + "    ");
@@ -764,7 +764,7 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
         return *this;
     }
     // If the entire circuit is a repeat block, just adjust its repeat count.
-    if (operations.size() == 1 && operations[0].gate->id == gate_name_to_id("REPEAT")) {
+    if (operations.size() == 1 && operations[0].gate->id == GateType::REPEAT) {
         uint64_t old_reps = op_data_rep_count(operations[0].target_data);
         uint64_t new_reps = old_reps * repetitions;
         if (old_reps != new_reps / repetitions) {
@@ -828,7 +828,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
         SpanRef<stim::GateTarget> target_data = target_buf.take_copy(op.target_data.targets);
         OperationData op_data{arg_buf.take_copy(op.target_data.args), target_data};
         operations.push_back({op.gate, op_data});
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate->id == GateType::REPEAT) {
             assert(op.target_data.targets.size() == 3);
             target_data[0].data += block_offset;
         }
@@ -1007,7 +1007,7 @@ Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length)
     Circuit result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = operations[start + step * k];
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate->id == GateType::REPEAT) {
             result.target_buf.append_tail(GateTarget{(uint32_t)result.blocks.size()});
             result.target_buf.append_tail(op.target_data.targets[1]);
             result.target_buf.append_tail(op.target_data.targets[2]);
@@ -1072,7 +1072,7 @@ Circuit Circuit::without_noise() const {
             // Drop result flip probabilities.
             auto targets = result.target_buf.take_copy(op.target_data.targets);
             result.safe_append(*op.gate, targets, {});
-        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+        } else if (op.gate->id == GateType::REPEAT) {
             auto args = result.arg_buf.take_copy(op.target_data.args);
             auto targets = result.target_buf.take_copy(op.target_data.targets);
             result.operations.push_back({op.gate, {args, targets}});
@@ -1091,20 +1091,16 @@ Circuit Circuit::without_noise() const {
 
 void flattened_helper(
     const Circuit &body, std::vector<double> &cur_coordinate_shift, std::vector<double> &coord_buffer, Circuit &out) {
-    const uint8_t shift = gate_name_to_id("SHIFT_COORDS");
-    const uint8_t rep = gate_name_to_id("REPEAT");
-    const uint8_t qubit_coords = gate_name_to_id("QUBIT_COORDS");
-    const uint8_t detector = gate_name_to_id("DETECTOR");
     for (const auto &op : body.operations) {
-        uint8_t id = op.gate->id;
-        if (id == shift) {
+        GateType id = op.gate->id;
+        if (id == GateType::SHIFT_COORDS) {
             while (cur_coordinate_shift.size() < op.target_data.args.size()) {
                 cur_coordinate_shift.push_back(0);
             }
             for (size_t k = 0; k < op.target_data.args.size(); k++) {
                 cur_coordinate_shift[k] += op.target_data.args[k];
             }
-        } else if (id == rep) {
+        } else if (id == GateType::REPEAT) {
             uint64_t reps = op_data_rep_count(op.target_data);
             const auto &loop_body = op_data_block_body(body, op.target_data);
             for (uint64_t k = 0; k < reps; k++) {
@@ -1113,7 +1109,7 @@ void flattened_helper(
         } else {
             coord_buffer.clear();
             coord_buffer.insert(coord_buffer.end(), op.target_data.args.begin(), op.target_data.args.end());
-            if (id == qubit_coords || op.gate->id == detector) {
+            if (id == GateType::QUBIT_COORDS || op.gate->id == GateType::DETECTOR) {
                 for (size_t k = 0; k < coord_buffer.size() && k < cur_coordinate_shift.size(); k++) {
                     coord_buffer[k] += cur_coordinate_shift[k];
                 }
@@ -1142,7 +1138,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
     std::vector<double> args_buf;
     for (size_t k = 0; k < operations.size(); k++) {
         const auto &op = operations[k];
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate->id == GateType::REPEAT) {
             const auto &block = op_data_block_body(*this, op.target_data);
             uint64_t reps = op_data_rep_count(op.target_data);
             result.append_repeat_block(reps, block.inverse(allow_weak_inverse));
@@ -1152,15 +1148,16 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
         SpanRef<const double> args = op.target_data.args;
         if (op.gate->flags & GATE_IS_UNITARY) {
             // Unitary gates always have an inverse.
-        } else if (op.gate->id == gate_name_to_id("TICK")) {
+        } else if (op.gate->id == GateType::TICK) {
             // Ticks are self-inverse.
         } else if (op.gate->flags & GATE_IS_NOISE) {
             // Noise isn't invertible, but it is weakly invertible.
             // ELSE_CORRELATED_ERROR isn't implemented due to complex order dependencies.
-            if (!allow_weak_inverse || op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+            if (!allow_weak_inverse || op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined inverse because it contains noise.\n"
-                    "For example it contains a '" + op.str() + "' instruction.");
+                    "For example it contains a '" +
+                    op.str() + "' instruction.");
             }
         } else if (op.gate->flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
             // Dissipative operations aren't invertible, but they are weakly invertible.
@@ -1170,21 +1167,21 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
                     "For example it contains a '" +
                     op.str() + "' instruction.");
             }
-        } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+        } else if (op.gate->id == GateType::QUBIT_COORDS) {
             // Qubit coordinate headers are kept at the beginning.
             if (k > skip_reversing) {
                 throw std::invalid_argument(
                     "Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
             }
             skip_reversing++;
-        } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+        } else if (op.gate->id == GateType::SHIFT_COORDS) {
             // Coordinate shifts reverse.
             args_buf.clear();
             for (const auto &a : op.target_data.args) {
                 args_buf.push_back(-a);
             }
             args = args_buf;
-        } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+        } else if (op.gate->id == GateType::DETECTOR || op.gate->id == GateType::OBSERVABLE_INCLUDE) {
             if (allow_weak_inverse) {
                 // If strong inverse for these gets implemented, they should be included in the weak inverse.
                 // But for now it's sufficient to just drop them for the weak inverse.
@@ -1210,7 +1207,8 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
                 reversed_targets_buf.push_back(src[j]);
             }
         }
-        const auto &best_inverse_gate = GATE_DATA.items[op.gate->best_candidate_inverse_id];
+        const auto &best_inverse_gate = GATE_DATA.items[
+            static_cast<uint8_t>(op.gate->best_candidate_inverse_id)];
         result.safe_append(best_inverse_gate, reversed_targets_buf, args);
     }
 
@@ -1238,13 +1236,13 @@ void get_final_qubit_coords_helper(
     std::map<uint64_t, std::vector<double>> new_qubit_coords;
 
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate->id == GateType::REPEAT) {
             const auto &block = circuit.blocks[op.target_data.targets[0].data];
             uint64_t block_repeats = op_data_rep_count(op.target_data);
             get_final_qubit_coords_helper(block, block_repeats, out_coord_shift, new_qubit_coords);
-        } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+        } else if (op.gate->id == GateType::SHIFT_COORDS) {
             vec_pad_add_mul(out_coord_shift, op.target_data.args);
-        } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+        } else if (op.gate->id == GateType::QUBIT_COORDS) {
             while (out_coord_shift.size() < op.target_data.args.size()) {
                 out_coord_shift.push_back(0);
             }
@@ -1295,9 +1293,9 @@ std::map<uint64_t, std::vector<double>> Circuit::get_final_qubit_coords() const 
 std::vector<double> Circuit::final_coord_shift() const {
     std::vector<double> coord_shift;
     for (const auto &op : operations) {
-        if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+        if (op.gate->id == GateType::SHIFT_COORDS) {
             vec_pad_add_mul(coord_shift, op.target_data.args);
-        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+        } else if (op.gate->id == GateType::REPEAT) {
             const auto &block = op_data_block_body(*this, op.target_data);
             uint64_t reps = op_data_rep_count(op.target_data);
             vec_pad_add_mul(coord_shift, block.final_coord_shift(), reps);
@@ -1319,9 +1317,9 @@ void get_detector_coordinates_helper(
 
     std::vector<double> coord_shift = initial_coord_shift;
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+        if (op.gate->id == GateType::SHIFT_COORDS) {
             vec_pad_add_mul(coord_shift, op.target_data.args);
-        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+        } else if (op.gate->id == GateType::REPEAT) {
             const auto &block = op_data_block_body(circuit, op.target_data);
             auto block_shift = block.final_coord_shift();
             uint64_t per = block.count_detectors();
@@ -1348,7 +1346,7 @@ void get_detector_coordinates_helper(
                     }
                 }
             }
-        } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+        } else if (op.gate->id == GateType::DETECTOR) {
             if (next_detector_index == *iter_desired_detector_index) {
                 std::vector<double> det_coords;
                 for (size_t k = 0; k < op.target_data.args.size(); k++) {
@@ -1394,7 +1392,7 @@ std::string Circuit::describe_instruction_location(size_t instruction_offset) co
     std::stringstream out;
     out << "    at instruction #" << (instruction_offset + 1);
     const auto &op = operations[instruction_offset];
-    if (op.gate->id == gate_name_to_id("REPEAT")) {
+    if (op.gate->id == GateType::REPEAT) {
         out << " [which is a REPEAT " << op_data_rep_count(op.target_data) << " block]";
     } else {
         out << " [which is " << op << "]";

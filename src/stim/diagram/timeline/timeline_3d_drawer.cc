@@ -293,19 +293,19 @@ void DiagramTimeline3DDrawer::do_observable_include(const ResolvedTimelineOperat
 }
 
 void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate->id == gate_name_to_id("MPP")) {
+    if (op.gate->id == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    } else if (op.gate->id == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+    } else if (op.gate->id == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+    } else if (op.gate->id == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == gate_name_to_id("E")) {
+    } else if (op.gate->id == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate->id == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("TICK")) {
+    } else if (op.gate->id == GateType::TICK) {
         do_tick();
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
@@ -321,7 +321,7 @@ DiagramTimeline3DDrawer::DiagramTimeline3DDrawer(size_t num_qubits, bool has_tic
 
 void add_used_qubits(const Circuit &circuit, std::set<uint64_t> &out) {
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        if (op.gate->id == GateType::REPEAT) {
             add_used_qubits(op_data_block_body(circuit, op.target_data), out);
         } else {
             for (const auto &t : op.target_data.targets) {

@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/tableau.h"
@@ -38,6 +39,7 @@ struct TableauSimulator {
     int8_t sign_bias;
     MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
+    GateVTable<void (TableauSimulator::*)(const OperationData&)> gate_vtable;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
@@ -155,6 +157,10 @@ struct TableauSimulator {
     void apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets);
 
     std::vector<PauliString> canonical_stabilizers() const;
+
+    inline void do_gate(GateType gate_id, const OperationData &data) {
+        (this->*(gate_vtable.data[gate_id]))(data);
+    }
 
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===
     void I(const OperationData &target_data);

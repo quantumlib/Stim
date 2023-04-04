@@ -22,6 +22,71 @@
 
 using namespace stim;
 
+constexpr GateVTable<void (FrameSimulator::*)(const OperationData&)> frame_simulator_vtable_data() {
+    return {{{
+        {GateType::DETECTOR, &FrameSimulator::I},
+        {GateType::OBSERVABLE_INCLUDE, &FrameSimulator::I},
+        {GateType::TICK, &FrameSimulator::I},
+        {GateType::QUBIT_COORDS, &FrameSimulator::I},
+        {GateType::SHIFT_COORDS, &FrameSimulator::I},
+        {GateType::REPEAT, &FrameSimulator::I},
+        {GateType::MX, &FrameSimulator::measure_x},
+        {GateType::MY, &FrameSimulator::measure_y},
+        {GateType::M, &FrameSimulator::measure_z},
+        {GateType::MRX, &FrameSimulator::measure_reset_x},
+        {GateType::MRY, &FrameSimulator::measure_reset_y},
+        {GateType::MR, &FrameSimulator::measure_reset_z},
+        {GateType::RX, &FrameSimulator::reset_x},
+        {GateType::RY, &FrameSimulator::reset_y},
+        {GateType::R, &FrameSimulator::reset_z},
+        {GateType::MPP, &FrameSimulator::MPP},
+        {GateType::XCX, &FrameSimulator::XCX},
+        {GateType::XCY, &FrameSimulator::XCY},
+        {GateType::XCZ, &FrameSimulator::XCZ},
+        {GateType::YCX, &FrameSimulator::YCX},
+        {GateType::YCY, &FrameSimulator::YCY},
+        {GateType::YCZ, &FrameSimulator::YCZ},
+        {GateType::CX, &FrameSimulator::ZCX},
+        {GateType::CY, &FrameSimulator::ZCY},
+        {GateType::CZ, &FrameSimulator::ZCZ},
+        {GateType::H, &FrameSimulator::H_XZ},
+        {GateType::H_XY, &FrameSimulator::H_XY},
+        {GateType::H_YZ, &FrameSimulator::H_YZ},
+        {GateType::DEPOLARIZE1, &FrameSimulator::DEPOLARIZE1},
+        {GateType::DEPOLARIZE2, &FrameSimulator::DEPOLARIZE2},
+        {GateType::X_ERROR, &FrameSimulator::X_ERROR},
+        {GateType::Y_ERROR, &FrameSimulator::Y_ERROR},
+        {GateType::Z_ERROR, &FrameSimulator::Z_ERROR},
+        {GateType::PAULI_CHANNEL_1, &FrameSimulator::PAULI_CHANNEL_1},
+        {GateType::PAULI_CHANNEL_2, &FrameSimulator::PAULI_CHANNEL_2},
+        {GateType::E, &FrameSimulator::CORRELATED_ERROR},
+        {GateType::ELSE_CORRELATED_ERROR, &FrameSimulator::ELSE_CORRELATED_ERROR},
+        {GateType::I, &FrameSimulator::I},
+        {GateType::X, &FrameSimulator::I},
+        {GateType::Y, &FrameSimulator::I},
+        {GateType::Z, &FrameSimulator::I},
+        {GateType::C_XYZ, &FrameSimulator::C_XYZ},
+        {GateType::C_ZYX, &FrameSimulator::C_ZYX},
+        {GateType::SQRT_X, &FrameSimulator::H_YZ},
+        {GateType::SQRT_X_DAG, &FrameSimulator::H_YZ},
+        {GateType::SQRT_Y, &FrameSimulator::H_XZ},
+        {GateType::SQRT_Y_DAG, &FrameSimulator::H_XZ},
+        {GateType::S, &FrameSimulator::H_XY},
+        {GateType::S_DAG, &FrameSimulator::H_XY},
+        {GateType::SQRT_XX, &FrameSimulator::SQRT_XX},
+        {GateType::SQRT_XX_DAG, &FrameSimulator::SQRT_XX},
+        {GateType::SQRT_YY, &FrameSimulator::SQRT_YY},
+        {GateType::SQRT_YY_DAG, &FrameSimulator::SQRT_YY},
+        {GateType::SQRT_ZZ, &FrameSimulator::SQRT_ZZ},
+        {GateType::SQRT_ZZ_DAG, &FrameSimulator::SQRT_ZZ},
+        {GateType::SWAP, &FrameSimulator::SWAP},
+        {GateType::ISWAP, &FrameSimulator::ISWAP},
+        {GateType::ISWAP_DAG, &FrameSimulator::ISWAP},
+        {GateType::CXSWAP, &FrameSimulator::CXSWAP},
+        {GateType::SWAPCX, &FrameSimulator::SWAPCX},
+    }}};
+}
+
 static size_t force_stream_count = 0;
 DebugForceResultStreamingRaii::DebugForceResultStreamingRaii() {
     force_stream_count++;
@@ -58,7 +123,8 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_
       tmp_storage(batch_size),
       last_correlated_error_occurred(batch_size),
       sweep_table(0, batch_size),
-      rng(rng) {
+      rng(rng),
+      gate_vtable(frame_simulator_vtable_data()) {
 }
 
 void FrameSimulator::xor_control_bit_into(uint32_t control, simd_bits_range_ref<MAX_BITWORD_WIDTH> target) {
@@ -84,7 +150,7 @@ void FrameSimulator::reset_all() {
 void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     reset_all();
     circuit.for_each_operation([&](const Operation &op) {
-        (this->*op.gate->frame_simulator_function)(op.target_data);
+        do_gate(op.gate->id, op.target_data);
     });
 }
 
@@ -603,14 +669,14 @@ void sample_out_helper(
         // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
         MeasureRecordBatchWriter writer(out, num_shots, format);
         circuit.for_each_operation([&](const Operation &op) {
-            (sim.*op.gate->frame_simulator_function)(op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
             sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
         });
         sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
     } else {
         // Small case. Just do everything in memory.
         circuit.for_each_operation([&](const Operation &op) {
-            (sim.*op.gate->frame_simulator_function)(op.target_data);
+            sim.do_gate(op.gate->id, op.target_data);
         });
         write_table_data(
             out, num_shots, circuit.count_measurements(), ref_sample, sim.m_record.storage, format, 'M', 'M', 0);

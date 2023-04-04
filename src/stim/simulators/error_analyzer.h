@@ -112,6 +112,12 @@ struct ErrorAnalyzer {
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 
+    /// Counts the number of tick operations, for better debug messages.
+    uint64_t num_ticks_in_past = 0;
+
+    /// Function vtable for each gate's simulator function
+    GateVTable<void (ErrorAnalyzer::*)(const OperationData&)> gate_vtable;
+
     /// Used for producing debug information when errors occur.
     const Circuit *current_circuit_being_analyzed = nullptr;
 
@@ -228,14 +234,15 @@ struct ErrorAnalyzer {
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
 
+    inline void rev_do_gate(GateType gate_id, const OperationData& data) {
+        (this->*(gate_vtable.data[gate_id]))(data);
+    }
+
     /// Returns a PauliString indicating the current error sensitivity of a detector or observable.
     ///
     /// The observable or detector is sensitive to the Pauli error P at q if the Pauli sensitivity
     /// at q anti-commutes with P.
     PauliString current_error_sensitivity_for(DemTarget t) const;
-
-    /// Counts the number of tick operations, for better debug messages.
-    uint64_t num_ticks_in_past = 0;
 
     /// Processes the instructions in a circuit multiple times.
     /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
