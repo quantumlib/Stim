@@ -29,12 +29,9 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
         failed,
         Gate{
             "XCX",
-            "XCX",
+            GateType::XCX,
+            GateType::XCX,
             0,
-            &TableauSimulator::XCX,
-            &FrameSimulator::XCX,
-            &ErrorAnalyzer::XCX,
-            &SparseUnsignedRevFrameTracker::undo_XCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -73,12 +70,9 @@ H 0
         failed,
         Gate{
             "XCY",
-            "XCY",
+            GateType::XCY,
+            GateType::XCY,
             0,
-            &TableauSimulator::XCY,
-            &FrameSimulator::XCY,
-            &ErrorAnalyzer::XCY,
-            &SparseUnsignedRevFrameTracker::undo_XCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -121,12 +115,9 @@ S 1
         failed,
         Gate{
             "XCZ",
-            "XCZ",
+            GateType::XCZ,
+            GateType::XCZ,
             0,
-            &TableauSimulator::XCZ,
-            &FrameSimulator::XCZ,
-            &ErrorAnalyzer::XCZ,
-            &SparseUnsignedRevFrameTracker::undo_XCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -179,12 +170,9 @@ CNOT 1 0
         failed,
         Gate{
             "YCX",
-            "YCX",
+            GateType::YCX,
+            GateType::YCX,
             0,
-            &TableauSimulator::YCX,
-            &FrameSimulator::YCX,
-            &ErrorAnalyzer::YCX,
-            &SparseUnsignedRevFrameTracker::undo_YCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -227,12 +215,9 @@ H 1
         failed,
         Gate{
             "YCY",
-            "YCY",
+            GateType::YCY,
+            GateType::YCY,
             0,
-            &TableauSimulator::YCY,
-            &FrameSimulator::YCY,
-            &ErrorAnalyzer::YCY,
-            &SparseUnsignedRevFrameTracker::undo_YCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -279,12 +264,9 @@ S 1
         failed,
         Gate{
             "YCZ",
-            "YCZ",
+            GateType::YCZ,
+            GateType::YCZ,
             0,
-            &TableauSimulator::YCZ,
-            &FrameSimulator::YCZ,
-            &ErrorAnalyzer::YCZ,
-            &SparseUnsignedRevFrameTracker::undo_YCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -341,12 +323,9 @@ S 0
         failed,
         Gate{
             "CX",
-            "CX",
+            GateType::CX,
+            GateType::CX,
             0,
-            &TableauSimulator::ZCX,
-            &FrameSimulator::ZCX,
-            &ErrorAnalyzer::ZCX,
-            &SparseUnsignedRevFrameTracker::undo_ZCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -400,12 +379,9 @@ CNOT 0 1
         failed,
         Gate{
             "CY",
-            "CY",
+            GateType::CY,
+            GateType::CY,
             0,
-            &TableauSimulator::ZCY,
-            &FrameSimulator::ZCY,
-            &ErrorAnalyzer::ZCY,
-            &SparseUnsignedRevFrameTracker::undo_ZCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
@@ -462,12 +438,9 @@ S 1
         failed,
         Gate{
             "CZ",
-            "CZ",
+            GateType::CZ,
+            GateType::CZ,
             0,
-            &TableauSimulator::ZCZ,
-            &FrameSimulator::ZCZ,
-            &ErrorAnalyzer::ZCZ,
-            &SparseUnsignedRevFrameTracker::undo_ZCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {

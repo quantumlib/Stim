@@ -43,7 +43,7 @@ void Graph::add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask) {
 }
 
 void Graph::add_edges_from_targets_with_no_separators(
-    ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
+    SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors) {
     FixedCapVector<uint64_t, 2> detectors;
     uint64_t obs_mask = 0;
 
@@ -77,7 +77,7 @@ void Graph::add_edges_from_targets_with_no_separators(
     }
 }
 
-void Graph::add_edges_from_separable_targets(ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
+void Graph::add_edges_from_separable_targets(SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors) {
     const DemTarget *prev = targets.begin();
     const DemTarget *cur = targets.begin();
     while (true) {

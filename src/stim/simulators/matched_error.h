@@ -92,7 +92,7 @@ struct FlippedMeasurement {
 /// Describes a specific range of targets within a parameterized instruction.
 struct CircuitTargetsInsideInstruction {
     /// The instruction type.
-    const Gate *gate;
+    GateType gate_type;
 
     /// The parens arguments for the instruction.
     std::vector<double> args;
@@ -103,7 +103,7 @@ struct CircuitTargetsInsideInstruction {
     std::vector<GateTargetWithCoords> targets_in_range;
 
     void fill_args_and_targets_in_range(
-        const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords);
+        const CircuitInstruction &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords);
 
     bool operator<(const CircuitTargetsInsideInstruction &other) const;
 
@@ -155,7 +155,7 @@ struct ExplainedError {
     std::vector<CircuitErrorLocation> circuit_error_locations;
 
     void fill_in_dem_targets(
-        ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
+        SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
 
     void canonicalize();
 

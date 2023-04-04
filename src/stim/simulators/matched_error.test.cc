@@ -76,7 +76,7 @@ TEST(matched_error, CircuitErrorLocationStackFrame_basics) {
 
 TEST(matched_error, CircuitTargetsInsideInstruction_basics) {
     CircuitTargetsInsideInstruction targets{
-        &GATE_DATA.at("X_ERROR"),
+        GateType::X_ERROR,
         {0.125},
         11,
         17,
@@ -99,14 +99,14 @@ TEST(matched_error, CircuitTargetsInsideInstruction_basics) {
 
 TEST(matched_error, CircuitTargetsInsideInstruction_fill) {
     CircuitTargetsInsideInstruction not_filled{
-        &GATE_DATA.at("X_ERROR"),
+        GateType::X_ERROR,
         {0.125},
         2,
         5,
         {},
     };
     not_filled.fill_args_and_targets_in_range(
-        Circuit("X_ERROR(0.125) 0 1 2 3 4 5 6 7 8 9").operations[0].target_data, {{4, {11, 13}}});
+        Circuit("X_ERROR(0.125) 0 1 2 3 4 5 6 7 8 9").operations[0], {{4, {11, 13}}});
     ASSERT_EQ(not_filled.str(), "X_ERROR(0.125) 2 3 4[coords 11,13]");
 }
 
@@ -125,7 +125,7 @@ TEST(matched_error, CircuitErrorLocation_basics) {
             },
         },
         CircuitTargetsInsideInstruction{
-            &GATE_DATA.at("X_ERROR"),
+            GateType::X_ERROR,
             {0.125},
             11,
             17,
@@ -177,7 +177,7 @@ TEST(matched_error, MatchedError_basics) {
             },
         },
         CircuitTargetsInsideInstruction{
-            &GATE_DATA.at("X_ERROR"),
+            GateType::X_ERROR,
             {0.125},
             11,
             17,

@@ -3,31 +3,32 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(const std::string &name) {
+std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(GateType gate_type) {
     std::pair<std::string, std::string> result;
-    if (name == "CX" || name == "CNOT" || name == "ZCX") {
+    if (gate_type == GateType::CX) {
         return {"Z", "X"};
-    } else if (name == "CY" || name == "ZCY") {
+    } else if (gate_type == GateType::CY) {
         return {"Z", "Y"};
-    } else if (name == "CZ" || name == "ZCZ") {
+    } else if (gate_type == GateType::CZ) {
         return {"Z", "Z"};
-    } else if (name == "XCX") {
+    } else if (gate_type == GateType::XCX) {
         return {"X", "X"};
-    } else if (name == "XCY") {
+    } else if (gate_type == GateType::XCY) {
         return {"X", "Y"};
-    } else if (name == "XCZ") {
+    } else if (gate_type == GateType::XCZ) {
         return {"X", "Z"};
-    } else if (name == "YCX") {
+    } else if (gate_type == GateType::YCX) {
         return {"Y", "X"};
-    } else if (name == "YCY") {
+    } else if (gate_type == GateType::YCY) {
         return {"Y", "Y"};
-    } else if (name == "YCZ") {
+    } else if (gate_type == GateType::YCZ) {
         return {"Y", "Z"};
-    } else if (name == "CXSWAP") {
+    } else if (gate_type == GateType::CXSWAP) {
         return {"ZSWAP", "XSWAP"};
-    } else if (name == "SWAPCX") {
+    } else if (gate_type == GateType::SWAPCX) {
         return {"XSWAP", "ZSWAP"};
     } else {
+        auto name = GATE_DATA.items[gate_type].name;
         return {name, name};
     }
 }

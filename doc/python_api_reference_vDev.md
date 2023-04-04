@@ -4280,7 +4280,7 @@ def __init__(
 def coords(
     self,
 ) -> List[float]:
-    """Returns the associated coordinate information as a list of flaots.
+    """Returns the associated coordinate information as a list of floats.
 
     If there is no coordinate information, returns an empty list.
     """
@@ -5792,7 +5792,7 @@ def __init__(
 def coords(
     self,
 ) -> List[float]:
-    """Returns the associated coordinate information as a list of flaots.
+    """Returns the associated coordinate information as a list of floats.
 
     If there is no coordinate information, returns an empty list.
     """

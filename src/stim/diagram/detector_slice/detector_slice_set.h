@@ -30,7 +30,7 @@ struct CoordFilter {
     bool use_target = false;
     stim::DemTarget exact_target{};
 
-    bool matches(stim::ConstPointerRange<double> coords, stim::DemTarget target) const;
+    bool matches(stim::SpanRef<const double> coords, stim::DemTarget target) const;
     static CoordFilter parse_from(const std::string &data);
 };
 
@@ -56,7 +56,7 @@ struct DetectorSliceSet {
         const stim::Circuit &circuit,
         uint64_t start_tick,
         uint64_t num_ticks,
-        stim::ConstPointerRange<CoordFilter> coord_filter);
+        stim::SpanRef<const CoordFilter> coord_filter);
 
     std::set<uint64_t> used_qubits() const;
     std::string str() const;
@@ -81,7 +81,7 @@ struct FlattenedCoords {
 
     static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
 };
-Coord<2> pick_polygon_center(stim::ConstPointerRange<Coord<2>> coords);
+Coord<2> pick_polygon_center(stim::SpanRef<const Coord<2>> coords);
 bool is_colinear(Coord<2> a, Coord<2> b, Coord<2> c);
 
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);

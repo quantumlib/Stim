@@ -57,8 +57,8 @@ struct DemTarget {
 };
 
 struct DemInstruction {
-    ConstPointerRange<double> arg_data;
-    ConstPointerRange<DemTarget> target_data;
+    SpanRef<const double> arg_data;
+    SpanRef<const DemTarget> target_data;
     DemInstructionType type;
 
     bool operator<(const DemInstruction &other) const;
@@ -96,9 +96,9 @@ struct DetectorErrorModel {
     DetectorErrorModel &operator+=(const DetectorErrorModel &other);
 
     void append_dem_instruction(const DemInstruction &instruction);
-    void append_error_instruction(double probability, ConstPointerRange<DemTarget> targets);
-    void append_shift_detectors_instruction(ConstPointerRange<double> coord_shift, uint64_t detector_shift);
-    void append_detector_instruction(ConstPointerRange<double> coords, DemTarget target);
+    void append_error_instruction(double probability, SpanRef<const DemTarget> targets);
+    void append_shift_detectors_instruction(SpanRef<const double> coord_shift, uint64_t detector_shift);
+    void append_detector_instruction(SpanRef<const double> coords, DemTarget target);
     void append_logical_observable_instruction(DemTarget target);
     void append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body);
     void append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body);

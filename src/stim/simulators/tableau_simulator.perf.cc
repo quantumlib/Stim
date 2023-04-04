@@ -27,7 +27,7 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back(GateTarget{k});
     }
-    OperationData op_data{{}, targets};
+    CircuitInstruction op_data{GateType::CX, {}, targets};
 
     benchmark_go([&]() {
         sim.ZCX(op_data);

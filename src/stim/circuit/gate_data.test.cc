@@ -36,6 +36,37 @@ TEST(gate_data, lookup) {
     ASSERT_TRUE(GATE_DATA.at("H_xz").id == GATE_DATA.at("H").id);
 }
 
+TEST(gate_data, zero_flag_means_not_a_gate) {
+    ASSERT_EQ(GATE_DATA.items[0].id, 0);
+    ASSERT_EQ(GATE_DATA.items[0].flags, GateFlags::NO_GATE_FLAG);
+    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
+        const auto &g = GATE_DATA.items[k];
+        if (g.id != 0) {
+            EXPECT_NE(g.flags, GateFlags::NO_GATE_FLAG) << g.name;
+        }
+    }
+}
+
+TEST(gate_data, one_step_to_canonical_gate) {
+    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
+        const auto &g = GATE_DATA.items[k];
+        if (g.id != 0) {
+            EXPECT_TRUE(g.id == k || GATE_DATA.items[g.id].id == g.id) << g.name;
+        }
+    }
+}
+
+TEST(gate_data, hash_matches_storage_location) {
+    ASSERT_EQ(GATE_DATA.items[0].id, 0);
+    ASSERT_EQ(GATE_DATA.items[0].flags, GateFlags::NO_GATE_FLAG);
+    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
+        const auto &g = GATE_DATA.items[k];
+        if (g.id != 0) {
+            EXPECT_EQ(gate_name_to_hash(g.name), k) << g.name;
+        }
+    }
+}
+
 std::pair<std::vector<PauliString>, std::vector<PauliString>> circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
@@ -71,9 +102,8 @@ bool is_decomposition_correct(const Gate &gate) {
     Circuit circuit2 = epr + Circuit(decomposition);
     auto v2 = circuit_output_eq_val(circuit2);
     for (const auto &op : circuit2.operations) {
-        if (op.gate->id != gate_name_to_id("CX") && op.gate->id != gate_name_to_id("H") &&
-            op.gate->id != gate_name_to_id("S") && op.gate->id != gate_name_to_id("M") &&
-            op.gate->id != gate_name_to_id("R")) {
+        if (op.gate_type != GateType::CX && op.gate_type != GateType::H && op.gate_type != GateType::S &&
+            op.gate_type != GateType::M && op.gate_type != GateType::R) {
             return false;
         }
     }
@@ -99,7 +129,7 @@ TEST(gate_data, unitary_inverses_are_correct) {
     for (const auto &g : GATE_DATA.gates()) {
         if (g.flags & GATE_IS_UNITARY) {
             auto g_t_inv = g.tableau().inverse(false);
-            auto g_inv_t = GATE_DATA.items[g.best_candidate_inverse_id].tableau();
+            auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
         }
     }

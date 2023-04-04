@@ -29,12 +29,9 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
         failed,
         Gate{
             "SWAP",
-            "SWAP",
+            GateType::SWAP,
+            GateType::SWAP,
             0,
-            &TableauSimulator::SWAP,
-            &FrameSimulator::SWAP,
-            &ErrorAnalyzer::SWAP,
-            &SparseUnsignedRevFrameTracker::undo_SWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -65,12 +62,9 @@ CNOT 0 1
         failed,
         Gate{
             "ISWAP",
-            "ISWAP_DAG",
+            GateType::ISWAP,
+            GateType::ISWAP_DAG,
             0,
-            &TableauSimulator::ISWAP,
-            &FrameSimulator::ISWAP,
-            &ErrorAnalyzer::ISWAP,
-            &SparseUnsignedRevFrameTracker::undo_ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -105,12 +99,9 @@ S 0
         failed,
         Gate{
             "ISWAP_DAG",
-            "ISWAP",
+            GateType::ISWAP_DAG,
+            GateType::ISWAP,
             0,
-            &TableauSimulator::ISWAP_DAG,
-            &FrameSimulator::ISWAP,
-            &ErrorAnalyzer::ISWAP,
-            &SparseUnsignedRevFrameTracker::undo_ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -149,12 +140,9 @@ H 0
         failed,
         Gate{
             "CXSWAP",
-            "SWAPCX",
+            GateType::CXSWAP,
+            GateType::SWAPCX,
             0,
-            &TableauSimulator::CXSWAP,
-            &FrameSimulator::CXSWAP,
-            &ErrorAnalyzer::CXSWAP,
-            &SparseUnsignedRevFrameTracker::undo_CXSWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -185,12 +173,9 @@ CNOT 0 1
         failed,
         Gate{
             "SWAPCX",
-            "CXSWAP",
+            GateType::SWAPCX,
+            GateType::CXSWAP,
             0,
-            &TableauSimulator::SWAPCX,
-            &FrameSimulator::SWAPCX,
-            &ErrorAnalyzer::SWAPCX,
-            &SparseUnsignedRevFrameTracker::undo_SWAPCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

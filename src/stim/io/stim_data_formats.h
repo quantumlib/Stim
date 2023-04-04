@@ -23,7 +23,7 @@ struct FileFormatData {
     const char *help_python_parse;
 };
 
-const std::map<std::string, FileFormatData>& format_name_to_enum_map();
+const std::map<std::string, FileFormatData> &format_name_to_enum_map();
 
 }  // namespace stim
 

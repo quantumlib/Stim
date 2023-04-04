@@ -21,15 +21,16 @@ uint8_t stim::is_power_of_2(size_t value) {
 
 Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
     Circuit inverted;
-    unitary_circuit.for_each_operation_reverse([&](const Operation &op) {
-        if (!(op.gate->flags & GATE_IS_UNITARY)) {
+    unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        if (!(gate_data.flags & GATE_IS_UNITARY)) {
             throw std::invalid_argument("Not unitary: " + op.str());
         }
-        size_t step = (op.gate->flags & GATE_TARGETS_PAIRS) ? 2 : 1;
-        auto s = op.target_data.targets.ptr_start;
-        const auto &inv_gate = op.gate->inverse();
-        for (size_t k = op.target_data.targets.size(); k > 0; k -= step) {
-            inverted.safe_append(inv_gate, {s + k - step, s + k}, op.target_data.args);
+        size_t step = (gate_data.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
+        auto s = op.targets.ptr_start;
+        const auto &inv_gate = gate_data.inverse();
+        for (size_t k = op.targets.size(); k > 0; k -= step) {
+            inverted.safe_append(inv_gate.id, {s + k - step, s + k}, op.args);
         }
     });
     return inverted;
@@ -176,10 +177,11 @@ Tableau stim::circuit_to_tableau(
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
-    circuit.for_each_operation([&](const Operation &op) {
-        if (op.gate->flags & GATE_IS_UNITARY) {
-            (sim.*op.gate->tableau_simulator_function)(op.target_data);
-        } else if (op.gate->flags & GATE_IS_NOISE) {
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        const auto &flags = GATE_DATA.items[op.gate_type].flags;
+        if (flags & GATE_IS_UNITARY) {
+            sim.do_gate(op);
+        } else if (flags & GATE_IS_NOISE) {
             if (!ignore_noise) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains noisy operations.\n"
@@ -187,15 +189,15 @@ Tableau stim::circuit_to_tableau(
                     "The first noisy operation is: " +
                     op.str());
             }
-        } else if (op.gate->flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
-            if (!ignore_measurement && (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS)) {
+        } else if (flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
+            if (!ignore_measurement && (flags & GATE_PRODUCES_NOISY_RESULTS)) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains measurement operations.\n"
                     "To ignore measurement operations, pass the argument ignore_measurement=True.\n"
                     "The first measurement operation is: " +
                     op.str());
             }
-            if (!ignore_reset && (op.gate->flags & GATE_IS_RESET)) {
+            if (!ignore_reset && (flags & GATE_IS_RESET)) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains reset operations.\n"
                     "To ignore reset operations, pass the argument ignore_reset=True.\n"
@@ -215,10 +217,11 @@ std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circ
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
-    circuit.for_each_operation([&](const Operation &op) {
-        if (op.gate->flags & GATE_IS_UNITARY) {
-            (sim.*op.gate->tableau_simulator_function)(op.target_data);
-        } else if (op.gate->flags & (GATE_IS_NOISE | GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        const auto &flags = GATE_DATA.items[op.gate_type].flags;
+        if (flags & GATE_IS_UNITARY) {
+            sim.do_gate(op);
+        } else if (flags & (GATE_IS_NOISE | GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
             throw std::invalid_argument(
                 "The circuit has no well-defined tableau because it contains noisy or dissipative operations.\n"
                 "The first such operation is: " +
@@ -342,7 +345,6 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
             apply("H", col);
         }
     }
-    signs_copy = remaining.xs.signs;
     for (size_t col = 0; col < n; col++) {
         if (remaining.xs.signs[col]) {
             apply("S", col);

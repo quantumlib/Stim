@@ -29,7 +29,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back(GateTarget{k});
     }
-    OperationData op_data{{&probability}, targets};
+    CircuitInstruction op_data{GateType::DEPOLARIZE1, &probability, targets};
     benchmark_go([&]() {
         sim.DEPOLARIZE1(op_data);
     })
@@ -48,7 +48,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back({k});
     }
-    OperationData op_data{{&probability}, targets};
+    CircuitInstruction op_data{GateType::DEPOLARIZE2, &probability, targets};
 
     benchmark_go([&]() {
         sim.DEPOLARIZE2(op_data);
@@ -67,7 +67,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back({k});
     }
-    OperationData op_data{{}, targets};
+    CircuitInstruction op_data{GateType::H, {}, targets};
 
     benchmark_go([&]() {
         sim.H_XZ(op_data);
@@ -86,7 +86,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back({k});
     }
-    OperationData op_data{{}, targets};
+    CircuitInstruction op_data{GateType::CX, {}, targets};
 
     benchmark_go([&]() {
         sim.ZCX(op_data);

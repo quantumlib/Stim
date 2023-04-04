@@ -18,7 +18,7 @@
 #define _STIM_STABILIZERS_TABLEAU_ITER_H
 
 #include "stim/mem/fixed_cap_vector.h"
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 #include "stim/stabilizers/tableau.h"
 
 namespace stim {
@@ -27,8 +27,8 @@ namespace stim {
 struct CommutingPauliStringIterator {
     // Fields defining the pauli strings that will be iterated.
     size_t num_qubits;
-    ConstPointerRange<PauliStringRef> cur_desired_commutators;
-    ConstPointerRange<PauliStringRef> cur_desired_anticommutators;
+    SpanRef<const PauliStringRef> cur_desired_commutators;
+    SpanRef<const PauliStringRef> cur_desired_anticommutators;
 
     // Fields tracking progress of the iteration.
     PauliString current;                  // The current Pauli string being considered.
@@ -39,7 +39,7 @@ struct CommutingPauliStringIterator {
     CommutingPauliStringIterator(size_t num_qubits);
 
     /// Restarts iteration, and changes the target commutators/anticommutators.
-    void restart_iter(ConstPointerRange<PauliStringRef> commutators, ConstPointerRange<PauliStringRef> anticommutators);
+    void restart_iter(SpanRef<const PauliStringRef> commutators, SpanRef<const PauliStringRef> anticommutators);
     void restart_iter_same_constraints();
 
     /// Yields the next iterated Pauli string (or nullptr if iteration over).
@@ -85,7 +85,7 @@ struct TableauIterator {
 
     // Restarts iteration.
     void restart();
-    std::pair<ConstPointerRange<PauliStringRef>, ConstPointerRange<PauliStringRef>> constraints_for_pauli_iterator(
+    std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>> constraints_for_pauli_iterator(
         size_t k) const;
 };
 

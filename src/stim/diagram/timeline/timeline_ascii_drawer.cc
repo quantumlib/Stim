@@ -43,7 +43,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
-    auto ends = two_qubit_gate_pieces(op.gate->name);
+    auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
         return;
@@ -58,7 +58,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
     first << (ends.first == "Z" ? "@" : ends.first);
     second << (ends.second == "Z" ? "@" : ends.second);
     if (!op.args.empty()) {
-        if (op.gate->id == gate_name_to_id("PAULI_CHANNEL_2")) {
+        if (op.gate_type == GateType::PAULI_CHANNEL_2) {
             first << "[0]";
             second << "[1]";
         }
@@ -128,13 +128,14 @@ void DiagramTimelineAsciiDrawer::do_tick() {
 void DiagramTimelineAsciiDrawer::do_single_qubit_gate_instance(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     const auto &target = op.targets[0];
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
 
     std::stringstream ss;
-    ss << op.gate->name;
+    ss << gate_data.name;
     if (!op.args.empty()) {
         ss << "(" << comma_sep(op.args, ",") << ")";
     }
-    if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
         ss << ':';
         write_rec_index(ss);
     }
@@ -187,7 +188,7 @@ void DiagramTimelineAsciiDrawer::write_rec_index(std::ostream &out, int64_t look
     out << ']';
 }
 
-void DiagramTimelineAsciiDrawer::write_coords(std::ostream &out, ConstPointerRange<double> relative_coordinates) {
+void DiagramTimelineAsciiDrawer::write_coords(std::ostream &out, SpanRef<const double> relative_coordinates) {
     out.put('(');
     for (size_t k = 0; k < relative_coordinates.size(); k++) {
         if (k) {
@@ -214,7 +215,7 @@ void DiagramTimelineAsciiDrawer::write_coord(std::ostream &out, size_t coord_ind
     }
 }
 
-void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
+void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
     size_t min_q = SIZE_MAX;
     size_t max_q = 0;
     for (const auto &t : targets) {
@@ -263,7 +264,8 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
             continue;
         }
         std::stringstream ss;
-        ss << op.gate->name;
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        ss << gate_data.name;
         if (t.is_x_target()) {
             ss << "[X]";
         } else if (t.is_y_target()) {
@@ -274,7 +276,7 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
         if (!op.args.empty()) {
             ss << "(" << comma_sep(op.args, ",") << ")";
         }
-        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+        if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
             ss << ':';
             write_rec_index(ss);
         }
@@ -354,7 +356,8 @@ void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation
     const auto &target = op.targets[0];
 
     std::stringstream ss;
-    ss << op.gate->name;
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    ss << gate_data.name;
     write_coords(ss, op.args);
     diagram.add_entry(AsciiDiagramEntry{
         {
@@ -370,7 +373,7 @@ void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation
 void DiagramTimelineAsciiDrawer::do_detector(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     std::stringstream ss;
@@ -404,7 +407,7 @@ void DiagramTimelineAsciiDrawer::do_detector(const ResolvedTimelineOperation &op
 void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     auto pseudo_target = op.targets[0];
-    ConstPointerRange<GateTarget> rec_targets = op.targets;
+    SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
     std::stringstream ss;
@@ -430,21 +433,21 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate->id == gate_name_to_id("MPP")) {
+    if (op.gate_type == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+    } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+    } else if (op.gate_type == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == gate_name_to_id("E")) {
+    } else if (op.gate_type == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("TICK")) {
+    } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);

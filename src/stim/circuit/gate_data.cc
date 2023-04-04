@@ -70,8 +70,8 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 
 const Gate &Gate::inverse() const {
     std::string inv_name = name;
-    if ((flags & GATE_IS_UNITARY) || id == gate_name_to_id("TICK")) {
-        return GATE_DATA.items[best_candidate_inverse_id];
+    if ((flags & GATE_IS_UNITARY) || id == GateType::TICK) {
+        return GATE_DATA.items[static_cast<uint8_t>(best_candidate_inverse_id)];
     }
     throw std::out_of_range(inv_name + " has no inverse.");
 }
@@ -81,30 +81,23 @@ Gate::Gate() : name(nullptr) {
 
 Gate::Gate(
     const char *name,
-    const char *best_inverse_name,
+    GateType gate_id,
+    GateType best_inverse_gate,
     uint8_t arg_count,
-    void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
-    void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-    void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
-    void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &),
     GateFlags flags,
     ExtraGateData (*extra_data_func)(void))
     : name(name),
-      tableau_simulator_function(tableau_simulator_function),
-      frame_simulator_function(frame_simulator_function),
-      reverse_error_analyzer_function(hit_simulator_function),
-      sparse_unsigned_rev_frame_tracker_function(sparse_unsigned_rev_frame_tracker_function),
       extra_data_func(extra_data_func),
       flags(flags),
       arg_count(arg_count),
       name_len((uint8_t)strlen(name)),
-      id(gate_name_to_id(name)),
-      best_candidate_inverse_id(gate_name_to_id(best_inverse_name)) {
+      id(gate_id),
+      best_candidate_inverse_id(best_inverse_gate) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     const char *c = gate.name;
-    uint8_t h = gate_name_to_id(c);
+    uint8_t h = gate_name_to_hash(c);
     Gate &loc = items[h];
     if (loc.name != nullptr) {
         std::cerr << "GATE COLLISION " << gate.name << " vs " << loc.name << "\n";
@@ -115,7 +108,7 @@ void GateDataMap::add_gate(bool &failed, const Gate &gate) {
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
-    uint8_t h_alt = gate_name_to_id(alt_name);
+    uint8_t h_alt = gate_name_to_hash(alt_name);
     Gate &g_alt = items[h_alt];
     if (g_alt.name != nullptr) {
         std::cerr << "GATE COLLISION " << alt_name << " vs " << g_alt.name << "\n";
@@ -123,23 +116,24 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
         return;
     }
 
-    uint8_t h_canon = gate_name_to_id(canon_name);
+    uint8_t h_canon = gate_name_to_hash(canon_name);
     Gate &g_canon = items[h_canon];
-    if (g_canon.name == nullptr || g_canon.id != h_canon) {
+    if (g_canon.name == nullptr || static_cast<uint8_t>(g_canon.id) != h_canon) {
         std::cerr << "MISSING CANONICAL GATE " << canon_name << "\n";
         failed = true;
         return;
     }
     g_alt.name = alt_name;
     g_alt.name_len = (uint8_t)strlen(alt_name);
-    g_alt.id = h_canon;
+    g_alt.id = g_canon.id;
+    g_alt.flags = g_canon.flags;
 }
 
-std::vector<Gate> GateDataMap::gates() const {
+std::vector<Gate> GateDataMap::gates(bool include_aliases) const {
     std::vector<Gate> result;
-    for (const auto &item : items) {
-        if (item.name != nullptr) {
-            result.push_back(item);
+    for (size_t k = 0; k < items.size(); k++) {
+        if (items[k].name != nullptr && (include_aliases || items[k].id == k)) {
+            result.push_back(items[k]);
         }
     }
     return result;

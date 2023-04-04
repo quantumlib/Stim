@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/tableau.h"
@@ -38,6 +39,7 @@ struct TableauSimulator {
     int8_t sign_bias;
     MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
+    GateVTable<void (TableauSimulator::*)(const CircuitInstruction &)> gate_vtable;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
@@ -80,19 +82,19 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_x(const OperationData &target_data);
+    void measure_x(const CircuitInstruction &target_data);
 
     /// Collapses then records the Y signs of the target qubits. Supports flipping the result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_y(const OperationData &target_data);
+    void measure_y(const CircuitInstruction &target_data);
 
     /// Collapses then records the Z signs of the target qubits. Supports flipping the result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_z(const OperationData &target_data);
+    void measure_z(const CircuitInstruction &target_data);
 
     /// Collapses then records an observable.
     ///
@@ -105,39 +107,39 @@ struct TableauSimulator {
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void reset_x(const OperationData &target_data);
+    void reset_x(const CircuitInstruction &target_data);
 
     /// Collapses then clears the target qubits to the |i> state.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void reset_y(const OperationData &target_data);
+    void reset_y(const CircuitInstruction &target_data);
 
     /// Collapses then clears the target qubits to the |0> state.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void reset_z(const OperationData &target_data);
+    void reset_z(const CircuitInstruction &target_data);
 
     /// Collapses then records and clears the target qubits in the X basis. Supports flipping the measurement result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_reset_x(const OperationData &target_data);
+    void measure_reset_x(const CircuitInstruction &target_data);
 
     /// Collapses then records and clears the target qubits in the Y basis. Supports flipping the measurement result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_reset_y(const OperationData &target_data);
+    void measure_reset_y(const CircuitInstruction &target_data);
 
     /// Collapses then records and clears the target qubits in the Z basis. Supports flipping the measurement result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_reset_z(const OperationData &target_data);
+    void measure_reset_z(const CircuitInstruction &target_data);
 
     /// Determines if a qubit's X observable commutes (vs anti-commutes) with the current stabilizer generators.
     bool is_deterministic_x(size_t target) const;
@@ -150,58 +152,62 @@ struct TableauSimulator {
     ///
     /// Automatically expands the tableau simulator's state, if needed.
     void expand_do_circuit(const Circuit &circuit, uint64_t reps = 1);
-    void do_operation_ensure_size(const Operation &operation);
+    void do_operation_ensure_size(const CircuitInstruction &operation);
 
     void apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets);
 
     std::vector<PauliString> canonical_stabilizers() const;
 
+    inline void do_gate(const CircuitInstruction &data) {
+        (this->*(gate_vtable.data[data.gate_type]))(data);
+    }
+
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===
-    void I(const OperationData &target_data);
-    void H_XZ(const OperationData &target_data);
-    void H_YZ(const OperationData &target_data);
-    void H_XY(const OperationData &target_data);
-    void C_XYZ(const OperationData &target_data);
-    void C_ZYX(const OperationData &target_data);
-    void SQRT_X(const OperationData &target_data);
-    void SQRT_Y(const OperationData &target_data);
-    void SQRT_Z(const OperationData &target_data);
-    void SQRT_X_DAG(const OperationData &target_data);
-    void SQRT_Y_DAG(const OperationData &target_data);
-    void SQRT_Z_DAG(const OperationData &target_data);
-    void SQRT_XX(const OperationData &target_data);
-    void SQRT_XX_DAG(const OperationData &target_data);
-    void SQRT_YY(const OperationData &target_data);
-    void SQRT_YY_DAG(const OperationData &target_data);
-    void SQRT_ZZ(const OperationData &target_data);
-    void SQRT_ZZ_DAG(const OperationData &target_data);
-    void ZCX(const OperationData &target_data);
-    void ZCY(const OperationData &target_data);
-    void ZCZ(const OperationData &target_data);
-    void SWAP(const OperationData &target_data);
-    void X(const OperationData &target_data);
-    void Y(const OperationData &target_data);
-    void Z(const OperationData &target_data);
-    void ISWAP(const OperationData &target_data);
-    void ISWAP_DAG(const OperationData &target_data);
-    void CXSWAP(const OperationData &target_data);
-    void SWAPCX(const OperationData &target_data);
-    void XCX(const OperationData &target_data);
-    void XCY(const OperationData &target_data);
-    void XCZ(const OperationData &target_data);
-    void YCX(const OperationData &target_data);
-    void YCY(const OperationData &target_data);
-    void YCZ(const OperationData &target_data);
-    void DEPOLARIZE1(const OperationData &target_data);
-    void DEPOLARIZE2(const OperationData &target_data);
-    void X_ERROR(const OperationData &target_data);
-    void Y_ERROR(const OperationData &target_data);
-    void Z_ERROR(const OperationData &target_data);
-    void PAULI_CHANNEL_1(const OperationData &target_data);
-    void PAULI_CHANNEL_2(const OperationData &target_data);
-    void CORRELATED_ERROR(const OperationData &target_data);
-    void ELSE_CORRELATED_ERROR(const OperationData &target_data);
-    void MPP(const OperationData &target_data);
+    void I(const CircuitInstruction &target_data);
+    void H_XZ(const CircuitInstruction &target_data);
+    void H_YZ(const CircuitInstruction &target_data);
+    void H_XY(const CircuitInstruction &target_data);
+    void C_XYZ(const CircuitInstruction &target_data);
+    void C_ZYX(const CircuitInstruction &target_data);
+    void SQRT_X(const CircuitInstruction &target_data);
+    void SQRT_Y(const CircuitInstruction &target_data);
+    void SQRT_Z(const CircuitInstruction &target_data);
+    void SQRT_X_DAG(const CircuitInstruction &target_data);
+    void SQRT_Y_DAG(const CircuitInstruction &target_data);
+    void SQRT_Z_DAG(const CircuitInstruction &target_data);
+    void SQRT_XX(const CircuitInstruction &target_data);
+    void SQRT_XX_DAG(const CircuitInstruction &target_data);
+    void SQRT_YY(const CircuitInstruction &target_data);
+    void SQRT_YY_DAG(const CircuitInstruction &target_data);
+    void SQRT_ZZ(const CircuitInstruction &target_data);
+    void SQRT_ZZ_DAG(const CircuitInstruction &target_data);
+    void ZCX(const CircuitInstruction &target_data);
+    void ZCY(const CircuitInstruction &target_data);
+    void ZCZ(const CircuitInstruction &target_data);
+    void SWAP(const CircuitInstruction &target_data);
+    void X(const CircuitInstruction &target_data);
+    void Y(const CircuitInstruction &target_data);
+    void Z(const CircuitInstruction &target_data);
+    void ISWAP(const CircuitInstruction &target_data);
+    void ISWAP_DAG(const CircuitInstruction &target_data);
+    void CXSWAP(const CircuitInstruction &target_data);
+    void SWAPCX(const CircuitInstruction &target_data);
+    void XCX(const CircuitInstruction &target_data);
+    void XCY(const CircuitInstruction &target_data);
+    void XCZ(const CircuitInstruction &target_data);
+    void YCX(const CircuitInstruction &target_data);
+    void YCY(const CircuitInstruction &target_data);
+    void YCZ(const CircuitInstruction &target_data);
+    void DEPOLARIZE1(const CircuitInstruction &target_data);
+    void DEPOLARIZE2(const CircuitInstruction &target_data);
+    void X_ERROR(const CircuitInstruction &target_data);
+    void Y_ERROR(const CircuitInstruction &target_data);
+    void Z_ERROR(const CircuitInstruction &target_data);
+    void PAULI_CHANNEL_1(const CircuitInstruction &target_data);
+    void PAULI_CHANNEL_2(const CircuitInstruction &target_data);
+    void CORRELATED_ERROR(const CircuitInstruction &target_data);
+    void ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data);
+    void MPP(const CircuitInstruction &target_data);
 
     /// Returns the single-qubit stabilizer of a target or, if it is entangled, the identity operation.
     PauliString peek_bloch(uint32_t target) const;
@@ -214,11 +220,11 @@ struct TableauSimulator {
     int8_t peek_z(uint32_t target) const;
 
     /// Forces a desired X basis measurement result, or raises an exception if it was impossible.
-    void postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_x(SpanRef<const GateTarget> targets, bool desired_result);
     /// Forces a desired Y basis measurement result, or raises an exception if it was impossible.
-    void postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_y(SpanRef<const GateTarget> targets, bool desired_result);
     /// Forces a desired Z basis measurement result, or raises an exception if it was impossible.
-    void postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result);
+    void postselect_z(SpanRef<const GateTarget> targets, bool desired_result);
 
     /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
     void paulis(const PauliString &paulis);
@@ -256,19 +262,19 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_x(ConstPointerRange<GateTarget> targets);
+    void collapse_x(SpanRef<const GateTarget> targets);
 
     /// Collapses the given qubits into the Y basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_y(ConstPointerRange<GateTarget> targets);
+    void collapse_y(SpanRef<const GateTarget> targets);
 
     /// Collapses the given qubits into the Z basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_z(ConstPointerRange<GateTarget> targets);
+    void collapse_z(SpanRef<const GateTarget> targets);
 
     /// Completely isolates a qubit from the other qubits tracked by the simulator, so it can be safely discarded.
     ///
@@ -292,21 +298,21 @@ struct TableauSimulator {
     int8_t peek_observable_expectation(const stim::PauliString &observable) const;
 
    private:
-    void noisify_new_measurements(const OperationData &target_data);
+    void noisify_new_measurements(const CircuitInstruction &target_data);
     void postselect_helper(
-        ConstPointerRange<GateTarget> targets,
+        SpanRef<const GateTarget> targets,
         bool desired_result,
-        void (TableauSimulator::*basis_change)(const OperationData &),
+        GateType basis_change_gate,
         const char *false_name,
         const char *true_name);
 };
 
 template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>
 void perform_pauli_errors_via_correlated_errors(
-    const OperationData &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
+    const CircuitInstruction &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
     double target_p{};
     GateTarget target_t[Q];
-    OperationData data{{&target_p}, {&target_t[0], &target_t[Q]}};
+    CircuitInstruction data{GateType::E, {&target_p}, {&target_t[0], &target_t[Q]}};
     for (size_t k = 0; k < target_data.targets.size(); k += Q) {
         reset_flag();
         double used_probability = 0;

@@ -1411,12 +1411,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
                 }
                 result = self.value.ref().after(pybind11::cast<Circuit>(operation));
-            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+            } else if (pybind11::isinstance<PyCircuitInstruction>(operation)) {
                 if (!targets.is_none()) {
                     throw std::invalid_argument(
                         "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
-                result = self.value.ref().after(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+                result = self.value.ref().after(pybind11::cast<PyCircuitInstruction>(operation).as_operation_ref());
             } else if (pybind11::isinstance<Tableau>(operation)) {
                 if (targets.is_none()) {
                     throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
@@ -1481,12 +1481,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
                 }
                 result = self.value.ref().before(pybind11::cast<Circuit>(operation));
-            } else if (pybind11::isinstance<CircuitInstruction>(operation)) {
+            } else if (pybind11::isinstance<PyCircuitInstruction>(operation)) {
                 if (!targets.is_none()) {
                     throw std::invalid_argument(
                         "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
-                result = self.value.ref().before(pybind11::cast<CircuitInstruction>(operation).as_operation_ref());
+                result = self.value.ref().before(pybind11::cast<PyCircuitInstruction>(operation).as_operation_ref());
             } else if (pybind11::isinstance<Tableau>(operation)) {
                 if (targets.is_none()) {
                     throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");

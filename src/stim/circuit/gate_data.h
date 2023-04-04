@@ -33,18 +33,13 @@
 
 namespace stim {
 
-struct TableauSimulator;
-struct SparseUnsignedRevFrameTracker;
-struct FrameSimulator;
-struct OperationData;
+struct CircuitInstruction;
 struct Tableau;
-struct Operation;
-struct ErrorAnalyzer;
 
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
-inline uint8_t gate_name_to_id(const char *v, size_t n) {
+constexpr inline uint8_t gate_name_to_hash(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
@@ -76,12 +71,88 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
     return result;
 }
 
-inline uint8_t gate_name_to_id(const char *c) {
-    return gate_name_to_id(c, strlen(c));
+constexpr inline uint8_t gate_name_to_hash(const char *c) {
+    return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
+enum GateType : uint8_t {
+    // Annotations
+    DETECTOR = gate_name_to_hash("DETECTOR"),
+    OBSERVABLE_INCLUDE = gate_name_to_hash("OBSERVABLE_INCLUDE"),
+    TICK = gate_name_to_hash("TICK"),
+    QUBIT_COORDS = gate_name_to_hash("QUBIT_COORDS"),
+    SHIFT_COORDS = gate_name_to_hash("SHIFT_COORDS"),
+    // Control flow
+    REPEAT = gate_name_to_hash("REPEAT"),
+    // Collapsing gates
+    MX = gate_name_to_hash("MX"),
+    MY = gate_name_to_hash("MY"),
+    M = gate_name_to_hash("M"),  // alias when parsing: MZ
+    MRX = gate_name_to_hash("MRX"),
+    MRY = gate_name_to_hash("MRY"),
+    MR = gate_name_to_hash("MR"),  // alias when parsing: MRZ
+    RX = gate_name_to_hash("RX"),
+    RY = gate_name_to_hash("RY"),
+    R = gate_name_to_hash("R"),  // alias when parsing: RZ
+    MPP = gate_name_to_hash("MPP"),
+    // Controlled gates
+    XCX = gate_name_to_hash("XCX"),
+    XCY = gate_name_to_hash("XCY"),
+    XCZ = gate_name_to_hash("XCZ"),
+    YCX = gate_name_to_hash("YCX"),
+    YCY = gate_name_to_hash("YCY"),
+    YCZ = gate_name_to_hash("YCZ"),
+    CX = gate_name_to_hash("CX"),  // alias when parsing: CNOT, ZCX
+    CY = gate_name_to_hash("CY"),  // alias when parsing: ZCY
+    CZ = gate_name_to_hash("CZ"),  // alias when parsing: ZCZ
+    // Hadamard-like gates
+    H = gate_name_to_hash("H"),  // alias when parsing: H_XZ
+    H_XY = gate_name_to_hash("H_XY"),
+    H_YZ = gate_name_to_hash("H_YZ"),
+    // Noise channels
+    DEPOLARIZE1 = gate_name_to_hash("DEPOLARIZE1"),
+    DEPOLARIZE2 = gate_name_to_hash("DEPOLARIZE2"),
+    X_ERROR = gate_name_to_hash("X_ERROR"),
+    Y_ERROR = gate_name_to_hash("Y_ERROR"),
+    Z_ERROR = gate_name_to_hash("Z_ERROR"),
+    PAULI_CHANNEL_1 = gate_name_to_hash("PAULI_CHANNEL_1"),
+    PAULI_CHANNEL_2 = gate_name_to_hash("PAULI_CHANNEL_2"),
+    E = gate_name_to_hash("E"),  // alias when parsing: CORRELATED_ERROR
+    ELSE_CORRELATED_ERROR = gate_name_to_hash("ELSE_CORRELATED_ERROR"),
+    // Pauli gates
+    I = gate_name_to_hash("I"),
+    X = gate_name_to_hash("X"),
+    Y = gate_name_to_hash("Y"),
+    Z = gate_name_to_hash("Z"),
+    // Period 3 gates
+    C_XYZ = gate_name_to_hash("C_XYZ"),
+    C_ZYX = gate_name_to_hash("C_ZYX"),
+    // Period 4 gates
+    SQRT_X = gate_name_to_hash("SQRT_X"),
+    SQRT_X_DAG = gate_name_to_hash("SQRT_X_DAG"),
+    SQRT_Y = gate_name_to_hash("SQRT_Y"),
+    SQRT_Y_DAG = gate_name_to_hash("SQRT_Y_DAG"),
+    S = gate_name_to_hash("S"),          // alias when parsing: SQRT_Z
+    S_DAG = gate_name_to_hash("S_DAG"),  // alias when parsing: SQRT_Z_DAG
+    // Pauli product gates
+    SQRT_XX = gate_name_to_hash("SQRT_XX"),
+    SQRT_XX_DAG = gate_name_to_hash("SQRT_XX_DAG"),
+    SQRT_YY = gate_name_to_hash("SQRT_YY"),
+    SQRT_YY_DAG = gate_name_to_hash("SQRT_YY_DAG"),
+    SQRT_ZZ = gate_name_to_hash("SQRT_ZZ"),
+    SQRT_ZZ_DAG = gate_name_to_hash("SQRT_ZZ_DAG"),
+    // Swap gates
+    SWAP = gate_name_to_hash("SWAP"),
+    ISWAP = gate_name_to_hash("ISWAP"),
+    CXSWAP = gate_name_to_hash("CXSWAP"),
+    SWAPCX = gate_name_to_hash("SWAPCX"),
+    ISWAP_DAG = gate_name_to_hash("ISWAP_DAG"),
+};
+
 enum GateFlags : uint16_t {
-    GATE_NO_FLAGS = 0,
+    // All gates must have at least one flag set.
+    NO_GATE_FLAG = 0,
+
     // Indicates whether unitary and tableau data is available for the gate, so it can be tested more easily.
     GATE_IS_UNITARY = 1 << 0,
     // Determines whether or not the gate is omitted when computing a reference sample.
@@ -138,26 +209,19 @@ struct ExtraGateData {
 
 struct Gate {
     const char *name;
-    void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
-    void (FrameSimulator::*frame_simulator_function)(const OperationData &);
-    void (ErrorAnalyzer::*reverse_error_analyzer_function)(const OperationData &);
-    void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &);
     ExtraGateData (*extra_data_func)(void);
     GateFlags flags;
     uint8_t arg_count;
     uint8_t name_len;
-    uint8_t id;
-    uint8_t best_candidate_inverse_id;
+    GateType id;
+    GateType best_candidate_inverse_id;
 
     Gate();
     Gate(
         const char *name,
-        const char *best_inverse_name,
+        GateType gate_id,
+        GateType best_inverse_gate,
         uint8_t arg_count,
-        void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
-        void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-        void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
-        void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &),
         GateFlags flags,
         ExtraGateData (*extra_data_func)(void));
 
@@ -268,16 +332,16 @@ struct GateDataMap {
     std::array<Gate, 256> items;
     GateDataMap();
 
-    std::vector<Gate> gates() const;
+    std::vector<Gate> gates(bool include_aliases = false) const;
 
     inline const Gate &at(const char *text, size_t text_len) const {
-        uint8_t h = gate_name_to_id(text, text_len);
+        uint8_t h = gate_name_to_hash(text, text_len);
         const Gate &gate = items[h];
         if (_case_insensitive_mismatch(text, text_len, gate.name, gate.name_len)) {
             throw std::out_of_range("Gate not found: '" + std::string(text, text_len) + "'");
         }
         // Canonicalize.
-        return items[gate.id];
+        return items[static_cast<uint8_t>(gate.id)];
     }
 
     inline const Gate &at(const char *text) const {
@@ -293,7 +357,7 @@ struct GateDataMap {
     }
 
     inline bool has(const std::string &text) const {
-        uint8_t h = gate_name_to_id(text.data(), text.size());
+        uint8_t h = gate_name_to_hash(text.data(), text.size());
         const Gate &gate = items[h];
         return !_case_insensitive_mismatch(text.data(), text.size(), gate.name, gate.name_len);
     }
@@ -302,11 +366,13 @@ struct GateDataMap {
 extern const GateDataMap GATE_DATA;
 
 void decompose_mpp_operation(
-    const OperationData &target_data,
+    const CircuitInstruction &target_data,
     size_t num_qubits,
     const std::function<void(
-        const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
-        &callback);
+        const CircuitInstruction &h_xz,
+        const CircuitInstruction &h_yz,
+        const CircuitInstruction &cnot,
+        const CircuitInstruction &meas)> &callback);
 
 }  // namespace stim
 
