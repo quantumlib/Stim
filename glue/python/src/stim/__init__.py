@@ -6,13 +6,28 @@
 # compatible instructions. Importing a different one can result in runtime segfaults that crash the python interpreter.
 
 import stim._detect_machine_architecture as _tmp
+import os
 
+# Autodetec arch
 _tmp = _tmp._UNSTABLE_detect_march()
 # NOTE: avx2 disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-# if _tmp == 'avx2':
-#     from stim._stim_avx2 import *
-#     from stim._stim_avx2 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
-if _tmp == 'avx2' or _tmp == 'sse2':
+if _tmp == "avx2" or _tmp == "avx512":
+    _tmp = "sse2"
+# Or enforce with environment variable STIM_ARCH
+if "STIM_ARCH" in os.environ:
+    _tmp = os.environ["STIM_ARCH"].lower()
+    if _tmp not in ['avx512', 'avx2', 'sse2', 'polyfill']:
+        print("Warning! STIM_ARCH is defined but is not one of the expected Stim architecture. Please select either avx512, avx2, ss2 or polyfill")
+        exit(1)
+
+# Load arch
+if _tmp == 'avx512':
+    from stim._stim_avx512 import *
+    from stim._stim_avx512 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
+elif _tmp == 'avx2':
+    from stim._stim_avx2 import *
+    from stim._stim_avx2 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
+elif _tmp == 'sse2':
     from stim._stim_sse2 import *
     from stim._stim_sse2 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
 else:

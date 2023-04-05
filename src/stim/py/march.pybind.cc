@@ -37,6 +37,12 @@ std::string detect_march() {
     cpuid(regs, INFO_HIGHEST_FUNCTION_PARAMETER);
     auto max_info_param = regs[EAX];
 
+#if defined(__x86_64__)   
+    if (__builtin_cpu_supports("avx512f")) {
+        return "avx512";
+    }
+#endif
+
     if (max_info_param >= INFO_EXTENDED_FEATURES) {
         cpuid(regs, INFO_EXTENDED_FEATURES);
         if (regs[EBX] & avx2_bit_in_ebx) {

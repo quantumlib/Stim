@@ -36,7 +36,16 @@ struct bitword;
 
 }  // namespace stim
 
-#if __AVX2__
+
+#if __AVX512__
+#include "stim/mem/simd_word_128_sse.h"
+#include "stim/mem/simd_word_256_avx.h"
+#include "stim/mem/simd_word_512_avx512.h"
+#include "stim/mem/simd_word_64_std.h"
+namespace stim {
+constexpr size_t MAX_BITWORD_WIDTH = 512;
+}  // namespace stim
+#elif __AVX2__
 #include "stim/mem/simd_word_128_sse.h"
 #include "stim/mem/simd_word_256_avx.h"
 #include "stim/mem/simd_word_64_std.h"

@@ -33,6 +33,7 @@ if sys.platform.startswith('win'):
         '/O2',
         f'/DVERSION_INFO={version}',
     ]
+    arch_sse = ['/arch:AVX512']
     arch_avx = ['/arch:AVX2']
     arch_sse = ['/arch:SSE2']
     arch_basic = []
@@ -44,6 +45,7 @@ else:
         '-g0',
         f'-DVERSION_INFO={version}',
     ]
+    arch_avx512 = ['-mavx512f']
     arch_avx = ['-mavx2']
     arch_sse = ['-msse2', '-mno-avx2']
     arch_basic = []
@@ -81,18 +83,29 @@ stim_sse2 = Extension(
     ],
 )
 
-# NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-# stim_avx2 = Extension(
-#     'stim._stim_avx2',
-#     sources=RELEVANT_SOURCE_FILES,
-#     include_dirs=[pybind11.get_include(), "src"],
-#     language='c++',
-#     extra_compile_args=[
-#         *common_compile_args,
-#         *arch_avx,
-#         '-DSTIM_PYBIND11_MODULE_NAME=_stim_avx2',
-#     ],
-# )
+stim_avx2 = Extension(
+    'stim._stim_avx2',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        *arch_avx,
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_avx2',
+    ],
+)
+
+stim_avx512 = Extension(
+    'stim._stim_avx512',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        *arch_avx512,
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_avx512',
+    ],
+)
 
 with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
@@ -111,8 +124,8 @@ setup(
         stim_detect_machine_architecture,
         stim_polyfill,
         stim_sse2,
-        # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-        # stim_avx2,
+        stim_avx2,
+        stim_avx512,
     ],
     python_requires='>=3.6.0',
     packages=['stim'],
