@@ -20,8 +20,7 @@
 using namespace stim;
 
 TEST(command_m2d, m2d) {
-    RaiiTempNamedFile tmp;
-    tmp.write_contents(R"CIRCUIT(
+    RaiiTempNamedFile tmp(R"CIRCUIT(
         X 0
         M 0 1
         DETECTOR rec[-2]
@@ -63,8 +62,7 @@ shot D0 D1
 }
 
 TEST(command_m2d, m2d_without_feedback) {
-    RaiiTempNamedFile tmp;
-    tmp.write_contents(R"CIRCUIT(
+    RaiiTempNamedFile tmp(R"CIRCUIT(
         CX 0 2 1 2
         M 2
         CX rec[-1] 2
@@ -119,4 +117,39 @@ shot D2 D3
 shot D3
 shot D3 L0
             )output"));
+}
+
+TEST(command_m2d, m2d_obs_size_misalign_1_obs) {
+    RaiiTempNamedFile tmp_circuit(R"CIRCUIT(
+        M 0
+        REPEAT 1024 {
+            DETECTOR rec[-1]
+        }
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )CIRCUIT");
+    RaiiTempNamedFile tmp_obs;
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()}, "0\n")),
+        trim(std::string(1024, '0') + "\n"));
+    ASSERT_EQ(tmp_obs.read_contents(), "0\n");
+}
+
+TEST(command_m2d, m2d_obs_size_misalign_11_obs) {
+    RaiiTempNamedFile tmp_circuit(R"CIRCUIT(
+        M 0
+        REPEAT 1024 {
+            DETECTOR rec[-1]
+        }
+        OBSERVABLE_INCLUDE(10) rec[-1]
+    )CIRCUIT");
+    RaiiTempNamedFile tmp_obs;
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()},
+            "0\n")),
+        trim(std::string(1024, '0') + "\n"));
+    ASSERT_EQ(tmp_obs.read_contents(), "00000000000\n");
 }

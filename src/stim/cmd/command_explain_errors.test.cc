@@ -22,8 +22,7 @@ using namespace stim;
 TEST(command_explain_errors, explain_errors) {
     ASSERT_EQ(run_captured_stim_main({"explain_errors"}, ""), "");
 
-    RaiiTempNamedFile tmp;
-    tmp.write_contents("error(1) D0\n");
+    RaiiTempNamedFile tmp("error(1) D0\n");
 
     ASSERT_EQ(
         trim(run_captured_stim_main({"explain_errors", "--dem_filter", tmp.path.data()}, R"input(

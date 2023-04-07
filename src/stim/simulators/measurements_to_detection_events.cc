@@ -198,7 +198,8 @@ void stim::stream_measurements_to_detection_events_helper(
     size_t num_detectors,
     size_t num_qubits,
     size_t num_sweep_bits) {
-    size_t num_out_bits = num_detectors + num_observables * append_observables;
+    bool internally_append_observables = append_observables || obs_out != nullptr;
+    size_t num_out_bits_including_any_obs = num_detectors + num_observables * internally_append_observables;;
     size_t num_sweep_bits_available = optional_sweep_bits_in == nullptr ? 0 : num_sweep_bits;
     size_t num_buffered_shots = 1024;
 
@@ -216,8 +217,8 @@ void stim::stream_measurements_to_detection_events_helper(
 
     // Buffers and transposed buffers.
     simd_bit_table<MAX_BITWORD_WIDTH> measurements__minor_shot_index(num_measurements, num_buffered_shots);
-    simd_bit_table<MAX_BITWORD_WIDTH> out__minor_shot_index(num_out_bits, num_buffered_shots);
-    simd_bit_table<MAX_BITWORD_WIDTH> out__major_shot_index(num_buffered_shots, num_out_bits);
+    simd_bit_table<MAX_BITWORD_WIDTH> out__minor_shot_index(num_out_bits_including_any_obs, num_buffered_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> out__major_shot_index(num_buffered_shots, num_out_bits_including_any_obs);
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
     if (reader->expects_empty_serialized_data_for_each_shot()) {
         throw std::invalid_argument(
@@ -257,7 +258,7 @@ void stim::stream_measurements_to_detection_events_helper(
             out__minor_shot_index,
             noiseless_circuit,
             reference_sample,
-            append_observables || obs_out != nullptr,
+            internally_append_observables,
             num_measurements,
             num_detectors,
             num_observables,
