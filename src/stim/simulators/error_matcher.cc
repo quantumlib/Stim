@@ -143,7 +143,7 @@ void ErrorMatcher::err_pauli_channel_2(const CircuitInstruction &op) {
 
     // Buffers and pointers into them.
     std::array<GateTarget, 2> pair;
-    double p;
+    double p = 0;
     CircuitInstruction pair_effect = {GateType::E, &p, pair};
     CircuitInstruction first_effect = {GateType::E, &p, &pair[0]};
     CircuitInstruction second_effect = {GateType::E, &p, &pair[1]};
