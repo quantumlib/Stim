@@ -22,6 +22,9 @@
 
 namespace stim {
 
+/// Stores shot data sparsely, as a list of locations of 1 bits in the shot.
+///
+/// For contrast, dense storage would involve storing one bit for each bit in the shot.
 struct SparseShot {
     /// Indices of non-zero bits.
     std::vector<uint64_t> hits;

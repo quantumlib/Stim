@@ -18,8 +18,6 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
-
 using namespace stim;
 
 TEST(MeasureRecordBatch, basic_usage) {
@@ -73,4 +71,25 @@ TEST(MeasureRecordBatch, basic_usage) {
         ASSERT_EQ(getc(tmp), '\n');
     }
     ASSERT_EQ(getc(tmp), EOF);
+}
+
+TEST(MeasureRecordBatch, record_zero_result) {
+    MeasureRecordBatch r(5, 2);
+    ASSERT_EQ(r.stored, 0);
+    auto v = r.record_zero_result_to_edit();
+    v[2] = 1;
+    ASSERT_EQ(r.stored, 1);
+    ASSERT_EQ(r.storage[0][1], 0);
+    ASSERT_EQ(r.storage[0][2], 1);
+    ASSERT_EQ(r.storage[0][3], 0);
+    ASSERT_EQ(r.lookback(1)[1], 0);
+    ASSERT_EQ(r.lookback(1)[2], 1);
+
+    r.record_zero_result_to_edit()[3] = 4;
+    ASSERT_EQ(r.storage[0][1], 0);
+    ASSERT_EQ(r.storage[0][2], 1);
+    ASSERT_EQ(r.storage[0][3], 0);
+    ASSERT_EQ(r.storage[1][1], 0);
+    ASSERT_EQ(r.storage[1][2], 0);
+    ASSERT_EQ(r.storage[1][3], 1);
 }

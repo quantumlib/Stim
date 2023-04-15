@@ -22,7 +22,7 @@
 using namespace stim;
 
 TEST(FrameSimulator, get_set_frame) {
-    FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
+    FrameSimulator sim(6, 999, 0, 0, 4, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
@@ -38,7 +38,7 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
-    FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    FrameSimulator big_sim(501, 999, 0, 0, 1001, SHARED_TEST_RNG());
     big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
@@ -52,7 +52,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     size_t num_qubits = 500;
     size_t num_samples = 1000;
     size_t max_lookback = 10;
-    FrameSimulator sim(num_qubits, num_samples, max_lookback, SHARED_TEST_RNG());
+    FrameSimulator sim(num_qubits, max_lookback, 0, 0, num_samples, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<GateTarget> targets{{101}, {403}, {202}, {100}};
@@ -780,11 +780,11 @@ TEST(FrameSimulator, classical_controls) {
 }
 
 TEST(FrameSimulator, record_gets_trimmed) {
-    FrameSimulator sim(100, 768, 5, SHARED_TEST_RNG());
+    FrameSimulator sim(100, 5, 0, 0, 768, SHARED_TEST_RNG());
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
-        sim.measure_z(c.operations[0]);
+        sim.do_MZ(c.operations[0]);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<MAX_BITWORD_WIDTH>(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }

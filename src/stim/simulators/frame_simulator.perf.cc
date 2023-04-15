@@ -15,6 +15,8 @@
 #include "stim/simulators/frame_simulator.h"
 
 #include "stim/benchmark_util.perf.h"
+#include "stim/gen/circuit_gen_params.h"
+#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 
@@ -23,7 +25,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_samples = 1000;
     double probability = 0.001;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, SIZE_MAX, SIZE_MAX, 10, num_samples, rng);
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
@@ -31,7 +33,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     }
     CircuitInstruction op_data{GateType::DEPOLARIZE1, &probability, targets};
     benchmark_go([&]() {
-        sim.DEPOLARIZE1(op_data);
+        sim.do_DEPOLARIZE1(op_data);
     })
         .goal_millis(5)
         .show_rate("OpQubits", targets.size() * num_samples);
@@ -42,7 +44,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     size_t num_samples = 1000;
     double probability = 0.001;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, SIZE_MAX, SIZE_MAX, 10, num_samples, rng);
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
@@ -51,7 +53,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     CircuitInstruction op_data{GateType::DEPOLARIZE2, &probability, targets};
 
     benchmark_go([&]() {
-        sim.DEPOLARIZE2(op_data);
+        sim.do_DEPOLARIZE2(op_data);
     })
         .goal_millis(5)
         .show_rate("OpQubits", targets.size() * num_samples);
@@ -61,7 +63,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, SIZE_MAX, SIZE_MAX, 10, num_samples, rng);
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
@@ -70,7 +72,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     CircuitInstruction op_data{GateType::H, {}, targets};
 
     benchmark_go([&]() {
-        sim.H_XZ(op_data);
+        sim.do_H_XZ(op_data);
     })
         .goal_millis(2)
         .show_rate("OpQubits", targets.size() * num_samples);
@@ -80,7 +82,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, SIZE_MAX, SIZE_MAX, 10, num_samples, rng);
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
@@ -89,8 +91,30 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     CircuitInstruction op_data{GateType::CX, {}, targets};
 
     benchmark_go([&]() {
-        sim.ZCX(op_data);
+        sim.do_ZCX(op_data);
     })
         .goal_millis(2)
         .show_rate("OpQubits", targets.size() * num_samples);
+}
+
+BENCHMARK(FrameSimulator_surface_code_rotated_memory_z_d11_r100_batch1024) {
+    auto params = CircuitGenParameters(100, 11, "rotated_memory_z");
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    params.after_clifford_depolarization = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+
+    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
+    FrameSimulator sim(circuit.count_qubits(), SIZE_MAX, circuit.count_detectors(), circuit.count_observables(), 1024, rng);
+
+    benchmark_go([&]() {
+        sim.reset_all_and_run(circuit);
+    })
+        .goal_millis(5.1)
+        .show_rate("Shots", 1024)
+        .show_rate("Dets", circuit.count_detectors() * 1024);
+    sim.reset_all();
+    if (sim.obs_record[0].not_zero()) {
+        std::cerr << "data dependence";
+    }
 }

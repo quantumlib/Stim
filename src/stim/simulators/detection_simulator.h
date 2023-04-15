@@ -22,44 +22,34 @@
 #include "stim/circuit/circuit.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_bit_table.h"
+#include "stim/simulators/frame_simulator.h"
 
 namespace stim {
 
-/// Samples detection events from the circuit and returns them in a simd_bit_table.
+/// A convenience method for sampling detection events from the circuit.
+///
+/// This method assumes the circuit is small enough that it's reasonable to simply store the
+/// measurements and detection event data of all samples in memory simultaneously. It also
+/// assumes that it's' acceptable to create a fresh FrameSimulator with all its various
+/// buffers. To stream data, or to re-use a FrameSimulator, drive a FrameSimulator directly
+/// instead of using this method.
 ///
 /// Args:
 ///     circuit: The circuit to sample.
+///     circuit_det_stats: A precomputed value saying how many detectors and observables are
+///         in the circuit. The method could compute this on its own, but you need to know
+///         these numbers in order to understand the result so forcing it to be passed in
+///         avoids duplicate work.
 ///     num_shots: The number of samples to take.
-///     prepend_observables: Include the observables in the output, before the detectors.
-///     append_observables: Include the observables in the output, after the detectors.
 ///     rng: Random number generator to use.
 ///
 /// Returns:
-///     A simd_bit_table with detector/observable index as the major index and shot index as the minor index.
-simd_bit_table<MAX_BITWORD_WIDTH> detector_samples(
-    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng);
-
-/// Samples detection events from the circuit and returns them in a simd_bit_table.
-///
-/// This is a specialization of the method that takes pre-analyzed detector and observable data, so that it does not
-/// need to be recomputed repeatedly when taking multiple batches of shots.
-///
-/// Args:
-///     circuit: The circuit to sample.
-///     det_obs: Pre-analyzed detector and observable data for the circuit.
-///     num_shots: The number of samples to take.
-///     prepend_observables: Include the observables in the output, before the detectors.
-///     append_observables: Include the observables in the output, after the detectors.
-///     rng: Random number generator to use.
-///
-/// Returns:
-///     A simd_bit_table with detector/observable index as the major index and shot index as the minor index.
-simd_bit_table<MAX_BITWORD_WIDTH> detector_samples(
+///     A pair of simd_bit_tables. The first is the detection event data. The second is the
+///     observable data.
+std::pair<simd_bit_table<MAX_BITWORD_WIDTH>, simd_bit_table<MAX_BITWORD_WIDTH>> sample_detection_events_simple(
     const Circuit &circuit,
-    const DetectorsAndObservables &det_obs,
+    CircuitDetectorStats circuit_det_stats,
     size_t num_shots,
-    bool prepend_observables,
-    bool append_observables,
     std::mt19937_64 &rng);
 
 /// Samples detection events from the circuit and writes them to a file.

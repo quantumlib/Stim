@@ -62,21 +62,19 @@ void stim::measurements_to_detection_events_helper(
     // expected parity of detectors involving that measurement. This can vary from shot to shot.
     std::mt19937_64 rng1(0);
     std::mt19937_64 rng2(0);
-    FrameSimulator frame_sim(num_qubits, batch_size, num_measurements, rng1);
+    FrameSimulator frame_sim(num_qubits, num_measurements, 0, 0, batch_size, rng1);
     frame_sim.sweep_table = sweep_bits__minor_shot_index;
     frame_sim.guarantee_anticommutation_via_frame_randomization = false;
 
     uint64_t measure_count_so_far = 0;
     uint64_t detector_offset = 0;
-    const auto det_id = GateType::DETECTOR;
-    const auto obs_id = GateType::OBSERVABLE_INCLUDE;
     noiseless_circuit.for_each_operation([&](const CircuitInstruction &op) {
         uint64_t out_index;
-        if (op.gate_type == det_id) {
+        if (op.gate_type == GateType::DETECTOR) {
             // Detectors go into next slot.
             out_index = detector_offset;
             detector_offset++;
-        } else if (append_observables && op.gate_type == obs_id) {
+        } else if (append_observables && op.gate_type == GateType::OBSERVABLE_INCLUDE) {
             // Observables accumulate at end of output, if desired.
             assert(!op.args.empty());  // Circuit validation should guarantee this.
             out_index = num_detectors + (uint64_t)op.args[0];

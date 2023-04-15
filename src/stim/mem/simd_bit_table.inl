@@ -207,6 +207,19 @@ std::string simd_bit_table<W>::str() const {
 }
 
 template <size_t W>
+simd_bit_table<W> simd_bit_table<W>::concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) {
+    if (num_major_bits_padded() < n_first || second.num_major_bits_padded() < n_second || num_minor_bits_padded() != second.num_minor_bits_padded()) {
+        throw std::invalid_argument("Size mismatch");
+    }
+    simd_bit_table<W> result(n_first + n_second, num_minor_bits_padded());
+    auto n1 = n_first * num_minor_u8_padded();
+    auto n2 = n_second * num_minor_u8_padded();
+    memcpy(result.data.u8, data.u8, n1);
+    memcpy(result.data.u8 + n1, second.data.u8, n2);
+    return result;
+}
+
+template <size_t W>
 simd_bit_table<W> simd_bit_table<W>::from_text(const char *text, size_t min_rows, size_t min_cols) {
     std::vector<std::vector<bool>> lines;
     lines.push_back({});

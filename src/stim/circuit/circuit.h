@@ -99,6 +99,11 @@ struct CircuitInstruction {
     void validate() const;
 };
 
+struct CircuitDetectorStats {
+    uint64_t num_detectors;
+    uint64_t num_observables;
+};
+
 /// A description of a quantum computation.
 struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
@@ -122,6 +127,8 @@ struct Circuit {
     size_t max_lookback() const;
     // Returns one more than the largest `k` from any `sweep[k]` target.
     size_t count_sweep_bits() const;
+
+    CircuitDetectorStats compute_detector_stats() const;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -331,19 +338,6 @@ struct Circuit {
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
-
-/// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
-struct DetectorsAndObservables {
-    MonotonicBuffer<uint64_t> jagged_detector_data;
-    std::vector<SpanRef<uint64_t>> detectors;
-    std::vector<std::vector<uint64_t>> observables;
-    DetectorsAndObservables(const Circuit &circuit);
-
-    DetectorsAndObservables(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables &operator=(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables(const DetectorsAndObservables &other);
-    DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
-};
 
 template <typename SOURCE>
 inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {

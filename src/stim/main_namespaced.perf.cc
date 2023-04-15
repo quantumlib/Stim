@@ -74,7 +74,7 @@ BENCHMARK(main_sample1_tableau_rep_d1000_r100) {
         rewind(out);
         TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_B8, false, rng);
     })
-        .goal_millis(30)
+        .goal_millis(22)
         .show_rate("Samples", circuit.count_measurements());
 }
 
@@ -89,7 +89,7 @@ BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
     })
-        .goal_millis(16)
+        .goal_millis(9)
         .show_rate("Samples", circuit.count_measurements());
 }
 
@@ -104,7 +104,7 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
         rewind(out);
         detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
-        .goal_millis(20)
+        .goal_millis(11)
         .show_rate("Samples", circuit.count_measurements());
 }
 
@@ -119,7 +119,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
     })
-        .goal_millis(20)
+        .goal_millis(13)
         .show_rate("Samples", circuit.count_measurements());
 }
 
@@ -149,7 +149,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
         rewind(out);
         detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
-        .goal_millis(25)
+        .goal_millis(15)
         .show_rate("Samples", circuit.count_measurements());
 }
 

@@ -289,7 +289,7 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
 }
 
 TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
-    FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
+    FrameSimulator f(16, SIZE_MAX, 0, 0, 16, SHARED_TEST_RNG());
     ErrorAnalyzer e(100, 1, 16, 100, false, false, false, 0.0, false, true);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {

@@ -60,6 +60,14 @@ void MeasureRecordBatch::record_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> re
     unwritten++;
 }
 
+simd_bits_range_ref<MAX_BITWORD_WIDTH> MeasureRecordBatch::record_zero_result_to_edit() {
+    reserve_space_for_results(1);
+    storage[stored].clear();
+    stored++;
+    unwritten++;
+    return storage[stored - 1];
+}
+
 simd_bits_range_ref<MAX_BITWORD_WIDTH> MeasureRecordBatch::lookback(size_t lookback) const {
     if (lookback > stored) {
         throw std::out_of_range("Referred to a measurement record before the beginning of time.");

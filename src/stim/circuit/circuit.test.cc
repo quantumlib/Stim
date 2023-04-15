@@ -572,57 +572,36 @@ TEST(circuit, count_detectors_num_observables) {
     ASSERT_EQ(Circuit().count_detectors(), 0);
     ASSERT_EQ(Circuit().count_observables(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_detectors(),
-        1);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-        M 0 1 2
-        DETECTOR rec[-1]
-        OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_observables(),
-        6);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), 1);
+    ASSERT_EQ(c.count_observables(), 6);
+    ASSERT_EQ(c.compute_detector_stats().num_detectors, 1);
+    ASSERT_EQ(c.compute_detector_stats().num_observables, 6);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    c = Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 1000 {
             REPEAT 1000 {
                 REPEAT 1000 {
                     REPEAT 1000 {
                         DETECTOR rec[-1]
-                    }
-                }
-            }
-        }
-    )CIRCUIT")
-            .count_detectors(),
-        1000000000000ULL);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-        M 0 1
-        REPEAT 1000 {
-            REPEAT 1000 {
-                REPEAT 1000 {
-                    REPEAT 1000 {
                         OBSERVABLE_INCLUDE(2) rec[-1]
                     }
                 }
             }
         }
-    )CIRCUIT")
-            .count_observables(),
-        3);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), 1000000000000ULL);
+    ASSERT_EQ(c.count_observables(), 3);
+    ASSERT_EQ(c.compute_detector_stats().num_detectors, 1000000000000ULL);
+    ASSERT_EQ(c.compute_detector_stats().num_observables, 3);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    c = Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 999999 {
          REPEAT 999999 {
@@ -651,9 +630,11 @@ TEST(circuit, count_detectors_num_observables) {
           }
          }
         }
-    )CIRCUIT")
-            .count_detectors(),
-        UINT64_MAX);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), UINT64_MAX);
+    ASSERT_EQ(c.count_observables(), 0);
+    ASSERT_EQ(c.compute_detector_stats().num_detectors, UINT64_MAX);
+    ASSERT_EQ(c.compute_detector_stats().num_observables, 0);
 }
 
 TEST(circuit, max_lookback) {

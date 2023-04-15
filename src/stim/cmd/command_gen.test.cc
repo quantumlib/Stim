@@ -43,9 +43,10 @@ TEST(command_gen, no_noise_no_detections) {
                     continue;
                 }
                 CircuitGenParameters params(r, d, func.second.first);
-                auto samples =
-                    detector_samples(func.second.second(params).circuit, 256, false, true, SHARED_TEST_RNG());
-                EXPECT_FALSE(samples.data.not_zero())
+                auto circuit = func.second.second(params).circuit;
+                auto [det_samples, obs_samples] =
+                    sample_detection_events_simple(circuit, circuit.compute_detector_stats(), 256, SHARED_TEST_RNG());
+                EXPECT_FALSE(det_samples.data.not_zero() || obs_samples.data.not_zero())
                     << "d=" << d << ", r=" << r << ", task=" << func.second.first << ", func=" << func.first;
             }
         }
