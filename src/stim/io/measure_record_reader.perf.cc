@@ -77,53 +77,53 @@ void sparse_reader_benchmark(double goal_micros) {
 }
 
 BENCHMARK(read_01_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(80);
+    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(60);
 }
 BENCHMARK(read_01_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(57);
+    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(45);
 }
 
 BENCHMARK(read_b8_dense_per10) {
     dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(0.65);
 }
 BENCHMARK(read_b8_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(8);
+    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(6);
 }
 
 BENCHMARK(read_hits_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(22);
+    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(16);
 }
 BENCHMARK(read_hits_dense_per100) {
-    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(2.8);
+    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(2.1);
 }
 BENCHMARK(read_hits_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(25);
+    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(15);
 }
 BENCHMARK(read_hits_sparse_per100) {
-    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(3.4);
+    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(2.2);
 }
 
 BENCHMARK(read_dets_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(30);
+    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(23);
 }
 BENCHMARK(read_dets_dense_per100) {
-    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.6);
+    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.0);
 }
 BENCHMARK(read_dets_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(33);
+    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(23);
 }
 BENCHMARK(read_dets_sparse_per100) {
-    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.6);
+    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.0);
 }
 
 BENCHMARK(read_r8_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(6.3);
+    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(5);
 }
 BENCHMARK(read_r8_dense_per100) {
     dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_R8>(1.3);
 }
 BENCHMARK(read_r8_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(4.4);
+    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(3.5);
 }
 BENCHMARK(read_r8_sparse_per100) {
     sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_R8>(1.0);

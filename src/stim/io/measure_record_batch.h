@@ -62,6 +62,8 @@ struct MeasureRecordBatch {
     /// Returns:
     ///     A reference into the storage table, with the bit at offset k corresponding to the measurement from stream k.
     simd_bits_range_ref<MAX_BITWORD_WIDTH> lookback(size_t lookback) const;
+    /// Writes a zero'd result into the record and returns a reference to it to edit.
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> record_zero_result_to_edit();
     /// Xors a batch measurement result into pre-reserved noisy storage.
     void xor_record_reserved_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result);
     /// Appends a batch measurement result into storage.

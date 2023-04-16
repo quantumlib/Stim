@@ -18,8 +18,8 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 
@@ -30,11 +30,7 @@ CompiledMeasurementsToDetectionEventsConverter::CompiledMeasurementsToDetectionE
     simd_bits<MAX_BITWORD_WIDTH> ref_sample, Circuit circuit, bool skip_reference_sample)
     : skip_reference_sample(skip_reference_sample),
       ref_sample(ref_sample),
-      circuit_num_measurements(circuit.count_measurements()),
-      circuit_num_sweep_bits(circuit.count_sweep_bits()),
-      circuit_num_detectors(circuit.count_detectors()),
-      circuit_num_observables(circuit.count_observables()),
-      circuit_num_qubits(circuit.count_qubits()),
+      circuit_stats(circuit.compute_stats()),
       circuit(std::move(circuit)) {
 }
 std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
@@ -75,15 +71,11 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
         detections_out.f,
         format_out,
         circuit.aliased_noiseless_circuit(),
+        circuit_stats,
         append_observables,
         ref_sample,
         obs_out.f,
-        parsed_obs_out_format,
-        circuit_num_measurements,
-        circuit_num_observables,
-        circuit_num_detectors,
-        circuit_num_qubits,
-        circuit_num_sweep_bits);
+        parsed_obs_out_format);
 }
 
 pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
@@ -104,45 +96,43 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
     bool append_observables = pybind11::cast<bool>(append_observables_obj);
     size_t num_shots;
     simd_bit_table<MAX_BITWORD_WIDTH> measurements_minor_shot_index =
-        numpy_array_to_transposed_simd_table(measurements, circuit_num_measurements, &num_shots);
+        numpy_array_to_transposed_simd_table(measurements, circuit_stats.num_measurements, &num_shots);
 
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_bits_minor_shot_index{0, num_shots};
     if (!sweep_bits.is_none()) {
         size_t num_sweep_shots;
         sweep_bits_minor_shot_index =
-            numpy_array_to_transposed_simd_table(sweep_bits, circuit_num_sweep_bits, &num_sweep_shots);
+            numpy_array_to_transposed_simd_table(sweep_bits, circuit_stats.num_sweep_bits, &num_sweep_shots);
         if (num_shots != num_sweep_shots) {
             throw std::invalid_argument("Need sweep_bits.shape[0] == measurements.shape[0]");
         }
     }
 
     size_t num_intermediate_bits =
-        circuit_num_detectors + circuit_num_observables * (append_observables || separate_observables);
+        circuit_stats.num_detectors + circuit_stats.num_observables * (append_observables || separate_observables);
     simd_bit_table<MAX_BITWORD_WIDTH> out_detection_results_minor_shot_index(num_intermediate_bits, num_shots);
     stim::measurements_to_detection_events_helper(
         measurements_minor_shot_index,
         sweep_bits_minor_shot_index,
         out_detection_results_minor_shot_index,
         circuit.aliased_noiseless_circuit(),
+        circuit_stats,
         ref_sample,
-        append_observables || separate_observables,
-        circuit_num_measurements,
-        circuit_num_detectors,
-        circuit_num_observables,
-        circuit_num_qubits);
+        append_observables || separate_observables);
 
-    size_t num_output_bits = circuit_num_detectors + circuit_num_observables * append_observables;
+    size_t num_output_bits = circuit_stats.num_detectors + circuit_stats.num_observables * append_observables;
     pybind11::object obs_data = pybind11::none();
     if (separate_observables) {
-        simd_bit_table<MAX_BITWORD_WIDTH> obs_table(circuit_num_observables, num_shots);
-        for (size_t obs = 0; obs < circuit_num_observables; obs++) {
-            auto obs_slice = out_detection_results_minor_shot_index[circuit_num_detectors + obs];
+        simd_bit_table<MAX_BITWORD_WIDTH> obs_table(circuit_stats.num_observables, num_shots);
+        for (size_t obs = 0; obs < circuit_stats.num_observables; obs++) {
+            auto obs_slice = out_detection_results_minor_shot_index[circuit_stats.num_detectors + obs];
             obs_table[obs] = obs_slice;
             if (!append_observables) {
                 obs_slice.clear();
             }
         }
-        obs_data = transposed_simd_bit_table_to_numpy(obs_table, circuit_num_observables, num_shots, bit_pack_result);
+        obs_data =
+            transposed_simd_bit_table_to_numpy(obs_table, circuit_stats.num_observables, num_shots, bit_pack_result);
     }
 
     // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.

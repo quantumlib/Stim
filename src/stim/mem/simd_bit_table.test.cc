@@ -218,6 +218,29 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, slice_maj, {
     ASSERT_FALSE(s[10].not_zero());
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bit_table, from_concat_major, {
+    auto a = simd_bit_table<W>::from_text(R"TABLE(
+        000111
+        101011
+        111111
+        000000
+    )TABLE");
+    auto b = simd_bit_table<W>::from_text(R"TABLE(
+        100000
+        000001
+        000100
+    )TABLE");
+    ASSERT_EQ(a.concat_major(b, 4, 3), simd_bit_table<W>::from_text(R"TABLE(
+            000111
+            101011
+            111111
+            000000
+            100000
+            000001
+            000100
+        )TABLE"));
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bit_table, from_quadrants, {
     simd_bit_table<W> t(2, 2);
     simd_bit_table<W> z(2, 2);

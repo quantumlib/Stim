@@ -69,15 +69,11 @@ void stream_measurements_to_detection_events_helper(
     FILE *results_out,
     SampleFormat results_out_format,
     const Circuit &circuit,
+    CircuitStats circuit_stats,
     bool append_observables,
     simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample,
     FILE *obs_out,
-    SampleFormat obs_out_format,
-    size_t num_measurements,
-    size_t num_observables,
-    size_t num_detectors,
-    size_t num_qubits,
-    size_t num_sweep_bits);
+    SampleFormat obs_out_format);
 
 /// Converts measurement data into detection event data based on a circuit.
 ///
@@ -114,12 +110,9 @@ void measurements_to_detection_events_helper(
     const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
     simd_bit_table<MAX_BITWORD_WIDTH> &out_detection_results__minor_shot_index,
     const Circuit &noiseless_circuit,
+    CircuitStats circuit_stats,
     const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-    bool append_observables,
-    size_t num_measurements,
-    size_t num_detectors,
-    size_t num_observables,
-    size_t num_qubits);
+    bool append_observables);
 
 }  // namespace stim
 

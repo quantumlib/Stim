@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/simulators/detection_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;

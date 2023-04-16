@@ -221,44 +221,6 @@ void CircuitInstruction::validate() const {
     }
 }
 
-DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
-    uint64_t tick = 0;
-    auto resolve_into = [&](const CircuitInstruction &op, const std::function<void(uint64_t)> &func) {
-        for (auto qb : op.targets) {
-            uint64_t dt = qb.data ^ TARGET_RECORD_BIT;
-            if (!dt) {
-                throw std::invalid_argument("Record lookback can't be 0 (unspecified).");
-            }
-            if (dt > tick) {
-                throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
-            }
-            func(tick - dt);
-        }
-    };
-
-    circuit.for_each_operation([&](const CircuitInstruction &p) {
-        if (GATE_DATA.items[p.gate_type].flags & GATE_PRODUCES_NOISY_RESULTS) {
-            tick += p.count_measurement_results();
-        } else if (p.gate_type == GateType::DETECTOR) {
-            resolve_into(p, [&](uint64_t k) {
-                jagged_detector_data.append_tail(k);
-            });
-            detectors.push_back(jagged_detector_data.commit_tail());
-        } else if (p.gate_type == GateType::OBSERVABLE_INCLUDE) {
-            size_t obs = (size_t)p.args[0];
-            if (obs != p.args[0]) {
-                throw std::invalid_argument("Observable index must be an integer.");
-            }
-            while (observables.size() <= obs) {
-                observables.emplace_back();
-            }
-            resolve_into(p, [&](uint32_t k) {
-                observables[obs].push_back(k);
-            });
-        }
-    });
-}
-
 uint64_t CircuitInstruction::count_measurement_results() const {
     auto flags = GATE_DATA.items[gate_type].flags;
     if (!(flags & GATE_PRODUCES_NOISY_RESULTS)) {
@@ -873,56 +835,6 @@ Circuit::Circuit(const char *text) {
     append_from_text(text);
 }
 
-DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other) noexcept
-    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
-      detectors(std::move(other.detectors)),
-      observables(std::move(other.observables)) {
-    // Keep a local copy of the detector data.
-    for (SpanRef<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-}
-
-DetectorsAndObservables &DetectorsAndObservables::operator=(DetectorsAndObservables &&other) noexcept {
-    observables = std::move(other.observables);
-    detectors = std::move(other.detectors);
-
-    // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (SpanRef<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-
-    return *this;
-}
-
-DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &other)
-    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
-      detectors(other.detectors),
-      observables(other.observables) {
-    // Keep a local copy of the detector data.
-    for (SpanRef<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-}
-
-DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndObservables &other) {
-    if (this == &other) {
-        return *this;
-    }
-
-    observables = other.observables;
-    detectors = other.detectors;
-
-    // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (SpanRef<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-
-    return *this;
-}
-
 size_t Circuit::count_qubits() const {
     return (uint32_t)max_operation_property([](const CircuitInstruction &op) -> uint32_t {
         uint32_t r = 0;
@@ -996,6 +908,64 @@ size_t Circuit::count_sweep_bits() const {
         }
         return r;
     });
+}
+
+CircuitStats Circuit::compute_stats() const {
+    CircuitStats total;
+
+    for (const auto &op : operations) {
+        if (op.gate_type == REPEAT) {
+            // Recurse into blocks.
+            auto sub = op.repeat_block_body(*this).compute_stats();
+            auto reps = op.repeat_block_rep_count();
+            total.num_observables = std::max(total.num_observables, sub.num_observables);
+            total.num_qubits = std::max(total.num_qubits, sub.num_qubits);
+            total.max_lookback = std::max(total.max_lookback, sub.max_lookback);
+            total.num_sweep_bits = std::max(total.num_sweep_bits, sub.num_sweep_bits);
+            total.num_detectors = add_saturate(total.num_detectors, mul_saturate(sub.num_detectors, reps));
+            total.num_measurements = add_saturate(total.num_measurements, mul_saturate(sub.num_measurements, reps));
+            total.num_ticks = add_saturate(total.num_ticks, mul_saturate(sub.num_ticks, reps));
+            continue;
+        }
+
+        for (auto t : op.targets) {
+            auto v = t.data & TARGET_VALUE_MASK;
+            // Qubit counting.
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+                total.num_qubits = std::max(total.num_qubits, v + 1);
+            }
+            // Lookback counting.
+            if (t.data & TARGET_RECORD_BIT) {
+                total.max_lookback = std::max(total.max_lookback, v);
+            }
+            // Sweep bit counting.
+            if (t.data & TARGET_SWEEP_BIT) {
+                total.num_sweep_bits = std::max(total.num_sweep_bits, v + 1);
+            }
+        }
+
+        // Measurement counting.
+        total.num_measurements += op.count_measurement_results();
+
+        switch (op.gate_type) {
+            case GateType::DETECTOR:
+                // Detector counting.
+                total.num_detectors += total.num_detectors < UINT64_MAX;
+                break;
+            case GateType::OBSERVABLE_INCLUDE:
+                // Observable counting.
+                total.num_observables = std::max(total.num_observables, (uint64_t)op.args[0] + 1);
+                break;
+            case GateType::TICK:
+                // Tick counting.
+                total.num_ticks++;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return total;
 }
 
 Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
