@@ -140,12 +140,12 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     if (prepend_observables || append_observables) {
         if (prepend_observables) {
             assert(!append_observables);
-            out_concat_buf.overwrite_major_range_with(0, det_data, 0, circuit_stats.num_detectors);
-            out_concat_buf.overwrite_major_range_with(circuit_stats.num_detectors, obs_data, 0, circuit_stats.num_observables);
-        } else {
-            assert(append_observables);
             out_concat_buf.overwrite_major_range_with(circuit_stats.num_observables, det_data, 0, circuit_stats.num_detectors);
             out_concat_buf.overwrite_major_range_with(0, obs_data, 0, circuit_stats.num_observables);
+        } else {
+            assert(append_observables);
+            out_concat_buf.overwrite_major_range_with(0, det_data, 0, circuit_stats.num_detectors);
+            out_concat_buf.overwrite_major_range_with(circuit_stats.num_detectors, obs_data, 0, circuit_stats.num_observables);
         }
 
         char c1 = append_observables ? 'D' : 'L';
