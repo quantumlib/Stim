@@ -125,6 +125,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
 }
 
 BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r1000_stream) {
+    DebugForceResultStreamingRaii stream;
     size_t distance = 1000;
     size_t rounds = 1000;
     auto circuit = make_rep_code(distance, rounds);
@@ -156,6 +157,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
 }
 
 BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
+    DebugForceResultStreamingRaii stream;
     size_t distance = 1000;
     size_t rounds = 1000;
     auto circuit = make_rep_code(distance, rounds);
