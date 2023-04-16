@@ -66,6 +66,9 @@ struct simd_bit_table {
     ///     A simd_bit_table with cell contents corresponding to the text.
     static simd_bit_table from_text(const char *text, size_t min_rows = 0, size_t min_cols = 0);
 
+    /// Resizes the table. Doesn't clear to zero. Does nothing if already the target size.
+    void destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor);
+
     /// Equality.
     bool operator==(const simd_bit_table &other) const;
     /// Inequality.

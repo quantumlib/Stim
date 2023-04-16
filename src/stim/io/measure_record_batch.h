@@ -25,6 +25,7 @@ namespace stim {
 ///
 /// Results that have been written and are further back than `max_lookback` may be discarded from memory.
 struct MeasureRecordBatch {
+    size_t num_shots;
     /// How far back into the measurement record a circuit being simulated may look.
     /// Results younger than this cannot be discarded.
     size_t max_lookback;
@@ -74,6 +75,8 @@ struct MeasureRecordBatch {
     void reserve_space_for_results(size_t count);
     /// Resets the record to an empty state.
     void clear();
+
+    void destructive_resize(size_t new_num_shots, size_t new_max_lookback);
 };
 
 }  // namespace stim

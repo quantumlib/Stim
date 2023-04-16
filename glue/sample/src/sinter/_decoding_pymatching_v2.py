@@ -18,7 +18,12 @@ def decode_using_pymatching_v2(*,
             f.write(b'\0' * (num_obs * num_shots))
         return
 
-    result = pymatching._cpp_pymatching.main(command_line_args=[
+    cli_method = getattr(pymatching, 'cli')
+    if cli_method is None:
+        # Backwards compat for pymatching 2.0.0
+        cli_method = pymatching._cpp_pymatching.main
+
+    result = cli_method(command_line_args=[
         "predict",
         "--dem", str(dem_path),
         "--in", str(dets_b8_in_path),

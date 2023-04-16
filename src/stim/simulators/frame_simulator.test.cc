@@ -1439,3 +1439,16 @@ TEST(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data) {
                  .popcnt();
     ASSERT_EQ(n, 0);
 }
+
+TEST(FrameSimulator, reconfigure_for) {
+    auto circuit = Circuit(R"CIRCUIT(
+        X_ERROR(1) 0
+        M 0
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    FrameSimulator frame_sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
+    frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
+    frame_sim.reset_all_and_run(circuit);
+    ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
+}
