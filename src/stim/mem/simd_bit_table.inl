@@ -101,6 +101,13 @@ void exchange_low_indices(simd_bit_table<W> &table) {
 }
 
 template <size_t W>
+void simd_bit_table<W>::destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor) {
+    num_simd_words_minor = min_bits_to_num_simd_words<W>(new_min_bits_minor);
+    num_simd_words_major = min_bits_to_num_simd_words<W>(new_min_bits_major);
+    data.destructive_resize(num_simd_words_minor * num_simd_words_major * W * W);
+}
+
+template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 

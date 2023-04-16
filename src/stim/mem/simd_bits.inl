@@ -194,6 +194,14 @@ simd_bits<W> &simd_bits<W>::swap_with(simd_bits_range_ref<W> other) {
 }
 
 template <size_t W>
+void simd_bits<W>::destructive_resize(size_t new_min_bits) {
+    if (min_bits_to_num_bits_padded<W>(new_min_bits) == num_bits_padded()) {
+        return;
+    }
+    *this = std::move(simd_bits<W>(new_min_bits));
+}
+
+template <size_t W>
 size_t simd_bits<W>::popcnt() const {
     return simd_bits_range_ref<W>(*this).popcnt();
 }

@@ -19,6 +19,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "stim/simulators/frame_simulator.h"
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
@@ -28,6 +29,7 @@ struct CompiledDetectorSampler {
     stim::CircuitStats circuit_stats;
     stim::Circuit circuit;
     std::shared_ptr<std::mt19937_64> prng;
+    stim::FrameSimulator frame_sim;
 
     CompiledDetectorSampler() = delete;
     CompiledDetectorSampler(const CompiledDetectorSampler &) = delete;

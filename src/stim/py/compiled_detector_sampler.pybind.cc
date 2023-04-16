@@ -25,8 +25,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
-    : circuit_stats(circuit.compute_stats()), circuit(std::move(circuit)), prng(prng) {
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::shared_ptr<std::mt19937_64> init_prng)
+    : circuit_stats(init_circuit.compute_stats()), circuit(std::move(init_circuit)), prng(init_prng), frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, *prng) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -35,9 +35,14 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
         throw std::invalid_argument(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
-    auto [det_data, obs_data] = sample_batch_detection_events(circuit, num_shots, *prng);
-    size_t num_dets = circuit_stats.num_detectors;
-    size_t num_obs = circuit_stats.num_observables;
+
+    frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
+    frame_sim.reset_all_and_run(circuit);
+
+    const auto &det_data = frame_sim.det_record.storage;
+    const auto &obs_data = frame_sim.obs_record;
+    uint64_t num_dets = circuit_stats.num_detectors;
+    uint64_t num_obs = circuit_stats.num_observables;
     if (separate_observables) {
         pybind11::object py_det_data = transposed_simd_bit_table_to_numpy(det_data, num_dets, num_shots, bit_packed);
         pybind11::object py_obs_data = transposed_simd_bit_table_to_numpy(obs_data, num_obs, num_shots, bit_packed);
@@ -45,15 +50,16 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
     }
 
     size_t num_concat = circuit_stats.num_detectors;
+    simd_bit_table<MAX_BITWORD_WIDTH> concat_data = det_data;
     if (append_observables) {
-        det_data = det_data.concat_major(obs_data, num_concat, circuit_stats.num_observables);
+        concat_data = concat_data.concat_major(obs_data, num_concat, circuit_stats.num_observables);
         num_concat += circuit_stats.num_observables;
     }
     if (prepend_observables) {
-        det_data = obs_data.concat_major(det_data, circuit_stats.num_observables, num_concat);
+        concat_data = obs_data.concat_major(concat_data, circuit_stats.num_observables, num_concat);
         num_concat += circuit_stats.num_observables;
     }
-    return transposed_simd_bit_table_to_numpy(det_data, num_concat, num_shots, bit_packed);
+    return transposed_simd_bit_table_to_numpy(concat_data, num_concat, num_shots, bit_packed);
 }
 
 void CompiledDetectorSampler::sample_write(

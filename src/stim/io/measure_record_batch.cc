@@ -24,7 +24,7 @@
 using namespace stim;
 
 MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
-    : max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
+    : num_shots(num_shots), max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
     for (size_t k = 0; k < num_shots; k++) {
         shot_mask[k] = true;
     }
@@ -134,4 +134,18 @@ void MeasureRecordBatch::final_write_unwritten_results_to(
 void MeasureRecordBatch::clear() {
     stored = 0;
     unwritten = 0;
+}
+void MeasureRecordBatch::destructive_resize(size_t new_num_shots, size_t new_max_lookback) {
+    unwritten = 0;
+    stored = 0;
+    written = 0;
+    max_lookback = new_max_lookback;
+    if (new_num_shots != num_shots) {
+        num_shots = new_num_shots;
+        shot_mask = simd_bits<MAX_BITWORD_WIDTH>(num_shots);
+        for (size_t k = 0; k < num_shots; k++) {
+            shot_mask[k] = true;
+        }
+        storage.destructive_resize(1, num_shots);
+    }
 }

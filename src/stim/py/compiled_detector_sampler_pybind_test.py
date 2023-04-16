@@ -19,18 +19,31 @@ import numpy as np
 import stim
 
 
+def test_compiled_detector_sampler_trivial():
+    c = stim.Circuit("""
+        X_ERROR(1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    np.testing.assert_array_equal(
+        c.compile_detector_sampler().sample(shots=2),
+        np.array([
+            [1],
+            [1],
+        ], dtype=np.bool_))
+
+
 def test_compiled_detector_sampler_sample():
-    c = stim.Circuit()
-    c.append_operation("X_ERROR", [0], 1)
-    c.append_operation("M", [0, 1, 2])
-    c.append_operation("DETECTOR", [stim.target_rec(-3), stim.target_rec(-2)])
-    c.append_operation("DETECTOR", [stim.target_rec(-3), stim.target_rec(-1)])
-    c.append_operation("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-    c.append_from_stim_program_text("""
+    c = stim.Circuit("""
+        X_ERROR(1) 0
+        M 0 1 2
+        DETECTOR rec[-3] rec[-2]
+        DETECTOR rec[-3] rec[-1]
+        DETECTOR rec[-1] rec[-2]
         OBSERVABLE_INCLUDE(0) rec[-3]
         OBSERVABLE_INCLUDE(3) rec[-2] rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-2]
     """)
-    c.append_operation("OBSERVABLE_INCLUDE", [stim.target_rec(-2)], 0)
     np.testing.assert_array_equal(
         c.compile_detector_sampler().sample(5),
         np.array([
@@ -39,7 +52,7 @@ def test_compiled_detector_sampler_sample():
             [1, 1, 0],
             [1, 1, 0],
             [1, 1, 0],
-        ], dtype=np.uint8))
+        ], dtype=np.bool_))
     np.testing.assert_array_equal(
         c.compile_detector_sampler().sample(5, prepend_observables=True),
         np.array([
@@ -48,7 +61,7 @@ def test_compiled_detector_sampler_sample():
             [1, 0, 0, 0, 1, 1, 0],
             [1, 0, 0, 0, 1, 1, 0],
             [1, 0, 0, 0, 1, 1, 0],
-        ], dtype=np.uint8))
+        ], dtype=np.bool_))
     np.testing.assert_array_equal(
         c.compile_detector_sampler().sample(5, append_observables=True),
         np.array([
@@ -57,7 +70,7 @@ def test_compiled_detector_sampler_sample():
             [1, 1, 0, 1, 0, 0, 0],
             [1, 1, 0, 1, 0, 0, 0],
             [1, 1, 0, 1, 0, 0, 0],
-        ], dtype=np.uint8))
+        ], dtype=np.bool_))
 
     dets, obs = c.compile_detector_sampler().sample(5, separate_observables=True)
     np.testing.assert_array_equal(
@@ -68,7 +81,7 @@ def test_compiled_detector_sampler_sample():
             [1, 1, 0],
             [1, 1, 0],
             [1, 1, 0],
-        ], dtype=np.uint8))
+        ], dtype=np.bool_))
     np.testing.assert_array_equal(
         obs,
         np.array([
@@ -106,7 +119,7 @@ def test_compiled_detector_sampler_sample():
             [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
             [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
             [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-        ], dtype=np.uint8))
+        ], dtype=np.bool_))
     np.testing.assert_array_equal(
         c.compile_detector_sampler().sample_bit_packed(5),
         np.array([

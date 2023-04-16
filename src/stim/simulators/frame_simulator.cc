@@ -50,27 +50,35 @@ inline void for_each_target_pair(FrameSimulator &sim, const CircuitInstruction &
 
 FrameSimulator::FrameSimulator(
     CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng)
-    : num_qubits(circuit_stats.num_qubits),
-      keeping_detection_data(mode == STREAM_DETECTIONS_TO_DISK || mode == STORE_DETECTIONS_TO_MEMORY),
-      batch_size(batch_size),
-      x_table(circuit_stats.num_qubits, batch_size),
-      z_table(circuit_stats.num_qubits, batch_size),
-      m_record(
-          batch_size,
-          mode == STORE_MEASUREMENTS_TO_MEMORY ? circuit_stats.num_measurements : circuit_stats.max_lookback),
-      det_record(
-          batch_size,
-          mode == STORE_DETECTIONS_TO_MEMORY  ? circuit_stats.num_detectors
-          : mode == STREAM_DETECTIONS_TO_DISK ? 1
-                                              : 0),
-      obs_record(
-          mode == STORE_DETECTIONS_TO_MEMORY || mode == STREAM_DETECTIONS_TO_DISK ? circuit_stats.num_observables : 0,
-          batch_size),
-      rng_buffer(batch_size),
-      tmp_storage(batch_size),
-      last_correlated_error_occurred(batch_size),
-      sweep_table(0, batch_size),
+    : num_qubits(0),
+      keeping_detection_data(false),
+      batch_size(0),
+      x_table(0, 0),
+      z_table(0, 0),
+      m_record(0, 0),
+      det_record(0, 0),
+      obs_record(0, 0),
+      rng_buffer(0),
+      tmp_storage(0),
+      last_correlated_error_occurred(0),
+      sweep_table(0, 0),
       rng(rng) {
+    configure_for(circuit_stats, mode, batch_size);
+}
+
+void FrameSimulator::configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size) {
+    batch_size = new_batch_size;
+    num_qubits = new_circuit_stats.num_qubits;
+    keeping_detection_data = new_mode == STREAM_DETECTIONS_TO_DISK || new_mode == STORE_DETECTIONS_TO_MEMORY;
+    x_table.destructive_resize(new_circuit_stats.num_qubits, batch_size);
+    z_table.destructive_resize(new_circuit_stats.num_qubits, batch_size);
+    m_record.destructive_resize(batch_size, new_mode == STORE_MEASUREMENTS_TO_MEMORY ? new_circuit_stats.num_measurements : new_circuit_stats.max_lookback);
+    det_record.destructive_resize(batch_size, new_mode == STORE_DETECTIONS_TO_MEMORY ? new_circuit_stats.num_detectors : new_mode == STREAM_DETECTIONS_TO_DISK ? 1 : 0),
+    obs_record.destructive_resize(new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STREAM_DETECTIONS_TO_DISK ? new_circuit_stats.num_observables : 0, batch_size);
+    rng_buffer.destructive_resize(batch_size);
+    tmp_storage.destructive_resize(batch_size);
+    last_correlated_error_occurred.destructive_resize(batch_size);
+    sweep_table.destructive_resize(0, batch_size);
 }
 
 void FrameSimulator::xor_control_bit_into(uint32_t control, simd_bits_range_ref<MAX_BITWORD_WIDTH> target) {

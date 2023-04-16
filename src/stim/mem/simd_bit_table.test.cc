@@ -289,3 +289,14 @@ TEST(simd_bit_table, lg) {
     ASSERT_EQ(lg(8), 3);
     ASSERT_EQ(lg(9), 3);
 }
+
+TEST_EACH_WORD_SIZE_W(simd_bit_table, destructive_resize, {
+    simd_bit_table<W> table = table.random(5, 7, SHARED_TEST_RNG());
+    const uint8_t *prev_pointer = table.data.u8;
+    table.destructive_resize(5, 7);
+    ASSERT_EQ(table.data.u8, prev_pointer);
+    table.destructive_resize(1025, 7);
+    ASSERT_NE(table.data.u8, prev_pointer);
+    ASSERT_GE(table.num_major_bits_padded(), 1025);
+    ASSERT_GE(table.num_minor_bits_padded(), 7);
+})
