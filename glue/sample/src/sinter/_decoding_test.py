@@ -234,6 +234,31 @@ def test_post_selection(decoder: str, required_import: str, force_streaming: Opt
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_observable_post_selection(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        postselected_observable_mask=np.array([1], dtype=np.uint8),
+        num_shots=10000,
+        decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    np.testing.assert_allclose(result.discards / result.shots, 0.2, atol=0.1)
+    np.testing.assert_allclose(result.errors / (result.shots - result.discards), 0.1, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
 def test_decode_fails_correctly(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
 

@@ -243,12 +243,12 @@ def _sample_decode_helper_using_memory(
 
         # Discard any shots where the decoder predicts a flipped postselected observable.
         if postselected_observable_mask is not None:
-            discarded_flags = np.any(postselected_observable_mask & predict_data, axis=1)
+            discarded_flags = np.any(postselected_observable_mask & (predict_data ^ obs_data), axis=1)
             cur_num_discarded_shots = np.count_nonzero(discarded_flags)
             if cur_num_discarded_shots:
                 out_num_discards += cur_num_discarded_shots
                 obs_data = obs_data[~discarded_flags, :]
-                predict_data = obs_data[~discarded_flags, :]
+                predict_data = predict_data[~discarded_flags, :]
 
         # Count how many mistakes the decoder made on non-discarded shots.
         out_num_errors += np.count_nonzero(np.any(obs_data ^ predict_data, axis=1))
