@@ -73,10 +73,10 @@ src/stim/search/hyper/graph.cc
 src/stim/search/hyper/node.cc
 src/stim/search/hyper/search_state.cc
 src/stim/simulators/dem_sampler.cc
-src/stim/simulators/detection_simulator.cc
 src/stim/simulators/error_analyzer.cc
 src/stim/simulators/error_matcher.cc
 src/stim/simulators/frame_simulator.cc
+src/stim/simulators/frame_simulator_util.cc
 src/stim/simulators/matched_error.cc
 src/stim/simulators/measurements_to_detection_events.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc

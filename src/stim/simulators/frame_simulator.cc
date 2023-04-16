@@ -30,8 +30,8 @@ DebugForceResultStreamingRaii::~DebugForceResultStreamingRaii() {
     force_stream_count--;
 }
 
-bool stim::should_use_streaming_instead_of_memory(uint64_t result_count) {
-    return force_stream_count > 0 || result_count > 100000000;
+bool stim::should_use_streaming_because_bit_count_is_too_large_to_store(uint64_t bit_count) {
+    return force_stream_count > 0 || bit_count > (uint64_t{1} << 32);
 }
 
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom FUNC to each.
@@ -48,19 +48,24 @@ inline void for_each_target_pair(FrameSimulator &sim, const CircuitInstruction &
     }
 }
 
-FrameSimulator::FrameSimulator(size_t num_qubits,
-                               size_t max_measurement_lookback,
-                               size_t max_detector_lookback,
-                               size_t num_tracked_observables,
-                               size_t batch_size,
-                               std::mt19937_64 &rng)
-    : num_qubits(num_qubits),
+FrameSimulator::FrameSimulator(
+    CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng)
+    : num_qubits(circuit_stats.num_qubits),
+      keeping_detection_data(mode == STREAM_DETECTIONS_TO_DISK || mode == STORE_DETECTIONS_TO_MEMORY),
       batch_size(batch_size),
-      x_table(num_qubits, batch_size),
-      z_table(num_qubits, batch_size),
-      m_record(batch_size, max_measurement_lookback),
-      det_record(batch_size, max_detector_lookback),
-      obs_record(num_tracked_observables, batch_size),
+      x_table(circuit_stats.num_qubits, batch_size),
+      z_table(circuit_stats.num_qubits, batch_size),
+      m_record(
+          batch_size,
+          mode == STORE_MEASUREMENTS_TO_MEMORY ? circuit_stats.num_measurements : circuit_stats.max_lookback),
+      det_record(
+          batch_size,
+          mode == STORE_DETECTIONS_TO_MEMORY  ? circuit_stats.num_detectors
+          : mode == STREAM_DETECTIONS_TO_DISK ? 1
+                                              : 0),
+      obs_record(
+          mode == STORE_DETECTIONS_TO_MEMORY || mode == STREAM_DETECTIONS_TO_DISK ? circuit_stats.num_observables : 0,
+          batch_size),
       rng_buffer(batch_size),
       tmp_storage(batch_size),
       last_correlated_error_occurred(batch_size),
@@ -143,23 +148,21 @@ void FrameSimulator::do_RX(const CircuitInstruction &target_data) {
     }
 }
 void FrameSimulator::do_DETECTOR(const CircuitInstruction &target_data) {
-    if (det_record.max_lookback == 0) {
-        return;
-    }
-    auto r = det_record.record_zero_result_to_edit();
-    for (auto t : target_data.targets) {
-        uint32_t lookback = t.data & TARGET_VALUE_MASK;
-        r ^= m_record.lookback(lookback);
+    if (keeping_detection_data) {
+        auto r = det_record.record_zero_result_to_edit();
+        for (auto t : target_data.targets) {
+            uint32_t lookback = t.data & TARGET_VALUE_MASK;
+            r ^= m_record.lookback(lookback);
+        }
     }
 }
 void FrameSimulator::do_OBSERVABLE_INCLUDE(const CircuitInstruction &target_data) {
-    if (obs_record.num_major_bits_padded() == 0) {
-        return;
-    }
-    auto r = obs_record[(size_t)target_data.args[0]];
-    for (auto t : target_data.targets) {
-        uint32_t lookback = t.data & TARGET_VALUE_MASK;
-        r ^= m_record.lookback(lookback);
+    if (keeping_detection_data) {
+        auto r = obs_record[(size_t)target_data.args[0]];
+        for (auto t : target_data.targets) {
+            uint32_t lookback = t.data & TARGET_VALUE_MASK;
+            r ^= m_record.lookback(lookback);
+        }
     }
 }
 
@@ -575,22 +578,6 @@ void FrameSimulator::do_PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
     last_correlated_error_occurred = tmp_storage;
 }
 
-simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample_flipped_measurements(
-    const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
-    FrameSimulator sim(circuit.count_qubits(), SIZE_MAX, 0, 0, num_samples, rng);
-    sim.reset_all_and_run(circuit);
-    return sim.m_record.storage;
-}
-
-simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample(
-    const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-    size_t num_samples,
-    std::mt19937_64 &rng) {
-    return transposed_vs_ref(
-        num_samples, FrameSimulator::sample_flipped_measurements(circuit, num_samples, rng), reference_sample);
-}
-
 void FrameSimulator::do_CORRELATED_ERROR(const CircuitInstruction &target_data) {
     last_correlated_error_occurred.clear();
     do_ELSE_CORRELATED_ERROR(target_data);
@@ -621,55 +608,6 @@ void FrameSimulator::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_d
     }
 }
 
-void sample_out_helper(
-    const Circuit &circuit,
-    FrameSimulator &sim,
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample,
-    size_t num_shots,
-    FILE *out,
-    SampleFormat format) {
-    sim.reset_all();
-
-    if (should_use_streaming_instead_of_memory(std::max(num_shots, size_t{256}) * circuit.count_measurements())) {
-        // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
-        MeasureRecordBatchWriter writer(out, num_shots, format);
-        circuit.for_each_operation([&](const CircuitInstruction &op) {
-            sim.do_gate(op);
-            sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
-        });
-        sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
-    } else {
-        // Small case. Just do everything in memory.
-        circuit.for_each_operation([&](const CircuitInstruction &op) {
-            sim.do_gate(op);
-        });
-        write_table_data(
-            out, num_shots, circuit.count_measurements(), ref_sample, sim.m_record.storage, format, 'M', 'M', 0);
-    }
-}
-
-void FrameSimulator::sample_out(
-    const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-    uint64_t num_shots,
-    FILE *out,
-    SampleFormat format,
-    std::mt19937_64 &rng) {
-    constexpr size_t GOOD_BLOCK_SIZE = 768;
-    size_t num_qubits = circuit.count_qubits();
-    size_t max_lookback = circuit.max_lookback();
-    if (num_shots >= GOOD_BLOCK_SIZE) {
-        auto sim = FrameSimulator(num_qubits, max_lookback, 0, 0, GOOD_BLOCK_SIZE, rng);
-        while (num_shots > GOOD_BLOCK_SIZE) {
-            sample_out_helper(circuit, sim, reference_sample, GOOD_BLOCK_SIZE, out, format);
-            num_shots -= GOOD_BLOCK_SIZE;
-        }
-    }
-    if (num_shots) {
-        auto sim = FrameSimulator(num_qubits, max_lookback, 0, 0, num_shots, rng);
-        sample_out_helper(circuit, sim, reference_sample, num_shots, out, format);
-    }
-}
 void FrameSimulator::do_gate(const CircuitInstruction &data) {
     switch (data.gate_type) {
         case GateType::DETECTOR:

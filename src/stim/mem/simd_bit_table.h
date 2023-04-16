@@ -106,7 +106,7 @@ struct simd_bit_table {
     simd_bit_table slice_maj(size_t maj_start_bit, size_t maj_stop_bit) const;
 
     /// Concatenates the contents of the two tables, along the major axis.
-    simd_bit_table<W> concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second);
+    simd_bit_table<W> concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const;
 
     /// Sets all bits in the table to zero.
     void clear();

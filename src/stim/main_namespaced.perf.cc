@@ -15,8 +15,8 @@
 #include "stim/main_namespaced.h"
 
 #include "stim/benchmark_util.perf.h"
-#include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
@@ -87,7 +87,7 @@ BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
-        FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
+        sample_batch_measurements_writing_results_to_disk(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
     })
         .goal_millis(9)
         .show_rate("Samples", circuit.count_measurements());
@@ -102,7 +102,8 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     simd_bits<MAX_BITWORD_WIDTH> ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+        sample_batch_detection_events_writing_results_to_disk(
+            circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(11)
         .show_rate("Samples", circuit.count_measurements());
@@ -117,7 +118,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
-        FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
+        sample_batch_measurements_writing_results_to_disk(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
     })
         .goal_millis(13)
         .show_rate("Samples", circuit.count_measurements());
@@ -132,7 +133,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r1000_stream) {
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
-        FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
+        sample_batch_measurements_writing_results_to_disk(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
     })
         .goal_millis(360)
         .show_rate("Samples", circuit.count_measurements());
@@ -147,7 +148,8 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+        sample_batch_detection_events_writing_results_to_disk(
+            circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(15)
         .show_rate("Samples", circuit.count_measurements());
@@ -162,7 +164,8 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+        sample_batch_detection_events_writing_results_to_disk(
+            circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(360)
         .show_rate("Samples", circuit.count_measurements());

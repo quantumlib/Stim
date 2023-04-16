@@ -25,6 +25,9 @@ namespace stim {
 /// Stores shot data sparsely, as a list of locations of 1 bits in the shot.
 ///
 /// For contrast, dense storage would involve storing one bit for each bit in the shot.
+///
+/// If this shot is detection event data, the observable data is still stored densely in
+/// the obs_mask field.
 struct SparseShot {
     /// Indices of non-zero bits.
     std::vector<uint64_t> hits;

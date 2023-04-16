@@ -472,8 +472,7 @@ TEST(circuit, for_each_operation_reverse) {
 TEST(circuit, count_qubits) {
     ASSERT_EQ(Circuit().count_qubits(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -483,9 +482,9 @@ TEST(circuit, count_qubits) {
                 M 2
             }
         }
-    )CIRCUIT")
-            .count_qubits(),
-        3);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_qubits(), 3);
+    ASSERT_EQ(c.compute_stats().num_qubits, 3);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -546,8 +545,7 @@ TEST(circuit, count_sweep_bits) {
         101);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 999999 {
@@ -563,9 +561,9 @@ TEST(circuit, count_sweep_bits) {
                 }
             }
         }
-    )CIRCUIT")
-            .count_sweep_bits(),
-        78);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_sweep_bits(), 78);
+    ASSERT_EQ(c.compute_stats().num_sweep_bits, 78);
 }
 
 TEST(circuit, count_detectors_num_observables) {
@@ -579,8 +577,8 @@ TEST(circuit, count_detectors_num_observables) {
     )CIRCUIT");
     ASSERT_EQ(c.count_detectors(), 1);
     ASSERT_EQ(c.count_observables(), 6);
-    ASSERT_EQ(c.compute_detector_stats().num_detectors, 1);
-    ASSERT_EQ(c.compute_detector_stats().num_observables, 6);
+    ASSERT_EQ(c.compute_stats().num_detectors, 1);
+    ASSERT_EQ(c.compute_stats().num_observables, 6);
 
     // Ensure not unrolling to compute.
     c = Circuit(R"CIRCUIT(
@@ -598,8 +596,8 @@ TEST(circuit, count_detectors_num_observables) {
     )CIRCUIT");
     ASSERT_EQ(c.count_detectors(), 1000000000000ULL);
     ASSERT_EQ(c.count_observables(), 3);
-    ASSERT_EQ(c.compute_detector_stats().num_detectors, 1000000000000ULL);
-    ASSERT_EQ(c.compute_detector_stats().num_observables, 3);
+    ASSERT_EQ(c.compute_stats().num_detectors, 1000000000000ULL);
+    ASSERT_EQ(c.compute_stats().num_observables, 3);
 
     c = Circuit(R"CIRCUIT(
         M 0 1
@@ -633,8 +631,8 @@ TEST(circuit, count_detectors_num_observables) {
     )CIRCUIT");
     ASSERT_EQ(c.count_detectors(), UINT64_MAX);
     ASSERT_EQ(c.count_observables(), 0);
-    ASSERT_EQ(c.compute_detector_stats().num_detectors, UINT64_MAX);
-    ASSERT_EQ(c.compute_detector_stats().num_observables, 0);
+    ASSERT_EQ(c.compute_stats().num_detectors, UINT64_MAX);
+    ASSERT_EQ(c.compute_stats().num_observables, 0);
 }
 
 TEST(circuit, max_lookback) {
@@ -682,8 +680,7 @@ TEST(circuit, max_lookback) {
 TEST(circuit, count_measurements) {
     ASSERT_EQ(Circuit().count_measurements(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -693,9 +690,9 @@ TEST(circuit, count_measurements) {
                 M 2
             }
         }
-    )CIRCUIT")
-            .count_measurements(),
-        8);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_measurements(), 8);
+    ASSERT_EQ(c.compute_stats().num_measurements, 8);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -710,8 +707,8 @@ TEST(circuit, count_measurements) {
     )CIRCUIT")
             .count_measurements(),
         999999ULL * 999999ULL * 999999ULL);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+
+    c = Circuit(R"CIRCUIT(
         REPEAT 999999 {
          REPEAT 999999 {
           REPEAT 999999 {
@@ -731,9 +728,9 @@ TEST(circuit, count_measurements) {
           }
          }
         }
-    )CIRCUIT")
-            .count_measurements(),
-        UINT64_MAX);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_measurements(), UINT64_MAX);
+    ASSERT_EQ(c.compute_stats().num_measurements, UINT64_MAX);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
@@ -1175,23 +1172,22 @@ TEST(circuit, count_ticks) {
             .count_ticks(),
         2);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-            TICK
-            REPEAT 1000 {
-                REPEAT 2000 {
-                    REPEAT 1000 {
-                        TICK
-                    }
-                    TICK
-                    TICK
+    auto c = Circuit(R"CIRCUIT(
+        TICK
+        REPEAT 1000 {
+            REPEAT 2000 {
+                REPEAT 1000 {
                     TICK
                 }
+                TICK
+                TICK
+                TICK
             }
-            TICK
-        )CIRCUIT")
-            .count_ticks(),
-        2006000002);
+        }
+        TICK
+    )CIRCUIT");
+    ASSERT_EQ(c.count_ticks(), 2006000002);
+    ASSERT_EQ(c.compute_stats().num_ticks, 2006000002);
 }
 
 TEST(circuit, coords_of_detector) {

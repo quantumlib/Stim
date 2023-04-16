@@ -20,7 +20,7 @@
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/main_namespaced.test.h"
-#include "stim/simulators/detection_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -44,8 +44,7 @@ TEST(command_gen, no_noise_no_detections) {
                 }
                 CircuitGenParameters params(r, d, func.second.first);
                 auto circuit = func.second.second(params).circuit;
-                auto [det_samples, obs_samples] =
-                    sample_detection_events_simple(circuit, circuit.compute_detector_stats(), 256, SHARED_TEST_RNG());
+                auto [det_samples, obs_samples] = sample_batch_detection_events(circuit, 256, SHARED_TEST_RNG());
                 EXPECT_FALSE(det_samples.data.not_zero() || obs_samples.data.not_zero())
                     << "d=" << d << ", r=" << r << ", task=" << func.second.first << ", func=" << func.first;
             }

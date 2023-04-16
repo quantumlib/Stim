@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/detection_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 
 #include "gtest/gtest.h"
 
@@ -22,7 +22,7 @@
 using namespace stim;
 
 simd_bit_table<MAX_BITWORD_WIDTH> sample_test_detection_events(const Circuit &circuit, size_t num_shots) {
-    return sample_detection_events_simple(circuit, circuit.compute_detector_stats(), num_shots, SHARED_TEST_RNG()).first;
+    return sample_batch_detection_events(circuit, num_shots, SHARED_TEST_RNG()).first;
 }
 
 TEST(DetectionSimulator, sample_test_detection_events) {
@@ -44,7 +44,7 @@ TEST(DetectionSimulator, bad_detector) {
     ASSERT_THROW({ sample_test_detection_events(Circuit("rec[-1]"), 5); }, std::invalid_argument);
 }
 
-TEST(DetectionSimulator, detector_samples_out) {
+TEST(DetectionSimulator, sample_batch_detection_events_writing_results_to_disk) {
     auto circuit = Circuit(R"circuit(
         X_ERROR(1) 0
         M 0 1
@@ -54,22 +54,22 @@ TEST(DetectionSimulator, detector_samples_out) {
     )circuit");
 
     FILE *tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1\nshot D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot L4 D1\nshot L4 D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1 L4\nshot D1 L4\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "1,6\n1,6\n");
 }
@@ -84,7 +84,7 @@ TEST(DetectionSimulator, stream_many_shots) {
         DETECTOR rec[-3]
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
@@ -110,7 +110,8 @@ TEST(DetectionSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -135,7 +136,8 @@ TEST(DetectionSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -163,10 +165,14 @@ TEST(DetectionSimulator, stream_results) {
             DETECTOR rec[-1]
         }
     )circuit");
-    FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
-    auto result = rewind_read_close(tmp);
+    RaiiTempNamedFile tmp;
+    FILE *f = fopen(tmp.path.c_str(), "w");
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 1, false, true, f, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    fclose(f);
+
+    auto result = tmp.read_contents();
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -190,7 +196,8 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -429,7 +436,7 @@ TEST(DetectionSimulator, obs_data) {
     )circuit");
     FILE *det_tmp = tmpfile();
     FILE *obs_tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 1001, false, false, det_tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG(), obs_tmp, SAMPLE_FORMAT_B8);
 
     auto det_saved = rewind_read_close(det_tmp);

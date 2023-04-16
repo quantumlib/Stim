@@ -99,9 +99,15 @@ struct CircuitInstruction {
     void validate() const;
 };
 
-struct CircuitDetectorStats {
-    uint64_t num_detectors;
-    uint64_t num_observables;
+/// Stores a variety of circuit quantities relevant for sizing memory.
+struct CircuitStats {
+    uint64_t num_detectors = 0;
+    uint64_t num_observables = 0;
+    uint64_t num_measurements = 0;
+    uint32_t num_qubits = 0;
+    uint32_t num_ticks = 0;
+    uint32_t max_lookback = 0;
+    uint32_t num_sweep_bits = 0;
 };
 
 /// A description of a quantum computation.
@@ -128,7 +134,7 @@ struct Circuit {
     // Returns one more than the largest `k` from any `sweep[k]` target.
     size_t count_sweep_bits() const;
 
-    CircuitDetectorStats compute_detector_stats() const;
+    CircuitStats compute_stats() const;
 
     /// Constructs an empty circuit.
     Circuit();

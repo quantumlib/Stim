@@ -25,7 +25,7 @@
 namespace stim_pybind {
 
 struct CompiledDetectorSampler {
-    stim::CircuitDetectorStats circuit_det_stats;
+    stim::CircuitStats circuit_stats;
     stim::Circuit circuit;
     std::shared_ptr<std::mt19937_64> prng;
 

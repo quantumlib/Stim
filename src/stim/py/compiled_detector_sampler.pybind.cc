@@ -18,15 +18,15 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
-    : circuit_det_stats(circuit.compute_detector_stats()), circuit(std::move(circuit)), prng(prng) {
+    : circuit_stats(circuit.compute_stats()), circuit(std::move(circuit)), prng(prng) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -35,27 +35,23 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
         throw std::invalid_argument(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
-    auto [det_data, obs_data] = sample_detection_events_simple(
-        circuit,
-        circuit_det_stats,
-        num_shots,
-        *prng);
-    size_t num_dets = circuit_det_stats.num_detectors;
-    size_t num_obs = circuit_det_stats.num_observables;
+    auto [det_data, obs_data] = sample_batch_detection_events(circuit, num_shots, *prng);
+    size_t num_dets = circuit_stats.num_detectors;
+    size_t num_obs = circuit_stats.num_observables;
     if (separate_observables) {
         pybind11::object py_det_data = transposed_simd_bit_table_to_numpy(det_data, num_dets, num_shots, bit_packed);
         pybind11::object py_obs_data = transposed_simd_bit_table_to_numpy(obs_data, num_obs, num_shots, bit_packed);
         return pybind11::make_tuple(py_det_data, py_obs_data);
     }
 
-    size_t num_concat = circuit_det_stats.num_detectors;
+    size_t num_concat = circuit_stats.num_detectors;
     if (append_observables) {
-        det_data = det_data.concat_major(obs_data, num_concat, circuit_det_stats.num_observables);
-        num_concat += circuit_det_stats.num_observables;
+        det_data = det_data.concat_major(obs_data, num_concat, circuit_stats.num_observables);
+        num_concat += circuit_stats.num_observables;
     }
     if (prepend_observables) {
-        det_data = obs_data.concat_major(det_data, circuit_det_stats.num_observables, num_concat);
-        num_concat += circuit_det_stats.num_observables;
+        det_data = obs_data.concat_major(det_data, circuit_stats.num_observables, num_concat);
+        num_concat += circuit_stats.num_observables;
     }
     return transposed_simd_bit_table_to_numpy(det_data, num_concat, num_shots, bit_packed);
 }
@@ -72,7 +68,7 @@ void CompiledDetectorSampler::sample_write(
     RaiiFile out(filepath.data(), "wb");
     RaiiFile obs_out(obs_out_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit,
         num_samples,
         prepend_observables,

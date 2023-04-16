@@ -27,6 +27,13 @@
 
 namespace stim {
 
+enum FrameSimulatorMode {
+    STORE_MEASUREMENTS_TO_MEMORY,
+    STREAM_MEASUREMENTS_TO_DISK,
+    STORE_DETECTIONS_TO_MEMORY,
+    STREAM_DETECTIONS_TO_DISK,
+};
+
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
 /// This simulator tracks, for each qubit, whether or not that qubit is bit flipped and/or phase flipped.
@@ -34,16 +41,17 @@ namespace stim {
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
     size_t num_qubits;  // Number of qubits being tracked.
+    bool keeping_detection_data;
     size_t batch_size;  // Number of instances being tracked.
     simd_bit_table<MAX_BITWORD_WIDTH>
         x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
     simd_bit_table<MAX_BITWORD_WIDTH>
-        z_table;                  // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
-    MeasureRecordBatch m_record;  // The measurement record.
+        z_table;                    // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    MeasureRecordBatch m_record;    // The measurement record.
     MeasureRecordBatch det_record;  // Detection event record.
     simd_bit_table<MAX_BITWORD_WIDTH> obs_record;  // Accumulating observable flip record.
-    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;   // Workspace used when sampling error processes.
-    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;  // Workspace used when sampling compound error processes.
+    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;       // Workspace used when sampling error processes.
+    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;      // Workspace used when sampling compound error processes.
     simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
     std::mt19937_64 &rng;  // Random number generator used for generating entropy.
@@ -54,51 +62,17 @@ struct FrameSimulator {
     // propagate, without interference from other effects.
     bool guarantee_anticommutation_via_frame_randomization = true;
 
+    /// Constructs a FrameSimulator capable of simulating a circuit with the given size stats.
+    ///
+    /// Args:
+    ///     circuit_stats: Sizes that determine how large internal buffers must be. Get
+    ///         this from stim::Circuit::compute_stats.
+    ///     mode: Describes the intended usage of the simulator, which affects the sizing
+    ///         of buffers.
+    ///     batch_size: How many shots to simulate simultaneously.
+    ///     rng: The random number generator to pull noise from.
+    FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng);
     FrameSimulator() = delete;
-    FrameSimulator(size_t num_qubits,
-                   size_t max_measurement_lookback,
-                   size_t max_detector_lookback,
-                   size_t num_observables,
-                   size_t batch_size,
-                   std::mt19937_64 &rng);
-
-    /// Returns a batch of measurement-flipped samples from the circuit.
-    ///
-    /// Args:
-    ///     circuit: The circuit to sample from.
-    ///     num_shots: The number of shots of the circuit to run.
-    ///     rng: Random number generator.
-    ///
-    /// Returns:
-    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
-    ///     Each bit in the table is whether a specific measurement was flipped in a specific shot.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(
-        const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
-
-    /// Returns a batch of samples from the circuit.
-    ///
-    /// Args:
-    ///     circuit: The circuit to sample from.
-    ///     reference_sample: A known-good sample from the circuit, collected without any noise processes.
-    ///     num_shots: The number of shots of the circuit to run.
-    ///     rng: Random number generator.
-    ///
-    /// Returns:
-    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
-    ///     Each bit in the table is a measurement result.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample(
-        const Circuit &circuit,
-        const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-        size_t num_samples,
-        std::mt19937_64 &rng);
-
-    static void sample_out(
-        const Circuit &circuit,
-        const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-        uint64_t num_shots,
-        FILE *out,
-        SampleFormat format,
-        std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
@@ -162,7 +136,7 @@ struct FrameSimulator {
     void single_cy(uint32_t c, uint32_t t);
 };
 
-bool should_use_streaming_instead_of_memory(uint64_t result_count);
+bool should_use_streaming_because_bit_count_is_too_large_to_store(uint64_t result_count);
 struct DebugForceResultStreamingRaii {
     DebugForceResultStreamingRaii();
     ~DebugForceResultStreamingRaii();
