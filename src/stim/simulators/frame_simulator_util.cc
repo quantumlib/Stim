@@ -108,6 +108,7 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     const Circuit &circuit,
     const CircuitStats &circuit_stats,
     FrameSimulator &frame_sim,
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_concat_buf,
     size_t num_shots,
     bool prepend_observables,
     bool append_observables,
@@ -120,16 +121,16 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     }
 
     frame_sim.reset_all_and_run(circuit);
+
     const auto &obs_data = frame_sim.obs_record;
     const auto &det_data = frame_sim.det_record.storage;
-
     if (obs_out != nullptr) {
         write_table_data(
             obs_out,
             num_shots,
             circuit_stats.num_observables,
             simd_bits<MAX_BITWORD_WIDTH>(0),
-            obs_data,
+            frame_sim.obs_record,
             obs_out_format,
             'L',
             'L',
@@ -137,13 +138,14 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     }
 
     if (prepend_observables || append_observables) {
-        simd_bit_table<MAX_BITWORD_WIDTH> concat_data(0, 0);
         if (prepend_observables) {
             assert(!append_observables);
-            concat_data = obs_data.concat_major(det_data, circuit_stats.num_observables, circuit_stats.num_detectors);
+            out_concat_buf.overwrite_major_range_with(0, det_data, 0, circuit_stats.num_detectors);
+            out_concat_buf.overwrite_major_range_with(circuit_stats.num_detectors, obs_data, 0, circuit_stats.num_observables);
         } else {
             assert(append_observables);
-            concat_data = det_data.concat_major(obs_data, circuit_stats.num_detectors, circuit_stats.num_observables);
+            out_concat_buf.overwrite_major_range_with(circuit_stats.num_observables, det_data, 0, circuit_stats.num_detectors);
+            out_concat_buf.overwrite_major_range_with(0, obs_data, 0, circuit_stats.num_observables);
         }
 
         char c1 = append_observables ? 'D' : 'L';
@@ -154,7 +156,7 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
             num_shots,
             circuit_stats.num_observables + circuit_stats.num_detectors,
             simd_bits<MAX_BITWORD_WIDTH>(0),
-            concat_data,
+            out_concat_buf,
             format,
             c1,
             c2,
@@ -231,6 +233,10 @@ void stim::sample_batch_detection_events_writing_results_to_disk(
         rng);
 
     // Run the frame simulator until as many shots as requested have been written.
+    simd_bit_table<MAX_BITWORD_WIDTH> out_concat_buf(0, 0);
+    if (append_observables || prepend_observables) {
+        out_concat_buf = simd_bit_table<MAX_BITWORD_WIDTH>(stats.num_detectors + stats.num_observables, batch_size);
+    }
     size_t shots_left = num_shots;
     while (shots_left) {
         size_t shots_performed = std::min(shots_left, batch_size);
@@ -251,6 +257,7 @@ void stim::sample_batch_detection_events_writing_results_to_disk(
                 circuit,
                 stats,
                 frame_sim,
+                out_concat_buf,
                 shots_performed,
                 prepend_observables,
                 append_observables,

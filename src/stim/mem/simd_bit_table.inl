@@ -220,6 +220,12 @@ simd_bit_table<W> simd_bit_table<W>::concat_major(const simd_bit_table<W> &secon
 }
 
 template <size_t W>
+void simd_bit_table<W>::overwrite_major_range_with(size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const {
+    assert(src.num_minor_bits_padded() == num_minor_bits_padded());
+    memcpy(data.u8 + dst_major_start * num_minor_u8_padded(), src.data.u8 + src_major_start * src.num_minor_u8_padded(), num_major_indices * num_minor_u8_padded());
+}
+
+template <size_t W>
 simd_bit_table<W> simd_bit_table<W>::from_text(const char *text, size_t min_rows, size_t min_cols) {
     std::vector<std::vector<bool>> lines;
     lines.push_back({});

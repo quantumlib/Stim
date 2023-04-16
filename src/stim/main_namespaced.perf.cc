@@ -98,12 +98,13 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     size_t rounds = 100;
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
+    FILE *obs_out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     simd_bits<MAX_BITWORD_WIDTH> ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
         sample_batch_detection_events_writing_results_to_disk(
-            circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+            circuit, 1, false, false, out, SAMPLE_FORMAT_B8, rng, obs_out, SAMPLE_FORMAT_B8);
     })
         .goal_millis(11)
         .show_rate("Samples", circuit.count_measurements());
@@ -145,12 +146,13 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     size_t rounds = 100;
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
+    FILE *obs_out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         sample_batch_detection_events_writing_results_to_disk(
-            circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+            circuit, 256, false, false, out, SAMPLE_FORMAT_B8, rng, obs_out, SAMPLE_FORMAT_B8);
     })
         .goal_millis(15)
         .show_rate("Samples", circuit.count_measurements());
@@ -162,12 +164,13 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
     size_t rounds = 1000;
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
+    FILE *obs_out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         sample_batch_detection_events_writing_results_to_disk(
-            circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
+            circuit, 256, false, false, out, SAMPLE_FORMAT_B8, rng, obs_out, SAMPLE_FORMAT_B8);
     })
         .goal_millis(360)
         .show_rate("Samples", circuit.count_measurements());
