@@ -11,7 +11,7 @@ import stim
 
 from sinter._anon_task_stats import AnonTaskStats
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding_decoder_class import Decoder
+from sinter._decoding_decoder_class import CompiledDecoder, Decoder
 
 if TYPE_CHECKING:
     import sinter
@@ -120,6 +120,7 @@ def sample_decode(*,
                   decoder: str,
                   tmp_dir: Union[str, pathlib.Path, None] = None,
                   custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+                  __private__unstable__force_decode_on_disk: Optional[bool] = None,
                   ) -> AnonTaskStats:
     """Samples how many times a decoder correctly predicts the logical frame.
 
@@ -160,19 +161,126 @@ def sample_decode(*,
     if num_shots == 0:
         return AnonTaskStats()
 
-    with contextlib.ExitStack() as exit_stack:
-        start_time = time.monotonic()
+    decoder_obj: Optional[Decoder] = None
+    if custom_decoders is not None:
+        decoder_obj = custom_decoders.get(decoder)
+    if decoder_obj is None:
+        decoder_obj = BUILT_IN_DECODERS.get(decoder)
+    if decoder_obj is None:
+        raise NotImplementedError(f"Unrecognized decoder: {decoder!r}")
 
-        if circuit_path is not None:
-            circuit = stim.Circuit.from_file(circuit_path)
-        else:
-            circuit = circuit_obj
+    dem: stim.DetectorErrorModel
+    if dem_obj is None:
+        dem = stim.DetectorErrorModel.from_file(dem_path)
+    else:
+        dem = dem_obj
+
+    circuit: stim.Circuit
+    if circuit_path is not None:
+        circuit = stim.Circuit.from_file(circuit_path)
+    else:
+        circuit = circuit_obj
+
+    start_time = time.monotonic()
+    try:
+        if __private__unstable__force_decode_on_disk:
+            raise NotImplementedError()
+        compiled_decoder = decoder_obj.compile_decoder_for_dem(dem=dem)
+        return _sample_decode_helper_using_memory(
+            circuit=circuit,
+            post_mask=post_mask,
+            postselected_observable_mask=postselected_observable_mask,
+            compiled_decoder=compiled_decoder,
+            total_num_shots=num_shots,
+            mini_batch_size=1024,
+            start_time_monotonic=start_time,
+        )
+    except NotImplementedError:
+        assert __private__unstable__force_decode_on_disk or __private__unstable__force_decode_on_disk is None
+        return _sample_decode_helper_using_disk(
+            circuit=circuit,
+            dem=dem,
+            dem_path=dem_path,
+            post_mask=post_mask,
+            postselected_observable_mask=postselected_observable_mask,
+            num_shots=num_shots,
+            decoder_obj=decoder_obj,
+            tmp_dir=tmp_dir,
+            start_time_monotonic=start_time,
+        )
+
+
+def _sample_decode_helper_using_memory(
+    *,
+    circuit: stim.Circuit,
+    post_mask: Optional[np.ndarray],
+    postselected_observable_mask: Optional[np.ndarray],
+    total_num_shots: int,
+    mini_batch_size: int,
+    compiled_decoder: CompiledDecoder,
+    start_time_monotonic: float,
+) -> AnonTaskStats:
+    sampler: stim.CompiledDetectorSampler = circuit.compile_detector_sampler()
+
+    out_num_discards = 0
+    out_num_errors = 0
+    shots_left = total_num_shots
+    while shots_left > 0:
+        cur_num_shots = min(shots_left, mini_batch_size)
+        dets_data, obs_data = sampler.sample(shots=cur_num_shots, separate_observables=True, bit_packed=True)
+
+        # Discard any shots that contain a postselected detection events.
+        if post_mask is not None:
+            discarded_flags = np.any(dets_data & post_mask, axis=1)
+            cur_num_discarded_shots = np.count_nonzero(discarded_flags)
+            if cur_num_discarded_shots:
+                out_num_discards += cur_num_discarded_shots
+                dets_data = dets_data[~discarded_flags, :]
+                obs_data = obs_data[~discarded_flags, :]
+
+        # Have the decoder predict which observables are flipped.
+        predict_data = compiled_decoder.decode_shots_bit_packed(bit_packed_detection_event_data=dets_data)
+
+        # Discard any shots where the decoder predicts a flipped postselected observable.
+        if postselected_observable_mask is not None:
+            discarded_flags = np.any(postselected_observable_mask & predict_data, axis=1)
+            cur_num_discarded_shots = np.count_nonzero(discarded_flags)
+            if cur_num_discarded_shots:
+                out_num_discards += cur_num_discarded_shots
+                obs_data = obs_data[~discarded_flags, :]
+                predict_data = obs_data[~discarded_flags, :]
+
+        # Count how many mistakes the decoder made on non-discarded shots.
+        out_num_errors += np.count_nonzero(np.any(obs_data ^ predict_data, axis=1))
+        shots_left -= cur_num_shots
+
+    return AnonTaskStats(
+        shots=total_num_shots,
+        errors=out_num_errors,
+        discards=out_num_discards,
+        seconds=time.monotonic() - start_time_monotonic,
+    )
+
+
+def _sample_decode_helper_using_disk(
+    *,
+    circuit: stim.Circuit,
+    dem: stim.DetectorErrorModel,
+    dem_path: Union[str, pathlib.Path],
+    post_mask: Optional[np.ndarray],
+    postselected_observable_mask: Optional[np.ndarray],
+    num_shots: int,
+    decoder_obj: Decoder,
+    tmp_dir: Union[str, pathlib.Path, None],
+    start_time_monotonic: float,
+) -> AnonTaskStats:
+    with contextlib.ExitStack() as exit_stack:
         if tmp_dir is None:
             tmp_dir = exit_stack.enter_context(tempfile.TemporaryDirectory())
         tmp_dir = pathlib.Path(tmp_dir)
         if dem_path is None:
             dem_path = tmp_dir / 'tmp.dem'
-            dem_obj.to_file(dem_path)
+            dem.to_file(dem_path)
         dem_path = pathlib.Path(dem_path)
 
         dets_all_path = tmp_dir / 'sinter_dets.all.b8'
@@ -216,13 +324,6 @@ def sample_decode(*,
         num_kept_shots = num_shots - num_det_discards
 
         # Perform syndrome decoding to predict observables from detection events.
-        decoder_obj: Optional[Decoder] = None
-        if custom_decoders is not None:
-            decoder_obj = custom_decoders.get(decoder)
-        if decoder_obj is None:
-            decoder_obj = BUILT_IN_DECODERS.get(decoder)
-        if decoder_obj is None:
-            raise NotImplementedError(f"Unrecognized decoder: {decoder!r}")
         decoder_obj.decode_via_files(
             num_shots=num_kept_shots,
             num_dets=num_dets,
@@ -246,5 +347,5 @@ def sample_decode(*,
             shots=num_shots,
             errors=num_errors,
             discards=num_obs_discards + num_det_discards,
-            seconds=time.monotonic() - start_time,
+            seconds=time.monotonic() - start_time_monotonic,
         )

@@ -1,6 +1,40 @@
 import abc
-
 import pathlib
+
+import numpy as np
+import stim
+
+
+class CompiledDecoder(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def decode_shots_bit_packed(
+            self,
+            *,
+            bit_packed_detection_event_data: np.ndarray,
+    ) -> np.ndarray:
+        """Predicts observable flips given detection events, with all data bit packed.
+
+        Args:
+            bit_packed_detection_event_data: Detection event data stored as a bit packed
+                numpy array. The numpy array will have the following dtype/shape:
+
+                    dtype: uint8
+                    shape: (num_shots, ceil(dem.num_detectors / 8))
+
+                where num_shots is the number of shots to decoder
+                where dem is the detector error model this instance was compiled to decode
+
+        Returns:
+            Bit packed observable flip data stored as a bit packed numpy array. The numpy
+            array must have the following dtype/shape:
+
+                dtype: uint8
+                shape: (num_shots, ceil(dem.num_observables / 8))
+
+            where num_shots is bit_packed_detection_event_data.shape[0]
+            where dem is the detector error model this instance was compiled to decode
+        """
+        pass
 
 
 class Decoder(metaclass=abc.ABCMeta):
@@ -12,6 +46,25 @@ class Decoder(metaclass=abc.ABCMeta):
     Decoder classes MUST be serializable (e.g. via pickling), so that they can be given to
     worker processes when using python multiprocessing.
     """
+
+    def compile_decoder_for_dem(self, *, dem: stim.DetectorErrorModel) -> CompiledDecoder:
+        """Creates a decoder preconfigured to decode the given detector error model.
+
+        The idea is that the preconfigured decoder amortizes the cost of configuration over
+        more calls. This makes smaller batch sizes efficient, reducing the amount of memory
+        used for storing each batch, improving overall efficiency.
+
+        Args:
+            dem: A detector error model for the samples that need to be decoded.
+
+        Returns:
+            An instance of `sinter.CompiledDecoder` that can be used to invoke the
+            preconfigured decoder.
+
+        Raises:
+            NotImplementedError: This sinter.Decoder doesn't support compiling for a dem.
+        """
+        raise NotImplementedError('compile_decoder_for_dem')
 
     @abc.abstractmethod
     def decode_via_files(self,
