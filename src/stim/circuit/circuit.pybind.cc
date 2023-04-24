@@ -1840,7 +1840,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Returns:
                 A `stim.Circuit` with feedback operations removed, with rewritten DETECTOR
-                instructions (as needed to avoid changing the meaning of each detector, and
+                instructions (as needed to avoid changing the meaning of each detector), and
                 with additional OBSERVABLE_INCLUDE instructions (as needed to avoid changing
                 the meaning of each observable).
 
