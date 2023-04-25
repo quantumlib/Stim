@@ -31,7 +31,7 @@ struct Graph {
     explicit Graph(size_t node_count);
     Graph(std::vector<Node> nodes, uint64_t distance_1_error_mask);
 
-    void add_edge_from_dem_targets(ConstPointerRange<DemTarget> targets, size_t dont_explore_edges_with_degree_above);
+    void add_edge_from_dem_targets(SpanRef<const DemTarget> targets, size_t dont_explore_edges_with_degree_above);
     static Graph from_dem(const DetectorErrorModel &model, size_t dont_explore_edges_with_degree_above);
     bool operator==(const Graph &other) const;
     bool operator!=(const Graph &other) const;

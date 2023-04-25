@@ -21,9 +21,9 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "stim/mem/pointer_range.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"
+#include "stim/mem/span_ref.h"
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
@@ -136,7 +136,7 @@ struct Tableau {
     Tableau then(const Tableau &second) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliStringRef &target, ConstPointerRange<size_t> target_qubits) const;
+    void apply_within(PauliStringRef &target, SpanRef<const size_t> target_qubits) const;
 
     /// Appends a smaller operation into this tableau's operation.
     ///

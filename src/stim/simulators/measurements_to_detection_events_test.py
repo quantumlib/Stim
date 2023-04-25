@@ -95,27 +95,27 @@ def test_convert():
     ''').compile_m2d_converter()
 
     result = converter.convert(
-        measurements=np.array([[0], [1]], dtype=np.bool8),
+        measurements=np.array([[0], [1]], dtype=np.bool_),
         append_observables=False,
     )
-    assert result.dtype == np.bool8
+    assert result.dtype == np.bool_
     assert result.shape == (2, 1)
     np.testing.assert_array_equal(result, [[1], [0]])
 
     result = converter.convert(
-        measurements=np.array([[0], [1]], dtype=np.bool8),
+        measurements=np.array([[0], [1]], dtype=np.bool_),
         append_observables=True,
     )
-    assert result.dtype == np.bool8
+    assert result.dtype == np.bool_
     assert result.shape == (2, 2)
     np.testing.assert_array_equal(result, [[1, 1], [0, 0]])
 
     result = converter.convert(
-        measurements=np.array([[0], [1], [0], [1]], dtype=np.bool8),
-        sweep_bits=np.array([[0], [0], [1], [1]], dtype=np.bool8),
+        measurements=np.array([[0], [1], [0], [1]], dtype=np.bool_),
+        sweep_bits=np.array([[0], [0], [1], [1]], dtype=np.bool_),
         append_observables=True,
     )
-    assert result.dtype == np.bool8
+    assert result.dtype == np.bool_
     assert result.shape == (4, 2)
     np.testing.assert_array_equal(result, [[1, 1], [0, 0], [0, 0], [1, 1]])
 
@@ -130,8 +130,8 @@ def test_convert_bit_packed():
        }
     ''').compile_m2d_converter()
 
-    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
-    expected_detections = np.array([[1] * 100, [0] * 100], dtype=np.bool8)
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
+    expected_detections = np.array([[1] * 100, [0] * 100], dtype=np.bool_)
     measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
     expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
 
@@ -140,7 +140,7 @@ def test_convert_bit_packed():
             measurements=m,
             append_observables=False,
         )
-        assert result.dtype == np.bool8
+        assert result.dtype == np.bool_
         assert result.shape == (2, 100)
         np.testing.assert_array_equal(result, expected_detections)
 
@@ -175,9 +175,9 @@ def test_convert_bit_packed_swept():
        }
     ''').compile_m2d_converter()
 
-    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
-    sweeps = np.array([[1], [0]], dtype=np.bool8)
-    expected_detections = np.array([[0] * 100, [0] * 100], dtype=np.bool8)
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
+    sweeps = np.array([[1], [0]], dtype=np.bool_)
+    expected_detections = np.array([[0] * 100, [0] * 100], dtype=np.bool_)
 
     measurements_packed = np.packbits(measurements, axis=1, bitorder='little')
     expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
@@ -190,7 +190,7 @@ def test_convert_bit_packed_swept():
                 sweep_bits=s,
                 append_observables=False,
             )
-            assert result.dtype == np.bool8
+            assert result.dtype == np.bool_
             assert result.shape == (2, 100)
             np.testing.assert_array_equal(result, expected_detections)
 
@@ -218,9 +218,9 @@ def test_convert_bit_packed_separate_observables():
        OBSERVABLE_INCLUDE(14) rec[-3]
     ''').compile_m2d_converter()
 
-    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
-    expected_dets = np.array([[1] * 100, [0] * 100], dtype=np.bool8)
-    expected_obs = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], [0] * 15], dtype=np.bool8)
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
+    expected_dets = np.array([[1] * 100, [0] * 100], dtype=np.bool_)
+    expected_obs = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], [0] * 15], dtype=np.bool_)
     measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
     expected_dets_packed = np.packbits(expected_dets, axis=1, bitorder='little')
     expected_obs_packed = np.packbits(expected_obs, axis=1, bitorder='little')
@@ -230,7 +230,7 @@ def test_convert_bit_packed_separate_observables():
             measurements=m,
             separate_observables=True,
         )
-        assert actual_dets.dtype == actual_obs.dtype == np.bool8
+        assert actual_dets.dtype == actual_obs.dtype == np.bool_
         assert actual_dets.shape == (2, 100)
         assert actual_obs.shape == (2, 15)
         np.testing.assert_array_equal(actual_dets, expected_dets)
@@ -258,15 +258,15 @@ def test_noiseless_conversion():
        OBSERVABLE_INCLUDE(0) rec[-1]
     ''').compile_m2d_converter()
 
-    measurements = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.bool8)
-    expected_dets = np.array([[0, 1], [0, 0], [1, 1], [1, 0]], dtype=np.bool8)
-    expected_obs = np.array([[1], [0], [1], [0]], dtype=np.bool8)
+    measurements = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.bool_)
+    expected_dets = np.array([[0, 1], [0, 0], [1, 1], [1, 0]], dtype=np.bool_)
+    expected_obs = np.array([[1], [0], [1], [0]], dtype=np.bool_)
 
     actual_dets, actual_obs = converter.convert(
         measurements=measurements,
         separate_observables=True,
     )
-    assert actual_dets.dtype == actual_obs.dtype == np.bool8
+    assert actual_dets.dtype == actual_obs.dtype == np.bool_
     assert actual_dets.shape == (4, 2)
     assert actual_obs.shape == (4, 1)
     np.testing.assert_array_equal(actual_dets, expected_dets)
@@ -275,7 +275,7 @@ def test_noiseless_conversion():
 
 def test_needs_append_or_separate():
     converter = stim.Circuit().compile_m2d_converter()
-    ms = np.zeros(shape=(50, 0), dtype=np.bool8)
+    ms = np.zeros(shape=(50, 0), dtype=np.bool_)
     with pytest.raises(ValueError, match="explicitly specify either separate"):
         converter.convert(measurements=ms)
     d1 = converter.convert(measurements=ms, append_observables=True)

@@ -44,7 +44,7 @@ TEST(ErrorMatcher, X_ERROR) {
                     },
                     FlippedMeasurement{UINT64_MAX, {}},
                     CircuitTargetsInsideInstruction{
-                        &GATE_DATA.at("X_ERROR"),
+                        GateType::X_ERROR,
                         {0.25},
                         0,
                         1,

@@ -15,10 +15,6 @@
 #include <complex>
 
 #include "stim/circuit/gate_data.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -29,11 +25,9 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
         failed,
         Gate{
             "SWAP",
+            GateType::SWAP,
+            GateType::SWAP,
             0,
-            &TableauSimulator::SWAP,
-            &FrameSimulator::SWAP,
-            &ErrorAnalyzer::SWAP,
-            &SparseUnsignedRevFrameTracker::undo_SWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -64,11 +58,9 @@ CNOT 0 1
         failed,
         Gate{
             "ISWAP",
+            GateType::ISWAP,
+            GateType::ISWAP_DAG,
             0,
-            &TableauSimulator::ISWAP,
-            &FrameSimulator::ISWAP,
-            &ErrorAnalyzer::ISWAP,
-            &SparseUnsignedRevFrameTracker::undo_ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -102,12 +94,51 @@ S 0
     add_gate(
         failed,
         Gate{
-            "CXSWAP",
+            "ISWAP_DAG",
+            GateType::ISWAP_DAG,
+            GateType::ISWAP,
             0,
-            &TableauSimulator::CXSWAP,
-            &FrameSimulator::CXSWAP,
-            &ErrorAnalyzer::CXSWAP,
-            &SparseUnsignedRevFrameTracker::undo_CXSWAP,
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
+Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+                    {"-ZY", "+IZ", "-YZ", "+ZI"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+S 1
+S 1
+S 1
+H 1
+CNOT 1 0
+CNOT 0 1
+H 0
+)CIRCUIT",
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            "CXSWAP",
+            GateType::CXSWAP,
+            GateType::SWAPCX,
+            0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -138,11 +169,9 @@ CNOT 0 1
         failed,
         Gate{
             "SWAPCX",
+            GateType::SWAPCX,
+            GateType::CXSWAP,
             0,
-            &TableauSimulator::SWAPCX,
-            &FrameSimulator::SWAPCX,
-            &ErrorAnalyzer::SWAPCX,
-            &SparseUnsignedRevFrameTracker::undo_SWAPCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -164,49 +193,6 @@ Targets:
                     R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
-)CIRCUIT",
-                };
-            },
-        });
-
-    add_gate(
-        failed,
-        Gate{
-            "ISWAP_DAG",
-            0,
-            &TableauSimulator::ISWAP_DAG,
-            &FrameSimulator::ISWAP,
-            &ErrorAnalyzer::ISWAP,
-            &SparseUnsignedRevFrameTracker::undo_ISWAP,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
-Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
-Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
-
-Parens Arguments:
-
-    This instruction takes no parens arguments.
-
-Targets:
-
-    Qubit pairs to operate on.
-)MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
-                    {"-ZY", "+IZ", "-YZ", "+ZI"},
-                    R"CIRCUIT(
-S 0
-S 0
-S 0
-S 1
-S 1
-S 1
-H 1
-CNOT 1 0
-CNOT 0 1
-H 0
 )CIRCUIT",
                 };
             },

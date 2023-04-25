@@ -18,6 +18,7 @@
 #define _STIM_SIMULATORS_SPARSE_REV_FRAME_TRACKER_H
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -37,63 +38,68 @@ struct SparseUnsignedRevFrameTracker {
     uint64_t num_measurements_in_past;
     /// Number of detectors that have not yet been processed.
     uint64_t num_detectors_in_past;
+    // Function vtable for each gate's simulator function
+    GateVTable<void (SparseUnsignedRevFrameTracker::*)(const CircuitInstruction &)> gate_vtable;
 
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
 
     PauliString current_error_sensitivity_for(DemTarget target) const;
 
-    void handle_xor_gauge(ConstPointerRange<DemTarget> sorted1, ConstPointerRange<DemTarget> sorted2);
-    void handle_gauge(ConstPointerRange<DemTarget> sorted);
+    inline void undo_gate(const CircuitInstruction &data) {
+        (this->*(gate_vtable.data[data.gate_type]))(data);
+    }
+    void undo_gate(const CircuitInstruction &op, const Circuit &parent);
+
+    void handle_xor_gauge(SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2);
+    void handle_gauge(SpanRef<const DemTarget> sorted);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);
     void undo_ZCX_single(GateTarget c, GateTarget t);
     void undo_ZCY_single(GateTarget c, GateTarget t);
     void undo_ZCZ_single(GateTarget c, GateTarget t);
-    void undo_operation(const Operation &op);
-    void undo_operation(const Operation &op, const Circuit &parent);
     void undo_circuit(const Circuit &circuit);
     void undo_loop(const Circuit &loop, uint64_t repetitions);
     void undo_loop_by_unrolling(const Circuit &loop, uint64_t repetitions);
-    void clear_qubits(const OperationData &dat);
-    void handle_x_gauges(const OperationData &dat);
-    void handle_y_gauges(const OperationData &dat);
-    void handle_z_gauges(const OperationData &dat);
+    void clear_qubits(const CircuitInstruction &dat);
+    void handle_x_gauges(const CircuitInstruction &dat);
+    void handle_y_gauges(const CircuitInstruction &dat);
+    void handle_z_gauges(const CircuitInstruction &dat);
 
-    void undo_DETECTOR(const OperationData &dat);
-    void undo_OBSERVABLE_INCLUDE(const OperationData &dat);
-    void undo_RX(const OperationData &dat);
-    void undo_RY(const OperationData &dat);
-    void undo_RZ(const OperationData &dat);
-    void undo_MX(const OperationData &dat);
-    void undo_MY(const OperationData &dat);
-    void undo_MZ(const OperationData &dat);
-    void undo_MPP(const OperationData &dat);
-    void undo_MRX(const OperationData &dat);
-    void undo_MRY(const OperationData &dat);
-    void undo_MRZ(const OperationData &dat);
-    void undo_H_XZ(const OperationData &dat);
-    void undo_H_XY(const OperationData &dat);
-    void undo_H_YZ(const OperationData &dat);
-    void undo_C_XYZ(const OperationData &dat);
-    void undo_C_ZYX(const OperationData &dat);
-    void undo_XCX(const OperationData &dat);
-    void undo_XCY(const OperationData &dat);
-    void undo_XCZ(const OperationData &dat);
-    void undo_YCX(const OperationData &dat);
-    void undo_YCY(const OperationData &dat);
-    void undo_YCZ(const OperationData &dat);
-    void undo_ZCX(const OperationData &dat);
-    void undo_ZCY(const OperationData &dat);
-    void undo_ZCZ(const OperationData &dat);
-    void undo_I(const OperationData &dat);
-    void undo_SQRT_XX(const OperationData &dat);
-    void undo_SQRT_YY(const OperationData &dat);
-    void undo_SQRT_ZZ(const OperationData &dat);
-    void undo_SWAP(const OperationData &dat);
-    void undo_ISWAP(const OperationData &dat);
-    void undo_CXSWAP(const OperationData &dat);
-    void undo_SWAPCX(const OperationData &dat);
-    void undo_tableau(const Tableau &tableau, ConstPointerRange<uint32_t> targets);
+    void undo_DETECTOR(const CircuitInstruction &dat);
+    void undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat);
+    void undo_RX(const CircuitInstruction &dat);
+    void undo_RY(const CircuitInstruction &dat);
+    void undo_RZ(const CircuitInstruction &dat);
+    void undo_MX(const CircuitInstruction &dat);
+    void undo_MY(const CircuitInstruction &dat);
+    void undo_MZ(const CircuitInstruction &dat);
+    void undo_MPP(const CircuitInstruction &dat);
+    void undo_MRX(const CircuitInstruction &dat);
+    void undo_MRY(const CircuitInstruction &dat);
+    void undo_MRZ(const CircuitInstruction &dat);
+    void undo_H_XZ(const CircuitInstruction &dat);
+    void undo_H_XY(const CircuitInstruction &dat);
+    void undo_H_YZ(const CircuitInstruction &dat);
+    void undo_C_XYZ(const CircuitInstruction &dat);
+    void undo_C_ZYX(const CircuitInstruction &dat);
+    void undo_XCX(const CircuitInstruction &dat);
+    void undo_XCY(const CircuitInstruction &dat);
+    void undo_XCZ(const CircuitInstruction &dat);
+    void undo_YCX(const CircuitInstruction &dat);
+    void undo_YCY(const CircuitInstruction &dat);
+    void undo_YCZ(const CircuitInstruction &dat);
+    void undo_ZCX(const CircuitInstruction &dat);
+    void undo_ZCY(const CircuitInstruction &dat);
+    void undo_ZCZ(const CircuitInstruction &dat);
+    void undo_I(const CircuitInstruction &dat);
+    void undo_SQRT_XX(const CircuitInstruction &dat);
+    void undo_SQRT_YY(const CircuitInstruction &dat);
+    void undo_SQRT_ZZ(const CircuitInstruction &dat);
+    void undo_SWAP(const CircuitInstruction &dat);
+    void undo_ISWAP(const CircuitInstruction &dat);
+    void undo_CXSWAP(const CircuitInstruction &dat);
+    void undo_SWAPCX(const CircuitInstruction &dat);
+    void undo_tableau(const Tableau &tableau, SpanRef<const uint32_t> targets);
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
     void shift(int64_t measurement_offset, int64_t detector_offset);

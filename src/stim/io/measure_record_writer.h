@@ -21,8 +21,8 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/io/stim_data_formats.h"
-#include "stim/mem/pointer_range.h"
 #include "stim/mem/simd_bit_table.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
@@ -36,7 +36,7 @@ struct MeasureRecordWriter {
     /// Writes (or buffers) one measurement result.
     virtual void write_bit(bool b) = 0;
     /// Writes (or buffers) multiple measurement results.
-    virtual void write_bytes(ConstPointerRange<uint8_t> data);
+    virtual void write_bytes(SpanRef<const uint8_t> data);
     /// Flushes all buffered measurement results and writes any end-of-record markers that are needed (e.g. a newline).
     virtual void write_end() = 0;
     /// Writes (or buffers) multiple measurement results.
@@ -60,7 +60,7 @@ struct MeasureRecordWriterFormatB8 : MeasureRecordWriter {
     uint8_t payload = 0;
     uint8_t count = 0;
     MeasureRecordWriterFormatB8(FILE *out);
-    void write_bytes(ConstPointerRange<uint8_t> data) override;
+    void write_bytes(SpanRef<const uint8_t> data) override;
     void write_bit(bool b) override;
     void write_end() override;
 };
@@ -71,7 +71,7 @@ struct MeasureRecordWriterFormatHits : MeasureRecordWriter {
     bool first = true;
 
     MeasureRecordWriterFormatHits(FILE *out);
-    void write_bytes(ConstPointerRange<uint8_t> data) override;
+    void write_bytes(SpanRef<const uint8_t> data) override;
     void write_bit(bool b) override;
     void write_end() override;
 };
@@ -81,7 +81,7 @@ struct MeasureRecordWriterFormatR8 : MeasureRecordWriter {
     uint16_t run_length = 0;
 
     MeasureRecordWriterFormatR8(FILE *out);
-    void write_bytes(ConstPointerRange<uint8_t> data) override;
+    void write_bytes(SpanRef<const uint8_t> data) override;
     void write_bit(bool b) override;
     void write_end() override;
 };
@@ -94,7 +94,7 @@ struct MeasureRecordWriterFormatDets : MeasureRecordWriter {
 
     MeasureRecordWriterFormatDets(FILE *out);
     void begin_result_type(char result_type) override;
-    void write_bytes(ConstPointerRange<uint8_t> data) override;
+    void write_bytes(SpanRef<const uint8_t> data) override;
     void write_bit(bool b) override;
     void write_end() override;
 };

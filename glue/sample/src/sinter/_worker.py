@@ -116,6 +116,8 @@ def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Dec
     from sinter._decoding import sample_decode
 
     if work.strong_id is None:
+        # The work is to compute the DEM, as opposed to taking shots.
+
         circuit = stim.Circuit.from_file(work.circuit_path)
         dem = auto_dem(circuit)
         dem.to_file(work.dem_path)

@@ -289,7 +289,10 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
 }
 
 TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
-    FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
+    CircuitStats stats;
+    stats.num_qubits = 16;
+    stats.num_measurements = 100;
+    FrameSimulator f(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 16, SHARED_TEST_RNG());
     ErrorAnalyzer e(100, 1, 16, 100, false, false, false, 0.0, false, true);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
@@ -314,11 +317,10 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
     for (size_t k = 0; k < 16; k++) {
         data.push_back(GateTarget::qubit(k));
     }
-    OperationData targets = {{}, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            (e.*gate.reverse_error_analyzer_function)(targets);
-            (f.*gate.inverse().frame_simulator_function)(targets);
+            e.rev_do_gate({gate.id, {}, data});
+            f.do_gate({gate.inverse().id, {}, data});
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
                 bool zs[2]{};
@@ -2934,7 +2936,7 @@ Circuit stack trace:
 
 TEST(ErrorAnalyzer, brute_force_decomp_simple) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),
@@ -2977,7 +2979,7 @@ TEST(ErrorAnalyzer, brute_force_decomp_simple) {
 
 TEST(ErrorAnalyzer, brute_force_decomp_introducing_obs_pair) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),
@@ -3029,7 +3031,7 @@ TEST(ErrorAnalyzer, brute_force_decomp_introducing_obs_pair) {
 
 TEST(ErrorAnalyzer, brute_force_decomp_with_obs) {
     MonotonicBuffer<DemTarget> buf;
-    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known;
+    std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known;
     bool actual;
     std::vector<DemTarget> problem{
         DemTarget::relative_detector_id(0),

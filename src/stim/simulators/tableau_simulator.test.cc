@@ -16,17 +16,34 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/circuit.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
+static std::vector<GateTarget> qubit_targets(const std::vector<uint32_t> &targets) {
+    std::vector<GateTarget> result;
+    for (uint32_t t : targets) {
+        result.push_back(GateTarget::qubit(t & ~TARGET_INVERTED_BIT, t & TARGET_INVERTED_BIT));
+    }
+    return result;
+}
+struct OpDat {
+    std::vector<GateTarget> targets;
+    OpDat(uint32_t u) : targets(qubit_targets({u})) {
+    }
+    OpDat(std::vector<uint32_t> u) : targets(qubit_targets(u)) {
+    }
+    operator CircuitInstruction() const {
+        return {(GateType)0, {}, targets};
+    }
+};
+
 TEST(TableauSimulator, identity) {
     auto s = TableauSimulator(SHARED_TEST_RNG(), 1);
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
-    s.measure_z(OpDat(0));
+    s.measure_z({GateType::Z, {}, qubit_targets({0})});
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
-    s.measure_z(OpDat::flipped(0));
+    s.measure_z({GateType::Z, {}, qubit_targets({0 | TARGET_INVERTED_BIT})});
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, true}));
 }
 
@@ -295,13 +312,12 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
         }
         sim.inv_state = t;
 
-        const auto &action = gate.tableau_simulator_function;
         const auto &inverse_op_tableau = gate.inverse().tableau();
         if (inverse_op_tableau.num_qubits == 2) {
-            (sim.*action)(OpDat({7, 4}));
+            sim.do_gate({gate.id, {}, qubit_targets({7, 4})});
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
-            (sim.*action)(OpDat(5));
+            sim.do_gate({gate.id, {}, qubit_targets({5})});
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
         EXPECT_EQ(sim.inv_state, t) << gate.name;
@@ -314,8 +330,8 @@ TEST(TableauSimulator, certain_errors_consistent_with_gates) {
     GateTarget targets[]{GateTarget{0}};
     double p0 = 0.0;
     double p1 = 1.0;
-    OperationData d0{{&p0}, {targets}};
-    OperationData d1{{&p1}, {targets}};
+    CircuitInstruction d0{(GateType)0, {&p0}, {targets}};
+    CircuitInstruction d1{(GateType)0, {&p1}, {targets}};
 
     sim1.X_ERROR(d1);
     sim2.X(d0);
@@ -387,7 +403,7 @@ TEST(TableauSimulator, to_vector_sim) {
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    (sim_tab.*GATE_DATA.at("XCX").tableau_simulator_function)(OpDat({4, 7}));
+    sim_tab.do_gate({GateType::XCX, {}, qubit_targets({4, 7})});
     sim_vec.apply("XCX", 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }

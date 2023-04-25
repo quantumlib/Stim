@@ -218,6 +218,29 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, slice_maj, {
     ASSERT_FALSE(s[10].not_zero());
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bit_table, from_concat_major, {
+    auto a = simd_bit_table<W>::from_text(R"TABLE(
+        000111
+        101011
+        111111
+        000000
+    )TABLE");
+    auto b = simd_bit_table<W>::from_text(R"TABLE(
+        100000
+        000001
+        000100
+    )TABLE");
+    ASSERT_EQ(a.concat_major(b, 4, 3), simd_bit_table<W>::from_text(R"TABLE(
+            000111
+            101011
+            111111
+            000000
+            100000
+            000001
+            000100
+        )TABLE"));
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bit_table, from_quadrants, {
     simd_bit_table<W> t(2, 2);
     simd_bit_table<W> z(2, 2);
@@ -266,3 +289,14 @@ TEST(simd_bit_table, lg) {
     ASSERT_EQ(lg(8), 3);
     ASSERT_EQ(lg(9), 3);
 }
+
+TEST_EACH_WORD_SIZE_W(simd_bit_table, destructive_resize, {
+    simd_bit_table<W> table = table.random(5, 7, SHARED_TEST_RNG());
+    const uint8_t *prev_pointer = table.data.u8;
+    table.destructive_resize(5, 7);
+    ASSERT_EQ(table.data.u8, prev_pointer);
+    table.destructive_resize(1025, 7);
+    ASSERT_NE(table.data.u8, prev_pointer);
+    ASSERT_GE(table.num_major_bits_padded(), 1025);
+    ASSERT_GE(table.num_minor_bits_padded(), 7);
+})

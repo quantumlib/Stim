@@ -93,13 +93,22 @@ std::string rewind_read_close(FILE *f) {
     }
 }
 
-RaiiTempNamedFile::RaiiTempNamedFile() {
+static void init_path(RaiiTempNamedFile &self) {
     char tmp_stdin_filename[] = "/tmp/stim_test_named_file_XXXXXX";
-    descriptor = mkstemp(tmp_stdin_filename);
-    if (descriptor == -1) {
+    self.descriptor = mkstemp(tmp_stdin_filename);
+    if (self.descriptor == -1) {
         throw std::runtime_error("Failed to create temporary file.");
     }
-    path = std::string(tmp_stdin_filename);
+    self.path = std::string(tmp_stdin_filename);
+}
+
+RaiiTempNamedFile::RaiiTempNamedFile() {
+    init_path(*this);
+}
+
+RaiiTempNamedFile::RaiiTempNamedFile(const std::string &contents) {
+    init_path(*this);
+    write_contents(contents);
 }
 
 RaiiTempNamedFile::~RaiiTempNamedFile() {

@@ -101,6 +101,13 @@ void exchange_low_indices(simd_bit_table<W> &table) {
 }
 
 template <size_t W>
+void simd_bit_table<W>::destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor) {
+    num_simd_words_minor = min_bits_to_num_simd_words<W>(new_min_bits_minor);
+    num_simd_words_major = min_bits_to_num_simd_words<W>(new_min_bits_major);
+    data.destructive_resize(num_simd_words_minor * num_simd_words_major * W * W);
+}
+
+template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 
@@ -204,6 +211,25 @@ std::string simd_bit_table<W>::str(size_t n) const {
 template <size_t W>
 std::string simd_bit_table<W>::str() const {
     return str(num_major_bits_padded(), num_minor_bits_padded());
+}
+
+template <size_t W>
+simd_bit_table<W> simd_bit_table<W>::concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const {
+    if (num_major_bits_padded() < n_first || second.num_major_bits_padded() < n_second || num_minor_bits_padded() != second.num_minor_bits_padded()) {
+        throw std::invalid_argument("Size mismatch");
+    }
+    simd_bit_table<W> result(n_first + n_second, num_minor_bits_padded());
+    auto n1 = n_first * num_minor_u8_padded();
+    auto n2 = n_second * num_minor_u8_padded();
+    memcpy(result.data.u8, data.u8, n1);
+    memcpy(result.data.u8 + n1, second.data.u8, n2);
+    return result;
+}
+
+template <size_t W>
+void simd_bit_table<W>::overwrite_major_range_with(size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const {
+    assert(src.num_minor_bits_padded() == num_minor_bits_padded());
+    memcpy(data.u8 + dst_major_start * num_minor_u8_padded(), src.data.u8 + src_major_start * src.num_minor_u8_padded(), num_major_indices * num_minor_u8_padded());
 }
 
 template <size_t W>

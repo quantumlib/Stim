@@ -45,7 +45,7 @@ pybind11::object buffer_slice_to_numpy(
     size_t shot_bit_copy_offset,
     size_t shot_bit_copy_length,
     bool bit_packed,
-    ConstPointerRange<uint8_t> immovable_buffer) {
+    SpanRef<const uint8_t> immovable_buffer) {
     size_t num_bytes_copied_per_shot = (shot_bit_copy_length + 7) / 8;
     if (bit_packed) {
         uint8_t *buffer = new uint8_t[num_bytes_copied_per_shot * num_shots];
@@ -204,7 +204,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 path: The path to the file to read the data from.
                 format: The format that the data is stored in, such as 'b8'.
                     See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-                bit_packed: Defaults to false. Determines whether the result is a bool8
+                bit_packed: Defaults to false. Determines whether the result is a bool_
                     numpy array with one bit per byte, or a uint8 numpy array with 8 bits
                     per byte.
                 num_measurements: How many measurements there are per shot.
@@ -221,10 +221,10 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                     A tuple (dets, obs) of numpy arrays containing the loaded data.
 
                     If bit_packed=False:
-                        dets.dtype = np.bool8
+                        dets.dtype = np.bool_
                         dets.shape = (num_shots, num_measurements + num_detectors)
                         det bit b from shot s is at dets[s, b]
-                        obs.dtype = np.bool8
+                        obs.dtype = np.bool_
                         obs.shape = (num_shots, num_observables)
                         obs bit b from shot s is at dets[s, b]
                     If bit_packed=True:
@@ -240,7 +240,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                     A numpy array containing the loaded data.
 
                     If bit_packed=False:
-                        dtype = np.bool8
+                        dtype = np.bool_
                         shape = (num_shots,
                                  num_measurements + num_detectors + num_observables)
                         bit b from shot s is at result[s, b]
@@ -289,7 +289,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                     of the array determines whether or not the data is bit packed, and the
                     shape must match the bits per shot.
 
-                    dtype=np.bool8: Not bit packed. Shape must be
+                    dtype=np.bool_: Not bit packed. Shape must be
                         (num_shots, num_measurements + num_detectors + num_observables).
                     dtype=np.uint8: Yes bit packed. Shape must be
                         (num_shots, math.ceil(
@@ -313,7 +313,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 ...     shot_data = np.array([
                 ...         [0, 1, 0],
                 ...         [0, 1, 1],
-                ...     ], dtype=np.bool8)
+                ...     ], dtype=np.bool_)
                 ...
                 ...     stim.write_shot_data_file(
                 ...         path=str(path),

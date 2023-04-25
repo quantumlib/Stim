@@ -20,11 +20,19 @@
 #include <random>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record_batch.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
+
+enum FrameSimulatorMode {
+    STORE_MEASUREMENTS_TO_MEMORY,
+    STREAM_MEASUREMENTS_TO_DISK,
+    STORE_DETECTIONS_TO_MEMORY,
+    STREAM_DETECTIONS_TO_DISK,
+};
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -33,14 +41,17 @@ namespace stim {
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
     size_t num_qubits;  // Number of qubits being tracked.
+    bool keeping_detection_data;
     size_t batch_size;  // Number of instances being tracked.
     simd_bit_table<MAX_BITWORD_WIDTH>
         x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
     simd_bit_table<MAX_BITWORD_WIDTH>
-        z_table;                  // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
-    MeasureRecordBatch m_record;  // The measurement record.
-    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;   // Workspace used when sampling error processes.
-    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;  // Workspace used when sampling compound error processes.
+        z_table;                    // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    MeasureRecordBatch m_record;    // The measurement record.
+    MeasureRecordBatch det_record;  // Detection event record.
+    simd_bit_table<MAX_BITWORD_WIDTH> obs_record;  // Accumulating observable flip record.
+    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;       // Workspace used when sampling error processes.
+    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;      // Workspace used when sampling compound error processes.
     simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
     std::mt19937_64 &rng;  // Random number generator used for generating entropy.
@@ -51,96 +62,74 @@ struct FrameSimulator {
     // propagate, without interference from other effects.
     bool guarantee_anticommutation_via_frame_randomization = true;
 
-    FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
-
-    /// Returns a batch of measurement-flipped samples from the circuit.
+    /// Constructs a FrameSimulator capable of simulating a circuit with the given size stats.
     ///
     /// Args:
-    ///     circuit: The circuit to sample from.
-    ///     num_shots: The number of shots of the circuit to run.
-    ///     rng: Random number generator.
-    ///
-    /// Returns:
-    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
-    ///     Each bit in the table is whether a specific measurement was flipped in a specific shot.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(
-        const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
-
-    /// Returns a batch of samples from the circuit.
-    ///
-    /// Args:
-    ///     circuit: The circuit to sample from.
-    ///     reference_sample: A known-good sample from the circuit, collected without any noise processes.
-    ///     num_shots: The number of shots of the circuit to run.
-    ///     rng: Random number generator.
-    ///
-    /// Returns:
-    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
-    ///     Each bit in the table is a measurement result.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample(
-        const Circuit &circuit,
-        const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-        size_t num_samples,
-        std::mt19937_64 &rng);
-
-    static void sample_out(
-        const Circuit &circuit,
-        const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-        uint64_t num_shots,
-        FILE *out,
-        SampleFormat format,
-        std::mt19937_64 &rng);
+    ///     circuit_stats: Sizes that determine how large internal buffers must be. Get
+    ///         this from stim::Circuit::compute_stats.
+    ///     mode: Describes the intended usage of the simulator, which affects the sizing
+    ///         of buffers.
+    ///     batch_size: How many shots to simulate simultaneously.
+    ///     rng: The random number generator to pull noise from.
+    FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng);
+    FrameSimulator() = delete;
 
     PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
+    void configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size);
 
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    void measure_x(const OperationData &target_data);
-    void measure_y(const OperationData &target_data);
-    void measure_z(const OperationData &target_data);
-    void reset_x(const OperationData &target_data);
-    void reset_y(const OperationData &target_data);
-    void reset_z(const OperationData &target_data);
-    void measure_reset_x(const OperationData &target_data);
-    void measure_reset_y(const OperationData &target_data);
-    void measure_reset_z(const OperationData &target_data);
+    void do_gate(const CircuitInstruction &data);
 
-    void I(const OperationData &target_data);
-    void H_XZ(const OperationData &target_data);
-    void H_XY(const OperationData &target_data);
-    void H_YZ(const OperationData &target_data);
-    void C_XYZ(const OperationData &target_data);
-    void C_ZYX(const OperationData &target_data);
-    void ZCX(const OperationData &target_data);
-    void ZCY(const OperationData &target_data);
-    void ZCZ(const OperationData &target_data);
-    void XCX(const OperationData &target_data);
-    void XCY(const OperationData &target_data);
-    void XCZ(const OperationData &target_data);
-    void YCX(const OperationData &target_data);
-    void YCY(const OperationData &target_data);
-    void YCZ(const OperationData &target_data);
-    void SWAP(const OperationData &target_data);
-    void ISWAP(const OperationData &target_data);
-    void CXSWAP(const OperationData &target_data);
-    void SWAPCX(const OperationData &target_data);
-    void MPP(const OperationData &target_data);
+    void do_MX(const CircuitInstruction &target_data);
+    void do_MY(const CircuitInstruction &target_data);
+    void do_MZ(const CircuitInstruction &target_data);
+    void do_RX(const CircuitInstruction &target_data);
+    void do_RY(const CircuitInstruction &target_data);
+    void do_RZ(const CircuitInstruction &target_data);
+    void do_MRX(const CircuitInstruction &target_data);
+    void do_MRY(const CircuitInstruction &target_data);
+    void do_MRZ(const CircuitInstruction &target_data);
 
-    void SQRT_XX(const OperationData &target_data);
-    void SQRT_YY(const OperationData &target_data);
-    void SQRT_ZZ(const OperationData &target_data);
+    void do_DETECTOR(const CircuitInstruction &target_data);
+    void do_OBSERVABLE_INCLUDE(const CircuitInstruction &target_data);
 
-    void DEPOLARIZE1(const OperationData &target_data);
-    void DEPOLARIZE2(const OperationData &target_data);
-    void X_ERROR(const OperationData &target_data);
-    void Y_ERROR(const OperationData &target_data);
-    void Z_ERROR(const OperationData &target_data);
-    void PAULI_CHANNEL_1(const OperationData &target_data);
-    void PAULI_CHANNEL_2(const OperationData &target_data);
-    void CORRELATED_ERROR(const OperationData &target_data);
-    void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+    void do_I(const CircuitInstruction &target_data);
+    void do_H_XZ(const CircuitInstruction &target_data);
+    void do_H_XY(const CircuitInstruction &target_data);
+    void do_H_YZ(const CircuitInstruction &target_data);
+    void do_C_XYZ(const CircuitInstruction &target_data);
+    void do_C_ZYX(const CircuitInstruction &target_data);
+    void do_ZCX(const CircuitInstruction &target_data);
+    void do_ZCY(const CircuitInstruction &target_data);
+    void do_ZCZ(const CircuitInstruction &target_data);
+    void do_XCX(const CircuitInstruction &target_data);
+    void do_XCY(const CircuitInstruction &target_data);
+    void do_XCZ(const CircuitInstruction &target_data);
+    void do_YCX(const CircuitInstruction &target_data);
+    void do_YCY(const CircuitInstruction &target_data);
+    void do_YCZ(const CircuitInstruction &target_data);
+    void do_SWAP(const CircuitInstruction &target_data);
+    void do_ISWAP(const CircuitInstruction &target_data);
+    void do_CXSWAP(const CircuitInstruction &target_data);
+    void do_SWAPCX(const CircuitInstruction &target_data);
+    void do_MPP(const CircuitInstruction &target_data);
+
+    void do_SQRT_XX(const CircuitInstruction &target_data);
+    void do_SQRT_YY(const CircuitInstruction &target_data);
+    void do_SQRT_ZZ(const CircuitInstruction &target_data);
+
+    void do_DEPOLARIZE1(const CircuitInstruction &target_data);
+    void do_DEPOLARIZE2(const CircuitInstruction &target_data);
+    void do_X_ERROR(const CircuitInstruction &target_data);
+    void do_Y_ERROR(const CircuitInstruction &target_data);
+    void do_Z_ERROR(const CircuitInstruction &target_data);
+    void do_PAULI_CHANNEL_1(const CircuitInstruction &target_data);
+    void do_PAULI_CHANNEL_2(const CircuitInstruction &target_data);
+    void do_CORRELATED_ERROR(const CircuitInstruction &target_data);
+    void do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data);
 
    private:
     void xor_control_bit_into(uint32_t control, simd_bits_range_ref<MAX_BITWORD_WIDTH> target);
@@ -148,7 +137,7 @@ struct FrameSimulator {
     void single_cy(uint32_t c, uint32_t t);
 };
 
-bool should_use_streaming_instead_of_memory(uint64_t result_count);
+bool should_use_streaming_because_bit_count_is_too_large_to_store(uint64_t result_count);
 struct DebugForceResultStreamingRaii {
     DebugForceResultStreamingRaii();
     ~DebugForceResultStreamingRaii();

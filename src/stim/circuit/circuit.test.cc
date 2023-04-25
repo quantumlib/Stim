@@ -12,28 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/circuit.test.h"
+#include "stim/circuit/circuit.h"
 
 #include "gtest/gtest.h"
 
 using namespace stim;
-
-OpDat::OpDat(uint32_t target) : targets({{target}}) {
-}
-
-OpDat::OpDat(std::vector<uint32_t> int_targets) {
-    for (auto e : int_targets) {
-        targets.push_back({e});
-    }
-}
-
-OpDat OpDat::flipped(size_t target) {
-    return OpDat(target | TARGET_INVERTED_BIT);
-}
-
-OpDat::operator OperationData() {
-    return {{}, targets};
-}
 
 TEST(circuit, from_text) {
     Circuit expected;
@@ -167,7 +150,7 @@ TEST(circuit, from_text) {
     ASSERT_EQ(parsed.operations.size(), 2);
     ASSERT_EQ(parsed.blocks.size(), 1);
     ASSERT_EQ(parsed.blocks[0].operations.size(), 1);
-    ASSERT_EQ(parsed.blocks[0].operations[0].target_data.targets.size(), 3);
+    ASSERT_EQ(parsed.blocks[0].operations[0].targets.size(), 3);
 
     expected.clear();
     expected.safe_append_ua(
@@ -196,8 +179,8 @@ TEST(circuit, parse_combiners) {
     ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
     auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.args.size(), 0);
-    ASSERT_EQ(c.operations[0].target_data.targets.size(), 7);
+    ASSERT_EQ(c.operations[0].args.size(), 0);
+    ASSERT_EQ(c.operations[0].targets.size(), 7);
     std::vector<GateTarget> expected{
         GateTarget::x(1),
         GateTarget::combiner(),
@@ -207,11 +190,11 @@ TEST(circuit, parse_combiners) {
         GateTarget::z(4),
         GateTarget::z(5),
     };
-    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
+    ASSERT_EQ(c.operations[0].targets, (SpanRef<GateTarget>)expected);
 
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
-    ASSERT_EQ(c.operations[0].target_data.args.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.args[0], 0.125);
+    ASSERT_EQ(c.operations[0].args.size(), 1);
+    ASSERT_EQ(c.operations[0].args[0], 0.125);
 }
 
 TEST(circuit, parse_sweep_bits) {
@@ -225,8 +208,8 @@ TEST(circuit, parse_sweep_bits) {
 
     Circuit c("CNOT sweep[2] 5");
     ASSERT_EQ(c.operations.size(), 1);
-    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
-    ASSERT_TRUE(c.operations[0].target_data.args.empty());
+    ASSERT_EQ(c.operations[0].targets, (SpanRef<GateTarget>)expected);
+    ASSERT_TRUE(c.operations[0].args.empty());
 }
 
 TEST(circuit, append_circuit) {
@@ -447,8 +430,8 @@ TEST(circuit, for_each_operation) {
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
 
-    std::vector<Operation> ops;
-    c.for_each_operation([&](const Operation &op) {
+    std::vector<CircuitInstruction> ops;
+    c.for_each_operation([&](const CircuitInstruction &op) {
         ops.push_back(op);
     });
     ASSERT_EQ(ops, flat.operations);
@@ -479,8 +462,8 @@ TEST(circuit, for_each_operation_reverse) {
     flat.safe_append_u("M", {0, 1});
     flat.safe_append_u("H", {0});
 
-    std::vector<Operation> ops;
-    c.for_each_operation_reverse([&](const Operation &op) {
+    std::vector<CircuitInstruction> ops;
+    c.for_each_operation_reverse([&](const CircuitInstruction &op) {
         ops.push_back(op);
     });
     ASSERT_EQ(ops, flat.operations);
@@ -489,8 +472,7 @@ TEST(circuit, for_each_operation_reverse) {
 TEST(circuit, count_qubits) {
     ASSERT_EQ(Circuit().count_qubits(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -500,9 +482,9 @@ TEST(circuit, count_qubits) {
                 M 2
             }
         }
-    )CIRCUIT")
-            .count_qubits(),
-        3);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_qubits(), 3);
+    ASSERT_EQ(c.compute_stats().num_qubits, 3);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -563,8 +545,7 @@ TEST(circuit, count_sweep_bits) {
         101);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 999999 {
@@ -580,66 +561,45 @@ TEST(circuit, count_sweep_bits) {
                 }
             }
         }
-    )CIRCUIT")
-            .count_sweep_bits(),
-        78);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_sweep_bits(), 78);
+    ASSERT_EQ(c.compute_stats().num_sweep_bits, 78);
 }
 
 TEST(circuit, count_detectors_num_observables) {
     ASSERT_EQ(Circuit().count_detectors(), 0);
     ASSERT_EQ(Circuit().count_observables(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_detectors(),
-        1);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-        M 0 1 2
-        DETECTOR rec[-1]
-        OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_observables(),
-        6);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), 1);
+    ASSERT_EQ(c.count_observables(), 6);
+    ASSERT_EQ(c.compute_stats().num_detectors, 1);
+    ASSERT_EQ(c.compute_stats().num_observables, 6);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    c = Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 1000 {
             REPEAT 1000 {
                 REPEAT 1000 {
                     REPEAT 1000 {
                         DETECTOR rec[-1]
-                    }
-                }
-            }
-        }
-    )CIRCUIT")
-            .count_detectors(),
-        1000000000000ULL);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-        M 0 1
-        REPEAT 1000 {
-            REPEAT 1000 {
-                REPEAT 1000 {
-                    REPEAT 1000 {
                         OBSERVABLE_INCLUDE(2) rec[-1]
                     }
                 }
             }
         }
-    )CIRCUIT")
-            .count_observables(),
-        3);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), 1000000000000ULL);
+    ASSERT_EQ(c.count_observables(), 3);
+    ASSERT_EQ(c.compute_stats().num_detectors, 1000000000000ULL);
+    ASSERT_EQ(c.compute_stats().num_observables, 3);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    c = Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 999999 {
          REPEAT 999999 {
@@ -668,9 +628,11 @@ TEST(circuit, count_detectors_num_observables) {
           }
          }
         }
-    )CIRCUIT")
-            .count_detectors(),
-        UINT64_MAX);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_detectors(), UINT64_MAX);
+    ASSERT_EQ(c.count_observables(), 0);
+    ASSERT_EQ(c.compute_stats().num_detectors, UINT64_MAX);
+    ASSERT_EQ(c.compute_stats().num_observables, 0);
 }
 
 TEST(circuit, max_lookback) {
@@ -718,8 +680,7 @@ TEST(circuit, max_lookback) {
 TEST(circuit, count_measurements) {
     ASSERT_EQ(Circuit().count_measurements(), 0);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+    auto c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -729,9 +690,9 @@ TEST(circuit, count_measurements) {
                 M 2
             }
         }
-    )CIRCUIT")
-            .count_measurements(),
-        8);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_measurements(), 8);
+    ASSERT_EQ(c.compute_stats().num_measurements, 8);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -746,8 +707,8 @@ TEST(circuit, count_measurements) {
     )CIRCUIT")
             .count_measurements(),
         999999ULL * 999999ULL * 999999ULL);
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
+
+    c = Circuit(R"CIRCUIT(
         REPEAT 999999 {
          REPEAT 999999 {
           REPEAT 999999 {
@@ -767,9 +728,9 @@ TEST(circuit, count_measurements) {
           }
          }
         }
-    )CIRCUIT")
-            .count_measurements(),
-        UINT64_MAX);
+    )CIRCUIT");
+    ASSERT_EQ(c.count_measurements(), UINT64_MAX);
+    ASSERT_EQ(c.compute_stats().num_measurements, UINT64_MAX);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
@@ -923,10 +884,10 @@ TEST(circuit, big_rep_count) {
             M 1
         }
     )CIRCUIT");
-    ASSERT_EQ(c.operations[0].target_data.targets.size(), 3);
-    ASSERT_EQ(c.operations[0].target_data.targets[0].data, 0);
-    ASSERT_EQ(c.operations[0].target_data.targets[1].data, 1234567890123456789ULL & 0xFFFFFFFFULL);
-    ASSERT_EQ(c.operations[0].target_data.targets[2].data, 1234567890123456789ULL >> 32);
+    ASSERT_EQ(c.operations[0].targets.size(), 3);
+    ASSERT_EQ(c.operations[0].targets[0].data, 0);
+    ASSERT_EQ(c.operations[0].targets[1].data, 1234567890123456789ULL & 0xFFFFFFFFULL);
+    ASSERT_EQ(c.operations[0].targets[2].data, 1234567890123456789ULL >> 32);
     ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
     ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
 
@@ -950,13 +911,13 @@ TEST(circuit, negative_float_coordinates) {
         QUBIT_COORDS(1, -2) 1
         QUBIT_COORDS(-3.5) 1
     )CIRCUIT");
-    ASSERT_EQ(c.operations[0].target_data.args[2], -3);
-    ASSERT_EQ(c.operations[2].target_data.args[0], -3.5);
+    ASSERT_EQ(c.operations[0].args[2], -3);
+    ASSERT_EQ(c.operations[2].args[0], -3.5);
     ASSERT_ANY_THROW({ Circuit("M(-0.1) 0"); });
     c = Circuit("QUBIT_COORDS(1e20) 0");
-    ASSERT_EQ(c.operations[0].target_data.args[0], 1e20);
+    ASSERT_EQ(c.operations[0].args[0], 1e20);
     c = Circuit("QUBIT_COORDS(1E+20) 0");
-    ASSERT_EQ(c.operations[0].target_data.args[0], 1E+20);
+    ASSERT_EQ(c.operations[0].args[0], 1E+20);
     ASSERT_ANY_THROW({ Circuit("QUBIT_COORDS(1e10000) 0"); });
 }
 
@@ -1211,23 +1172,22 @@ TEST(circuit, count_ticks) {
             .count_ticks(),
         2);
 
-    ASSERT_EQ(
-        Circuit(R"CIRCUIT(
-            TICK
-            REPEAT 1000 {
-                REPEAT 2000 {
-                    REPEAT 1000 {
-                        TICK
-                    }
-                    TICK
-                    TICK
+    auto c = Circuit(R"CIRCUIT(
+        TICK
+        REPEAT 1000 {
+            REPEAT 2000 {
+                REPEAT 1000 {
                     TICK
                 }
+                TICK
+                TICK
+                TICK
             }
-            TICK
-        )CIRCUIT")
-            .count_ticks(),
-        2006000002);
+        }
+        TICK
+    )CIRCUIT");
+    ASSERT_EQ(c.count_ticks(), 2006000002);
+    ASSERT_EQ(c.compute_stats().num_ticks, 2006000002);
 }
 
 TEST(circuit, coords_of_detector) {
@@ -1512,6 +1472,70 @@ TEST(circuit, inverse) {
             S 0
         )CIRCUIT"));
 
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            SHIFT_COORDS(-2, 3)
+            TICK
+            TICK
+            SHIFT_COORDS(4)
+            TICK
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            TICK
+            SHIFT_COORDS(-4)
+            TICK
+            TICK
+            SHIFT_COORDS(2, -3)
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            X_ERROR(0.125) 0 1
+            Y_ERROR(0.125) 1 2
+            Z_ERROR(0.125) 2 3
+            PAULI_CHANNEL_1(0.125, 0.25, 0) 0 1 0 0
+            PAULI_CHANNEL_2(0, 0.125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) 5 7 2 3
+            DEPOLARIZE1(0.25) 4 5 6
+            DEPOLARIZE2(0.25) 1 2 3 4
+            REPEAT 2 {
+                MX(0.125) 3 4
+                MY(0.125) 5 6
+                M(0.125) 7 8
+            }
+            MRX(0.125) 9 10
+            MRY(0.125) 11 12
+            MR(0.125) 13 14
+            RX 15 16
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+            RY 17 18
+            R 19 20
+            MPP(0.125) X0*X1 Y2*Y3*Y4 Z5*Y6
+        )CIRCUIT")
+            .inverse(true),
+        Circuit(R"CIRCUIT(
+            MPP(0.125) Y6*Z5 Y4*Y3*Y2 X1*X0
+            MR 20 19
+            MRY 18 17
+            MRX 16 15
+            MR(0.125) 14 13
+            MRY(0.125) 12 11
+            MRX(0.125) 10 9
+            REPEAT 2 {
+                M(0.125) 8 7
+                MY(0.125) 6 5
+                MX(0.125) 4 3
+            }
+            DEPOLARIZE2(0.25) 3 4 1 2
+            DEPOLARIZE1(0.25) 6 5 4
+            PAULI_CHANNEL_2(0, 0.125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) 2 3 5 7
+            PAULI_CHANNEL_1(0.125, 0.25, 0) 0 0 1 0
+            Z_ERROR(0.125) 3 2
+            Y_ERROR(0.125) 2 1
+            X_ERROR(0.125) 1 0
+        )CIRCUIT"));
+
     ASSERT_THROW({ Circuit("X_ERROR(0.125) 0").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("M(0.125) 0").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("M 0").inverse(); }, std::invalid_argument);
@@ -1520,4 +1544,5 @@ TEST(circuit, inverse) {
     ASSERT_THROW({ Circuit("MPP X0*X1").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("DETECTOR").inverse(); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("OBSERVABLE_INCLUDE").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("ELSE_CORRELATED_ERROR(0.125) X0").inverse(true); }, std::invalid_argument);
 }

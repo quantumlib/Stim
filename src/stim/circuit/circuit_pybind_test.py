@@ -1320,3 +1320,7 @@ def test_with_inlined_feedback():
     dem1 = before.flattened().detector_error_model()
     dem2 = after.flattened().detector_error_model()
     assert dem1.approx_equals(dem2, atol=1e-5)
+
+
+def test_detslice_ops_diagram_no_ticks_does_not_hang():
+    assert stim.Circuit.generated("surface_code:rotated_memory_x", rounds=5, distance=5).diagram("detslice-svg") is not None

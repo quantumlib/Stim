@@ -18,15 +18,15 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
-    : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::shared_ptr<std::mt19937_64> init_prng)
+    : circuit_stats(init_circuit.compute_stats()), circuit(std::move(init_circuit)), prng(init_prng), frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, *prng) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -35,33 +35,31 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
         throw std::invalid_argument(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = detector_samples(
-        circuit, dets_obs, num_shots, prepend_observables, append_observables || separate_observables, *prng);
-    size_t num_dets = dets_obs.detectors.size();
-    size_t num_obs = dets_obs.observables.size();
 
-    size_t num_det_bits;
-    pybind11::object obs_data = pybind11::none();
+    frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
+    frame_sim.reset_all_and_run(circuit);
+
+    const auto &det_data = frame_sim.det_record.storage;
+    const auto &obs_data = frame_sim.obs_record;
+    uint64_t num_dets = circuit_stats.num_detectors;
+    uint64_t num_obs = circuit_stats.num_observables;
     if (separate_observables) {
-        num_det_bits = num_dets;
-        simd_bit_table<MAX_BITWORD_WIDTH> obs_table(num_obs, num_shots);
-        for (size_t obs = 0; obs < num_obs; obs++) {
-            auto obs_slice = sample[num_dets + obs];
-            obs_table[obs] = obs_slice;
-            obs_slice.clear();
-        }
-        obs_data = transposed_simd_bit_table_to_numpy(obs_table, num_obs, num_shots, bit_packed);
-    } else {
-        num_det_bits = num_dets + num_obs * (append_observables + prepend_observables);
+        pybind11::object py_det_data = transposed_simd_bit_table_to_numpy(det_data, num_dets, num_shots, bit_packed);
+        pybind11::object py_obs_data = transposed_simd_bit_table_to_numpy(obs_data, num_obs, num_shots, bit_packed);
+        return pybind11::make_tuple(py_det_data, py_obs_data);
     }
 
-    // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.
-    pybind11::object det_data = transposed_simd_bit_table_to_numpy(sample, num_det_bits, num_shots, bit_packed);
-
-    if (separate_observables) {
-        return pybind11::make_tuple(det_data, obs_data);
+    size_t num_concat = circuit_stats.num_detectors;
+    simd_bit_table<MAX_BITWORD_WIDTH> concat_data = det_data;
+    if (append_observables) {
+        concat_data = concat_data.concat_major(obs_data, num_concat, circuit_stats.num_observables);
+        num_concat += circuit_stats.num_observables;
     }
-    return det_data;
+    if (prepend_observables) {
+        concat_data = obs_data.concat_major(concat_data, circuit_stats.num_observables, num_concat);
+        num_concat += circuit_stats.num_observables;
+    }
+    return transposed_simd_bit_table_to_numpy(concat_data, num_concat, num_shots, bit_packed);
 }
 
 void CompiledDetectorSampler::sample_write(
@@ -76,7 +74,7 @@ void CompiledDetectorSampler::sample_write(
     RaiiFile out(filepath.data(), "wb");
     RaiiFile obs_out(obs_out_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit,
         num_samples,
         prepend_observables,
@@ -197,14 +195,14 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                 append_observables: Defaults to false. When set, observables are included
                     with the detectors and are placed at the end of the results.
                 bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
-                    a bool8 numpy array with 1 bit per byte. Uses little endian packing.
+                    a bool_ numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
                 A numpy array or tuple of numpy arrays containing the samples.
 
                 if separate_observables=False and bit_packed=False:
                     A single numpy array.
-                    dtype=bool8
+                    dtype=bool_
                     shape=(
                         shots,
                         num_detectors + num_observables * (
@@ -226,9 +224,9 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
                 if separate_observables=True and bit_packed=False:
                     A (dets, obs) tuple.
-                    dets.dtype=bool8
+                    dets.dtype=bool_
                     dets.shape=(shots, num_detectors)
-                    obs.dtype=bool8
+                    obs.dtype=bool_
                     obs.shape=(shots, num_observables)
                     The bit for detection event `m` in shot `s` is at
                         dets[s, m]

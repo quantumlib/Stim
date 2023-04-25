@@ -27,11 +27,7 @@ namespace stim_pybind {
 struct CompiledMeasurementsToDetectionEventsConverter {
     const bool skip_reference_sample;
     const stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample;
-    const uint64_t circuit_num_measurements;
-    const uint64_t circuit_num_sweep_bits;
-    const uint64_t circuit_num_detectors;
-    const uint64_t circuit_num_observables;
-    const size_t circuit_num_qubits;
+    const stim::CircuitStats circuit_stats;
     const stim::Circuit circuit;
 
     CompiledMeasurementsToDetectionEventsConverter() = delete;

@@ -56,10 +56,11 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         }
         out << indent << "        ";
         out << "at instruction #" << (frame.instruction_offset + 1);
+        const auto &gate_data = GATE_DATA.items[e.instruction_targets.gate_type];
         if (k < e.stack_frames.size() - 1) {
             out << " (a REPEAT " << frame.instruction_repetitions_arg << " block)";
-        } else if (e.instruction_targets.gate != nullptr) {
-            out << " (" << e.instruction_targets.gate->name << ")";
+        } else {
+            out << " (" << gate_data.name << ")";
         }
         if (k) {
             out << " in the REPEAT block";
@@ -81,7 +82,7 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
 }
 
 void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
-    const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords) {
+    const CircuitInstruction &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords) {
     targets_in_range.clear();
     for (size_t k = target_range_start; k < target_range_end; k++) {
         const auto &t = actual_op.targets[k];
@@ -99,7 +100,7 @@ void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
 }
 
 void ExplainedError::fill_in_dem_targets(
-    ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
+    SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
     dem_error_terms.clear();
     for (const auto &t : targets) {
         auto entry = dem_coords.find(t.raw_id());
@@ -148,10 +149,11 @@ std::ostream &stim::operator<<(std::ostream &out, const ExplainedError &e) {
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const CircuitTargetsInsideInstruction &e) {
-    if (e.gate == nullptr) {
+    const auto &gate_data = GATE_DATA.items[e.gate_type];
+    if (gate_data.flags == GateFlags::NO_GATE_FLAG) {
         out << "null";
     } else {
-        out << e.gate->name;
+        out << gate_data.name;
     }
     if (!e.args.empty()) {
         out << '(' << comma_sep(e.args) << ')';
@@ -195,7 +197,7 @@ bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
            stack_frames == other.stack_frames;
 }
 bool CircuitTargetsInsideInstruction::operator==(const CircuitTargetsInsideInstruction &other) const {
-    return gate == other.gate && target_range_start == other.target_range_start &&
+    return gate_type == other.gate_type && target_range_start == other.target_range_start &&
            target_range_end == other.target_range_end && targets_in_range == other.targets_in_range &&
            args == other.args;
 }
@@ -283,8 +285,8 @@ void CircuitErrorLocation::canonicalize() {
 
 template <typename T>
 bool vec_less_than(const std::vector<T> &vec1, const std::vector<T> &vec2) {
-    ConstPointerRange<T> c1 = vec1;
-    ConstPointerRange<T> c2 = vec2;
+    SpanRef<const T> c1 = vec1;
+    SpanRef<const T> c2 = vec2;
     return c1 < c2;
 }
 bool GateTargetWithCoords::operator<(const GateTargetWithCoords &other) const {
@@ -359,10 +361,10 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
     if (args != other.args) {
         return vec_less_than(args, other.args);
     }
-    if ((gate == nullptr) != (other.gate == nullptr)) {
-        return (gate == nullptr) < (other.gate == nullptr);
+    if ((gate_type == 0) || (other.gate_type == 0)) {
+        return gate_type < other.gate_type;
     }
-    return strcmp(gate->name, other.gate->name) < 0;
+    return strcmp(GATE_DATA.items[gate_type].name, GATE_DATA.items[other.gate_type].name) < 0;
 }
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {

@@ -15,10 +15,6 @@
 #include <complex>
 
 #include "stim/circuit/gate_data.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -29,11 +25,9 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
         failed,
         Gate{
             "SQRT_XX",
+            GateType::SQRT_XX,
+            GateType::SQRT_XX_DAG,
             0,
-            &TableauSimulator::SQRT_XX,
-            &FrameSimulator::SQRT_XX,
-            &ErrorAnalyzer::SQRT_XX,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -70,11 +64,9 @@ H 1
         failed,
         Gate{
             "SQRT_XX_DAG",
+            GateType::SQRT_XX_DAG,
+            GateType::SQRT_XX,
             0,
-            &TableauSimulator::SQRT_XX_DAG,
-            &FrameSimulator::SQRT_XX,
-            &ErrorAnalyzer::SQRT_XX,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -116,11 +108,9 @@ H 1
         failed,
         Gate{
             "SQRT_YY",
+            GateType::SQRT_YY,
+            GateType::SQRT_YY_DAG,
             0,
-            &TableauSimulator::SQRT_YY,
-            &FrameSimulator::SQRT_YY,
-            &ErrorAnalyzer::SQRT_YY,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -165,11 +155,9 @@ S 1
         failed,
         Gate{
             "SQRT_YY_DAG",
+            GateType::SQRT_YY_DAG,
+            GateType::SQRT_YY,
             0,
-            &TableauSimulator::SQRT_YY_DAG,
-            &FrameSimulator::SQRT_YY,
-            &ErrorAnalyzer::SQRT_YY,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -215,11 +203,9 @@ S 1
         failed,
         Gate{
             "SQRT_ZZ",
+            GateType::SQRT_ZZ,
+            GateType::SQRT_ZZ_DAG,
             0,
-            &TableauSimulator::SQRT_ZZ,
-            &FrameSimulator::SQRT_ZZ,
-            &ErrorAnalyzer::SQRT_ZZ,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -251,11 +237,9 @@ S 1
         failed,
         Gate{
             "SQRT_ZZ_DAG",
+            GateType::SQRT_ZZ_DAG,
+            GateType::SQRT_ZZ,
             0,
-            &TableauSimulator::SQRT_ZZ_DAG,
-            &FrameSimulator::SQRT_ZZ,
-            &ErrorAnalyzer::SQRT_ZZ,
-            &SparseUnsignedRevFrameTracker::undo_SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

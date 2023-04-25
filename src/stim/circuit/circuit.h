@@ -30,60 +30,84 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/monotonic_buffer.h"
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
 // Change this number from time to time to ensure people don't rely on seeds across versions.
 constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1238ULL;
 
-uint64_t op_data_rep_count(const OperationData &data);
-
 uint64_t add_saturate(uint64_t a, uint64_t b);
 uint64_t mul_saturate(uint64_t a, uint64_t b);
 
+struct Circuit;
+
 /// The data that describes how a gate is being applied to qubits (or other targets).
 ///
-/// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
-struct OperationData {
-    /// Context-dependent numeric arguments (e.g. probabilities).
-    ConstPointerRange<double> args;
-    /// Context-dependent data on what to target.
-    ///
-    /// The bottom 24 bits of each item always refer to a qubit index.
-    /// The top 8 bits are used for additional data such as
-    /// Pauli basis, record lookback, and measurement inversion.
-    ConstPointerRange<GateTarget> targets;
-
-    bool operator==(const OperationData &other) const;
-    bool operator!=(const OperationData &other) const;
-
-    std::string str() const;
-};
-
 /// A gate applied to targets.
 ///
 /// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
-struct Operation {
-    /// The gate applied by the operation. Should never be nullptr.
-    const Gate *gate;
-    /// The targeting data for applying the gate.
-    OperationData target_data;
+struct CircuitInstruction {
+    /// The gate applied by the operation.
+    GateType gate_type;
+
+    /// Numeric arguments varying the functionality of the gate.
+    ///
+    /// The meaning of the numbers varies from gate to gate.
+    /// Examples:
+    ///     X_ERROR(p) has a single argument: probability of X.
+    ///     PAULI_CHANNEL_1(px,py,pz) has multiple probability arguments.
+    ///     DETECTOR(c1,c2) has variable arguments: coordinate data.
+    ///     OBSERVABLE_INCLUDE(k) has a single argument: the observable index.
+    SpanRef<const double> args;
+
+    /// Encoded data indicating the qubits and other targets acted on by the gate.
+    SpanRef<const GateTarget> targets;
+
+    CircuitInstruction() = delete;
+    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets);
+
     /// Determines if two operations can be combined into one operation (with combined targeting data).
-    bool can_fuse(const Operation &other) const;
+    ///
+    /// For example, `H 1` then `H 2 1` is equivalent to `H 1 2 1` so those instructions are fusable.
+    bool can_fuse(const CircuitInstruction &other) const;
     /// Equality.
-    bool operator==(const Operation &other) const;
+    bool operator==(const CircuitInstruction &other) const;
     /// Inequality.
-    bool operator!=(const Operation &other) const;
-    /// Returns a text description of the operation's gate and targets.
-    std::string str() const;
+    bool operator!=(const CircuitInstruction &other) const;
     /// Approximate equality.
-    bool approx_equals(const Operation &other, double atol) const;
+    bool approx_equals(const CircuitInstruction &other, double atol) const;
+    /// Returns a text description of the instruction, as would appear in a STIM circuit file.
+    std::string str() const;
 
     /// Determines the number of entries added to the measurement record by the operation.
     ///
     /// Note: invalid to use this on REPEAT blocks.
     uint64_t count_measurement_results() const;
+
+    uint64_t repeat_block_rep_count() const;
+    Circuit &repeat_block_body(Circuit &host) const;
+    const Circuit &repeat_block_body(const Circuit &host) const;
+
+    /// Verifies complex invariants that circuit instructions are supposed to follow.
+    ///
+    /// For example: CNOT gates should have an even number of targets.
+    /// For example: X_ERROR should have a single float argument between 0 and 1 inclusive.
+    ///
+    /// Raises:
+    ///     std::invalid_argument: Validation failed.
+    void validate() const;
+};
+
+/// Stores a variety of circuit quantities relevant for sizing memory.
+struct CircuitStats {
+    uint64_t num_detectors = 0;
+    uint64_t num_observables = 0;
+    uint64_t num_measurements = 0;
+    uint32_t num_qubits = 0;
+    uint32_t num_ticks = 0;
+    uint32_t max_lookback = 0;
+    uint32_t num_sweep_bits = 0;
 };
 
 /// A description of a quantum computation.
@@ -92,7 +116,7 @@ struct Circuit {
     MonotonicBuffer<GateTarget> target_buf;
     MonotonicBuffer<double> arg_buf;
     /// Operations in the circuit, from earliest to latest.
-    std::vector<Operation> operations;
+    std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
     // Returns one more than the largest `k` from any qubit target `k` or `!k` or `{X,Y,Z}k`.
@@ -109,6 +133,8 @@ struct Circuit {
     size_t max_lookback() const;
     // Returns one more than the largest `k` from any `sweep[k]` target.
     size_t count_sweep_bits() const;
+
+    CircuitStats compute_stats() const;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -151,14 +177,14 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(const Operation &operation);
+    void safe_append(const CircuitInstruction &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_u(
         const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args);
+    void safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args);
     /// Safely copies a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, const Circuit &body);
     /// Safely moves a repeat block to the end of the circuit.
@@ -192,19 +218,28 @@ struct Circuit {
     Circuit flattened() const;
 
     /// Returns a circuit that implements the inverse Clifford operation.
-    Circuit inverse() const;
+    ///
+    /// Args:
+    ///     allow_weak_inverse: When this is set to true, the inverse of the circuit doesn't need
+    ///         to be exact. In particular, noise and measurement becomes self-inverse. Examples:
+    ///             - The weak inverse of MX is MX.
+    ///             - The weak inverse of MRX is MRX.
+    ///             - The weak inverse of RX is MRX.
+    ///             - The weak inverse of X_ERROR(0.1) is X_ERROR(0.1).
+    ///             - The weak inverse of DETECTOR is [discard the operation].
+    ///             - The weak inverse of OBSERVABLE_INCLUDE is [discard the operation].
+    ///
+    /// Returns:
+    ///     The inverted circuit.
+    Circuit inverse(bool allow_weak_inverse = false) const;
 
     /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {
-            assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 3);
-                auto b = op.target_data.targets[0].data;
-                assert(b < blocks.size());
-                uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = blocks[b];
+            if (op.gate_type == GateType::REPEAT) {
+                uint64_t repeats = op.repeat_block_rep_count();
+                const auto &block = op.repeat_block_body(*this);
                 for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation(callback);
                 }
@@ -219,13 +254,9 @@ struct Circuit {
     void for_each_operation_reverse(const CALLBACK &callback) const {
         for (size_t p = operations.size(); p-- > 0;) {
             const auto &op = operations[p];
-            assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 3);
-                auto b = op.target_data.targets[0].data;
-                assert(b < blocks.size());
-                uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = blocks[b];
+            if (op.gate_type == GateType::REPEAT) {
+                uint64_t repeats = op.repeat_block_rep_count();
+                const auto &block = op.repeat_block_body(*this);
                 for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation_reverse(callback);
                 }
@@ -240,13 +271,12 @@ struct Circuit {
     uint64_t flat_count_operations(const COUNT &count) const {
         uint64_t n = 0;
         for (const auto &op : operations) {
-            assert(op.gate != nullptr);
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 3);
-                auto b = op.target_data.targets[0].data;
+            if (op.gate_type == GateType::REPEAT) {
+                assert(op.targets.size() == 3);
+                auto b = op.targets[0].data;
                 assert(b < blocks.size());
                 auto sub = blocks[b].flat_count_operations<COUNT>(count);
-                n = add_saturate(n, mul_saturate(sub, op_data_rep_count(op.target_data)));
+                n = add_saturate(n, mul_saturate(sub, op.repeat_block_rep_count()));
             } else {
                 n = add_saturate(n, count(op));
             }
@@ -262,7 +292,7 @@ struct Circuit {
             n = std::max(n, block.max_operation_property<MAP>(map));
         }
         for (const auto &op : operations) {
-            if (op.gate->flags & GATE_IS_BLOCK) {
+            if (op.gate_type == GateType::REPEAT) {
                 // Handled in block case.
                 continue;
             }
@@ -313,23 +343,7 @@ struct Circuit {
     std::string describe_instruction_location(size_t instruction_offset) const;
 };
 
-void vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul = 1);
-
-/// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
-struct DetectorsAndObservables {
-    MonotonicBuffer<uint64_t> jagged_detector_data;
-    std::vector<PointerRange<uint64_t>> detectors;
-    std::vector<std::vector<uint64_t>> observables;
-    DetectorsAndObservables(const Circuit &circuit);
-
-    DetectorsAndObservables(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables &operator=(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables(const DetectorsAndObservables &other);
-    DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
-};
-
-Circuit &op_data_block_body(Circuit &host, const OperationData &data);
-const Circuit &op_data_block_body(const Circuit &host, const OperationData &data);
+void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
 
 template <typename SOURCE>
 inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {
@@ -426,8 +440,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 }
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
-std::ostream &operator<<(std::ostream &out, const Operation &op);
-std::ostream &operator<<(std::ostream &out, const OperationData &dat);
+std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
 void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation);
 
 }  // namespace stim

@@ -44,7 +44,8 @@ int stim::command_sample_dem(int argc, const char **argv) {
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map(), argc, argv);
     const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map(), argc, argv);
     const auto &err_out_format = find_enum_argument("--err_out_format", "01", format_name_to_enum_map(), argc, argv);
-    const auto &err_in_format = find_enum_argument("--replay_err_in_format", "01", format_name_to_enum_map(), argc, argv);
+    const auto &err_in_format =
+        find_enum_argument("--replay_err_in_format", "01", format_name_to_enum_map(), argc, argv);
     uint64_t num_shots = find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv);
 
     RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));

@@ -6,7 +6,7 @@
 #include "base64.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/json_obj.h"
-#include "stim/mem/pointer_range.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim_draw_internal {
 

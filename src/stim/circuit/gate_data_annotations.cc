@@ -13,10 +13,6 @@
 // limitations under the License.
 
 #include "stim/circuit/gate_data.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -25,12 +21,10 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
         failed,
         Gate{
             "DETECTOR",
+            GateType::DETECTOR,
+            GateType::DETECTOR,
             ARG_COUNT_SYGIL_ANY,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::DETECTOR,
-            &SparseUnsignedRevFrameTracker::undo_DETECTOR,
-            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",
@@ -115,12 +109,11 @@ Example:
         failed,
         Gate{
             "OBSERVABLE_INCLUDE",
+            GateType::OBSERVABLE_INCLUDE,
+            GateType::OBSERVABLE_INCLUDE,
             1,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::OBSERVABLE_INCLUDE,
-            &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE,
-            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS),
+            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS |
+                        GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",
@@ -191,12 +184,10 @@ Example:
         failed,
         Gate{
             "TICK",
+            GateType::TICK,
+            GateType::TICK,
             0,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::TICK,
-            &SparseUnsignedRevFrameTracker::undo_I,
-            (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
+            (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",
@@ -243,12 +234,10 @@ Example:
         failed,
         Gate{
             "QUBIT_COORDS",
+            GateType::QUBIT_COORDS,
+            GateType::QUBIT_COORDS,
             ARG_COUNT_SYGIL_ANY,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::I,
-            &SparseUnsignedRevFrameTracker::undo_I,
-            GATE_IS_NOT_FUSABLE,
+            (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",
@@ -294,12 +283,10 @@ Example:
         failed,
         Gate{
             "SHIFT_COORDS",
+            GateType::SHIFT_COORDS,
+            GateType::SHIFT_COORDS,
             ARG_COUNT_SYGIL_ANY,
-            &TableauSimulator::I,
-            &FrameSimulator::I,
-            &ErrorAnalyzer::SHIFT_COORDS,
-            &SparseUnsignedRevFrameTracker::undo_I,
-            (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
+            (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",

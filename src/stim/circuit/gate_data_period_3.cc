@@ -15,10 +15,6 @@
 #include <complex>
 
 #include "stim/circuit/gate_data.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
@@ -29,11 +25,9 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
         failed,
         Gate{
             "C_XYZ",
+            GateType::C_XYZ,
+            GateType::C_ZYX,
             0,
-            &TableauSimulator::C_XYZ,
-            &FrameSimulator::C_XYZ,
-            &ErrorAnalyzer::C_XYZ,
-            &SparseUnsignedRevFrameTracker::undo_C_XYZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -65,11 +59,9 @@ H 0
         failed,
         Gate{
             "C_ZYX",
+            GateType::C_ZYX,
+            GateType::C_XYZ,
             0,
-            &TableauSimulator::C_ZYX,
-            &FrameSimulator::C_ZYX,
-            &ErrorAnalyzer::C_ZYX,
-            &SparseUnsignedRevFrameTracker::undo_C_ZYX,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

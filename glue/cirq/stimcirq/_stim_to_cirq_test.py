@@ -589,3 +589,24 @@ def test_single_repeat_loops_always_flattened():
             repetitions=1,
         ),
     )) == stim.Circuit("H 0\nTICK")
+
+def test_circuit_operations_always_in_isolated_moment():
+    stim_circuit = stim.Circuit(
+        """
+        REPEAT 2 {
+            H 0 1
+        }
+        H 2 3
+        """
+    )
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    qs = cirq.LineQubit.range(4)
+    expected_cirq_circuit = cirq.Circuit(
+        cirq.CircuitOperation(
+            circuit=cirq.FrozenCircuit([cirq.H(qs[0]),cirq.H(qs[1])]), 
+            repetitions=2, 
+            use_repetition_ids=False
+        ),
+        cirq.Moment(cirq.H(qs[2]),cirq.H(qs[3])),
+    )
+    assert cirq_circuit == expected_cirq_circuit

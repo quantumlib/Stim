@@ -35,6 +35,7 @@ struct RaiiTempNamedFile {
     std::string path;
     RaiiTempNamedFile();
     ~RaiiTempNamedFile();
+    RaiiTempNamedFile(const std::string &contents);
     std::string read_contents();
     void write_contents(const std::string &contents);
 };

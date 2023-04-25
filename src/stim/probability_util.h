@@ -50,7 +50,7 @@ struct RareErrorIterator {
     }
 
     template <typename BODY, typename T>
-    inline static void for_samples(double p, const ConstPointerRange<T> &vals, std::mt19937_64 &rng, BODY body) {
+    inline static void for_samples(double p, const SpanRef<const T> &vals, std::mt19937_64 &rng, BODY body) {
         if (p == 0) {
             return;
         }

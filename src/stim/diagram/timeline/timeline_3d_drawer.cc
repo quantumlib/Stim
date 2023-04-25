@@ -57,7 +57,7 @@ void DiagramTimeline3DDrawer::do_two_qubit_gate_instance(const ResolvedTimelineO
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
-    auto ends = two_qubit_gate_pieces(op.gate->name);
+    auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
         return;
@@ -67,7 +67,7 @@ void DiagramTimeline3DDrawer::do_two_qubit_gate_instance(const ResolvedTimelineO
         return;
     }
 
-    auto pieces = two_qubit_gate_pieces(op.gate->name);
+    auto pieces = two_qubit_gate_pieces(op.gate_type);
     auto c1 = mq2xyz(cur_moment, target1.qubit_value());
     auto c2 = mq2xyz(cur_moment, target2.qubit_value());
     draw_two_qubit_gate_end_point(c1, pieces.first);
@@ -140,10 +140,11 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
     const auto &target = op.targets[0];
 
     auto center = mq2xyz(cur_moment, target.qubit_value());
-    diagram_out.elements.push_back({op.gate->name, center});
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    diagram_out.elements.push_back({gate_data.name, center});
 }
 
-void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
+void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
     bool already_used = false;
     for (auto t : targets) {
         if (t.is_x_target() || t.is_y_target() || t.is_z_target() || t.is_qubit_target()) {
@@ -170,7 +171,8 @@ void DiagramTimeline3DDrawer::do_multi_qubit_gate_with_pauli_targets(const Resol
             continue;
         }
         std::stringstream ss;
-        ss << op.gate->name;
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        ss << gate_data.name;
         if (t.is_x_target()) {
             ss << ":X";
         } else if (t.is_y_target()) {
@@ -293,21 +295,21 @@ void DiagramTimeline3DDrawer::do_observable_include(const ResolvedTimelineOperat
 }
 
 void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate->id == gate_name_to_id("MPP")) {
+    if (op.gate_type == GateType::MPP) {
         do_mpp(op);
-    } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+    } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
-    } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+    } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
         do_observable_include(op);
-    } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+    } else if (op.gate_type == GateType::QUBIT_COORDS) {
         do_qubit_coords(op);
-    } else if (op.gate->id == gate_name_to_id("E")) {
+    } else if (op.gate_type == GateType::E) {
         do_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+    } else if (op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         do_else_correlated_error(op);
-    } else if (op.gate->id == gate_name_to_id("TICK")) {
+    } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);
@@ -321,10 +323,10 @@ DiagramTimeline3DDrawer::DiagramTimeline3DDrawer(size_t num_qubits, bool has_tic
 
 void add_used_qubits(const Circuit &circuit, std::set<uint64_t> &out) {
     for (const auto &op : circuit.operations) {
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
-            add_used_qubits(op_data_block_body(circuit, op.target_data), out);
+        if (op.gate_type == GateType::REPEAT) {
+            add_used_qubits(op.repeat_block_body(circuit), out);
         } else {
-            for (const auto &t : op.target_data.targets) {
+            for (const auto &t : op.targets) {
                 if (t.is_x_target() || t.is_y_target() || t.is_z_target() || t.is_qubit_target()) {
                     out.insert(t.qubit_value());
                 }

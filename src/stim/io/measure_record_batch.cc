@@ -24,7 +24,7 @@
 using namespace stim;
 
 MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
-    : max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
+    : num_shots(num_shots), max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
     for (size_t k = 0; k < num_shots; k++) {
         shot_mask[k] = true;
     }
@@ -38,7 +38,7 @@ void MeasureRecordBatch::reserve_space_for_results(size_t count) {
     }
 }
 
-void MeasureRecordBatch::reserve_noisy_space_for_results(const OperationData &target_data, std::mt19937_64 &rng) {
+void MeasureRecordBatch::reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng) {
     size_t count = target_data.targets.size();
     reserve_space_for_results(count);
     float p = target_data.args.empty() ? 0 : target_data.args[0];
@@ -58,6 +58,14 @@ void MeasureRecordBatch::record_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> re
     storage[stored] &= shot_mask;
     stored++;
     unwritten++;
+}
+
+simd_bits_range_ref<MAX_BITWORD_WIDTH> MeasureRecordBatch::record_zero_result_to_edit() {
+    reserve_space_for_results(1);
+    storage[stored].clear();
+    stored++;
+    unwritten++;
+    return storage[stored - 1];
 }
 
 simd_bits_range_ref<MAX_BITWORD_WIDTH> MeasureRecordBatch::lookback(size_t lookback) const {
@@ -84,17 +92,18 @@ void MeasureRecordBatch::mark_all_as_written() {
 
 void MeasureRecordBatch::intermediate_write_unwritten_results_to(
     MeasureRecordBatchWriter &writer, simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample) {
-    while (unwritten >= 1024) {
-        auto slice = storage.slice_maj(stored - unwritten, stored - unwritten + 1024);
-        for (size_t k = 0; k < 1024; k++) {
+    constexpr size_t WRITE_SIZE = 256;
+    while (unwritten >= WRITE_SIZE) {
+        auto slice = storage.slice_maj(stored - unwritten, stored - unwritten + WRITE_SIZE);
+        for (size_t k = 0; k < WRITE_SIZE; k++) {
             size_t j = written + k;
             if (j < ref_sample.num_bits_padded() && ref_sample[j]) {
                 slice[k] ^= shot_mask;
             }
         }
-        writer.batch_write_bytes(slice, 1024 >> 6);
-        unwritten -= 1024;
-        written += 1024;
+        writer.batch_write_bytes(slice, WRITE_SIZE >> 6);
+        unwritten -= WRITE_SIZE;
+        written += WRITE_SIZE;
     }
 
     size_t m = std::max(max_lookback, unwritten);
@@ -125,4 +134,18 @@ void MeasureRecordBatch::final_write_unwritten_results_to(
 void MeasureRecordBatch::clear() {
     stored = 0;
     unwritten = 0;
+}
+void MeasureRecordBatch::destructive_resize(size_t new_num_shots, size_t new_max_lookback) {
+    unwritten = 0;
+    stored = 0;
+    written = 0;
+    max_lookback = new_max_lookback;
+    if (new_num_shots != num_shots) {
+        num_shots = new_num_shots;
+        shot_mask = simd_bits<MAX_BITWORD_WIDTH>(num_shots);
+        for (size_t k = 0; k < num_shots; k++) {
+            shot_mask[k] = true;
+        }
+        storage.destructive_resize(1, num_shots);
+    }
 }

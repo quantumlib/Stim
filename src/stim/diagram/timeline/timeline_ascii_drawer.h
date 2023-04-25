@@ -46,11 +46,11 @@ struct DiagramTimelineAsciiDrawer {
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);
     void start_next_moment();
-    void reserve_drawing_room_for_targets(stim::ConstPointerRange<stim::GateTarget> targets);
+    void reserve_drawing_room_for_targets(stim::SpanRef<const stim::GateTarget> targets);
     void write_rec_index(std::ostream &out, int64_t lookback_shift = -1);
     void write_det_index(std::ostream &out);
     void write_coord(std::ostream &out, size_t coord_index, double relative_coordinate);
-    void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
+    void write_coords(std::ostream &out, stim::SpanRef<const double> relative_coordinates);
     size_t m2x(size_t m) const;
     size_t q2y(size_t q) const;
 

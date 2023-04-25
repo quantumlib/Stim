@@ -285,28 +285,29 @@ void VectorSimulator::canonicalize_assuming_stabilizer_state(double norm2) {
 void VectorSimulator::do_unitary_circuit(const Circuit &circuit) {
     std::vector<size_t> targets1{1};
     std::vector<size_t> targets2{1, 2};
-    circuit.for_each_operation([&](const Operation &op) {
-        if (!(op.gate->flags & GATE_IS_UNITARY)) {
+    circuit.for_each_operation([&](const CircuitInstruction &op) {
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        if (!(gate_data.flags & GATE_IS_UNITARY)) {
             std::stringstream ss;
-            ss << "Not a unitary gate: " << op.gate->name;
+            ss << "Not a unitary gate: " << gate_data.name;
             throw std::invalid_argument(ss.str());
         }
-        auto unitary = op.gate->unitary();
-        for (auto t : op.target_data.targets) {
+        auto unitary = gate_data.unitary();
+        for (auto t : op.targets) {
             if (!t.is_qubit_target() || (size_t{1} << t.data) >= state.size()) {
                 std::stringstream ss;
                 ss << "Targets out of range: " << op;
                 throw std::invalid_argument(ss.str());
             }
         }
-        if (op.gate->flags & stim::GATE_TARGETS_PAIRS) {
-            for (size_t k = 0; k < op.target_data.targets.size(); k += 2) {
-                targets2[0] = (size_t)op.target_data.targets[k].data;
-                targets2[1] = (size_t)op.target_data.targets[k + 1].data;
+        if (gate_data.flags & stim::GATE_TARGETS_PAIRS) {
+            for (size_t k = 0; k < op.targets.size(); k += 2) {
+                targets2[0] = (size_t)op.targets[k].data;
+                targets2[1] = (size_t)op.targets[k + 1].data;
                 apply(unitary, targets2);
             }
         } else {
-            for (auto t : op.target_data.targets) {
+            for (auto t : op.targets) {
                 targets1[0] = (size_t)t.data;
                 apply(unitary, targets1);
             }
