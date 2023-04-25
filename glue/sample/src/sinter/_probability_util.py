@@ -1,17 +1,13 @@
 import dataclasses
 import math
 import pathlib
-import stim
-from typing import Any
-from typing import Dict
-from typing import Union, Callable, Sequence, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Union, Callable, Sequence, TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
     import sinter
     from scipy.stats._stats_mstats_common import LinregressResult
-
 
 
 def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> Union[float, np.ndarray]:

@@ -26,6 +26,13 @@ def test_better_sorted_str_terms():
         "toric d=10 r=30",
         "toric d=18 r=54",
     ]
+    assert sorted([
+        "a1",
+        "1a",
+    ], key=f) == [
+        "1a",
+        "a1",
+    ]
 
 
 def test_plotting_does_not_crash():

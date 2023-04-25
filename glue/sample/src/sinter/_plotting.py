@@ -32,6 +32,32 @@ def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
     return out
 
 
+class LooseCompare:
+    def __init__(self, val: Any):
+        self.val = val
+
+    def __lt__(self, other):
+        if isinstance(other, LooseCompare):
+            other_val = other.val
+        else:
+            other_val = other
+        if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
+            return self.val < other_val
+        return str(self.val) < str(other_val)
+
+    def __str__(self):
+        return str(self.val)
+
+    def __eq__(self, other):
+        if isinstance(other, LooseCompare):
+            other_val = other.val
+        else:
+            other_val = other
+        if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
+            return self.val == other_val
+        return str(self.val) == str(other_val)
+
+
 def better_sorted_str_terms(val: Any) -> Any:
     if isinstance(val, tuple):
         return tuple(better_sorted_str_terms(e) for e in val)
@@ -55,7 +81,7 @@ def better_sorted_str_terms(val: Any) -> Any:
             except ValueError:
                 pass
         result.append(term)
-    return tuple(result)
+    return tuple(LooseCompare(e) for e in result)
 
 
 def group_by(items: Iterable[TVal],
