@@ -128,6 +128,61 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
         assert (d / "output.png").exists()
 
 
+def test_main_plot_xaxis():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+shots,errors,discards,seconds,decoder,strong_id,json_metadata
+300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""r"":15,""d"":5}"
+300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf7,"{""r"":9,""d"":3}"
+9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""r"":6,""d"":2}"
+            """.strip(), file=f)
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "plot",
+                "--in",
+                str(d / "input.csv"),
+                "--out",
+                str(d / "output.png"),
+                "--x_func",
+                "metadata['d']",
+                "--xaxis",
+                "[sqrt]distance root",
+            ])
+        assert (d / "output.png").exists()
+
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "plot",
+                "--in",
+                str(d / "input.csv"),
+                "--out",
+                str(d / "output2.png"),
+                "--x_func",
+                "metadata['d']",
+                "--xaxis",
+                "[log]distance log",
+            ])
+        assert (d / "output2.png").exists()
+
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "plot",
+                "--in",
+                str(d / "input.csv"),
+                "--out",
+                str(d / "output3.png"),
+                "--x_func",
+                "metadata['d']",
+                "--xaxis",
+                "distance raw",
+            ])
+        assert (d / "output3.png").exists()
+
+
 def test_main_plot_custom_y_func():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
