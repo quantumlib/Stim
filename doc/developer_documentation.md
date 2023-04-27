@@ -116,6 +116,24 @@ make stim
 # ./out/stim
 ```
 
+Stim can also be installed:
+```bash
+# from the repository root:
+cmake .
+make stim
+make install
+
+# output binary ends up at:
+# -CMAKE_INSTALL_PREFIX/bin
+# output library ends up at:
+# -CMAKE_INSTALL_PREFIX/lib
+# output headers end up at:
+# -CMAKE_INSTALL_PREFIX/include
+```
+by default `make install` will install to the system default directory (e.g.
+`/usr/local`). The install path can be controlled by passing the flag
+`-DCMAKE_INSTALL_PREFIX=/path/to/install` to `cmake`.
+
 Vectorization can be controlled by passing the flag `-DSIMD_WIDTH` to `cmake`:
 
 - `cmake . -DSIMD_WIDTH=256` means "use 256 bit avx operations" (forces `-mavx2`)
