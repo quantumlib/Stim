@@ -66,6 +66,9 @@ struct simd_bit_table {
     ///     A simd_bit_table with cell contents corresponding to the text.
     static simd_bit_table from_text(const char *text, size_t min_rows = 0, size_t min_cols = 0);
 
+    /// Resizes the table. Doesn't clear to zero. Does nothing if already the target size.
+    void destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor);
+
     /// Equality.
     bool operator==(const simd_bit_table &other) const;
     /// Inequality.
@@ -104,6 +107,11 @@ struct simd_bit_table {
     simd_bit_table transposed() const;
     /// Returns a subset of the table.
     simd_bit_table slice_maj(size_t maj_start_bit, size_t maj_stop_bit) const;
+
+    /// Concatenates the contents of the two tables, along the major axis.
+    simd_bit_table<W> concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const;
+    /// Overwrites a range of the table with a range from another table with the same minor size.
+    void overwrite_major_range_with(size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const;
 
     /// Sets all bits in the table to zero.
     void clear();

@@ -1,4 +1,5 @@
-from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict, Sequence
+import math
+from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict, Sequence, cast
 import argparse
 
 import matplotlib.pyplot as plt
@@ -156,11 +157,15 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--xaxis',
                         type=str,
                         default='[log]',
-                        help='Customize the X axis label. Prefix [log] for log scale.')
+                        help='Customize the X axis label. '
+                             'Prefix [log] for logarithmic scale. '
+                             'Prefix [sqrt] for square root scale.')
     parser.add_argument('--yaxis',
                         type=str,
                         default=None,
-                        help='Customize the Y axis label. Prefix [log] for log scale.')
+                        help='Customize the Y axis label. '
+                             'Prefix [log] for logarithmic scale. '
+                             'Prefix [sqrt] for square root scale.')
     parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
@@ -224,15 +229,137 @@ def parse_args(args: List[str]) -> Any:
     return a
 
 
-def _ax_log_helper(*, ax: Optional[plt.Axes], log_x: bool, log_y: bool):
+def _log_ticks(
+        min_v: float,
+        max_v: float,
+) -> Tuple[float, float, List[float], List[float]]:
+    d0 = math.floor(math.log10(min_v) + 0.0001)
+    d1 = math.ceil(math.log10(max_v) - 0.0001)
+    return (
+        10**d0,
+        10**d1,
+        [10**k for k in range(d0, d1 + 1)],
+        [d*10**k for k in range(d0, d1) for d in range(2, 10)],
+    )
+
+
+def _sqrt_ticks(
+        min_v: float,
+        max_v: float,
+) -> Tuple[float, float, List[float], List[float]]:
+    d = max_v - min_v
+    step = 10**math.floor(math.log10(d))
+    small_step = step / 10
+
+    start_k = math.floor(min_v / step)
+    end_k = math.ceil(max_v / step) + 1
+    major_ticks = [step * k for k in range(start_k, end_k)]
+    if len(major_ticks) < 5:
+        step /= 2
+        start_k = math.floor(min_v / step)
+        end_k = math.ceil(max_v / step) + 1
+        major_ticks = [step * k for k in range(start_k, end_k)]
+
+    small_start_k = math.floor(major_ticks[0] / small_step)
+    small_end_k = math.ceil(major_ticks[-1] / small_step) + 1
+    minor_ticks = [small_step * k for k in range(small_start_k, small_end_k)]
+
+    return (
+        major_ticks[0],
+        major_ticks[-1],
+        major_ticks,
+        minor_ticks,
+    )
+
+
+def _pick_min_max(
+        *,
+        plotted_stats: Sequence['sinter.TaskStats'],
+        v_func: Callable[['sinter.TaskStats'], Optional[float]],
+        default_min: float,
+        default_max: float,
+        forced_min: Optional[float],
+        forced_max: Optional[float],
+        want_positive: bool,
+) -> Tuple[float, float]:
+    vs = [
+        v
+        for stat in plotted_stats
+        if (v := v_func(stat)) is not None
+        if v > 0 or not want_positive
+    ]
+
+    min_v = min(vs, default=default_min)
+    max_v = max(vs, default=default_max)
+    if forced_min is not None:
+        min_v = min_v
+        max_v = max(min_v, max_v)
+    if forced_max is not None:
+        max_v = max_v
+        min_v = min(min_v, max_v)
+    if want_positive:
+        assert min_v > 0
+    assert max_v >= min_v
+
+    return min_v, max_v
+
+
+def _set_axis_scale_label_ticks(
+        *,
+        ax: Optional[plt.Axes],
+        y_not_x: bool,
+        axis_label: str,
+        default_scale: str = 'linear',
+        default_min_v: float = 0,
+        default_max_v: float = 0,
+        v_func: Callable[['sinter.TaskStats'], Optional[float]],
+        forced_scale: Optional[str] = None,
+        forced_min_v: Optional[float] = None,
+        forced_max_v: Optional[float] = None,
+        plotted_stats: Sequence['sinter.TaskStats'],
+):
     if ax is None:
         return
-    if log_x and log_y:
-        ax.loglog()
-    elif log_y:
-        ax.semilogy()
-    elif log_x:
-        ax.semilogx()
+    set_scale = ax.set_yscale if y_not_x else ax.set_xscale
+    set_label = ax.set_ylabel if y_not_x else ax.set_xlabel
+    set_lim = cast(Callable[[Optional[float], Optional[float]], None], ax.set_ylim if y_not_x else ax.set_xlim)
+    set_ticks = ax.set_yticks if y_not_x else ax.set_xticks
+
+    if axis_label.startswith('[') and ']' in axis_label:
+        axis_split = axis_label.index(']')
+        scale_name = axis_label[1:axis_split]
+        axis_label = axis_label[axis_split + 1:]
+    else:
+        scale_name = default_scale
+    set_label(axis_label)
+
+    min_v, max_v = _pick_min_max(
+        plotted_stats=plotted_stats,
+        v_func=v_func,
+        default_min=default_min_v,
+        default_max=default_max_v,
+        forced_min=forced_min_v,
+        forced_max=forced_max_v,
+        want_positive=scale_name != 'linear',
+    )
+
+    if scale_name == 'linear':
+        pass
+    elif scale_name == 'log':
+        set_scale('log')
+        min_v, max_v, major_ticks, minor_ticks = _log_ticks(min_v, max_v)
+        set_ticks(major_ticks)
+        set_ticks(minor_ticks, minor=True)
+        set_lim(min_v, max_v)
+    elif scale_name == 'sqrt':
+        from matplotlib.scale import FuncScale
+        min_v, max_v, major_ticks, minor_ticks = _sqrt_ticks(min_v, max_v)
+        set_lim(min_v, max_v)
+        set_scale(FuncScale(ax, (lambda e: e**0.5, lambda e: e**2)))
+        set_ticks(major_ticks)
+        set_ticks(minor_ticks, minor=True)
+    else:
+        raise NotImplemented(f'{scale_name=}')
 
 
 def _plot_helper(
@@ -296,16 +423,26 @@ def _plot_helper(
         if filter_func(stat)
     ]
 
-    want_log_x = xaxis.startswith('[log]')
-    force_log_y = yaxis is not None and yaxis.startswith('[log]')
-    force_not_log_y = yaxis is not None and not yaxis.startswith('[log]')
-    _ax_log_helper(ax=ax_err, log_x=want_log_x, log_y=not force_not_log_y)
-    _ax_log_helper(ax=ax_dis, log_x=want_log_x, log_y=force_log_y and ax_err is None)
-    _ax_log_helper(ax=ax_cus, log_x=want_log_x, log_y=force_log_y)
-    if xaxis.startswith('[log]'):
-        xaxis = xaxis[5:]
-    if yaxis is not None and yaxis.startswith('[log]'):
-        yaxis = yaxis[5:]
+    def stat_to_err_rate(stat: 'sinter.TaskStats') -> Optional[float]:
+        if stat.shots <= stat.discards:
+            return None
+        err_rate = stat.errors / (stat.shots - stat.discards)
+        pieces = failure_units_per_shot_func(stat)
+        return shot_error_rate_to_piece_error_rate(err_rate, pieces=pieces)
+
+    for ax in [ax_err, ax_dis, ax_cus]:
+        _set_axis_scale_label_ticks(
+            ax=ax,
+            y_not_x=False,
+            axis_label=xaxis,
+            default_scale='linear',
+            default_min_v=1,
+            default_max_v=10,
+            forced_max_v=None,
+            forced_min_v=None,
+            plotted_stats=plotted_stats,
+            v_func=x_func,
+        )
 
     if ax_err is not None:
         plot_error_rate(
@@ -317,32 +454,16 @@ def _plot_helper(
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=plot_args_func,
         )
-        if min_y is None:
-            min_y = 1
-            for stat in plotted_stats:
-                if stat.shots <= stat.discards:
-                    continue
-                err_rate = stat.errors / (stat.shots - stat.discards)
-                pieces = failure_units_per_shot_func(stat)
-                err_rate = shot_error_rate_to_piece_error_rate(err_rate, pieces=pieces)
-                if err_rate < min_y:
-                    min_y = err_rate
-            if not plotted_stats:
-                min_y = 1e-4
-            low_d = 4
-            while 10**-low_d > min_y*0.9 and low_d < 10:
-                low_d += 1
-            min_y = 10**-low_d
-        major_tick_steps = 1
-        while 10**-major_tick_steps >= min_y * 0.1:
-            major_tick_steps += 1
-        ax_err.set_yticks([10**-d for d in range(major_tick_steps)])
-        ax_err.set_yticks([b*10**-d for d in range(1, major_tick_steps) for b in range(2, 10)], minor=True)
-        ax_err.set_ylim(min_y, 1e-0)
-        if yaxis is not None and not include_custom_plot:
-            ax_err.set_ylabel(yaxis)
-        else:
-            ax_err.set_ylabel(f"Logical Error Rate (per {failure_unit})")
+        _set_axis_scale_label_ticks(
+            ax=ax_err,
+            y_not_x=True,
+            axis_label=f"Logical Error Rate (per {failure_unit})" if yaxis is None else yaxis,
+            default_scale='log',
+            forced_max_v=1,
+            default_min_v=1e-4,
+            plotted_stats=plotted_stats,
+            v_func=stat_to_err_rate,
+        )
         ax_err.grid(which='major', color='#000000')
         ax_err.grid(which='minor', color='#DDDDDD')
         ax_err.legend()
@@ -359,8 +480,8 @@ def _plot_helper(
         )
         ax_dis.set_yticks([p / 10 for p in range(11)], labels=[f'{10*p}%' for p in range(11)])
         ax_dis.set_ylim(0, 1)
-        ax_dis.grid(which='minor')
-        ax_dis.grid(which='major', color='black')
+        ax_dis.grid(which='major', color='#000000')
+        ax_dis.grid(which='minor', color='#DDDDDD')
         if yaxis is not None and not include_custom_plot and ax_err is None:
             ax_dis.set_ylabel(yaxis)
         else:
@@ -378,21 +499,28 @@ def _plot_helper(
             filter_func=filter_func,
             plot_args_func=plot_args_func,
         )
-        ax_cus.grid()
-        if yaxis is not None:
-            ax_cus.set_ylabel(yaxis)
-        else:
-            ax_cus.set_ylabel('custom')
+        _set_axis_scale_label_ticks(
+            ax=ax_cus,
+            y_not_x=True,
+            axis_label='custom' if yaxis is None else yaxis,
+            default_scale='linear',
+            default_min_v=1e-4,
+            default_max_v=0,
+            plotted_stats=plotted_stats,
+            v_func=y_func,
+        )
+        ax_cus.grid(which='major', color='#000000')
+        ax_cus.grid(which='minor', color='#DDDDDD')
         ax_cus.legend()
 
-    inferred_x_axis = xaxis if xaxis is not None else 'custom'
-    for ax in [ax_err, ax_dis, ax_cus]:
-        if ax is not None:
-            ax.set_xlabel(inferred_x_axis)
+    stripped_xaxis = xaxis
+    if stripped_xaxis is not None:
+        if stripped_xaxis.startswith('[') and ']' in stripped_xaxis:
+            stripped_xaxis = stripped_xaxis[stripped_xaxis.index(']') + 1:]
 
     vs_suffix = ''
-    if xaxis is not None:
-        vs_suffix = f' vs {xaxis}'
+    if stripped_xaxis is not None:
+        vs_suffix = f' vs {stripped_xaxis}'
     if ax_err is not None:
         ax_err.set_title(f'Logical Error Rate per {failure_unit}{vs_suffix}')
         if title is not None:

@@ -1,5 +1,6 @@
 import pathlib
 import tempfile
+from typing import Optional
 
 import numpy as np
 import pytest
@@ -9,7 +10,7 @@ from sinter._collection import post_selection_mask_from_4th_coord
 from sinter._decoding import sample_decode
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 
-DECODER_PACKAGES = [
+_DECODER_KEY_AND_PACKAGE = [
     ('pymatching', 'pymatching'),
     ('fusion_blossom', 'fusion_blossom'),
     ('internal', 'gqec'),
@@ -18,9 +19,15 @@ DECODER_PACKAGES = [
     ('internal_correlated_2', 'gqec'),
 ]
 
+DECODER_CASES = [
+    (a, b, c)
+    for a, b in _DECODER_KEY_AND_PACKAGE
+    for c in [None, True]
+]
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_decode_repetition_code(decoder: str, required_import: str):
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_decode_repetition_code(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
 
     circuit = stim.Circuit.generated('repetition_code:memory',
@@ -40,8 +47,8 @@ def test_decode_repetition_code(decoder: str, required_import: str):
     assert result.shots == 1000
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_decode_surface_code(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_decode_surface_code(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
 
     circuit = stim.Circuit.generated(
@@ -57,12 +64,13 @@ def test_decode_surface_code(decoder: str, required_import: str):
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert 0 <= stats.errors <= 50
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_empty(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_empty(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit()
     result = sample_decode(
@@ -72,14 +80,15 @@ def test_empty(decoder: str, required_import: str):
         dem_path=None,
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_no_observables(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_no_observables(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
@@ -93,14 +102,15 @@ def test_no_observables(decoder: str, required_import: str):
         dem_path=None,
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_invincible_observables(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_invincible_observables(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
@@ -115,14 +125,15 @@ def test_invincible_observables(decoder: str, required_import: str):
         dem_path=None,
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,required_import,offset', [(a, b, c) for a, b in DECODER_PACKAGES for c in range(8)])
-def test_observable_offsets_mod8(decoder: str, required_import: str, offset: int):
+@pytest.mark.parametrize('decoder,required_import,force_streaming,offset', [(a, b, c, d) for a, b, c in DECODER_CASES for d in range(8)])
+def test_observable_offsets_mod8(decoder: str, required_import: str, force_streaming: bool, offset: int):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
@@ -140,14 +151,15 @@ def test_observable_offsets_mod8(decoder: str, required_import: str, offset: int
         dem_path=None,
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_no_detectors(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_no_detectors(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
@@ -161,13 +173,14 @@ def test_no_detectors(decoder: str, required_import: str):
         dem_path=None,
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_no_detectors_with_post_mask(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_no_detectors_with_post_mask(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
@@ -182,13 +195,14 @@ def test_no_detectors_with_post_mask(decoder: str, required_import: str):
         post_mask=np.array([], dtype=np.uint8),
         num_shots=1000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_post_selection(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_post_selection(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.6) 0
@@ -213,13 +227,39 @@ def test_post_selection(decoder: str, required_import: str):
         post_mask=post_selection_mask_from_4th_coord(circuit),
         num_shots=2000,
         decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert 1050 <= result.discards <= 1350
     assert 40 <= result.errors <= 160
 
 
-@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
-def test_decode_fails_correctly(decoder: str, required_import: str):
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_observable_post_selection(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        postselected_observable_mask=np.array([1], dtype=np.uint8),
+        num_shots=10000,
+        decoder=decoder,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    np.testing.assert_allclose(result.discards / result.shots, 0.2, atol=0.1)
+    np.testing.assert_allclose(result.errors / (result.shots - result.discards), 0.1, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_decode_fails_correctly(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
 
     decoder_obj = BUILT_IN_DECODERS.get(decoder)

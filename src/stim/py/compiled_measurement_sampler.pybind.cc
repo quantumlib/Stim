@@ -17,8 +17,8 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
@@ -33,7 +33,7 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
 }
 
 pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = FrameSimulator::sample(circuit, ref_sample, num_shots, *prng);
+    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, *prng, true);
     size_t bits_per_sample = circuit.count_measurements();
     return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
 }
@@ -45,7 +45,7 @@ void CompiledMeasurementSampler::sample_write(
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
     }
-    FrameSimulator::sample_out(circuit, ref_sample, num_samples, out, f, *prng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, *prng);
     fclose(out);
 }
 

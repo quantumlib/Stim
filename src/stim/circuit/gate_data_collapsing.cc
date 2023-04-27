@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_target.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.h"
 

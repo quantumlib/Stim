@@ -78,6 +78,8 @@ struct simd_bits {
     /// Determines whether or not any of the bits in the simd_bits are non-zero.
     bool not_zero() const;
 
+    void destructive_resize(size_t new_min_bits);
+
     /// Returns a reference to the bit at offset k.
     bit_ref operator[](size_t k);
     /// Returns a const reference to the bit at offset k.

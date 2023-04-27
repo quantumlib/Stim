@@ -25,6 +25,7 @@ namespace stim {
 ///
 /// Results that have been written and are further back than `max_lookback` may be discarded from memory.
 struct MeasureRecordBatch {
+    size_t num_shots;
     /// How far back into the measurement record a circuit being simulated may look.
     /// Results younger than this cannot be discarded.
     size_t max_lookback;
@@ -62,6 +63,8 @@ struct MeasureRecordBatch {
     /// Returns:
     ///     A reference into the storage table, with the bit at offset k corresponding to the measurement from stream k.
     simd_bits_range_ref<MAX_BITWORD_WIDTH> lookback(size_t lookback) const;
+    /// Writes a zero'd result into the record and returns a reference to it to edit.
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> record_zero_result_to_edit();
     /// Xors a batch measurement result into pre-reserved noisy storage.
     void xor_record_reserved_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result);
     /// Appends a batch measurement result into storage.
@@ -72,6 +75,8 @@ struct MeasureRecordBatch {
     void reserve_space_for_results(size_t count);
     /// Resets the record to an empty state.
     void clear();
+
+    void destructive_resize(size_t new_num_shots, size_t new_max_lookback);
 };
 
 }  // namespace stim

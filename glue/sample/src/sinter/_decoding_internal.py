@@ -1,6 +1,6 @@
 import pathlib
 
-from sinter._decoding_decoder_class import Decoder
+from sinter._decoding_decoder_class import Decoder, CompiledDecoder
 
 
 class InternalDecoder(Decoder):
@@ -8,6 +8,19 @@ class InternalDecoder(Decoder):
 
     def __init__(self, name: str):
         self.name = name
+
+    def compile_decoder_for_dem(self, *, dem: 'stim.DetectorErrorModel') -> CompiledDecoder:
+        try:
+            import gqec  # Internal python wheel.
+        except ImportError as ex:
+            raise ImportError(
+                "The decoder 'internal*' isn't installed.\n"
+                "These decoders aren't publicly available.\n"
+            ) from ex
+
+        if not hasattr(gqec, 'compile_decoder_for_sinter'):
+            raise NotImplementedError()
+        return gqec.compile_decoder_for_sinter(dem)
 
     def decode_via_files(self,
                          *,
@@ -20,11 +33,6 @@ class InternalDecoder(Decoder):
                          tmp_dir: pathlib.Path,
                        ) -> None:
 
-        if num_dets == 0:
-            with open(obs_predictions_b8_out_path, 'wb') as f:
-                f.write(b'\0' * (num_obs * num_shots))
-            return
-
         try:
             import gqec  # Internal python wheel.
         except ImportError as ex:
@@ -32,5 +40,10 @@ class InternalDecoder(Decoder):
                 "The decoder 'internal*' isn't installed.\n"
                 "These decoders aren't publicly available.\n"
             ) from ex
+
+        if num_dets == 0:
+            with open(obs_predictions_b8_out_path, 'wb') as f:
+                f.write(b'\0' * (num_obs * num_shots))
+            return
 
         gqec.run_for_sinter(str(dem_path), str(dets_b8_in_path), "b8", str(obs_predictions_b8_out_path), self.name)

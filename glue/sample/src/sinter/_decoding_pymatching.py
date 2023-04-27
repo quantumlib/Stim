@@ -1,25 +1,47 @@
-import pathlib
+from sinter._decoding_decoder_class import Decoder, CompiledDecoder
 
-from sinter._decoding_decoder_class import Decoder
-from sinter._decoding_pymatching_v1 import decode_using_pymatching_v1
-from sinter._decoding_pymatching_v2 import decode_using_pymatching_v2
+
+class PyMatchingCompiledDecoder(CompiledDecoder):
+    def __init__(self, matcher: 'pymatching.Matching'):
+        self.matcher = matcher
+
+    def decode_shots_bit_packed(
+            self,
+            *,
+            bit_packed_detection_event_data: 'np.ndarray',
+    ) -> 'np.ndarray':
+        return self.matcher.decode_batch(
+            shots=bit_packed_detection_event_data,
+            bit_packed_shots=True,
+            bit_packed_predictions=True,
+            return_weights=False,
+        )
 
 
 class PyMatchingDecoder(Decoder):
     """Use pymatching to predict observables from detection events."""
 
-    def __init__(self):
-        self._method_to_use = None
+    def compile_decoder_for_dem(self, *, dem: 'stim.DetectorErrorModel') -> CompiledDecoder:
+        try:
+            import pymatching
+        except ImportError as ex:
+            raise ImportError(
+                "The decoder 'pymatching' isn't installed\n"
+                "To fix this, install the python package 'pymatching' into your environment.\n"
+                "For example, if you are using pip, run `pip install pymatching`.\n"
+            ) from ex
+
+        return PyMatchingCompiledDecoder(pymatching.Matching.from_detector_error_model(dem))
 
     def decode_via_files(self,
                          *,
                          num_shots: int,
                          num_dets: int,
                          num_obs: int,
-                         dem_path: pathlib.Path,
-                         dets_b8_in_path: pathlib.Path,
-                         obs_predictions_b8_out_path: pathlib.Path,
-                         tmp_dir: pathlib.Path,
+                         dem_path: 'pathlib.Path',
+                         dets_b8_in_path: 'pathlib.Path',
+                         obs_predictions_b8_out_path: 'pathlib.Path',
+                         tmp_dir: 'pathlib.Path',
                        ) -> None:
         try:
             import pymatching
@@ -30,18 +52,30 @@ class PyMatchingDecoder(Decoder):
                 "For example, if you are using pip, run `pip install pymatching`.\n"
             ) from ex
 
-        if self._method_to_use is None:
-            if getattr(getattr(pymatching, '_cpp_pymatching', None), 'main', None) is not None:
-                self._method_to_use = decode_using_pymatching_v2
-            else:
-                self._method_to_use = decode_using_pymatching_v1
+        if num_dets == 0:
+            with open(obs_predictions_b8_out_path, 'wb') as f:
+                f.write(b'\0' * (num_obs * num_shots))
+            return
 
-        self._method_to_use(
-            num_shots=num_shots,
-            num_dets=num_dets,
-            num_obs=num_obs,
-            dem_path=dem_path,
-            dets_b8_in_path=dets_b8_in_path,
-            obs_predictions_b8_out_path=obs_predictions_b8_out_path,
-            tmp_dir=tmp_dir,
-        )
+        if not hasattr(pymatching, 'cli'):
+            raise ValueError("""
+The installed version of pymatching has no `pymatching.cli` method.
+sinter requires pymatching 2.1.0 or later.
+If you're using pip to install packages, this can be fixed by running
+
+```
+pip install "pymatching~=2.1" --upgrade
+```
+
+""")
+
+        result = pymatching.cli(command_line_args=[
+            "predict",
+            "--dem", str(dem_path),
+            "--in", str(dets_b8_in_path),
+            "--in_format", "b8",
+            "--out", str(obs_predictions_b8_out_path),
+            "--out_format", "b8",
+        ])
+        if result:
+            raise ValueError("pymatching.cli returned a non-zero exit code")

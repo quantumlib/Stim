@@ -19,7 +19,7 @@
 #include "stim/io/raii_file.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/probability_util.h"
-#include "stim/simulators/detection_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 
 using namespace stim;
 
@@ -65,7 +65,7 @@ int stim::command_detect(int argc, const char **argv) {
     auto circuit = Circuit::from_file(in.f);
     in.done();
     auto rng = optionally_seeded_rng(argc, argv);
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit,
         num_shots,
         prepend_observables,

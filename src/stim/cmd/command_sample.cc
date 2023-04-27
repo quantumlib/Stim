@@ -19,6 +19,7 @@
 #include "stim/io/stim_data_formats.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
@@ -56,7 +57,7 @@ int stim::command_sample(int argc, const char **argv) {
         if (!skip_reference_sample) {
             ref = TableauSimulator::reference_sample_circuit(circuit);
         }
-        FrameSimulator::sample_out(circuit, ref, num_shots, out, out_format.id, rng);
+        sample_batch_measurements_writing_results_to_disk(circuit, ref, num_shots, out, out_format.id, rng);
     }
 
     if (in != stdin) {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/detection_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 
 #include "gtest/gtest.h"
 
@@ -21,12 +21,16 @@
 
 using namespace stim;
 
-TEST(DetectionSimulator, detector_samples) {
+simd_bit_table<MAX_BITWORD_WIDTH> sample_test_detection_events(const Circuit &circuit, size_t num_shots) {
+    return sample_batch_detection_events(circuit, num_shots, SHARED_TEST_RNG()).first;
+}
+
+TEST(DetectionSimulator, sample_test_detection_events) {
     auto circuit = Circuit(
         "X_ERROR(1) 0\n"
         "M 0\n"
         "DETECTOR rec[-1]\n");
-    auto samples = detector_samples(circuit, 5, false, false, SHARED_TEST_RNG());
+    auto samples = sample_test_detection_events(circuit, 5);
     ASSERT_EQ(
         samples.str(5),
         "11111\n"
@@ -37,10 +41,10 @@ TEST(DetectionSimulator, detector_samples) {
 }
 
 TEST(DetectionSimulator, bad_detector) {
-    ASSERT_THROW({ detector_samples(Circuit("rec[-1]"), 5, false, false, SHARED_TEST_RNG()); }, std::invalid_argument);
+    ASSERT_THROW({ sample_test_detection_events(Circuit("rec[-1]"), 5); }, std::invalid_argument);
 }
 
-TEST(DetectionSimulator, detector_samples_out) {
+TEST(DetectionSimulator, sample_batch_detection_events_writing_results_to_disk) {
     auto circuit = Circuit(R"circuit(
         X_ERROR(1) 0
         M 0 1
@@ -50,22 +54,22 @@ TEST(DetectionSimulator, detector_samples_out) {
     )circuit");
 
     FILE *tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1\nshot D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot L4 D1\nshot L4 D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1 L4\nshot D1 L4\n");
 
     tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "1,6\n1,6\n");
 }
@@ -80,7 +84,7 @@ TEST(DetectionSimulator, stream_many_shots) {
         DETECTOR rec[-3]
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
@@ -106,7 +110,8 @@ TEST(DetectionSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -131,7 +136,8 @@ TEST(DetectionSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -159,10 +165,14 @@ TEST(DetectionSimulator, stream_results) {
             DETECTOR rec[-1]
         }
     )circuit");
-    FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
-    auto result = rewind_read_close(tmp);
+    RaiiTempNamedFile tmp;
+    FILE *f = fopen(tmp.path.c_str(), "w");
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 1, false, true, f, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    fclose(f);
+
+    auto result = tmp.read_contents();
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -186,7 +196,8 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
+    sample_batch_detection_events_writing_results_to_disk(
+        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -201,7 +212,7 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
 }
 
 TEST(DetectorSimulator, noisy_measurement_x) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RX 0
         MX(0.05) 0
@@ -209,16 +220,13 @@ TEST(DetectorSimulator, noisy_measurement_x) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RX 0 1
         Z_ERROR(1) 0 1
@@ -229,10 +237,7 @@ TEST(DetectorSimulator, noisy_measurement_x) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -241,7 +246,7 @@ TEST(DetectorSimulator, noisy_measurement_x) {
 }
 
 TEST(DetectorSimulator, noisy_measurement_y) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RY 0
         MY(0.05) 0
@@ -249,16 +254,13 @@ TEST(DetectorSimulator, noisy_measurement_y) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RY 0 1
         Z_ERROR(1) 0 1
@@ -269,10 +271,7 @@ TEST(DetectorSimulator, noisy_measurement_y) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -281,7 +280,7 @@ TEST(DetectorSimulator, noisy_measurement_y) {
 }
 
 TEST(DetectorSimulator, noisy_measurement_z) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RZ 0
         MZ(0.05) 0
@@ -289,16 +288,13 @@ TEST(DetectorSimulator, noisy_measurement_z) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RZ 0 1
         X_ERROR(1) 0 1
@@ -309,10 +305,7 @@ TEST(DetectorSimulator, noisy_measurement_z) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -321,7 +314,7 @@ TEST(DetectorSimulator, noisy_measurement_z) {
 }
 
 TEST(DetectorSimulator, noisy_measure_reset_x) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RX 0
         MRX(0.05) 0
@@ -329,16 +322,13 @@ TEST(DetectorSimulator, noisy_measure_reset_x) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RX 0 1
         Z_ERROR(1) 0 1
@@ -349,10 +339,7 @@ TEST(DetectorSimulator, noisy_measure_reset_x) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -361,7 +348,7 @@ TEST(DetectorSimulator, noisy_measure_reset_x) {
 }
 
 TEST(DetectorSimulator, noisy_measure_reset_y) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RY 0
         MRY(0.05) 0
@@ -369,16 +356,13 @@ TEST(DetectorSimulator, noisy_measure_reset_y) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RY 0 1
         Z_ERROR(1) 0 1
@@ -389,10 +373,7 @@ TEST(DetectorSimulator, noisy_measure_reset_y) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -401,7 +382,7 @@ TEST(DetectorSimulator, noisy_measure_reset_y) {
 }
 
 TEST(DetectorSimulator, noisy_measure_reset_z) {
-    auto r = detector_samples(
+    auto r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RZ 0
         MRZ(0.05) 0
@@ -409,16 +390,13 @@ TEST(DetectorSimulator, noisy_measure_reset_z) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        10000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        10000);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = detector_samples(
+    r = sample_test_detection_events(
         Circuit(R"CIRCUIT(
         RZ 0 1
         X_ERROR(1) 0 1
@@ -429,10 +407,7 @@ TEST(DetectorSimulator, noisy_measure_reset_z) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )CIRCUIT"),
-        5000,
-        false,
-        false,
-        SHARED_TEST_RNG());
+        5000);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -461,7 +436,7 @@ TEST(DetectionSimulator, obs_data) {
     )circuit");
     FILE *det_tmp = tmpfile();
     FILE *obs_tmp = tmpfile();
-    detector_samples_out(
+    sample_batch_detection_events_writing_results_to_disk(
         circuit, 1001, false, false, det_tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG(), obs_tmp, SAMPLE_FORMAT_B8);
 
     auto det_saved = rewind_read_close(det_tmp);

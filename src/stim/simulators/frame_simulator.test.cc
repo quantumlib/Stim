@@ -16,13 +16,17 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
 TEST(FrameSimulator, get_set_frame) {
-    FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
+    CircuitStats circuit_stats;
+    circuit_stats.num_qubits = 6;
+    circuit_stats.max_lookback = 999;
+    FrameSimulator sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 4, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
@@ -38,7 +42,9 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
-    FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    circuit_stats.num_qubits = 501;
+    circuit_stats.max_lookback = 999;
+    FrameSimulator big_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, SHARED_TEST_RNG());
     big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
@@ -49,10 +55,11 @@ TEST(FrameSimulator, get_set_frame) {
 bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     Tableau tableau = gate.tableau();
 
-    size_t num_qubits = 500;
+    CircuitStats circuit_stats;
+    circuit_stats.num_qubits = 500;
+    circuit_stats.max_lookback = 10;
     size_t num_samples = 1000;
-    size_t max_lookback = 10;
-    FrameSimulator sim(num_qubits, num_samples, max_lookback, SHARED_TEST_RNG());
+    FrameSimulator sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1000, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<GateTarget> targets{{101}, {403}, {202}, {100}};
@@ -60,7 +67,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         targets.pop_back();
     }
     for (size_t k = 7; k < num_samples; k += 101) {
-        PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
+        PauliString test_value = PauliString::random(circuit_stats.num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
         sim.do_gate({gate.id, {}, targets});
@@ -134,7 +141,7 @@ TEST(FrameSimulator, test_util_is_output_possible) {
 bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     auto circuit = Circuit(program_text);
     auto reference_sample = TableauSimulator::reference_sample_circuit(circuit);
-    auto samples = FrameSimulator::sample(circuit, reference_sample, 10, SHARED_TEST_RNG());
+    auto samples = sample_batch_measurements(circuit, reference_sample, 10, SHARED_TEST_RNG(), true);
 
     for (size_t k = 0; k < 10; k++) {
         simd_bits_range_ref<MAX_BITWORD_WIDTH> sample = samples[k];
@@ -272,7 +279,7 @@ TEST(FrameSimulator, consistency) {
         "M 6");
 }
 
-TEST(FrameSimulator, sample_out) {
+TEST(FrameSimulator, sample_batch_measurements_writing_results_to_disk) {
     auto circuit = Circuit(
         "X 0\n"
         "M 1\n"
@@ -280,17 +287,17 @@ TEST(FrameSimulator, sample_out) {
         "M 2\n"
         "M 3\n");
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 10, SHARED_TEST_RNG());
+    auto r = sample_batch_measurements(circuit, ref, 10, SHARED_TEST_RNG(), true);
     for (size_t k = 0; k < 10; k++) {
         ASSERT_EQ(r[k].u64[0], 2);
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
     ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 2);
@@ -298,7 +305,7 @@ TEST(FrameSimulator, sample_out) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 64, tmp, SAMPLE_FORMAT_PTB64, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 64, tmp, SAMPLE_FORMAT_PTB64, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 8; k++) {
         ASSERT_EQ(getc(tmp), 0);
@@ -322,7 +329,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
         circuit.safe_append_u("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 750, SHARED_TEST_RNG());
+    auto r = sample_batch_measurements(circuit, ref, 750, SHARED_TEST_RNG(), true);
     for (size_t i = 0; i < 750; i++) {
         for (size_t k = 0; k < 1250; k++) {
             ASSERT_EQ(r[i][k], k % 3 == 0) << k;
@@ -330,7 +337,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -341,7 +348,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -363,17 +370,17 @@ TEST(FrameSimulator, run_length_measurement_formats) {
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
     ASSERT_EQ(rewind_read_close(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
     ASSERT_EQ(
         rewind_read_close(tmp),
         "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 3; k++) {
         ASSERT_EQ(getc(tmp), 100);
@@ -398,7 +405,7 @@ TEST(FrameSimulator, big_circuit_random_measurements) {
         circuit.safe_append_u("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 1000, SHARED_TEST_RNG());
+    auto r = sample_batch_measurements(circuit, ref, 1000, SHARED_TEST_RNG(), true);
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;
     }
@@ -410,7 +417,7 @@ TEST(FrameSimulator, correlated_error) {
 
     expected.clear();
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
@@ -419,14 +426,15 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
@@ -435,14 +443,15 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[1] = true;
     expected[2] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
@@ -451,14 +460,15 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[2] = true;
     expected[3] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
@@ -467,14 +477,15 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
@@ -483,14 +494,15 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
@@ -499,7 +511,8 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
@@ -508,7 +521,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[3] = true;
     expected[4] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
@@ -518,13 +531,14 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     int hits[3]{};
     std::mt19937_64 rng(0);
     size_t n = 10000;
-    auto samples = FrameSimulator::sample(
+    auto samples = sample_batch_measurements(
         Circuit(R"circuit(
         CORRELATED_ERROR(0.5) X0
         ELSE_CORRELATED_ERROR(0.25) X1
@@ -533,7 +547,8 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
         ref,
         n,
-        rng);
+        rng,
+        true);
     for (size_t k = 0; k < n; k++) {
         hits[0] += samples[k][0];
         hits[1] += samples[k][1];
@@ -550,62 +565,67 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
     // Quantum controlling classical operation is not allowed.
     ASSERT_THROW(
         {
-            FrameSimulator::sample(
+            sample_batch_measurements(
                 Circuit(R"circuit(
             M 0
             CNOT 1 rec[-1]
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                SHARED_TEST_RNG(),
+                true);
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            FrameSimulator::sample(
+            sample_batch_measurements(
                 Circuit(R"circuit(
             M 0
             CY 1 rec[-1]
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                SHARED_TEST_RNG(),
+                true);
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            FrameSimulator::sample(
+            sample_batch_measurements(
                 Circuit(R"circuit(
             M 0
             YCZ rec[-1] 1
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                SHARED_TEST_RNG(),
+                true);
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            FrameSimulator::sample(
+            sample_batch_measurements(
                 Circuit(R"circuit(
             M 0
             XCZ rec[-1] 1
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                SHARED_TEST_RNG(),
+                true);
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            FrameSimulator::sample(
+            sample_batch_measurements(
                 Circuit(R"circuit(
             M 0
             SWAP 1 rec[-1]
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                SHARED_TEST_RNG(),
+                true);
         },
         std::invalid_argument);
 }
@@ -617,7 +637,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
@@ -626,10 +646,11 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
@@ -638,10 +659,11 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
@@ -650,10 +672,11 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
@@ -662,7 +685,8 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 }
 
@@ -672,7 +696,7 @@ TEST(FrameSimulator, classical_controls) {
 
     expected.clear();
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         M 0
         CX rec[-1] 1
@@ -680,12 +704,13 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         M !0
         CX rec[-1] 1
@@ -693,14 +718,15 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
@@ -709,14 +735,15 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
@@ -725,9 +752,10 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
-    auto r = FrameSimulator::sample(
+    auto r = sample_batch_measurements(
         Circuit(R"circuit(
         X_ERROR(0.5) 0
         M 0
@@ -736,7 +764,8 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
         ref,
         1000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        true);
     size_t hits = 0;
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_EQ(r[k][0], r[k][1]);
@@ -748,7 +777,7 @@ TEST(FrameSimulator, classical_controls) {
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
@@ -759,14 +788,15 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        FrameSimulator::sample(
+        sample_batch_measurements(
             Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
@@ -775,16 +805,17 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            SHARED_TEST_RNG(),
+            true)[0],
         expected);
 }
 
 TEST(FrameSimulator, record_gets_trimmed) {
-    FrameSimulator sim(100, 768, 5, SHARED_TEST_RNG());
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
+    FrameSimulator sim(c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, SHARED_TEST_RNG());
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
-        sim.measure_z(c.operations[0]);
+        sim.do_MZ(c.operations[0]);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<MAX_BITWORD_WIDTH>(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
@@ -792,7 +823,7 @@ TEST(FrameSimulator, record_gets_trimmed) {
 
 TEST(FrameSimulator, stream_huge_case) {
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(
+    sample_batch_measurements_writing_results_to_disk(
         Circuit(R"CIRCUIT(
             X_ERROR(1) 2
             REPEAT 100000 {
@@ -820,7 +851,8 @@ TEST(FrameSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -840,7 +872,8 @@ TEST(FrameSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -864,7 +897,8 @@ TEST(FrameSimulator, stream_results) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -882,11 +916,12 @@ TEST(FrameSimulator, stream_many_shots) {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2049, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
-    for (size_t k = 0; k < 2048 * 4; k += 4) {
+    ASSERT_EQ(result.size(), 2049 * 4);
+    for (size_t k = 0; k < 2049 * 4; k += 4) {
         ASSERT_EQ(result[k], '0') << k;
         ASSERT_EQ(result[k + 1], '1') << (k + 1);
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
@@ -904,7 +939,8 @@ TEST(FrameSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -919,20 +955,22 @@ TEST(FrameSimulator, stream_results_triple_shot) {
 }
 
 TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RY 0
-        MY 0
-        MY 0
-        Z_ERROR(1) 0
-        MY 0
-        MY 0
-        Z_ERROR(1) 0
-        MY 0
-        MY 0
-    )CIRCUIT"),
+            RY 0
+            MY 0
+            MY 0
+            Z_ERROR(1) 0
+            MY 0
+            MY 0
+            Z_ERROR(1) 0
+            MY 0
+            MY 0
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_EQ(r[0].popcnt(), 0);
     ASSERT_EQ(r[1].popcnt(), 0);
     ASSERT_EQ(r[2].popcnt(), 10000);
@@ -940,7 +978,7 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
     ASSERT_EQ(r[4].popcnt(), 0);
     ASSERT_EQ(r[5].popcnt(), 0);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RY 0
         MRY 0
@@ -952,8 +990,10 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
         MRY 0
         MRY 0
     )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_EQ(r[0].popcnt(), 0);
     ASSERT_EQ(r[1].popcnt(), 0);
     ASSERT_EQ(r[2].popcnt(), 10000);
@@ -968,7 +1008,8 @@ TEST(FrameSimulator, resets_vs_measurements) {
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table<MAX_BITWORD_WIDTH> t = FrameSimulator::sample(Circuit(circuit), ref, 100, SHARED_TEST_RNG());
+        simd_bit_table<MAX_BITWORD_WIDTH> t =
+            sample_batch_measurements(Circuit(circuit), ref, 100, SHARED_TEST_RNG(), true);
         return !t.data.not_zero();
     };
 
@@ -1112,28 +1153,32 @@ TEST(FrameSimulator, resets_vs_measurements) {
 }
 
 TEST(FrameSimulator, noisy_measurement_x) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RX 0
-        MX(0.05) 0
-        MX 0
-    )CIRCUIT"),
+            RX 0
+            MX(0.05) 0
+            MX 0
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RX 0 1
-        Z_ERROR(1) 0 1
-        MX(0.05) 0 1
-        MX 0 1
-    )CIRCUIT"),
+            RX 0 1
+            Z_ERROR(1) 0 1
+            MX(0.05) 0 1
+            MX 0 1
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1142,28 +1187,32 @@ TEST(FrameSimulator, noisy_measurement_x) {
 }
 
 TEST(FrameSimulator, noisy_measurement_y) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RY 0
         MY(0.05) 0
         MY 0
     )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RY 0 1
         Z_ERROR(1) 0 1
         MY(0.05) 0 1
         MY 0 1
     )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1172,28 +1221,32 @@ TEST(FrameSimulator, noisy_measurement_y) {
 }
 
 TEST(FrameSimulator, noisy_measurement_z) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RZ 0
         MZ(0.05) 0
         MZ 0
     )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RZ 0 1
-        X_ERROR(1) 0 1
-        MZ(0.05) 0 1
-        MZ 0 1
-    )CIRCUIT"),
+            RZ 0 1
+            X_ERROR(1) 0 1
+            MZ(0.05) 0 1
+            MZ 0 1
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1202,28 +1255,32 @@ TEST(FrameSimulator, noisy_measurement_z) {
 }
 
 TEST(FrameSimulator, noisy_measure_reset_x) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RX 0
-        MRX(0.05) 0
-        MRX 0
-    )CIRCUIT"),
+            RX 0
+            MRX(0.05) 0
+            MRX 0
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RX 0 1
-        Z_ERROR(1) 0 1
-        MRX(0.05) 0 1
-        MRX 0 1
-    )CIRCUIT"),
+            RX 0 1
+            Z_ERROR(1) 0 1
+            MRX(0.05) 0 1
+            MRX 0 1
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1232,28 +1289,32 @@ TEST(FrameSimulator, noisy_measure_reset_x) {
 }
 
 TEST(FrameSimulator, noisy_measure_reset_y) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RY 0
-        MRY(0.05) 0
-        MRY 0
-    )CIRCUIT"),
+            RY 0
+            MRY(0.05) 0
+            MRY 0
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RY 0 1
-        Z_ERROR(1) 0 1
-        MRY(0.05) 0 1
-        MRY 0 1
-    )CIRCUIT"),
+            RY 0 1
+            Z_ERROR(1) 0 1
+            MRY(0.05) 0 1
+            MRY 0 1
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1262,28 +1323,32 @@ TEST(FrameSimulator, noisy_measure_reset_y) {
 }
 
 TEST(FrameSimulator, noisy_measure_reset_z) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RZ 0
-        MRZ(0.05) 0
-        MRZ 0
-    )CIRCUIT"),
+            RZ 0
+            MRZ(0.05) 0
+            MRZ 0
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
     ASSERT_LT(m1, 700);
 
-    r = FrameSimulator::sample_flipped_measurements(
+    r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        RZ 0 1
-        X_ERROR(1) 0 1
-        MRZ(0.05) 0 1
-        MRZ 0 1
-    )CIRCUIT"),
+            RZ 0 1
+            X_ERROR(1) 0 1
+            MRZ(0.05) 0 1
+            MRZ 0 1
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         5000,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1292,17 +1357,19 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
 }
 
 TEST(FrameSimulator, measure_pauli_product_4body) {
-    auto r = FrameSimulator::sample_flipped_measurements(
+    auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
-        X_ERROR(0.5) 0 1 2 3
-        Z_ERROR(0.5) 0 1 2 3
-        MPP X0*X1*X2*X3
-        MX 0 1 2 3 4 5
-        MPP X2*X3*X4*X5
-        MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
-    )CIRCUIT"),
+            X_ERROR(0.5) 0 1 2 3
+            Z_ERROR(0.5) 0 1 2 3
+            MPP X0*X1*X2*X3
+            MX 0 1 2 3 4 5
+            MPP X2*X3*X4*X5
+            MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
+        )CIRCUIT"),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         10,
-        SHARED_TEST_RNG());
+        SHARED_TEST_RNG(),
+        false);
     for (size_t k = 0; k < 10; k++) {
         auto x0123 = r[0][k];
         auto x0 = r[1][k];
@@ -1321,46 +1388,67 @@ TEST(FrameSimulator, measure_pauli_product_4body) {
 }
 
 TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
-    auto n = FrameSimulator::sample_flipped_measurements(
+    auto n = sample_batch_measurements(
                  Circuit(R"CIRCUIT(
-            MPP Z8*X9
-            DETECTOR rec[-1]
-        )CIRCUIT"),
+                     MPP Z8*X9
+                     DETECTOR rec[-1]
+                 )CIRCUIT"),
+                 simd_bits<MAX_BITWORD_WIDTH>(0),
                  1000,
-                 SHARED_TEST_RNG())[0]
+                 SHARED_TEST_RNG(),
+                 false)[0]
                  .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 
-    n = FrameSimulator::sample_flipped_measurements(
+    n = sample_batch_measurements(
             Circuit(R"CIRCUIT(
-            MPP X9
-            DETECTOR rec[-1]
-        )CIRCUIT"),
+                MPP X9
+                DETECTOR rec[-1]
+            )CIRCUIT"),
+            simd_bits<MAX_BITWORD_WIDTH>(0),
             1000,
-            SHARED_TEST_RNG())[0]
+            SHARED_TEST_RNG(),
+            false)[0]
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 
-    n = FrameSimulator::sample_flipped_measurements(
+    n = sample_batch_measurements(
             Circuit(R"CIRCUIT(
-            MX 9
-            DETECTOR rec[-1]
-        )CIRCUIT"),
+                MX 9
+                DETECTOR rec[-1]
+            )CIRCUIT"),
+            simd_bits<MAX_BITWORD_WIDTH>(0),
             1000,
-            SHARED_TEST_RNG())[0]
+            SHARED_TEST_RNG(),
+            false)[0]
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 }
 
 TEST(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data) {
-    auto n = FrameSimulator::sample_flipped_measurements(
+    auto n = sample_batch_measurements(
                  Circuit(R"CIRCUIT(
-            CNOT sweep[0] 0
-            M 0
-            DETECTOR rec[-1]
-        )CIRCUIT"),
+                     CNOT sweep[0] 0
+                     M 0
+                     DETECTOR rec[-1]
+                 )CIRCUIT"),
+                 simd_bits<MAX_BITWORD_WIDTH>(0),
                  1000,
-                 SHARED_TEST_RNG())[0]
+                 SHARED_TEST_RNG(),
+                 false)[0]
                  .popcnt();
     ASSERT_EQ(n, 0);
+}
+
+TEST(FrameSimulator, reconfigure_for) {
+    auto circuit = Circuit(R"CIRCUIT(
+        X_ERROR(1) 0
+        M 0
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    FrameSimulator frame_sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
+    frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
+    frame_sim.reset_all_and_run(circuit);
+    ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
 }

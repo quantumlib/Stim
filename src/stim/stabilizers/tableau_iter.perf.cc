@@ -26,7 +26,7 @@ BENCHMARK(tableau_iter_unsigned_3q) {
             c += iter.result.num_qubits;
         }
     })
-        .goal_millis(250)
+        .goal_millis(200)
         .show_rate("TableausPerSecond", 1451520);
     if (c == 0) {
         std::cerr << "use the output\n";
