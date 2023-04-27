@@ -240,6 +240,17 @@ jobs:
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++17 test.cc out/libstim.a -I src
     - run: ./a.out test
+  build_lib_install:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - run: mkdir install_dir
+    - run: cmake . -DCMAKE_INSTALL_PREFIX=install_dir
+    - run: make -j 2
+    - run: make install
+    - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
+    - run: g++ -std=c++17 test.cc install_dir/lib/libstim.a -I install_dir/include
+    - run: ./a.out test
   benchmark_windows:
     runs-on: windows-latest
     steps:
