@@ -34,7 +34,6 @@ struct PauliStringRef;
 template <size_t W>
 struct PauliString;
 
-
 /// A state vector quantum circuit simulator.
 ///
 /// Not intended to be particularly performant. Mostly used as a reference when testing.
@@ -71,7 +70,7 @@ struct VectorSimulator {
 
         // Project out the non-overlapping parts.
         for (const auto &p : stabilizers) {
-            sim.project(p);
+            sim.project<W>(p);
         }
         if (stabilizers.empty()) {
             sim.project<W>(PauliString<W>(0));

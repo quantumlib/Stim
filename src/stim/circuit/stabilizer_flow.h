@@ -24,14 +24,15 @@
 
 namespace stim {
 
+template <size_t W>
 struct StabilizerFlow {
-    stim::PauliString<MAX_BITWORD_WIDTH> input;
-    stim::PauliString<MAX_BITWORD_WIDTH> output;
+    stim::PauliString<W> input;
+    stim::PauliString<W> output;
     std::vector<stim::GateTarget> measurement_outputs;
 
-    static StabilizerFlow from_str(const char *c);
-    bool operator==(const StabilizerFlow &other) const;
-    bool operator!=(const StabilizerFlow &other) const;
+    static StabilizerFlow<W> from_str(const char *c);
+    bool operator==(const StabilizerFlow<W> &other) const;
+    bool operator!=(const StabilizerFlow<W> &other) const;
     std::string str() const;
 };
 
@@ -47,14 +48,18 @@ struct StabilizerFlow {
 /// Returns:
 ///     A vector containing one boolean for each flow. The k'th boolean is true if the
 ///     k'th flow passed all checks.
+template <size_t W>
 std::vector<bool> check_if_circuit_has_stabilizer_flows(
     size_t num_samples,
     std::mt19937_64 &rng,
     const Circuit &circuit,
-    const std::vector<StabilizerFlow> flows);
+    const std::vector<StabilizerFlow<W>> flows);
 
-std::ostream &operator<<(std::ostream &out, const StabilizerFlow &flow);
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow);
 
 }  // namespace stim
+
+#include "stim/circuit/stabilizer_flow.inl"
 
 #endif

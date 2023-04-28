@@ -17,50 +17,52 @@
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.test.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
-TEST(FrameSimulator, get_set_frame) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, get_set_frame, {
     CircuitStats circuit_stats;
     circuit_stats.num_qubits = 6;
     circuit_stats.max_lookback = 999;
-    FrameSimulator sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 4, SHARED_TEST_RNG());
-    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    sim.set_frame(0, PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    sim.set_frame(3, PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZZZZ"));
-    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZZZZ"));
+    FrameSimulator<W> sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 4, SHARED_TEST_RNG());
+    ASSERT_EQ(sim.get_frame(0), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<W>::from_str("______"));
+    sim.set_frame(0, PauliString<W>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(0), PauliString<W>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<W>::from_str("______"));
+    sim.set_frame(3, PauliString<W>::from_str("ZZZZZZ"));
+    ASSERT_EQ(sim.get_frame(0), PauliString<W>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<W>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<W>::from_str("ZZZZZZ"));
 
     circuit_stats.num_qubits = 501;
     circuit_stats.max_lookback = 999;
-    FrameSimulator big_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, SHARED_TEST_RNG());
-    big_sim.set_frame(258, PauliString<MAX_BITWORD_WIDTH>::from_func(false, 501, [](size_t k) {
+    FrameSimulator<W> big_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, SHARED_TEST_RNG());
+    big_sim.set_frame(258, PauliString<W>::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse_str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
-}
+})
 
+template <size_t W>
 bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
-    auto tableau = gate.tableau<MAX_BITWORD_WIDTH>();
+    auto tableau = gate.tableau<W>();
 
     CircuitStats circuit_stats;
     circuit_stats.num_qubits = 500;
     circuit_stats.max_lookback = 10;
     size_t num_samples = 1000;
-    FrameSimulator sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1000, SHARED_TEST_RNG());
+    FrameSimulator<W> sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1000, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<GateTarget> targets{{101}, {403}, {202}, {100}};
@@ -68,8 +70,8 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         targets.pop_back();
     }
     for (size_t k = 7; k < num_samples; k += 101) {
-        auto test_value = PauliString<MAX_BITWORD_WIDTH>::random(circuit_stats.num_qubits, SHARED_TEST_RNG());
-        PauliStringRef<MAX_BITWORD_WIDTH> test_value_ref(test_value);
+        auto test_value = PauliString<W>::random(circuit_stats.num_qubits, SHARED_TEST_RNG());
+        PauliStringRef<W> test_value_ref(test_value);
         sim.set_frame(k, test_value);
         sim.do_gate({gate.id, {}, targets});
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
@@ -91,17 +93,18 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     return true;
 }
 
-TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, bulk_operations_consistent_with_tableau_data, {
     for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau(gate)) << gate.name;
+            EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau<W>(gate)) << gate.name;
         }
     }
-}
+})
 
+template <size_t W>
 bool is_output_possible_promising_no_bare_resets(
-    const Circuit &circuit, const simd_bits_range_ref<MAX_BITWORD_WIDTH> output) {
-    auto tableau_sim = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits());
+    const Circuit &circuit, const simd_bits_range_ref<W> output) {
+    auto tableau_sim = TableauSimulator<W>(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
     circuit.for_each_operation([&](const CircuitInstruction &op) {
@@ -121,32 +124,33 @@ bool is_output_possible_promising_no_bare_resets(
     return pass;
 }
 
-TEST(FrameSimulator, test_util_is_output_possible) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, test_util_is_output_possible, {
     auto circuit = Circuit(
         "H 0\n"
         "CNOT 0 1\n"
         "X 0\n"
         "M 0\n"
         "M 1\n");
-    auto data = simd_bits<MAX_BITWORD_WIDTH>(2);
+    auto data = simd_bits<W>(2);
     data.u64[0] = 0;
-    ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
+    ASSERT_EQ(false, is_output_possible_promising_no_bare_resets<W>(circuit, data));
     data.u64[0] = 1;
-    ASSERT_EQ(true, is_output_possible_promising_no_bare_resets(circuit, data));
+    ASSERT_EQ(true, is_output_possible_promising_no_bare_resets<W>(circuit, data));
     data.u64[0] = 2;
-    ASSERT_EQ(true, is_output_possible_promising_no_bare_resets(circuit, data));
+    ASSERT_EQ(true, is_output_possible_promising_no_bare_resets<W>(circuit, data));
     data.u64[0] = 3;
-    ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
-}
+    ASSERT_EQ(false, is_output_possible_promising_no_bare_resets<W>(circuit, data));
+})
 
+template <size_t W>
 bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     auto circuit = Circuit(program_text);
-    auto reference_sample = TableauSimulator::reference_sample_circuit(circuit);
+    auto reference_sample = TableauSimulator<W>::reference_sample_circuit(circuit);
     auto samples = sample_batch_measurements(circuit, reference_sample, 10, SHARED_TEST_RNG(), true);
 
     for (size_t k = 0; k < 10; k++) {
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> sample = samples[k];
-        if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
+        simd_bits_range_ref<W> sample = samples[k];
+        if (!is_output_possible_promising_no_bare_resets<W>(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k2 = 0; k2 < circuit.count_measurements(); k2++) {
                 std::cerr << '0' + sample[k2];
@@ -158,9 +162,9 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     return true;
 }
 
-#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << program
+#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau<W>(program)) << program
 
-TEST(FrameSimulator, consistency) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, consistency, {
     EXPECT_SAMPLES_POSSIBLE(
         "H 0\n"
         "CNOT 0 1\n"
@@ -278,16 +282,16 @@ TEST(FrameSimulator, consistency) {
         "M 1\n"
         "M 5\n"
         "M 6");
-}
+})
 
-TEST(FrameSimulator, sample_batch_measurements_writing_results_to_disk) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, sample_batch_measurements_writing_results_to_disk, {
     auto circuit = Circuit(
         "X 0\n"
         "M 1\n"
         "M 0\n"
         "M 2\n"
         "M 3\n");
-    auto ref = TableauSimulator::reference_sample_circuit(circuit);
+    auto ref = TableauSimulator<W>::reference_sample_circuit(circuit);
     auto r = sample_batch_measurements(circuit, ref, 10, SHARED_TEST_RNG(), true);
     for (size_t k = 0; k < 10; k++) {
         ASSERT_EQ(r[k].u64[0], 2);
@@ -319,9 +323,9 @@ TEST(FrameSimulator, sample_batch_measurements_writing_results_to_disk) {
         ASSERT_EQ(getc(tmp), 0);
     }
     ASSERT_EQ(getc(tmp), EOF);
-}
+})
 
-TEST(FrameSimulator, big_circuit_measurements) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, big_circuit_measurements, {
     Circuit circuit;
     for (uint32_t k = 0; k < 1250; k += 3) {
         circuit.safe_append_u("X", {k});
@@ -329,7 +333,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
     for (uint32_t k = 0; k < 1250; k++) {
         circuit.safe_append_u("M", {k});
     }
-    auto ref = TableauSimulator::reference_sample_circuit(circuit);
+    auto ref = TableauSimulator<W>::reference_sample_circuit(circuit);
     auto r = sample_batch_measurements(circuit, ref, 750, SHARED_TEST_RNG(), true);
     for (size_t i = 0; i < 750; i++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -360,15 +364,15 @@ TEST(FrameSimulator, big_circuit_measurements) {
         }
     }
     ASSERT_EQ(getc(tmp), EOF);
-}
+})
 
-TEST(FrameSimulator, run_length_measurement_formats) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, run_length_measurement_formats, {
     Circuit circuit;
     circuit.safe_append_u("X", {100, 500, 501, 551, 1200});
     for (uint32_t k = 0; k < 1250; k++) {
         circuit.safe_append_u("M", {k});
     }
-    auto ref = TableauSimulator::reference_sample_circuit(circuit);
+    auto ref = TableauSimulator<W>::reference_sample_circuit(circuit);
 
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
@@ -395,9 +399,9 @@ TEST(FrameSimulator, run_length_measurement_formats) {
         ASSERT_EQ(getc(tmp), 1250 - 1200 - 1);
     }
     ASSERT_EQ(getc(tmp), EOF);
-}
+})
 
-TEST(FrameSimulator, big_circuit_random_measurements) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, big_circuit_random_measurements, {
     Circuit circuit;
     for (uint32_t k = 0; k < 270; k++) {
         circuit.safe_append_u("H_XZ", {k});
@@ -405,16 +409,16 @@ TEST(FrameSimulator, big_circuit_random_measurements) {
     for (uint32_t k = 0; k < 270; k++) {
         circuit.safe_append_u("M", {k});
     }
-    auto ref = TableauSimulator::reference_sample_circuit(circuit);
+    auto ref = TableauSimulator<W>::reference_sample_circuit(circuit);
     auto r = sample_batch_measurements(circuit, ref, 1000, SHARED_TEST_RNG(), true);
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;
     }
-}
+})
 
-TEST(FrameSimulator, correlated_error) {
-    simd_bits<MAX_BITWORD_WIDTH> ref(5);
-    simd_bits<MAX_BITWORD_WIDTH> expected(5);
+TEST_EACH_WORD_SIZE_W(FrameSimulator, correlated_error, {
+    simd_bits<W> ref(5);
+    simd_bits<W> expected(5);
 
     expected.clear();
     ASSERT_EQ(
@@ -558,10 +562,10 @@ TEST(FrameSimulator, correlated_error) {
     ASSERT_TRUE(0.45 * n < hits[0] && hits[0] < 0.55 * n);
     ASSERT_TRUE((0.125 - 0.05) * n < hits[1] && hits[1] < (0.125 + 0.05) * n);
     ASSERT_TRUE((0.28125 - 0.05) * n < hits[2] && hits[2] < (0.28125 + 0.05) * n);
-}
+})
 
-TEST(FrameSimulator, quantum_cannot_control_classical) {
-    simd_bits<MAX_BITWORD_WIDTH> ref(128);
+TEST_EACH_WORD_SIZE_W(FrameSimulator, quantum_cannot_control_classical, {
+    simd_bits<W> ref(128);
 
     // Quantum controlling classical operation is not allowed.
     ASSERT_THROW(
@@ -629,11 +633,11 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 true);
         },
         std::invalid_argument);
-}
+})
 
-TEST(FrameSimulator, classical_can_control_quantum) {
-    simd_bits<MAX_BITWORD_WIDTH> ref(128);
-    simd_bits<MAX_BITWORD_WIDTH> expected(5);
+TEST_EACH_WORD_SIZE_W(FrameSimulator, classical_can_control_quantum, {
+    simd_bits<W> ref(128);
+    simd_bits<W> expected(5);
     expected.clear();
     expected[0] = true;
     expected[1] = true;
@@ -689,11 +693,11 @@ TEST(FrameSimulator, classical_can_control_quantum) {
             SHARED_TEST_RNG(),
             true)[0],
         expected);
-}
+})
 
-TEST(FrameSimulator, classical_controls) {
-    simd_bits<MAX_BITWORD_WIDTH> ref(128);
-    simd_bits<MAX_BITWORD_WIDTH> expected(5);
+TEST_EACH_WORD_SIZE_W(FrameSimulator, classical_controls, {
+    simd_bits<W> ref(128);
+    simd_bits<W> expected(5);
 
     expected.clear();
     ASSERT_EQ(
@@ -809,20 +813,20 @@ TEST(FrameSimulator, classical_controls) {
             SHARED_TEST_RNG(),
             true)[0],
         expected);
-}
+})
 
-TEST(FrameSimulator, record_gets_trimmed) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, record_gets_trimmed, {
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
-    FrameSimulator sim(c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, SHARED_TEST_RNG());
+    FrameSimulator<W> sim(c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, SHARED_TEST_RNG());
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.do_MZ(c.operations[0]);
-        sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<MAX_BITWORD_WIDTH>(0));
+        sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<W>(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
-}
+})
 
-TEST(FrameSimulator, stream_huge_case) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_huge_case, {
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
         Circuit(R"CIRCUIT(
@@ -831,7 +835,7 @@ TEST(FrameSimulator, stream_huge_case) {
                 M 0 1 2 3
             }
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         256,
         tmp,
         SAMPLE_FORMAT_B8,
@@ -841,9 +845,9 @@ TEST(FrameSimulator, stream_huge_case) {
         ASSERT_EQ(getc(tmp), 0x44);
     }
     ASSERT_EQ(getc(tmp), EOF);
-}
+})
 
-TEST(FrameSimulator, block_results_single_shot) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_single_shot, {
     auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
@@ -853,7 +857,7 @@ TEST(FrameSimulator, block_results_single_shot) {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -862,9 +866,9 @@ TEST(FrameSimulator, block_results_single_shot) {
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
     }
     ASSERT_EQ(result[30000], '\n');
-}
+})
 
-TEST(FrameSimulator, block_results_triple_shot) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_triple_shot, {
     auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
@@ -874,7 +878,7 @@ TEST(FrameSimulator, block_results_triple_shot) {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -886,9 +890,9 @@ TEST(FrameSimulator, block_results_triple_shot) {
         }
         ASSERT_EQ(result[s + 30000], '\n');
     }
-}
+})
 
-TEST(FrameSimulator, stream_results) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results, {
     DebugForceResultStreamingRaii force_streaming;
     auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
@@ -899,7 +903,7 @@ TEST(FrameSimulator, stream_results) {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -908,9 +912,9 @@ TEST(FrameSimulator, stream_results) {
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
     }
     ASSERT_EQ(result[30000], '\n');
-}
+})
 
-TEST(FrameSimulator, stream_many_shots) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_many_shots, {
     DebugForceResultStreamingRaii force_streaming;
     auto circuit = Circuit(R"circuit(
         X_ERROR(1) 1
@@ -918,7 +922,7 @@ TEST(FrameSimulator, stream_many_shots) {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2049, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+        circuit, simd_bits<W>(0), 2049, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     ASSERT_EQ(result.size(), 2049 * 4);
@@ -928,9 +932,9 @@ TEST(FrameSimulator, stream_many_shots) {
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
         ASSERT_EQ(result[k + 3], '\n') << (k + 3);
     }
-}
+})
 
-TEST(FrameSimulator, stream_results_triple_shot) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results_triple_shot, {
     DebugForceResultStreamingRaii force_streaming;
     auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
@@ -941,7 +945,7 @@ TEST(FrameSimulator, stream_results_triple_shot) {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -953,9 +957,9 @@ TEST(FrameSimulator, stream_results_triple_shot) {
         }
         ASSERT_EQ(result[s + 30000], '\n');
     }
-}
+})
 
-TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, measure_y_without_reset_doesnt_reset, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             RY 0
@@ -968,7 +972,7 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
             MY 0
             MY 0
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -991,7 +995,7 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
         MRY 0
         MRY 0
     )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1001,15 +1005,15 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
     ASSERT_EQ(r[3].popcnt(), 0);
     ASSERT_EQ(r[4].popcnt(), 10000);
     ASSERT_EQ(r[5].popcnt(), 0);
-}
+})
 
-TEST(FrameSimulator, resets_vs_measurements) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, resets_vs_measurements, {
     auto check = [&](const char *circuit, std::vector<bool> results) {
-        simd_bits<MAX_BITWORD_WIDTH> ref(results.size());
+        simd_bits<W> ref(results.size());
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table<MAX_BITWORD_WIDTH> t =
+        simd_bit_table<W> t =
             sample_batch_measurements(Circuit(circuit), ref, 100, SHARED_TEST_RNG(), true);
         return !t.data.not_zero();
     };
@@ -1151,16 +1155,16 @@ TEST(FrameSimulator, resets_vs_measurements) {
             true,
             false,
         }));
-}
+})
 
-TEST(FrameSimulator, noisy_measurement_x) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_x, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             RX 0
             MX(0.05) 0
             MX 0
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1176,7 +1180,7 @@ TEST(FrameSimulator, noisy_measurement_x) {
             MX(0.05) 0 1
             MX 0 1
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1185,16 +1189,16 @@ TEST(FrameSimulator, noisy_measurement_x) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 5000);
     ASSERT_EQ(r[3].popcnt(), 5000);
-}
+})
 
-TEST(FrameSimulator, noisy_measurement_y) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_y, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RY 0
         MY(0.05) 0
         MY 0
     )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1210,7 +1214,7 @@ TEST(FrameSimulator, noisy_measurement_y) {
         MY(0.05) 0 1
         MY 0 1
     )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1219,16 +1223,16 @@ TEST(FrameSimulator, noisy_measurement_y) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 5000);
     ASSERT_EQ(r[3].popcnt(), 5000);
-}
+})
 
-TEST(FrameSimulator, noisy_measurement_z) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_z, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
         RZ 0
         MZ(0.05) 0
         MZ 0
     )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1244,7 +1248,7 @@ TEST(FrameSimulator, noisy_measurement_z) {
             MZ(0.05) 0 1
             MZ 0 1
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1253,16 +1257,16 @@ TEST(FrameSimulator, noisy_measurement_z) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 5000);
     ASSERT_EQ(r[3].popcnt(), 5000);
-}
+})
 
-TEST(FrameSimulator, noisy_measure_reset_x) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_reset_x, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             RX 0
             MRX(0.05) 0
             MRX 0
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1278,7 +1282,7 @@ TEST(FrameSimulator, noisy_measure_reset_x) {
             MRX(0.05) 0 1
             MRX 0 1
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1287,16 +1291,16 @@ TEST(FrameSimulator, noisy_measure_reset_x) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 0);
     ASSERT_EQ(r[3].popcnt(), 0);
-}
+})
 
-TEST(FrameSimulator, noisy_measure_reset_y) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_reset_y, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             RY 0
             MRY(0.05) 0
             MRY 0
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1312,7 +1316,7 @@ TEST(FrameSimulator, noisy_measure_reset_y) {
             MRY(0.05) 0 1
             MRY 0 1
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1321,16 +1325,16 @@ TEST(FrameSimulator, noisy_measure_reset_y) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 0);
     ASSERT_EQ(r[3].popcnt(), 0);
-}
+})
 
-TEST(FrameSimulator, noisy_measure_reset_z) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, noisy_measurement_reset_z, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             RZ 0
             MRZ(0.05) 0
             MRZ 0
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10000,
         SHARED_TEST_RNG(),
         false);
@@ -1346,7 +1350,7 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
             MRZ(0.05) 0 1
             MRZ 0 1
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         5000,
         SHARED_TEST_RNG(),
         false);
@@ -1355,9 +1359,9 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 0);
     ASSERT_EQ(r[3].popcnt(), 0);
-}
+})
 
-TEST(FrameSimulator, measure_pauli_product_4body) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, measure_pauli_product_4body, {
     auto r = sample_batch_measurements(
         Circuit(R"CIRCUIT(
             X_ERROR(0.5) 0 1 2 3
@@ -1367,7 +1371,7 @@ TEST(FrameSimulator, measure_pauli_product_4body) {
             MPP X2*X3*X4*X5
             MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
         )CIRCUIT"),
-        simd_bits<MAX_BITWORD_WIDTH>(0),
+        simd_bits<W>(0),
         10,
         SHARED_TEST_RNG(),
         false);
@@ -1386,15 +1390,15 @@ TEST(FrameSimulator, measure_pauli_product_4body) {
         ASSERT_EQ(x2345, x2 ^ x3 ^ x4 ^ x5);
         ASSERT_EQ(y0145 ^ mz0145, x0123 ^ x2345);
     }
-}
+})
 
-TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, non_deterministic_pauli_product_detectors, {
     auto n = sample_batch_measurements(
                  Circuit(R"CIRCUIT(
                      MPP Z8*X9
                      DETECTOR rec[-1]
                  )CIRCUIT"),
-                 simd_bits<MAX_BITWORD_WIDTH>(0),
+                 simd_bits<W>(0),
                  1000,
                  SHARED_TEST_RNG(),
                  false)[0]
@@ -1406,7 +1410,7 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
                 MPP X9
                 DETECTOR rec[-1]
             )CIRCUIT"),
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             1000,
             SHARED_TEST_RNG(),
             false)[0]
@@ -1418,49 +1422,49 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
                 MX 9
                 DETECTOR rec[-1]
             )CIRCUIT"),
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             1000,
             SHARED_TEST_RNG(),
             false)[0]
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
-}
+})
 
-TEST(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data, {
     auto n = sample_batch_measurements(
                  Circuit(R"CIRCUIT(
                      CNOT sweep[0] 0
                      M 0
                      DETECTOR rec[-1]
                  )CIRCUIT"),
-                 simd_bits<MAX_BITWORD_WIDTH>(0),
+                 simd_bits<W>(0),
                  1000,
                  SHARED_TEST_RNG(),
                  false)[0]
                  .popcnt();
     ASSERT_EQ(n, 0);
-}
+})
 
-TEST(FrameSimulator, reconfigure_for) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, reconfigure_for, {
     auto circuit = Circuit(R"CIRCUIT(
         X_ERROR(1) 0
         M 0
         DETECTOR rec[-1]
     )CIRCUIT");
 
-    FrameSimulator frame_sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
+    FrameSimulator<W> frame_sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
     frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
     frame_sim.reset_all_and_run(circuit);
     ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
-}
+})
 
-TEST(FrameSimulator, mpad) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, mpad, {
     auto circuit = Circuit(R"CIRCUIT(
         MPAD 0 1
     )CIRCUIT");
     auto sample = sample_batch_measurements(
         circuit,
-        TableauSimulator::reference_sample_circuit(circuit),
+        TableauSimulator<W>::reference_sample_circuit(circuit),
         100,
         SHARED_TEST_RNG(),
         false);
@@ -1468,9 +1472,9 @@ TEST(FrameSimulator, mpad) {
         ASSERT_EQ(sample[0][k], false);
         ASSERT_EQ(sample[1][k], true);
     }
-}
+})
 
-TEST(FrameSimulator, mxxyyzz_basis) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_basis, {
     auto circuit = Circuit(R"CIRCUIT(
         RX 0 1
         MXX 0 1
@@ -1481,7 +1485,7 @@ TEST(FrameSimulator, mxxyyzz_basis) {
     )CIRCUIT");
     auto sample = sample_batch_measurements(
         circuit,
-        TableauSimulator::reference_sample_circuit(circuit),
+        TableauSimulator<W>::reference_sample_circuit(circuit),
         100,
         SHARED_TEST_RNG(),
         false);
@@ -1490,9 +1494,9 @@ TEST(FrameSimulator, mxxyyzz_basis) {
         ASSERT_EQ(sample[1][k], false);
         ASSERT_EQ(sample[2][k], false);
     }
-}
+})
 
-TEST(FrameSimulator, mxxyyzz_inversion) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_inversion, {
     auto circuit = Circuit(R"CIRCUIT(
         MXX 0 1 0 !1 !0 1 !0 !1
         MYY 0 1 0 !1 !0 1 !0 !1
@@ -1500,7 +1504,7 @@ TEST(FrameSimulator, mxxyyzz_inversion) {
     )CIRCUIT");
     auto sample = sample_batch_measurements(
         circuit,
-        TableauSimulator::reference_sample_circuit(circuit),
+        TableauSimulator<W>::reference_sample_circuit(circuit),
         100,
         SHARED_TEST_RNG(),
         false);
@@ -1516,16 +1520,16 @@ TEST(FrameSimulator, mxxyyzz_inversion) {
         ASSERT_EQ(sample[10][k], !sample[8][k]);
         ASSERT_EQ(sample[11][k], sample[8][k]);
     }
-}
+})
 
-TEST(FrameSimulator, runs_on_general_circuit) {
+TEST_EACH_WORD_SIZE_W(FrameSimulator, runs_on_general_circuit, {
     auto circuit = generate_test_circuit_with_all_operations();
     auto sample = sample_batch_measurements(
         circuit,
-        TableauSimulator::reference_sample_circuit(circuit),
+        TableauSimulator<W>::reference_sample_circuit(circuit),
         100,
         SHARED_TEST_RNG(),
         false);
     ASSERT_GT(sample.num_simd_words_minor, 0);
     ASSERT_GT(sample.num_simd_words_major, 0);
-}
+})

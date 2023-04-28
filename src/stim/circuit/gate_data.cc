@@ -98,29 +98,6 @@ Gate::Gate(
       id(gate_id),
       best_candidate_inverse_id(best_inverse_gate) {
 }
-std::vector<StabilizerFlow> Gate::flows() const {
-    if (flags & GATE_IS_UNITARY) {
-        auto t = tableau<MAX_BITWORD_WIDTH>();
-        if (flags & GATE_TARGETS_PAIRS) {
-            return {
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X_"), t.xs[0], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z_"), t.zs[0], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_X"), t.xs[1], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"), t.zs[1], {}},
-            };
-        }
-        return {
-            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X"), t.xs[0], {}},
-            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z"), t.zs[0], {}},
-        };
-    }
-    std::vector<StabilizerFlow> out;
-    auto data = extra_data_func();
-    for (const auto &c : data.flow_data) {
-        out.push_back(StabilizerFlow::from_str(c));
-    }
-    return out;
-}
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     assert(gate.id < NUM_DEFINED_GATES);

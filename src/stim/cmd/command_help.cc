@@ -228,7 +228,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
 }
 
 void print_stabilizer_generators(Acc &out, const Gate &gate) {
-    auto flows = gate.flows();
+    auto flows = gate.flows<MAX_BITWORD_WIDTH>();
     if (flows.empty()) {
         return;
     }
@@ -238,7 +238,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
         out << "Stabilizer Generators:\n";
     }
     out.change_indent(+4);
-    for (const auto &flow : gate.flows()) {
+    for (const auto &flow : gate.flows<MAX_BITWORD_WIDTH>()) {
         auto s = flow.str();
         std::string no_plus;
         for (char c : s) {

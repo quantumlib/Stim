@@ -11,7 +11,7 @@
 #include "tableau.js.h"
 
 struct ExposedTableauSimulator {
-    stim::TableauSimulator sim;
+    stim::TableauSimulator<stim::MAX_BITWORD_WIDTH> sim;
     ExposedTableauSimulator();
     ExposedTableauSimulator copy() const;
     bool measure(size_t target);

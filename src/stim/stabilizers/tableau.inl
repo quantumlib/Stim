@@ -22,7 +22,7 @@
 #include <random>
 
 #include "stim/circuit/gate_data.h"
-
+#include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {

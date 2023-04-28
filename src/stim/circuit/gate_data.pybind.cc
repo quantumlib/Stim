@@ -373,7 +373,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
     c.def_property_readonly(
         "__unstable_flows",
         [](const Gate &self) -> pybind11::object {
-            auto f = self.flows();
+            auto f = self.flows<MAX_BITWORD_WIDTH>();
             if (f.empty()) {
                 return pybind11::none();
             }

@@ -74,7 +74,7 @@ void CompiledDetectorSampler::sample_write(
     RaiiFile out(filepath.data(), "wb");
     RaiiFile obs_out(obs_out_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    sample_batch_detection_events_writing_results_to_disk(
+    sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
         circuit,
         num_samples,
         prepend_observables,

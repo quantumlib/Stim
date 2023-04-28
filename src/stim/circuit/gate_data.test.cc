@@ -75,8 +75,8 @@ circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
-    TableauSimulator sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
-    TableauSimulator sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
+    TableauSimulator<MAX_BITWORD_WIDTH> sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
+    TableauSimulator<MAX_BITWORD_WIDTH> sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
     sim1.expand_do_circuit(circuit);
     sim2.expand_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};
@@ -137,9 +137,9 @@ TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     }
 })
 
-TEST(gate_data, stabilizer_flows_are_correct) {
+TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
     for (const auto &g : GATE_DATA.items) {
-         auto flows = g.flows();
+         auto flows = g.flows<W>();
          if (flows.empty()) {
             continue;
          }
@@ -167,11 +167,11 @@ TEST(gate_data, stabilizer_flows_are_correct) {
              EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
          }
     }
-}
+})
 
-TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
+TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit, {
     for (const auto &g : GATE_DATA.items) {
-        auto flows = g.flows();
+        auto flows = g.flows<W>();
         if (flows.empty()) {
            continue;
         }
@@ -198,4 +198,4 @@ TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];
         }
     }
-}
+})

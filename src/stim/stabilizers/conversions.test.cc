@@ -218,7 +218,7 @@ TEST(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip) {
     for (const auto &little_endian : std::vector<bool>{false, true}) {
         for (size_t n = 0; n < 10; n++) {
             // Pick a random stabilizer state.
-            TableauSimulator sim(SHARED_TEST_RNG(), n);
+            TableauSimulator<MAX_BITWORD_WIDTH> sim(SHARED_TEST_RNG(), n);
             sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(n, SHARED_TEST_RNG());
             auto desired_vec = sim.to_state_vector(little_endian);
 

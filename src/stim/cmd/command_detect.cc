@@ -65,7 +65,7 @@ int stim::command_detect(int argc, const char **argv) {
     auto circuit = Circuit::from_file(in.f);
     in.done();
     auto rng = optionally_seeded_rng(argc, argv);
-    sample_batch_detection_events_writing_results_to_disk(
+    sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
         circuit,
         num_shots,
         prepend_observables,
