@@ -40,6 +40,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
+    - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
@@ -1931,6 +1932,53 @@ def num_sweep_bits(
         ...    CX sweep[2] 0
         ... ''').num_sweep_bits
         6
+    """
+```
+
+<a name="stim.Circuit.num_ticks"></a>
+```python
+# stim.Circuit.num_ticks
+
+# (in class stim.Circuit)
+@property
+def num_ticks(
+    self,
+) -> int:
+    """Counts the number of TICK instructions executed when running the circuit.
+
+    TICKs in loops are counted once per iteration.
+
+    Returns:
+        The number of ticks executed by the circuit.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit().num_ticks
+        0
+
+        >>> stim.Circuit('''
+        ...    TICK
+        ... ''').num_ticks
+        1
+
+        >>> stim.Circuit('''
+        ...    H 0
+        ...    TICK
+        ...    CX 0 1
+        ...    TICK
+        ... ''').num_ticks
+        2
+
+        >>> stim.Circuit('''
+        ...    H 0
+        ...    TICK
+        ...    REPEAT 100 {
+        ...        CX 0 1
+        ...        TICK
+        ...    }
+        ... ''').num_ticks
+        101
     """
 ```
 

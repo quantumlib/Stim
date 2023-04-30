@@ -301,6 +301,48 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def_property_readonly(
+        "num_ticks",
+        &Circuit::count_ticks,
+        clean_doc_string(R"DOC(
+            Counts the number of TICK instructions executed when running the circuit.
+
+            TICKs in loops are counted once per iteration.
+
+            Returns:
+                The number of ticks executed by the circuit.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit().num_ticks
+                0
+
+                >>> stim.Circuit('''
+                ...    TICK
+                ... ''').num_ticks
+                1
+
+                >>> stim.Circuit('''
+                ...    H 0
+                ...    TICK
+                ...    CX 0 1
+                ...    TICK
+                ... ''').num_ticks
+                2
+
+                >>> stim.Circuit('''
+                ...    H 0
+                ...    TICK
+                ...    REPEAT 100 {
+                ...        CX 0 1
+                ...        TICK
+                ...    }
+                ... ''').num_ticks
+                101
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
         "num_observables",
         &Circuit::count_observables,
         clean_doc_string(R"DOC(
