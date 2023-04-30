@@ -275,3 +275,43 @@ def test_sqrt_ticks():
         [300000, 350000, 400000, 450000, 500000, 550000, 600000],
         [10000*k for k in range(30, 61)],
     )
+
+
+def test_main_plot_degenerate_data():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata
+                  100,     0,       0,   1.00,magical,000000000,"{}"
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+        ])
+        assert (d / "output.png").exists()
+
+
+def test_main_plot_degenerate_data_sqrt_axis():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata
+                  100,     0,       0,   1.00,magical,000000000,"{}"
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+            "--xaxis",
+            "[sqrt]x",
+        ])
+        assert (d / "output.png").exists()

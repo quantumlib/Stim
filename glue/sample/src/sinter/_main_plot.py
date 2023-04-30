@@ -235,6 +235,9 @@ def _log_ticks(
 ) -> Tuple[float, float, List[float], List[float]]:
     d0 = math.floor(math.log10(min_v) + 0.0001)
     d1 = math.ceil(math.log10(max_v) - 0.0001)
+    if d1 == d0:
+        d1 += 1
+        d0 -= 1
     return (
         10**d0,
         10**d1,
@@ -247,6 +250,12 @@ def _sqrt_ticks(
         min_v: float,
         max_v: float,
 ) -> Tuple[float, float, List[float], List[float]]:
+    if max_v == min_v:
+        max_v *= 2
+        min_v /= 2
+    if max_v == min_v:
+        max_v = 1
+        min_v = 0
     d = max_v - min_v
     step = 10**math.floor(math.log10(d))
     small_step = step / 10
@@ -282,6 +291,7 @@ def _pick_min_max(
         forced_max: Optional[float],
         want_positive: bool,
 ) -> Tuple[float, float]:
+    assert default_max >= default_min
     vs = [
         v
         for stat in plotted_stats
@@ -313,7 +323,6 @@ def _set_axis_scale_label_ticks(
         default_min_v: float = 0,
         default_max_v: float = 0,
         v_func: Callable[['sinter.TaskStats'], Optional[float]],
-        forced_scale: Optional[str] = None,
         forced_min_v: Optional[float] = None,
         forced_max_v: Optional[float] = None,
         plotted_stats: Sequence['sinter.TaskStats'],
@@ -461,6 +470,7 @@ def _plot_helper(
             default_scale='log',
             forced_max_v=1,
             default_min_v=1e-4,
+            default_max_v=1,
             plotted_stats=plotted_stats,
             v_func=stat_to_err_rate,
         )
