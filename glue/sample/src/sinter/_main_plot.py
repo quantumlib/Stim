@@ -515,7 +515,7 @@ def _plot_helper(
             axis_label='custom' if yaxis is None else yaxis,
             default_scale='linear',
             default_min_v=1e-4,
-            default_max_v=0,
+            default_max_v=1,
             plotted_stats=plotted_stats,
             v_func=y_func,
         )
