@@ -1324,3 +1324,24 @@ def test_with_inlined_feedback():
 
 def test_detslice_ops_diagram_no_ticks_does_not_hang():
     assert stim.Circuit.generated("surface_code:rotated_memory_x", rounds=5, distance=5).diagram("detslice-svg") is not None
+
+
+def test_num_ticks():
+    assert stim.Circuit().num_ticks == 0
+    assert stim.Circuit("TICK").num_ticks == 1
+    assert stim.Circuit("""
+        TICK
+        REPEAT 100 {
+            TICK
+            TICK
+            REPEAT 10 {
+                TICK
+            }
+        }
+    """).num_ticks == 1201
+    assert stim.Circuit("""
+        H 0
+        TICK
+        CX 0 1
+        TICK
+    """).num_ticks == 2

@@ -1378,6 +1378,46 @@ class Circuit:
             ... ''').num_sweep_bits
             6
         """
+    @property
+    def num_ticks(
+        self,
+    ) -> int:
+        """Counts the number of TICK instructions executed when running the circuit.
+
+        TICKs in loops are counted once per iteration.
+
+        Returns:
+            The number of ticks executed by the circuit.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit().num_ticks
+            0
+
+            >>> stim.Circuit('''
+            ...    TICK
+            ... ''').num_ticks
+            1
+
+            >>> stim.Circuit('''
+            ...    H 0
+            ...    TICK
+            ...    CX 0 1
+            ...    TICK
+            ... ''').num_ticks
+            2
+
+            >>> stim.Circuit('''
+            ...    H 0
+            ...    TICK
+            ...    REPEAT 100 {
+            ...        CX 0 1
+            ...        TICK
+            ...    }
+            ... ''').num_ticks
+            101
+        """
     def search_for_undetectable_logical_errors(
         self,
         *,
