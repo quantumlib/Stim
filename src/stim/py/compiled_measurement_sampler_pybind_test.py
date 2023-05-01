@@ -14,6 +14,7 @@
 import tempfile
 
 import numpy as np
+import pytest
 import stim
 
 
@@ -117,6 +118,37 @@ def test_skip_reference_sample():
         stim.Circuit("X_ERROR(1) 0\nM 0").compile_sampler(skip_reference_sample=True).sample(1),
         [[True]],
     )
+
+def test_reference_sample_init():
+    np.testing.assert_array_equal(
+        stim.Circuit("X 0\nM 0").compile_sampler(reference_sample=None).sample(1),
+        [[True]],
+    )
+    circuit = stim.Circuit("X 0\nM 0")
+    s = stim.TableauSimulator()
+    ref_sample = np.array([False])
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample).sample(1),
+        [[False]],
+    )
+    ref_sample = s.reference_sample(circuit)
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample).sample(1),
+        [[True]],
+    )
+    circuit = stim.Circuit("X_ERROR(1) 0\n M 0")
+    ref_sample = np.array([False])
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample).sample(1),
+        [[True]],
+    )
+    ref_sample = s.reference_sample(circuit)
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample).sample(1),
+        [[True]],
+    )
+    with pytest.raises(ValueError):
+        circuit.compile_sampler(reference_sample=ref_sample, skip_reference_sample=True).sample(1)
 
 
 def test_repr():

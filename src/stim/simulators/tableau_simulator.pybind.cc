@@ -18,6 +18,7 @@
 #include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
@@ -2017,6 +2018,33 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                         stim.PauliString("+ZZ"),
                     ],
                 )
+        )DOC")
+            .data());
+    c.def(
+        "reference_sample",
+        [](const TableauSimulator self, const Circuit &circuit, bool bit_packed) {
+            simd_bits<MAX_BITWORD_WIDTH> ref = self.reference_sample_circuit(circuit);
+            simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(ref.ptr_simd, ref.num_simd_words);
+            size_t num_measure = circuit.count_measurements();
+            return simd_bits_to_numpy(reference_sample, num_measure, bit_packed);
+        },
+        pybind11::arg("circuit"),
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(R"DOC(
+            @signature def reference_sample(self, circuit: stim.Circuit, *, bit_packed: bool = False) -> np.ndarray:
+            Samples the given circuit in a deterministic fashion.
+
+            Discards all noisy operations, and biases all collapse events
+            towards +Z instead of randomly +Z/-Z.
+
+            Args:
+                circuit: The circuit to "sample" from.
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                reference_sample: reference sample sampled from the given circuit.
         )DOC")
             .data());
 }

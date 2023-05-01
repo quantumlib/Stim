@@ -697,3 +697,27 @@ def test_depolarize2_error():
 
     with pytest.raises(ValueError, match='Unexpected argument'):
         s.depolarize2(1, p=1, q=2)
+
+
+
+def test_reference_sample():
+    s = stim.TableauSimulator(seed=1)
+    s.h(*range(0, 10, 2))
+    s.cnot(*range(10))
+    circuit = stim.Circuit("""H 0
+                CNOT 0 1
+                """
+                )
+    ref = s.reference_sample(circuit)
+    assert len(ref) == 0
+    circuit = stim.Circuit("""H 0
+        CNOT 0 1
+        M 0
+        R 0
+        M 1
+        DEPOLARIZE1(0.01) 0 1 2 3
+        DEPOLARIZE2(0.01) 0 1 2 3
+        """)
+    ref = s.reference_sample(circuit)
+    assert len(ref) == 2
+    assert not np.all(ref)

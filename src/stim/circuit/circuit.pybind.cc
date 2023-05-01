@@ -415,6 +415,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
+        pybind11::arg("reference_sample") = pybind11::none(),
         clean_doc_string(R"DOC(
             Returns an object that can quickly batch sample measurements from the circuit.
 
@@ -458,6 +459,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     CAUTION: simulation results *MAY NOT* be consistent if you vary how many
                     shots are taken. For example, taking 10 shots and then 90 shots will
                     give different results from taking 100 shots in one call.
+                reference_sample: Reference sample used by the sampler. If None
+                    then the reference sample is constructed on the fly
+                    according to skip_reference_sample.
+
+            Raises:
+                ValueError: skip_reference_sample is True and reference_sample is not None.
 
             Examples:
                 >>> import stim
