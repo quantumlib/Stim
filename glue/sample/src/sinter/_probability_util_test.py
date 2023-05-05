@@ -235,3 +235,41 @@ def test_shot_error_rate_to_piece_error_rate():
         ),
         1e-102,
         rtol=1e-5)
+
+
+def test_shot_error_rate_to_piece_error_rate_unions():
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.75,
+            pieces=1,
+            values=2,
+        ),
+        0.75,
+        rtol=1e-5)
+
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.2,
+            pieces=1,
+            values=2,
+        ),
+        0.2,
+        rtol=1e-5)
+
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.001,
+            pieces=1000000,
+            values=2,
+        ),
+        0.001 / 1000000,
+        rtol=1e-2)
+
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.0975,
+            pieces=10,
+            values=2,
+        ),
+        0.010453280306648605,
+        rtol=1e-5)

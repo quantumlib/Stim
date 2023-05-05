@@ -201,6 +201,7 @@ def plot_error_rate(
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
         failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
+        failure_values_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
@@ -218,6 +219,10 @@ def plot_error_rate(
             you to instead make it the logical error rate per round. For example, if the metadata
             associated with a shot has a field 'r' which is the number of rounds, then this can be
             achieved with `failure_units_per_shot_func=lambda stats: stats.metadata['r']`.
+        failure_values_func: How many independent ways there are for a shot to fail, such as
+            the number of independent observables in a memory experiment. This affects how the failure
+            units rescaling plays out (e.g. with 1 independent failure the "center" of the conversion
+            is at 50% whereas for 2 independent failures the "center" is at 75%).
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
@@ -252,10 +257,11 @@ def plot_error_rate(
         )
 
         pieces = failure_units_per_shot_func(stat)
+        values = failure_values_func(stat)
         result = Fit(
-            low=shot_error_rate_to_piece_error_rate(result.low, pieces=pieces),
-            best=shot_error_rate_to_piece_error_rate(result.best, pieces=pieces),
-            high=shot_error_rate_to_piece_error_rate(result.high, pieces=pieces),
+            low=shot_error_rate_to_piece_error_rate(result.low, pieces=pieces, values=values),
+            best=shot_error_rate_to_piece_error_rate(result.best, pieces=pieces, values=values),
+            high=shot_error_rate_to_piece_error_rate(result.high, pieces=pieces, values=values),
         )
 
         if stat.errors == 0:
