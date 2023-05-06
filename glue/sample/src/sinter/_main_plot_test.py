@@ -315,3 +315,37 @@ def test_main_plot_degenerate_data_sqrt_axis():
             "[sqrt]x",
         ])
         assert (d / "output.png").exists()
+
+
+def test_failure_values_func():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata
+                 1000,   400,       0,   1.00,magical,000000001,"{""f"":1}"
+                 1000,   400,       0,   1.00,magical,000000002,"{""f"":2}"
+                 1000,   400,       0,   1.00,magical,000000003,"{""f"":3}"
+                 1000,   400,       0,   1.00,magical,000000005,"{""f"":5}"
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+            "--xaxis",
+            "values",
+            "--x_func",
+            "metadata['f']",
+            "--subtitle",
+            "test",
+            "--failure_values_func",
+            "metadata['f']",
+            "--failure_units_per_shot_func",
+            "100",
+            "--failure_unit_name",
+            "rounds",
+        ])
+        assert (d / "output.png").exists()

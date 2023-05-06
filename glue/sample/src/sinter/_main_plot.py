@@ -227,13 +227,14 @@ def parse_args(args: List[str]) -> Any:
             raise ValueError("--failure_units_per_shot_func doesn't affect --type custom_y")
     if (a.failure_units_per_shot_func is not None) != (a.failure_unit_name is not None):
         raise ValueError("--failure_units_per_shot_func and --failure_unit_name can only be specified together.")
+    if a.failure_values_func is not None and a.failure_units_per_shot_func is None:
+            raise ValueError('Specified --failure_values_func without --failure_units_per_shot_func')
     if a.failure_units_per_shot_func is None:
         a.failure_units_per_shot_func = "1"
     if a.failure_values_func is None:
         a.failure_values_func = "1"
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
-
     a.x_func = eval(compile(
         f'lambda *, stat, decoder, metadata, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',

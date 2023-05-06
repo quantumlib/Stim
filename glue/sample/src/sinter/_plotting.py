@@ -263,6 +263,8 @@ def plot_error_rate(
             best=shot_error_rate_to_piece_error_rate(result.best, pieces=pieces, values=values),
             high=shot_error_rate_to_piece_error_rate(result.high, pieces=pieces, values=values),
         )
+        print()
+        print(stat, "values", values, "fit", result)
 
         if stat.errors == 0:
             result = Fit(low=result.low, high=result.high, best=float('nan'))
