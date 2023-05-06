@@ -282,11 +282,36 @@ def fit_binomial(
     return Fit(best=num_hits / num_shots, low=low / num_shots, high=high / num_shots)
 
 
-def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float) -> float:
+def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float, values: float = 1) -> float:
     """Convert from total error rate to per-piece error rate.
 
-    Works by assuming pieces fail independently and a shot fails if an any single
-    piece fails.
+    Args:
+        shot_error_rate: The rate at which shots fail.
+        pieces: The number of xor-pieces we want to subdivide each shot into,
+            as if each piece was an independent chance for the shot to fail and
+            the total chance of a shot failing was the xor of each piece
+            failing.
+        values: The number of or-pieces each shot's failure is being formed out
+            of.
+
+    Returns:
+        Let N = `pieces` (number of rounds)
+        Let V = `values` (number of observables)
+        Let S = `shot_error_rate`
+        Let R = the returned result
+
+        R satisfies the following property. Let X be the probability of each
+        observable flipping, each round. R will be the probability that any of
+        the observables is flipped after 1 round, given this X. X is chosen to
+        satisfy the following condition. If a Bernoulli distribution with
+        probability X is sampled V*N times, and the results grouped into V
+        groups of N, and each group is reduced to a single value using XOR, and
+        then the reduced group values are reduced to a single final value using
+        OR, then this final value will be True with probability S.
+
+        Or, in other words, if a shot consists of N rounds which V independent
+        observables must survive, then R is like the per-round failure for
+        any of the observables.
     """
     if not (0 <= shot_error_rate <= 1):
         raise ValueError(f'need (0 <= shot_error_rate={shot_error_rate} <= 1)')
@@ -294,8 +319,15 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float
         raise ValueError('need pieces > 0')
     if not isinstance(pieces, (int, float)):
         raise ValueError('need isinstance(pieces, (int, float)')
+    if not isinstance(values, (int, float)):
+        raise ValueError('need isinstance(values, (int, float)')
     if pieces == 1:
         return shot_error_rate
+    if values != 1:
+        p = 1 - (1 - shot_error_rate)**(1 / values)
+        p = shot_error_rate_to_piece_error_rate(p, pieces=pieces)
+        return 1 - (1 - p)**values
+
     if shot_error_rate > 0.5:
         return 1 - shot_error_rate_to_piece_error_rate(1 - shot_error_rate, pieces=pieces)
     assert 0 <= shot_error_rate <= 0.5

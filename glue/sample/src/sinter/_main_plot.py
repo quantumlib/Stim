@@ -1,3 +1,4 @@
+import collections
 import math
 from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict, Sequence, cast
 import argparse
@@ -120,6 +121,29 @@ def parse_args(args: List[str]) -> Any:
                              '''    --failure_units_per_shot_func "metadata['distance'] * 3"\n'''
                              '''    --failure_units_per_shot_func "10"\n'''
                         )
+    parser.add_argument('--failure_values_func',
+                        type=str,
+                        default=None,
+                        help='A python expression that evaluates to the number of independent ways a shot can fail.\n'
+                             'For example, if a shot corresponds to a memory experiment preserving two observables,\n'
+                             'then the failure unions is 2.\n'
+                             '\n'
+                             'This value is necessary to correctly rescale the logical error rate plots when using\n'
+                             '--failure_values_func. By default it is assumed to be 1.\n'
+                             '\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
+                             '\n'
+                             'Expected expression type:\n'
+                             '    float.\n'
+                             '\n'
+                             'Examples:\n'
+                             '''    --failure_values_func "metadata['num_obs']"\n'''
+                             '''    --failure_values_func "2"\n'''
+                        )
     parser.add_argument('--plot_args_func',
                         type=str,
                         default='''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}''',
@@ -178,6 +202,13 @@ def parse_args(args: List[str]) -> Any:
                         default=None,
                         type=str,
                         help='Sets the title of the plot.')
+    parser.add_argument('--subtitle',
+                        default=None,
+                        type=str,
+                        help='Sets the subtitle of the plot.\n'
+                             '\n'
+                             'Note: The pattern "{common}" will expand to text including\n'
+                             'all json metadata values that are the same across all stats.')
     parser.add_argument('--highlight_max_likelihood_factor',
                         type=float,
                         default=1000,
@@ -196,11 +227,14 @@ def parse_args(args: List[str]) -> Any:
             raise ValueError("--failure_units_per_shot_func doesn't affect --type custom_y")
     if (a.failure_units_per_shot_func is not None) != (a.failure_unit_name is not None):
         raise ValueError("--failure_units_per_shot_func and --failure_unit_name can only be specified together.")
+    if a.failure_values_func is not None and a.failure_units_per_shot_func is None:
+            raise ValueError('Specified --failure_values_func without --failure_units_per_shot_func')
     if a.failure_units_per_shot_func is None:
         a.failure_units_per_shot_func = "1"
+    if a.failure_values_func is None:
+        a.failure_values_func = "1"
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
-
     a.x_func = eval(compile(
         f'lambda *, stat, decoder, metadata, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',
@@ -221,6 +255,10 @@ def parse_args(args: List[str]) -> Any:
     a.failure_units_per_shot_func = eval(compile(
         f'lambda *, stat, decoder, metadata, strong_id: {a.failure_units_per_shot_func}',
         filename='failure_units_per_shot_func:command_line_arg',
+        mode='eval'))
+    a.failure_values_func = eval(compile(
+        f'lambda *, stat, decoder, metadata, strong_id: {a.failure_values_func}',
+        filename='failure_values_func:command_line_arg',
         mode='eval'))
     a.plot_args_func = eval(compile(
         f'lambda *, index, key, stats, stat, decoder, metadata, strong_id: {a.plot_args_func}',
@@ -302,10 +340,10 @@ def _pick_min_max(
     min_v = min(vs, default=default_min)
     max_v = max(vs, default=default_max)
     if forced_min is not None:
-        min_v = min_v
+        min_v = forced_min
         max_v = max(min_v, max_v)
     if forced_max is not None:
-        max_v = max_v
+        max_v = forced_max
         min_v = min(min_v, max_v)
     if want_positive:
         assert min_v > 0
@@ -371,12 +409,28 @@ def _set_axis_scale_label_ticks(
         raise NotImplemented(f'{scale_name=}')
 
 
+def _common_json_properties(stats: List['sinter.TaskStats']) -> Dict[str, Any]:
+    vals = {}
+    for stat in stats:
+        if isinstance(stat.json_metadata, dict):
+            for k in stat.json_metadata:
+                vals[k] = set()
+    for stat in stats:
+        if isinstance(stat.json_metadata, dict):
+            for k in vals:
+                v = stat.json_metadata.get(k)
+                if v is None or isinstance(v, (float, str, int)):
+                    vals[k].add(v)
+    return {k: next(iter(v)) for k, v in vals.items() if len(v) == 1}
+
+
 def _plot_helper(
     *,
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
     group_func: Callable[['sinter.TaskStats'], Any],
     filter_func: Callable[['sinter.TaskStats'], Any],
     failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any],
+    failure_values_func: Callable[['sinter.TaskStats'], Any],
     x_func: Callable[['sinter.TaskStats'], Any],
     y_func: Optional[Callable[['sinter.TaskStats'], Any]],
     failure_unit: str,
@@ -386,6 +440,7 @@ def _plot_helper(
     yaxis: Optional[str],
     min_y: Optional[float],
     title: Optional[str],
+    subtitle: Optional[str],
     fig_size: Optional[Tuple[int, int]],
     plot_args_func: Callable[[int, Any, List['sinter.TaskStats']], Dict[str, Any]],
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
@@ -419,12 +474,14 @@ def _plot_helper(
     if num_plots == 1:
         axes = [axes]
     axes = list(axes)
+    pop_axes = list(axes)
     if include_custom_plot:
-        ax_cus = axes.pop()
+        ax_cus = pop_axes.pop()
     if include_discard_rate_plot:
-        ax_dis = axes.pop()
+        ax_dis = pop_axes.pop()
     if include_error_rate_plot:
-        ax_err = axes.pop()
+        ax_err = pop_axes.pop()
+    assert not pop_axes
 
     plotted_stats: List['sinter.TaskStats'] = [
         stat
@@ -460,6 +517,7 @@ def _plot_helper(
             group_func=group_func,
             x_func=x_func,
             failure_units_per_shot_func=failure_units_per_shot_func,
+            failure_values_func=failure_values_func,
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=plot_args_func,
         )
@@ -468,9 +526,10 @@ def _plot_helper(
             y_not_x=True,
             axis_label=f"Logical Error Rate (per {failure_unit})" if yaxis is None else yaxis,
             default_scale='log',
-            forced_max_v=1,
+            forced_max_v=1 if min_y is None or 1 > min_y else None,
             default_min_v=1e-4,
             default_max_v=1,
+            forced_min_v=min_y,
             plotted_stats=plotted_stats,
             v_func=stat_to_err_rate,
         )
@@ -542,6 +601,12 @@ def _plot_helper(
             ax_cus.set_title(title)
         else:
             ax_cus.set_title(f'Custom Plot')
+    if subtitle is not None:
+        if '{common}' in subtitle:
+            auto_subtitle = ', '.join(f'{k}={v}' for k, v in sorted(_common_json_properties(plotted_stats).items()))
+            subtitle = subtitle.replace('{common}', auto_subtitle)
+        for ax in axes:
+            ax.set_title(ax.title.get_text() + '\n' + subtitle)
 
     if fig_size is None:
         fig.set_size_inches(10 * num_plots, 10)
@@ -588,6 +653,11 @@ def main_plot(*, command_line_args: List[str]):
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             strong_id=stat.strong_id),
+        failure_values_func=lambda stat: args.failure_values_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
         plot_args_func=lambda index, group_key, stats: args.plot_args_func(
             index=index,
             key=group_key,
@@ -604,6 +674,7 @@ def main_plot(*, command_line_args: List[str]):
         min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
         title=args.title,
+        subtitle=args.subtitle,
     )
     if args.out is not None:
         fig.savefig(args.out)
