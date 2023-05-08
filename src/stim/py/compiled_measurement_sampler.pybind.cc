@@ -70,19 +70,21 @@ CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     bool skip_reference_sample,
     const pybind11::object &seed,
     const pybind11::object &reference_sample) {
-    uint64_t num_bits = circuit.count_measurements();
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample(circuit.count_measurements());
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample_ref(ref_sample);
     if (reference_sample.is_none()) {
-        ref_sample = skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                           : TableauSimulator::reference_sample_circuit(circuit);
+        simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
+                                                      ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
+                                                      : TableauSimulator::reference_sample_circuit(circuit);
+        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
     } else {
         if (skip_reference_sample) {
             throw std::invalid_argument("skip_reference_sample = True but reference_sample is not None.");
         }
+        uint64_t num_bits = circuit.count_measurements();
+        simd_bits<MAX_BITWORD_WIDTH> ref_sample(num_bits);
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample_ref(ref_sample);
         memcpy_bits_from_numpy_to_simd(num_bits, reference_sample, ref_sample_ref);
+        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
     }
-    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }
 
 void stim_pybind::pybind_compiled_measurement_sampler_methods(
