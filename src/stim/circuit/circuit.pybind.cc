@@ -459,9 +459,15 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     CAUTION: simulation results *MAY NOT* be consistent if you vary how many
                     shots are taken. For example, taking 10 shots and then 90 shots will
                     give different results from taking 100 shots in one call.
-                reference_sample: Reference sample used by the sampler. If None
-                    then the reference sample is constructed on the fly
-                    according to skip_reference_sample.
+                reference_sample: The data to xor into the measurement flips produced by the
+                    frame simulator, in order to produce proper measurement results.
+                    This can either be specified as an `np.bool_` array or a bit packed
+                    `np.uint8` array (little endian). Under normal conditions, the reference
+                    sample should be a valid noiseless sample of the circuit, such as the
+                    one returned by `circuit.reference_sample()`. If this argument is not
+                    provided, the reference sample will be set to
+                    `circuit.reference_sample()`, unless `skip_reference_sample=True`
+                    is used, in which case it will be set to all-zeros.
 
             Raises:
                 ValueError: skip_reference_sample is True and reference_sample is not None.
