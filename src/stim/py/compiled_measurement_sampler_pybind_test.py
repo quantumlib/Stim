@@ -125,13 +125,12 @@ def test_reference_sample_init():
         [[True]],
     )
     circuit = stim.Circuit("X 0\nM 0")
-    s = stim.TableauSimulator()
     ref_sample = np.array([False])
     np.testing.assert_array_equal(
         circuit.compile_sampler(reference_sample=ref_sample).sample(1),
         [[False]],
     )
-    ref_sample = s.reference_sample(circuit)
+    ref_sample = circuit.reference_sample()
     np.testing.assert_array_equal(
         circuit.compile_sampler(reference_sample=ref_sample).sample(1),
         [[True]],
@@ -142,13 +141,25 @@ def test_reference_sample_init():
         circuit.compile_sampler(reference_sample=ref_sample).sample(1),
         [[True]],
     )
-    ref_sample = s.reference_sample(circuit)
+    ref_sample = circuit.reference_sample()
     np.testing.assert_array_equal(
         circuit.compile_sampler(reference_sample=ref_sample).sample(1),
         [[True]],
     )
     with pytest.raises(ValueError):
         circuit.compile_sampler(reference_sample=ref_sample, skip_reference_sample=True)
+    circuit = stim.Circuit("H 0\n X 1\n CNOT 0 1\n H 0 1\n MPP X0*X1")
+    ref_sample = circuit.reference_sample()
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample, seed=0).sample(10),
+        circuit.compile_sampler(reference_sample=None, seed=0).sample(10),
+    )
+    circuit = stim.Circuit("H 0\n X 1\n CNOT 0 1\n H 0 1 2\n MPP Y1*Y2 X1*X2 Z1*Z2")
+    ref_sample = circuit.reference_sample()
+    np.testing.assert_array_equal(
+        circuit.compile_sampler(reference_sample=ref_sample, seed=0).sample(11),
+        circuit.compile_sampler(seed=0).sample(11),
+    )
 
 
 def test_repr():
