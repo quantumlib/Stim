@@ -1345,3 +1345,23 @@ def test_num_ticks():
         CX 0 1
         TICK
     """).num_ticks == 2
+
+
+def test_reference_sample():
+    circuit = stim.Circuit(
+        """
+        H 0
+        CNOT 0 1
+    """
+    )
+    ref = circuit.reference_sample()
+    assert len(ref) == 0
+    circuit = stim.Circuit(
+        """
+        H 0
+        M 0
+        M 1
+    """
+    )
+    ref = circuit.reference_sample()
+    assert ref[0] == ref[1]
