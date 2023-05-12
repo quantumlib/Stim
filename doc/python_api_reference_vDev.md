@@ -1040,8 +1040,8 @@ def compile_sampler(
     self,
     *,
     skip_reference_sample: bool = False,
-    seed: object = None,
-    reference_sample: object = None,
+    seed: Optional[int] = None,
+    reference_sample: Optional[np.ndarray] = None,
 ) -> stim.CompiledMeasurementSampler:
     """Returns an object that can quickly batch sample measurements from the circuit.
 
@@ -2003,6 +2003,7 @@ def num_ticks(
 # (in class stim.Circuit)
 def reference_sample(
     self,
+    *,
     bit_packed: bool = False,
 ) -> np.ndarray:
     """Samples the given circuit in a deterministic fashion.
