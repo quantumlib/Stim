@@ -148,7 +148,7 @@ def test_reference_sample_init():
         [[True]],
     )
     with pytest.raises(ValueError):
-        circuit.compile_sampler(reference_sample=ref_sample, skip_reference_sample=True).sample(1)
+        circuit.compile_sampler(reference_sample=ref_sample, skip_reference_sample=True)
 
 
 def test_repr():
