@@ -488,7 +488,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "reference_sample",
-        [](const Circuit self, bool bit_packed) {
+        [](const Circuit &self, bool bit_packed) {
             simd_bits<MAX_BITWORD_WIDTH> ref = TableauSimulator::reference_sample_circuit(self);
             simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(ref.ptr_simd, ref.num_simd_words);
             size_t num_measure = self.count_measurements();
