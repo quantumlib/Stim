@@ -1363,14 +1363,20 @@ def test_reference_sample():
         M 1
     """
     )
-    ref = circuit.reference_sample()
-    assert ref[0] == ref[1]
-    circuit = stim.Circuit()
+    circuit = stim.Circuit(
+        """
+        H 0 1
+        CX 0 2 1 3
+        MPP X0*X1 Y0*Y1 Z0*Z1
+    """
+    )
+    np.testing.assert_array_equal(circuit.reference_sample(), circuit.reference_sample())
+    assert np.sum(circuit.reference_sample()) % 2 == 1
     circuit.append("X", (i for i in range(0, 100, 2)))
     circuit.append("M", (i for i in range(100)))
-    ref_sample = circuit.reference_sample(bit_packed=False)
-    expected = np.zeros((len(ref_sample) // 8 + 1), dtype=np.uint8)
-    for bit_indx, bit in enumerate(ref_sample):
-        expected[bit_indx//8] |= (bit << (bit_indx % 8))
     ref_sample = circuit.reference_sample(bit_packed=True)
-    np.testing.assert_array_equal(ref_sample, expected)
+    unpacked = np.unpackbits(ref_sample, bitorder="little")
+    expected = circuit.reference_sample(bit_packed=False)
+    expected_padded = np.zeros_like(unpacked)
+    expected_padded[:len(expected)] = expected
+    np.testing.assert_array_equal(unpacked, expected_padded)
