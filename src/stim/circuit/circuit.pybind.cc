@@ -419,6 +419,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("seed") = pybind11::none(),
         pybind11::arg("reference_sample") = pybind11::none(),
         clean_doc_string(R"DOC(
+            @signature def compile_sampler(self, *, skip_reference_sample: bool = False, seed: Optional[int] = None, reference_sample: Optional[np.ndarray] = None) -> stim.CompiledMeasurementSampler
             Returns an object that can quickly batch sample measurements from the circuit.
 
             Args:
@@ -497,7 +498,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("bit_packed") = false,
         clean_doc_string(R"DOC(
-            @signature def reference_sample(self, bit_packed: bool = False) -> np.ndarray:
+            @signature def reference_sample(self, *, bit_packed: bool = False) -> np.ndarray:
             Samples the given circuit in a deterministic fashion.
 
             Discards all noisy operations, and biases all collapse events
