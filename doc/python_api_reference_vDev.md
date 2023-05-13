@@ -41,6 +41,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
+    - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
@@ -1039,7 +1040,8 @@ def compile_sampler(
     self,
     *,
     skip_reference_sample: bool = False,
-    seed: object = None,
+    seed: Optional[int] = None,
+    reference_sample: Optional[np.ndarray] = None,
 ) -> stim.CompiledMeasurementSampler:
     """Returns an object that can quickly batch sample measurements from the circuit.
 
@@ -1083,6 +1085,18 @@ def compile_sampler(
             CAUTION: simulation results *MAY NOT* be consistent if you vary how many
             shots are taken. For example, taking 10 shots and then 90 shots will
             give different results from taking 100 shots in one call.
+        reference_sample: The data to xor into the measurement flips produced by the
+            frame simulator, in order to produce proper measurement results.
+            This can either be specified as an `np.bool_` array or a bit packed
+            `np.uint8` array (little endian). Under normal conditions, the reference
+            sample should be a valid noiseless sample of the circuit, such as the
+            one returned by `circuit.reference_sample()`. If this argument is not
+            provided, the reference sample will be set to
+            `circuit.reference_sample()`, unless `skip_reference_sample=True`
+            is used, in which case it will be set to all-zeros.
+
+    Raises:
+        ValueError: skip_reference_sample is True and reference_sample is not None.
 
     Examples:
         >>> import stim
@@ -1979,6 +1993,31 @@ def num_ticks(
         ...    }
         ... ''').num_ticks
         101
+    """
+```
+
+<a name="stim.Circuit.reference_sample"></a>
+```python
+# stim.Circuit.reference_sample
+
+# (in class stim.Circuit)
+def reference_sample(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Samples the given circuit in a deterministic fashion.
+
+    Discards all noisy operations, and biases all collapse events
+    towards +Z instead of randomly +Z/-Z.
+
+    Args:
+        circuit: The circuit to "sample" from.
+        bit_packed: Defaults to False. Determines whether the output numpy arrays
+            use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+    Returns:
+        reference_sample: reference sample sampled from the given circuit.
     """
 ```
 
@@ -3391,6 +3430,7 @@ def __init__(
     *,
     skip_reference_sample: bool = False,
     seed: object = None,
+    reference_sample: object = None,
 ) -> None:
     """Creates a measurement sampler for the given circuit.
 
@@ -3439,6 +3479,15 @@ def __init__(
             CAUTION: simulation results *MAY NOT* be consistent if you vary how many
             shots are taken. For example, taking 10 shots and then 90 shots will
             give different results from taking 100 shots in one call.
+        reference_sample: The data to xor into the measurement flips produced by the
+            frame simulator, in order to produce proper measurement results.
+            This can either be specified as an `np.bool_` array or a bit packed
+            `np.uint8` array (little endian). Under normal conditions, the reference
+            sample should be a valid noiseless sample of the circuit, such as the
+            one returned by `circuit.reference_sample()`. If this argument is not
+            provided, the reference sample will be set to
+            `circuit.reference_sample()`, unless `skip_reference_sample=True`
+            is used, in which case it will be set to all-zeros.
 
     Returns:
         An initialized stim.CompiledMeasurementSampler.

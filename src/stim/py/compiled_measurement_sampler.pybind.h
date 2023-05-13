@@ -45,7 +45,10 @@ struct CompiledMeasurementSampler {
 pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler(pybind11::module &m);
 void pybind_compiled_measurement_sampler_methods(pybind11::module &m, pybind11::class_<CompiledMeasurementSampler> &c);
 CompiledMeasurementSampler py_init_compiled_sampler(
-    const stim::Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed);
+    const stim::Circuit &circuit,
+    bool skip_reference_sample,
+    const pybind11::object &seed,
+    const pybind11::object &reference_sample);
 
 }  // namespace stim_pybind
 

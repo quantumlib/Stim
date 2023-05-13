@@ -30,10 +30,12 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/search/search.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
 
 using namespace stim;
@@ -415,7 +417,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
+        pybind11::arg("reference_sample") = pybind11::none(),
         clean_doc_string(R"DOC(
+            @signature def compile_sampler(self, *, skip_reference_sample: bool = False, seed: Optional[int] = None, reference_sample: Optional[np.ndarray] = None) -> stim.CompiledMeasurementSampler:
             Returns an object that can quickly batch sample measurements from the circuit.
 
             Args:
@@ -458,6 +462,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     CAUTION: simulation results *MAY NOT* be consistent if you vary how many
                     shots are taken. For example, taking 10 shots and then 90 shots will
                     give different results from taking 100 shots in one call.
+                reference_sample: The data to xor into the measurement flips produced by the
+                    frame simulator, in order to produce proper measurement results.
+                    This can either be specified as an `np.bool_` array or a bit packed
+                    `np.uint8` array (little endian). Under normal conditions, the reference
+                    sample should be a valid noiseless sample of the circuit, such as the
+                    one returned by `circuit.reference_sample()`. If this argument is not
+                    provided, the reference sample will be set to
+                    `circuit.reference_sample()`, unless `skip_reference_sample=True`
+                    is used, in which case it will be set to all-zeros.
+
+            Raises:
+                ValueError: skip_reference_sample is True and reference_sample is not None.
 
             Examples:
                 >>> import stim
@@ -468,6 +484,33 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
                 array([[False, False,  True]])
+        )DOC")
+            .data());
+
+    c.def(
+        "reference_sample",
+        [](const Circuit &self, bool bit_packed) {
+            simd_bits<MAX_BITWORD_WIDTH> ref = TableauSimulator::reference_sample_circuit(self);
+            simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(ref.ptr_simd, ref.num_simd_words);
+            size_t num_measure = self.count_measurements();
+            return simd_bits_to_numpy(reference_sample, num_measure, bit_packed);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(R"DOC(
+            @signature def reference_sample(self, *, bit_packed: bool = False) -> np.ndarray:
+            Samples the given circuit in a deterministic fashion.
+
+            Discards all noisy operations, and biases all collapse events
+            towards +Z instead of randomly +Z/-Z.
+
+            Args:
+                circuit: The circuit to "sample" from.
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                reference_sample: reference sample sampled from the given circuit.
         )DOC")
             .data());
 

@@ -66,11 +66,25 @@ pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measur
 }
 
 CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
-    const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
-                                                  ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                                  : TableauSimulator::reference_sample_circuit(circuit);
-    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
+    const Circuit &circuit,
+    bool skip_reference_sample,
+    const pybind11::object &seed,
+    const pybind11::object &reference_sample) {
+    if (reference_sample.is_none()) {
+        simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
+                                                      ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
+                                                      : TableauSimulator::reference_sample_circuit(circuit);
+        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
+    } else {
+        if (skip_reference_sample) {
+            throw std::invalid_argument("skip_reference_sample = True but reference_sample is not None.");
+        }
+        uint64_t num_bits = circuit.count_measurements();
+        simd_bits<MAX_BITWORD_WIDTH> ref_sample(num_bits);
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample_ref(ref_sample);
+        memcpy_bits_from_numpy_to_simd(num_bits, reference_sample, ref_sample_ref);
+        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
+    }
 }
 
 void stim_pybind::pybind_compiled_measurement_sampler_methods(
@@ -81,6 +95,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
+        pybind11::arg("reference_sample") = pybind11::none(),
         clean_doc_string(R"DOC(
             Creates a measurement sampler for the given circuit.
 
@@ -129,6 +144,15 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
                     CAUTION: simulation results *MAY NOT* be consistent if you vary how many
                     shots are taken. For example, taking 10 shots and then 90 shots will
                     give different results from taking 100 shots in one call.
+                reference_sample: The data to xor into the measurement flips produced by the
+                    frame simulator, in order to produce proper measurement results.
+                    This can either be specified as an `np.bool_` array or a bit packed
+                    `np.uint8` array (little endian). Under normal conditions, the reference
+                    sample should be a valid noiseless sample of the circuit, such as the
+                    one returned by `circuit.reference_sample()`. If this argument is not
+                    provided, the reference sample will be set to
+                    `circuit.reference_sample()`, unless `skip_reference_sample=True`
+                    is used, in which case it will be set to all-zeros.
 
             Returns:
                 An initialized stim.CompiledMeasurementSampler.
