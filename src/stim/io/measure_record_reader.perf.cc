@@ -33,7 +33,7 @@ void dense_reader_benchmark(double goal_micros) {
         writer->write_end();
     }
 
-    auto reader = MeasureRecordReader::make(f, format, n, 0, 0);
+    auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(f, format, n, 0, 0);
     simd_bits<MAX_BITWORD_WIDTH> buffer(n);
     benchmark_go([&]() {
         rewind(f);
@@ -60,7 +60,7 @@ void sparse_reader_benchmark(double goal_micros) {
         writer->write_end();
     }
 
-    auto reader = MeasureRecordReader::make(f, format, n, 0, 0);
+    auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(f, format, n, 0, 0);
     SparseShot buffer;
     buffer.hits.reserve((size_t)ceil(n * p * 1.1));
     benchmark_go([&]() {

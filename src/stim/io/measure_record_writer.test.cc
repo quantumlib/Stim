@@ -15,6 +15,7 @@
  */
 
 #include "stim/io/measure_record_writer.h"
+#include "stim/mem/simd_word.test.h"
 
 #include "gtest/gtest.h"
 
@@ -163,9 +164,9 @@ TEST(MeasureRecordWriter, FormatR8_LongGap) {
     ASSERT_EQ(s[3], (char)32);
 }
 
-TEST(MeasureRecordWriter, write_table_data_small) {
-    simd_bit_table<MAX_BITWORD_WIDTH> results(4, 5);
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample(0);
+TEST_EACH_WORD_SIZE_W(MeasureRecordWriter, write_table_data_small, {
+    simd_bit_table<W> results(4, 5);
+    simd_bits<W> ref_sample(0);
     results[1][0] ^= 1;
     results[1][1] ^= 1;
     results[1][2] ^= 1;
@@ -175,31 +176,31 @@ TEST(MeasureRecordWriter, write_table_data_small) {
     FILE *tmp;
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "1\n1\n1\n1\n1\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'M', 'M', 0);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "shot M1\nshot M1\nshot M1\nshot M1\nshot M1\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 1);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 1);
     ASSERT_EQ(rewind_read_close(tmp), "shot L0\nshot L0\nshot L0\nshot L0\nshot L0\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "\x01\x02\x01\x02\x01\x02\x01\x02\x01\x02");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
+    write_table_data<W>(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "\x02\x02\x02\x02\x02");
 
     tmp = tmpfile();
-    write_table_data(tmp, 64, 4, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
+    write_table_data<W>(tmp, 64, 4, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     ASSERT_EQ(
         rewind_read_close(tmp),
         std::string(
@@ -208,11 +209,11 @@ TEST(MeasureRecordWriter, write_table_data_small) {
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0",
             8 * 4));
-}
+})
 
-TEST(MeasureRecordWriter, write_table_data_large) {
-    simd_bit_table<MAX_BITWORD_WIDTH> results(100, 2);
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample(100);
+TEST_EACH_WORD_SIZE_W(MeasureRecordWriter, write_table_data_large, {
+    simd_bit_table<W> results(100, 2);
+    simd_bits<W> ref_sample(100);
     ref_sample[2] ^= true;
     ref_sample[3] ^= true;
     ref_sample[5] ^= true;
@@ -223,7 +224,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
     FILE *tmp;
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
     ASSERT_EQ(
         rewind_read_close(tmp),
         "0011010100"
@@ -248,19 +249,19 @@ TEST(MeasureRecordWriter, write_table_data_large) {
         "0000000000\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
     ASSERT_EQ(rewind_read_close(tmp), "2,3,5,7,11\n2,3,5,11\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 5);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 5);
     ASSERT_EQ(rewind_read_close(tmp), "shot D2 D3 L0 L2 L6\nshot D2 D3 L0 L6\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 90);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 90);
     ASSERT_EQ(rewind_read_close(tmp), "shot D2 D3 D5 D7 D11\nshot D2 D3 D5 D11\n");
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
     ASSERT_EQ(
         rewind_read_close(tmp),
         std::string(
@@ -269,7 +270,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
             11));
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
+    write_table_data<W>(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
     ASSERT_EQ(
         rewind_read_close(tmp),
         std::string(
@@ -278,7 +279,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
             26));
 
     tmp = tmpfile();
-    write_table_data(tmp, 64, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
+    write_table_data<W>(tmp, 64, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     auto actual = rewind_read_close(tmp);
     ASSERT_EQ(
         actual,
@@ -384,7 +385,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0",
             8 * 100));
-}
+})
 
 TEST(MeasureRecordWriter, write_bits_01_a) {
     FILE *f = tmpfile();

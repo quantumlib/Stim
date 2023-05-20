@@ -19,15 +19,16 @@
 #include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
+#include "stim/mem/simd_word.test.h"
 
 using namespace stim;
 
-TEST(MeasureRecordBatchWriter, basic_usage) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordBatchWriter, basic_usage, {
     FILE *tmp = tmpfile();
     MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);
-    simd_bits<MAX_BITWORD_WIDTH> v(5);
+    simd_bits<W> v(5);
     v[1] = true;
-    w.batch_write_bit(v);
+    w.batch_write_bit<W>(v);
     w.write_end();
     rewind(tmp);
     ASSERT_EQ(getc(tmp), '0');
@@ -40,4 +41,4 @@ TEST(MeasureRecordBatchWriter, basic_usage) {
     ASSERT_EQ(getc(tmp), '\n');
     ASSERT_EQ(getc(tmp), '0');
     ASSERT_EQ(getc(tmp), '\n');
-}
+})

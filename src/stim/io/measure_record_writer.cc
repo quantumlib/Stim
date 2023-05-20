@@ -23,17 +23,17 @@ using namespace stim;
 std::unique_ptr<MeasureRecordWriter> MeasureRecordWriter::make(FILE *out, SampleFormat output_format) {
     switch (output_format) {
         case SAMPLE_FORMAT_01:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormat01(out));
+            return std::make_unique<MeasureRecordWriterFormat01>(out);
         case SAMPLE_FORMAT_B8:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatB8(out));
+            return std::make_unique<MeasureRecordWriterFormatB8>(out);
         case SAMPLE_FORMAT_DETS:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatDets(out));
+            return std::make_unique<MeasureRecordWriterFormatDets>(out);
         case SAMPLE_FORMAT_HITS:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatHits(out));
+            return std::make_unique<MeasureRecordWriterFormatHits>(out);
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatR8(out));
+            return std::make_unique<MeasureRecordWriterFormatR8>(out);
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
@@ -208,71 +208,4 @@ void MeasureRecordWriterFormatDets::write_end() {
     putc('\n', out);
     position = 0;
     first = true;
-}
-
-simd_bit_table<MAX_BITWORD_WIDTH> stim::transposed_vs_ref(
-    size_t num_samples_raw,
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample) {
-    auto result = table.transposed();
-    for (size_t s = 0; s < num_samples_raw; s++) {
-        result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;
-    }
-    return result;
-}
-
-void stim::write_table_data(
-    FILE *out,
-    size_t num_shots,
-    size_t num_measurements,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
-    SampleFormat format,
-    char dets_prefix_1,
-    char dets_prefix_2,
-    size_t dets_prefix_transition) {
-    if (format == SAMPLE_FORMAT_PTB64) {
-        if (num_shots % 64 != 0) {
-            throw std::invalid_argument("shots must be a multiple of 64 to use ptb64 format.");
-        }
-        auto f64 = num_shots >> 6;
-        for (size_t s = 0; s < f64; s++) {
-            for (size_t m = 0; m < num_measurements; m++) {
-                uint64_t v = table[m].u64[s];
-                if (m < reference_sample.num_bits_padded() && reference_sample[m]) {
-                    v = ~v;
-                }
-                fwrite(&v, 1, 64 >> 3, out);
-            }
-        }
-    } else {
-        auto result = transposed_vs_ref(num_shots, table, reference_sample);
-        if (dets_prefix_transition == 0) {
-            dets_prefix_transition = num_measurements;
-            dets_prefix_1 = dets_prefix_2;
-        } else if (dets_prefix_1 == dets_prefix_2 || dets_prefix_transition >= num_measurements) {
-            dets_prefix_transition = num_measurements;
-        }
-        for (size_t shot = 0; shot < num_shots; shot++) {
-            auto w = MeasureRecordWriter::make(out, format);
-
-            w->begin_result_type(dets_prefix_1);
-            size_t n8 = dets_prefix_transition >> 3;
-            uint8_t *p = result[shot].u8;
-            w->write_bytes({p, p + n8});
-            size_t m = n8 << 3;
-            while (m < dets_prefix_transition) {
-                w->write_bit(result[shot][m]);
-                m++;
-            }
-
-            w->begin_result_type(dets_prefix_2);
-            while (m < num_measurements) {
-                w->write_bit(result[shot][m]);
-                m++;
-            }
-
-            w->write_end();
-        }
-    }
 }
