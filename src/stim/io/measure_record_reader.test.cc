@@ -20,6 +20,7 @@
 
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_writer.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/probability_util.h"
 #include "stim/test_util.test.h"
 
@@ -55,10 +56,11 @@ TEST(read_unsigned_int, ValueTooBig) {
     ASSERT_THROW({ read_uint64(tmp, value, next); }, std::runtime_error);
 }
 
+template <size_t W>
 void assert_contents_load_correctly(SampleFormat format, const std::string &contents) {
     FILE *tmp = tmpfile_with_contents(contents);
-    auto reader = MeasureRecordReader::make(tmp, format, 18);
-    simd_bits<MAX_BITWORD_WIDTH> buf(18);
+    auto reader = MeasureRecordReader<W>::make(tmp, format, 18);
+    simd_bits<W> buf(18);
     reader->start_and_read_entire_record(buf);
     ASSERT_EQ(buf[0], 0);
     ASSERT_EQ(buf[1], 0);
@@ -85,31 +87,31 @@ void assert_contents_load_correctly(SampleFormat format, const std::string &cont
     ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17}));
 }
 
-TEST(MeasureRecordReader, Format01) {
-    assert_contents_load_correctly(SAMPLE_FORMAT_01, "000111110000111111\n");
-}
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01, {
+    assert_contents_load_correctly<W>(SAMPLE_FORMAT_01, "000111110000111111\n");
+})
 
-TEST(MeasureRecordReader, FormatB8) {
-    assert_contents_load_correctly(SAMPLE_FORMAT_B8, "\xF8\xF0\x03");
-}
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatB8, {
+    assert_contents_load_correctly<W>(SAMPLE_FORMAT_B8, "\xF8\xF0\x03");
+})
 
-TEST(MeasureRecordReader, FormatHits) {
-    assert_contents_load_correctly(SAMPLE_FORMAT_HITS, "3,4,5,6,7,12,13,14,15,16,17\n");
-}
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits, {
+    assert_contents_load_correctly<W>(SAMPLE_FORMAT_HITS, "3,4,5,6,7,12,13,14,15,16,17\n");
+})
 
-TEST(MeasureRecordReader, FormatR8) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8, {
     char tmp_data[]{3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0};
-    assert_contents_load_correctly(SAMPLE_FORMAT_R8, std::string(std::begin(tmp_data), std::end(tmp_data)));
-}
+    assert_contents_load_correctly<W>(SAMPLE_FORMAT_R8, std::string(std::begin(tmp_data), std::end(tmp_data)));
+})
 
-TEST(MeasureRecordReader, FormatR8_LongGap) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8_LongGap, {
     FILE *tmp = tmpfile_with_contents("\xFF\xFF\x02\x20");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8, 8 * 64 + 32 + 1);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_R8, 8 * 64 + 32 + 1);
     SparseShot sparse;
     ASSERT_TRUE(reader->start_and_read_entire_record(sparse));
     ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{255 + 255 + 2}));
     ASSERT_FALSE(reader->start_and_read_entire_record(sparse));
-}
+})
 
 FILE *write_records(SpanRef<const uint8_t> data, SampleFormat format) {
     FILE *tmp = tmpfile();
@@ -119,57 +121,58 @@ FILE *write_records(SpanRef<const uint8_t> data, SampleFormat format) {
     return tmp;
 }
 
+template <size_t W>
 size_t read_records_as_bytes(FILE *in, SpanRef<uint8_t> buf, SampleFormat format, size_t bits_per_record) {
-    auto reader = MeasureRecordReader::make(in, format, bits_per_record);
+    auto reader = MeasureRecordReader<W>::make(in, format, bits_per_record);
     if (buf.size() * 8 < reader->bits_per_record()) {
         throw std::invalid_argument("buf too small");
     }
-    simd_bits<MAX_BITWORD_WIDTH> buf2(reader->bits_per_record());
+    simd_bits<W> buf2(reader->bits_per_record());
     bool success = reader->start_and_read_entire_record(buf2);
     EXPECT_TRUE(success);
     memcpy(buf.ptr_start, buf2.u8, (reader->bits_per_record() + 7) / 8);
     return reader->bits_per_record();
 }
 
-TEST(MeasureRecordReader, Format01_WriteRead) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_WriteRead, {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
     uint8_t dst[num_bytes];
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_01);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01, 8 * num_bytes));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
-}
+})
 
-TEST(MeasureRecordReader, FormatB8_WriteRead) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatB8_WriteRead, {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
     uint8_t dst[num_bytes];
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_B8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8, 8 * num_bytes));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
-}
+})
 
-TEST(MeasureRecordReader, FormatR8_WriteRead) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8_WriteRead, {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
     uint8_t dst[num_bytes]{};
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_R8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_WriteRead) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_WriteRead, {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
     uint8_t dst[num_bytes];
@@ -177,13 +180,13 @@ TEST(MeasureRecordReader, FormatHits_WriteRead) {
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_HITS);
     rewind(tmp);
     ASSERT_EQ(
-        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
+        num_bytes * 8 - 1, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_WriteRead) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_WriteRead, {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
     uint8_t dst[num_bytes];
@@ -191,13 +194,13 @@ TEST(MeasureRecordReader, FormatDets_WriteRead) {
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_DETS);
     rewind(tmp);
     ASSERT_EQ(
-        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
+        num_bytes * 8 - 1, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
-}
+})
 
-TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_WriteRead_MultipleRecords, {
     uint8_t record1[]{0x12, 0xAB, 0x00, 0xFF, 0x75};
     uint8_t record2[]{0x80, 0xFF, 0x01, 0x56, 0x57};
     uint8_t record3[]{0x2F, 0x08, 0xF0, 0x1C, 0x60};
@@ -215,9 +218,9 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
 
     rewind(tmp);
 
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, bits_per_record);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_01, bits_per_record);
 
-    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
+    simd_bits<W> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -234,9 +237,9 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
     }
 
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords, {
     uint8_t record1[]{0x12, 0xAB, 0x00, 0xFF, 0x75};
     uint8_t record2[]{0x80, 0xFF, 0x01, 0x56, 0x57};
     uint8_t record3[]{0x2F, 0x08, 0xF0, 0x1C, 0x60};
@@ -254,8 +257,8 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
 
     rewind(tmp);
 
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, bits_per_record);
-    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_HITS, bits_per_record);
+    simd_bits<W> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -272,9 +275,9 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
     }
 
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords, {
     uint8_t record1[]{0x12, 0xAB, 0x00, 0xFF, 0x75};
     uint8_t record2[]{0x80, 0xFF, 0x01, 0x56, 0x57};
     uint8_t record3[]{0x2F, 0x08, 0xF0, 0x1C, 0x60};
@@ -292,8 +295,8 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
 
     rewind(tmp);
 
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, bits_per_record);
-    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, bits_per_record);
+    simd_bits<W> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -310,24 +313,24 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
     }
 
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
-}
+})
 
-TEST(MeasureRecordReader, Format01_MultipleRecords) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_MultipleRecords, {
     FILE *tmp = tmpfile_with_contents("111011001\n010000000\n101100011\n");
     ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 9);
-    simd_bits<MAX_BITWORD_WIDTH> buf(9);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_01, 9);
+    simd_bits<W> buf(9);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_MultipleShortRecords, {
     FILE *tmp = tmpfile_with_contents("shot M0\nshot M1\nshot M0\nshot\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 2);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 2);
 
-    simd_bits<MAX_BITWORD_WIDTH> buf(2);
+    simd_bits<W> buf(2);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 1);
     ASSERT_EQ(buf[1], 0);
@@ -341,12 +344,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_EQ(buf[0], 0);
     ASSERT_EQ(buf[1], 0);
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0, {
     FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L1 L2\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
-    simd_bits<MAX_BITWORD_WIDTH> buf(11);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    simd_bits<W> buf(11);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 1);
     ASSERT_EQ(buf[1], 0);
@@ -361,74 +364,74 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     ASSERT_EQ(buf[10], 0);
 
     rewind(tmp);
-    reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
     SparseShot sparse;
     reader->start_and_read_entire_record(sparse);
     ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{0, 3, 5}));
     ASSERT_EQ(sparse.obs_mask, 6);
-}
+})
 
-TEST(MeasureRecordReader, Format01_InvalidInput) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_InvalidInput, {
     FILE *tmp = tmpfile_with_contents("012\n");
     ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 3);
-    simd_bits<MAX_BITWORD_WIDTH> buf(3);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_01, 3);
+    simd_bits<W> buf(3);
     ASSERT_THROW({ reader->start_and_read_entire_record(buf); }, std::invalid_argument);
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_InvalidInput) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_InvalidInput, {
     FILE *tmp = tmpfile_with_contents("100,1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
-    simd_bits<MAX_BITWORD_WIDTH> buf(3);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_HITS, 3);
+    simd_bits<W> buf(3);
     ASSERT_THROW({ reader->start_and_read_entire_record(buf); }, std::invalid_argument);
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_InvalidInput_sparse) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_InvalidInput_sparse, {
     FILE *tmp = tmpfile_with_contents("100,1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_HITS, 3);
     SparseShot sparse;
     ASSERT_THROW({ reader->start_and_read_entire_record(sparse); }, std::invalid_argument);
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_Repeated_Dense) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_Repeated_Dense, {
     FILE *tmp = tmpfile_with_contents("1,1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
-    simd_bits<MAX_BITWORD_WIDTH> buf(3);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_HITS, 3);
+    simd_bits<W> buf(3);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 0);
     ASSERT_EQ(buf[1], 0);
     ASSERT_EQ(buf[2], 0);
-}
+})
 
-TEST(MeasureRecordReader, FormatHits_Repeated_Sparse) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_Repeated_Sparse, {
     FILE *tmp = tmpfile_with_contents("1,1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_HITS, 3);
     SparseShot sparse;
     ASSERT_TRUE(reader->start_and_read_entire_record(sparse));
     ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{1, 1}));
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_InvalidInput_Sparse) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_InvalidInput_Sparse, {
     FILE *tmp = tmpfile_with_contents("D2\n");
-    auto r = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3);
+    auto r = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 3);
     SparseShot sparse;
     ASSERT_THROW({ r->start_and_read_entire_record(sparse); }, std::invalid_argument);
-}
+})
 
-TEST(MeasureRecordReader, FormatDets_InvalidInput_Dense) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_InvalidInput_Dense, {
     FILE *tmp = tmpfile_with_contents("D2\n");
-    auto r = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3);
-    simd_bits<MAX_BITWORD_WIDTH> buf(3);
+    auto r = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 3);
+    simd_bits<W> buf(3);
     ASSERT_THROW({ r->start_and_read_entire_record(buf); }, std::invalid_argument);
-}
+})
 
-TEST(MeasureRecordReader, read_records_into_RoundTrip) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_records_into_RoundTrip, {
     size_t n_shots = 100;
     size_t n_results = 512 - 8;
 
-    simd_bit_table<MAX_BITWORD_WIDTH> shot_maj_data =
-        simd_bit_table<MAX_BITWORD_WIDTH>::random(n_shots, n_results, SHARED_TEST_RNG());
-    simd_bit_table<MAX_BITWORD_WIDTH> shot_min_data = shot_maj_data.transposed();
+    auto shot_maj_data =
+        simd_bit_table<W>::random(n_shots, n_results, SHARED_TEST_RNG());
+    auto shot_min_data = shot_maj_data.transposed();
     for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
         if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
@@ -449,8 +452,8 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
         // Check that read shot-min data matches written data.
         rewind(f);
         {
-            auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
-            simd_bit_table<MAX_BITWORD_WIDTH> read_shot_min_data(n_results, n_shots);
+            auto reader = MeasureRecordReader<W>::make(f, format, n_results, 0, 0);
+            simd_bit_table<W> read_shot_min_data(n_results, n_shots);
             size_t n = reader->read_records_into(read_shot_min_data, false);
             EXPECT_EQ(n, n_shots) << kv.second.name << " (not striped)";
             EXPECT_EQ(read_shot_min_data, shot_min_data) << kv.second.name << " (not striped)";
@@ -459,8 +462,8 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
         // Check that read shot-maj data matches written data when transposing.
         rewind(f);
         {
-            auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
-            simd_bit_table<MAX_BITWORD_WIDTH> read_shot_maj_data(n_shots, n_results);
+            auto reader = MeasureRecordReader<W>::make(f, format, n_results, 0, 0);
+            simd_bit_table<W> read_shot_maj_data(n_shots, n_results);
             size_t n = reader->read_records_into(read_shot_maj_data, true);
             EXPECT_EQ(n, n_shots) << kv.second.name << " (striped)";
             EXPECT_EQ(read_shot_maj_data, shot_maj_data) << kv.second.name << " (striped)";
@@ -468,12 +471,12 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
 
         fclose(f);
     }
-}
+})
 
-TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type, {
     FILE *f = tmpfile_with_contents("shot D1 L1");
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(6, 1);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
+    simd_bit_table<W> read(6, 1);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 1);
@@ -483,16 +486,16 @@ TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type)
     ASSERT_EQ(read[3][0], false);
     ASSERT_EQ(read[4][0], true);
     ASSERT_EQ(read[5][0], false);
-}
+})
 
-TEST(MeasureRecordReader, read_r8_detection_event_data) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_r8_detection_event_data, {
     FILE *f = tmpfile();
     putc(6, f);
     putc(1, f);
     putc(4, f);
     rewind(f);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_R8, 0, 3, 3);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(6, 2);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_R8, 0, 3, 3);
+    simd_bit_table<W> read(6, 2);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 2);
@@ -508,17 +511,17 @@ TEST(MeasureRecordReader, read_r8_detection_event_data) {
     ASSERT_EQ(read[3][1], false);
     ASSERT_EQ(read[4][1], false);
     ASSERT_EQ(read[5][1], false);
-}
+})
 
-TEST(MeasureRecordReader, read_b8_detection_event_data_full_run_together) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_b8_detection_event_data_full_run_together, {
     FILE *f = tmpfile();
     putc(0, f);
     putc(1, f);
     putc(2, f);
     putc(3, f);
     rewind(f);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_B8, 0, 27, 0);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(27, 1);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_B8, 0, 27, 0);
+    simd_bit_table<W> read(27, 1);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 1);
@@ -527,15 +530,15 @@ TEST(MeasureRecordReader, read_b8_detection_event_data_full_run_together) {
     ASSERT_EQ(t[0].u8[1], 1);
     ASSERT_EQ(t[0].u8[2], 2);
     ASSERT_EQ(t[0].u8[3], 3);
-}
+})
 
-TEST(MeasureRecordReader, start_and_read_entire_record) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record, {
     size_t n = 512 - 8;
     size_t no = 5;
     size_t nd = n - no;
 
     // Compute expected data.
-    simd_bits<MAX_BITWORD_WIDTH> test_data(n);
+    simd_bits<W> test_data(n);
     biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), SHARED_TEST_RNG());
     SparseShot sparse_test_data;
     for (size_t k = 0; k < nd; k++) {
@@ -571,7 +574,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
         }
 
         {
-            auto reader = MeasureRecordReader::make(f, format, 0, nd, no);
+            auto reader = MeasureRecordReader<W>::make(f, format, 0, nd, no);
 
             // Check sparse record read.
             SparseShot sparse_out;
@@ -581,7 +584,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
             ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
 
             rewind(f);
-            simd_bits<MAX_BITWORD_WIDTH> dense_out(n);
+            simd_bits<W> dense_out(n);
             ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
             for (size_t k = 0; k < n; k++) {
                 ASSERT_EQ(dense_out[k], test_data[k]);
@@ -591,10 +594,10 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
 
         fclose(f);
     }
-}
+})
 
-TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
-    simd_bits<MAX_BITWORD_WIDTH> test_data(256);
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_all_zero, {
+    simd_bits<W> test_data(256);
     SparseShot sparse_test_data;
 
     for (const auto &kv : format_name_to_enum_map()) {
@@ -612,7 +615,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
         }
 
         {
-            auto reader = MeasureRecordReader::make(f, format, 256, 0, 0);
+            auto reader = MeasureRecordReader<W>::make(f, format, 256, 0, 0);
 
             // Check sparse record read.
             SparseShot sparse_out;
@@ -622,7 +625,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
             ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
 
             rewind(f);
-            simd_bits<MAX_BITWORD_WIDTH> dense_out(256);
+            simd_bits<W> dense_out(256);
             ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
             ASSERT_EQ(dense_out, test_data);
             ASSERT_FALSE(reader->start_and_read_entire_record(dense_out));
@@ -630,12 +633,12 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
 
         fclose(f);
     }
-}
+})
 
-TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_dense, {
     FILE *f = tmpfile();
-    simd_bits<MAX_BITWORD_WIDTH> saved1 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
-    simd_bits<MAX_BITWORD_WIDTH> saved2 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
+    auto saved1 = simd_bits<W>::random(64 * 71, SHARED_TEST_RNG());
+    auto saved2 = simd_bits<W>::random(64 * 71, SHARED_TEST_RNG());
     for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
@@ -644,8 +647,8 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
     }
     rewind(f);
 
-    simd_bits<MAX_BITWORD_WIDTH> loaded(71);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_PTB64, 71, 0, 0);
+    simd_bits<W> loaded(71);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_PTB64, 71, 0, 0);
     for (size_t shot = 0; shot < 64; shot++) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         for (size_t m = 0; m < 71; m++) {
@@ -659,22 +662,22 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
         }
     }
     ASSERT_FALSE(reader->start_and_read_entire_record(loaded));
-}
+})
 
-TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse, {
     FILE *tmp = tmpfile();
-    simd_bit_table<MAX_BITWORD_WIDTH> ground_truth(71, 64 * 5);
+    simd_bit_table<W> ground_truth(71, 64 * 5);
     {
         MeasureRecordBatchWriter writer(tmp, 64 * 5, stim::SAMPLE_FORMAT_PTB64);
         for (size_t k = 0; k < 71; k++) {
             ground_truth[k].randomize(64 * 5, SHARED_TEST_RNG());
-            writer.batch_write_bit(ground_truth[k]);
+            writer.batch_write_bit<W>(ground_truth[k]);
         }
         writer.write_end();
     }
     rewind(tmp);
 
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_PTB64, 71, 0, 0);
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_PTB64, 71, 0, 0);
     for (size_t shot = 0; shot < 64 * 5; shot++) {
         SparseShot loaded;
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
@@ -689,9 +692,9 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
 
     SparseShot discard;
     ASSERT_FALSE(reader->start_and_read_entire_record(discard));
-}
+})
 
-TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table, {
     for (const auto &format_data : format_name_to_enum_map()) {
         SampleFormat format = format_data.second.id;
         size_t num_shots = 500;
@@ -700,40 +703,40 @@ TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
         }
         size_t bits_per_shot = 1000;
 
-        simd_bit_table<MAX_BITWORD_WIDTH> expected(num_shots, bits_per_shot);
+        simd_bit_table<W> expected(num_shots, bits_per_shot);
         for (size_t shot = 0; shot < num_shots; shot++) {
             expected[shot].randomize(bits_per_shot, SHARED_TEST_RNG());
         }
-        simd_bit_table<MAX_BITWORD_WIDTH> expected_transposed = expected.transposed();
+        simd_bit_table<W> expected_transposed = expected.transposed();
 
         RaiiTempNamedFile tmp;
         FILE *f = fopen(tmp.path.c_str(), "wb");
-        write_table_data(
-            f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
+        write_table_data<W>(
+            f, num_shots, bits_per_shot, simd_bits<W>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);
 
         f = fopen(tmp.path.c_str(), "rb");
-        simd_bit_table<MAX_BITWORD_WIDTH> output(num_shots, bits_per_shot);
+        simd_bit_table<W> output(num_shots, bits_per_shot);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output, true);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", not transposed";
         fclose(f);
         ASSERT_EQ(output, expected) << format_data.second.name << ", not transposed";
 
         f = fopen(tmp.path.c_str(), "rb");
-        simd_bit_table<MAX_BITWORD_WIDTH> output_transposed(bits_per_shot, num_shots);
+        simd_bit_table<W> output_transposed(bits_per_shot, num_shots);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output_transposed, false);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", yes transposed";
         fclose(f);
         ASSERT_EQ(output_transposed, expected_transposed) << format_data.second.name << ", yes transposed";
     }
-}
+})
 
-TEST(MeasureRecordReader, read_windows_newlines_01) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_windows_newlines_01, {
     FILE *f = tmpfile();
     fprintf(f, "01\r\n01\r\n");
     rewind(f);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_01, 2, 0, 0);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(2, 2);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_01, 2, 0, 0);
+    simd_bit_table<W> read(2, 2);
     size_t n = reader->read_records_into(read, false);
     ASSERT_EQ(n, 2);
     ASSERT_EQ(read[0][0], false);
@@ -741,14 +744,14 @@ TEST(MeasureRecordReader, read_windows_newlines_01) {
     ASSERT_EQ(read[0][1], false);
     ASSERT_EQ(read[1][1], true);
     fclose(f);
-}
+})
 
-TEST(MeasureRecordReader, read_windows_newlines_hits) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_windows_newlines_hits, {
     FILE *f = tmpfile();
     fprintf(f, "3\r\n1\r\n");
     rewind(f);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_HITS, 4, 0, 0);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(4, 2);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_HITS, 4, 0, 0);
+    simd_bit_table<W> read(4, 2);
     size_t n = reader->read_records_into(read, false);
     ASSERT_EQ(n, 2);
     ASSERT_EQ(read[0][0], false);
@@ -760,14 +763,14 @@ TEST(MeasureRecordReader, read_windows_newlines_hits) {
     ASSERT_EQ(read[2][1], false);
     ASSERT_EQ(read[3][1], false);
     fclose(f);
-}
+})
 
-TEST(MeasureRecordReader, read_windows_newlines_dets) {
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_windows_newlines_dets, {
     FILE *f = tmpfile();
     fprintf(f, "shot M3\r\n\r\n\n   shot M1\r\n\n");
     rewind(f);
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 4, 0, 0);
-    simd_bit_table<MAX_BITWORD_WIDTH> read(4, 2);
+    auto reader = MeasureRecordReader<W>::make(f, SAMPLE_FORMAT_DETS, 4, 0, 0);
+    simd_bit_table<W> read(4, 2);
     size_t n = reader->read_records_into(read, false);
     ASSERT_EQ(n, 2);
     ASSERT_EQ(read[0][0], false);
@@ -779,4 +782,4 @@ TEST(MeasureRecordReader, read_windows_newlines_dets) {
     ASSERT_EQ(read[2][1], false);
     ASSERT_EQ(read[3][1], false);
     fclose(f);
-}
+})

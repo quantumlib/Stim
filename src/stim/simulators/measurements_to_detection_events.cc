@@ -205,8 +205,8 @@ void stim::stream_measurements_to_detection_events_helper(
     size_t num_buffered_shots = 1024;
 
     // Readers / writers.
-    auto reader = MeasureRecordReader::make(measurements_in, measurements_in_format, circuit_stats.num_measurements);
-    std::unique_ptr<MeasureRecordReader> sweep_data_reader;
+    auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(measurements_in, measurements_in_format, circuit_stats.num_measurements);
+    std::unique_ptr<MeasureRecordReader<MAX_BITWORD_WIDTH>> sweep_data_reader;
     std::unique_ptr<MeasureRecordWriter> obs_writer;
     if (obs_out != nullptr) {
         obs_writer = MeasureRecordWriter::make(obs_out, obs_out_format);
@@ -214,7 +214,7 @@ void stim::stream_measurements_to_detection_events_helper(
     auto writer = MeasureRecordWriter::make(results_out, results_out_format);
     if (optional_sweep_bits_in != nullptr) {
         sweep_data_reader =
-            MeasureRecordReader::make(optional_sweep_bits_in, sweep_bits_in_format, circuit_stats.num_sweep_bits);
+            MeasureRecordReader<MAX_BITWORD_WIDTH>::make(optional_sweep_bits_in, sweep_bits_in_format, circuit_stats.num_sweep_bits);
     }
 
     // Buffers and transposed buffers.

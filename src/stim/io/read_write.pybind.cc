@@ -120,7 +120,7 @@ pybind11::object read_shot_data_file(
     size_t num_shots = 0;
     {
         RaiiFile f(path.c_str(), "rb");
-        auto reader = MeasureRecordReader::make(f.f, parsed_format, nm, nd, no);
+        auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(f.f, parsed_format, nm, nd, no);
 
         simd_bits<MAX_BITWORD_WIDTH> buffer(num_bits_per_shot);
         while (true) {

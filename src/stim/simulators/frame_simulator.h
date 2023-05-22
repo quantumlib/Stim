@@ -47,8 +47,8 @@ struct FrameSimulator {
         x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
     simd_bit_table<MAX_BITWORD_WIDTH>
         z_table;                    // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
-    MeasureRecordBatch m_record;    // The measurement record.
-    MeasureRecordBatch det_record;  // Detection event record.
+    MeasureRecordBatch<MAX_BITWORD_WIDTH> m_record;    // The measurement record.
+    MeasureRecordBatch<MAX_BITWORD_WIDTH> det_record;  // Detection event record.
     simd_bit_table<MAX_BITWORD_WIDTH> obs_record;  // Accumulating observable flip record.
     simd_bits<MAX_BITWORD_WIDTH> rng_buffer;       // Workspace used when sampling error processes.
     simd_bits<MAX_BITWORD_WIDTH> tmp_storage;      // Workspace used when sampling compound error processes.
