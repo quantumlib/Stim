@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
@@ -543,7 +544,7 @@ void FrameSimulator::do_Z_ERROR(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation(
+    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
         target_data,
         num_qubits,
         [&](const CircuitInstruction &h_xz,

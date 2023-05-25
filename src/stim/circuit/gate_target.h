@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include "stim/circuit/gate_data.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
@@ -62,6 +63,10 @@ struct GateTarget {
 
     void write_succinct(std::ostream &out) const;
 };
+
+void write_targets(std::ostream &out, SpanRef<const GateTarget> targets);
+std::string targets_str(SpanRef<const GateTarget> targets);
+std::string target_str(GateTarget t);
 
 std::ostream &operator<<(std::ostream &out, const GateTarget &t);
 

@@ -175,9 +175,9 @@ bool MeasureRecordReaderFormat01<W>::start_and_read_entire_record_helper(SAW0 sa
                 if (k == 0) {
                     return false;
                 }
-                // intentional fall through.
+                [[fallthrough]];
             case '\r':
-                // intentional fall through.
+                [[fallthrough]];
             case '\n':
                 throw std::invalid_argument(
                     "01 data ended in middle of record at byte position " + std::to_string(k) +

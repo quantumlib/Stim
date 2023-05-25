@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_target.h"
 #include "stim/str_util.h"
 
 using namespace stim;
@@ -40,201 +41,6 @@ void fuse_data(SpanRef<const GateTarget> &dst, SpanRef<const GateTarget> src, Mo
     }
     assert(dst.ptr_end == src.ptr_start);
     dst.ptr_end = src.ptr_end;
-}
-
-std::string target_str(GateTarget t) {
-    std::stringstream out;
-    t.write_succinct(out);
-    return out.str();
-}
-
-void write_targets(std::ostream &out, SpanRef<const GateTarget> targets) {
-    bool skip_space = false;
-    for (auto t : targets) {
-        if (t.is_combiner()) {
-            skip_space = true;
-        } else if (!skip_space) {
-            out << ' ';
-        } else {
-            skip_space = false;
-        }
-        t.write_succinct(out);
-    }
-}
-
-std::string targets_str(SpanRef<const GateTarget> targets) {
-    std::stringstream out;
-    write_targets(out, targets);
-    return out.str();
-}
-
-uint64_t CircuitInstruction::repeat_block_rep_count() const {
-    assert(targets.size() == 3);
-    uint64_t low = targets[1].data;
-    uint64_t high = targets[2].data;
-    return low | (high << 32);
-}
-
-Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0].data;
-    assert(b < host.blocks.size());
-    return host.blocks[b];
-}
-
-const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0].data;
-    assert(b < host.blocks.size());
-    return host.blocks[b];
-}
-
-CircuitInstruction::CircuitInstruction(
-    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets)
-    : gate_type(gate_type), args(args), targets(targets) {
-}
-
-void CircuitInstruction::validate() const {
-    const Gate &gate = GATE_DATA.items[gate_type];
-
-    if (gate.flags == GateFlags::NO_GATE_FLAG) {
-        throw std::invalid_argument("Unrecognized gate_type. Associated flag is NO_GATE_FLAG.");
-    }
-
-    if (gate.flags & GATE_TARGETS_PAIRS) {
-        if (targets.size() & 1) {
-            throw std::invalid_argument(
-                "Two qubit gate " + std::string(gate.name) +
-                " requires an even number of targets but was given "
-                "(" +
-                comma_sep(args).str() + ").");
-        }
-        for (size_t k = 0; k < targets.size(); k += 2) {
-            if (targets[k] == targets[k + 1]) {
-                throw std::invalid_argument(
-                    "The two qubit gate " + std::string(gate.name) +
-                    " was applied to a target pair with the same target (" + target_str(targets[k]) +
-                    ") twice. Gates can't interact targets with themselves.");
-            }
-        }
-    }
-
-    if (gate.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
-        if (args.size() > 1) {
-            throw std::invalid_argument(
-                "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " parens arguments (" +
-                comma_sep(args).str() + ") but takes 0 or 1 parens arguments.");
-        }
-    } else if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_SYGIL_ANY) {
-        throw std::invalid_argument(
-            "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " parens arguments (" +
-            comma_sep(args).str() + ") but takes " + std::to_string(gate.arg_count) + " parens arguments.");
-    }
-
-    if ((gate.flags & GATE_TAKES_NO_TARGETS) && !targets.empty()) {
-        throw std::invalid_argument(
-            "Gate " + std::string(gate.name) + " takes no targets but was given targets" + targets_str(targets) + ".");
-    }
-
-    if (gate.flags & GATE_ARGS_ARE_DISJOINT_PROBABILITIES) {
-        double total = 0;
-        for (const auto p : args) {
-            if (!(p >= 0 && p <= 1)) {
-                throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) + " only takes probability arguments, but one of its arguments (" +
-                    comma_sep(args).str() + ") wasn't a probability.");
-            }
-            total += p;
-        }
-        if (total > 1.0000001) {
-            throw std::invalid_argument(
-                "The disjoint probability arguments (" + comma_sep(args).str() + ") given to gate " +
-                std::string(gate.name) + " sum to more than 1.");
-        }
-    } else if (gate.flags & GATE_ARGS_ARE_UNSIGNED_INTEGERS) {
-        for (const auto p : args) {
-            if (p < 0 || p != round(p)) {
-                throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) +
-                    " only takes non-negative integer arguments, but one of its arguments (" + comma_sep(args).str() +
-                    ") wasn't a non-negative integer.");
-            }
-        }
-    }
-
-    uint32_t valid_target_mask = TARGET_VALUE_MASK;
-
-    // Check combiners.
-    if (gate.flags & GATE_TARGETS_COMBINERS) {
-        bool combiner_allowed = false;
-        bool just_saw_combiner = false;
-        bool failed = false;
-        for (const auto p : targets) {
-            if (p.is_combiner()) {
-                failed |= !combiner_allowed;
-                combiner_allowed = false;
-                just_saw_combiner = true;
-            } else {
-                combiner_allowed = true;
-                just_saw_combiner = false;
-            }
-        }
-        failed |= just_saw_combiner;
-        if (failed) {
-            throw std::invalid_argument(
-                "Gate " + std::string(gate.name) +
-                " given combiners ('*') that aren't between other targets: " + targets_str(targets) + ".");
-        }
-        valid_target_mask |= TARGET_COMBINER;
-    }
-
-    // Check that targets are in range.
-    if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
-        valid_target_mask |= TARGET_INVERTED_BIT;
-    }
-    if (gate.flags & GATE_CAN_TARGET_BITS) {
-        valid_target_mask |= TARGET_RECORD_BIT | TARGET_SWEEP_BIT;
-    }
-    if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
-        for (GateTarget q : targets) {
-            if (!(q.data & TARGET_RECORD_BIT)) {
-                throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes rec[-k] targets.");
-            }
-        }
-    } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        for (GateTarget q : targets) {
-            if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
-                throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
-            }
-        }
-    } else {
-        for (GateTarget q : targets) {
-            if (q.data != (q.data & valid_target_mask)) {
-                std::stringstream ss;
-                ss << "Target ";
-                q.write_succinct(ss);
-                ss << " has invalid modifiers for gate type '" << gate.name << "'.";
-                throw std::invalid_argument(ss.str());
-            }
-        }
-    }
-}
-
-uint64_t CircuitInstruction::count_measurement_results() const {
-    auto flags = GATE_DATA.items[gate_type].flags;
-    if (!(flags & GATE_PRODUCES_NOISY_RESULTS)) {
-        return 0;
-    }
-    uint64_t n = (uint64_t)targets.size();
-    if (flags & GATE_TARGETS_COMBINERS) {
-        for (auto e : targets) {
-            if (e.is_combiner()) {
-                n -= 2;
-            }
-        }
-    }
-    return n;
 }
 
 Circuit::Circuit() : target_buf(), operations(), blocks() {
@@ -287,30 +93,6 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
         arg_buf = std::move(circuit.arg_buf);
     }
     return *this;
-}
-
-bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
-    auto flags = GATE_DATA.items[gate_type].flags;
-    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE);
-}
-
-bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate_type == other.gate_type && args == other.args && targets == other.targets;
-}
-bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double atol) const {
-    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < args.size(); k++) {
-        if (fabs(args[k] - other.args[k]) > atol) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
-    return !(*this == other);
 }
 
 bool Circuit::operator==(const Circuit &other) const {
@@ -814,12 +596,6 @@ Circuit &Circuit::operator*=(uint64_t repetitions) {
 }
 
 std::string Circuit::str() const {
-    std::stringstream s;
-    s << *this;
-    return s.str();
-}
-
-std::string CircuitInstruction::str() const {
     std::stringstream s;
     s << *this;
     return s.str();

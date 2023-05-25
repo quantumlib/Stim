@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "stim/circuit/circuit_instruction.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/monotonic_buffer.h"
@@ -39,65 +40,6 @@ constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1238ULL;
 
 uint64_t add_saturate(uint64_t a, uint64_t b);
 uint64_t mul_saturate(uint64_t a, uint64_t b);
-
-struct Circuit;
-
-/// The data that describes how a gate is being applied to qubits (or other targets).
-///
-/// A gate applied to targets.
-///
-/// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
-struct CircuitInstruction {
-    /// The gate applied by the operation.
-    GateType gate_type;
-
-    /// Numeric arguments varying the functionality of the gate.
-    ///
-    /// The meaning of the numbers varies from gate to gate.
-    /// Examples:
-    ///     X_ERROR(p) has a single argument: probability of X.
-    ///     PAULI_CHANNEL_1(px,py,pz) has multiple probability arguments.
-    ///     DETECTOR(c1,c2) has variable arguments: coordinate data.
-    ///     OBSERVABLE_INCLUDE(k) has a single argument: the observable index.
-    SpanRef<const double> args;
-
-    /// Encoded data indicating the qubits and other targets acted on by the gate.
-    SpanRef<const GateTarget> targets;
-
-    CircuitInstruction() = delete;
-    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets);
-
-    /// Determines if two operations can be combined into one operation (with combined targeting data).
-    ///
-    /// For example, `H 1` then `H 2 1` is equivalent to `H 1 2 1` so those instructions are fusable.
-    bool can_fuse(const CircuitInstruction &other) const;
-    /// Equality.
-    bool operator==(const CircuitInstruction &other) const;
-    /// Inequality.
-    bool operator!=(const CircuitInstruction &other) const;
-    /// Approximate equality.
-    bool approx_equals(const CircuitInstruction &other, double atol) const;
-    /// Returns a text description of the instruction, as would appear in a STIM circuit file.
-    std::string str() const;
-
-    /// Determines the number of entries added to the measurement record by the operation.
-    ///
-    /// Note: invalid to use this on REPEAT blocks.
-    uint64_t count_measurement_results() const;
-
-    uint64_t repeat_block_rep_count() const;
-    Circuit &repeat_block_body(Circuit &host) const;
-    const Circuit &repeat_block_body(const Circuit &host) const;
-
-    /// Verifies complex invariants that circuit instructions are supposed to follow.
-    ///
-    /// For example: CNOT gates should have an even number of targets.
-    /// For example: X_ERROR should have a single float argument between 0 and 1 inclusive.
-    ///
-    /// Raises:
-    ///     std::invalid_argument: Validation failed.
-    void validate() const;
-};
 
 /// Stores a variety of circuit quantities relevant for sizing memory.
 struct CircuitStats {

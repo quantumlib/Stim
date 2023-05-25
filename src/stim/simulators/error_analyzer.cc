@@ -18,6 +18,7 @@
 #include <queue>
 #include <sstream>
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
@@ -1385,7 +1386,7 @@ void ErrorAnalyzer::MPP(const CircuitInstruction &target_data) {
     for (size_t k = 0; k < n; k++) {
         reversed_targets[k] = target_data.targets[n - k - 1];
     }
-    decompose_mpp_operation(
+    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
         CircuitInstruction{GateType::MPP, target_data.args, reversed_targets},
         tracker.xs.size(),
         [&](const CircuitInstruction &h_xz,

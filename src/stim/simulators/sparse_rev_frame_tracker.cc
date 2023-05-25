@@ -14,6 +14,8 @@
 
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 
+#include "stim/circuit/gate_decomposition.h"
+
 using namespace stim;
 
 constexpr GateVTable<void (SparseUnsignedRevFrameTracker::*)(const CircuitInstruction &)> rev_tracker_vtable_data() {
@@ -202,7 +204,7 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_da
     for (size_t k = 0; k < n; k++) {
         reversed_targets[k] = target_data.targets[n - k - 1];
     }
-    decompose_mpp_operation(
+    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
         CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
         xs.size(),
         [&](const CircuitInstruction &h_xz,

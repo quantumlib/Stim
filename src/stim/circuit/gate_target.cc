@@ -180,3 +180,29 @@ void GateTarget::write_succinct(std::ostream &out) const {
         out << (data & TARGET_VALUE_MASK);
     }
 }
+
+void stim::write_targets(std::ostream &out, SpanRef<const GateTarget> targets) {
+    bool skip_space = false;
+    for (auto t : targets) {
+        if (t.is_combiner()) {
+            skip_space = true;
+        } else if (!skip_space) {
+            out << ' ';
+        } else {
+            skip_space = false;
+        }
+        t.write_succinct(out);
+    }
+}
+
+std::string stim::targets_str(SpanRef<const GateTarget> targets) {
+    std::stringstream out;
+    stim::write_targets(out, targets);
+    return out.str();
+}
+
+std::string stim::target_str(GateTarget t) {
+    std::stringstream out;
+    t.write_succinct(out);
+    return out.str();
+}

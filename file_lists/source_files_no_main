@@ -1,6 +1,7 @@
 src/stim.cc
 src/stim/arg_parse.cc
 src/stim/circuit/circuit.cc
+src/stim/circuit/circuit_instruction.cc
 src/stim/circuit/gate_data.cc
 src/stim/circuit/gate_data_annotations.cc
 src/stim/circuit/gate_data_blocks.cc
