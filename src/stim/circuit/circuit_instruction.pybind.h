@@ -17,6 +17,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include "stim/circuit/circuit_instruction.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
 
