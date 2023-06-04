@@ -32,17 +32,20 @@ namespace stim {
 ///
 /// This is useful when appending operations to the tableau, since otherwise
 /// the append would be working against the grain of memory.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct TableauTransposedRaii {
-    Tableau &tableau;
+    Tableau<W> &tableau;
 
-    explicit TableauTransposedRaii(Tableau &tableau);
+    explicit TableauTransposedRaii(Tableau<W> &tableau);
     ~TableauTransposedRaii();
 
     TableauTransposedRaii() = delete;
     TableauTransposedRaii(const TableauTransposedRaii &) = delete;
     TableauTransposedRaii(TableauTransposedRaii &&) = delete;
 
-    PauliString unsigned_x_input(size_t q) const;
+    PauliString<W> unsigned_x_input(size_t q) const;
 
     void append_H_XZ(size_t q);
     void append_H_XY(size_t q);
@@ -56,5 +59,7 @@ struct TableauTransposedRaii {
 };
 
 }  // namespace stim
+
+#include "stim/stabilizers/tableau_transposed_raii.inl"
 
 #endif

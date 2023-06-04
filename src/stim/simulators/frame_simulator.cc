@@ -238,9 +238,9 @@ void FrameSimulator::do_MRZ(const CircuitInstruction &target_data) {
 void FrameSimulator::do_I(const CircuitInstruction &target_data) {
 }
 
-PauliString FrameSimulator::get_frame(size_t sample_index) const {
+PauliString<MAX_BITWORD_WIDTH> FrameSimulator::get_frame(size_t sample_index) const {
     assert(sample_index < batch_size);
-    PauliString result(num_qubits);
+    PauliString<MAX_BITWORD_WIDTH> result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
         result.xs[q] = x_table[q][sample_index];
         result.zs[q] = z_table[q][sample_index];
@@ -248,7 +248,7 @@ PauliString FrameSimulator::get_frame(size_t sample_index) const {
     return result;
 }
 
-void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef &new_frame) {
+void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef<MAX_BITWORD_WIDTH> &new_frame) {
     assert(sample_index < batch_size);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
@@ -297,7 +297,9 @@ void FrameSimulator::do_C_ZYX(const CircuitInstruction &target_data) {
 void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
-            z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+            z_table[c], x_table[t], z_table[t], [](
+                simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+                simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
                 z1 ^= z2;
                 x2 ^= x1;
             });
@@ -312,7 +314,9 @@ void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
 void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
-            z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+            z_table[c], x_table[t], z_table[t], [](
+                simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+                simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
                 z1 ^= x2 ^ z2;
                 z2 ^= x1;
                 x2 ^= x1;
@@ -350,7 +354,9 @@ void FrameSimulator::do_ZCZ(const CircuitInstruction &target_data) {
         size_t t = targets[k + 1].data;
         if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             x_table[c].for_each_word(
-                z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z_table[c], x_table[t], z_table[t], [](
+                    simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+                    simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
                     z1 ^= x2;
                     z2 ^= x1;
                 });
@@ -371,7 +377,9 @@ void FrameSimulator::do_SWAP(const CircuitInstruction &target_data) {
         size_t q1 = targets[k].data;
         size_t q2 = targets[k + 1].data;
         x_table[q1].for_each_word(
-            z_table[q1], x_table[q2], z_table[q2], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+            z_table[q1], x_table[q2], z_table[q2], [](
+                simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+                simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
                 std::swap(z1, z2);
                 std::swap(x1, x2);
             });
@@ -379,7 +387,9 @@ void FrameSimulator::do_SWAP(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_ISWAP(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         auto dx = x1 ^ x2;
         auto t1 = z1 ^ dx;
         auto t2 = z2 ^ dx;
@@ -390,7 +400,9 @@ void FrameSimulator::do_ISWAP(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_CXSWAP(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         z2 ^= z1;
         z1 ^= z2;
         x1 ^= x2;
@@ -399,7 +411,9 @@ void FrameSimulator::do_CXSWAP(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_SWAPCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         z1 ^= z2;
         z2 ^= z1;
         x2 ^= x1;
@@ -408,16 +422,20 @@ void FrameSimulator::do_SWAPCX(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_SQRT_XX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        simd_word dz = z1 ^ z2;
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
+        auto dz = z1 ^ z2;
         x1 ^= dz;
         x2 ^= dz;
     });
 }
 
 void FrameSimulator::do_SQRT_YY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        simd_word d = x1 ^ z1 ^ x2 ^ z2;
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
+        auto d = x1 ^ z1 ^ x2 ^ z2;
         x1 ^= d;
         z1 ^= d;
         x2 ^= d;
@@ -426,7 +444,9 @@ void FrameSimulator::do_SQRT_YY(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_SQRT_ZZ(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         auto dx = x1 ^ x2;
         z1 ^= dx;
         z2 ^= dx;
@@ -434,14 +454,18 @@ void FrameSimulator::do_SQRT_ZZ(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_XCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         x1 ^= z2;
         x2 ^= z1;
     });
 }
 
 void FrameSimulator::do_XCY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         x1 ^= x2 ^ z2;
         x2 ^= z1;
         z2 ^= z1;
@@ -457,7 +481,9 @@ void FrameSimulator::do_XCZ(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_YCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         x2 ^= x1 ^ z1;
         x1 ^= z2;
         z1 ^= z2;
@@ -465,7 +491,9 @@ void FrameSimulator::do_YCX(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_YCY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    for_each_target_pair(*this, target_data, [](
+        simd_word<MAX_BITWORD_WIDTH> &x1, simd_word<MAX_BITWORD_WIDTH> &z1,
+        simd_word<MAX_BITWORD_WIDTH> &x2, simd_word<MAX_BITWORD_WIDTH> &z2) {
         auto y1 = x1 ^ z1;
         auto y2 = x2 ^ z2;
         x1 ^= y2;
@@ -600,7 +628,8 @@ void FrameSimulator::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_d
     }
     // Omit locations blocked by prev error, while updating prev error mask.
     simd_bits_range_ref<MAX_BITWORD_WIDTH>{rng_buffer}.for_each_word(
-        last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
+        last_correlated_error_occurred, [](
+            simd_word<MAX_BITWORD_WIDTH> &buf, simd_word<MAX_BITWORD_WIDTH> &prev) {
             buf = prev.andnot(buf);
             prev |= buf;
         });

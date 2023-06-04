@@ -21,7 +21,7 @@
 using namespace stim;
 
 SparseUnsignedRevFrameTracker _tracker_from_pauli_string(const char *text) {
-    auto p = PauliString::from_str(text);
+    auto p = PauliString<MAX_BITWORD_WIDTH>::from_str(text);
     SparseUnsignedRevFrameTracker result(p.num_qubits, 0, 0);
     for (size_t q = 0; q < p.num_qubits; q++) {
         if (p.xs[q]) {
@@ -37,7 +37,7 @@ SparseUnsignedRevFrameTracker _tracker_from_pauli_string(const char *text) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_h) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("H").tableau();
+    auto tableau = GATE_DATA.at("H").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -59,7 +59,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_h) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_s) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("S").tableau();
+    auto tableau = GATE_DATA.at("S").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -81,7 +81,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_s) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_c_xyz) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("C_XYZ").tableau();
+    auto tableau = GATE_DATA.at("C_XYZ").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -103,7 +103,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_c_xyz) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_cx) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0, 1};
-    Tableau tableau = GATE_DATA.at("CX").tableau();
+    auto tableau = GATE_DATA.at("CX").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("II");
     actual.undo_tableau(tableau, targets);
@@ -164,7 +164,7 @@ TEST(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau) {
                 targets.push_back(n - k + 1);
             }
             tracker_gate.undo_gate({gate.id, {}, qubit_targets(targets)});
-            tracker_tableau.undo_tableau(gate.tableau(), targets);
+            tracker_tableau.undo_tableau(gate.tableau<MAX_BITWORD_WIDTH>(), targets);
             EXPECT_EQ(tracker_gate, tracker_tableau) << gate.name;
         }
     }

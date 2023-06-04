@@ -93,8 +93,8 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       gate_vtable(rev_tracker_vtable_data()) {
 }
 
-PauliString SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarget target) const {
-    PauliString result(xs.size());
+PauliString<MAX_BITWORD_WIDTH> SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarget target) const {
+    PauliString<MAX_BITWORD_WIDTH> result(xs.size());
     for (size_t q = 0; q < xs.size(); q++) {
         result.xs[q] = std::find(xs[q].begin(), xs[q].end(), target) != xs[q].end();
         result.zs[q] = std::find(zs[q].begin(), zs[q].end(), target) != zs[q].end();
@@ -549,7 +549,7 @@ void SparseUnsignedRevFrameTracker::undo_ISWAP(const CircuitInstruction &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau &tableau, SpanRef<const uint32_t> targets) {
+void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets) {
     size_t n = tableau.num_qubits;
     if (n != targets.size()) {
         throw new std::invalid_argument("tableau.num_qubits != targets.size()");

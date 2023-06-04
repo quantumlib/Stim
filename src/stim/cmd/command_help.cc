@@ -224,7 +224,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (gate.flags & GATE_IS_UNITARY) {
         out << "Stabilizer Generators:\n";
         out.change_indent(+4);
-        auto tableau = gate.tableau();
+        auto tableau = gate.tableau<MAX_BITWORD_WIDTH>();
         if (gate.flags & GATE_TARGETS_PAIRS) {
             out << "X_ -> " << tableau.xs[0] << "\n";
             out << "Z_ -> " << tableau.zs[0] << "\n";

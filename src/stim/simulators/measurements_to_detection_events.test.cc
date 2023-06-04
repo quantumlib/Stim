@@ -300,7 +300,7 @@ TEST(measurements_to_detection_events, append_observables) {
     simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 256);
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
     simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 256);
-    size_t min_bits = sizeof(simd_word) * 8;
+    size_t min_bits = sizeof(simd_word<MAX_BITWORD_WIDTH>) * 8;
 
     // Appended.
     converted = measurements_to_detection_events(

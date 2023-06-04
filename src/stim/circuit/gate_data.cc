@@ -40,18 +40,6 @@ GateDataMap::GateDataMap() {
     }
 }
 
-Tableau Gate::tableau() const {
-    const auto &tableau_data = extra_data_func().tableau_data;
-    const auto &d = tableau_data;
-    if (tableau_data.size() == 2) {
-        return Tableau::gate1(d[0], d[1]);
-    }
-    if (tableau_data.size() == 4) {
-        return Tableau::gate2(d[0], d[1], d[2], d[3]);
-    }
-    throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
-}
-
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
     const auto &unitary_data = extra_data_func().unitary_data;
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {

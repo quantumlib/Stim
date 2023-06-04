@@ -4,39 +4,9 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 
-using namespace stim;
+namespace stim {
 
-uint8_t stim::floor_lg2(size_t value) {
-    uint8_t result = 0;
-    while (value > 1) {
-        result += 1;
-        value >>= 1;
-    }
-    return result;
-}
-
-uint8_t stim::is_power_of_2(size_t value) {
-    return value != 0 && (value & (value - 1)) == 0;
-}
-
-Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
-    Circuit inverted;
-    unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
-        if (!(gate_data.flags & GATE_IS_UNITARY)) {
-            throw std::invalid_argument("Not unitary: " + op.str());
-        }
-        size_t step = (gate_data.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
-        auto s = op.targets.ptr_start;
-        const auto &inv_gate = gate_data.inverse();
-        for (size_t k = op.targets.size(); k > 0; k -= step) {
-            inverted.safe_append(inv_gate.id, {s + k - step, s + k}, op.args);
-        }
-    });
-    return inverted;
-}
-
-size_t biggest_index(const std::vector<std::complex<float>> &state_vector) {
+inline size_t biggest_index(const std::vector<std::complex<float>> &state_vector) {
     size_t best_index = 0;
     float best_size = std::norm(state_vector[0]);
     for (size_t k = 1; k < state_vector.size(); k++) {
@@ -49,7 +19,7 @@ size_t biggest_index(const std::vector<std::complex<float>> &state_vector) {
     return best_index;
 }
 
-size_t compute_occupation(const std::vector<std::complex<float>> &state_vector) {
+inline size_t compute_occupation(const std::vector<std::complex<float>> &state_vector) {
     size_t c = 0;
     for (const auto &v : state_vector) {
         if (v != std::complex<float>{0, 0}) {
@@ -59,7 +29,8 @@ size_t compute_occupation(const std::vector<std::complex<float>> &state_vector) 
     return c;
 }
 
-Circuit stim::stabilizer_state_vector_to_circuit(
+template <size_t W>
+Circuit stabilizer_state_vector_to_circuit(
     const std::vector<std::complex<float>> &state_vector, bool little_endian) {
     if (!is_power_of_2(state_vector.size())) {
         std::stringstream ss;
@@ -158,7 +129,8 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     return recorded;
 }
 
-std::vector<std::vector<std::complex<float>>> stim::tableau_to_unitary(const Tableau &tableau, bool little_endian) {
+template <size_t W>
+std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau<W> &tableau, bool little_endian) {
     auto flat = tableau.to_flat_unitary_matrix(little_endian);
     std::vector<std::vector<std::complex<float>>> result;
     size_t n = 1 << tableau.num_qubits;
@@ -171,9 +143,10 @@ std::vector<std::vector<std::complex<float>>> stim::tableau_to_unitary(const Tab
     return result;
 }
 
-Tableau stim::circuit_to_tableau(
+template <size_t W>
+Tableau<W> circuit_to_tableau(
     const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
-    Tableau result(circuit.count_qubits());
+    Tableau<W> result(circuit.count_qubits());
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
@@ -212,8 +185,9 @@ Tableau stim::circuit_to_tableau(
     return sim.inv_state.inverse();
 }
 
-std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circuit &circuit, bool little_endian) {
-    Tableau result(circuit.count_qubits());
+template <size_t W>
+std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &circuit, bool little_endian) {
+    Tableau<W> result(circuit.count_qubits());
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
@@ -234,7 +208,8 @@ std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circ
     return sim.to_state_vector(little_endian);
 }
 
-Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &method) {
+template <size_t W>
+Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method) {
     if (method != "elimination") {
         std::stringstream ss;
         ss << "Unknown method: '" << method << "'. Known methods:\n";
@@ -242,14 +217,14 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
         throw std::invalid_argument(ss.str());
     }
 
-    Tableau remaining = tableau.inverse();
+    Tableau<W> remaining = tableau.inverse();
     Circuit recorded_circuit;
     auto apply = [&](const std::string &name, uint32_t target) {
-        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target});
+        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau<W>(), {target});
         recorded_circuit.safe_append_u(name, {target});
     };
     auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
-        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target, target2});
+        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau<W>(), {target, target2});
         recorded_circuit.safe_append_u(name, {target, target2});
     };
     auto x_out = [&](size_t inp, size_t out) {
@@ -328,7 +303,7 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
     }
 
     // Fix pauli signs.
-    simd_bits<MAX_BITWORD_WIDTH> signs_copy = remaining.zs.signs;
+    simd_bits<W> signs_copy = remaining.zs.signs;
     for (size_t col = 0; col < n; col++) {
         if (signs_copy[col]) {
             apply("H", col);
@@ -359,7 +334,7 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
     return recorded_circuit;
 }
 
-size_t first_set_bit(size_t value, size_t min_result) {
+inline size_t first_set_bit(size_t value, size_t min_result) {
     size_t t = min_result;
     value >>= min_result;
     assert(value);
@@ -370,7 +345,8 @@ size_t first_set_bit(size_t value, size_t min_result) {
     return t;
 }
 
-Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
+template <size_t W>
+Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
     // Verify matrix is square.
     size_t num_amplitudes = matrix.size();
     if (!is_power_of_2(num_amplitudes)) {
@@ -392,7 +368,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     for (const auto &row : matrix) {
         first_col.push_back(row[0]);
     }
-    Circuit recorded_circuit = unitary_circuit_inverse(stabilizer_state_vector_to_circuit(first_col, true));
+    Circuit recorded_circuit = unitary_circuit_inverse(stabilizer_state_vector_to_circuit<W>(first_col, true));
 
     // Use the state channel duality to get the operation into the vector simulator.
     VectorSimulator sim(0);
@@ -486,11 +462,12 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
         }
     }
 
-    return circuit_to_tableau(recorded_circuit, false, false, false);
+    return circuit_to_tableau<W>(recorded_circuit, false, false, false);
 }
 
-Tableau stim::stabilizers_to_tableau(
-    const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
+template <size_t W>
+Tableau<W> stabilizers_to_tableau(
+    const std::vector<PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
     size_t num_qubits = 0;
     for (const auto &e : stabilizers) {
         num_qubits = std::max(num_qubits, e.num_qubits);
@@ -509,15 +486,15 @@ Tableau stim::stabilizers_to_tableau(
             }
         }
     }
-    Tableau inverted(num_qubits);
+    Tableau<W> inverted(num_qubits);
 
-    PauliString cur(num_qubits);
+    PauliString<W> cur(num_qubits);
     std::vector<size_t> targets;
     while (targets.size() < num_qubits) {
         targets.push_back(targets.size());
     }
-    auto overwrite_cur_apply_recorded = [&](const PauliString &e) {
-        PauliStringRef cur_ref = cur.ref();
+    auto overwrite_cur_apply_recorded = [&](const PauliString<W> &e) {
+        PauliStringRef<W> cur_ref = cur.ref();
         cur.xs.clear();
         cur.zs.clear();
         cur.xs.word_range_ref(0, e.xs.num_simd_words) = e.xs;
@@ -556,7 +533,8 @@ Tableau stim::stabilizers_to_tableau(
 
         // Change pivot basis to the Z axis.
         if (cur.xs[pivot]) {
-            inverted.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ" : "H_XZ").tableau(), {pivot});
+            std::string name = cur.zs[pivot] ? "H_YZ" : "H_XZ";
+            inverted.inplace_scatter_append(GATE_DATA.at(name).tableau<W>(), {pivot});
         }
         // Cancel other terms in Pauli string.
         for (size_t q = 0; q < num_qubits; q++) {
@@ -566,20 +544,20 @@ Tableau stim::stabilizers_to_tableau(
                     GATE_DATA.at(p == 1   ? "XCX"
                                  : p == 2 ? "XCZ"
                                           : "XCY")
-                        .tableau(),
+                        .tableau<W>(),
                     {pivot, q});
             }
         }
 
         // Move pivot to diagonal.
         if (pivot != used) {
-            inverted.inplace_scatter_append(GATE_DATA.at("SWAP").tableau(), {pivot, used});
+            inverted.inplace_scatter_append(GATE_DATA.at("SWAP").tableau<W>(), {pivot, used});
         }
 
         // Fix sign.
         overwrite_cur_apply_recorded(e);
         if (cur.sign) {
-            inverted.inplace_scatter_append(GATE_DATA.at("X").tableau(), {used});
+            inverted.inplace_scatter_append(GATE_DATA.at("X").tableau<W>(), {used});
         }
 
         used++;
@@ -598,3 +576,5 @@ Tableau stim::stabilizers_to_tableau(
     }
     return inverted.inverse();
 }
+
+}  // namespace stim

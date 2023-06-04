@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/vector_simulator.h"
 
 #include "gtest/gtest.h"
 
@@ -304,7 +305,7 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
 }
 
 TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
-    auto t = Tableau::random(10, SHARED_TEST_RNG());
+    auto t = Tableau<MAX_BITWORD_WIDTH>::random(10, SHARED_TEST_RNG());
     TableauSimulator sim(SHARED_TEST_RNG(), 10);
     for (const auto &gate : GATE_DATA.gates()) {
         if (!(gate.flags & GATE_IS_UNITARY)) {
@@ -312,7 +313,7 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
         }
         sim.inv_state = t;
 
-        const auto &inverse_op_tableau = gate.inverse().tableau();
+        const auto &inverse_op_tableau = gate.inverse().tableau<MAX_BITWORD_WIDTH>();
         if (inverse_op_tableau.num_qubits == 2) {
             sim.do_gate({gate.id, {}, qubit_targets({7, 4})});
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
@@ -399,7 +400,7 @@ TEST(TableauSimulator, to_vector_sim) {
     sim_vec.apply("ZCX", 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.inv_state = Tableau::random(10, SHARED_TEST_RNG());
+    sim_tab.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(10, SHARED_TEST_RNG());
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -458,17 +459,17 @@ TEST(TableauSimulator, to_state_vector_canonical) {
     }
 }
 
-bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::vector<uint32_t> &measurement_targets) {
+bool vec_sim_corroborates_measurement_process(const Tableau<MAX_BITWORD_WIDTH> &state, const std::vector<uint32_t> &measurement_targets) {
     TableauSimulator sim_tab(SHARED_TEST_RNG(), 2);
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
     sim_tab.measure_z(OpDat(measurement_targets));
-    PauliString buf(sim_tab.inv_state.num_qubits);
+    PauliString<MAX_BITWORD_WIDTH> buf(sim_tab.inv_state.num_qubits);
     size_t k = 0;
     for (auto t : measurement_targets) {
         buf.zs[t] = true;
         buf.sign = sim_tab.measurement_record.storage[k++];
-        float f = vec_sim.project(buf);
+        float f = vec_sim.project<MAX_BITWORD_WIDTH>(buf);
         if (fabs(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;
         }
@@ -479,19 +480,19 @@ bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::v
 
 TEST(TableauSimulator, measurement_vs_vector_sim) {
     for (size_t k = 0; k < 10; k++) {
-        Tableau state = Tableau::random(2, SHARED_TEST_RNG());
+        auto state = Tableau<MAX_BITWORD_WIDTH>::random(2, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1}));
     }
     for (size_t k = 0; k < 10; k++) {
-        Tableau state = Tableau::random(4, SHARED_TEST_RNG());
+        auto state = Tableau<MAX_BITWORD_WIDTH>::random(4, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {2, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1, 2, 3}));
     }
     {
-        Tableau state = Tableau::random(12, SHARED_TEST_RNG());
+        auto state = Tableau<MAX_BITWORD_WIDTH>::random(12, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1, 2, 3}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 10, 11}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {11, 5, 7}));
@@ -792,76 +793,76 @@ TEST(TableauSimulator, mr_repeated_target) {
 
 TEST(TableauSimulator, peek_bloch) {
     TableauSimulator sim(SHARED_TEST_RNG(), 3);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     sim.H_XZ(OpDat(0));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     sim.X(OpDat(1));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     sim.H_YZ(OpDat(2));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     sim.X(OpDat(0));
     sim.X(OpDat(1));
     sim.X(OpDat(2));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     sim.Y(OpDat(0));
     sim.Y(OpDat(1));
     sim.Y(OpDat(2));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     sim.ZCZ(OpDat({0, 1}));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     sim.ZCZ(OpDat({1, 2}));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     sim.ZCZ(OpDat({0, 2}));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+I"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+I"));
 
     sim.X(OpDat(0));
     sim.X(OpDat(1));
     sim.X(OpDat(2));
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+I"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString<MAX_BITWORD_WIDTH>::from_str("+I"));
 }
 
 TEST(TableauSimulator, paulis) {
     TableauSimulator sim1(SHARED_TEST_RNG(), 500);
     TableauSimulator sim2(SHARED_TEST_RNG(), 500);
-    sim1.inv_state = Tableau::random(500, SHARED_TEST_RNG());
+    sim1.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(500, SHARED_TEST_RNG());
     sim2.inv_state = sim1.inv_state;
 
-    sim1.paulis(PauliString(500));
+    sim1.paulis(PauliString<MAX_BITWORD_WIDTH>(500));
     ASSERT_EQ(sim1.inv_state, sim2.inv_state);
-    sim1.paulis(PauliString(5));
+    sim1.paulis(PauliString<MAX_BITWORD_WIDTH>(5));
     ASSERT_EQ(sim1.inv_state, sim2.inv_state);
-    sim1.paulis(PauliString(0));
+    sim1.paulis(PauliString<MAX_BITWORD_WIDTH>(0));
     ASSERT_EQ(sim1.inv_state, sim2.inv_state);
 
-    sim1.paulis(PauliString::from_str("IXYZ"));
+    sim1.paulis(PauliString<MAX_BITWORD_WIDTH>::from_str("IXYZ"));
     sim2.X(OpDat(1));
     sim2.Y(OpDat(2));
     sim2.Z(OpDat(3));
@@ -871,7 +872,7 @@ TEST(TableauSimulator, paulis) {
 TEST(TableauSimulator, set_num_qubits) {
     TableauSimulator sim1(SHARED_TEST_RNG(), 10);
     TableauSimulator sim2(SHARED_TEST_RNG(), 10);
-    sim1.inv_state = Tableau::random(10, SHARED_TEST_RNG());
+    sim1.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(10, SHARED_TEST_RNG());
     sim2.inv_state = sim1.inv_state;
 
     sim1.set_num_qubits(20);
@@ -893,7 +894,7 @@ TEST(TableauSimulator, set_num_qubits) {
 
 TEST(TableauSimulator, set_num_qubits_reduce_random) {
     TableauSimulator sim(SHARED_TEST_RNG(), 10);
-    sim.inv_state = Tableau::random(10, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(10, SHARED_TEST_RNG());
     sim.set_num_qubits(5);
     ASSERT_EQ(sim.inv_state.num_qubits, 5);
     ASSERT_TRUE(sim.inv_state.satisfies_invariants());
@@ -901,7 +902,7 @@ TEST(TableauSimulator, set_num_qubits_reduce_random) {
 
 void scramble_stabilizers(TableauSimulator &s) {
     auto &rng = SHARED_TEST_RNG();
-    TableauTransposedRaii tmp(s.inv_state);
+    TableauTransposedRaii<MAX_BITWORD_WIDTH> tmp(s.inv_state);
     for (size_t i = 0; i < s.inv_state.num_qubits; i++) {
         for (size_t j = i + 1; j < s.inv_state.num_qubits; j++) {
             if (rng() & 1) {
@@ -926,45 +927,45 @@ TEST(TableauSimulator, canonical_stabilizers) {
     sim.ZCX(OpDat({0, 1}));
     ASSERT_EQ(
         sim.canonical_stabilizers(),
-        (std::vector<PauliString>{
-            PauliString::from_str("XX"),
-            PauliString::from_str("ZZ"),
+        (std::vector<PauliString<MAX_BITWORD_WIDTH>>{
+            PauliString<MAX_BITWORD_WIDTH>::from_str("XX"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ"),
         }));
     sim.SQRT_Y(OpDat({0, 1}));
     ASSERT_EQ(
         sim.canonical_stabilizers(),
-        (std::vector<PauliString>{
-            PauliString::from_str("XX"),
-            PauliString::from_str("ZZ"),
+        (std::vector<PauliString<MAX_BITWORD_WIDTH>>{
+            PauliString<MAX_BITWORD_WIDTH>::from_str("XX"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ"),
         }));
     sim.SQRT_X(OpDat({0, 1}));
     ASSERT_EQ(
         sim.canonical_stabilizers(),
-        (std::vector<PauliString>{
-            PauliString::from_str("XX"),
-            PauliString::from_str("-ZZ"),
+        (std::vector<PauliString<MAX_BITWORD_WIDTH>>{
+            PauliString<MAX_BITWORD_WIDTH>::from_str("XX"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ"),
         }));
     sim.set_num_qubits(3);
     ASSERT_EQ(
         sim.canonical_stabilizers(),
-        (std::vector<PauliString>{
-            PauliString::from_str("+XX_"),
-            PauliString::from_str("-ZZ_"),
-            PauliString::from_str("+__Z"),
+        (std::vector<PauliString<MAX_BITWORD_WIDTH>>{
+            PauliString<MAX_BITWORD_WIDTH>::from_str("+XX_"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ_"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("+__Z"),
         }));
     sim.ZCX(OpDat({2, 0}));
     ASSERT_EQ(
         sim.canonical_stabilizers(),
-        (std::vector<PauliString>{
-            PauliString::from_str("+XX_"),
-            PauliString::from_str("-ZZ_"),
-            PauliString::from_str("+__Z"),
+        (std::vector<PauliString<MAX_BITWORD_WIDTH>>{
+            PauliString<MAX_BITWORD_WIDTH>::from_str("+XX_"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ_"),
+            PauliString<MAX_BITWORD_WIDTH>::from_str("+__Z"),
         }));
 }
 
 TEST(TableauSimulator, canonical_stabilizers_random) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
-    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(4, SHARED_TEST_RNG());
     auto s1 = sim.canonical_stabilizers();
     scramble_stabilizers(sim);
     auto s2 = sim.canonical_stabilizers();
@@ -974,7 +975,7 @@ TEST(TableauSimulator, canonical_stabilizers_random) {
 TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
     auto &rng = SHARED_TEST_RNG();
     TableauSimulator sim(rng, 4);
-    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(4, SHARED_TEST_RNG());
     auto s1 = sim.canonical_stabilizers();
     sim.inv_state.expand(8, 1.0);
     scramble_stabilizers(sim);
@@ -990,12 +991,12 @@ TEST(TableauSimulator, measure_kickback_z) {
     auto k1 = sim.measure_kickback_z(GateTarget::qubit(1));
     auto k2 = sim.measure_kickback_z(GateTarget::qubit(2));
     auto k3 = sim.measure_kickback_z(GateTarget::qubit(3));
-    ASSERT_EQ(k1.second, PauliString::from_str("XX__"));
-    ASSERT_EQ(k2.second, PauliString::from_str("__XX"));
-    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_EQ(k1.second, PauliString<MAX_BITWORD_WIDTH>::from_str("XX__"));
+    ASSERT_EQ(k2.second, PauliString<MAX_BITWORD_WIDTH>::from_str("__XX"));
+    ASSERT_EQ(k3.second, PauliString<MAX_BITWORD_WIDTH>(0));
     ASSERT_EQ(k2.first, k3.first);
-    auto p = PauliString::from_str("+Z");
-    auto pn = PauliString::from_str("-Z");
+    auto p = PauliString<MAX_BITWORD_WIDTH>::from_str("+Z");
+    auto pn = PauliString<MAX_BITWORD_WIDTH>::from_str("-Z");
     ASSERT_EQ(sim.peek_bloch(0), k1.first ? pn : p);
     ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
     ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
@@ -1009,12 +1010,12 @@ TEST(TableauSimulator, measure_kickback_x) {
     auto k1 = sim.measure_kickback_x(GateTarget::qubit(1));
     auto k2 = sim.measure_kickback_x(GateTarget::qubit(2));
     auto k3 = sim.measure_kickback_x(GateTarget::qubit(3));
-    ASSERT_EQ(k1.second, PauliString::from_str("ZZ__"));
-    ASSERT_EQ(k2.second, PauliString::from_str("__ZZ"));
-    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_EQ(k1.second, PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ__"));
+    ASSERT_EQ(k2.second, PauliString<MAX_BITWORD_WIDTH>::from_str("__ZZ"));
+    ASSERT_EQ(k3.second, PauliString<MAX_BITWORD_WIDTH>(0));
     ASSERT_EQ(k2.first, k3.first);
-    auto p = PauliString::from_str("+X");
-    auto pn = PauliString::from_str("-X");
+    auto p = PauliString<MAX_BITWORD_WIDTH>::from_str("+X");
+    auto pn = PauliString<MAX_BITWORD_WIDTH>::from_str("-X");
     ASSERT_EQ(sim.peek_bloch(0), k1.first ? pn : p);
     ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
     ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
@@ -1028,12 +1029,12 @@ TEST(TableauSimulator, measure_kickback_y) {
     auto k1 = sim.measure_kickback_y(GateTarget::qubit(1));
     auto k2 = sim.measure_kickback_y(GateTarget::qubit(2));
     auto k3 = sim.measure_kickback_y(GateTarget::qubit(3));
-    ASSERT_EQ(k1.second, PauliString::from_str("ZX__"));
-    ASSERT_EQ(k2.second, PauliString::from_str("__ZX"));
-    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_EQ(k1.second, PauliString<MAX_BITWORD_WIDTH>::from_str("ZX__"));
+    ASSERT_EQ(k2.second, PauliString<MAX_BITWORD_WIDTH>::from_str("__ZX"));
+    ASSERT_EQ(k3.second, PauliString<MAX_BITWORD_WIDTH>(0));
     ASSERT_NE(k2.first, k3.first);
-    auto p = PauliString::from_str("+Y");
-    auto pn = PauliString::from_str("-Y");
+    auto p = PauliString<MAX_BITWORD_WIDTH>::from_str("+Y");
+    auto pn = PauliString<MAX_BITWORD_WIDTH>::from_str("-Y");
     ASSERT_EQ(sim.peek_bloch(0), k1.first ? p : pn);
     ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
     ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
@@ -1042,7 +1043,7 @@ TEST(TableauSimulator, measure_kickback_y) {
 
 TEST(TableauSimulator, measure_kickback_isolates) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
-    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(4, SHARED_TEST_RNG());
     for (size_t k = 0; k < 4; k++) {
         auto result = sim.measure_kickback_z(GateTarget::qubit(k));
         for (size_t j = 0; j < result.second.num_qubits && j < k; j++) {
@@ -1055,59 +1056,59 @@ TEST(TableauSimulator, measure_kickback_isolates) {
 TEST(TableauSimulator, collapse_isolate_completely) {
     for (size_t k = 0; k < 10; k++) {
         TableauSimulator sim(SHARED_TEST_RNG(), 6);
-        sim.inv_state = Tableau::random(6, SHARED_TEST_RNG());
+        sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(6, SHARED_TEST_RNG());
         {
-            TableauTransposedRaii tmp(sim.inv_state);
+            TableauTransposedRaii<MAX_BITWORD_WIDTH> tmp(sim.inv_state);
             sim.collapse_isolate_qubit_z(2, tmp);
         }
-        PauliString x2 = sim.inv_state.xs[2];
-        PauliString z2 = sim.inv_state.zs[2];
+        PauliString<MAX_BITWORD_WIDTH> x2 = sim.inv_state.xs[2];
+        PauliString<MAX_BITWORD_WIDTH> z2 = sim.inv_state.zs[2];
         x2.sign = false;
         z2.sign = false;
-        ASSERT_EQ(x2, PauliString::from_str("__X___"));
-        ASSERT_EQ(z2, PauliString::from_str("__Z___"));
+        ASSERT_EQ(x2, PauliString<MAX_BITWORD_WIDTH>::from_str("__X___"));
+        ASSERT_EQ(z2, PauliString<MAX_BITWORD_WIDTH>::from_str("__Z___"));
     }
 }
 
 TEST(TableauSimulator, reset_pure) {
     TableauSimulator t(SHARED_TEST_RNG(), 1);
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
     t.reset_y(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
     t.reset_x(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
     t.reset_y(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
     t.reset_z(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, reset_random) {
     TableauSimulator t(SHARED_TEST_RNG(), 5);
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.reset_x(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.reset_y(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.reset_z(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.measure_reset_x(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.measure_reset_y(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
-    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(5, SHARED_TEST_RNG());
     t.measure_reset_z(OpDat(0));
-    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(t.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, reset_x_entangled) {
@@ -1118,8 +1119,8 @@ TEST(TableauSimulator, reset_x_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign = false;
-    ASSERT_EQ(p1, PauliString::from_str("+X"));
-    ASSERT_EQ(p2, PauliString::from_str("+X"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 }
 
 TEST(TableauSimulator, reset_y_entangled) {
@@ -1130,8 +1131,8 @@ TEST(TableauSimulator, reset_y_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign = false;
-    ASSERT_EQ(p1, PauliString::from_str("+Y"));
-    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 }
 
 TEST(TableauSimulator, reset_z_entangled) {
@@ -1142,8 +1143,8 @@ TEST(TableauSimulator, reset_z_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign = false;
-    ASSERT_EQ(p1, PauliString::from_str("+Z"));
-    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, measure_x_entangled) {
@@ -1156,8 +1157,8 @@ TEST(TableauSimulator, measure_x_entangled) {
     auto p2 = t.peek_bloch(1);
     p1.sign ^= b;
     p2.sign ^= b;
-    ASSERT_EQ(p1, PauliString::from_str("+X"));
-    ASSERT_EQ(p2, PauliString::from_str("+X"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 }
 
 TEST(TableauSimulator, measure_y_entangled) {
@@ -1170,8 +1171,8 @@ TEST(TableauSimulator, measure_y_entangled) {
     auto p2 = t.peek_bloch(1);
     p1.sign ^= b;
     p2.sign ^= !b;
-    ASSERT_EQ(p1, PauliString::from_str("+Y"));
-    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 }
 
 TEST(TableauSimulator, measure_z_entangled) {
@@ -1184,8 +1185,8 @@ TEST(TableauSimulator, measure_z_entangled) {
     auto p2 = t.peek_bloch(1);
     p1.sign ^= b;
     p2.sign ^= b;
-    ASSERT_EQ(p1, PauliString::from_str("+Z"));
-    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, measure_reset_x_entangled) {
@@ -1197,8 +1198,8 @@ TEST(TableauSimulator, measure_reset_x_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign ^= b;
-    ASSERT_EQ(p1, PauliString::from_str("+X"));
-    ASSERT_EQ(p2, PauliString::from_str("+X"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 }
 
 TEST(TableauSimulator, measure_reset_y_entangled) {
@@ -1210,8 +1211,8 @@ TEST(TableauSimulator, measure_reset_y_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign ^= !b;
-    ASSERT_EQ(p1, PauliString::from_str("+Y"));
-    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 }
 
 TEST(TableauSimulator, measure_reset_z_entangled) {
@@ -1223,8 +1224,8 @@ TEST(TableauSimulator, measure_reset_z_entangled) {
     auto p1 = t.peek_bloch(0);
     auto p2 = t.peek_bloch(1);
     p2.sign ^= b;
-    ASSERT_EQ(p1, PauliString::from_str("+Z"));
-    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+    ASSERT_EQ(p1, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, resets_vs_measurements) {
@@ -1695,20 +1696,20 @@ TEST(TableauSimulator, peek_observable_expectation) {
         X 0
     )CIRCUIT");
 
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("XX")), 1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("YY")), 1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZ")), -1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-XX")), -1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-ZZ")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("XX")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("YY")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("-XX")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ")), 1);
 
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("")), 1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-I")), -1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("X")), 0);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("Z")), 0);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("Z_")), 0);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZZ")), -1);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("XXX")), 0);
-    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZZZZZZZ")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("-I")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("X")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("Z")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("Z_")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZ")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("XXX")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZZZZZZ")), -1);
 }
 
 TEST(TableauSimulator, postselect_x) {
@@ -1717,65 +1718,65 @@ TEST(TableauSimulator, postselect_x) {
     // Postselect from +X.
     sim.reset_x(OpDat(0));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect from -X.
     sim.reset_x(OpDat(0));
     sim.Z(OpDat(0));
     ASSERT_THROW({ sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
 
     // Postselect from +Y.
     sim.reset_y(OpDat(0));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect from -Y.
     sim.reset_y(OpDat(0));
     sim.X(OpDat(0));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect from +Z.
     sim.reset_z(OpDat(0));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect from -Z.
     sim.reset_z(OpDat(0));
     sim.X(OpDat(0));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 
     // Postselect opposite state entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
 
     // Postselect both independent.
     sim.reset_z(OpDat({0, 1}));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
 
     // Postselect both entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
 
     // Contradiction reached during second postselection.
     sim.reset_z(OpDat({0, 1}));
@@ -1787,8 +1788,8 @@ TEST(TableauSimulator, postselect_x) {
             sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
         },
         std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
 }
 
 TEST(TableauSimulator, postselect_y) {
@@ -1797,57 +1798,57 @@ TEST(TableauSimulator, postselect_y) {
     // Postselect from +X.
     sim.reset_x(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect from -X.
     sim.reset_x(OpDat(0));
     sim.Z(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect from +Y.
     sim.reset_y(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect from -Y.
     sim.reset_y(OpDat(0));
     sim.X(OpDat(0));
     ASSERT_THROW({ sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     // Postselect from +Z.
     sim.reset_z(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect from -Z.
     sim.reset_z(OpDat(0));
     sim.X(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 
     // Postselect opposite state entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     // Postselect both independent.
     sim.reset_z(OpDat({0, 1}));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     // Postselect both entangled.
     sim.reset_z(OpDat({0, 1}));
@@ -1855,8 +1856,8 @@ TEST(TableauSimulator, postselect_y) {
     sim.ZCX(OpDat({0, 1}));
     sim.Z(OpDat(0));
     sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
 
     // Contradiction reached during second postselection.
     sim.reset_z(OpDat({0, 1}));
@@ -1867,8 +1868,8 @@ TEST(TableauSimulator, postselect_y) {
             sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
         },
         std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
 }
 
 TEST(TableauSimulator, postselect_z) {
@@ -1877,65 +1878,65 @@ TEST(TableauSimulator, postselect_z) {
     // Postselect from +X.
     sim.reset_x(OpDat(0));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect from -X.
     sim.reset_x(OpDat(0));
     sim.Z(OpDat(0));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect from +Y.
     sim.reset_y(OpDat(0));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect from -Y.
     sim.reset_y(OpDat(0));
     sim.X(OpDat(0));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect from +Z.
     sim.reset_z(OpDat(0));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect from -Z.
     sim.reset_z(OpDat(0));
     sim.X(OpDat(0));
     ASSERT_THROW({ sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
 
     // Postselect entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 
     // Postselect opposite state entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
 
     // Postselect both independent.
     sim.reset_x(OpDat({0, 1}));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
 
     // Postselect both entangled.
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
 
     // Contradiction reached during second postselection.
     sim.reset_z(OpDat({0, 1}));
@@ -1947,8 +1948,8 @@ TEST(TableauSimulator, postselect_z) {
             sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
         },
         std::invalid_argument);
-    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString<MAX_BITWORD_WIDTH>::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Z"));
 }
 
 TEST(TableauSimulator, peek_x) {
@@ -2070,29 +2071,29 @@ TEST(TableauSimulator, peek_x) {
 }
 
 TEST(TableauSimulator, apply_tableau) {
-    auto cnot = GATE_DATA.at("CNOT").tableau();
-    auto s = GATE_DATA.at("S").tableau();
-    auto h = GATE_DATA.at("H").tableau();
-    auto cxyz = GATE_DATA.at("C_XYZ").tableau();
+    auto cnot = GATE_DATA.at("CNOT").tableau<MAX_BITWORD_WIDTH>();
+    auto s = GATE_DATA.at("S").tableau<MAX_BITWORD_WIDTH>();
+    auto h = GATE_DATA.at("H").tableau<MAX_BITWORD_WIDTH>();
+    auto cxyz = GATE_DATA.at("C_XYZ").tableau<MAX_BITWORD_WIDTH>();
 
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.apply_tableau(h, {1});
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+X"));
     sim.apply_tableau(s, {1});
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("+Y"));
     sim.apply_tableau(s, {1});
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
     sim.apply_tableau(cnot, {2, 1});
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("-X"));
     sim.apply_tableau(cnot, {1, 2});
-    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("I"));
-    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IXXI")), -1);
-    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IZZI")), +1);
+    ASSERT_EQ(sim.peek_bloch(1), PauliString<MAX_BITWORD_WIDTH>::from_str("I"));
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("IXXI")), -1);
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("IZZI")), +1);
 
     sim.apply_tableau(cxyz, {2});
     sim.apply_tableau(cxyz.inverse(), {1});
-    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IZYI")), -1);
-    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IYXI")), +1);
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("IZYI")), -1);
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString<MAX_BITWORD_WIDTH>::from_str("IYXI")), +1);
 }
 
 TEST(TableauSimulator, measure_pauli_string) {
@@ -2101,36 +2102,36 @@ TEST(TableauSimulator, measure_pauli_string) {
     sim.ZCX(OpDat({0, 1}));
     sim.X(OpDat(0));
 
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("XX"), 0.0));
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("XX"), 1.0));
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-XX"), 0.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-XX"), 1.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XX"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XX"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-XX"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-XX"), 1.0));
 
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("ZZ"), 0.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("ZZ"), 1.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-ZZ"), 0.0));
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-ZZ"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("ZZ"), 1.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ"), 1.0));
 
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("YY"), 0.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("XXZ"), 0.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("__Z"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("YY"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XXZ"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("__Z"), 0.0));
 
-    auto b = sim.measure_pauli_string(PauliString::from_str("XXX"), 0.0);
-    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("XXX"), 0.0), b);
-    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("-XXX"), 0.0), !b);
-    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("XXX"), 1.0), !b);
+    auto b = sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XXX"), 0.0);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XXX"), 0.0), b);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-XXX"), 0.0), !b);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XXX"), 1.0), !b);
 
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("XX"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("XX"), 1.0));
 
-    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), -0.5); }, std::invalid_argument);
-    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), 2.5); }, std::invalid_argument);
-    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), NAN); }, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str(""), -0.5); }, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str(""), 2.5); }, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str(""), NAN); }, std::invalid_argument);
 
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("+"), 0.0));
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("+"), 1.0));
-    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-"), 0.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-"), 1.0));
-    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("____________Z"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("+"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("+"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-"), 1.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("____________Z"), 0.0));
     ASSERT_EQ(sim.inv_state.num_qubits, 13);
 
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 1, 1,  0,  1, 0, 0, 1, 0, 0, 0,
@@ -2138,7 +2139,7 @@ TEST(TableauSimulator, measure_pauli_string) {
 
     size_t t = 0;
     for (size_t k = 0; k < 10000; k++) {
-        t += sim.measure_pauli_string(PauliString::from_str("-ZZ"), 0.2);
+        t += sim.measure_pauli_string(PauliString<MAX_BITWORD_WIDTH>::from_str("-ZZ"), 0.2);
     }
     ASSERT_GT(t / 10000.0, 0.05);
     ASSERT_LT(t / 10000.0, 0.35);

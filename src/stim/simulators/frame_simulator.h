@@ -74,8 +74,8 @@ struct FrameSimulator {
     FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng);
     FrameSimulator() = delete;
 
-    PauliString get_frame(size_t sample_index) const;
-    void set_frame(size_t sample_index, const PauliStringRef &new_frame);
+    PauliString<MAX_BITWORD_WIDTH> get_frame(size_t sample_index) const;
+    void set_frame(size_t sample_index, const PauliStringRef<MAX_BITWORD_WIDTH> &new_frame);
     void configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size);
 
     void reset_all_and_run(const Circuit &circuit);

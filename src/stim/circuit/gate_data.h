@@ -33,6 +33,7 @@
 
 namespace stim {
 
+template <size_t W>
 struct Tableau;
 
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
@@ -225,7 +226,20 @@ struct Gate {
         ExtraGateData (*extra_data_func)(void));
 
     const Gate &inverse() const;
-    Tableau tableau() const;
+
+    template <size_t W>
+    Tableau<W> tableau() const {
+        const auto &tableau_data = extra_data_func().tableau_data;
+        const auto &d = tableau_data;
+        if (tableau_data.size() == 2) {
+            return Tableau<W>::gate1(d[0], d[1]);
+        }
+        if (tableau_data.size() == 4) {
+            return Tableau<W>::gate2(d[0], d[1], d[2], d[3]);
+        }
+        throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
+    }
+
     std::vector<std::vector<std::complex<float>>> unitary() const;
 };
 

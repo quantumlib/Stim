@@ -20,19 +20,21 @@
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 
-using namespace stim;
+namespace stim {
 
-PauliStringRef::PauliStringRef(
+template <size_t W>
+PauliStringRef<W>::PauliStringRef(
     size_t init_num_qubits,
     bit_ref init_sign,
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> init_xs,
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> init_zs)
+    simd_bits_range_ref<W> init_xs,
+    simd_bits_range_ref<W> init_zs)
     : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {
     assert(init_xs.num_bits_padded() == init_zs.num_bits_padded());
-    assert(init_xs.num_simd_words == (init_num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH);
+    assert(init_xs.num_simd_words == (init_num_qubits + W - 1) / W);
 }
 
-std::string PauliStringRef::sparse_str() const {
+template <size_t W>
+std::string PauliStringRef<W>::sparse_str() const {
     std::stringstream out;
     out << "+-"[(bool)sign];
     bool first = true;
@@ -54,14 +56,16 @@ std::string PauliStringRef::sparse_str() const {
     return out.str();
 }
 
-void PauliStringRef::swap_with(PauliStringRef other) {
+template <size_t W>
+void PauliStringRef<W>::swap_with(PauliStringRef<W> other) {
     assert(num_qubits == other.num_qubits);
     sign.swap_with(other.sign);
     xs.swap_with(other.xs);
     zs.swap_with(other.zs);
 }
 
-PauliStringRef &PauliStringRef::operator=(const PauliStringRef &other) {
+template <size_t W>
+PauliStringRef<W> &PauliStringRef<W>::operator=(const PauliStringRef<W> &other) {
     assert(num_qubits == other.num_qubits);
     sign = other.sign;
     assert((bool)sign == (bool)other.sign);
@@ -70,43 +74,40 @@ PauliStringRef &PauliStringRef::operator=(const PauliStringRef &other) {
     return *this;
 }
 
-std::string PauliStringRef::str() const {
+template <size_t W>
+std::string PauliStringRef<W>::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-bool PauliStringRef::operator==(const PauliStringRef &other) const {
+template <size_t W>
+bool PauliStringRef<W>::operator==(const PauliStringRef<W> &other) const {
     return num_qubits == other.num_qubits && sign == other.sign && xs == other.xs && zs == other.zs;
 }
 
-bool PauliStringRef::operator!=(const PauliStringRef &other) const {
+template <size_t W>
+bool PauliStringRef<W>::operator!=(const PauliStringRef<W> &other) const {
     return !(*this == other);
 }
 
-std::ostream &stim::operator<<(std::ostream &out, const PauliStringRef &ps) {
-    out << "+-"[ps.sign];
-    for (size_t k = 0; k < ps.num_qubits; k++) {
-        out << "_XZY"[ps.xs[k] + 2 * ps.zs[k]];
-    }
-    return out;
-}
-
-PauliStringRef &PauliStringRef::operator*=(const PauliStringRef &rhs) {
+template <size_t W>
+PauliStringRef<W> &PauliStringRef<W>::operator*=(const PauliStringRef<W> &rhs) {
     uint8_t log_i = inplace_right_mul_returning_log_i_scalar(rhs);
     assert((log_i & 1) == 0);
     sign ^= log_i & 2;
     return *this;
 }
 
-uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStringRef &rhs) noexcept {
+template <size_t W>
+uint8_t PauliStringRef<W>::inplace_right_mul_returning_log_i_scalar(const PauliStringRef<W> &rhs) noexcept {
     assert(num_qubits == rhs.num_qubits);
 
     // Accumulator registers for counting mod 4 in parallel across each bit position.
-    simd_word cnt1{};
-    simd_word cnt2{};
+    simd_word<W> cnt1{};
+    simd_word<W> cnt2{};
 
-    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
         // Update the left hand side Paulis.
         auto old_x1 = x1;
         auto old_z1 = z1;
@@ -127,18 +128,20 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     return s & 3;
 }
 
-bool PauliStringRef::commutes(const PauliStringRef &other) const noexcept {
+template <size_t W>
+bool PauliStringRef<W>::commutes(const PauliStringRef<W> &other) const noexcept {
     if (num_qubits > other.num_qubits) {
         return other.commutes(*this);
     }
-    simd_word cnt1{};
-    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+    simd_word<W> cnt1{};
+    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
         cnt1 ^= (x1 & z2) ^ (x2 & z1);
     });
     return (cnt1.popcount() & 1) == 0;
 }
 
-void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, SpanRef<const size_t> indices, bool inverse) {
+template <size_t W>
+void PauliStringRef<W>::after_inplace_broadcast(const Tableau<W> &tableau, SpanRef<const size_t> indices, bool inverse) {
     if (tableau.num_qubits == 0 || indices.size() % tableau.num_qubits != 0) {
         throw std::invalid_argument("len(tableau) == 0 or len(indices) % len(tableau) != 0");
     }
@@ -160,7 +163,8 @@ void PauliStringRef::after_inplace_broadcast(const Tableau &tableau, SpanRef<con
     }
 }
 
-void PauliStringRef::after_inplace(const Circuit &circuit) {
+template <size_t W>
+void PauliStringRef<W>::after_inplace(const Circuit &circuit) {
     for (const auto &op : circuit.operations) {
         if (op.gate_type == GateType::REPEAT) {
             const auto &body = op.repeat_block_body(circuit);
@@ -174,7 +178,8 @@ void PauliStringRef::after_inplace(const Circuit &circuit) {
     }
 }
 
-void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inverse) {
+template <size_t W>
+void PauliStringRef<W>::after_inplace(const CircuitInstruction &operation, bool inverse) {
     const auto &gate_data = GATE_DATA.items[operation.gate_type];
     if (gate_data.flags & GATE_IS_UNITARY) {
         // TODO: use hand-optimized methods instead of the generic tableau method.
@@ -188,7 +193,7 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
             }
             indices.push_back(t.qubit_value());
         }
-        after_inplace_broadcast(gate_data.tableau(), indices, inverse);
+        after_inplace_broadcast(gate_data.tableau<W>(), indices, inverse);
     } else if (gate_data.flags & GATE_HAS_NO_EFFECT_ON_QUBITS) {
         // Gate can be ignored.
     } else if (gate_data.flags & GATE_IS_RESET) {
@@ -261,39 +266,49 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
     }
 }
 
-PauliString PauliStringRef::after(const Circuit &circuit) const {
-    PauliString result = *this;
+template <size_t W>
+PauliString<W> PauliStringRef<W>::after(const Circuit &circuit) const {
+    PauliString<W> result = *this;
     result.ref().after_inplace(circuit);
     return result;
 }
 
-PauliString PauliStringRef::after(const Tableau &tableau, SpanRef<const size_t> indices) const {
-    PauliString result = *this;
+template <size_t W>
+PauliString<W> PauliStringRef<W>::after(const Tableau<W> &tableau, SpanRef<const size_t> indices) const {
+    PauliString<W> result = *this;
     result.ref().after_inplace_broadcast(tableau, indices, false);
     return result;
 }
-PauliString PauliStringRef::after(const CircuitInstruction &operation) const {
-    PauliString result = *this;
+
+template <size_t W>
+PauliString<W> PauliStringRef<W>::after(const CircuitInstruction &operation) const {
+    PauliString<W> result = *this;
     result.ref().after_inplace(operation, false);
     return result;
 }
 
-PauliString PauliStringRef::before(const Circuit &circuit) const {
+template <size_t W>
+PauliString<W> PauliStringRef<W>::before(const Circuit &circuit) const {
     // TODO: use hand-optimized methods instead of the generic circuit inverse method.
     return after(circuit.inverse(true));
 }
-PauliString PauliStringRef::before(const CircuitInstruction &operation) const {
-    PauliString result = *this;
+
+template <size_t W>
+PauliString<W> PauliStringRef<W>::before(const CircuitInstruction &operation) const {
+    PauliString<W> result = *this;
     result.ref().after_inplace(operation, true);
     return result;
 }
-PauliString PauliStringRef::before(const Tableau &tableau, SpanRef<const size_t> indices) const {
-    PauliString result = *this;
+
+template <size_t W>
+PauliString<W> PauliStringRef<W>::before(const Tableau<W> &tableau, SpanRef<const size_t> indices) const {
+    PauliString<W> result = *this;
     result.ref().after_inplace_broadcast(tableau, indices, true);
     return result;
 }
 
-void PauliStringRef::gather_into(PauliStringRef out, SpanRef<const size_t> in_indices) const {
+template <size_t W>
+void PauliStringRef<W>::gather_into(PauliStringRef<W> out, SpanRef<const size_t> in_indices) const {
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
@@ -302,7 +317,8 @@ void PauliStringRef::gather_into(PauliStringRef out, SpanRef<const size_t> in_in
     }
 }
 
-void PauliStringRef::scatter_into(PauliStringRef out, SpanRef<const size_t> out_indices) const {
+template <size_t W>
+void PauliStringRef<W>::scatter_into(PauliStringRef<W> out, SpanRef<const size_t> out_indices) const {
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];
@@ -311,3 +327,14 @@ void PauliStringRef::scatter_into(PauliStringRef out, SpanRef<const size_t> out_
     }
     out.sign ^= sign;
 }
+
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const PauliStringRef<W> &ps) {
+    out << "+-"[ps.sign];
+    for (size_t k = 0; k < ps.num_qubits; k++) {
+        out << "_XZY"[ps.xs[k] + 2 * ps.zs[k]];
+    }
+    return out;
+}
+
+}  // namespace stim
