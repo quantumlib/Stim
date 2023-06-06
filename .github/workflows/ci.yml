@@ -148,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - run: python glue/python/overwrite_dev_version_with_date.py
+      - run: python dev/overwrite_dev_versions_with_date.py
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
@@ -312,9 +312,9 @@ jobs:
           node-version: 16.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-dev-py3-none-any.whl
-      - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
-      - run: diff <(python glue/python/generate_stub_file.py -dev) glue/python/src/stim/__init__.pyi
-      - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
+      - run: diff <(python dev/gen_api_reference.py -dev) doc/python_api_reference_vDev.md
+      - run: diff <(python dev/gen_stub_file.py -dev) glue/python/src/stim/__init__.pyi
+      - run: diff <(python dev/gen_stub_file.py -dev) doc/stim.pyi
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md

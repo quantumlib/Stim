@@ -10,26 +10,46 @@ if TYPE_CHECKING:
     from scipy.stats._stats_mstats_common import LinregressResult
 
 
-def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> Union[float, np.ndarray]:
-    r"""Approximates $\ln(P(hits = B(n, p)))$; the natural logarithm of a binomial distribution.
+def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarray:
+    r"""Approximates the natural log of a binomial distribution's probability.
 
-    All computations are done in log space to ensure intermediate values can be represented as
-    floating point numbers without underflowing to 0 or overflowing to infinity. This is necessary
-    when computing likelihoods over many samples. For example, if 80% of a million samples are hits,
-    the maximum likelihood estimate is p=0.8. But even this optimal estimate assigns a prior
-    probability of roughly 10^-217322 for seeing *exactly* 80% hits out of a million (whereas the
-    smallest representable double is roughly 10^-324).
+    When working with large binomials, it's often necessary to work in log space
+    to represent the result. For example, suppose that out of two million
+    samples 200_000 are hits. The maximum likelihood estimate is p=0.2. Even if
+    this is the true probability, the chance of seeing *exactly* 20% hits out of
+    a million shots is roughly 10^-217322. Whereas the smallest representable
+    double is roughly 10^-324. But ln(10^-217322) ~= -500402.4 is representable.
 
-    This method can be broadcast over multiple hypothesis probabilities.
+    This method evaluates $\ln(P(hits = B(n, p)))$, with all computations done
+    in log space to ensure intermediate values can be represented as floating
+    point numbers without underflowing to 0 or overflowing to infinity. This
+    method can be broadcast over multiple hypothesis probabilities by giving a
+    numpy array for `p` instead of a single float.
 
     Args:
-        p: The independent probability of a hit occurring for each sample. This can also be an array
-            of probabilities, in which case the function is broadcast over the array.
+        p: The hypotehsis probability. The independent probability of a hit
+            occurring for each sample. This can also be an array of
+            probabilities, in which case the function is broadcast over the
+            array.
         n: The number of samples that were taken.
-        hits: The number of hits that were observed amongst the samples that were taken.
+        hits: The number of hits that were observed amongst the samples that
+            were taken.
 
     Returns:
         $\ln(P(hits = B(n, p)))$
+
+    Examples:
+        >>> import sinter
+        >>> sinter.log_binomial(p=0.5, n=100, hits=50)
+        array(-2.5283785, dtype=float32)
+        >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
+        array(-216626.97, dtype=float32)
+        >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)
+        array(-99654.86, dtype=float32)
+        >>> sinter.log_binomial(p=0.01, n=1_000_000, hits=1_000)
+        array(-6742.573, dtype=float32)
+        >>> sinter.log_binomial(p=[0.01, 0.1, 0.2], n=1_000_000, hits=1_000)
+        array([  -6742.573,  -99654.86 , -216626.97 ], dtype=float32)
     """
     # Clamp probabilities into the valid [0, 1] range (in case float error put them outside it).
     p_clipped = np.clip(p, 0, 1)
@@ -58,7 +78,26 @@ def log_factorial(n: int) -> float:
     r"""Approximates $\ln(n!)$; the natural logarithm of a factorial.
 
     Uses Stirling's approximation for large n.
+
+    Args:
+        n: The input to the factorial.
+
+    Returns:
+        Evaluates $ln(n!)$ using Stirling's approximation.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.log_factorial(0)
+        0.0
+        >>> sinter.log_factorial(1)
+        0.0
+        >>> sinter.log_factorial(2)
+        0.6931471805599453
+        >>> sinter.log_factorial(100)
+        363.7385422250079
     """
+    if n <= 1:
+        return 0.0
     if n < 20:
         return sum(math.log(k) for k in range(1, n + 1))
     return (n + 0.5) * math.log(n) - n + math.log(2 * np.pi) / 2
@@ -146,20 +185,25 @@ class Fit:
     """The result of a fitting process.
 
     Attributes:
-        best: The max likelihood hypothesis. The hypothesis that had the lowest squared error,
-            or the best fitting score.
-        low: The hypothesis with the smallest parameter whose cost or score was still "close to"
-            the cost of the best hypothesis. For example, this could be a hypothesis whose
-            squared error was within some tolerance of the best fit's square error, or whose
-            likelihood was within some maximum Bayes factor of the max likelihood hypothesis.
-        high: The hypothesis with the larger parameter whose cost or score was still "close to"
-            the cost of the best hypothesis. For example, this could be a hypothesis whose
-            squared error was within some tolerance of the best fit's square error, or whose
-            likelihood was within some maximum Bayes factor of the max likelihood hypothesis.
+        low: The hypothesis with the smallest parameter whose cost or score was
+            still "close to" the cost of the best hypothesis. For example, this
+            could be a hypothesis whose squared error was within some tolerance
+            of the best fit's square error, or whose likelihood was within some
+            maximum Bayes factor of the max likelihood hypothesis.
+        best: The max likelihood hypothesis. The hypothesis that had the lowest
+            squared error, or the best fitting score.
+        high: The hypothesis with the larger parameter whose cost or score was
+            still "close to" the cost of the best hypothesis. For example, this
+            could be a hypothesis whose squared error was within some tolerance
+            of the best fit's square error, or whose likelihood was within some
+            maximum Bayes factor of the max likelihood hypothesis.
     """
     low: float
     best: float
     high: float
+
+    def __repr__(self) -> str:
+        return f'sinter.Fit(low={self.low!r}, best={self.best!r}, high={self.high!r})'
 
 
 def fit_line_y_at_x(*,
@@ -167,24 +211,35 @@ def fit_line_y_at_x(*,
                     ys: Sequence[float],
                     target_x: float,
                     max_extra_squared_error: float) -> 'sinter.Fit':
-    """Performs a line fit of the given points, focusing on the line's value for y at a given x coordinate.
+    """Performs a line fit, focusing on the line's y coord at a given x coord.
 
-    Finds the y value at the given x of the best fit, but also the minimum and maximum
-    values for y at the given x amongst all possible line fits whose squared error cost
-    is within the given `max_extra_squared_error` cost of the best fit.
+    Finds the y value at the given x of the best fit, but also the minimum and
+    maximum values for y at the given x amongst all possible line fits whose
+    squared error cost is within the given `max_extra_squared_error` cost of the
+    best fit.
 
     Args:
         xs: The x coordinates of points to fit.
         ys: The y coordinates of points to fit.
-        target_x: The reported fit values are the value of y at this x coordinate.
+        target_x: The fit values are the value of y at this x coordinate.
         max_extra_squared_error: When computing the low and high fits, this is
             the maximum additional squared error that can be introduced by
             varying the slope away from the best fit.
 
     Returns:
-        A sinter.Fit containing the best fit for y at the given x, as well as low
-        and high fits that are as far as possible from the best fit while respective
-        the given max_extra_squared_error.
+        A sinter.Fit containing the best fit for y at the given x, as well as
+        low and high fits that are as far as possible from the best fit while
+        respecting the given max_extra_squared_error.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.fit_line_y_at_x(
+        ...     xs=[1, 2, 3],
+        ...     ys=[10, 12, 14],
+        ...     target_x=4,
+        ...     max_extra_squared_error=1,
+        ... )
+        sinter.Fit(low=14.47247314453125, best=16.0, high=17.52752685546875)
     """
 
     # Local import to reduce initial cost of importing sinter.
@@ -212,8 +267,13 @@ def fit_line_slope(*,
     """Performs a line fit of the given points, focusing on the line's slope.
 
     Finds the slope of the best fit, but also the minimum and maximum slopes
-    for line fits whose squared error cost is within the given `max_extra_squared_error`
-    cost of the best fit.
+    for line fits whose squared error cost is within the given
+    `max_extra_squared_error` cost of the best fit.
+
+    Note that the extra squared error is computed while including a specific
+    offset of some specific line. So the low/high estimates are for specific
+    lines, not for the general class of lines with a given slope, adding
+    together the contributions of all lines in that class.
 
     Args:
         xs: The x coordinates of points to fit.
@@ -226,6 +286,15 @@ def fit_line_slope(*,
         A sinter.Fit containing the best fit, as well as low and high fits that
         are as far as possible from the best fit while respective the given
         max_extra_squared_error.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.fit_line_slope(
+        ...     xs=[1, 2, 3],
+        ...     ys=[10, 12, 14],
+        ...     max_extra_squared_error=1,
+        ... )
+        sinter.Fit(low=1.2928924560546875, best=2.0, high=2.7071075439453125)
     """
     # Local import to reduce initial cost of importing sinter.
     from scipy.stats import linregress
@@ -249,18 +318,36 @@ def fit_binomial(
         num_shots: int,
         num_hits: int,
         max_likelihood_factor: float) -> 'sinter.Fit':
-    """Compute the (min, max) probabilities within the given ratio of the max likelihood hypothesis.
+    """Determine hypothesis probabilities compatible with the given hit ratio.
+
+    The result includes the best fit (the max likelihood hypothis) as well as
+    the smallest and largest probabilities whose likelihood is within the given
+    factor of the maximum likelihood hypothesis.
 
     Args:
         num_shots: The number of samples that were taken.
         num_hits: The number of hits that were seen in the samples.
-        max_likelihood_factor: The maximum Bayes factor between the low,high hypotheses and
-            the best hypothesis (the max likelihood hypothesis). This value should be
-            larger than 1 (as opposed to between 0 and 1).
+        max_likelihood_factor: The maximum Bayes factor between the low/high
+            hypotheses and the best hypothesis (the max likelihood hypothesis).
+            This value should be larger than 1 (as opposed to between 0 and 1).
 
     Returns:
-        A `sinter.Fit` containing the max likelihood h
-        A (min_hypothesis_probability, max_hypothesis_probability) tuple.
+        A `sinter.Fit` with the low, best, and high hypothesis probabilities.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.fit_binomial(
+        ...     num_shots=100_000_000,
+        ...     num_hits=2,
+        ...     max_likelihood_factor=1000,
+        ... )
+        sinter.Fit(low=2e-10, best=2e-08, high=1.259e-07)
+        >>> sinter.fit_binomial(
+        ...     num_shots=10,
+        ...     num_hits=5,
+        ...     max_likelihood_factor=9,
+        ... )
+        sinter.Fit(low=0.202, best=0.5, high=0.798)
     """
     if max_likelihood_factor < 1:
         raise ValueError(f'max_likelihood_factor={max_likelihood_factor} < 1')
@@ -312,6 +399,30 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float
         Or, in other words, if a shot consists of N rounds which V independent
         observables must survive, then R is like the per-round failure for
         any of the observables.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.shot_error_rate_to_piece_error_rate(
+        ...     shot_error_rate=0.1,
+        ...     pieces=2,
+        ... )
+        0.05278640450004207
+        >>> sinter.shot_error_rate_to_piece_error_rate(
+        ...     shot_error_rate=0.05278640450004207,
+        ...     pieces=1 / 2,
+        ... )
+        0.10000000000000003
+        >>> sinter.shot_error_rate_to_piece_error_rate(
+        ...     shot_error_rate=1e-9,
+        ...     pieces=100,
+        ... )
+        1.000000082740371e-11
+        >>> sinter.shot_error_rate_to_piece_error_rate(
+        ...     shot_error_rate=0.6,
+        ...     pieces=10,
+        ...     values=2,
+        ... )
+        0.12052311142021144
     """
     if not (0 <= shot_error_rate <= 1):
         raise ValueError(f'need (0 <= shot_error_rate={shot_error_rate} <= 1)')
@@ -343,6 +454,25 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float
 
 
 def comma_separated_key_values(path: str) -> Dict[str, Any]:
+    """Converts paths like 'folder/d=5,r=3.stim' into dicts like {'d':5,'r':3}.
+
+    On the command line, specifying `--metadata_func auto` results in this
+    method being used to extra metadata from the circuit file paths. Integers
+    and floats will be parsed into their values, instead of being stored as
+    strings.
+
+    Args:
+        path: A file path where the name of the file has a series of terms like
+            'a=b' separated by commas and ending in '.stim'.
+
+    Returns:
+        A dictionary from named keys to parsed values.
+
+    Examples:
+        >>> import sinter
+        >>> sinter.comma_separated_key_values("folder/d=5,r=3.5,x=abc.stim")
+        {'d': 5, 'r': 3.5, 'x': 'abc'}
+    """
     name = pathlib.Path(path).name
     if '.' in name:
         name = name[:name.rindex('.')]

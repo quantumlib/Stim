@@ -7,7 +7,7 @@
 #########################################################
 # Example usage (from repo root):
 #
-# ./glue/python/overwrite_dev_version_with_date.sh
+# ./dev/overwrite_dev_versions_with_date.sh
 #########################################################
 
 import os
@@ -35,14 +35,17 @@ def main():
     package_setup_files = [
         "setup.py",
         "glue/cirq/setup.py",
+        "glue/cirq/__init__.py",
+        "glue/zx/__init__.py",
         "glue/zx/setup.py",
         "glue/sample/setup.py",
+        "glue/sample/__init__.py",
     ]
     for path in package_setup_files:
         with open(path) as f:
             content = f.read()
         assert maj_min_version_line in content
-        content = content.replace(maj_min_version_line, f"version = '{new_version}'")
+        content = content.replace(maj_min_version_line, f"__version__ = '{new_version}'")
         with open(path, 'w') as f:
             print(content, file=f, end='')
 

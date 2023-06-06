@@ -25,13 +25,13 @@ MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
-version = '1.12.dev0'
+__version__ = '1.12.dev0'
 
 if sys.platform.startswith('win'):
     common_compile_args = [
         '/std:c++17',
         '/O2',
-        f'/DVERSION_INFO={version}',
+        f'/DVERSION_INFO={__version__}',
     ]
     arch_avx = ['/arch:AVX2']
     arch_sse = ['/arch:SSE2']
@@ -42,7 +42,7 @@ else:
         '-fno-strict-aliasing',
         '-O3',
         '-g0',
-        f'-DVERSION_INFO={version}',
+        f'-DVERSION_INFO={__version__}',
     ]
     arch_avx = ['-mavx2']
     arch_sse = ['-msse2', '-mno-avx2']
@@ -99,7 +99,7 @@ with open('glue/python/README.md', encoding='UTF-8') as f:
 
 setup(
     name='stim',
-    version=version,
+    version=__version__,
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',

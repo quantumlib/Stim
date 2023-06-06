@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class CollectionOptions:
-    """Configures how data is collected for a decoding problem.
+    """Describes options for how data is collected for a decoding problem.
 
     Attributes:
         max_shots: Defaults to None (unused). Stops the sampling process
@@ -51,7 +51,45 @@ class CollectionOptions:
             raise ValueError(
                 f'max_batch_seconds={self.max_batch_seconds} is not None and max_batch_seconds <= 0')
 
+    def __repr__(self) -> str:
+        terms = []
+        if self.max_shots is not None:
+            terms.append(f'max_shots={self.max_shots!r}')
+        if self.max_errors is not None:
+            terms.append(f'max_errors={self.max_errors!r}')
+        if self.start_batch_size is not None:
+            terms.append(f'start_batch_size={self.start_batch_size!r}')
+        if self.max_batch_size is not None:
+            terms.append(f'max_batch_size={self.max_batch_size!r}')
+        if self.max_batch_seconds is not None:
+            terms.append(f'max_batch_seconds={self.max_batch_seconds!r}')
+        return f'sinter.CollectionOptions({", ".join(terms)})'
+
     def combine(self, other: 'sinter.CollectionOptions') -> 'sinter.CollectionOptions':
+        """Returns a combination of multiple collection options.
+
+        All fields are combined by taking the minimum from both collection
+        options objects, with None treated as being infinitely large.
+
+        Args:
+            other: The collections options to combine with.
+
+        Returns:
+            The combined collection options.
+
+        Examples:
+            >>> import sinter
+            >>> a = sinter.CollectionOptions(
+            ...    max_shots=1_000_000,
+            ...    start_batch_size=100,
+            ... )
+            >>> b = sinter.CollectionOptions(
+            ...    max_shots=100_000,
+            ...    max_errors=100,
+            ... )
+            >>> a.combine(b)
+            sinter.CollectionOptions(max_shots=100000, max_errors=100, start_batch_size=100)
+        """
         return CollectionOptions(
             max_shots=nullable_min(self.max_shots, other.max_shots),
             max_errors=nullable_min(self.max_errors, other.max_errors),

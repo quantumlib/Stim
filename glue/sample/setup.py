@@ -19,11 +19,11 @@ with open('README.md', encoding='UTF-8') as f:
 with open('requirements.txt', encoding='UTF-8') as f:
     requirements = [line.split()[0] for line in f.read().splitlines()]
 
-version = '1.12.dev0'
+__version__ = '1.12.dev0'
 
 setup(
     name='sinter',
-    version=version,
+    version=__version__,
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     license='Apache 2',
