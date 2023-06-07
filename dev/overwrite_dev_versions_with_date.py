@@ -24,7 +24,7 @@ def main():
     # (Requires the existing version to have a 'dev' suffix.)
     # (Uses the timestamp of the HEAD commit, to ensure consistency when run multiple times.)
     with open('setup.py') as f:
-        maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^version = '[^']+'", line)]
+        maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^__version__ = '[^']+'", line)]
         maj_version, min_version, patch = maj_min_version_line.split()[-1].strip("'").split('.')
         if 'dev' not in patch:
             return  # Do nothing for non-dev versions.
