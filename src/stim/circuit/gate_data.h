@@ -33,7 +33,6 @@
 
 namespace stim {
 
-struct CircuitInstruction;
 struct Tableau;
 
 constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
@@ -364,15 +363,6 @@ struct GateDataMap {
 };
 
 extern const GateDataMap GATE_DATA;
-
-void decompose_mpp_operation(
-    const CircuitInstruction &target_data,
-    size_t num_qubits,
-    const std::function<void(
-        const CircuitInstruction &h_xz,
-        const CircuitInstruction &h_yz,
-        const CircuitInstruction &cnot,
-        const CircuitInstruction &meas)> &callback);
 
 }  // namespace stim
 

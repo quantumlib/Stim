@@ -24,6 +24,9 @@ namespace stim {
 /// Stores a record of multiple measurement streams that can be looked up and written to the external world.
 ///
 /// Results that have been written and are further back than `max_lookback` may be discarded from memory.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct MeasureRecordBatch {
     size_t num_shots;
     /// How far back into the measurement record a circuit being simulated may look.
@@ -38,10 +41,10 @@ struct MeasureRecordBatch {
     size_t written;
     /// For performance reasons, measurement data given to store may include non-zero values past the data corresponding
     /// to the number of expected shots. AND-ing the data with this mask fixes the problem.
-    simd_bits<MAX_BITWORD_WIDTH> shot_mask;
+    simd_bits<W> shot_mask;
     /// The 2-dimensional block of bits storing the measurement results from each separate measurement stream.
     /// Major index is measurement index, minor index is shot index.
-    simd_bit_table<MAX_BITWORD_WIDTH> storage;
+    simd_bit_table<W> storage;
 
     /// Constructs an empty MeasureRecordBatch configured for the given max_lookback and number of shots.
     MeasureRecordBatch(size_t num_shots, size_t max_lookback);
@@ -54,21 +57,21 @@ struct MeasureRecordBatch {
     ///
     /// For performance reasons, they may not be written until a large enough block has been accumulated.
     void intermediate_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample);
+        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Forces measurements to be written to the given writer, and to tell the writer the measurements are ending.
     void final_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample);
+        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Looks up a historical batch measurement.
     ///
     /// Returns:
     ///     A reference into the storage table, with the bit at offset k corresponding to the measurement from stream k.
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> lookback(size_t lookback) const;
+    simd_bits_range_ref<W> lookback(size_t lookback) const;
     /// Writes a zero'd result into the record and returns a reference to it to edit.
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> record_zero_result_to_edit();
+    simd_bits_range_ref<W> record_zero_result_to_edit();
     /// Xors a batch measurement result into pre-reserved noisy storage.
-    void xor_record_reserved_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result);
+    void xor_record_reserved_result(simd_bits_range_ref<W> result);
     /// Appends a batch measurement result into storage.
-    void record_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result);
+    void record_result(simd_bits_range_ref<W> result);
     /// Reserves space for storing measurement results. Initializes bits to be noisy with the given probability.
     void reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng);
     /// Ensures there is enough space for storing a number of measurement results, without moving memory.
@@ -80,5 +83,7 @@ struct MeasureRecordBatch {
 };
 
 }  // namespace stim
+
+#include "stim/io/measure_record_batch.inl"
 
 #endif

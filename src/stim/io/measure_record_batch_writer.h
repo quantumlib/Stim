@@ -42,10 +42,25 @@ struct MeasureRecordBatchWriter {
     ///
     /// Args:
     ///     bits: The measurement results. The bit at offset k is the bit for the writer at offset k.
-    void batch_write_bit(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits);
+    template <size_t W>
+    void batch_write_bit(simd_bits_range_ref<W> bits) {
+        if (output_format == SAMPLE_FORMAT_PTB64) {
+            uint8_t *p = bits.u8;
+            for (auto &writer : writers) {
+                uint8_t *n = p + 8;
+                writer->write_bytes({p, n});
+                p = n;
+            }
+        } else {
+            for (size_t k = 0; k < writers.size(); k++) {
+                writers[k]->write_bit(bits[k]);
+            }
+        }
+    }
+
     /// Writes multiple separate measurement results to each MeasureRecordWriter.
     ///
-    /// This method can be called after calling `batch_write_bit`, but for performance reasons it is recommended to not
+    /// This method can be called after calling `batch_write_bit<W>`, but for performance reasons it is recommended to not
     /// do this since it can result in the individual writers doing extra work due to not being on byte boundaries.
     ///
     /// Args:
@@ -54,7 +69,24 @@ struct MeasureRecordBatchWriter {
     ///         writer at offset k.
     ///     num_major_u64: The number of measurement results (divided by 64) for each writer. The actual number of
     ///         results is required to be a multiple of 64 for performance reasons.
-    void batch_write_bytes(const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_u64);
+    template <size_t W>
+    void batch_write_bytes(const simd_bit_table<W> &table, size_t num_major_u64) {
+        if (output_format == SAMPLE_FORMAT_PTB64) {
+            for (size_t k = 0; k < writers.size(); k++) {
+                for (size_t w = 0; w < num_major_u64; w++) {
+                    uint8_t *p = table.data.u8 + (k * 8) + table.num_minor_u8_padded() * w;
+                    writers[k]->write_bytes({p, p + 8});
+                }
+            }
+        } else {
+            auto transposed = table.transposed();
+            for (size_t k = 0; k < writers.size(); k++) {
+                uint8_t *p = transposed[k].u8;
+                writers[k]->write_bytes({p, p + num_major_u64 * 8});
+            }
+        }
+    }
+
     /// Tells each writer to finish up, then concatenates all of their data into the `out` stream and cleans up.
     void write_end();
 };

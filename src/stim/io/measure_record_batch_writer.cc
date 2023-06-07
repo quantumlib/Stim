@@ -61,38 +61,6 @@ void MeasureRecordBatchWriter::begin_result_type(char result_type) {
     }
 }
 
-void MeasureRecordBatchWriter::batch_write_bit(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits) {
-    if (output_format == SAMPLE_FORMAT_PTB64) {
-        uint8_t *p = bits.u8;
-        for (auto &writer : writers) {
-            uint8_t *n = p + 8;
-            writer->write_bytes({p, n});
-            p = n;
-        }
-    } else {
-        for (size_t k = 0; k < writers.size(); k++) {
-            writers[k]->write_bit(bits[k]);
-        }
-    }
-}
-
-void MeasureRecordBatchWriter::batch_write_bytes(const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_u64) {
-    if (output_format == SAMPLE_FORMAT_PTB64) {
-        for (size_t k = 0; k < writers.size(); k++) {
-            for (size_t w = 0; w < num_major_u64; w++) {
-                uint8_t *p = table.data.u8 + (k * 8) + table.num_minor_u8_padded() * w;
-                writers[k]->write_bytes({p, p + 8});
-            }
-        }
-    } else {
-        auto transposed = table.transposed();
-        for (size_t k = 0; k < writers.size(); k++) {
-            uint8_t *p = transposed[k].u8;
-            writers[k]->write_bytes({p, p + num_major_u64 * 8});
-        }
-    }
-}
-
 void MeasureRecordBatchWriter::write_end() {
     for (auto &writer : writers) {
         writer->write_end();

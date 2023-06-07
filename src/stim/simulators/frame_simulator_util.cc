@@ -58,18 +58,18 @@ void rerun_frame_sim_while_streaming_dets_to_disk(
             if (sim.det_record.unwritten >= WRITE_SIZE) {
                 assert(sim.det_record.stored == WRITE_SIZE);
                 assert(sim.det_record.unwritten == WRITE_SIZE);
-                writer.batch_write_bytes(sim.det_record.storage, WRITE_SIZE >> 6);
+                writer.batch_write_bytes<MAX_BITWORD_WIDTH>(sim.det_record.storage, WRITE_SIZE >> 6);
                 sim.det_record.clear();
             }
         }
     });
     for (size_t k = sim.det_record.stored - sim.det_record.unwritten; k < sim.det_record.stored; k++) {
-        writer.batch_write_bit(sim.det_record.storage[k]);
+        writer.batch_write_bit<MAX_BITWORD_WIDTH>(sim.det_record.storage[k]);
     }
     if (append_observables) {
         writer.begin_result_type('L');
         for (size_t k = 0; k < circuit_stats.num_observables; k++) {
-            writer.batch_write_bit(sim.obs_record[k]);
+            writer.batch_write_bit<MAX_BITWORD_WIDTH>(sim.obs_record[k]);
         }
     }
     writer.write_end();

@@ -17,6 +17,7 @@
 #include <set>
 
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
 
 using namespace stim;
@@ -117,7 +118,7 @@ bool TableauSimulator::is_deterministic_z(size_t target) const {
 }
 
 void TableauSimulator::MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation(
+    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
         target_data,
         inv_state.num_qubits,
         [&](const CircuitInstruction &h_xz,

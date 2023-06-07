@@ -1,6 +1,7 @@
 src/stim.cc
 src/stim/arg_parse.cc
 src/stim/circuit/circuit.cc
+src/stim/circuit/circuit_instruction.cc
 src/stim/circuit/gate_data.cc
 src/stim/circuit/gate_data_annotations.cc
 src/stim/circuit/gate_data_blocks.cc
@@ -49,9 +50,7 @@ src/stim/gen/gen_color_code.cc
 src/stim/gen/gen_rep_code.cc
 src/stim/gen/gen_surface_code.cc
 src/stim/io/measure_record.cc
-src/stim/io/measure_record_batch.cc
 src/stim/io/measure_record_batch_writer.cc
-src/stim/io/measure_record_reader.cc
 src/stim/io/measure_record_writer.cc
 src/stim/io/raii_file.cc
 src/stim/io/sparse_shot.cc
