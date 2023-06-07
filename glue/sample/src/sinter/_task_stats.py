@@ -7,7 +7,29 @@ from sinter._csv_out import csv_line
 
 @dataclasses.dataclass(frozen=True)
 class TaskStats:
-    """Results of sampling from a decoding problem."""
+    """Statistics sampled from a task.
+
+    The rows in the CSV files produced by sinter correspond to instances of
+    `sinter.TaskStats`. For example, a row can be produced by printing a
+    `sinter.TaskStats`.
+
+    Attributes:
+        strong_id: The cryptographically unique identifier of the task, from
+            `sinter.Task.strong_id()`.
+        decoder: The name of the decoder that was used to decode the task.
+            Errors are counted when this decoder made a wrong prediction.
+        json_metadata: A JSON-encodable value (such as a dictionary from strings
+            to integers) that were included with the task in order to describe
+            what the task was. This value can be a huge variety of things, but
+            typically it will be a dictionary with fields such as 'd' for the
+            code distance.
+        shots: Number of times the task was sampled.
+        errors: Number of times a sample resulted in an error.
+        discards: Number of times a sample resulted in a discard. Note that
+            discarded a task is not an error.
+        seconds: The amount of CPU core time spent sampling the tasks, in
+            seconds.
+    """
 
     # Information describing the problem that was sampled.
     strong_id: str
@@ -33,6 +55,22 @@ class TaskStats:
         )
 
     def to_anon_stats(self) -> AnonTaskStats:
+        """Returns a `sinter.AnonTaskStats` with the same statistics.
+
+        Examples:
+            >>> import sinter
+            >>> stat = sinter.TaskStats(
+            ...     strong_id='test',
+            ...     json_metadata={'a': [1, 2, 3]},
+            ...     decoder='pymatching',
+            ...     shots=22,
+            ...     errors=3,
+            ...     discards=4,
+            ...     seconds=5,
+            ... )
+            >>> stat.to_anon_stats()
+            sinter.AnonTaskStats(shots=22, errors=3, discards=4, seconds=5)
+        """
         return AnonTaskStats(
             shots=self.shots,
             errors=self.errors,
@@ -41,6 +79,24 @@ class TaskStats:
         )
 
     def to_csv_line(self) -> str:
+        """Converts into a line that can be printed into a CSV file.
+
+        Examples:
+            >>> import sinter
+            >>> stat = sinter.TaskStats(
+            ...     strong_id='test',
+            ...     json_metadata={'a': [1, 2, 3]},
+            ...     decoder='pymatching',
+            ...     shots=22,
+            ...     errors=3,
+            ...     discards=4,
+            ...     seconds=5,
+            ... )
+            >>> print(sinter.CSV_HEADER)
+                 shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
+            >>> print(stat.to_csv_line())
+                    22,         3,         4,       5,pymatching,test,"{""a"":[1,2,3]}"
+        """
         return csv_line(
             shots=self.shots,
             errors=self.errors,
@@ -52,3 +108,14 @@ class TaskStats:
 
     def __str__(self):
         return self.to_csv_line()
+
+    def __repr__(self) -> str:
+        terms = []
+        terms.append(f'strong_id={self.strong_id!r}')
+        terms.append(f'decoder={self.decoder!r}')
+        terms.append(f'json_metadata={self.json_metadata!r}')
+        terms.append(f'shots={self.shots!r}')
+        terms.append(f'errors={self.errors!r}')
+        terms.append(f'discards={self.discards!r}')
+        terms.append(f'seconds={self.seconds!r}')
+        return f'sinter.TaskStats({", ".join(terms)})'

@@ -1,7 +1,7 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
 # (This a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
+from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
 if TYPE_CHECKING:
     import io
     import pathlib
@@ -40,7 +40,6 @@ class Circuit:
         ...    DETECTOR rec[-1] rec[-2]
         ... ''').compile_detector_sampler().sample(shots=1)
         array([[False]])
-
     """
     def __add__(
         self,

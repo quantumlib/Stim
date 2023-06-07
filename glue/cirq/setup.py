@@ -17,11 +17,11 @@ from setuptools import setup
 with open('README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
-version = '1.12.dev0'
+__version__ = '1.12.dev0'
 
 setup(
     name='stimcirq',
-    version=version,
+    version=__version__,
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',

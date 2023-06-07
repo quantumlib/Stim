@@ -21,6 +21,18 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class Progress:
+    """Describes statistics and status messages from ongoing sampling.
+
+    This is the type yielded by `sinter.iter_collect`, and given to the
+    `progress_callback` argument of `sinter.collect`.
+
+    Attributes:
+        new_stats: New sampled statistics collected since the last progress
+            update.
+        status_message: A free form human readable string describing the current
+            collection status, such as the number of tasks left and the
+            estimated time to completion for each task.
+    """
     new_stats: Tuple[TaskStats, ...]
     status_message: str
 
@@ -39,7 +51,11 @@ def iter_collect(*,
                  start_batch_size: Optional[int] = None,
                  custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
                  ) -> Iterator['sinter.Progress']:
-    """Collects error correction statistics using multiple worker processes.
+    """Iterates error correction statistics collected from worker processes.
+
+    It is important to iterate until the sequence ends, or worker processes will
+    be left alive. The values yielded during iteration are progress updates from
+    the workers.
 
     Note: if max_batch_size and max_batch_seconds are both not used (or
     explicitly set to None), a default batch-size-limiting mechanism will be
@@ -82,9 +98,48 @@ def iter_collect(*,
             'pymatching' and 'fusion_blossom', can be used.
 
     Yields:
-        sinter.SamplerStats values recording incremental statistical data
-        as it is collected by workers.
+        sinter.Progress instances recording incremental statistical data as it
+        is collected by workers.
+
+    Examples:
+        >>> import sinter
+        >>> import stim
+        >>> tasks = [
+        ...     sinter.Task(
+        ...         circuit=stim.Circuit.generated(
+        ...             'repetition_code:memory',
+        ...             distance=5,
+        ...             rounds=5,
+        ...             before_round_data_depolarization=1e-3,
+        ...         ),
+        ...         json_metadata={'d': 5},
+        ...     ),
+        ...     sinter.Task(
+        ...         circuit=stim.Circuit.generated(
+        ...             'repetition_code:memory',
+        ...             distance=7,
+        ...             rounds=5,
+        ...             before_round_data_depolarization=1e-3,
+        ...         ),
+        ...         json_metadata={'d': 7},
+        ...     ),
+        ... ]
+        >>> iterator = sinter.iter_collect(
+        ...     tasks=tasks,
+        ...     decoders=['vacuous'],
+        ...     num_workers=2,
+        ...     max_shots=100,
+        ... )
+        >>> total_shots = 0
+        >>> for progress in iterator:
+        ...     for stat in progress.new_stats:
+        ...         total_shots += stat.shots
+        >>> print(total_shots)
+        200
     """
+    if isinstance(decoders, str):
+        decoders = [decoders]
+
     if hint_num_tasks is None:
         try:
             # noinspection PyTypeChecker
@@ -155,7 +210,8 @@ def collect(*,
             hint_num_tasks: Optional[int] = None,
             custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
             ) -> List['sinter.TaskStats']:
-    """
+    """Collects statistics from the given tasks, using multiprocessing.
+
     Args:
         num_workers: The number of worker processes to use.
         tasks: Decoding problems to sample.
@@ -201,15 +257,50 @@ def collect(*,
             taken per shot. This information is then used to predict the
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
-        custom_decoders: Custom decoders that can be used if requested by name.
-            If not specified, only decoders built into sinter, such as
-            'pymatching' and 'fusion_blossom', can be used.
+        custom_decoders: Named child classes of `sinter.decoder`, that can be
+            used if requested by name by a task or by the decoders list.
+            If not specified, only decoders with support built into sinter, such
+            as 'pymatching' and 'fusion_blossom', can be used.
 
     Returns:
         A list of sample statistics, one from each problem. The list is not in
         any specific order. This is the same data that would have been written
         to a CSV file, but aggregated so that each problem has exactly one
         sample statistic instead of potentially multiple.
+
+    Examples:
+        >>> import sinter
+        >>> import stim
+        >>> tasks = [
+        ...     sinter.Task(
+        ...         circuit=stim.Circuit.generated(
+        ...             'repetition_code:memory',
+        ...             distance=5,
+        ...             rounds=5,
+        ...             before_round_data_depolarization=1e-3,
+        ...         ),
+        ...         json_metadata={'d': 5},
+        ...     ),
+        ...     sinter.Task(
+        ...         circuit=stim.Circuit.generated(
+        ...             'repetition_code:memory',
+        ...             distance=7,
+        ...             rounds=5,
+        ...             before_round_data_depolarization=1e-3,
+        ...         ),
+        ...         json_metadata={'d': 7},
+        ...     ),
+        ... ]
+        >>> stats = sinter.collect(
+        ...     tasks=tasks,
+        ...     decoders=['vacuous'],
+        ...     num_workers=2,
+        ...     max_shots=100,
+        ... )
+        >>> for stat in sorted(stats, key=lambda e: e.json_metadata['d']):
+        ...     print(stat.json_metadata, stat.shots)
+        {'d': 5} 100
+        {'d': 7} 100
     """
     # Load existing data.
     additional_existing_data = ExistingData()
@@ -284,6 +375,32 @@ def post_selection_mask_from_predicate(
 
 
 def post_selection_mask_from_4th_coord(dem: Union[stim.Circuit, stim.DetectorErrorModel]) -> np.ndarray:
+    """Returns a mask that postselects detector's with non-zero 4th coordinate.
+
+    This method is a leftover from before the existence of the command line
+    argument `--postselected_detectors_predicate`, when
+    `--postselect_detectors_with_non_zero_4th_coord` was the only way to do
+    post selection of detectors.
+
+    Args:
+        dem: The detector error model to pull coordinate data from.
+
+    Returns:
+        A bit packed numpy array where detectors with non-zero 4th coordinate
+        data have a True bit at their corresponding index.
+
+    Examples:
+        >>> import sinter
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     detector(1, 2, 3) D0
+        ...     detector(1, 1, 1, 1) D1
+        ...     detector(1, 1, 1, 0) D2
+        ...     detector(1, 1, 1, 999) D80
+        ... ''')
+        >>> sinter.post_selection_mask_from_4th_coord(dem)
+        array([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], dtype=uint8)
+    """
     num_dets = dem.num_detectors
     post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
     for k, coord in dem.get_detector_coordinates().items():

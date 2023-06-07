@@ -4,6 +4,7 @@ from typing import Union
 import numpy as np
 import pytest
 
+import sinter
 from sinter._probability_util import (
     binary_search, log_binomial, log_factorial, fit_line_y_at_x, fit_line_slope,
     binary_intercept, least_squares_through_point, fit_binomial, shot_error_rate_to_piece_error_rate,
@@ -273,3 +274,8 @@ def test_shot_error_rate_to_piece_error_rate_unions():
         ),
         0.010453280306648605,
         rtol=1e-5)
+
+
+def test_fit_repr():
+    v = sinter.Fit(low=0.25, best=1, high=10)
+    assert eval(repr(v), {"sinter": sinter}) == v
