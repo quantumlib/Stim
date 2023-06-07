@@ -1,3 +1,4 @@
+__version__ = '1.12.dev0'
 from ._external_stabilizer import (
     ExternalStabilizer,
 )

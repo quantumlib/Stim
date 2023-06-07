@@ -59,6 +59,39 @@ class LooseCompare:
 
 
 def better_sorted_str_terms(val: Any) -> Any:
+    """A function that orders "a10000" after "a9", instead of before.
+
+    Normally, sorting strings sorts them lexicographically, treating numbers so
+    that "1999999" ends up being less than "2". This method splits the string
+    into a tuple of text pairs and parsed number parts, so that sorting by this
+    key puts "2" before "1999999".
+
+    Because this method is intended for use in plotting, where it's more
+    important to see a bad result than to see nothing, it returns a type that
+    tries to be comparable to everything.
+
+    Args:
+        val: The value to convert into a value with a better sorting order.
+
+    Returns:
+        A custom type of object with a better sorting order.
+
+    Examples:
+        >>> import sinter
+        >>> items = [
+        ...    "distance=199999, rounds=3",
+        ...    "distance=2, rounds=3",
+        ...    "distance=199999, rounds=199999",
+        ...    "distance=2, rounds=199999",
+        ... ]
+        >>> for e in sorted(items, key=sinter.better_sorted_str_terms):
+        ...    print(e)
+        distance=2, rounds=3
+        distance=2, rounds=199999
+        distance=199999, rounds=3
+        distance=199999, rounds=199999
+    """
+
     if isinstance(val, tuple):
         return tuple(better_sorted_str_terms(e) for e in val)
     if not isinstance(val, str):

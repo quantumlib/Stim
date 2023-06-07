@@ -421,6 +421,10 @@ def _common_json_properties(stats: List['sinter.TaskStats']) -> Dict[str, Any]:
                 v = stat.json_metadata.get(k)
                 if v is None or isinstance(v, (float, str, int)):
                     vals[k].add(v)
+    if 'decoder' not in vals:
+        vals['decoder'] = set()
+        for stat in stats:
+            vals['decoder'].add(stat.decoder)
     return {k: next(iter(v)) for k, v in vals.items() if len(v) == 1}
 
 

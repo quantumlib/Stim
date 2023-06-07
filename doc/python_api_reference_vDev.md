@@ -1,6 +1,6 @@
 # Stim (Development Version) API Reference
 
-*CAUTION*: this API reference is for the in-development version of Stim.
+*CAUTION*: this API reference is for the in-development version of stim.
 Methods and arguments mentioned here may not be accessible in stable versions, yet.
 API references for stable versions are kept on the [stim github wiki](https://github.com/quantumlib/Stim/wiki)
 
@@ -347,7 +347,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.write_shot_data_file`](#stim.write_shot_data_file)
 ```python
 # Types used by the method definitions.
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
+from typing import overload, TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 import io
 import pathlib
 import numpy as np
@@ -391,7 +391,6 @@ class Circuit:
         ...    DETECTOR rec[-1] rec[-2]
         ... ''').compile_detector_sampler().sample(shots=1)
         array([[False]])
-
     """
 ```
 
