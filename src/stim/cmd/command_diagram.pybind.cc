@@ -46,8 +46,9 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
 
 void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c) {
     c.def("_repr_html_", [](const DiagramHelper &self) -> pybind11::object {
+        pybind11::object output = pybind11::none();
         if (self.type == DIAGRAM_TYPE_TEXT) {
-            return pybind11::cast("<pre>" + self.content + "</pre>");
+            output = pybind11::cast("<pre>" + self.content + "</pre>");
         }
         if (self.type == DIAGRAM_TYPE_SVG) {
             std::stringstream out;
@@ -55,17 +56,17 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
             out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
             write_data_as_base64_to(self.content.data(), self.content.size(), out);
             out << R"HTML("/></div>)HTML";
-            return pybind11::cast(out.str());
+            output = pybind11::cast(out.str());
         }
         if (self.type == DIAGRAM_TYPE_GLTF) {
             std::stringstream out;
             write_html_viewer_for_gltf_data(self.content, out);
-            return pybind11::cast(out.str());
+            output = pybind11::cast(out.str());
         }
         if (self.type == DIAGRAM_TYPE_HTML) {
-            return pybind11::cast(self.content);
+            output = pybind11::cast(self.content);
         }
-        return pybind11::none();
+        return output;
     });
     c.def("_repr_svg_", [](const DiagramHelper &self) -> pybind11::object {
         if (self.type != DIAGRAM_TYPE_SVG) {
