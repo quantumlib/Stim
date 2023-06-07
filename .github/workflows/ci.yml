@@ -313,8 +313,8 @@ jobs:
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: diff <(python dev/gen_stim_api_reference.py -dev) doc/python_api_reference_vDev.md
-      - run: diff <(python dev/gen_stub_file.py -dev) glue/python/src/stim/__init__.pyi
-      - run: diff <(python dev/gen_stub_file.py -dev) doc/stim.pyi
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) glue/python/src/stim/__init__.pyi
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) doc/stim.pyi
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
