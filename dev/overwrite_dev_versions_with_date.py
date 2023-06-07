@@ -35,11 +35,11 @@ def main():
     package_setup_files = [
         "setup.py",
         "glue/cirq/setup.py",
-        "glue/cirq/__init__.py",
-        "glue/zx/__init__.py",
+        "glue/cirq/stimcirq/__init__.py",
+        "glue/zx/stimzx/__init__.py",
         "glue/zx/setup.py",
         "glue/sample/setup.py",
-        "glue/sample/__init__.py",
+        "glue/sample/src/sinter/__init__.py",
     ]
     for path in package_setup_files:
         with open(path) as f:
