@@ -1271,10 +1271,10 @@ def plot_discard_rate(
     ax: 'plt.Axes',
     stats: 'Iterable[sinter.TaskStats]',
     x_func: Callable[[sinter.TaskStats], Any],
-    failure_units_per_shot_func: Callable[[sinter.TaskStats], Any] = <function <lambda> at 0x7f72ebcb0900>,
-    group_func: Callable[[sinter.TaskStats], ~TCurveId] = <function <lambda> at 0x7f72ebcb09a0>,
-    filter_func: Callable[[sinter.TaskStats], Any] = <function <lambda> at 0x7f72ebcb0a40>,
-    plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = <function <lambda> at 0x7f72ebcb0ae0>,
+    failure_units_per_shot_func: Callable[[sinter.TaskStats], Any] = lambda _: 1,
+    group_func: Callable[[sinter.TaskStats], ~TCurveId] = lambda _: None,
+    filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
+    plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
@@ -1322,11 +1322,11 @@ def plot_error_rate(
     ax: 'plt.Axes',
     stats: 'Iterable[sinter.TaskStats]',
     x_func: Callable[[sinter.TaskStats], Any],
-    failure_units_per_shot_func: Callable[[sinter.TaskStats], Any] = <function <lambda> at 0x7f72ebcb0cc0>,
-    failure_values_func: Callable[[sinter.TaskStats], Any] = <function <lambda> at 0x7f72ebcb0d60>,
-    group_func: Callable[[sinter.TaskStats], ~TCurveId] = <function <lambda> at 0x7f72ebcb0e00>,
-    filter_func: Callable[[sinter.TaskStats], Any] = <function <lambda> at 0x7f72ebcb0ea0>,
-    plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = <function <lambda> at 0x7f72ebcb0f40>,
+    failure_units_per_shot_func: Callable[[sinter.TaskStats], Any] = lambda _: 1,
+    failure_values_func: Callable[[sinter.TaskStats], Any] = lambda _: 1,
+    group_func: Callable[[sinter.TaskStats], ~TCurveId] = lambda _: None,
+    filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
+    plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.

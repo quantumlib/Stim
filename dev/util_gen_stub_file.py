@@ -212,7 +212,7 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
     has_setter = False
     is_normal_method = isinstance(obj, types.FunctionType)
     sig_name = ''
-    if is_normal_method:
+    if 'sinter' in full_name and is_normal_method:
         text = ''
         if term_name in getattr(parent, '__abstractmethods__', []):
             text += '@abc.abstractmethod\n'
@@ -231,6 +231,15 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
         text = text.replace('''Union[Dict[str, ForwardRef('JSON_TYPE')], List[ForwardRef('JSON_TYPE')], str, int, float]''', 'Any')
         text = text.replace("'sinter.Fit'", 'sinter.Fit')
 
+        # Replace default value lambdas with their source.
+        if 'lambda' in str(text):
+            for name, param in inspect.signature(obj).parameters.items():
+                if 'lambda' in str(param.default):
+                    _, lambda_src = inspect.getsource(param.default).split('lambda ')
+                    lambda_src = lambda_src.strip()
+                    assert lambda_src.endswith(',')
+                    lambda_src = 'lambda ' + lambda_src[:-1]
+                    text = text.replace(str(param.default), lambda_src)
 
         text = text.replace('numpy.', 'np.')
     elif is_method or is_property:
@@ -262,7 +271,7 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
             dataclass_prop += '(frozen=True)'
         out_obj.lines.append(dataclass_prop)
 
-    out_obj.lines.append(text.replace('._stim_avx2', ''))
+    out_obj.lines.append(text.replace('._stim_avx2', '').replace('._stim_sse2', ''))
     if has_setter:
         if '->' in sig_name:
             setter_type = sig_name[sig_name.index('->') + 2:].strip().replace('._stim_avx2', '')
