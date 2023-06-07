@@ -48,7 +48,6 @@ cc_library(
         "-std=c++17",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_binary(
@@ -60,7 +59,6 @@ cc_binary(
         "-O3",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_binary(
@@ -72,7 +70,6 @@ cc_binary(
         "-O3",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_test(
@@ -84,7 +81,6 @@ cc_test(
     ],
     data = glob(["testdata/**"]),
     includes = ["src/"],
-    linkopts = ["-lpthread"],
     deps = [
         "@gtest",
         "@gtest//:gtest_main",
@@ -103,7 +99,6 @@ cc_binary(
         "-DVERSION_INFO=0.0.dev0",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
     linkshared = 1,
     deps = ["@pybind11"],
 )

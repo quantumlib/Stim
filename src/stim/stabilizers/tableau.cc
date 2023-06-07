@@ -20,7 +20,6 @@
 #include <iostream>
 #include <map>
 #include <random>
-#include <thread>
 
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/vector_simulator.h"
@@ -449,7 +448,10 @@ PauliString Tableau::to_pauli_string() const {
 }
 
 Tableau Tableau::inverse(bool skip_signs) const {
-    Tableau result(num_qubits);
+    Tableau result(xs.xt.num_major_bits_padded());
+    result.num_qubits = num_qubits;
+    result.xs.num_qubits = num_qubits;
+    result.zs.num_qubits = num_qubits;
 
     // Transpose data with xx zz swap tweak.
     result.xs.xt.data = zs.zt.data;
@@ -478,26 +480,10 @@ Tableau Tableau::inverse(bool skip_signs) const {
 }
 
 void Tableau::do_transpose_quadrants() {
-    if (num_qubits >= 1024) {
-        std::thread t1([&]() {
-            xs.xt.do_square_transpose();
-        });
-        std::thread t2([&]() {
-            xs.zt.do_square_transpose();
-        });
-        std::thread t3([&]() {
-            zs.xt.do_square_transpose();
-        });
-        zs.zt.do_square_transpose();
-        t1.join();
-        t2.join();
-        t3.join();
-    } else {
-        xs.xt.do_square_transpose();
-        xs.zt.do_square_transpose();
-        zs.xt.do_square_transpose();
-        zs.zt.do_square_transpose();
-    }
+    xs.xt.do_square_transpose();
+    xs.zt.do_square_transpose();
+    zs.xt.do_square_transpose();
+    zs.zt.do_square_transpose();
 }
 
 Tableau Tableau::then(const Tableau &second) const {

@@ -1157,3 +1157,13 @@ TEST(tableau, unitary_vs_gate_data) {
         }
     }
 }
+
+TEST(Tableau, inverse_not_confused_by_size_padding) {
+    // Create a tableau where the avoid-quadratic-overhead padding causes it to pad over a simd word size boundary.
+    Tableau t(1);
+    t += Tableau(500);
+
+    // Check that inverting it doesn't produce garbage.
+    Tableau t_inv = t.inverse();
+    ASSERT_EQ(t_inv, t);
+}
