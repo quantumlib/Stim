@@ -14,12 +14,8 @@
 
 #include "stim/stabilizers/tableau_transposed_raii.h"
 
-#include <cmath>
 #include <cstring>
-#include <iostream>
 #include <map>
-#include <random>
-#include <thread>
 
 #include "stim/stabilizers/pauli_string.h"
 
