@@ -71,7 +71,7 @@ def parse_args(args: List[str]) -> Any:
                         type=int,
                         nargs=2,
                         default=None,
-                        help='Desired figure width in pixels.')
+                        help='Desired figure width and height in pixels.')
     parser.add_argument('--group_func',
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",

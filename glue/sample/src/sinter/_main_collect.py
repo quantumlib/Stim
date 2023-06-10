@@ -127,7 +127,7 @@ def parse_args(args: List[str]) -> Any:
                              '    Something that can be given to `bool` to get False (do not postselect) or True (yes postselect).\n'
                              'Examples:\n'
                              '''    --postselected_detectors_predicate "coords[2] == 0"\n'''
-                             '''    --postselected_observables_predicate "coords[3] < metadata['postselection_level']"\n''')
+                             '''    --postselected_detectors_predicate "coords[3] < metadata['postselection_level']"\n''')
     parser.add_argument('--postselected_observables_predicate',
                         type=str,
                         default='''False''',
