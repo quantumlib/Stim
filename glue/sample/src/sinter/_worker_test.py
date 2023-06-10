@@ -30,6 +30,7 @@ def test_worker_loop_infers_dem():
             num_shots=-1,
             postselected_observables_mask=None,
             postselection_mask=None,
+            split_errors=False,
         ))
         inp.put(None)
         worker_loop(tmp_dir, inp, out, None, 0)
@@ -69,6 +70,7 @@ def test_worker_loop_does_not_recompute_dem():
             num_shots=1000,
             postselected_observables_mask=None,
             postselection_mask=None,
+            split_errors=False,
         ))
         inp.put(None)
         worker_loop(tmp_dir, inp, out, None, 0)

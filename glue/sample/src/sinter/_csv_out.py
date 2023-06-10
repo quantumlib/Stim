@@ -1,3 +1,4 @@
+import collections
 import csv
 import io
 import json
@@ -37,6 +38,8 @@ def csv_line(*,
                                    sort_keys=True)
 
     shots = escape_csv(shots, 10)
+    if isinstance(errors, (dict, collections.Counter)):
+        errors = json.dumps(errors, separators=(',', ':'), sort_keys=True)
     errors = escape_csv(errors, 10)
     discards = escape_csv(discards, 10)
     seconds = escape_csv(seconds, 8)

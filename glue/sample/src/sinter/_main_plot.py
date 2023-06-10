@@ -23,6 +23,7 @@ def parse_args(args: List[str]) -> Any:
                         help='A python expression that determines whether a case is kept or not.\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -37,6 +38,7 @@ def parse_args(args: List[str]) -> Any:
                         help='A python expression that determines where points go on the x axis.\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -44,6 +46,7 @@ def parse_args(args: List[str]) -> Any:
                              '    Something that can be given to `float` to get a float.\n'
                              'Examples:\n'
                              '''    --x_func "metadata['p']"\n'''
+                             '''    --x_func m.p\n'''
                              '''    --x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
                         )
     parser.add_argument('--y_func',
@@ -54,6 +57,7 @@ def parse_args(args: List[str]) -> Any:
                              'by the "custom_y" type plot.'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -68,16 +72,13 @@ def parse_args(args: List[str]) -> Any:
                         nargs=2,
                         default=None,
                         help='Desired figure width in pixels.')
-    parser.add_argument('--fig_height',
-                        type=int,
-                        default=None,
-                        help='Desired figure height in pixels.')
     parser.add_argument('--group_func',
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",
                         help='A python expression that determines how points are grouped into curves.\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -85,6 +86,7 @@ def parse_args(args: List[str]) -> Any:
                              '    Something that can be given to `str` to get a useful string.\n'
                              'Examples:\n'
                              '''    --group_func "(decoder, metadata['d'])"\n'''
+                             '''    --group_func m.d\n'''
                              '''    --group_func "metadata['path'].split('/')[-2]"\n'''
                         )
     parser.add_argument('--failure_unit_name',
@@ -102,13 +104,14 @@ def parse_args(args: List[str]) -> Any:
                              'to be, otherwise.\n'
                              '\n'
                              'This value is used to rescale the logical error rate plots. For example, if there are 4\n'
-                             'failure units per shot then a shot error rate of 10% corresponds to a unit failure rate\n'
-                             'of 2.7129%. The conversion formula (assuming <50% error rates) is:\n'
+                             'failure units per shot then a shot error rate of 10%% corresponds to a unit failure rate\n'
+                             'of 2.7129%%. The conversion formula (assuming less than 50%% error rates) is:\n'
                              '\n'
                              '    P_unit = 0.5 - 0.5 * (1 - 2 * P_shot)**(1/units_per_shot)\n'
                              '\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -118,7 +121,8 @@ def parse_args(args: List[str]) -> Any:
                              '\n'
                              'Examples:\n'
                              '''    --failure_units_per_shot_func "metadata['rounds']"\n'''
-                             '''    --failure_units_per_shot_func "metadata['distance'] * 3"\n'''
+                             '''    --failure_units_per_shot_func m.r\n'''
+                             '''    --failure_units_per_shot_func "m.distance * 3"\n'''
                              '''    --failure_units_per_shot_func "10"\n'''
                         )
     parser.add_argument('--failure_values_func',
@@ -133,6 +137,7 @@ def parse_args(args: List[str]) -> Any:
                              '\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -153,6 +158,7 @@ def parse_args(args: List[str]) -> Any:
                              '    key: The group key (returned from --group_func) identifying the curve.\n'
                              '    stats: The list of sinter.TaskStats object in the group.\n'
                              '    metadata: (From one arbitrary data point in the group.) The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
                              '    decoder: (From one arbitrary data point in the group.) The decoder that decoded the data for the data point.\n'
                              '    strong_id: (From one arbitrary data point in the group.) The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: (From one arbitrary data point in the group.) The sinter.TaskStats object for the data point.\n'
@@ -160,7 +166,7 @@ def parse_args(args: List[str]) -> Any:
                              '    A dictionary to give to matplotlib plotting functions as a **kwargs argument.\n'
                              'Examples:\n'
                              """    --plot_args_func "'''{'label': 'curve #' + str(index), 'linewidth': 5}'''"\n"""
-                             """    --plot_args_func "'''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}'''"\n"""
+                             """    --plot_args_func "'''{'marker': 'ov*sp^<>8PhH+xXDd|'[index %% 18]}'''"\n"""
                         )
     parser.add_argument('--in',
                         type=str,
@@ -190,6 +196,9 @@ def parse_args(args: List[str]) -> Any:
                         help='Customize the Y axis label. '
                              'Prefix [log] for logarithmic scale. '
                              'Prefix [sqrt] for square root scale.')
+    parser.add_argument('--split_errors',
+                        action='store_true',
+                        help='When a stat has classified errors, this causes each classification to be a separate statistic.\n')
     parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
@@ -236,32 +245,32 @@ def parse_args(args: List[str]) -> Any:
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
     a.x_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, strong_id: {a.x_func}',
+        f'lambda *, stat, decoder, metadata, m, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',
         mode='eval'))
     if a.y_func is not None:
         a.y_func = eval(compile(
-            f'lambda *, stat, decoder, metadata, strong_id: {a.y_func}',
+            f'lambda *, stat, decoder, metadata, m, strong_id: {a.y_func}',
             filename='x_func:command_line_arg',
             mode='eval'))
     a.group_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, strong_id: {a.group_func}',
+        f'lambda *, stat, decoder, metadata, m, strong_id: {a.group_func}',
         filename='group_func:command_line_arg',
         mode='eval'))
     a.filter_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, strong_id: {a.filter_func}',
+        f'lambda *, stat, decoder, metadata, m, strong_id: {a.filter_func}',
         filename='filter_func:command_line_arg',
         mode='eval'))
     a.failure_units_per_shot_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, strong_id: {a.failure_units_per_shot_func}',
+        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_units_per_shot_func}',
         filename='failure_units_per_shot_func:command_line_arg',
         mode='eval'))
     a.failure_values_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, strong_id: {a.failure_values_func}',
+        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_values_func}',
         filename='failure_values_func:command_line_arg',
         mode='eval'))
     a.plot_args_func = eval(compile(
-        f'lambda *, index, key, stats, stat, decoder, metadata, strong_id: {a.plot_args_func}',
+        f'lambda *, index, key, stats, stat, decoder, metadata, m, strong_id: {a.plot_args_func}',
         filename='plot_args_func:command_line_arg',
         mode='eval'))
     return a
@@ -624,11 +633,28 @@ def _plot_helper(
     return fig, axs
 
 
+class _FieldToMetadataWrapper:
+    def __init__(self, d: Dict):
+        self.__private_d = d
+
+    def __getattr__(self, item):
+        if isinstance(self.__private_d, dict):
+            return self.__private_d.get(item, None)
+        return None
+
+
 def main_plot(*, command_line_args: List[str]):
     args = parse_args(command_line_args)
     total = ExistingData()
     for file in getattr(args, 'in'):
         total += ExistingData.from_file(file)
+
+    if args.split_errors:
+        total.data = {
+            s.strong_id: s
+            for v in total.data.values()
+            for s in v._split_errors()
+        }
 
     fig, _ = _plot_helper(
         samples=total,
@@ -636,31 +662,37 @@ def main_plot(*, command_line_args: List[str]):
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         x_func=lambda stat: args.x_func(
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         y_func=None if args.y_func is None else lambda stat: args.y_func(
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         filter_func=lambda stat: args.filter_func(
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         failure_units_per_shot_func=lambda stat: args.failure_units_per_shot_func(
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         failure_values_func=lambda stat: args.failure_values_func(
             stat=stat,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         plot_args_func=lambda index, group_key, stats: args.plot_args_func(
             index=index,
@@ -669,6 +701,7 @@ def main_plot(*, command_line_args: List[str]):
             stat=stats[0],
             decoder=stats[0].decoder,
             metadata=stats[0].json_metadata,
+            m=_FieldToMetadataWrapper(stats[0].json_metadata),
             strong_id=stats[0].strong_id),
         failure_unit=args.failure_unit_name,
         plot_types=args.type,

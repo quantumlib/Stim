@@ -24,6 +24,7 @@ class WorkIn:
             postselection_mask: 'Optional[np.ndarray]',
             postselected_observables_mask: 'Optional[np.ndarray]',
             json_metadata: 'JSON_TYPE',
+            split_errors: bool,
             num_shots: int):
         self.work_key = work_key
         self.circuit_path = circuit_path
@@ -33,6 +34,7 @@ class WorkIn:
         self.postselection_mask = postselection_mask
         self.postselected_observables_mask = postselected_observables_mask
         self.json_metadata = json_metadata
+        self.split_errors = split_errors
         self.num_shots = num_shots
 
     def with_work_key(self, work_key: Any) -> 'WorkIn':
@@ -46,6 +48,7 @@ class WorkIn:
             json_metadata=self.json_metadata,
             strong_id=self.strong_id,
             num_shots=self.num_shots,
+            split_errors=self.split_errors,
         )
 
 
@@ -147,6 +150,7 @@ def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Dec
         post_mask=work.postselection_mask,
         postselected_observable_mask=work.postselected_observables_mask,
         decoder=work.decoder,
+        split_errors=work.split_errors,
         tmp_dir=child_dir,
         custom_decoders=custom_decoders,
     )

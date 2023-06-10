@@ -1,4 +1,6 @@
+import collections
 import dataclasses
+from typing import Optional
 
 
 @dataclasses.dataclass(frozen=True)
@@ -12,12 +14,19 @@ class AnonTaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
+        classified_errors: Defaults to None. When data is collecting using
+            `--split_errors`, this counter has keys corresponding to observed
+            symptoms and values corresponding to how often those errors
+            occurred. The total of all the values is equal to the total number
+            of errors. For example, the key 'E_E' means observable 0 and
+            observable 2 flipped.
     """
 
     shots: int = 0
     errors: int = 0
     discards: int = 0
     seconds: float = 0
+    classified_errors: Optional[collections.Counter] = None
 
     def __post_init__(self):
         assert isinstance(self.errors, int)
@@ -28,6 +37,8 @@ class AnonTaskStats:
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
+        if self.classified_errors is not None:
+            assert sum(self.classified_errors.values()) == self.errors
 
     def __repr__(self) -> str:
         terms = []
@@ -39,6 +50,8 @@ class AnonTaskStats:
             terms.append(f'discards={self.discards!r}')
         if self.seconds != 0:
             terms.append(f'seconds={self.seconds!r}')
+        if self.classified_errors is not None:
+            terms.append(f'classified_errors={self.classified_errors!r}')
         return f'sinter.AnonTaskStats({", ".join(terms)})'
 
     def __add__(self, other: 'AnonTaskStats') -> 'AnonTaskStats':
@@ -66,4 +79,5 @@ class AnonTaskStats:
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
+            classified_errors=None if self.classified_errors is None or other.classified_errors is None else other.classified_errors,
         )

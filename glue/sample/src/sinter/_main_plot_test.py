@@ -349,3 +349,33 @@ def test_failure_values_func():
             "rounds",
         ])
         assert (d / "output.png").exists()
+
+
+def test_m_fields():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata
+                 1000,   400,       0,   1.00,magical,000000001,"{""f"":1}"
+                 1000,   400,       0,   1.00,magical,000000002,"{""f"":2}"
+                 1000,   400,       0,   1.00,magical,000000003,"{""f"":3}"
+                 1000,   400,       0,   1.00,magical,000000005,"{""f"":5}"
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+            "--xaxis",
+            "values",
+            "--x_func",
+            "m.f",
+            "--group_func",
+            "m.g",
+            "--subtitle",
+            "test",
+        ])
+        assert (d / "output.png").exists()
