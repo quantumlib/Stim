@@ -6,7 +6,9 @@ quantum error correction circuits.
 - [How it works](#how_it_works)
 - [How to install](#how_to_install)
 - [How to use: Python API](#how_to_use_python)
+    - [Sinter Python API Reference](doc/sinter_api.md)
 - [How to use: Linux Command Line](#how_to_use_linux)
+    - [Sinter Command Line Reference](doc/sinter_command_line.md)
 - [The csv format for sample statistics](#csv_format)
 
 <a name="how_to_works"></a>
@@ -286,7 +288,10 @@ For example:
 The columns are:
 
 - `shots` (unsigned int): How many times the circuit was sampled.
-- `errors` (unsigned int): How many times the decoder failed to predict the logical observable.
+  - `errors` (unsigned int): How many times the decoder failed to predict the logical observable.
+      The errors field may also have type `Dict[str, int]`, with a value like `{"E_":100,"EE":300}`.
+      In this case the keys correspond to types of error that occurred and the values are how often that
+      specific type of error occurred.
 - `discards` (unsigned int): How many times a shot was discarded because a postselected detector fired or because the decoder incorrectly predicted the value of a postselected observable. Discarded shots never count as errors.
 - `seconds` (non-negative float): How many CPU core seconds it took to simulate and decode these shots.
 - `decoder` (str): Which decoder was used.

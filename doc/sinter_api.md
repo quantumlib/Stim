@@ -73,11 +73,18 @@ class AnonTaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
+        classified_errors: Defaults to None. When data is collecting using
+            `--split_errors`, this counter has keys corresponding to observed
+            symptoms and values corresponding to how often those errors
+            occurred. The total of all the values is equal to the total number
+            of errors. For example, the key 'E_E' means observable 0 and
+            observable 2 flipped.
     """
     shots: int = 0
     errors: int = 0
     discards: int = 0
     seconds: float = 0
+    classified_errors: Optional[collections.Counter] = None
 ```
 
 <a name="sinter.AnonTaskStats.__add__"></a>
@@ -656,6 +663,12 @@ class TaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
+        classified_errors: Defaults to None. When data is collecting using
+            `--split_errors`, this counter has keys corresponding to observed
+            symptoms and values corresponding to how often those errors
+            occurred. The total of all the values is equal to the total number
+            of errors. For example, the key 'E_E' means observable 0 and
+            observable 2 flipped.
     """
     strong_id: str
     decoder: str
@@ -664,6 +677,7 @@ class TaskStats:
     errors: int
     discards: int
     seconds: float
+    classified_errors: Optional[collections.Counter] = None
 ```
 
 <a name="sinter.TaskStats.to_anon_stats"></a>
@@ -776,6 +790,7 @@ def collect(
     progress_callback: Optional[Callable[[sinter.Progress], NoneType]] = None,
     max_shots: Optional[int] = None,
     max_errors: Optional[int] = None,
+    split_errors: bool = False,
     decoders: Optional[Iterable[str]] = None,
     max_batch_seconds: Optional[int] = None,
     max_batch_size: Optional[int] = None,
@@ -810,6 +825,10 @@ def collect(
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
             iterable and each Task has its decoder set to None.
+        split_errors: Defaults to False. When set to to True, the returned
+            TaskStats instances will have a non-None `classified_errors` field
+            where keys are bitmasks identifying which observables flipped and
+            values are the number of errors where that happened.
         max_shots: Defaults to None (unused). Stops the sampling process
             after this many samples have been taken from the circuit.
         max_errors: Defaults to None (unused). Stops the sampling process
@@ -1087,6 +1106,7 @@ def iter_collect(
     max_batch_seconds: Optional[int] = None,
     max_batch_size: Optional[int] = None,
     start_batch_size: Optional[int] = None,
+    split_errors: bool = False,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
 ) -> Iterator[sinter.Progress]:
     """Iterates error correction statistics collected from worker processes.
@@ -1118,6 +1138,10 @@ def iter_collect(
             after this many errors have been seen in samples taken from the
             circuit. The actual number sampled errors may be larger due to
             batching.
+        split_errors: Defaults to False. When set to to True, the returned
+            TaskStats instances will have a non-None `classified_errors` field
+            where keys are bitmasks identifying which observables flipped and
+            values are the number of errors where that happened.
         start_batch_size: Defaults to None (collector's choice). The very
             first shots taken from the circuit will use a batch of this
             size, and no other batches will be taken in parallel. Once this

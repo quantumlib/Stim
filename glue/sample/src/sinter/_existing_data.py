@@ -1,3 +1,4 @@
+import collections
 import json
 import pathlib
 from typing import Any, Dict, List, TYPE_CHECKING
@@ -61,10 +62,20 @@ class ExistingData:
                 f"but expected columns {sorted(expected_fields)!r}")
         result = ExistingData()
         for row in reader:
+            errs = json.loads(row['errors'])
+            if isinstance(errs, int):
+                num_errors = errs
+                classified_errors = None
+            elif isinstance(errs, dict):
+                num_errors = sum(errs.values())
+                classified_errors = collections.Counter(errs)
+            else:
+                raise NotImplementedError(f"{row['errors']=}")
             result.add_sample(TaskStats(
                 shots=int(row['shots']),
                 discards=int(row['discards']),
-                errors=int(row['errors']),
+                errors=num_errors,
+                classified_errors=classified_errors,
                 seconds=float(row['seconds']),
                 strong_id=row['strong_id'],
                 decoder=row['decoder'],

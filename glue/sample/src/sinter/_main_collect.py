@@ -127,7 +127,7 @@ def parse_args(args: List[str]) -> Any:
                              '    Something that can be given to `bool` to get False (do not postselect) or True (yes postselect).\n'
                              'Examples:\n'
                              '''    --postselected_detectors_predicate "coords[2] == 0"\n'''
-                             '''    --postselected_observables_predicate "coords[3] < metadata['postselection_level']"\n''')
+                             '''    --postselected_detectors_predicate "coords[3] < metadata['postselection_level']"\n''')
     parser.add_argument('--postselected_observables_predicate',
                         type=str,
                         default='''False''',
@@ -141,6 +141,9 @@ def parse_args(args: List[str]) -> Any:
                              'Examples:\n'
                              '''    --postselected_observables_predicate "False"\n'''
                              '''    --postselected_observables_predicate "metadata['d'] == 5 and index >= 2"\n''')
+    parser.add_argument('--split_errors',
+                        help='Causes errors to be grouped by the observable mispredictions that caused the error.',
+                        action='store_true')
     parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
@@ -278,6 +281,7 @@ def main_collect(*, command_line_args: List[str]):
             progress_callback=on_progress,
             max_errors=args.max_errors,
             max_shots=args.max_shots,
+            split_errors=args.split_errors,
             decoders=args.decoders,
             max_batch_seconds=args.max_batch_seconds,
             max_batch_size=args.max_batch_size,
