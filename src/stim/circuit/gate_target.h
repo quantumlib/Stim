@@ -44,6 +44,7 @@ struct GateTarget {
     static GateTarget sweep_bit(uint32_t index);
     static GateTarget combiner();
 
+    GateTarget operator!() const;
     int32_t rec_offset() const;
     bool has_qubit_value() const;
     bool is_combiner() const;
@@ -60,6 +61,7 @@ struct GateTarget {
     bool operator<(const GateTarget &other) const;
     std::string str() const;
     std::string repr() const;
+    char pauli_type() const;
 
     void write_succinct(std::ostream &out) const;
 };

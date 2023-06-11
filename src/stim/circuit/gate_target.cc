@@ -206,3 +206,16 @@ std::string stim::target_str(GateTarget t) {
     t.write_succinct(out);
     return out.str();
 }
+
+GateTarget GateTarget::operator!() const {
+    if (data & (TARGET_COMBINER | TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument("Target '" + str() + "' doesn't have a defined inverse.");
+    }
+    return GateTarget{data ^ TARGET_INVERTED_BIT};
+}
+
+char GateTarget::pauli_type() const {
+    assert(TARGET_PAULI_X_BIT == (1 << 30));
+    assert(TARGET_PAULI_Z_BIT == (1 << 29));
+    return "IZXY"[(data >> 29) & 3];
+}
