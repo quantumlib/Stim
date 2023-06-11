@@ -16,9 +16,9 @@
 
 #include <fstream>
 
-#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/circuit/gate_target.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"

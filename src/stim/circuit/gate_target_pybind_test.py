@@ -126,3 +126,15 @@ def test_hashable():
     c = stim.GateTarget(5)
     assert hash(a) == hash(c)
     assert len({a, b, c}) == 2
+
+
+def test_pauli_type():
+    assert stim.GateTarget(5).pauli_type == 'I'
+    assert stim.target_inv(5).pauli_type == 'I'
+    assert stim.target_rec(-5).pauli_type == 'I'
+    assert stim.target_sweep_bit(6).pauli_type == 'I'
+
+    assert stim.target_x(7).pauli_type == 'X'
+    assert stim.target_y(8).pauli_type == 'Y'
+    assert stim.target_y(8, invert=True).pauli_type == 'Y'
+    assert stim.target_z(9).pauli_type == 'Z'
