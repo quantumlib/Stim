@@ -18,6 +18,7 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/circuit/gate_data.pybind.h"
 #include "stim/circuit/gate_target.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
@@ -463,6 +464,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_tableau_iter = pybind_tableau_iter(m);
 
     auto c_circuit_gate_target = pybind_circuit_gate_target(m);
+    auto c_gate_data = pybind_gate_data(m);
     auto c_circuit_instruction = pybind_circuit_instruction(m);
     auto c_circuit_repeat_block = pybind_circuit_repeat_block(m);
     auto c_circuit = pybind_circuit(m);
@@ -491,6 +493,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     // method definitions
     pybind_circuit_instruction_methods(m, c_circuit_instruction);
     pybind_circuit_gate_target_methods(m, c_circuit_gate_target);
+    pybind_gate_data_methods(m, c_gate_data);
     pybind_circuit_repeat_block_methods(m, c_circuit_repeat_block);
     pybind_circuit_methods(m, c_circuit);
 
