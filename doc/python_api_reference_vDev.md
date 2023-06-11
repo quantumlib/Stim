@@ -3605,7 +3605,7 @@ def sample(
     shots: int,
     *,
     bit_packed: bool = False,
-) -> object:
+) -> np.ndarray:
     """Samples a batch of measurement samples from the circuit.
 
     Args:

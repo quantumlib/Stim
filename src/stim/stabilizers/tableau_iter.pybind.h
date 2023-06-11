@@ -20,8 +20,8 @@
 #include "stim/stabilizers/tableau_iter.h"
 
 namespace stim_pybind {
-pybind11::class_<stim::TableauIterator> pybind_tableau_iter(pybind11::module &m);
-void pybind_tableau_iter_methods(pybind11::module &m, pybind11::class_<stim::TableauIterator> &c);
+pybind11::class_<stim::TableauIterator<stim::MAX_BITWORD_WIDTH>> pybind_tableau_iter(pybind11::module &m);
+void pybind_tableau_iter_methods(pybind11::module &m, pybind11::class_<stim::TableauIterator<stim::MAX_BITWORD_WIDTH>> &c);
 }  // namespace stim_pybind
 
 #endif

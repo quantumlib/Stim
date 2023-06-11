@@ -49,8 +49,8 @@ TEST(stabilizer_flow, check_if_circuit_has_stabilizer_flows) {
 
 TEST(stabilizer_flow, str_and_from_str) {
     auto flow = StabilizerFlow{
-        PauliString::from_str("XY"),
-        PauliString::from_str("_Z"),
+        PauliString<MAX_BITWORD_WIDTH>::from_str("XY"),
+        PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"),
         {GateTarget::rec(-3)},
     };
     auto s = "+XY -> +_Z xor rec[-3]";
@@ -58,14 +58,14 @@ TEST(stabilizer_flow, str_and_from_str) {
     ASSERT_EQ(StabilizerFlow::from_str(s), flow);
 
     ASSERT_EQ(StabilizerFlow::from_str("1 -> rec[-1]"), (StabilizerFlow{
-        PauliString(0),
-        PauliString(0),
+        PauliString<MAX_BITWORD_WIDTH>(0),
+        PauliString<MAX_BITWORD_WIDTH>(0),
         {GateTarget::rec(-1)}
     }));
 
     ASSERT_EQ(StabilizerFlow::from_str("-1 -> -X xor rec[-1] xor rec[-3]"), (StabilizerFlow{
-        PauliString::from_str("-"),
-        PauliString::from_str("-X"),
+        PauliString<MAX_BITWORD_WIDTH>::from_str("-"),
+        PauliString<MAX_BITWORD_WIDTH>::from_str("-X"),
         {GateTarget::rec(-1), GateTarget::rec(-3)}
     }));
 }

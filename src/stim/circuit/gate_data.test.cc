@@ -18,6 +18,7 @@
 
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/circuit.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
 
@@ -69,7 +70,8 @@ TEST(gate_data, hash_matches_storage_location) {
     }
 }
 
-std::pair<std::vector<PauliString>, std::vector<PauliString>> circuit_output_eq_val(const Circuit &circuit) {
+std::pair<std::vector<PauliString<MAX_BITWORD_WIDTH>>, std::vector<PauliString<MAX_BITWORD_WIDTH>>>
+circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
@@ -125,15 +127,15 @@ TEST(gate_data, decompositions_are_correct) {
     }
 }
 
-TEST(gate_data, unitary_inverses_are_correct) {
+TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
         if (g.flags & GATE_IS_UNITARY) {
-            auto g_t_inv = g.tableau().inverse(false);
-            auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau();
+            auto g_t_inv = g.tableau<W>().inverse(false);
+            auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau<W>();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
         }
     }
-}
+})
 
 TEST(gate_data, stabilizer_flows_are_correct) {
     for (const auto &g : GATE_DATA.items) {

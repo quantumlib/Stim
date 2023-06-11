@@ -1755,11 +1755,17 @@ Decomposition (into H, S, CX, M, R):
 
 The single qubit depolarizing channel.
 
+Applies a single-qubit depolarizing error with the given probability.
+When a single-qubit depolarizing error is applied, a random Pauli
+error (except for I) is chosen and applied. Note that this means
+maximal mixing occurs when the probability parameter is set to 75%,
+rather than at 100%.
+
 Applies a randomly chosen Pauli with a given probability.
 
 Parens Arguments:
 
-    A single float specifying the depolarization strength.
+    A single float (p) specifying the depolarization strength.
 
 Targets:
 
@@ -1772,23 +1778,32 @@ Pauli Mixture:
     p/3: Y
     p/3: Z
 
-Example:
+Examples:
 
-    DEPOLARIZE1(0.001) 5
-    DEPOLARIZE1(0.001) 42
-    DEPOLARIZE1(0.001) 5 42
-    
+    # Apply 1-qubit depolarization to qubit 0 using p=1%
+    DEPOLARIZE2(0.01) 0
+
+    # Apply 1-qubit depolarization to qubit 2
+    # Separately apply 1-qubit depolarization to qubits 3 and 5
+    DEPOLARIZE1(0.01) 2 3 5
+
+    # Maximally mix qubits 0 through 2
+    DEPOLARIZE1(0.75) 0 1 2
 
 <a name="DEPOLARIZE2"></a>
 ### The 'DEPOLARIZE2' Instruction
 
 The two qubit depolarizing channel.
 
-Applies a randomly chosen two-qubit Pauli product with a given probability.
+Applies a two-qubit depolarizing error with the given probability.
+When a two-qubit depolarizing error is applied, a random pair of Pauli
+errors (except for II) is chosen and applied. Note that this means
+maximal mixing occurs when the probability parameter is set to 93.75%,
+rather than at 100%.
 
 Parens Arguments:
 
-    A single float specifying the depolarization strength.
+    A single float (p) specifying the depolarization strength.
 
 Targets:
 
@@ -1813,12 +1828,17 @@ Pauli Mixture:
     p/15: ZY
     p/15: ZZ
 
-Example:
+Examples:
 
-    DEPOLARIZE2(0.001) 5 6
-    DEPOLARIZE2(0.001) 42 43
-    DEPOLARIZE2(0.001) 5 6 42 43
-    
+    # Apply 2-qubit depolarization to qubit 0 and qubit 1 using p=1%
+    DEPOLARIZE2(0.01) 0 1
+
+    # Apply 2-qubit depolarization to qubit 2 and qubit 3
+    # Separately apply 2-qubit depolarization to qubit 5 and qubit 7
+    DEPOLARIZE2(0.01) 2 3 5 7
+
+    # Maximally mix qubits 0 through 3
+    DEPOLARIZE2(0.9375) 0 1 2 3
 
 <a name="E"></a>
 ### The 'E' Instruction

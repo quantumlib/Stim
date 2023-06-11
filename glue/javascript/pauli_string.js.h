@@ -8,8 +8,8 @@
 #include "stim/stabilizers/pauli_string.h"
 
 struct ExposedPauliString {
-    stim::PauliString pauli_string;
-    explicit ExposedPauliString(stim::PauliString pauli_string);
+    stim::PauliString<stim::MAX_BITWORD_WIDTH> pauli_string;
+    explicit ExposedPauliString(stim::PauliString<stim::MAX_BITWORD_WIDTH> pauli_string);
     explicit ExposedPauliString(const emscripten::val &arg);
     static ExposedPauliString random(size_t n);
     ExposedPauliString times(const ExposedPauliString &other) const;

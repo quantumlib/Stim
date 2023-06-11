@@ -42,7 +42,7 @@ struct SparseUnsignedRevFrameTracker {
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
 
-    PauliString current_error_sensitivity_for(DemTarget target) const;
+    PauliString<MAX_BITWORD_WIDTH> current_error_sensitivity_for(DemTarget target) const;
 
     void undo_gate(const CircuitInstruction &data);
     void undo_gate(const CircuitInstruction &op, const Circuit &parent);
@@ -99,7 +99,7 @@ struct SparseUnsignedRevFrameTracker {
     void undo_ISWAP(const CircuitInstruction &inst);
     void undo_CXSWAP(const CircuitInstruction &inst);
     void undo_SWAPCX(const CircuitInstruction &inst);
-    void undo_tableau(const Tableau &tableau, SpanRef<const uint32_t> targets);
+    void undo_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets);
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
     void shift(int64_t measurement_offset, int64_t detector_offset);

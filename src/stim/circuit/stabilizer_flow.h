@@ -25,8 +25,8 @@
 namespace stim {
 
 struct StabilizerFlow {
-    stim::PauliString input;
-    stim::PauliString output;
+    stim::PauliString<MAX_BITWORD_WIDTH> input;
+    stim::PauliString<MAX_BITWORD_WIDTH> output;
     std::vector<stim::GateTarget> measurement_outputs;
 
     static StabilizerFlow from_str(const char *c);

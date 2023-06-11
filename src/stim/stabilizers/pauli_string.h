@@ -66,6 +66,9 @@ inline uint8_t pauli_xyz_to_xz(uint8_t xyz) {
 /// have contents referring into densely packed table row data (or to a PauliString or to other sources). Basically,
 /// PauliString is for the special somewhat-unusual case where you want to create data to back a PauliStringRef instead
 /// of simply passing existing data along. It's a convenience class.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct PauliString {
     /// The length of the Pauli string.
     size_t num_qubits;
@@ -73,40 +76,40 @@ struct PauliString {
     bool sign;
     /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
-    simd_bits<MAX_BITWORD_WIDTH> xs, zs;
+    simd_bits<W> xs, zs;
 
     /// Identity constructor.
     explicit PauliString(size_t num_qubits);
     /// Factory method for creating a PauliString whose Pauli entries are returned by a function.
-    static PauliString from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
+    static PauliString<W> from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     /// Factory method for creating a PauliString by parsing a string (e.g. "-XIIYZ").
-    static PauliString from_str(const char *text);
+    static PauliString<W> from_str(const char *text);
     /// Factory method for creating a PauliString with uniformly random sign and Pauli entries.
-    static PauliString random(size_t num_qubits, std::mt19937_64 &rng);
+    static PauliString<W> random(size_t num_qubits, std::mt19937_64 &rng);
 
     /// Copy constructor.
-    PauliString(const PauliStringRef &other);  // NOLINT(google-explicit-constructor)
+    PauliString(const PauliStringRef<W> &other);  // NOLINT(google-explicit-constructor)
     /// Overwrite assignment.
-    PauliString &operator=(const PauliStringRef &other) noexcept;
+    PauliString &operator=(const PauliStringRef<W> &other) noexcept;
 
     /// Equality.
-    bool operator==(const PauliStringRef &other) const;
-    bool operator==(const PauliString &other) const;
+    bool operator==(const PauliStringRef<W> &other) const;
+    bool operator==(const PauliString<W> &other) const;
     /// Inequality.
-    bool operator!=(const PauliStringRef &other) const;
-    bool operator!=(const PauliString &other) const;
+    bool operator!=(const PauliStringRef<W> &other) const;
+    bool operator!=(const PauliString<W> &other) const;
 
     /// Implicit conversion to a reference.
-    operator PauliStringRef();
+    operator PauliStringRef<W>();
     /// Implicit conversion to a const reference.
-    operator const PauliStringRef() const;
+    operator const PauliStringRef<W>() const;
     /// Explicit conversion to a reference.
-    PauliStringRef ref();
+    PauliStringRef<W> ref();
     /// Explicit conversion to a const reference.
-    const PauliStringRef ref() const;
+    const PauliStringRef<W> ref() const;
 
     /// Returns a python-style slice of the Paulis in the Pauli string.
-    PauliString py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
+    PauliString<W> py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
     /// Returns a Pauli from the pauli string, allowing python-style negative indices, using IXYZ encoding.
     uint8_t py_get_item(int64_t index) const;
 
@@ -129,8 +132,13 @@ struct PauliString {
 };
 
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const PauliString &ps);
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const PauliString<W> &ps);
 
 }  // namespace stim
+
+#include "stim/stabilizers/pauli_string.inl"
 
 #endif

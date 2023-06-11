@@ -7,7 +7,7 @@
 
 using namespace stim;
 
-void _pauli_string_controlled_not(PauliStringRef control, uint32_t target, Circuit &out) {
+void _pauli_string_controlled_not(PauliStringRef<MAX_BITWORD_WIDTH> control, uint32_t target, Circuit &out) {
     for (uint32_t q = 0; q < (uint32_t)control.num_qubits; q++) {
         auto p = control.xs[q] + 2 * control.zs[q];
         if (p == 1) {
@@ -87,18 +87,18 @@ StabilizerFlow StabilizerFlow::from_str(const char *text) {
         while (!parts[0].empty() && parts[0].back() == ' ') {
            parts[0].pop_back();
         }
-        PauliString input = parts[0] == "1" ? PauliString(0) : parts[0] == "-1" ? PauliString::from_str("-") : PauliString::from_str(parts[0].c_str());
+        PauliString input = parts[0] == "1" ? PauliString<MAX_BITWORD_WIDTH>(0) : parts[0] == "-1" ? PauliString<MAX_BITWORD_WIDTH>::from_str("-") : PauliString<MAX_BITWORD_WIDTH>::from_str(parts[0].c_str());
 
         parts = split(' ', parts[1]);
         size_t k = 0;
         while (k < parts.size() && parts[k].empty()) {
            k += 1;
         }
-        PauliString output(0);
+        PauliString<MAX_BITWORD_WIDTH> output(0);
         std::vector<GateTarget> measurements;
 
         if (!parts[k].empty() && parts[k][0] != 'r') {
-           output = PauliString::from_str(parts[k].c_str());
+           output = PauliString<MAX_BITWORD_WIDTH>::from_str(parts[k].c_str());
         } else {
            auto t = stim::GateTarget::from_target_str(parts[k].c_str());
            if (!t.is_measurement_record_target()) {

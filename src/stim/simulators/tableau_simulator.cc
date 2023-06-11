@@ -19,11 +19,12 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/vector_simulator.h"
 
 using namespace stim;
 
 TableauSimulator::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
-    : inv_state(Tableau::identity(num_qubits)),
+    : inv_state(Tableau<MAX_BITWORD_WIDTH>::identity(num_qubits)),
       rng(std::move(rng)),
       sign_bias(sign_bias),
       measurement_record(std::move(record)),
@@ -84,7 +85,7 @@ void TableauSimulator::postselect_helper(
     {
         uint8_t old_bias = sign_bias;
         sign_bias = desired_result ? -1 : +1;
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         while (finished < targets.size()) {
             size_t q = (size_t)targets[finished].qubit_value();
             collapse_qubit_z(q, temp_transposed);
@@ -272,7 +273,7 @@ void TableauSimulator::do_MZ(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-bool TableauSimulator::measure_pauli_string(const PauliStringRef pauli_string, double flip_probability) {
+bool TableauSimulator::measure_pauli_string(const PauliStringRef<MAX_BITWORD_WIDTH> pauli_string, double flip_probability) {
     if (!(0 <= flip_probability && flip_probability <= 1)) {
         throw std::invalid_argument("Need 0 <= flip_probability <= 1");
     }
@@ -465,11 +466,11 @@ void TableauSimulator::do_SQRT_Z_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-PauliString TableauSimulator::peek_bloch(uint32_t target) const {
-    PauliStringRef x = inv_state.xs[target];
-    PauliStringRef z = inv_state.zs[target];
+PauliString<MAX_BITWORD_WIDTH> TableauSimulator::peek_bloch(uint32_t target) const {
+    PauliStringRef<MAX_BITWORD_WIDTH> x = inv_state.xs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> z = inv_state.zs[target];
 
-    PauliString result(1);
+    PauliString<MAX_BITWORD_WIDTH> result(1);
     if (!x.xs.not_zero()) {
         result.sign = x.sign;
         result.xs[0] = true;
@@ -477,7 +478,7 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
         result.sign = z.sign;
         result.zs[0] = true;
     } else if (x.xs == z.xs) {
-        PauliString y = inv_state.eval_y_obs(target);
+        PauliString<MAX_BITWORD_WIDTH> y = inv_state.eval_y_obs(target);
         result.sign = y.sign;
         result.xs[0] = true;
         result.zs[0] = true;
@@ -487,17 +488,17 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
 }
 
 int8_t TableauSimulator::peek_x(uint32_t target) const {
-    PauliStringRef x = inv_state.xs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> x = inv_state.xs[target];
     return x.xs.not_zero() ? 0 : x.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_y(uint32_t target) const {
-    PauliString y = inv_state.eval_y_obs(target);
+    PauliString<MAX_BITWORD_WIDTH> y = inv_state.eval_y_obs(target);
     return y.xs.not_zero() ? 0 : y.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_z(uint32_t target) const {
-    PauliStringRef z = inv_state.zs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> z = inv_state.zs[target];
     return z.xs.not_zero() ? 0 : z.sign ? -1 : +1;
 }
 
@@ -953,14 +954,14 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
 
 VectorSimulator TableauSimulator::to_vector_sim() const {
     auto inv = inv_state.inverse();
-    std::vector<PauliStringRef> stabilizers;
+    std::vector<PauliStringRef<MAX_BITWORD_WIDTH>> stabilizers;
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return VectorSimulator::from_stabilizers(stabilizers);
+    return VectorSimulator::from_stabilizers<MAX_BITWORD_WIDTH>(stabilizers);
 }
 
-void TableauSimulator::apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets) {
+void TableauSimulator::apply_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, const std::vector<size_t> &targets) {
     inv_state.inplace_scatter_prepend(tableau.inverse(), targets);
 }
 
@@ -990,7 +991,7 @@ void TableauSimulator::collapse_x(SpanRef<const GateTarget> targets, size_t stri
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
         do_H_XZ({GateType::H, {}, collapse_targets});
         {
-            TableauTransposedRaii temp_transposed(inv_state);
+            TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
@@ -1015,7 +1016,7 @@ void TableauSimulator::collapse_y(SpanRef<const GateTarget> targets, size_t stri
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
         do_H_YZ({GateType::H_YZ, {}, collapse_targets});
         {
-            TableauTransposedRaii temp_transposed(inv_state);
+            TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
@@ -1038,14 +1039,14 @@ void TableauSimulator::collapse_z(SpanRef<const GateTarget> targets, size_t stri
 
     // Only pay the cost of transposing if collapsing is needed.
     if (!collapse_targets.empty()) {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         for (auto target : collapse_targets) {
             collapse_qubit_z(target.data, temp_transposed);
         }
     }
 }
 
-size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
+size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii) {
     auto n = inv_state.num_qubits;
 
     // Search for any stabilizer generator that anti-commutes with the measurement observable.
@@ -1082,7 +1083,7 @@ size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii &
     return pivot;
 }
 
-void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
+void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii) {
     // Force T(Z_target) to be a product of Z operations.
     collapse_qubit_z(target, transposed_raii);
 
@@ -1141,7 +1142,7 @@ simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Ci
     return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
 }
 
-void TableauSimulator::paulis(const PauliString &paulis) {
+void TableauSimulator::paulis(const PauliString<MAX_BITWORD_WIDTH> &paulis) {
     auto nw = paulis.xs.num_simd_words;
     inv_state.zs.signs.word_range_ref(0, nw) ^= paulis.xs;
     inv_state.xs.signs.word_range_ref(0, nw) ^= paulis.zs;
@@ -1166,14 +1167,14 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
 
     // Collapse qubits past the new size and ensure the internal state totally decouples them.
     {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         for (size_t q = new_num_qubits; q < inv_state.num_qubits; q++) {
             collapse_isolate_qubit_z(q, temp_transposed);
         }
     }
 
-    Tableau old_state = std::move(inv_state);
-    inv_state = Tableau(new_num_qubits);
+    Tableau<MAX_BITWORD_WIDTH> old_state = std::move(inv_state);
+    inv_state = Tableau<MAX_BITWORD_WIDTH>(new_num_qubits);
     inv_state.xs.signs.truncated_overwrite_from(old_state.xs.signs, new_num_qubits);
     inv_state.zs.signs.truncated_overwrite_from(old_state.zs.signs, new_num_qubits);
     for (size_t q = 0; q < new_num_qubits; q++) {
@@ -1184,14 +1185,14 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(GateTarget target) {
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_z(GateTarget target) {
     bool flipped = target.is_inverted_result_target();
     uint32_t q = target.qubit_value();
-    PauliString kickback(0);
+    PauliString<MAX_BITWORD_WIDTH> kickback(0);
     bool has_kickback = !is_deterministic_z(q);  // Note: do this before transposing the state!
 
     {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         if (has_kickback) {
             size_t pivot = collapse_qubit_z(q, temp_transposed);
             kickback = temp_transposed.unsigned_x_input(pivot);
@@ -1206,7 +1207,7 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(GateTarget tar
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(GateTarget target) {
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_y(GateTarget target) {
     do_H_YZ({GateType::H, {}, &target});
     auto result = measure_kickback_z(target);
     do_H_YZ({GateType::H, {}, &target});
@@ -1217,7 +1218,7 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(GateTarget tar
     return result;
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(GateTarget target) {
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_x(GateTarget target) {
     do_H_XZ({GateType::H, {}, &target});
     auto result = measure_kickback_z(target);
     do_H_XZ({GateType::H, {}, &target});
@@ -1228,10 +1229,10 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(GateTarget tar
     return result;
 }
 
-std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
-    Tableau t = inv_state.inverse();
+std::vector<PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::canonical_stabilizers() const {
+    Tableau<MAX_BITWORD_WIDTH> t = inv_state.inverse();
     size_t n = t.num_qubits;
-    std::vector<PauliString> stabilizers;
+    std::vector<PauliString<MAX_BITWORD_WIDTH>> stabilizers;
     for (size_t k = 0; k < n; k++) {
         stabilizers.push_back(t.zs[k]);
     }
@@ -1260,8 +1261,8 @@ std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
     return stabilizers;
 }
 
-int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &observable) const {
-    stim::TableauSimulator state = *this;
+int8_t TableauSimulator::peek_observable_expectation(const PauliString<MAX_BITWORD_WIDTH> &observable) const {
+    TableauSimulator state = *this;
 
     // Kick the observable onto an ancilla qubit's Z observable.
     auto n = (uint32_t)std::max(state.inv_state.num_qubits, observable.num_qubits);
