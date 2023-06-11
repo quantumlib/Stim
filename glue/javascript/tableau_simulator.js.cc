@@ -63,7 +63,7 @@ ExposedTableauSimulator::ExposedTableauSimulator() : sim(JS_BIND_SHARED_RNG(), 0
 
 bool ExposedTableauSimulator::measure(size_t target) {
     sim.ensure_large_enough_for_qubits(target + 1);
-    sim.measure_z(JsCircuitInstruction(GateType::M, {GateTarget{target}}));
+    sim.do_MZ(JsCircuitInstruction(GateType::M, {GateTarget{target}}));
     return (bool)sim.measurement_record.storage.back();
 }
 
