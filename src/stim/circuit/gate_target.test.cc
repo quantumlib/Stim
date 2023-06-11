@@ -192,3 +192,57 @@ TEST(gate_target, equality) {
     ASSERT_FALSE(GateTarget{1} < GateTarget{0});
     ASSERT_FALSE(GateTarget{0} < GateTarget{0});
 }
+
+TEST(gate_target, inverse) {
+    ASSERT_EQ(!GateTarget::qubit(5), GateTarget::qubit(5, true));
+    ASSERT_EQ(GateTarget::qubit(5), !GateTarget::qubit(5, true));
+    ASSERT_EQ(!GateTarget::x(5), GateTarget::x(5, true));
+    ASSERT_EQ(GateTarget::x(5), !GateTarget::x(5, true));
+    ASSERT_EQ(!GateTarget::y(5), GateTarget::y(5, true));
+    ASSERT_EQ(GateTarget::y(5), !GateTarget::y(5, true));
+    ASSERT_EQ(!GateTarget::z(9), GateTarget::z(9, true));
+    ASSERT_EQ(GateTarget::z(7), !GateTarget::z(7, true));
+    ASSERT_EQ(!!GateTarget::z(9), GateTarget::z(9));
+    ASSERT_THROW({ !GateTarget::combiner(); }, std::invalid_argument);
+    ASSERT_THROW({ !GateTarget::rec(-3); }, std::invalid_argument);
+    ASSERT_THROW({ !GateTarget::sweep_bit(6); }, std::invalid_argument);
+}
+
+TEST(gate_target, pauli) {
+    ASSERT_EQ(GateTarget::combiner().pauli_type(), 'I');
+    ASSERT_EQ(GateTarget::sweep_bit(5).pauli_type(), 'I');
+    ASSERT_EQ(GateTarget::rec(-5).pauli_type(), 'I');
+    ASSERT_EQ(GateTarget::qubit(5).pauli_type(), 'I');
+    ASSERT_EQ(GateTarget::qubit(6, true).pauli_type(), 'I');
+
+    ASSERT_EQ(GateTarget::x(7).pauli_type(), 'X');
+    ASSERT_EQ(GateTarget::x(7, true).pauli_type(), 'X');
+    ASSERT_EQ(GateTarget::y(7).pauli_type(), 'Y');
+    ASSERT_EQ(GateTarget::y(7, true).pauli_type(), 'Y');
+    ASSERT_EQ(GateTarget::z(7).pauli_type(), 'Z');
+    ASSERT_EQ(GateTarget::z(7, true).pauli_type(), 'Z');
+}
+
+TEST(gate_target, from_target_str) {
+    ASSERT_EQ(GateTarget::from_target_str("5"), GateTarget::qubit(5));
+    ASSERT_EQ(GateTarget::from_target_str("rec[-3]"), GateTarget::rec(-3));
+}
+
+TEST(gate_target, target_str_round_trip) {
+    std::vector<GateTarget> targets{
+        GateTarget::qubit(2),
+        GateTarget::qubit(3, true),
+        GateTarget::sweep_bit(5),
+        GateTarget::rec(-7),
+        GateTarget::x(11),
+        GateTarget::x(13, true),
+        GateTarget::y(17),
+        GateTarget::y(19, true),
+        GateTarget::z(23),
+        GateTarget::z(29, true),
+        GateTarget::combiner(),
+    };
+    for (const auto &t : targets) {
+        ASSERT_EQ(GateTarget::from_target_str(t.target_str().c_str()), t) << t;
+    }
+}

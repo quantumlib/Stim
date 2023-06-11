@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
@@ -91,7 +92,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
 }
 
 TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau(gate)) << gate.name;
         }
@@ -107,7 +108,7 @@ bool is_output_possible_promising_no_bare_resets(
         if (op.gate_type == GateType::M) {
             for (auto qf : op.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure_z({GateType::M, {}, &qf});
+                tableau_sim.do_MZ({GateType::M, {}, &qf});
                 if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }
@@ -1451,4 +1452,80 @@ TEST(FrameSimulator, reconfigure_for) {
     frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
     frame_sim.reset_all_and_run(circuit);
     ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
+}
+
+TEST(FrameSimulator, mpad) {
+    auto circuit = Circuit(R"CIRCUIT(
+        MPAD 0 1
+    )CIRCUIT");
+    auto sample = sample_batch_measurements(
+        circuit,
+        TableauSimulator::reference_sample_circuit(circuit),
+        100,
+        SHARED_TEST_RNG(),
+        false);
+    for (size_t k = 0; k < 100; k++) {
+        ASSERT_EQ(sample[0][k], false);
+        ASSERT_EQ(sample[1][k], true);
+    }
+}
+
+TEST(FrameSimulator, mxxyyzz_basis) {
+    auto circuit = Circuit(R"CIRCUIT(
+        RX 0 1
+        MXX 0 1
+        RY 0 1
+        MYY 0 1
+        RZ 0 1
+        MZZ 0 1
+    )CIRCUIT");
+    auto sample = sample_batch_measurements(
+        circuit,
+        TableauSimulator::reference_sample_circuit(circuit),
+        100,
+        SHARED_TEST_RNG(),
+        false);
+    for (size_t k = 0; k < 100; k++) {
+        ASSERT_EQ(sample[0][k], false);
+        ASSERT_EQ(sample[1][k], false);
+        ASSERT_EQ(sample[2][k], false);
+    }
+}
+
+TEST(FrameSimulator, mxxyyzz_inversion) {
+    auto circuit = Circuit(R"CIRCUIT(
+        MXX 0 1 0 !1 !0 1 !0 !1
+        MYY 0 1 0 !1 !0 1 !0 !1
+        MZZ 0 1 0 !1 !0 1 !0 !1
+    )CIRCUIT");
+    auto sample = sample_batch_measurements(
+        circuit,
+        TableauSimulator::reference_sample_circuit(circuit),
+        100,
+        SHARED_TEST_RNG(),
+        false);
+    for (size_t k = 0; k < 100; k++) {
+        ASSERT_EQ(sample[1][k], !sample[0][k]);
+        ASSERT_EQ(sample[2][k], !sample[0][k]);
+        ASSERT_EQ(sample[3][k], sample[0][k]);
+        ASSERT_EQ(sample[5][k], !sample[4][k]);
+        ASSERT_EQ(sample[6][k], !sample[4][k]);
+        ASSERT_EQ(sample[7][k], sample[4][k]);
+        ASSERT_EQ(sample[8][k], 1 ^ sample[0][k] ^ sample[4][k]);
+        ASSERT_EQ(sample[9][k], !sample[8][k]);
+        ASSERT_EQ(sample[10][k], !sample[8][k]);
+        ASSERT_EQ(sample[11][k], sample[8][k]);
+    }
+}
+
+TEST(FrameSimulator, runs_on_general_circuit) {
+    auto circuit = generate_test_circuit_with_all_operations();
+    auto sample = sample_batch_measurements(
+        circuit,
+        TableauSimulator::reference_sample_circuit(circuit),
+        100,
+        SHARED_TEST_RNG(),
+        false);
+    ASSERT_GT(sample.num_simd_words_minor, 0);
+    ASSERT_GT(sample.num_simd_words_major, 0);
 }

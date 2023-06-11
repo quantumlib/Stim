@@ -182,7 +182,7 @@ TEST_EACH_WORD_SIZE_W(tableau, str, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, gate_tableau_data_vs_unitary_data, {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(tableau_agrees_with_unitary<W>(gate.tableau<W>(), gate.unitary())) << gate.name;
         }
@@ -190,7 +190,7 @@ TEST_EACH_WORD_SIZE_W(tableau, gate_tableau_data_vs_unitary_data, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, inverse_data, {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             auto &inv_gate = gate.inverse();
             auto tab = gate.tableau<W>();
@@ -1149,7 +1149,7 @@ TEST_EACH_WORD_SIZE_W(tableau, unitary_big_endian, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, unitary_vs_gate_data, {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             std::vector<std::complex<float>> flat_expected;
             for (const auto &row : gate.unitary()) {

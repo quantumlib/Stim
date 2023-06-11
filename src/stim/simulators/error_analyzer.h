@@ -115,9 +115,6 @@ struct ErrorAnalyzer {
     /// Counts the number of tick operations, for better debug messages.
     uint64_t num_ticks_in_past = 0;
 
-    /// Function vtable for each gate's simulator function
-    GateVTable<void (ErrorAnalyzer::*)(const CircuitInstruction &)> gate_vtable;
-
     /// Used for producing debug information when errors occur.
     const Circuit *current_circuit_being_analyzed = nullptr;
 
@@ -167,76 +164,70 @@ struct ErrorAnalyzer {
     ErrorAnalyzer &operator=(ErrorAnalyzer &&analyzer) noexcept = delete;
     ErrorAnalyzer &operator=(const ErrorAnalyzer &analyzer) = delete;
 
-    /// ======================================================================================
-    /// === Individual methods for processing each operation that can appear in a circuit. ===
-    /// ======================================================================================
-    /// Note that the circuit is iterated over backwards, so it may appear that these methods
-    /// do the opposite of what is expected (eg. C_XYZ turning X into Z instead of into Y).
-    /// ======================================================================================
-    /// These are pointed to by the `reverse_error_analyzer_function` field in gate data.
-    /// ======================================================================================
-    void SHIFT_COORDS(const CircuitInstruction &dat);
-    void RX(const CircuitInstruction &dat);
-    void RY(const CircuitInstruction &dat);
-    void RZ(const CircuitInstruction &dat);
-    void MX(const CircuitInstruction &dat);
-    void MY(const CircuitInstruction &dat);
-    void MZ(const CircuitInstruction &dat);
-    void MPP(const CircuitInstruction &dat);
-    void MRX(const CircuitInstruction &dat);
-    void MRY(const CircuitInstruction &dat);
-    void MRZ(const CircuitInstruction &dat);
-    void H_XZ(const CircuitInstruction &dat);
-    void H_XY(const CircuitInstruction &dat);
-    void H_YZ(const CircuitInstruction &dat);
-    void C_XYZ(const CircuitInstruction &dat);
-    void C_ZYX(const CircuitInstruction &dat);
-    void XCX(const CircuitInstruction &dat);
-    void XCY(const CircuitInstruction &dat);
-    void XCZ(const CircuitInstruction &dat);
-    void YCX(const CircuitInstruction &dat);
-    void YCY(const CircuitInstruction &dat);
-    void YCZ(const CircuitInstruction &dat);
-    void ZCX(const CircuitInstruction &dat);
-    void ZCY(const CircuitInstruction &dat);
-    void ZCZ(const CircuitInstruction &dat);
-    void I(const CircuitInstruction &dat);
-    void TICK(const CircuitInstruction &dat);
-    void SQRT_XX(const CircuitInstruction &dat);
-    void SQRT_YY(const CircuitInstruction &dat);
-    void SQRT_ZZ(const CircuitInstruction &dat);
-    void SWAP(const CircuitInstruction &dat);
-    void DETECTOR(const CircuitInstruction &dat);
-    void OBSERVABLE_INCLUDE(const CircuitInstruction &dat);
-    void X_ERROR(const CircuitInstruction &dat);
-    void Y_ERROR(const CircuitInstruction &dat);
-    void Z_ERROR(const CircuitInstruction &dat);
-    void CORRELATED_ERROR(const CircuitInstruction &dat);
-    void DEPOLARIZE1(const CircuitInstruction &dat);
-    void DEPOLARIZE2(const CircuitInstruction &dat);
-    void ELSE_CORRELATED_ERROR(const CircuitInstruction &dat);
-    void PAULI_CHANNEL_1(const CircuitInstruction &dat);
-    void PAULI_CHANNEL_2(const CircuitInstruction &dat);
-    void ISWAP(const CircuitInstruction &dat);
-    void CXSWAP(const CircuitInstruction &dat);
-    void SWAPCX(const CircuitInstruction &dat);
+    void undo_SHIFT_COORDS(const CircuitInstruction &inst);
+    void undo_RX(const CircuitInstruction &inst);
+    void undo_RY(const CircuitInstruction &inst);
+    void undo_RZ(const CircuitInstruction &inst);
+    void undo_MX(const CircuitInstruction &inst);
+    void undo_MY(const CircuitInstruction &inst);
+    void undo_MZ(const CircuitInstruction &inst);
+    void undo_MPP(const CircuitInstruction &inst);
+    void undo_MXX(const CircuitInstruction &inst);
+    void undo_MYY(const CircuitInstruction &inst);
+    void undo_MZZ(const CircuitInstruction &inst);
+    void undo_MPAD(const CircuitInstruction &inst);
+    void undo_MRX(const CircuitInstruction &inst);
+    void undo_MRY(const CircuitInstruction &inst);
+    void undo_MRZ(const CircuitInstruction &inst);
+    void undo_H_XZ(const CircuitInstruction &inst);
+    void undo_H_XY(const CircuitInstruction &inst);
+    void undo_H_YZ(const CircuitInstruction &inst);
+    void undo_C_XYZ(const CircuitInstruction &inst);
+    void undo_C_ZYX(const CircuitInstruction &inst);
+    void undo_XCX(const CircuitInstruction &inst);
+    void undo_XCY(const CircuitInstruction &inst);
+    void undo_XCZ(const CircuitInstruction &inst);
+    void undo_YCX(const CircuitInstruction &inst);
+    void undo_YCY(const CircuitInstruction &inst);
+    void undo_YCZ(const CircuitInstruction &inst);
+    void undo_ZCX(const CircuitInstruction &inst);
+    void undo_ZCY(const CircuitInstruction &inst);
+    void undo_ZCZ(const CircuitInstruction &inst);
+    void undo_I(const CircuitInstruction &inst);
+    void undo_TICK(const CircuitInstruction &inst);
+    void undo_SQRT_XX(const CircuitInstruction &inst);
+    void undo_SQRT_YY(const CircuitInstruction &inst);
+    void undo_SQRT_ZZ(const CircuitInstruction &inst);
+    void undo_SWAP(const CircuitInstruction &inst);
+    void undo_DETECTOR(const CircuitInstruction &inst);
+    void undo_OBSERVABLE_INCLUDE(const CircuitInstruction &inst);
+    void undo_X_ERROR(const CircuitInstruction &inst);
+    void undo_Y_ERROR(const CircuitInstruction &inst);
+    void undo_Z_ERROR(const CircuitInstruction &inst);
+    void undo_CORRELATED_ERROR(const CircuitInstruction &inst);
+    void undo_DEPOLARIZE1(const CircuitInstruction &inst);
+    void undo_DEPOLARIZE2(const CircuitInstruction &inst);
+    void undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &inst);
+    void undo_PAULI_CHANNEL_1(const CircuitInstruction &inst);
+    void undo_PAULI_CHANNEL_2(const CircuitInstruction &inst);
+    void undo_ISWAP(const CircuitInstruction &inst);
+    void undo_CXSWAP(const CircuitInstruction &inst);
+    void undo_SWAPCX(const CircuitInstruction &inst);
 
-    void RX_with_context(const CircuitInstruction &dat, const char *context_op);
-    void RY_with_context(const CircuitInstruction &dat, const char *context_op);
-    void RZ_with_context(const CircuitInstruction &dat, const char *context_op);
-    void MX_with_context(const CircuitInstruction &dat, const char *context_op);
-    void MY_with_context(const CircuitInstruction &dat, const char *context_op);
-    void MZ_with_context(const CircuitInstruction &dat, const char *context_op);
+    void undo_RX_with_context(const CircuitInstruction &inst, const char *context_op);
+    void undo_RY_with_context(const CircuitInstruction &inst, const char *context_op);
+    void undo_RZ_with_context(const CircuitInstruction &inst, const char *context_op);
+    void undo_MX_with_context(const CircuitInstruction &inst, const char *context_op);
+    void undo_MY_with_context(const CircuitInstruction &inst, const char *context_op);
+    void undo_MZ_with_context(const CircuitInstruction &inst, const char *context_op);
 
     /// Processes each of the instructions in the circuit, in reverse order.
-    void run_circuit(const Circuit &circuit);
+    void undo_circuit(const Circuit &circuit);
     /// This is used at the end of the analysis to check that any remaining sensitivities commute
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
 
-    inline void rev_do_gate(const CircuitInstruction &data) {
-        (this->*(gate_vtable.data[data.gate_type]))(data);
-    }
+    void undo_gate(const CircuitInstruction &inst);
 
     /// Returns a PauliString indicating the current error sensitivity of a detector or observable.
     ///
@@ -329,6 +320,9 @@ struct ErrorAnalyzer {
     bool has_unflushed_ungraphlike_errors() const;
 
    private:
+    void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
+    void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
+    void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
     void check_can_approximate_disjoint(const char *op_name);
     void add_composite_error(double probability, SpanRef<const GateTarget> targets);
     void correlated_error_block(const std::vector<CircuitInstruction> &dats);

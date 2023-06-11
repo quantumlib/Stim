@@ -9,12 +9,15 @@ src/stim/circuit/gate_data_collapsing.cc
 src/stim/circuit/gate_data_controlled.cc
 src/stim/circuit/gate_data_hada.cc
 src/stim/circuit/gate_data_noisy.cc
+src/stim/circuit/gate_data_pair_measure.cc
 src/stim/circuit/gate_data_pauli.cc
 src/stim/circuit/gate_data_period_3.cc
 src/stim/circuit/gate_data_period_4.cc
 src/stim/circuit/gate_data_pp.cc
 src/stim/circuit/gate_data_swaps.cc
+src/stim/circuit/gate_decomposition.cc
 src/stim/circuit/gate_target.cc
+src/stim/circuit/stabilizer_flow.cc
 src/stim/cmd/command_analyze_errors.cc
 src/stim/cmd/command_detect.cc
 src/stim/cmd/command_diagram.cc

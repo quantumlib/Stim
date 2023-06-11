@@ -49,6 +49,7 @@ def iter_collect(*,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
+                 split_errors: bool = False,
                  custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
                  ) -> Iterator['sinter.Progress']:
     """Iterates error correction statistics collected from worker processes.
@@ -80,6 +81,10 @@ def iter_collect(*,
             after this many errors have been seen in samples taken from the
             circuit. The actual number sampled errors may be larger due to
             batching.
+        split_errors: Defaults to False. When set to to True, the returned
+            TaskStats instances will have a non-None `classified_errors` field
+            where keys are bitmasks identifying which observables flipped and
+            values are the number of errors where that happened.
         start_batch_size: Defaults to None (collector's choice). The very
             first shots taken from the circuit will use a batch of this
             size, and no other batches will be taken in parallel. Once this
@@ -157,6 +162,7 @@ def iter_collect(*,
                 max_batch_size=max_batch_size,
             ),
             decoders=decoders,
+            split_errors=split_errors,
             additional_existing_data=additional_existing_data,
             custom_decoders=custom_decoders) as manager:
         try:
@@ -202,6 +208,7 @@ def collect(*,
             progress_callback: Optional[Callable[['sinter.Progress'], None]] = None,
             max_shots: Optional[int] = None,
             max_errors: Optional[int] = None,
+            split_errors: bool = False,
             decoders: Optional[Iterable[str]] = None,
             max_batch_seconds: Optional[int] = None,
             max_batch_size: Optional[int] = None,
@@ -236,6 +243,10 @@ def collect(*,
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
             iterable and each Task has its decoder set to None.
+        split_errors: Defaults to False. When set to to True, the returned
+            TaskStats instances will have a non-None `classified_errors` field
+            where keys are bitmasks identifying which observables flipped and
+            values are the number of errors where that happened.
         max_shots: Defaults to None (unused). Stops the sampling process
             after this many samples have been taken from the circuit.
         max_errors: Defaults to None (unused). Stops the sampling process
@@ -341,6 +352,7 @@ def collect(*,
             max_batch_seconds=max_batch_seconds,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
+            split_errors=split_errors,
             decoders=decoders,
             tasks=tasks,
             hint_num_tasks=hint_num_tasks,

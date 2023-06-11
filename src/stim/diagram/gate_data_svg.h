@@ -31,6 +31,7 @@ struct SvgGateData {
     std::string text_color;
     size_t font_size;
     size_t sub_font_size;
+    int32_t y_shift;
 
     static std::map<std::string, SvgGateData> make_gate_data_map();
 };

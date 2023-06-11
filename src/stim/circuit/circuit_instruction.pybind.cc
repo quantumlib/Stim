@@ -14,8 +14,8 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 
-#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_target.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/str_util.h"
 

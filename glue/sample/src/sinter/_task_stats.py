@@ -1,4 +1,7 @@
+import collections
 import dataclasses
+from typing import List
+from typing import Optional
 
 from sinter._anon_task_stats import AnonTaskStats
 from sinter._json_type import JSON_TYPE
@@ -29,6 +32,12 @@ class TaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
+        classified_errors: Defaults to None. When data is collecting using
+            `--split_errors`, this counter has keys corresponding to observed
+            symptoms and values corresponding to how often those errors
+            occurred. The total of all the values is equal to the total number
+            of errors. For example, the key 'E_E' means observable 0 and
+            observable 2 flipped.
     """
 
     # Information describing the problem that was sampled.
@@ -41,6 +50,7 @@ class TaskStats:
     errors: int
     discards: int
     seconds: float
+    classified_errors: Optional[collections.Counter] = None
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
         assert self.strong_id == other.strong_id
@@ -52,6 +62,7 @@ class TaskStats:
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
+            classified_errors=None if self.classified_errors is None or other.classified_errors is None else self.classified_errors + other.classified_errors,
         )
 
     def to_anon_stats(self) -> AnonTaskStats:
@@ -76,6 +87,7 @@ class TaskStats:
             errors=self.errors,
             discards=self.discards,
             seconds=self.seconds,
+            classified_errors=self.classified_errors,
         )
 
     def to_csv_line(self) -> str:
@@ -99,12 +111,30 @@ class TaskStats:
         """
         return csv_line(
             shots=self.shots,
-            errors=self.errors,
+            errors={str(k): v for k, v in self.classified_errors.items()} if self.classified_errors is not None else self.errors,
             seconds=self.seconds,
             discards=self.discards,
             strong_id=self.strong_id,
             decoder=self.decoder,
-            json_metadata=self.json_metadata)
+            json_metadata=self.json_metadata,
+        )
+
+    def _split_errors(self) -> List['TaskStats']:
+        if self.classified_errors is None:
+            return [self]
+        result = []
+        for k, v in self.classified_errors.items():
+            result.append(TaskStats(
+                strong_id=f'{self.strong_id}:{k}',
+                decoder=self.decoder,
+                json_metadata=self.json_metadata,
+                shots=self.shots,
+                errors=v,
+                discards=self.discards,
+                seconds=self.seconds,
+                classified_errors=collections.Counter({k: v}),
+            ))
+        return result
 
     def __str__(self):
         return self.to_csv_line()

@@ -16,7 +16,6 @@ import pathlib
 import tempfile
 
 import doctest
-import importlib
 import pytest
 import types
 
@@ -60,7 +59,7 @@ def test_targets():
 
 def test_gate_data():
     data = stim._UNSTABLE_raw_gate_data()
-    assert len(data) == 60
+    assert len(data) == 64
     assert data["CX"]["name"] == "CX"
     assert data["CX"]["aliases"] == ["CNOT", "ZCX"]
     assert data["X"]["unitary_matrix"] == [[0, 1], [1, 0]]
@@ -160,3 +159,41 @@ def test_main_redirects_stderr(capsys):
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "Unrecognized value 'XXXXX'" in captured.err
+
+
+def test_target_methods_accept_gate_targets():
+    assert stim.target_inv(stim.GateTarget(5)) == stim.target_inv(5)
+    assert stim.target_inv(stim.target_inv(5)) == stim.GateTarget(5)
+    assert stim.target_inv(stim.target_x(5)) == stim.target_x(5, invert=True)
+    assert stim.target_inv(stim.target_y(5)) == stim.target_y(5, invert=True)
+    assert stim.target_inv(stim.target_z(5)) == stim.target_z(5, invert=True)
+
+    assert stim.target_x(stim.GateTarget(5)) == stim.target_x(5)
+    assert stim.target_x(stim.target_inv(stim.GateTarget(5))) == stim.target_x(5, invert=True)
+    assert stim.target_x(stim.GateTarget(5), invert=True) == stim.target_x(5, invert=True)
+    assert stim.target_x(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_x(5)
+
+    assert stim.target_y(stim.GateTarget(5)) == stim.target_y(5)
+    assert stim.target_y(stim.target_inv(stim.GateTarget(5))) == stim.target_y(5, invert=True)
+    assert stim.target_y(stim.GateTarget(5), invert=True) == stim.target_y(5, invert=True)
+    assert stim.target_y(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_y(5)
+
+    assert stim.target_z(stim.GateTarget(5)) == stim.target_z(5)
+    assert stim.target_z(stim.target_inv(stim.GateTarget(5))) == stim.target_z(5, invert=True)
+    assert stim.target_z(stim.GateTarget(5), invert=True) == stim.target_z(5, invert=True)
+    assert stim.target_z(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_z(5)
+
+    with pytest.raises(ValueError):
+        stim.target_inv(stim.target_sweep_bit(4))
+
+    with pytest.raises(ValueError):
+        stim.target_inv(stim.target_rec(-4))
+
+    with pytest.raises(ValueError):
+        stim.target_x(stim.target_sweep_bit(4))
+
+    with pytest.raises(ValueError):
+        stim.target_y(stim.target_sweep_bit(4))
+
+    with pytest.raises(ValueError):
+        stim.target_z(stim.target_sweep_bit(4))

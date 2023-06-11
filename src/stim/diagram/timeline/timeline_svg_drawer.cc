@@ -201,7 +201,7 @@ void DiagramTimelineSvgDrawer::draw_generic_box(
     float cx, float cy, const std::string &text, SpanRef<const double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
-        throw std::invalid_argument("Unhandled gate case: " + text);
+        throw std::invalid_argument("DiagramTimelineSvgDrawer unhandled gate case: " + text);
     }
     SvgGateData data = f->second;
     draw_annotated_gate(cx, cy, data, end_args);
@@ -212,6 +212,11 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
     cx += (data.span - 1) * GATE_PITCH * 0.5f;
     float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2.0f;
     float h = GATE_RADIUS * 2.0f;
+    size_t n = utf8_char_count(data.body) + utf8_char_count(data.subscript) + +utf8_char_count(data.superscript);
+    auto font_size = data.font_size != 0        ? data.font_size
+        : n == 1                   ? 30
+        : n >= 4 && data.span == 1 ? 12
+                                   : 16;
     svg_out << "<rect";
     write_key_val(svg_out, "x", cx - w * 0.5);
     write_key_val(svg_out, "y", cy - h * 0.5);
@@ -222,20 +227,13 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
     svg_out << "/>\n";
 
     moment_width = std::max(moment_width, data.span);
-    size_t n = utf8_char_count(data.body) + utf8_char_count(data.subscript) + +utf8_char_count(data.superscript);
     svg_out << "<text";
     write_key_val(svg_out, "dominant-baseline", "central");
     write_key_val(svg_out, "text-anchor", "middle");
     write_key_val(svg_out, "font-family", "monospace");
-    write_key_val(
-        svg_out,
-        "font-size",
-        data.font_size != 0        ? data.font_size
-        : n == 1                   ? 30
-        : n >= 4 && data.span == 1 ? 12
-                                   : 16);
+    write_key_val(svg_out, "font-size", font_size);
     write_key_val(svg_out, "x", cx);
-    write_key_val(svg_out, "y", cy);
+    write_key_val(svg_out, "y", cy + data.y_shift);
     if (data.text_color != "black") {
         write_key_val(svg_out, "fill", data.text_color);
     }
@@ -371,7 +369,7 @@ void DiagramTimelineSvgDrawer::do_single_qubit_gate_instance(const ResolvedTimel
 
     auto c = q2xy(target.qubit_value());
     draw_generic_box(c.xyz[0], c.xyz[1], ss.str(), op.args);
-    if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate_data.flags & GATE_PRODUCES_RESULTS) {
         draw_rec(c.xyz[0], c.xyz[1]);
     }
 }
@@ -553,7 +551,7 @@ void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_pauli_targets(const Reso
         auto c = q2xy(t.qubit_value());
         draw_generic_box(
             c.xyz[0], c.xyz[1], ss.str(), t.qubit_value() == minmax_q.second ? op.args : SpanRef<const double>{});
-        if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS && t.qubit_value() == minmax_q.first) {
+        if (gate_data.flags & GATE_PRODUCES_RESULTS && t.qubit_value() == minmax_q.first) {
             draw_rec(c.xyz[0], c.xyz[1]);
         }
     }

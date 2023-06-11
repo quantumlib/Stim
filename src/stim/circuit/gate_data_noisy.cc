@@ -24,7 +24,7 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             GateType::DEPOLARIZE1,
             GateType::DEPOLARIZE1,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -62,7 +62,7 @@ Pauli Mixture:
             GateType::DEPOLARIZE2,
             GateType::DEPOLARIZE2,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -112,7 +112,7 @@ Pauli Mixture:
             GateType::X_ERROR,
             GateType::X_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -146,7 +146,7 @@ Pauli Mixture:
             GateType::Y_ERROR,
             GateType::Y_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -180,7 +180,7 @@ Pauli Mixture:
             GateType::Z_ERROR,
             GateType::Z_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -214,7 +214,7 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_1,
             GateType::PAULI_CHANNEL_1,
             3,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -259,7 +259,7 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_2,
             GateType::PAULI_CHANNEL_2,
             15,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -332,7 +332,7 @@ Pauli Mixture:
             GateType::E,
             GateType::E,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -375,7 +375,7 @@ Example:
             GateType::ELSE_CORRELATED_ERROR,
             GateType::ELSE_CORRELATED_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

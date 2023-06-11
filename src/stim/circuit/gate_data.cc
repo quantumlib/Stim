@@ -16,14 +16,23 @@
 
 #include <complex>
 
-#include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
+#include "stim/circuit/stabilizer_flow.h"
 
 using namespace stim;
 
 GateDataMap::GateDataMap() {
     bool failed = false;
+    items[0].name = "NO_GATE";
+    items[0].name_len = strlen(items[0].name);
+    items[0].extra_data_func = []() -> ExtraGateData {
+        return {
+            "none",
+            "none",
+            {},
+            {},
+            nullptr,
+        };
+    };
     add_gate_data_annotations(failed);
     add_gate_data_blocks(failed);
     add_gate_data_collapsing(failed);
@@ -35,6 +44,13 @@ GateDataMap::GateDataMap() {
     add_gate_data_period_4(failed);
     add_gate_data_pp(failed);
     add_gate_data_swaps(failed);
+    add_gate_data_pair_measure(failed);
+    for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
+        if (items[k].name_len == 0) {
+            std::cerr << "Uninitialized gate id: " << k << ".\n";
+            failed = true;
+        }
+    }
     if (failed) {
         throw std::out_of_range("Failed to initialize gate data.");
     }
@@ -82,61 +98,77 @@ Gate::Gate(
       id(gate_id),
       best_candidate_inverse_id(best_inverse_gate) {
 }
+std::vector<StabilizerFlow> Gate::flows() const {
+    if (flags & GATE_IS_UNITARY) {
+        auto t = tableau<MAX_BITWORD_WIDTH>();
+        if (flags & GATE_TARGETS_PAIRS) {
+            return {
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X_"), t.xs[0], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z_"), t.zs[0], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_X"), t.xs[1], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"), t.zs[1], {}},
+            };
+        }
+        return {
+            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X"), t.xs[0], {}},
+            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z"), t.zs[0], {}},
+        };
+    }
+    std::vector<StabilizerFlow> out;
+    auto data = extra_data_func();
+    for (const auto &c : data.flow_data) {
+        out.push_back(StabilizerFlow::from_str(c));
+    }
+    return out;
+}
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
+    assert(gate.id < NUM_DEFINED_GATES);
     const char *c = gate.name;
-    uint8_t h = gate_name_to_hash(c);
-    Gate &loc = items[h];
-    if (loc.name != nullptr) {
-        std::cerr << "GATE COLLISION " << gate.name << " vs " << loc.name << "\n";
+    auto h = gate_name_to_hash(c);
+    auto &hash_loc = hashed_name_to_gate_type_table[h];
+    if (hash_loc.expected_name_len != 0) {
+        std::cerr << "GATE COLLISION " << gate.name << " vs " << items[hash_loc.id].name << "\n";
         failed = true;
         return;
     }
-    loc = gate;
+    items[gate.id] = gate;
+    hash_loc.id = gate.id;
+    hash_loc.expected_name = gate.name;
+    hash_loc.expected_name_len = gate.name_len;
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
-    uint8_t h_alt = gate_name_to_hash(alt_name);
-    Gate &g_alt = items[h_alt];
-    if (g_alt.name != nullptr) {
-        std::cerr << "GATE COLLISION " << alt_name << " vs " << g_alt.name << "\n";
+    auto h_alt = gate_name_to_hash(alt_name);
+    auto &hash_loc = hashed_name_to_gate_type_table[h_alt];
+    if (hash_loc.expected_name_len != 0) {
+        std::cerr << "GATE COLLISION " << alt_name << " vs " << items[hash_loc.id].name << "\n";
         failed = true;
         return;
     }
 
-    uint8_t h_canon = gate_name_to_hash(canon_name);
-    Gate &g_canon = items[h_canon];
-    if (g_canon.name == nullptr || static_cast<uint8_t>(g_canon.id) != h_canon) {
+    auto h_canon = gate_name_to_hash(canon_name);
+    if (hashed_name_to_gate_type_table[h_canon].expected_name_len == 0) {
         std::cerr << "MISSING CANONICAL GATE " << canon_name << "\n";
         failed = true;
         return;
     }
-    g_alt.name = alt_name;
-    g_alt.name_len = (uint8_t)strlen(alt_name);
-    g_alt.id = g_canon.id;
-    g_alt.flags = g_canon.flags;
-}
 
-std::vector<Gate> GateDataMap::gates(bool include_aliases) const {
-    std::vector<Gate> result;
-    for (size_t k = 0; k < items.size(); k++) {
-        if (items[k].name != nullptr && (include_aliases || items[k].id == k)) {
-            result.push_back(items[k]);
-        }
-    }
-    return result;
+    hash_loc.id = hashed_name_to_gate_type_table[h_canon].id;
+    hash_loc.expected_name = alt_name;
+    hash_loc.expected_name_len = strlen(alt_name);
 }
 
 ExtraGateData::ExtraGateData(
     const char *category,
     const char *help,
     FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-    FixedCapVector<const char *, 4> tableau_data,
+    FixedCapVector<const char *, 10> flow_data,
     const char *h_s_cx_m_r_decomposition)
     : category(category),
       help(help),
       unitary_data(unitary_data),
-      tableau_data(tableau_data),
+      flow_data(flow_data),
       h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
 }
 

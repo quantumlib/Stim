@@ -181,6 +181,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.GateTarget.is_x_target`](#stim.GateTarget.is_x_target)
     - [`stim.GateTarget.is_y_target`](#stim.GateTarget.is_y_target)
     - [`stim.GateTarget.is_z_target`](#stim.GateTarget.is_z_target)
+    - [`stim.GateTarget.pauli_type`](#stim.GateTarget.pauli_type)
+    - [`stim.GateTarget.qubit_value`](#stim.GateTarget.qubit_value)
     - [`stim.GateTarget.value`](#stim.GateTarget.value)
 - [`stim.GateTargetWithCoords`](#stim.GateTargetWithCoords)
     - [`stim.GateTargetWithCoords.__init__`](#stim.GateTargetWithCoords.__init__)
@@ -5713,7 +5715,26 @@ def __repr__(
 def is_combiner(
     self,
 ) -> bool:
-    """Returns whether or not this is a `stim.target_combiner()`.
+    """Returns whether or not this is a combiner target like `*`.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_combiner
+        False
+        >>> stim.target_inv(7).is_combiner
+        False
+        >>> stim.target_x(8).is_combiner
+        False
+        >>> stim.target_y(2).is_combiner
+        False
+        >>> stim.target_z(3).is_combiner
+        False
+        >>> stim.target_sweep_bit(9).is_combiner
+        False
+        >>> stim.target_rec(-5).is_combiner
+        False
+        >>> stim.target_combiner().is_combiner
+        True
     """
 ```
 
@@ -5726,11 +5747,26 @@ def is_combiner(
 def is_inverted_result_target(
     self,
 ) -> bool:
-    """Returns whether or not this is an inverted target.
+    """Returns whether or not this is an inverted target like `!5` or `!X4`.
 
-    Inverted targets include inverted qubit targets `stim.target_inv(5)`
-    (`!5` in a circuit file) and inverted Pauli targets like
-    `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_inverted_result_target
+        False
+        >>> stim.target_inv(7).is_inverted_result_target
+        True
+        >>> stim.target_x(8).is_inverted_result_target
+        False
+        >>> stim.target_x(8, invert=True).is_inverted_result_target
+        True
+        >>> stim.target_y(2).is_inverted_result_target
+        False
+        >>> stim.target_z(3).is_inverted_result_target
+        False
+        >>> stim.target_sweep_bit(9).is_inverted_result_target
+        False
+        >>> stim.target_rec(-5).is_inverted_result_target
+        False
     """
 ```
 
@@ -5743,10 +5779,24 @@ def is_inverted_result_target(
 def is_measurement_record_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a measurement record target.
+    """Returns whether or not this is a measurement record target like `rec[-5]`.
 
-    The value returned by `stim.target_rec(-5)`, which would be `rec[-5]` in a
-    circuit file, is a measurement record target.
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_measurement_record_target
+        False
+        >>> stim.target_inv(7).is_measurement_record_target
+        False
+        >>> stim.target_x(8).is_measurement_record_target
+        False
+        >>> stim.target_y(2).is_measurement_record_target
+        False
+        >>> stim.target_z(3).is_measurement_record_target
+        False
+        >>> stim.target_sweep_bit(9).is_measurement_record_target
+        False
+        >>> stim.target_rec(-5).is_measurement_record_target
+        True
     """
 ```
 
@@ -5759,9 +5809,24 @@ def is_measurement_record_target(
 def is_qubit_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a (possibly inverted) qubit target.
+    """Returns whether or not this is a qubit target like `5` or `!6`.
 
-    For example, `5` on its own in a stim circuit is a raw qubit target.
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_qubit_target
+        True
+        >>> stim.target_inv(7).is_qubit_target
+        True
+        >>> stim.target_x(8).is_qubit_target
+        False
+        >>> stim.target_y(2).is_qubit_target
+        False
+        >>> stim.target_z(3).is_qubit_target
+        False
+        >>> stim.target_sweep_bit(9).is_qubit_target
+        False
+        >>> stim.target_rec(-5).is_qubit_target
+        False
     """
 ```
 
@@ -5774,10 +5839,25 @@ def is_qubit_target(
 def is_sweep_bit_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a sweep bit target.
+    """Returns whether or not this is a sweep bit target like `sweep[4]`.
 
-    For example, `sweep[5]` in a circuit file is a sweep target, and the value
-    returned by `stim.target_sweep_bit` is a sweep target.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_sweep_bit_target
+        False
+        >>> stim.target_inv(7).is_sweep_bit_target
+        False
+        >>> stim.target_x(8).is_sweep_bit_target
+        False
+        >>> stim.target_y(2).is_sweep_bit_target
+        False
+        >>> stim.target_z(3).is_sweep_bit_target
+        False
+        >>> stim.target_sweep_bit(9).is_sweep_bit_target
+        True
+        >>> stim.target_rec(-5).is_sweep_bit_target
+        False
     """
 ```
 
@@ -5790,10 +5870,24 @@ def is_sweep_bit_target(
 def is_x_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a (possibly inverted) X pauli target.
+    """Returns whether or not this is an X pauli target like `X2` or `!X7`.
 
-    For example, `X5` in a stim circuit is a X Pauli target. The value returned by
-    `stim.target_x` is a X pauli target.
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_x_target
+        False
+        >>> stim.target_inv(7).is_x_target
+        False
+        >>> stim.target_x(8).is_x_target
+        True
+        >>> stim.target_y(2).is_x_target
+        False
+        >>> stim.target_z(3).is_x_target
+        False
+        >>> stim.target_sweep_bit(9).is_x_target
+        False
+        >>> stim.target_rec(-5).is_x_target
+        False
     """
 ```
 
@@ -5806,10 +5900,24 @@ def is_x_target(
 def is_y_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a (possibly inverted) Y pauli target.
+    """Returns whether or not this is a Y pauli target like `Y2` or `!Y7`.
 
-    For example, `Y5` in a stim circuit is a Y Pauli target. The value returned by
-    `stim.target_y` is a Y pauli target.
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_y_target
+        False
+        >>> stim.target_inv(7).is_y_target
+        False
+        >>> stim.target_x(8).is_y_target
+        False
+        >>> stim.target_y(2).is_y_target
+        True
+        >>> stim.target_z(3).is_y_target
+        False
+        >>> stim.target_sweep_bit(9).is_y_target
+        False
+        >>> stim.target_rec(-5).is_y_target
+        False
     """
 ```
 
@@ -5822,10 +5930,86 @@ def is_y_target(
 def is_z_target(
     self,
 ) -> bool:
-    """Returns whether or not this is a (possibly inverted) Z pauli target.
+    """Returns whether or not this is a Z pauli target like `Z2` or `!Z7`.
 
-    For example, `Z5` in a stim circuit is a Z Pauli target. The value returned by
-    `stim.target_z` is a Z pauli target.
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).is_z_target
+        False
+        >>> stim.target_inv(7).is_z_target
+        False
+        >>> stim.target_x(8).is_z_target
+        False
+        >>> stim.target_y(2).is_z_target
+        False
+        >>> stim.target_z(3).is_z_target
+        True
+        >>> stim.target_sweep_bit(9).is_z_target
+        False
+        >>> stim.target_rec(-5).is_z_target
+        False
+    """
+```
+
+<a name="stim.GateTarget.pauli_type"></a>
+```python
+# stim.GateTarget.pauli_type
+
+# (in class stim.GateTarget)
+@property
+def pauli_type(
+    self,
+) -> str:
+    """Returns whether this is an 'X', 'Y', or 'Z' target.
+
+    For non-pauli targets, this property evaluates to 'I'.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).pauli_type
+        'I'
+        >>> stim.target_inv(7).pauli_type
+        'I'
+        >>> stim.target_x(8).pauli_type
+        'X'
+        >>> stim.target_y(2).pauli_type
+        'Y'
+        >>> stim.target_z(3).pauli_type
+        'Z'
+        >>> stim.target_sweep_bit(9).pauli_type
+        'I'
+        >>> stim.target_rec(-5).pauli_type
+        'I'
+    """
+```
+
+<a name="stim.GateTarget.qubit_value"></a>
+```python
+# stim.GateTarget.qubit_value
+
+# (in class stim.GateTarget)
+@property
+def qubit_value(
+    self,
+) -> Optional[int]:
+    """Returns the integer value of the targeted qubit, or else None.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).qubit_value
+        6
+        >>> stim.target_inv(7).qubit_value
+        7
+        >>> stim.target_x(8).qubit_value
+        8
+        >>> stim.target_y(2).qubit_value
+        2
+        >>> stim.target_z(3).qubit_value
+        3
+        >>> print(stim.target_sweep_bit(9).qubit_value)
+        None
+        >>> print(stim.target_rec(-5).qubit_value)
+        None
     """
 ```
 
@@ -5842,6 +6026,23 @@ def value(
 
     This is non-negative integer for qubit targets, and a negative integer for
     measurement record targets.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateTarget(6).value
+        6
+        >>> stim.target_inv(7).value
+        7
+        >>> stim.target_x(8).value
+        8
+        >>> stim.target_y(2).value
+        2
+        >>> stim.target_z(3).value
+        3
+        >>> stim.target_sweep_bit(9).value
+        9
+        >>> stim.target_rec(-5).value
+        -5
     """
 ```
 
@@ -11133,7 +11334,7 @@ def target_combiner(
 
 # (at top-level in the stim module)
 def target_inv(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
 ) -> stim.GateTarget:
     """Returns a target flagged as inverted.
 
@@ -11302,7 +11503,7 @@ def target_sweep_bit(
 
 # (at top-level in the stim module)
 def target_x(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli X target that can be passed into `stim.Circuit.append`.
@@ -11335,7 +11536,7 @@ def target_x(
 
 # (at top-level in the stim module)
 def target_y(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
@@ -11368,7 +11569,7 @@ def target_y(
 
 # (at top-level in the stim module)
 def target_z(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli Z target that can be passed into `stim.Circuit.append`.

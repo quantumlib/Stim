@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
@@ -62,8 +63,9 @@ TEST(gate_data, hash_matches_storage_location) {
     ASSERT_EQ(GATE_DATA.items[0].flags, GateFlags::NO_GATE_FLAG);
     for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
         const auto &g = GATE_DATA.items[k];
+        EXPECT_EQ(g.id, k) << g.name;
         if (g.id != 0) {
-            EXPECT_EQ(gate_name_to_hash(g.name), k) << g.name;
+            EXPECT_EQ(GATE_DATA.hashed_name_to_gate_type_table[gate_name_to_hash(g.name)].id, g.id) << g.name;
         }
     }
 }
@@ -114,21 +116,19 @@ bool is_decomposition_correct(const Gate &gate) {
 }
 
 TEST(gate_data, decompositions_are_correct) {
-    for (const auto &g : GATE_DATA.gates()) {
-        if (g.extra_data_func != nullptr) {
-            auto data = g.extra_data_func();
-            if (g.flags & GATE_IS_UNITARY) {
-                EXPECT_TRUE(data.h_s_cx_m_r_decomposition != nullptr) << g.name;
-            }
-            if (data.h_s_cx_m_r_decomposition != nullptr) {
-                EXPECT_TRUE(is_decomposition_correct(g)) << g.name;
-            }
+    for (const auto &g : GATE_DATA.items) {
+        auto data = g.extra_data_func();
+        if (g.flags & GATE_IS_UNITARY) {
+            EXPECT_TRUE(data.h_s_cx_m_r_decomposition != nullptr) << g.name;
+        }
+        if (data.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
+            EXPECT_TRUE(is_decomposition_correct(g)) << g.name;
         }
     }
 }
 
 TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
-    for (const auto &g : GATE_DATA.gates()) {
+    for (const auto &g : GATE_DATA.items) {
         if (g.flags & GATE_IS_UNITARY) {
             auto g_t_inv = g.tableau<W>().inverse(false);
             auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau<W>();
@@ -136,3 +136,66 @@ TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
         }
     }
 })
+
+TEST(gate_data, stabilizer_flows_are_correct) {
+    for (const auto &g : GATE_DATA.items) {
+         auto flows = g.flows();
+         if (flows.empty()) {
+            continue;
+         }
+         std::vector<GateTarget> targets;
+        if (g.id == GateType::MPP) {
+            targets.push_back(GateTarget::x(0));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::y(1));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::z(2));
+            targets.push_back(GateTarget::x(3));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::x(4));
+        } else {
+            targets.push_back(GateTarget::qubit(0));
+            if (g.flags & GATE_TARGETS_PAIRS) {
+               targets.push_back(GateTarget::qubit(1));
+            }
+        }
+
+         Circuit c;
+         c.safe_append(g.id, targets, {});
+         auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
+         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
+             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
+         }
+    }
+}
+
+TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
+    for (const auto &g : GATE_DATA.items) {
+        auto flows = g.flows();
+        if (flows.empty()) {
+           continue;
+        }
+        std::vector<GateTarget> targets;
+        if (g.id == GateType::MPP) {
+            targets.push_back(GateTarget::x(0));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::y(1));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::z(2));
+            targets.push_back(GateTarget::x(3));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::x(4));
+        } else {
+            targets.push_back(GateTarget::qubit(0));
+            if (g.flags & GATE_TARGETS_PAIRS) {
+               targets.push_back(GateTarget::qubit(1));
+            }
+        }
+
+        Circuit c(g.extra_data_func().h_s_cx_m_r_decomposition);
+        auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
+        for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
+            EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];
+        }
+    }
+}

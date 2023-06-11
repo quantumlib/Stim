@@ -295,6 +295,8 @@ void FrameSimulator::do_C_ZYX(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
+    c &= ~TARGET_INVERTED_BIT;
+    t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](
@@ -312,6 +314,8 @@ void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
 }
 
 void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
+    c &= ~TARGET_INVERTED_BIT;
+    t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](
@@ -352,6 +356,8 @@ void FrameSimulator::do_ZCZ(const CircuitInstruction &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t c = targets[k].data;
         size_t t = targets[k + 1].data;
+        c &= ~TARGET_INVERTED_BIT;
+        t &= ~TARGET_INVERTED_BIT;
         if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             x_table[c].for_each_word(
                 z_table[c], x_table[t], z_table[t], [](
@@ -572,7 +578,7 @@ void FrameSimulator::do_Z_ERROR(const CircuitInstruction &target_data) {
 }
 
 void FrameSimulator::do_MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
+    decompose_mpp_operation(
         target_data,
         num_qubits,
         [&](const CircuitInstruction &h_xz,
@@ -646,186 +652,272 @@ void FrameSimulator::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_d
     }
 }
 
-void FrameSimulator::do_gate(const CircuitInstruction &data) {
-    switch (data.gate_type) {
+void FrameSimulator::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        do_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+    }
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+}
+
+void FrameSimulator::do_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        do_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+    }
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+}
+
+void FrameSimulator::do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        do_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+    }
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+}
+
+void FrameSimulator::do_MXX(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        num_qubits,
+        [&](CircuitInstruction segment){
+            do_MXX_disjoint_controls_segment(segment);
+        });
+}
+
+void FrameSimulator::do_MYY(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        num_qubits,
+        [&](CircuitInstruction segment){
+            do_MYY_disjoint_controls_segment(segment);
+        });
+}
+
+void FrameSimulator::do_MZZ(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        num_qubits,
+        [&](CircuitInstruction segment){
+            do_MZZ_disjoint_controls_segment(segment);
+        });
+}
+
+void FrameSimulator::do_MPAD(const CircuitInstruction &inst) {
+    simd_bits<MAX_BITWORD_WIDTH> empty(batch_size);
+    assert(inst.args.empty());
+    for (size_t k = 0; k < inst.targets.size(); k++) {
+        m_record.record_result(empty);
+    }
+}
+
+void FrameSimulator::do_gate(const CircuitInstruction &inst) {
+    switch (inst.gate_type) {
         case GateType::DETECTOR:
-            do_DETECTOR(data);
+            do_DETECTOR(inst);
             break;
         case GateType::OBSERVABLE_INCLUDE:
-            do_OBSERVABLE_INCLUDE(data);
+            do_OBSERVABLE_INCLUDE(inst);
             break;
         case GateType::TICK:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::QUBIT_COORDS:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::SHIFT_COORDS:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::MX:
-            do_MX(data);
+            do_MX(inst);
             break;
         case GateType::MY:
-            do_MY(data);
+            do_MY(inst);
             break;
         case GateType::M:
-            do_MZ(data);
+            do_MZ(inst);
             break;
         case GateType::MRX:
-            do_MRX(data);
+            do_MRX(inst);
             break;
         case GateType::MRY:
-            do_MRY(data);
+            do_MRY(inst);
             break;
         case GateType::MR:
-            do_MRZ(data);
+            do_MRZ(inst);
             break;
         case GateType::RX:
-            do_RX(data);
+            do_RX(inst);
             break;
         case GateType::RY:
-            do_RY(data);
+            do_RY(inst);
             break;
         case GateType::R:
-            do_RZ(data);
+            do_RZ(inst);
             break;
         case GateType::MPP:
-            do_MPP(data);
+            do_MPP(inst);
+            break;
+        case GateType::MPAD:
+            do_MPAD(inst);
+            break;
+        case GateType::MXX:
+            do_MXX(inst);
+            break;
+        case GateType::MYY:
+            do_MYY(inst);
+            break;
+        case GateType::MZZ:
+            do_MZZ(inst);
             break;
         case GateType::XCX:
-            do_XCX(data);
+            do_XCX(inst);
             break;
         case GateType::XCY:
-            do_XCY(data);
+            do_XCY(inst);
             break;
         case GateType::XCZ:
-            do_XCZ(data);
+            do_XCZ(inst);
             break;
         case GateType::YCX:
-            do_YCX(data);
+            do_YCX(inst);
             break;
         case GateType::YCY:
-            do_YCY(data);
+            do_YCY(inst);
             break;
         case GateType::YCZ:
-            do_YCZ(data);
+            do_YCZ(inst);
             break;
         case GateType::CX:
-            do_ZCX(data);
+            do_ZCX(inst);
             break;
         case GateType::CY:
-            do_ZCY(data);
+            do_ZCY(inst);
             break;
         case GateType::CZ:
-            do_ZCZ(data);
+            do_ZCZ(inst);
             break;
         case GateType::H:
-            do_H_XZ(data);
+            do_H_XZ(inst);
             break;
         case GateType::H_XY:
-            do_H_XY(data);
+            do_H_XY(inst);
             break;
         case GateType::H_YZ:
-            do_H_YZ(data);
+            do_H_YZ(inst);
             break;
         case GateType::DEPOLARIZE1:
-            do_DEPOLARIZE1(data);
+            do_DEPOLARIZE1(inst);
             break;
         case GateType::DEPOLARIZE2:
-            do_DEPOLARIZE2(data);
+            do_DEPOLARIZE2(inst);
             break;
         case GateType::X_ERROR:
-            do_X_ERROR(data);
+            do_X_ERROR(inst);
             break;
         case GateType::Y_ERROR:
-            do_Y_ERROR(data);
+            do_Y_ERROR(inst);
             break;
         case GateType::Z_ERROR:
-            do_Z_ERROR(data);
+            do_Z_ERROR(inst);
             break;
         case GateType::PAULI_CHANNEL_1:
-            do_PAULI_CHANNEL_1(data);
+            do_PAULI_CHANNEL_1(inst);
             break;
         case GateType::PAULI_CHANNEL_2:
-            do_PAULI_CHANNEL_2(data);
+            do_PAULI_CHANNEL_2(inst);
             break;
         case GateType::E:
-            do_CORRELATED_ERROR(data);
+            do_CORRELATED_ERROR(inst);
             break;
         case GateType::ELSE_CORRELATED_ERROR:
-            do_ELSE_CORRELATED_ERROR(data);
+            do_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::X:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::Y:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::Z:
-            do_I(data);
+            do_I(inst);
             break;
         case GateType::C_XYZ:
-            do_C_XYZ(data);
+            do_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
-            do_C_ZYX(data);
+            do_C_ZYX(inst);
             break;
         case GateType::SQRT_X:
-            do_H_YZ(data);
+            do_H_YZ(inst);
             break;
         case GateType::SQRT_X_DAG:
-            do_H_YZ(data);
+            do_H_YZ(inst);
             break;
         case GateType::SQRT_Y:
-            do_H_XZ(data);
+            do_H_XZ(inst);
             break;
         case GateType::SQRT_Y_DAG:
-            do_H_XZ(data);
+            do_H_XZ(inst);
             break;
         case GateType::S:
-            do_H_XY(data);
+            do_H_XY(inst);
             break;
         case GateType::S_DAG:
-            do_H_XY(data);
+            do_H_XY(inst);
             break;
         case GateType::SQRT_XX:
-            do_SQRT_XX(data);
+            do_SQRT_XX(inst);
             break;
         case GateType::SQRT_XX_DAG:
-            do_SQRT_XX(data);
+            do_SQRT_XX(inst);
             break;
         case GateType::SQRT_YY:
-            do_SQRT_YY(data);
+            do_SQRT_YY(inst);
             break;
         case GateType::SQRT_YY_DAG:
-            do_SQRT_YY(data);
+            do_SQRT_YY(inst);
             break;
         case GateType::SQRT_ZZ:
-            do_SQRT_ZZ(data);
+            do_SQRT_ZZ(inst);
             break;
         case GateType::SQRT_ZZ_DAG:
-            do_SQRT_ZZ(data);
+            do_SQRT_ZZ(inst);
             break;
         case GateType::SWAP:
-            do_SWAP(data);
+            do_SWAP(inst);
             break;
         case GateType::ISWAP:
-            do_ISWAP(data);
+            do_ISWAP(inst);
             break;
         case GateType::ISWAP_DAG:
-            do_ISWAP(data);
+            do_ISWAP(inst);
             break;
         case GateType::CXSWAP:
-            do_CXSWAP(data);
+            do_CXSWAP(inst);
             break;
         case GateType::SWAPCX:
-            do_SWAPCX(data);
+            do_SWAPCX(inst);
             break;
         default:
-            throw std::invalid_argument("Not implement: " + data.str());
+            throw std::invalid_argument("Not implemented: " + inst.str());
     }
 }

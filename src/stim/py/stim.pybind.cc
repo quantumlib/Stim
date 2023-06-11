@@ -16,9 +16,9 @@
 #include <pybind11/pybind11.h>
 
 #include "stim/circuit/circuit.pybind.h"
-#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/circuit/gate_target.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
@@ -39,8 +39,8 @@
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
 
-#define xstr(s) str(s)
-#define str(s) #s
+#define xstr_literal(s) str_literal(s)
+#define str_literal(s) #s
 
 using namespace stim;
 using namespace stim_pybind;
@@ -49,20 +49,44 @@ GateTarget target_rec(int32_t lookback) {
     return GateTarget::rec(lookback);
 }
 
-GateTarget target_inv(uint32_t qubit) {
-    return GateTarget::qubit(qubit, true);
+GateTarget target_inv(const pybind11::object &qubit) {
+    if (pybind11::isinstance<GateTarget>(qubit)) {
+        return !pybind11::cast<GateTarget>(qubit);
+    }
+    return GateTarget::qubit(pybind11::cast<uint32_t>(qubit), true);
 }
 
-GateTarget target_x(uint32_t qubit, bool invert) {
-    return GateTarget::x(qubit, invert);
+GateTarget target_x(const pybind11::object &qubit, bool invert) {
+    if (pybind11::isinstance<GateTarget>(qubit)) {
+        auto t = pybind11::cast<GateTarget>(qubit);
+        if (!t.is_qubit_target()) {
+            throw std::invalid_argument("result of stim.target_x(" + t.str() + ") is not defined");
+        }
+        return GateTarget::x(t.qubit_value(), t.is_inverted_result_target() ^ invert);
+    }
+    return GateTarget::x(pybind11::cast<uint32_t>(qubit), invert);
 }
 
-GateTarget target_y(uint32_t qubit, bool invert) {
-    return GateTarget::y(qubit, invert);
+GateTarget target_y(const pybind11::object &qubit, bool invert) {
+    if (pybind11::isinstance<GateTarget>(qubit)) {
+        auto t = pybind11::cast<GateTarget>(qubit);
+        if (!t.is_qubit_target()) {
+            throw std::invalid_argument("result of stim.target_y(" + t.str() + ") is not defined");
+        }
+        return GateTarget::y(t.qubit_value(), t.is_inverted_result_target() ^ invert);
+    }
+    return GateTarget::y(pybind11::cast<uint32_t>(qubit), invert);
 }
 
-GateTarget target_z(uint32_t qubit, bool invert) {
-    return GateTarget::z(qubit, invert);
+GateTarget target_z(const pybind11::object &qubit, bool invert) {
+    if (pybind11::isinstance<GateTarget>(qubit)) {
+        auto t = pybind11::cast<GateTarget>(qubit);
+        if (!t.is_qubit_target()) {
+            throw std::invalid_argument("result of stim.target_z(" + t.str() + ") is not defined");
+        }
+        return GateTarget::z(t.qubit_value(), t.is_inverted_result_target() ^ invert);
+    }
+    return GateTarget::z(pybind11::cast<uint32_t>(qubit), invert);
 }
 
 GateTarget target_sweep_bit(uint32_t qubit) {
@@ -99,10 +123,9 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
         result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);
     }
     std::vector<std::string> aliases;
-    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
-        auto other_id = GATE_DATA.items[k].id;
-        if (other_id == gate.id && other_id != k) {
-            aliases.push_back(GATE_DATA.items[k].name);
+    for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (h.id == gate.id && std::string(gate.name) != std::string(h.expected_name)) {
+            aliases.push_back(h.expected_name);
         }
     }
     if (!aliases.empty()) {
@@ -124,8 +147,10 @@ pybind11::object raw_format_data_solo(const FileFormatData &data) {
 
 pybind11::dict raw_gate_data() {
     pybind11::dict result;
-    for (const auto &gate : GATE_DATA.gates()) {
-        result[gate.name] = raw_gate_data_solo(gate);
+    for (const auto &gate : GATE_DATA.items) {
+        if (gate.id != NOT_A_GATE) {
+            result[gate.name] = raw_gate_data_solo(gate);
+        }
     }
     return result;
 }
@@ -175,6 +200,7 @@ void top_level(pybind11::module &m) {
         &target_inv,
         pybind11::arg("qubit_index"),
         clean_doc_string(R"DOC(
+            @signature def target_inv(qubit_index: Union[int, stim.GateTarget]) -> stim.GateTarget:
             Returns a target flagged as inverted.
 
             Inverted targets are used to indicate measurement results should be flipped.
@@ -225,6 +251,7 @@ void top_level(pybind11::module &m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(R"DOC(
+            @signature def target_x(qubit_index: Union[int, stim.GateTarget], invert: bool = False) -> stim.GateTarget:
             Returns a Pauli X target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -255,6 +282,7 @@ void top_level(pybind11::module &m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(R"DOC(
+            @signature def target_y(qubit_index: Union[int, stim.GateTarget], invert: bool = False) -> stim.GateTarget:
             Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -285,6 +313,7 @@ void top_level(pybind11::module &m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(R"DOC(
+            @signature def target_z(qubit_index: Union[int, stim.GateTarget], invert: bool = False) -> stim.GateTarget:
             Returns a Pauli Z target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -412,7 +441,7 @@ void top_level(pybind11::module &m) {
 }
 
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
-    m.attr("__version__") = xstr(VERSION_INFO);
+    m.attr("__version__") = xstr_literal(VERSION_INFO);
     m.doc() = R"pbdoc(
         Stim: A fast stabilizer circuit library.
     )pbdoc";

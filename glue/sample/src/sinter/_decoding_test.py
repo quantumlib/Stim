@@ -264,6 +264,37 @@ def test_observable_post_selection(decoder: str, required_import: str, force_str
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_error_splitting(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        num_shots=10000,
+        decoder=decoder,
+        split_errors=True,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    assert result.discards == 0
+    assert result.classified_errors is not None
+    if decoder != 'vacuous':
+        np.testing.assert_allclose(result.errors / result.shots, 1 - 0.8 * 0.9, atol=0.05)
+        assert set(result.classified_errors.keys()) == {'E_', '_E', 'EE'}
+        np.testing.assert_allclose(result.classified_errors['E_'] / result.shots, 0.1 * 0.2, atol=0.05)
+        np.testing.assert_allclose(result.classified_errors['_E'] / result.shots, 0.1 * 0.8, atol=0.05)
+        np.testing.assert_allclose(result.classified_errors['EE'] / result.shots, 0.9 * 0.2, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
 def test_decode_fails_correctly(decoder: str, required_import: str, force_streaming: Optional[bool]):
     pytest.importorskip(required_import)
 

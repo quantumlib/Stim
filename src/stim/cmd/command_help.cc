@@ -34,6 +34,7 @@
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/circuit/stabilizer_flow.h"
 
 using namespace stim;
 
@@ -167,8 +168,10 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
     out.change_indent(+4);
     for (size_t k = 0; k < 3; k++) {
         out << name;
-        if ((gate.flags & GATE_IS_NOISE) || (k == 2 && (gate.flags & GATE_PRODUCES_NOISY_RESULTS))) {
-            out << "(" << 0.001 << ")";
+        if (gate.flags & GATE_IS_NOISY) {
+            if (k == 2 || !(gate.flags & GATE_PRODUCES_RESULTS)) {
+                out << "(" << 0.001 << ")";
+            }
         }
         if (k != 1) {
             out << " " << 5;
@@ -178,7 +181,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         }
         if (k != 0) {
             out << " ";
-            if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
+            if (gate.flags & GATE_PRODUCES_RESULTS) {
                 out << "!";
             }
             out << 42;
@@ -203,9 +206,13 @@ void print_decomposition(Acc &out, const Gate &gate) {
     const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
-        undecomposed << gate.name << " 0";
-        if (gate.flags & GATE_TARGETS_PAIRS) {
-            undecomposed << " 1";
+        if (gate.id == GateType::MPP) {
+            undecomposed << "MPP X0*Y1*Z2 X3*X4";
+        } else {
+            undecomposed << gate.name << " 0";
+            if (gate.flags & GATE_TARGETS_PAIRS) {
+                undecomposed << " 1";
+            }
         }
 
         out << "Decomposition (into H, S, CX, M, R):\n";
@@ -221,31 +228,27 @@ void print_decomposition(Acc &out, const Gate &gate) {
 }
 
 void print_stabilizer_generators(Acc &out, const Gate &gate) {
-    if (gate.flags & GATE_IS_UNITARY) {
-        out << "Stabilizer Generators:\n";
-        out.change_indent(+4);
-        auto tableau = gate.tableau<MAX_BITWORD_WIDTH>();
-        if (gate.flags & GATE_TARGETS_PAIRS) {
-            out << "X_ -> " << tableau.xs[0] << "\n";
-            out << "Z_ -> " << tableau.zs[0] << "\n";
-            out << "_X -> " << tableau.xs[1] << "\n";
-            out << "_Z -> " << tableau.zs[1] << "\n";
-        } else {
-            out << "X -> " << tableau.xs[0] << "\n";
-            out << "Z -> " << tableau.zs[0] << "\n";
-        }
-        out.change_indent(-4);
-    } else {
-        auto data = gate.extra_data_func();
-        if (data.tableau_data.size()) {
-            out << "Stabilizer Generators:\n";
-            out.change_indent(+4);
-            for (const auto &e : data.tableau_data) {
-                out << e << "\n";
-            }
-            out.change_indent(-4);
-        }
+    auto flows = gate.flows();
+    if (flows.empty()) {
+        return;
     }
+    if (gate.id == GateType::MPP) {
+        out << "Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):\n";
+    } else {
+        out << "Stabilizer Generators:\n";
+    }
+    out.change_indent(+4);
+    for (const auto &flow : gate.flows()) {
+        auto s = flow.str();
+        std::string no_plus;
+        for (char c : s) {
+            if (c != '+') {
+                no_plus.push_back(c);
+            }
+        }
+        out << no_plus << "\n";
+    }
+    out.change_indent(-4);
 }
 
 void print_bloch_vector(Acc &out, const Gate &gate) {
@@ -377,27 +380,18 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     } else {
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
-    for (const auto &other : GATE_DATA.gates(true)) {
-        if (other.id == alt_gate.id && other.name != alt_gate.name) {
+    for (const auto &entry : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (entry.expected_name_len > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
-                out << "<a name=\"" << other.name << "\"></a>";
+                out << "<a name=\"" << entry.expected_name << "\"></a>";
             }
-            out << "`" << other.name << "`\n";
+            out << "`" << entry.expected_name << "`\n";
         }
     }
     auto data = gate.extra_data_func();
     out << data.help;
-    if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
-        out << "If this gate is parameterized by a probability argument, the "
-               "recorded result will be flipped with that probability. "
-               "If not, the recorded result is noiseless. "
-               "Note that the noise only affects the recorded result, not the "
-               "target qubit's state.\n\n";
-        out << "Prefixing a target with ! inverts its recorded measurement result.\n";
-    }
-
-    if (std::string(data.help).find("xample:\n") == std::string::npos) {
+    if (std::string(data.help).find("xample:\n") == std::string::npos && std::string(data.help).find("xamples:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
     print_stabilizer_generators(out, gate);
@@ -557,14 +551,18 @@ Use `stim help [topic]` for help on specific topics. Available topics include:
 
 std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
-    for (const auto &g : GATE_DATA.gates(true)) {
-        result[g.name] = generate_per_gate_help_markdown(g, 0, false);
+    for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (e.expected_name_len > 0) {
+            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA.items[e.id], 0, false);
+        }
     }
 
     std::map<std::string, std::set<std::string>> categories;
-    for (const auto &g : GATE_DATA.gates(true)) {
-        const auto &rep = GATE_DATA.at(g.name);
-        categories[std::string(rep.extra_data_func().category)].insert(g.name);
+    for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (e.expected_name_len > 0) {
+            const auto &rep = GATE_DATA.at(e.expected_name);
+            categories[std::string(rep.extra_data_func().category)].insert(e.expected_name);
+        }
     }
 
     std::stringstream all;

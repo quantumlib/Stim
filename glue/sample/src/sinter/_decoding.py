@@ -1,3 +1,5 @@
+import collections
+from typing import Iterable
 from typing import Optional, Dict, Tuple, TYPE_CHECKING, Union
 
 import contextlib
@@ -81,7 +83,9 @@ def _streaming_count_mistakes(
         num_obs: int,
         postselected_observable_mask: Optional[np.ndarray] = None,
         obs_in: pathlib.Path,
-        predictions_in: pathlib.Path) -> Tuple[int, int]:
+        predictions_in: pathlib.Path,
+        out_obs_to_num_errors: Optional[collections.Counter],
+) -> Tuple[int, int]:
 
     num_obs_bytes = math.ceil(num_obs / 8)
     num_shots_left = num_shots
@@ -98,13 +102,18 @@ def _streaming_count_mistakes(
                 pred_batch.shape = (batch_size, num_obs_bytes)
 
                 cmp_table = pred_batch ^ obs_batch
-                if postselected_observable_mask is None:
-                    local_discards = 0
-                else:
-                    local_discards = np.count_nonzero(np.any(cmp_table & postselected_observable_mask, axis=1))
-                local_errors_or_discards = np.count_nonzero(np.any(cmp_table, axis=1))
-                num_discards += local_discards
-                num_errors += local_errors_or_discards - local_discards
+                err_mask = np.any(cmp_table, axis=1)
+                if postselected_observable_mask is not None:
+                    discard_mask = np.any(cmp_table & postselected_observable_mask, axis=1)
+                    err_mask &= ~discard_mask
+                    num_discards += np.count_nonzero(discard_mask)
+
+                if out_obs_to_num_errors is not None:
+                    for misprediction_arr in cmp_table[err_mask]:
+                        err_key = ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
+                        out_obs_to_num_errors[err_key] += 1
+
+                num_errors += np.count_nonzero(err_mask)
                 num_shots_left -= batch_size
     return num_discards, num_errors
 
@@ -116,6 +125,7 @@ def sample_decode(*,
                   dem_path: Union[None, str, pathlib.Path],
                   post_mask: Optional[np.ndarray] = None,
                   postselected_observable_mask: Optional[np.ndarray] = None,
+                  split_errors: bool = False,
                   num_shots: int,
                   decoder: str,
                   tmp_dir: Union[str, pathlib.Path, None] = None,
@@ -139,6 +149,10 @@ def sample_decode(*,
         postselected_observable_mask: Bit packed mask indicating which observables to
             postselect on. If the decoder incorrectly predicts any of these observables, the
             shot is discarded instead of counted as an error.
+        split_errors: Defaults to False. When set to to True, the returned
+            AnonTaskStats will have a non-None `classified_errors` field where
+            keys are an integer with the k'th bit set to 1 if the k'th
+            observable was mispredicted.
         num_shots: The number of sample shots to take from the circuit.
         decoder: The name of the decoder to use. Allowed values are:
             "pymatching":
@@ -194,6 +208,8 @@ def sample_decode(*,
             total_num_shots=num_shots,
             mini_batch_size=1024,
             start_time_monotonic=start_time,
+            split_errors=split_errors,
+            num_obs=circuit.num_observables,
         )
     except NotImplementedError:
         assert __private__unstable__force_decode_on_disk or __private__unstable__force_decode_on_disk is None
@@ -207,6 +223,7 @@ def sample_decode(*,
             decoder_obj=decoder_obj,
             tmp_dir=tmp_dir,
             start_time_monotonic=start_time,
+            split_errors=split_errors,
         )
 
 
@@ -215,16 +232,19 @@ def _sample_decode_helper_using_memory(
     circuit: stim.Circuit,
     post_mask: Optional[np.ndarray],
     postselected_observable_mask: Optional[np.ndarray],
+    num_obs: int,
     total_num_shots: int,
     mini_batch_size: int,
     compiled_decoder: CompiledDecoder,
     start_time_monotonic: float,
+    split_errors: bool,
 ) -> AnonTaskStats:
     sampler: stim.CompiledDetectorSampler = circuit.compile_detector_sampler()
 
     out_num_discards = 0
     out_num_errors = 0
     shots_left = total_num_shots
+    out_obs_to_num_errors = collections.Counter() if split_errors else None
     while shots_left > 0:
         cur_num_shots = min(shots_left, mini_batch_size)
         dets_data, obs_data = sampler.sample(shots=cur_num_shots, separate_observables=True, bit_packed=True)
@@ -251,7 +271,13 @@ def _sample_decode_helper_using_memory(
                 predict_data = predict_data[~discarded_flags, :]
 
         # Count how many mistakes the decoder made on non-discarded shots.
-        out_num_errors += np.count_nonzero(np.any(obs_data ^ predict_data, axis=1))
+        mispredictions = obs_data ^ predict_data
+        err_mask = np.any(mispredictions, axis=1)
+        if split_errors:
+            for misprediction_arr in mispredictions[err_mask]:
+                err_key = ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
+                out_obs_to_num_errors[err_key] += 1
+        out_num_errors += np.count_nonzero(err_mask)
         shots_left -= cur_num_shots
 
     return AnonTaskStats(
@@ -259,6 +285,7 @@ def _sample_decode_helper_using_memory(
         errors=out_num_errors,
         discards=out_num_discards,
         seconds=time.monotonic() - start_time_monotonic,
+        classified_errors=out_obs_to_num_errors,
     )
 
 
@@ -273,6 +300,7 @@ def _sample_decode_helper_using_disk(
     decoder_obj: Decoder,
     tmp_dir: Union[str, pathlib.Path, None],
     start_time_monotonic: float,
+    split_errors: bool,
 ) -> AnonTaskStats:
     with contextlib.ExitStack() as exit_stack:
         if tmp_dir is None:
@@ -335,12 +363,14 @@ def _sample_decode_helper_using_disk(
         )
 
         # Count how many predictions matched the actual observable data.
+        out_obs_to_num_errors = collections.Counter() if split_errors else None
         num_obs_discards, num_errors = _streaming_count_mistakes(
             num_shots=num_kept_shots,
             num_obs=num_obs,
             obs_in=obs_used_path,
             predictions_in=predictions_path,
             postselected_observable_mask=postselected_observable_mask,
+            out_obs_to_num_errors=out_obs_to_num_errors,
         )
 
         return AnonTaskStats(
@@ -348,4 +378,5 @@ def _sample_decode_helper_using_disk(
             errors=num_errors,
             discards=num_obs_discards + num_det_discards,
             seconds=time.monotonic() - start_time_monotonic,
+            classified_errors=out_obs_to_num_errors,
         )

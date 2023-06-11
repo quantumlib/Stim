@@ -43,6 +43,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
+    const auto &gate_data = GATE_DATA.items[op.gate_type];
     auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
@@ -64,6 +65,10 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
         }
         first << "(" << comma_sep(op.args, ",") << ")";
         second << "(" << comma_sep(op.args, ",") << ")";
+    }
+    if (gate_data.flags & GATE_PRODUCES_RESULTS) {
+        first << ':';
+        write_rec_index(first);
     }
 
     diagram.add_entry(AsciiDiagramEntry{
@@ -135,7 +140,7 @@ void DiagramTimelineAsciiDrawer::do_single_qubit_gate_instance(const ResolvedTim
     if (!op.args.empty()) {
         ss << "(" << comma_sep(op.args, ",") << ")";
     }
-    if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate_data.flags & GATE_PRODUCES_RESULTS) {
         ss << ':';
         write_rec_index(ss);
     }
@@ -276,7 +281,7 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
         if (!op.args.empty()) {
             ss << "(" << comma_sep(op.args, ",") << ")";
         }
-        if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
+        if (gate_data.flags & GATE_PRODUCES_RESULTS) {
             ss << ':';
             write_rec_index(ss);
         }
