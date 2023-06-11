@@ -206,9 +206,13 @@ void print_decomposition(Acc &out, const Gate &gate) {
     const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
-        undecomposed << gate.name << " 0";
-        if (gate.flags & GATE_TARGETS_PAIRS) {
-            undecomposed << " 1";
+        if (gate.id == GateType::MPP) {
+            undecomposed << "MPP X0*Y1*Z2 X3*X4";
+        } else {
+            undecomposed << gate.name << " 0";
+            if (gate.flags & GATE_TARGETS_PAIRS) {
+                undecomposed << " 1";
+            }
         }
 
         out << "Decomposition (into H, S, CX, M, R):\n";
@@ -228,7 +232,11 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (flows.empty()) {
         return;
     }
-    out << "Stabilizer Generators:\n";
+    if (gate.id == GateType::MPP) {
+        out << "Stabilizer Generators (for MPP X0*Y1*Z2 X3*X4):\n";
+    } else {
+        out << "Stabilizer Generators:\n";
+    }
     out.change_indent(+4);
     for (const auto &flow : gate.flows()) {
         auto s = flow.str();

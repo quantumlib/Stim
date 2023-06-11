@@ -179,7 +179,7 @@ ExtraGateData::ExtraGateData(
     const char *category,
     const char *help,
     FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-    FixedCapVector<const char *, 4> flow_data,
+    FixedCapVector<const char *, 10> flow_data,
     const char *h_s_cx_m_r_decomposition)
     : category(category),
       help(help),

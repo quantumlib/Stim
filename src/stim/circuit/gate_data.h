@@ -205,7 +205,7 @@ struct ExtraGateData {
     /// For single qubit Cliffords, this should be the output stabilizers for X then Z.
     /// For 2 qubit Cliffords, this should be the output stabilizers for X_, Z_, _X, _Z.
     /// For 2 qubit dissipative gates, this should be flows like "X_ -> XX xor rec[-1]".
-    FixedCapVector<const char *, 4> flow_data;
+    FixedCapVector<const char *, 10> flow_data;
     /// Stim circuit file contents of a decomposition into H+S+CX+M+R operations. (nullptr if not decomposable.)
     const char *h_s_cx_m_r_decomposition;
 
@@ -213,7 +213,7 @@ struct ExtraGateData {
         const char *category,
         const char *help,
         FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-        FixedCapVector<const char *, 4> tableau_data,
+        FixedCapVector<const char *, 10> tableau_data,
         const char *h_s_cx_m_r_decomposition);
 };
 

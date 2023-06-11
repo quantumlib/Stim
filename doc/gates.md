@@ -2124,6 +2124,30 @@ Examples:
     # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
     MPP(0.001) Z1*Z2 X1*X2
 
+Stabilizer Generators (for MPP X0*Y1*Z2 X3*X4):
+
+    XYZ__ -> rec[-2]
+    ___XX -> rec[-1]
+    X____ -> X____
+    _Y___ -> _Y___
+    __Z__ -> __Z__
+    ___X_ -> ___X_
+    ____X -> ____X
+    ZZ___ -> ZZ___
+    _XX__ -> _XX__
+    ___ZZ -> ___ZZ
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `MPP X0*Y1*Z2 X3*X4`
+    S 1 1 1
+    H 0 1 3 4
+    CX 2 0 1 0 4 3
+    M 0 3
+    CX 2 0 1 0 4 3
+    H 0 1 3 4
+    S 1
+    
 
 <a name="MR"></a>
 ### The 'MR' Instruction
