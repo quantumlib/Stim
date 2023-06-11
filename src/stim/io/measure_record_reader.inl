@@ -742,7 +742,7 @@ size_t MeasureRecordReaderFormatPTB64<W>::read_into_table_with_major_shot_index(
 }
 
 template <size_t W>
-size_t stim::read_file_data_into_shot_table(
+size_t read_file_data_into_shot_table(
     FILE *in,
     size_t max_shots,
     size_t num_bits_per_shot,
@@ -763,4 +763,4 @@ size_t stim::read_file_data_into_shot_table(
     }
 }
 
-}
+}  // namespace stim

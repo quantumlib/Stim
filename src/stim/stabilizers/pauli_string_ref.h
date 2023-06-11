@@ -25,8 +25,10 @@
 
 namespace stim {
 
+template <size_t W>
 struct PauliString;
 struct Circuit;
+template <size_t W>
 struct Tableau;
 struct CircuitInstruction;
 
@@ -35,6 +37,9 @@ struct CircuitInstruction;
 /// A PauliStringRef is a Pauli string whose contents are backed by referenced memory, instead of memory owned by the
 /// class instance. For example, the memory may be a row from the densely packed bits of a stabilizer tableau. This
 /// avoids unnecessary copying, and allows for conveniently applying operations inplace on existing data.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct PauliStringRef {
     /// The length of the Pauli string.
     size_t num_qubits;
@@ -42,28 +47,28 @@ struct PauliStringRef {
     bit_ref sign;
     /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, zs;
+    simd_bits_range_ref<W> xs, zs;
 
     /// Constructs a PauliStringRef pointing at the given sign, x, and z data.
     ///
     /// Requires:
     ///     xs.num_bits_padded() == zs.num_bits_padded()
-    ///     xs.num_simd_words == ceil(num_qubits / MAX_BITWORD_WIDTH)
+    ///     xs.num_simd_words == ceil(num_qubits / W)
     PauliStringRef(
         size_t num_qubits,
         bit_ref sign,
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> xs,
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> zs);
+        simd_bits_range_ref<W> xs,
+        simd_bits_range_ref<W> zs);
 
     /// Equality.
-    bool operator==(const PauliStringRef &other) const;
+    bool operator==(const PauliStringRef<W> &other) const;
     /// Inequality.
-    bool operator!=(const PauliStringRef &other) const;
+    bool operator!=(const PauliStringRef<W> &other) const;
 
     /// Overwrite assignment.
-    PauliStringRef &operator=(const PauliStringRef &other);
+    PauliStringRef<W> &operator=(const PauliStringRef<W> &other);
     /// Swap assignment.
-    void swap_with(PauliStringRef other);
+    void swap_with(PauliStringRef<W> other);
 
     /// Multiplies a commuting Pauli string into this one.
     ///
@@ -72,7 +77,7 @@ struct PauliStringRef {
     /// ASSERTS:
     ///     The given Pauli strings have the same size.
     ///     The given Pauli strings commute.
-    PauliStringRef &operator*=(const PauliStringRef &commuting_rhs);
+    PauliStringRef<W> &operator*=(const PauliStringRef<W> &commuting_rhs);
 
     // A more general version  of `*this *= rhs` which works for anti-commuting Paulis.
     //
@@ -89,7 +94,7 @@ struct PauliStringRef {
     //
     // ASSERTS:
     //     The given Pauli strings have the same size.
-    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef &rhs) noexcept;
+    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef<W> &rhs) noexcept;
 
     /// Overwrites the entire given Pauli string's contents with a subset of Paulis from this Pauli string.
     /// Does not affect the sign of the given Pauli string.
@@ -98,7 +103,7 @@ struct PauliStringRef {
     ///     out: The Pauli string to overwrite.
     ///     in_indices: For each qubit position in the output Pauli string, which qubit positions is read from in this
     ///         Pauli string.
-    void gather_into(PauliStringRef out, SpanRef<const size_t> in_indices) const;
+    void gather_into(PauliStringRef<W> out, SpanRef<const size_t> in_indices) const;
 
     /// Overwrites part of the given Pauli string with the contents of this Pauli string.
     /// Also multiplies this Pauli string's sign into the given Pauli string's sign.
@@ -107,30 +112,33 @@ struct PauliStringRef {
     ///     out: The Pauli string to partially overwrite.
     ///     out_indices: For each qubit position in this Pauli string, which qubit position is overwritten in the output
     ///         Pauli string.
-    void scatter_into(PauliStringRef out, SpanRef<const size_t> out_indices) const;
+    void scatter_into(PauliStringRef<W> out, SpanRef<const size_t> out_indices) const;
 
     /// Determines if this Pauli string commutes with the given Pauli string.
-    bool commutes(const PauliStringRef &other) const noexcept;
+    bool commutes(const PauliStringRef<W> &other) const noexcept;
 
     /// Returns a string describing the given Pauli string, with one character per qubit.
     std::string str() const;
     /// Returns a string describing the given Pauli string, indexing the Paulis so that identities can be omitted.
     std::string sparse_str() const;
 
-    void after_inplace_broadcast(const Tableau &tableau, SpanRef<const size_t> targets, bool inverse);
+    void after_inplace_broadcast(const Tableau<W> &tableau, SpanRef<const size_t> targets, bool inverse);
     void after_inplace(const Circuit &Circuit);
     void after_inplace(const CircuitInstruction &operation, bool inverse);
-    PauliString after(const Circuit &circuit) const;
-    PauliString after(const Tableau &tableau, SpanRef<const size_t> indices) const;
-    PauliString after(const CircuitInstruction &operation) const;
-    PauliString before(const Circuit &circuit) const;
-    PauliString before(const Tableau &tableau, SpanRef<const size_t> indices) const;
-    PauliString before(const CircuitInstruction &operation) const;
+    PauliString<W> after(const Circuit &circuit) const;
+    PauliString<W> after(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
+    PauliString<W> after(const CircuitInstruction &operation) const;
+    PauliString<W> before(const Circuit &circuit) const;
+    PauliString<W> before(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
+    PauliString<W> before(const CircuitInstruction &operation) const;
 };
 
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const PauliStringRef<W> &ps);
 
 }  // namespace stim
+
+#include "stim/stabilizers/pauli_string_ref.inl"
 
 #endif

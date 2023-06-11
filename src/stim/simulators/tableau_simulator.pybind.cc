@@ -491,7 +491,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do_tableau",
-        [](TableauSimulator &self, const Tableau &tableau, const std::vector<size_t> &targets) {
+        [](TableauSimulator &self, const Tableau<MAX_BITWORD_WIDTH> &tableau, const std::vector<size_t> &targets) {
             if (targets.size() != tableau.num_qubits) {
                 throw std::invalid_argument("len(tableau) != len(targets)");
             }
@@ -1646,7 +1646,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "set_inverse_tableau",
-        [](TableauSimulator &self, const Tableau &new_inverse_tableau) {
+        [](TableauSimulator &self, const Tableau<MAX_BITWORD_WIDTH> &new_inverse_tableau) {
             self.inv_state = new_inverse_tableau;
         },
         pybind11::arg("new_inverse_tableau"),
@@ -1834,7 +1834,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
     c.def(
         "set_state_from_stabilizers",
         [](TableauSimulator &self, pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
-            std::vector<PauliString> converted_stabilizers;
+            std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
                 const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
                 if (p.imag) {
@@ -1843,7 +1843,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                 converted_stabilizers.push_back(p.value);
             }
             self.inv_state =
-                stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, true);
+                stabilizers_to_tableau<MAX_BITWORD_WIDTH>(converted_stabilizers, allow_redundant, allow_underconstrained, true);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),
@@ -1954,7 +1954,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             }
 
             self.inv_state =
-                circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false).inverse();
+                circuit_to_tableau<MAX_BITWORD_WIDTH>(
+                    stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false).inverse();
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),

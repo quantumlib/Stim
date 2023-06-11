@@ -57,7 +57,10 @@ constexpr size_t MAX_BITWORD_WIDTH = 64;
 #endif
 
 namespace stim {
-typedef bitword<MAX_BITWORD_WIDTH> simd_word;
+
+template <size_t W>
+using simd_word = bitword<W>;
+
 }  // namespace stim
 
 #endif

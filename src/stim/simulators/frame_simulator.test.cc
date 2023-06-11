@@ -28,25 +28,25 @@ TEST(FrameSimulator, get_set_frame) {
     circuit_stats.num_qubits = 6;
     circuit_stats.max_lookback = 999;
     FrameSimulator sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 4, SHARED_TEST_RNG());
-    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("______"));
-    sim.set_frame(0, PauliString::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("______"));
-    sim.set_frame(3, PauliString::from_str("ZZZZZZ"));
-    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
+    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    sim.set_frame(0, PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    sim.set_frame(3, PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZZZZ"));
+    ASSERT_EQ(sim.get_frame(0), PauliString<MAX_BITWORD_WIDTH>::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString<MAX_BITWORD_WIDTH>::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString<MAX_BITWORD_WIDTH>::from_str("ZZZZZZ"));
 
     circuit_stats.num_qubits = 501;
     circuit_stats.max_lookback = 999;
     FrameSimulator big_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, SHARED_TEST_RNG());
-    big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) {
+    big_sim.set_frame(258, PauliString<MAX_BITWORD_WIDTH>::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse_str(), "+X303");
@@ -54,7 +54,7 @@ TEST(FrameSimulator, get_set_frame) {
 }
 
 bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
-    Tableau tableau = gate.tableau();
+    auto tableau = gate.tableau<MAX_BITWORD_WIDTH>();
 
     CircuitStats circuit_stats;
     circuit_stats.num_qubits = 500;
@@ -68,8 +68,8 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         targets.pop_back();
     }
     for (size_t k = 7; k < num_samples; k += 101) {
-        PauliString test_value = PauliString::random(circuit_stats.num_qubits, SHARED_TEST_RNG());
-        PauliStringRef test_value_ref(test_value);
+        auto test_value = PauliString<MAX_BITWORD_WIDTH>::random(circuit_stats.num_qubits, SHARED_TEST_RNG());
+        PauliStringRef<MAX_BITWORD_WIDTH> test_value_ref(test_value);
         sim.set_frame(k, test_value);
         sim.do_gate({gate.id, {}, targets});
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {

@@ -8,8 +8,8 @@
 #include "stim/stabilizers/tableau.h"
 
 struct ExposedTableau {
-    stim::Tableau tableau;
-    explicit ExposedTableau(stim::Tableau tableau);
+    stim::Tableau<stim::MAX_BITWORD_WIDTH> tableau;
+    explicit ExposedTableau(stim::Tableau<stim::MAX_BITWORD_WIDTH> tableau);
     explicit ExposedTableau(int n);
     static ExposedTableau random(int n);
     static ExposedTableau from_named_gate(const std::string &name);

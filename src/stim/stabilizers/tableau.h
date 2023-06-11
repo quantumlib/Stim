@@ -24,17 +24,19 @@
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"
 #include "stim/mem/span_ref.h"
+#include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 
+template <size_t W>
 struct TableauHalf {
     size_t num_qubits;
-    simd_bit_table<MAX_BITWORD_WIDTH> xt;
-    simd_bit_table<MAX_BITWORD_WIDTH> zt;
-    simd_bits<MAX_BITWORD_WIDTH> signs;
-    PauliStringRef operator[](size_t input_qubit);
-    const PauliStringRef operator[](size_t input_qubit) const;
+    simd_bit_table<W> xt;
+    simd_bit_table<W> zt;
+    simd_bits<W> signs;
+    PauliStringRef<W> operator[](size_t input_qubit);
+    const PauliStringRef<W> operator[](size_t input_qubit) const;
     TableauHalf(size_t num_qubits);
 };
 
@@ -46,16 +48,19 @@ struct TableauHalf {
 /// The memory layout used by this class is column major, meaning iterating over
 /// the output observable is iterating along the grain of memory. This makes
 /// prepending operations cheap. To append operations, use TableauTransposedRaii.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct Tableau {
     size_t num_qubits;
-    TableauHalf xs;
-    TableauHalf zs;
+    TableauHalf<W> xs;
+    TableauHalf<W> zs;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
 
-    PauliString eval_y_obs(size_t qubit) const;
+    PauliString<W> eval_y_obs(size_t qubit) const;
 
     std::string str() const;
 
@@ -75,18 +80,18 @@ struct Tableau {
     void expand(size_t new_num_qubits, double resize_pad_factor);
 
     /// Creates a Tableau representing the identity operation.
-    static Tableau identity(size_t num_qubits);
+    static Tableau<W> identity(size_t num_qubits);
     /// Creates a Tableau from a PauliString via conjugation
-    static Tableau from_pauli_string(const PauliString &pauli_string);
+    static Tableau<W> from_pauli_string(const PauliString<W> &pauli_string);
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
-    static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
+    static Tableau<W> random(size_t num_qubits, std::mt19937_64 &rng);
     /// Returns the inverse Tableau.
     ///
     /// Args:
     ///     skip_signs: Instead of computing the signs, just set them all to positive.
-    Tableau inverse(bool skip_signs = false) const;
+    Tableau<W> inverse(bool skip_signs = false) const;
     /// Returns the Tableau raised to an integer power (using repeated squaring).
-    Tableau raised_to(int64_t exponent) const;
+    Tableau<W> raised_to(int64_t exponent) const;
 
     std::vector<std::complex<float>> to_flat_unitary_matrix(bool little_endian) const;
     bool satisfies_invariants() const;
@@ -95,7 +100,7 @@ struct Tableau {
     bool is_pauli_product() const;
 
     /// If tableau is conjugation by a pauli, then return that pauli. Else throw exception.
-    PauliString to_pauli_string() const;
+    PauliString<W> to_pauli_string() const;
 
     /// Creates a Tableau representing a single qubit gate.
     ///
@@ -105,7 +110,7 @@ struct Tableau {
     /// Args:
     ///    x: The output-side observable that the input-side X observable gets mapped to.
     ///    z: The output-side observable that the input-side Y observable gets mapped to.
-    static Tableau gate1(const char *x, const char *z);
+    static Tableau<W> gate1(const char *x, const char *z);
 
     /// Creates a Tableau representing a two qubit gate.
     ///
@@ -117,7 +122,7 @@ struct Tableau {
     ///    z1: The output-side observable that the input-side YI observable gets mapped to.
     ///    x2: The output-side observable that the input-side IX observable gets mapped to.
     ///    z2: The output-side observable that the input-side IY observable gets mapped to.
-    static Tableau gate2(const char *x1, const char *z1, const char *x2, const char *z2);
+    static Tableau<W> gate2(const char *x1, const char *z1, const char *x2, const char *z2);
 
     /// Returns the result of applying the tableau to the given Pauli string.
     ///
@@ -127,16 +132,16 @@ struct Tableau {
     /// Returns:
     ///     The output-side Pauli string.
     ///     Algebraically: $c p c^{-1}$ where $c$ is the tableau's Clifford operation.
-    PauliString operator()(const PauliStringRef &p) const;
+    PauliString<W> operator()(const PauliStringRef<W> &p) const;
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliString scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const;
+    PauliString<W> scatter_eval(const PauliStringRef<W> &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Returns a tableau equivalent to the composition of two tableaus of the same size.
-    Tableau then(const Tableau &second) const;
+    Tableau<W> then(const Tableau<W> &second) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliStringRef &target, SpanRef<const size_t> target_qubits) const;
+    void apply_within(PauliStringRef<W> &target, SpanRef<const size_t> target_qubits) const;
 
     /// Appends a smaller operation into this tableau's operation.
     ///
@@ -146,7 +151,7 @@ struct Tableau {
     /// Args:
     ///     operation: The smaller operation to append into this tableau.
     ///     target_qubits: The qubits being acted on by `operation`.
-    void inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits);
+    void inplace_scatter_append(const Tableau<W> &operation, const std::vector<size_t> &target_qubits);
 
     /// Prepends a smaller operation into this tableau's operation.
     ///
@@ -156,15 +161,15 @@ struct Tableau {
     /// Args:
     ///     operation: The smaller operation to prepend into this tableau.
     ///     target_qubits: The qubits being acted on by `operation`.
-    void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
+    void inplace_scatter_prepend(const Tableau<W> &operation, const std::vector<size_t> &target_qubits);
 
     /// Applies a transpose to the X2X, X2Z, Z2X, and Z2Z bit tables within the tableau.
     void do_transpose_quadrants();
 
     /// Returns the direct sum of two tableaus.
-    Tableau operator+(const Tableau &second) const;
+    Tableau<W> operator+(const Tableau<W> &second) const;
     /// Appends the other tableau onto this one, resulting in the direct sum.
-    Tableau &operator+=(const Tableau &second);
+    Tableau<W> &operator+=(const Tableau<W> &second);
 
     /// === Specialized vectorized methods for prepending operations onto the tableau === ///
     void prepend_SWAP(size_t q1, size_t q2);
@@ -199,10 +204,10 @@ struct Tableau {
     void prepend_YCX(size_t control, size_t target);
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
-    void prepend_pauli_product(const PauliStringRef &op);
+    void prepend_pauli_product(const PauliStringRef<W> &op);
 
     /// Builds the Y output by using Y = iXZ.
-    PauliString y_output(size_t input_index) const;
+    PauliString<W> y_output(size_t input_index) const;
 
     /// Constant-time version of tableau.xs[input_index][output_index].
     uint8_t x_output_pauli_xyz(size_t input_index, size_t output_index) const;
@@ -217,15 +222,19 @@ struct Tableau {
     /// Constant-time version of tableau.inverse().zs[input_index][output_index].
     uint8_t inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const;
     /// Faster version of tableau.inverse().xs[input_index].
-    PauliString inverse_x_output(size_t input_index, bool skip_sign = false) const;
+    PauliString<W> inverse_x_output(size_t input_index, bool skip_sign = false) const;
     /// Faster version of tableau.inverse().y_output(input_index).
-    PauliString inverse_y_output(size_t input_index, bool skip_sign = false) const;
+    PauliString<W> inverse_y_output(size_t input_index, bool skip_sign = false) const;
     /// Faster version of tableau.inverse().zs[input_index].
-    PauliString inverse_z_output(size_t input_index, bool skip_sign = false) const;
+    PauliString<W> inverse_z_output(size_t input_index, bool skip_sign = false) const;
 };
 
-std::ostream &operator<<(std::ostream &out, const Tableau &ps);
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const Tableau<W> &ps);
 
 }  // namespace stim
+
+#include "stim/stabilizers/tableau.inl"
+#include "stim/stabilizers/tableau_specialized_prepend.inl"
 
 #endif

@@ -118,7 +118,7 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
     result["help"] = extra.help;
     if (gate.flags & GATE_IS_UNITARY) {
         result["unitary_matrix"] = gate.unitary();
-        result["stabilizer_tableau"] = gate.tableau();
+        result["stabilizer_tableau"] = gate.tableau<MAX_BITWORD_WIDTH>();
     }
     if (extra.h_s_cx_m_r_decomposition != nullptr) {
         result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);

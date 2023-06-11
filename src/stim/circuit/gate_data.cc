@@ -16,7 +16,6 @@
 
 #include <complex>
 
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/circuit/stabilizer_flow.h"
 
 using namespace stim;
@@ -55,21 +54,6 @@ GateDataMap::GateDataMap() {
     if (failed) {
         throw std::out_of_range("Failed to initialize gate data.");
     }
-}
-
-Tableau Gate::tableau() const {
-    if (!(flags & GATE_IS_UNITARY)) {
-        throw std::invalid_argument(std::string(name) + " isn't unitary so it doesn't have a tableau.");
-    }
-    const auto &tableau_data = extra_data_func().flow_data;
-    const auto &d = tableau_data;
-    if (tableau_data.size() == 2) {
-        return Tableau::gate1(d[0], d[1]);
-    }
-    if (tableau_data.size() == 4) {
-        return Tableau::gate2(d[0], d[1], d[2], d[3]);
-    }
-    throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
 }
 
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
@@ -116,18 +100,18 @@ Gate::Gate(
 }
 std::vector<StabilizerFlow> Gate::flows() const {
     if (flags & GATE_IS_UNITARY) {
-        auto t = tableau();
+        auto t = tableau<MAX_BITWORD_WIDTH>();
         if (flags & GATE_TARGETS_PAIRS) {
             return {
-                StabilizerFlow{stim::PauliString::from_str("X_"), t.xs[0], {}},
-                StabilizerFlow{stim::PauliString::from_str("Z_"), t.zs[0], {}},
-                StabilizerFlow{stim::PauliString::from_str("_X"), t.xs[1], {}},
-                StabilizerFlow{stim::PauliString::from_str("_Z"), t.zs[1], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X_"), t.xs[0], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z_"), t.zs[0], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_X"), t.xs[1], {}},
+                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"), t.zs[1], {}},
             };
         }
         return {
-            StabilizerFlow{stim::PauliString::from_str("X"), t.xs[0], {}},
-            StabilizerFlow{stim::PauliString::from_str("Z"), t.zs[0], {}},
+            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X"), t.xs[0], {}},
+            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z"), t.zs[0], {}},
         };
     }
     std::vector<StabilizerFlow> out;

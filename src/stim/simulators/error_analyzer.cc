@@ -445,8 +445,8 @@ void ErrorAnalyzer::check_for_gauge(
     throw std::invalid_argument(error_msg.str());
 }
 
-PauliString ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
-    PauliString result(tracker.xs.size());
+PauliString<MAX_BITWORD_WIDTH> ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
+    PauliString<MAX_BITWORD_WIDTH> result(tracker.xs.size());
     for (size_t q = 0; q < tracker.xs.size(); q++) {
         result.xs[q] = std::find(tracker.xs[q].begin(), tracker.xs[q].end(), t) != tracker.xs[q].end();
         result.zs[q] = std::find(tracker.zs[q].begin(), tracker.zs[q].end(), t) != tracker.zs[q].end();

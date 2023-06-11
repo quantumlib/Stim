@@ -85,10 +85,3 @@ src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/tableau_simulator.cc
 src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
-src/stim/stabilizers/conversions.cc
-src/stim/stabilizers/pauli_string.cc
-src/stim/stabilizers/pauli_string_ref.cc
-src/stim/stabilizers/tableau.cc
-src/stim/stabilizers/tableau_iter.cc
-src/stim/stabilizers/tableau_specialized_prepend.cc
-src/stim/stabilizers/tableau_transposed_raii.cc

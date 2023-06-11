@@ -233,7 +233,7 @@ struct ErrorAnalyzer {
     ///
     /// The observable or detector is sensitive to the Pauli error P at q if the Pauli sensitivity
     /// at q anti-commutes with P.
-    PauliString current_error_sensitivity_for(DemTarget t) const;
+    PauliString<MAX_BITWORD_WIDTH> current_error_sensitivity_for(DemTarget t) const;
 
     /// Processes the instructions in a circuit multiple times.
     /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
