@@ -23,9 +23,17 @@
 #include <unordered_map>
 
 #include "stim/circuit/circuit.h"
-#include "stim/stabilizers/pauli_string.h"
+#include "stim/mem/simd_word.h"
+#include "stim/probability_util.h"
 
 namespace stim {
+
+template <size_t W>
+struct PauliStringRef;
+
+template <size_t W>
+struct PauliString;
+
 
 /// A state vector quantum circuit simulator.
 ///
@@ -40,10 +48,39 @@ struct VectorSimulator {
     ///
     /// Assumes the stabilizers commute. Works by generating a random state vector and projecting onto
     /// each of the given stabilizers. Global phase will vary.
-    static VectorSimulator from_stabilizers(const std::vector<PauliStringRef> &stabilizers);
+    template <size_t W>
+    static VectorSimulator from_stabilizers(const std::vector<PauliStringRef<W>> &stabilizers) {
+        VectorSimulator result(0);
+        result.state = state_vector_from_stabilizers(stabilizers, 1);
+        return result;
+    }
 
+    template <size_t W>
     static std::vector<std::complex<float>> state_vector_from_stabilizers(
-        const std::vector<PauliStringRef> &stabilizers, float norm2 = 1);
+        const std::vector<PauliStringRef<W>> &stabilizers, float norm2 = 1) {
+        size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
+        VectorSimulator sim(num_qubits);
+
+        // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
+        std::uniform_real_distribution<float> dist(-1.0, +1.0);
+
+        auto rng = externally_seeded_rng();
+        for (auto &s : sim.state) {
+            s = {dist(rng), dist(rng)};
+        }
+
+        // Project out the non-overlapping parts.
+        for (const auto &p : stabilizers) {
+            sim.project(p);
+        }
+        if (stabilizers.empty()) {
+            sim.project<W>(PauliString<W>(0));
+        }
+
+        sim.canonicalize_assuming_stabilizer_state(norm2);
+
+        return sim.state;
+    }
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
@@ -52,8 +89,28 @@ struct VectorSimulator {
     void apply(const std::string &gate, size_t qubit);
     /// Helper method for applying named two qubit gates.
     void apply(const std::string &gate, size_t qubit1, size_t qubit2);
+
     /// Helper method for applying the gates in a Pauli string.
-    void apply(const PauliStringRef &gate, size_t qubit_offset);
+    template <size_t W>
+    void apply(const PauliStringRef<W> &gate, size_t qubit_offset) {
+        if (gate.sign) {
+            for (auto &e : state) {
+                e *= -1;
+            }
+        }
+        for (size_t k = 0; k < gate.num_qubits; k++) {
+            bool x = gate.xs[k];
+            bool z = gate.zs[k];
+            size_t q = qubit_offset + k;
+            if (x && z) {
+                apply("Y", q);
+            } else if (x) {
+                apply("X", q);
+            } else if (z) {
+                apply("Z", q);
+            }
+        }
+    }
 
     /// Applies the unitary operations within a circuit to the simulator's state.
     void do_unitary_circuit(const Circuit &circuit);
@@ -69,7 +126,47 @@ struct VectorSimulator {
     /// Returns:
     ///     The 2-norm of the component of the state vector that was already in the +1 eigenstate.
     ///     In other words, the probability that measuring the observable would have returned +1 instead of -1.
-    float project(const PauliStringRef &observable);
+    template <size_t W>
+    float project(const PauliStringRef<W> &observable) {
+        assert(1ULL << observable.num_qubits == state.size());
+        auto basis_change = [&]() {
+            for (size_t k = 0; k < observable.num_qubits; k++) {
+                if (observable.xs[k]) {
+                    if (observable.zs[k]) {
+                        apply("H_YZ", k);
+                    } else {
+                        apply("H_XZ", k);
+                    }
+                }
+            }
+        };
+
+        uint64_t mask = 0;
+        for (size_t k = 0; k < observable.num_qubits; k++) {
+            if (observable.xs[k] || observable.zs[k]) {
+                mask |= 1ULL << k;
+            }
+        }
+
+        basis_change();
+        float mag2 = 0;
+        for (size_t i = 0; i < state.size(); i++) {
+            bool reject = observable.sign;
+            reject ^= (popcnt64(i & mask) & 1) != 0;
+            if (reject) {
+                state[i] = 0;
+            } else {
+                mag2 += state[i].real() * state[i].real() + state[i].imag() * state[i].imag();
+            }
+        }
+        assert(mag2 > 1e-8);
+        auto w = sqrtf(mag2);
+        for (size_t i = 0; i < state.size(); i++) {
+            state[i] /= w;
+        }
+        basis_change();
+        return mag2;
+    }
 
     /// Determines if two vector simulators have similar state vectors.
     bool approximate_equals(const VectorSimulator &other, bool up_to_global_phase = false) const;

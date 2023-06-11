@@ -22,15 +22,40 @@
 
 namespace stim {
 
-uint8_t floor_lg2(size_t value);
+inline uint8_t floor_lg2(size_t value) {
+    uint8_t result = 0;
+    while (value > 1) {
+        result += 1;
+        value >>= 1;
+    }
+    return result;
+}
 
-uint8_t is_power_of_2(size_t value);
+inline uint8_t is_power_of_2(size_t value) {
+    return value != 0 && (value & (value - 1)) == 0;
+}
 
 /// Converts a tableau into a unitary matrix.
-std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau &tableau, bool little_endian);
+template <size_t W>
+std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau<W> &tableau, bool little_endian);
 
 /// Inverts the given circuit, as long as it only contains unitary operations.
-Circuit unitary_circuit_inverse(const Circuit &unitary_circuit);
+inline Circuit unitary_circuit_inverse(const Circuit &unitary_circuit) {
+    Circuit inverted;
+    unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
+        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        if (!(gate_data.flags & GATE_IS_UNITARY)) {
+            throw std::invalid_argument("Not unitary: " + op.str());
+        }
+        size_t step = (gate_data.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
+        auto s = op.targets.ptr_start;
+        const auto &inv_gate = gate_data.inverse();
+        for (size_t k = op.targets.size(); k > 0; k -= step) {
+            inverted.safe_append(inv_gate.id, {s + k - step, s + k}, op.args);
+        }
+    });
+    return inverted;
+}
 
 /// Synthesizes a circuit to generate the given state vector.
 ///
@@ -45,6 +70,7 @@ Circuit unitary_circuit_inverse(const Circuit &unitary_circuit);
 ///
 /// Throws:
 ///     std::invalid_argument: The given state vector cannot be produced by a stabilizer circuit.
+template <size_t W>
 Circuit stabilizer_state_vector_to_circuit(
     const std::vector<std::complex<float>> &stabilizer_state_vector, bool little_endian);
 
@@ -58,7 +84,8 @@ Circuit stabilizer_state_vector_to_circuit(
 ///
 /// Returns:
 ///     A tableau encoding the given circuit's Clifford operation.
-Tableau circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset);
+template <size_t W>
+Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset);
 
 /// Simulates the given circuit and outputs a state vector.
 ///
@@ -68,6 +95,7 @@ Tableau circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignor
 ///
 /// Returns:
 ///     The state vector, using the requested endianness.
+template <size_t W>
 std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &circuit, bool little_endian);
 
 /// Synthesizes a circuit that implements the given tableau's Clifford operation.
@@ -86,7 +114,8 @@ std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &c
 ///
 /// Returns:
 ///     The synthesized circuit.
-Circuit tableau_to_circuit(const Tableau &tableau, const std::string &method);
+template <size_t W>
+Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method);
 
 /// Converts a unitary matrix into a stabilizer tableau.
 ///
@@ -99,7 +128,8 @@ Circuit tableau_to_circuit(const Tableau &tableau, const std::string &method);
 ///
 /// Throws:
 ///     std::invalid_argument: The given unitary matrix isn't a Clifford operation.
-Tableau unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian);
+template <size_t W>
+Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian);
 
 /// Computes destabilizers for the given stabilizers, and packages into a tableau.
 ///
@@ -114,9 +144,12 @@ Tableau unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &
 /// Returns:
 ///     A tableau containing the given stabilizers, but extended to also include matching stabilizers.
 ///     The Z outputs of the tableau will be the given stabilizers (skipping any redundant ones).
-Tableau stabilizers_to_tableau(
-    const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert);
+template <size_t W>
+Tableau<W> stabilizers_to_tableau(
+    const std::vector<stim::PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert);
 
 }  // namespace stim
+
+#include "stim/stabilizers/conversions.inl"
 
 #endif

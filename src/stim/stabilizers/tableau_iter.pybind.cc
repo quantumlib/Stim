@@ -19,8 +19,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-pybind11::class_<TableauIterator> stim_pybind::pybind_tableau_iter(pybind11::module &m) {
-    auto c = pybind11::class_<TableauIterator>(
+pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_tableau_iter(pybind11::module &m) {
+    auto c = pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>>(
         m,
         "TableauIterator",
         clean_doc_string(R"DOC(
@@ -39,10 +39,10 @@ pybind11::class_<TableauIterator> stim_pybind::pybind_tableau_iter(pybind11::mod
     return c;
 }
 
-void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::class_<TableauIterator> &c) {
+void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>> &c) {
     c.def(
         "__iter__",
-        [](TableauIterator &self) -> TableauIterator {
+        [](TableauIterator<MAX_BITWORD_WIDTH> &self) -> TableauIterator<MAX_BITWORD_WIDTH> {
             TableauIterator copy = self;
             return copy;
         },
@@ -57,7 +57,7 @@ void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__next__",
-        [](TableauIterator &self) -> Tableau {
+        [](TableauIterator<MAX_BITWORD_WIDTH> &self) -> Tableau<MAX_BITWORD_WIDTH> {
             if (!self.iter_next()) {
                 throw pybind11::stop_iteration();
             }

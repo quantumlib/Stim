@@ -24,16 +24,16 @@
 using namespace stim;
 
 union WordOr64 {
-    simd_word w;
-    uint64_t p[sizeof(simd_word) / sizeof(uint64_t)];
+    simd_word<MAX_BITWORD_WIDTH> w;
+    uint64_t p[sizeof(simd_word<MAX_BITWORD_WIDTH>) / sizeof(uint64_t)];
 
     WordOr64() : p() {
     }
 };
 
-TEST(simd_word_pick, popcount) {
+TEST_EACH_WORD_SIZE_W(simd_word_pick, popcount, {
     WordOr64 v;
-    auto n = sizeof(simd_word) * 8;
+    auto n = sizeof(simd_word<W>) * 8;
 
     for (size_t expected = 0; expected <= n; expected++) {
         std::vector<uint64_t> bits{};
@@ -51,7 +51,7 @@ TEST(simd_word_pick, popcount) {
             ASSERT_EQ(v.w.popcount(), expected);
         }
     }
-}
+})
 
 TEST_EACH_WORD_SIZE_W(simd_word_pick, operator_bool, {
     bitword<W> w{};

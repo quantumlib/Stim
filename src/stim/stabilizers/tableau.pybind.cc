@@ -114,8 +114,8 @@ size_t determine_tableau_shape(const pybind11::object &numpy_array, const char *
     return n;
 }
 
-pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
-    return pybind11::class_<Tableau>(
+pybind11::class_<Tableau<MAX_BITWORD_WIDTH>> stim_pybind::pybind_tableau(pybind11::module &m) {
+    return pybind11::class_<Tableau<MAX_BITWORD_WIDTH>>(
         m,
         "Tableau",
         clean_doc_string(R"DOC(
@@ -154,7 +154,7 @@ pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
             .data());
 }
 
-void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<Tableau> &c) {
+void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<Tableau<MAX_BITWORD_WIDTH>> &c) {
     c.def(
         pybind11::init<size_t>(),
         pybind11::arg("num_qubits"),
@@ -179,7 +179,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "random",
         [](size_t num_qubits) {
-            return Tableau::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
+            return Tableau<MAX_BITWORD_WIDTH>::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
         },
         pybind11::arg("num_qubits"),
         clean_doc_string(R"DOC(
@@ -205,7 +205,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "iter_all",
         [](size_t num_qubits, bool unsigned_only) {
-            return TableauIterator(num_qubits, !unsigned_only);
+            return TableauIterator<MAX_BITWORD_WIDTH>(num_qubits, !unsigned_only);
         },
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),
@@ -241,7 +241,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_unitary_matrix",
-        [](Tableau &self, const std::string &endian) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -304,7 +304,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_numpy",
-        [](const Tableau &self, bool bit_packed) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, bool bit_packed) {
             auto n = self.num_qubits;
 
             return pybind11::make_tuple(
@@ -501,7 +501,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 check_tableau_signs_shape(z_signs, n, "z_signs");
             }
 
-            Tableau result(n);
+            Tableau<MAX_BITWORD_WIDTH> result(n);
             memcpy_bits_from_numpy_to_simd_bit_table(n, n, x2x, result.xs.xt);
             memcpy_bits_from_numpy_to_simd_bit_table(n, n, x2z, result.xs.zt);
             memcpy_bits_from_numpy_to_simd_bit_table(n, n, z2x, result.zs.xt);
@@ -624,7 +624,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_pauli_string",
-        [](const Tableau &self) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             return PyPauliString(self.to_pauli_string());
         },
         clean_doc_string(R"DOC(
@@ -659,7 +659,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_circuit",
-        [](Tableau &self, const std::string &method) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &method) {
             return tableau_to_circuit(self, method);
         },
         pybind11::kw_only(),
@@ -726,7 +726,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (!(gate.flags & GATE_IS_UNITARY)) {
                 throw std::out_of_range("Recognized name, but not unitary: " + std::string(name));
             }
-            return gate.tableau();
+            return gate.tableau<MAX_BITWORD_WIDTH>();
         },
         pybind11::arg("name"),
         clean_doc_string(R"DOC(
@@ -758,19 +758,19 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__len__",
-        [](const Tableau &self) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             return self.num_qubits;
         },
         "Returns the number of qubits operated on by the tableau.");
 
-    c.def("__str__", &Tableau::str, "Returns a text description.");
+    c.def("__str__", &Tableau<MAX_BITWORD_WIDTH>::str, "Returns a text description.");
 
     c.def(pybind11::self == pybind11::self, "Determines if two tableaus have identical contents.");
     c.def(pybind11::self != pybind11::self, "Determines if two tableaus have non-identical contents.");
 
     c.def(
         "__pow__",
-        &Tableau::raised_to,
+        &Tableau<MAX_BITWORD_WIDTH>::raised_to,
         pybind11::arg("exponent"),
         clean_doc_string(R"DOC(
             Raises the tableau to an integer power.
@@ -803,7 +803,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse",
-        &Tableau::inverse,
+        &Tableau<MAX_BITWORD_WIDTH>::inverse,
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
@@ -872,7 +872,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "append",
-        [](Tableau &self, const Tableau &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -914,7 +914,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "then",
-        [](const Tableau &self, const Tableau &second) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &second) {
             if (self.num_qubits != second.num_qubits) {
                 throw std::invalid_argument("len(self) != len(second)");
             }
@@ -946,7 +946,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__mul__",
-        [](const Tableau &self, const Tableau &rhs) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &rhs) {
             if (self.num_qubits != rhs.num_qubits) {
                 throw std::invalid_argument("len(lhs) != len(rhs)");
             }
@@ -976,7 +976,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "prepend",
-        [](Tableau &self, const Tableau &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -1015,7 +1015,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "x_output",
-        [](Tableau &self, size_t target) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, size_t target) {
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
@@ -1044,7 +1044,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "x_sign",
-        [](Tableau &self, pybind11::ssize_t target) -> int {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, pybind11::ssize_t target) -> int {
             if (target < 0 || (size_t)target >= self.num_qubits) {
                 throw std::invalid_argument("not 0 <= target < len(tableau)");
             }
@@ -1070,7 +1070,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "z_sign",
-        [](Tableau &self, pybind11::ssize_t target) -> int {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, pybind11::ssize_t target) -> int {
             if (target < 0 || (size_t)target >= self.num_qubits) {
                 throw std::invalid_argument("not 0 <= target < len(tableau)");
             }
@@ -1096,7 +1096,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "y_sign",
-        [](Tableau &self, pybind11::ssize_t target) -> int {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, pybind11::ssize_t target) -> int {
             if (target < 0 || (size_t)target >= self.num_qubits) {
                 throw std::invalid_argument("not 0 <= target < len(tableau)");
             }
@@ -1124,7 +1124,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "y_output",
-        [](Tableau &self, size_t target) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, size_t target) {
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
@@ -1153,7 +1153,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "z_output",
-        [](Tableau &self, size_t target) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, size_t target) {
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
@@ -1182,7 +1182,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "x_output_pauli",
-        &Tableau::x_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::x_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1221,7 +1221,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "y_output_pauli",
-        &Tableau::y_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::y_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1260,7 +1260,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "z_output_pauli",
-        &Tableau::z_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::z_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1299,7 +1299,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_x_output_pauli",
-        &Tableau::inverse_x_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::inverse_x_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1338,7 +1338,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_y_output_pauli",
-        &Tableau::inverse_y_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::inverse_y_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1377,7 +1377,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_z_output_pauli",
-        &Tableau::inverse_z_output_pauli_xyz,
+        &Tableau<MAX_BITWORD_WIDTH>::inverse_z_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(R"DOC(
@@ -1416,7 +1416,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_x_output",
-        [](const Tableau &self, size_t input_index, bool skip_sign) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
             return PyPauliString(self.inverse_x_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
@@ -1455,7 +1455,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_y_output",
-        [](const Tableau &self, size_t input_index, bool skip_sign) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
             return PyPauliString(self.inverse_y_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
@@ -1494,7 +1494,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "inverse_z_output",
-        [](const Tableau &self, size_t input_index, bool skip_sign) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
             return PyPauliString(self.inverse_z_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
@@ -1535,8 +1535,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "copy",
-        [](Tableau &self) {
-            Tableau copy = self;
+        [](Tableau<MAX_BITWORD_WIDTH> &self) {
+            Tableau<MAX_BITWORD_WIDTH> copy = self;
             return copy;
         },
         clean_doc_string(R"DOC(
@@ -1576,7 +1576,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     throw std::invalid_argument("not all(len(p) == len(zs) for p in zs)");
                 }
             }
-            Tableau result(n);
+            Tableau<MAX_BITWORD_WIDTH> result(n);
             for (size_t q = 0; q < n; q++) {
                 result.xs[q] = xs[q].value;
                 result.zs[q] = zs[q].value;
@@ -1646,7 +1646,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     converted_matrix.back().push_back(pybind11::cast<std::complex<float>>(cell));
                 }
             }
-            return unitary_to_tableau(converted_matrix, little_endian);
+            return unitary_to_tableau<MAX_BITWORD_WIDTH>(converted_matrix, little_endian);
         },
         pybind11::arg("matrix"),
         pybind11::kw_only(),
@@ -1708,7 +1708,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "from_circuit",
         [](const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
-            return circuit_to_tableau(circuit, ignore_noise, ignore_measurement, ignore_reset);
+            return circuit_to_tableau<MAX_BITWORD_WIDTH>(circuit, ignore_noise, ignore_measurement, ignore_reset);
         },
         pybind11::arg("circuit"),
         pybind11::kw_only(),
@@ -1767,7 +1767,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__repr__",
-        [](const Tableau &self) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             std::stringstream result;
             result << "stim.Tableau.from_conjugated_generators(\n    xs=[\n";
             for (size_t q = 0; q < self.num_qubits; q++) {
@@ -1784,7 +1784,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__call__",
-        [](const Tableau &self, const PyPauliString &pauli_string) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const PyPauliString &pauli_string) {
             PyPauliString result{self(pauli_string.value)};
             if (pauli_string.imag) {
                 result *= std::complex<float>(0, 1);
@@ -1871,7 +1871,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             .data());
 
     c.def(pybind11::pickle(
-        [](const Tableau &self) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             pybind11::dict d;
             std::vector<PyPauliString> xs;
             std::vector<PyPauliString> zs;
@@ -1909,7 +1909,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 throw std::invalid_argument("Invalid pickle.");
             }
 
-            Tableau result(n);
+            Tableau<MAX_BITWORD_WIDTH> result(n);
             for (size_t q = 0; q < n; q++) {
                 result.xs[q] = xs[q].value;
                 result.zs[q] = zs[q].value;
@@ -1923,7 +1923,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "from_stabilizers",
         [](pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
-            std::vector<PauliString> converted_stabilizers;
+            std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
                 const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
                 if (p.imag) {
@@ -1931,7 +1931,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 }
                 converted_stabilizers.push_back(p.value);
             }
-            return stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, false);
+            return stabilizers_to_tableau<MAX_BITWORD_WIDTH>(converted_stabilizers, allow_redundant, allow_underconstrained, false);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),
@@ -2034,7 +2034,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 v.push_back(pybind11::cast<std::complex<float>>(obj));
             }
 
-            return circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false);
+            return circuit_to_tableau<MAX_BITWORD_WIDTH>(
+                stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false);
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
@@ -2100,7 +2101,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_state_vector",
-        [](const Tableau &self, const std::string &endian) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;

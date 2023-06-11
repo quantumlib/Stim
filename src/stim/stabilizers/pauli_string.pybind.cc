@@ -23,10 +23,10 @@
 using namespace stim;
 using namespace stim_pybind;
 
-PyPauliString::PyPauliString(const PauliStringRef val, bool imag) : value(val), imag(imag) {
+PyPauliString::PyPauliString(const PauliStringRef<MAX_BITWORD_WIDTH> val, bool imag) : value(val), imag(imag) {
 }
 
-PyPauliString::PyPauliString(PauliString &&val, bool imag) : value(std::move(val)), imag(imag) {
+PyPauliString::PyPauliString(PauliString<MAX_BITWORD_WIDTH> &&val, bool imag) : value(std::move(val)), imag(imag) {
 }
 
 PyPauliString PyPauliString::operator+(const PyPauliString &rhs) const {
@@ -153,7 +153,7 @@ PyPauliString &PyPauliString::operator*=(size_t power) {
             break;
     }
 
-    value = PauliString::from_func(value.sign, value.num_qubits * power, [&](size_t k) {
+    value = PauliString<MAX_BITWORD_WIDTH>::from_func(value.sign, value.num_qubits * power, [&](size_t k) {
         return "_XZY"[value.xs[k % value.num_qubits] + 2 * value.zs[k % value.num_qubits]];
     });
     return *this;
@@ -323,7 +323,7 @@ PyPauliString PyPauliString::from_text(const char *text) {
         factor = {0, 1};
         offset = 2;
     }
-    PyPauliString value{PauliString::from_str(text + offset), false};
+    PyPauliString value{PauliString<MAX_BITWORD_WIDTH>::from_str(text + offset), false};
     value *= factor;
     return value;
 }
@@ -442,7 +442,7 @@ PyPauliString PyPauliString::from_unitary_matrix(
     }
 
     uint8_t leftover_phase = phases[0] + popcnt64(x & z);
-    PyPauliString result(PauliString(q), (leftover_phase & 1) != 0);
+    PyPauliString result(PauliString<MAX_BITWORD_WIDTH>(q), (leftover_phase & 1) != 0);
     result.value.sign = (leftover_phase & 2) != 0;
     auto &rx = result.value.xs.u64[0];
     auto &rz = result.value.zs.u64[0];
@@ -489,7 +489,7 @@ pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::modul
 void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<PyPauliString> &c) {
     c.def(
         pybind11::init([](size_t num_qubits) {
-            PyPauliString result{PauliString(num_qubits), false};
+            PyPauliString result{PauliString<MAX_BITWORD_WIDTH>(num_qubits), false};
             return result;
         }),
         pybind11::arg("num_qubits"),
@@ -564,7 +564,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::init([](const std::vector<pybind11::ssize_t> &pauli_indices) {
             return PyPauliString(
-                PauliString::from_func(
+                PauliString<MAX_BITWORD_WIDTH>::from_func(
                     false,
                     pauli_indices.size(),
                     [&](size_t i) {
@@ -602,7 +602,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         "random",
         [](size_t num_qubits, bool allow_imaginary) {
             auto rng = make_py_seeded_rng(pybind11::none());
-            return PyPauliString(PauliString::random(num_qubits, *rng), allow_imaginary ? ((*rng)() & 1) : false);
+            return PyPauliString(PauliString<MAX_BITWORD_WIDTH>::random(num_qubits, *rng), allow_imaginary ? ((*rng)() & 1) : false);
         },
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),
@@ -638,7 +638,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         "to_tableau",
         [](const PyPauliString &self) {
-            return Tableau::from_pauli_string(self.value);
+            return Tableau<MAX_BITWORD_WIDTH>::from_pauli_string(self.value);
         },
         clean_doc_string(R"DOC(
             Creates a Tableau equivalent to this Pauli string.
@@ -1252,7 +1252,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
            const pybind11::object &sign,
            const pybind11::object &num_qubits) -> PyPauliString {
             size_t n = numpy_pair_to_size(xs, zs, num_qubits);
-            PyPauliString result{PauliString(n)};
+            PyPauliString result{PauliString<MAX_BITWORD_WIDTH>(n)};
             memcpy_bits_from_numpy_to_simd(n, xs, result.value.xs);
             memcpy_bits_from_numpy_to_simd(n, zs, result.value.zs);
             result *= sign;
@@ -1405,7 +1405,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const PyPauliString &self,
            const pybind11::object &operation,
            const pybind11::object &targets) -> PyPauliString {
-            PauliString result(0);
+            PauliString<MAX_BITWORD_WIDTH> result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
                     throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
@@ -1417,7 +1417,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
                 result = self.value.ref().after(pybind11::cast<PyCircuitInstruction>(operation).as_operation_ref());
-            } else if (pybind11::isinstance<Tableau>(operation)) {
+            } else if (pybind11::isinstance<Tableau<MAX_BITWORD_WIDTH>>(operation)) {
                 if (targets.is_none()) {
                     throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
                 }
@@ -1425,7 +1425,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 for (const auto &e : targets) {
                     raw_targets.push_back(pybind11::cast<size_t>(e));
                 }
-                result = self.value.ref().after(pybind11::cast<Tableau>(operation), raw_targets);
+                result = self.value.ref().after(pybind11::cast<Tableau<MAX_BITWORD_WIDTH>>(operation), raw_targets);
             } else {
                 throw std::invalid_argument(
                     "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
@@ -1475,7 +1475,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const PyPauliString &self,
            const pybind11::object &operation,
            const pybind11::object &targets) -> PyPauliString {
-            PauliString result(0);
+            PauliString<MAX_BITWORD_WIDTH> result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
                     throw std::invalid_argument("Don't specify 'targets' when the operation is a stim.Circuit");
@@ -1487,7 +1487,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         "Don't specify 'targets' when the operation is a stim.CircuitInstruction");
                 }
                 result = self.value.ref().before(pybind11::cast<PyCircuitInstruction>(operation).as_operation_ref());
-            } else if (pybind11::isinstance<Tableau>(operation)) {
+            } else if (pybind11::isinstance<Tableau<MAX_BITWORD_WIDTH>>(operation)) {
                 if (targets.is_none()) {
                     throw std::invalid_argument("Must specify 'targets' when the operation is a stim.Tableau");
                 }
@@ -1495,7 +1495,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 for (const auto &e : targets) {
                     raw_targets.push_back(pybind11::cast<size_t>(e));
                 }
-                result = self.value.ref().before(pybind11::cast<Tableau>(operation), raw_targets);
+                result = self.value.ref().before(pybind11::cast<Tableau<MAX_BITWORD_WIDTH>>(operation), raw_targets);
             } else {
                 throw std::invalid_argument(
                     "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));

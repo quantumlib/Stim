@@ -24,26 +24,29 @@
 namespace stim {
 
 /// Iterates over Pauli strings that match commutators and anticommutators.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct CommutingPauliStringIterator {
     // Fields defining the pauli strings that will be iterated.
     size_t num_qubits;
-    SpanRef<const PauliStringRef> cur_desired_commutators;
-    SpanRef<const PauliStringRef> cur_desired_anticommutators;
+    SpanRef<const PauliStringRef<W>> cur_desired_commutators;
+    SpanRef<const PauliStringRef<W>> cur_desired_anticommutators;
 
     // Fields tracking progress of the iteration.
-    PauliString current;                  // The current Pauli string being considered.
+    PauliString<W> current;                  // The current Pauli string being considered.
     size_t next_output_index;             // Next thing to return from buffer.
     size_t filled_output;                 // Number of used entries in buffer.
-    std::vector<PauliString> output_buf;  // Pre-allocated buffer.
+    std::vector<PauliString<W>> output_buf;  // Pre-allocated buffer.
 
     CommutingPauliStringIterator(size_t num_qubits);
 
     /// Restarts iteration, and changes the target commutators/anticommutators.
-    void restart_iter(SpanRef<const PauliStringRef> commutators, SpanRef<const PauliStringRef> anticommutators);
+    void restart_iter(SpanRef<const PauliStringRef<W>> commutators, SpanRef<const PauliStringRef<W>> anticommutators);
     void restart_iter_same_constraints();
 
     /// Yields the next iterated Pauli string (or nullptr if iteration over).
-    const PauliString *iter_next();
+    const PauliString<W> *iter_next();
 
     /// Checks whether the given Pauli string (versus) commutes with 64 variants
     /// of `current` created by varying its first three Paulis. Assumes that the
@@ -58,26 +61,29 @@ struct CommutingPauliStringIterator {
     ///     variant of the current Pauli string commuted or not. The bits of k
     ///     (where k is the index of a bit in the result) are x0, x1, x2, z0,
     ///     z1, z2 in little endian order.
-    uint64_t mass_anticommute_check(const PauliStringRef versus);
+    uint64_t mass_anticommute_check(const PauliStringRef<W> versus);
 
     /// Internal method used for refilling a buffer of results.
     void load_more();
 };
 
 /// Iterates over tableaus of a given size.
+///
+/// The template parameter, W, represents the SIMD width.
+template <size_t W>
 struct TableauIterator {
-    bool also_iter_signs;                             // If false, only unsigned tableaus are yielded.
-    Tableau result;                                   // Pre-allocated result storage.
-    std::vector<PauliStringRef> tableau_column_refs;  // Quick access to tableau columns.
+    bool also_iter_signs;                                // If false, only unsigned tableaus are yielded.
+    Tableau<W> result;                                   // Pre-allocated result storage.
+    std::vector<PauliStringRef<W>> tableau_column_refs;  // Quick access to tableau columns.
 
     // Fields tracking the progress of iteration.
     size_t cur_k;
-    std::vector<CommutingPauliStringIterator> pauli_string_iterators;
+    std::vector<CommutingPauliStringIterator<W>> pauli_string_iterators;
 
     TableauIterator(size_t num_qubits, bool also_iter_signs);
-    TableauIterator(const TableauIterator &);
-    TableauIterator &operator=(const TableauIterator &);
-    TableauIterator &operator=(TableauIterator &&) = delete;
+    TableauIterator(const TableauIterator<W> &);
+    TableauIterator &operator=(const TableauIterator<W> &);
+    TableauIterator &operator=(TableauIterator<W> &&) = delete;
 
     /// Updates the `result` field to point at the next yielded tableau.
     /// Returns true if this succeeded, or false if iteration has ended.
@@ -85,10 +91,12 @@ struct TableauIterator {
 
     // Restarts iteration.
     void restart();
-    std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>> constraints_for_pauli_iterator(
+    std::pair<SpanRef<const PauliStringRef<W>>, SpanRef<const PauliStringRef<W>>> constraints_for_pauli_iterator(
         size_t k) const;
 };
 
 }  // namespace stim
+
+#include "stim/stabilizers/tableau_iter.inl"
 
 #endif

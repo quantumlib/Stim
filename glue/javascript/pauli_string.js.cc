@@ -6,26 +6,26 @@
 
 using namespace stim;
 
-ExposedPauliString::ExposedPauliString(PauliString pauli_string) : pauli_string(pauli_string) {
+ExposedPauliString::ExposedPauliString(PauliString<stim::MAX_BITWORD_WIDTH> pauli_string) : pauli_string(pauli_string) {
 }
 
 ExposedPauliString::ExposedPauliString(const emscripten::val &arg) : pauli_string(0) {
     std::string t = arg.typeOf().as<std::string>();
     if (arg.isNumber()) {
-        pauli_string = PauliString(js_val_to_uint32_t(arg));
+        pauli_string = PauliString<stim::MAX_BITWORD_WIDTH>(js_val_to_uint32_t(arg));
     } else if (arg.isString()) {
-        pauli_string = PauliString::from_str(arg.as<std::string>().data());
+        pauli_string = PauliString<stim::MAX_BITWORD_WIDTH>::from_str(arg.as<std::string>().data());
     } else {
         throw std::invalid_argument("Expected an int or a string. Got " + t);
     }
 }
 
 ExposedPauliString ExposedPauliString::random(size_t n) {
-    return ExposedPauliString(PauliString::random(n, JS_BIND_SHARED_RNG()));
+    return ExposedPauliString(PauliString<stim::MAX_BITWORD_WIDTH>::random(n, JS_BIND_SHARED_RNG()));
 }
 
 ExposedPauliString ExposedPauliString::times(const ExposedPauliString &other) const {
-    PauliString result = pauli_string;
+    PauliString<stim::MAX_BITWORD_WIDTH> result = pauli_string;
     uint8_t r = result.ref().inplace_right_mul_returning_log_i_scalar(other.pauli_string);
     if (r & 1) {
         throw std::invalid_argument("Multiplied non-commuting.");
@@ -37,7 +37,7 @@ ExposedPauliString ExposedPauliString::times(const ExposedPauliString &other) co
 }
 
 ExposedPauliString ExposedPauliString::neg() const {
-    PauliString result = pauli_string;
+    PauliString<stim::MAX_BITWORD_WIDTH> result = pauli_string;
     result.sign ^= 1;
     return ExposedPauliString(result);
 }

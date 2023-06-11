@@ -16,9 +16,10 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
-using namespace stim;
+namespace stim {
 
-CommutingPauliStringIterator::CommutingPauliStringIterator(size_t num_qubits)
+template <size_t W>
+CommutingPauliStringIterator<W>::CommutingPauliStringIterator(size_t num_qubits)
     : num_qubits(num_qubits),
       cur_desired_commutators(),
       cur_desired_anticommutators(),
@@ -33,11 +34,12 @@ CommutingPauliStringIterator::CommutingPauliStringIterator(size_t num_qubits)
         throw std::invalid_argument("Too many qubits to iterate tableaus (num_qubits > 64).");
     }
     while (output_buf.size() < 64) {
-        output_buf.push_back(PauliString(num_qubits));
+        output_buf.push_back(PauliString<W>(num_qubits));
     }
 }
 
-uint64_t CommutingPauliStringIterator::mass_anticommute_check(const PauliStringRef versus) {
+template <size_t W>
+uint64_t CommutingPauliStringIterator<W>::mass_anticommute_check(const PauliStringRef<W> versus) {
     constexpr uint64_t x0 = 0xAAAAAAAAAAAAAAAAUL;
     constexpr uint64_t x1 = 0xCCCCCCCCCCCCCCCCUL;
     constexpr uint64_t x2 = 0xF0F0F0F0F0F0F0F0UL;
@@ -64,21 +66,24 @@ uint64_t CommutingPauliStringIterator::mass_anticommute_check(const PauliStringR
     return result;
 }
 
-void CommutingPauliStringIterator::restart_iter_same_constraints() {
+template <size_t W>
+void CommutingPauliStringIterator<W>::restart_iter_same_constraints() {
     current.xs.u64[0] = 0;
     current.zs.u64[0] = 0;
     next_output_index = 0;
     filled_output = 0;
 }
 
-void CommutingPauliStringIterator::restart_iter(
-    SpanRef<const PauliStringRef> commutators, SpanRef<const PauliStringRef> anticommutators) {
+template <size_t W>
+void CommutingPauliStringIterator<W>::restart_iter(
+    SpanRef<const PauliStringRef<W>> commutators, SpanRef<const PauliStringRef<W>> anticommutators) {
     restart_iter_same_constraints();
     cur_desired_commutators = commutators;
     cur_desired_anticommutators = anticommutators;
 }
 
-const PauliString *CommutingPauliStringIterator::iter_next() {
+template <size_t W>
+const PauliString<W> *CommutingPauliStringIterator<W>::iter_next() {
     if (next_output_index >= filled_output) {
         load_more();
     }
@@ -88,7 +93,8 @@ const PauliString *CommutingPauliStringIterator::iter_next() {
     return &output_buf[next_output_index++];
 }
 
-void CommutingPauliStringIterator::load_more() {
+template <size_t W>
+void CommutingPauliStringIterator<W>::load_more() {
     next_output_index = 0;
     filled_output = 0;
 
@@ -132,15 +138,16 @@ void CommutingPauliStringIterator::load_more() {
     }
 }
 
-TableauIterator::TableauIterator(size_t num_qubits, bool also_iter_signs)
+template <size_t W>
+TableauIterator<W>::TableauIterator(size_t num_qubits, bool also_iter_signs)
     : also_iter_signs(also_iter_signs), result(num_qubits), cur_k(0) {
     for (size_t k = 0; k < num_qubits; k++) {
         // Iterator for X_k's output.
-        pauli_string_iterators.push_back(CommutingPauliStringIterator(num_qubits));
+        pauli_string_iterators.push_back(CommutingPauliStringIterator<W>(num_qubits));
         tableau_column_refs.push_back(result.xs[k]);
 
         // Iterator for Z_k's output.
-        pauli_string_iterators.push_back(CommutingPauliStringIterator(num_qubits));
+        pauli_string_iterators.push_back(CommutingPauliStringIterator<W>(num_qubits));
         tableau_column_refs.push_back(result.zs[k]);
     }
 
@@ -151,11 +158,13 @@ TableauIterator::TableauIterator(size_t num_qubits, bool also_iter_signs)
     }
 }
 
-TableauIterator::TableauIterator(const TableauIterator &other) : result(0) {
+template <size_t W>
+TableauIterator<W>::TableauIterator(const TableauIterator<W> &other) : result(0) {
     *this = other;
 }
 
-TableauIterator &TableauIterator::operator=(const TableauIterator &other) {
+template <size_t W>
+TableauIterator<W> &TableauIterator<W>::operator=(const TableauIterator<W> &other) {
     also_iter_signs = other.also_iter_signs;
     result = other.result;
     cur_k = other.cur_k;
@@ -176,11 +185,12 @@ TableauIterator &TableauIterator::operator=(const TableauIterator &other) {
     return *this;
 }
 
-std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>> TableauIterator::constraints_for_pauli_iterator(
+template <size_t W>
+std::pair<SpanRef<const PauliStringRef<W>>, SpanRef<const PauliStringRef<W>>> TableauIterator<W>::constraints_for_pauli_iterator(
     size_t k) const {
-    const PauliStringRef *tab_obs_start = &tableau_column_refs[0];
-    SpanRef<const PauliStringRef> commute_rng = {tab_obs_start, tab_obs_start + k};
-    SpanRef<const PauliStringRef> anticommute_rng;
+    const PauliStringRef<W> *tab_obs_start = &tableau_column_refs[0];
+    SpanRef<const PauliStringRef<W>> commute_rng = {tab_obs_start, tab_obs_start + k};
+    SpanRef<const PauliStringRef<W>> anticommute_rng;
     if (k & 1) {
         anticommute_rng.ptr_end = commute_rng.ptr_end;
         commute_rng.ptr_end--;
@@ -189,7 +199,8 @@ std::pair<SpanRef<const PauliStringRef>, SpanRef<const PauliStringRef>> TableauI
     return {commute_rng, anticommute_rng};
 }
 
-bool TableauIterator::iter_next() {
+template <size_t W>
+bool TableauIterator<W>::iter_next() {
     if (result.xs.signs.u64[0] > 0) {
         result.xs.signs.u64[0]--;
         return true;
@@ -201,7 +212,7 @@ bool TableauIterator::iter_next() {
     }
 
     while (cur_k != SIZE_MAX) {
-        const PauliString *out = pauli_string_iterators[cur_k].iter_next();
+        const PauliString<W> *out = pauli_string_iterators[cur_k].iter_next();
         if (out == nullptr) {
             // Exhausted all Paulis strings at this level; go back a level.
             cur_k--;  // At 0 this underflows to SIZE_MAX, exiting the loop.
@@ -229,9 +240,12 @@ bool TableauIterator::iter_next() {
     return false;
 }
 
-void TableauIterator::restart() {
+template <size_t W>
+void TableauIterator<W>::restart() {
     cur_k = 0;
     pauli_string_iterators[0].restart_iter({}, {});
     result.xs.signs.clear();
     result.zs.signs.clear();
 }
+
+}  // namespace stim
