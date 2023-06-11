@@ -8,7 +8,7 @@ uint64_t stim::count_determined_measurements(const Circuit &circuit) {
     std::mt19937_64 irrelevant_rng{0};
     auto n = circuit.count_qubits();
     TableauSimulator sim(irrelevant_rng, n);
-    PauliString obs_buffer(n);
+    PauliString<MAX_BITWORD_WIDTH> obs_buffer(n);
 
     circuit.for_each_operation([&](const CircuitInstruction &inst) {
         if (!(GATE_DATA.items[inst.gate_type].flags & GATE_PRODUCES_RESULTS)) {
