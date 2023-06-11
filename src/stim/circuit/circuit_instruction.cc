@@ -67,7 +67,7 @@ void CircuitInstruction::validate() const {
             if (targets[k] == targets[k + 1]) {
                 throw std::invalid_argument(
                     "The two qubit gate " + std::string(gate.name) +
-                    " was applied to a target pair with the same target (" + target_str(targets[k]) +
+                    " was applied to a target pair with the same target (" + targets[k].target_str() +
                     ") twice. Gates can't interact targets with themselves.");
             }
         }
@@ -143,7 +143,7 @@ void CircuitInstruction::validate() const {
     }
 
     // Check that targets are in range.
-    if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
+    if (gate.flags & GATE_PRODUCES_RESULTS) {
         valid_target_mask |= TARGET_INVERTED_BIT;
     }
     if (gate.flags & GATE_CAN_TARGET_BITS) {
@@ -173,15 +173,28 @@ void CircuitInstruction::validate() const {
             }
         }
     }
+    if (gate_type == GateType::MPAD) {
+        for (const auto &t : targets) {
+            if (t.data > 1) {
+                std::stringstream ss;
+                ss << "Target ";
+                t.write_succinct(ss);
+                ss << " is not valid for gate type '" << gate.name << "'.";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+    }
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {
     auto flags = GATE_DATA.items[gate_type].flags;
-    if (!(flags & GATE_PRODUCES_NOISY_RESULTS)) {
+    if (!(flags & GATE_PRODUCES_RESULTS)) {
         return 0;
     }
     uint64_t n = (uint64_t)targets.size();
-    if (flags & GATE_TARGETS_COMBINERS) {
+    if (flags & GATE_TARGETS_PAIRS) {
+        return n >> 1;
+    } else if (flags & GATE_TARGETS_COMBINERS) {
         for (auto e : targets) {
             if (e.is_combiner()) {
                 n -= 2;

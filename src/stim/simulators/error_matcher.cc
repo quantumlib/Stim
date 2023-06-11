@@ -62,7 +62,7 @@ ErrorMatcher::ErrorMatcher(
 
 void ErrorMatcher::err_atom(const CircuitInstruction &effect) {
     assert(error_analyzer.error_class_probabilities.empty());
-    error_analyzer.rev_do_gate(effect);
+    error_analyzer.undo_gate(effect);
     if (error_analyzer.error_class_probabilities.empty()) {
         /// Maybe there were no detectors or observables nearby? Or the noise probability was zero?
         return;
@@ -216,7 +216,7 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
     cur_op = &op;
 
     if (op.gate_type == GateType::DETECTOR) {
-        error_analyzer.DETECTOR(op);
+        error_analyzer.undo_DETECTOR(op);
         if (!op.args.empty()) {
             auto id = error_analyzer.tracker.num_detectors_in_past;
             auto entry = dem_coords_map.insert({id, {}}).first;
@@ -229,12 +229,12 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
             }
         }
     } else if (op.gate_type == GateType::SHIFT_COORDS) {
-        error_analyzer.SHIFT_COORDS(op);
+        error_analyzer.undo_SHIFT_COORDS(op);
         for (size_t k = 0; k < op.args.size(); k++) {
             cur_coord_offset[k] -= op.args[k];
         }
-    } else if (!(flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
-        error_analyzer.rev_do_gate(op);
+    } else if (!(flags & (GATE_IS_NOISY | GATE_PRODUCES_RESULTS))) {
+        error_analyzer.undo_gate(op);
     } else if (op.gate_type == GateType::E || op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.targets.size();

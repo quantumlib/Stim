@@ -445,6 +445,10 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("SWAP", 7, 9),
         f("PAULI_CHANNEL_1", 8, 9),
         f("PAULI_CHANNEL_2", 9, 9),
+        f("MXX", 10, 9),
+        f("MYY", 11, 9),
+        f("MZZ", 12, 9),
+        f("MPAD", 13, 9),
 
         make_x_control_mesh(),
         make_y_control_mesh(),

@@ -208,10 +208,39 @@ class CircuitTranslationTracker:
             obs = _stim_targets_to_dense_pauli_string(group)
             qubits = [cirq.LineQubit(t.value) for t in group]
             key = str(self.get_next_measure_id())
-            if obs.coefficient == -1:
-                raise NotImplementedError(
-                    "Converting inverted MPP blocked by https://github.com/quantumlib/Cirq/issues/4814"
-                )
+            self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
+
+    def process_m_pair(self, instruction: stim.CircuitInstruction, basis: str) -> None:
+        args = instruction.gate_args_copy()
+        if args and args[0]:
+            raise NotImplementedError("Noisy M" + basis*2)
+
+        targets: List[stim.GateTarget] = instruction.targets_copy()
+        for k in range(0, len(targets), 2):
+            obs = cirq.DensePauliString(basis * 2)
+            if targets[0].is_inverted_result_target ^ targets[1].is_inverted_result_target:
+                obs *= -1
+            qubits = [cirq.LineQubit(targets[0].value), cirq.LineQubit(targets[1].value)]
+            key = str(self.get_next_measure_id())
+            self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
+
+    def process_mxx(self, instruction: stim.CircuitInstruction) -> None:
+        self.process_m_pair(instruction, "X")
+
+    def process_myy(self, instruction: stim.CircuitInstruction) -> None:
+        self.process_m_pair(instruction, "Y")
+
+    def process_mzz(self, instruction: stim.CircuitInstruction) -> None:
+        self.process_m_pair(instruction, "Z")
+
+    def process_mpad(self, instruction: stim.CircuitInstruction) -> None:
+        targets: List[stim.GateTarget] = instruction.targets_copy()
+        for t in targets:
+            obs = cirq.DensePauliString("")
+            if t.value == 1:
+                obs *= -1
+            qubits = []
+            key = str(self.get_next_measure_id())
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
 
     def process_correlated_error(self, instruction: stim.CircuitInstruction) -> None:
@@ -447,6 +476,10 @@ class CircuitTranslationTracker:
             "E": CircuitTranslationTracker.process_correlated_error,
             "CORRELATED_ERROR": CircuitTranslationTracker.process_correlated_error,
             "MPP": CircuitTranslationTracker.process_mpp,
+            "MXX": CircuitTranslationTracker.process_mxx,
+            "MYY": CircuitTranslationTracker.process_myy,
+            "MZZ": CircuitTranslationTracker.process_mzz,
+            "MPAD": CircuitTranslationTracker.process_mpad,
             "DETECTOR": CircuitTranslationTracker.process_detector,
             "OBSERVABLE_INCLUDE": CircuitTranslationTracker.process_observable_include,
         }

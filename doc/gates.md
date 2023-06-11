@@ -70,10 +70,15 @@
     - [RX](#RX)
     - [RY](#RY)
     - [RZ](#RZ)
+- Pair Measurement Gates
+    - [MXX](#MXX)
+    - [MYY](#MYY)
+    - [MZZ](#MZZ)
 - Control Flow
     - [REPEAT](#REPEAT)
 - Annotations
     - [DETECTOR](#DETECTOR)
+    - [MPAD](#MPAD)
     - [OBSERVABLE_INCLUDE](#OBSERVABLE_INCLUDE)
     - [QUBIT_COORDS](#QUBIT_COORDS)
     - [SHIFT_COORDS](#SHIFT_COORDS)
@@ -103,8 +108,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +X
-    Z -> +Z
+    X -> X
+    Z -> Z
     
 Bloch Rotation:
 
@@ -144,7 +149,7 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +X
+    X -> X
     Z -> -Z
     
 Bloch Rotation:
@@ -234,7 +239,7 @@ Example:
 Stabilizer Generators:
 
     X -> -X
-    Z -> +Z
+    Z -> Z
     
 Bloch Rotation:
 
@@ -276,8 +281,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Y
-    Z -> +X
+    X -> Y
+    Z -> X
     
 Bloch Rotation:
 
@@ -319,8 +324,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Z
-    Z -> +Y
+    X -> Z
+    Z -> Y
     
 Bloch Rotation:
 
@@ -363,8 +368,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Z
-    Z -> +X
+    X -> Z
+    Z -> X
     
 Bloch Rotation:
 
@@ -405,7 +410,7 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Y
+    X -> Y
     Z -> -Z
     
 Bloch Rotation:
@@ -450,7 +455,7 @@ Example:
 Stabilizer Generators:
 
     X -> -X
-    Z -> +Y
+    Z -> Y
     
 Bloch Rotation:
 
@@ -496,8 +501,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Y
-    Z -> +Z
+    X -> Y
+    Z -> Z
     
 Bloch Rotation:
 
@@ -539,7 +544,7 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +X
+    X -> X
     Z -> -Y
     
 Bloch Rotation:
@@ -582,8 +587,8 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +X
-    Z -> +Y
+    X -> X
+    Z -> Y
     
 Bloch Rotation:
 
@@ -626,7 +631,7 @@ Example:
 Stabilizer Generators:
 
     X -> -Z
-    Z -> +X
+    Z -> X
     
 Bloch Rotation:
 
@@ -668,7 +673,7 @@ Example:
     
 Stabilizer Generators:
 
-    X -> +Z
+    X -> Z
     Z -> -X
     
 Bloch Rotation:
@@ -714,7 +719,7 @@ Example:
 Stabilizer Generators:
 
     X -> -Y
-    Z -> +Z
+    Z -> Z
     
 Bloch Rotation:
 
@@ -777,10 +782,10 @@ Example:
     CX sweep[5] 7 sweep[5] 8
 Stabilizer Generators:
 
-    X_ -> +XX
-    Z_ -> +Z_
-    _X -> +_X
-    _Z -> +ZZ
+    X_ -> XX
+    Z_ -> Z_
+    _X -> _X
+    _Z -> ZZ
     
 Unitary Matrix (little endian):
 
@@ -819,10 +824,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +XX
-    Z_ -> +_Z
-    _X -> +X_
-    _Z -> +ZZ
+    X_ -> XX
+    Z_ -> _Z
+    _X -> X_
+    _Z -> ZZ
     
 Unitary Matrix (little endian):
 
@@ -877,10 +882,10 @@ Example:
     CY sweep[5] 7 sweep[5] 8
 Stabilizer Generators:
 
-    X_ -> +XY
-    Z_ -> +Z_
-    _X -> +ZX
-    _Z -> +ZZ
+    X_ -> XY
+    Z_ -> Z_
+    _X -> ZX
+    _Z -> ZZ
     
 Unitary Matrix (little endian):
 
@@ -941,10 +946,10 @@ Example:
     CZ sweep[5] 7 8 sweep[5]
 Stabilizer Generators:
 
-    X_ -> +XZ
-    Z_ -> +Z_
-    _X -> +ZX
-    _Z -> +_Z
+    X_ -> XZ
+    Z_ -> Z_
+    _X -> ZX
+    _Z -> _Z
     
 Unitary Matrix (little endian):
 
@@ -983,10 +988,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +ZY
-    Z_ -> +_Z
-    _X -> +YZ
-    _Z -> +Z_
+    X_ -> ZY
+    Z_ -> _Z
+    _X -> YZ
+    _Z -> Z_
     
 Unitary Matrix (little endian):
 
@@ -1029,9 +1034,9 @@ Example:
 Stabilizer Generators:
 
     X_ -> -ZY
-    Z_ -> +_Z
+    Z_ -> _Z
     _X -> -YZ
-    _Z -> +Z_
+    _Z -> Z_
     
 Unitary Matrix (little endian):
 
@@ -1076,9 +1081,9 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +X_
+    X_ -> X_
     Z_ -> -YX
-    _X -> +_X
+    _X -> _X
     _Z -> -XY
     
 Unitary Matrix (little endian):
@@ -1121,10 +1126,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +X_
-    Z_ -> +YX
-    _X -> +_X
-    _Z -> +XY
+    X_ -> X_
+    Z_ -> YX
+    _X -> _X
+    _Z -> XY
     
 Unitary Matrix (little endian):
 
@@ -1171,9 +1176,9 @@ Example:
 Stabilizer Generators:
 
     X_ -> -ZY
-    Z_ -> +XY
+    Z_ -> XY
     _X -> -YZ
-    _Z -> +YX
+    _Z -> YX
     
 Unitary Matrix (little endian):
 
@@ -1223,9 +1228,9 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +ZY
+    X_ -> ZY
     Z_ -> -XY
-    _X -> +YZ
+    _X -> YZ
     _Z -> -YX
     
 Unitary Matrix (little endian):
@@ -1276,10 +1281,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +YZ
-    Z_ -> +Z_
-    _X -> +ZY
-    _Z -> +_Z
+    X_ -> YZ
+    Z_ -> Z_
+    _X -> ZY
+    _Z -> _Z
     
 Unitary Matrix (little endian):
 
@@ -1320,9 +1325,9 @@ Example:
 Stabilizer Generators:
 
     X_ -> -YZ
-    Z_ -> +Z_
+    Z_ -> Z_
     _X -> -ZY
-    _Z -> +_Z
+    _Z -> _Z
     
 Unitary Matrix (little endian):
 
@@ -1366,10 +1371,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +_X
-    Z_ -> +_Z
-    _X -> +X_
-    _Z -> +Z_
+    X_ -> _X
+    Z_ -> _Z
+    _X -> X_
+    _Z -> Z_
     
 Unitary Matrix (little endian):
 
@@ -1408,10 +1413,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +_X
-    Z_ -> +ZZ
-    _X -> +XX
-    _Z -> +Z_
+    X_ -> _X
+    Z_ -> ZZ
+    _X -> XX
+    _Z -> Z_
     
 Unitary Matrix (little endian):
 
@@ -1453,10 +1458,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +X_
-    Z_ -> +ZX
-    _X -> +_X
-    _Z -> +XZ
+    X_ -> X_
+    Z_ -> ZX
+    _X -> _X
+    _Z -> XZ
     
 Unitary Matrix (little endian):
 
@@ -1499,10 +1504,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +X_
-    Z_ -> +ZY
-    _X -> +XX
-    _Z -> +XZ
+    X_ -> X_
+    Z_ -> ZY
+    _X -> XX
+    _Z -> XZ
     
 Unitary Matrix (little endian):
 
@@ -1561,10 +1566,10 @@ Example:
     XCZ 7 sweep[5] 8 sweep[5]
 Stabilizer Generators:
 
-    X_ -> +X_
-    Z_ -> +ZZ
-    _X -> +XX
-    _Z -> +_Z
+    X_ -> X_
+    Z_ -> ZZ
+    _X -> XX
+    _Z -> _Z
     
 Unitary Matrix (little endian):
 
@@ -1605,10 +1610,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +XX
-    Z_ -> +ZX
-    _X -> +_X
-    _Z -> +YZ
+    X_ -> XX
+    Z_ -> ZX
+    _X -> _X
+    _Z -> YZ
     
 Unitary Matrix (little endian):
 
@@ -1655,10 +1660,10 @@ Example:
     
 Stabilizer Generators:
 
-    X_ -> +XY
-    Z_ -> +ZY
-    _X -> +YX
-    _Z -> +YZ
+    X_ -> XY
+    Z_ -> ZY
+    _X -> YX
+    _Z -> YZ
     
 Unitary Matrix (little endian):
 
@@ -1721,10 +1726,10 @@ Example:
     YCZ 7 sweep[5] 8 sweep[5]
 Stabilizer Generators:
 
-    X_ -> +XZ
-    Z_ -> +ZZ
-    _X -> +YX
-    _Z -> +_Z
+    X_ -> XZ
+    Z_ -> ZZ
+    _X -> YX
+    _Z -> _Z
     
 Unitary Matrix (little endian):
 
@@ -2075,20 +2080,10 @@ Examples:
 
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MZ(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    M 5
-    M !42
-    M(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    Z -> m xor chance(p)
-    Z -> +Z
+    Z -> rec[-1]
+    Z -> Z
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2129,20 +2124,29 @@ Examples:
     # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
     MPP(0.001) Z1*Z2 X1*X2
 
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):
 
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MPP 5
-    MPP !42
-    MPP(0.001) 5 !42
+    XYZ__ -> rec[-2]
+    ___XX -> rec[-1]
+    X____ -> X____
+    _Y___ -> _Y___
+    __Z__ -> __Z__
+    ___X_ -> ___X_
+    ____X -> ____X
+    ZZ___ -> ZZ___
+    _XX__ -> _XX__
+    ___ZZ -> ___ZZ
     
-Stabilizer Generators:
+Decomposition (into H, S, CX, M, R):
 
-    P -> m xor chance(p)
-    P -> P
+    # The following circuit is equivalent (up to global phase) to `MPP X0*Y1*Z2 X3*X4`
+    S 1 1 1
+    H 0 1 3 4
+    CX 2 0 1 0 4 3
+    M 0 3
+    CX 2 0 1 0 4 3
+    H 0 1 3 4
+    S 1
     
 
 <a name="MR"></a>
@@ -2184,20 +2188,10 @@ Examples:
 
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRZ(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MR 5
-    MR !42
-    MR(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    Z -> m xor chance(p)
-    1 -> +Z
+    Z -> rec[-1]
+    1 -> Z
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2240,20 +2234,10 @@ Examples:
 
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRX(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MRX 5
-    MRX !42
-    MRX(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    X -> m xor chance(p)
-    1 -> +X
+    X -> rec[-1]
+    1 -> X
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2298,20 +2282,10 @@ Examples:
 
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRY(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MRY 5
-    MRY !42
-    MRY(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    Y -> m xor chance(p)
-    1 -> +Y
+    Y -> rec[-1]
+    1 -> Y
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2320,8 +2294,8 @@ Decomposition (into H, S, CX, M, R):
     S 0
     S 0
     H 0
-    R 0
     M 0
+    R 0
     H 0
     S 0
     
@@ -2359,20 +2333,10 @@ Examples:
 
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MX(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MX 5
-    MX !42
-    MX(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    X -> +m xor chance(p)
-    X -> +X
+    X -> rec[-1]
+    X -> X
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2415,20 +2379,10 @@ Examples:
 
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MY(0.02) 2 3 5
-If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
-
-Prefixing a target with ! inverts its recorded measurement result.
-
-Example:
-
-    MY 5
-    MY !42
-    MY(0.001) 5 !42
-    
 Stabilizer Generators:
 
-    Y -> m xor chance(p)
-    Y -> +Y
+    Y -> rec[-1]
+    Y -> Y
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2468,16 +2422,9 @@ Examples:
 
     # Reset multiple qubits into the |0> state.
     RZ 2 3 5
-
-Example:
-
-    R 5
-    R 42
-    R 5 42
-    
 Stabilizer Generators:
 
-    1 -> +Z
+    1 -> Z
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2508,16 +2455,9 @@ Examples:
 
     # Result multiple qubits into the |+> state.
     RX 2 3 5
-
-Example:
-
-    RX 5
-    RX 42
-    RX 5 42
-    
 Stabilizer Generators:
 
-    1 -> +X
+    1 -> X
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2548,16 +2488,9 @@ Examples:
 
     # Result multiple qubits into the |i> state.
     RY 2 3 5
-
-Example:
-
-    RY 5
-    RY 42
-    RY 5 42
-    
 Stabilizer Generators:
 
-    1 -> +Y
+    1 -> Y
     
 Decomposition (into H, S, CX, M, R):
 
@@ -2569,6 +2502,192 @@ Decomposition (into H, S, CX, M, R):
     R 0
     H 0
     S 0
+    
+
+## Pair Measurement Gates
+
+<a name="MXX"></a>
+### The 'MXX' Instruction
+
+Two-qubit X basis parity measurement.
+
+This operation measures whether pairs of qubits are in the {|++>,|-->} subspace or in the
+{|+->,|-+>} subspace of the two qubit state space. |+> and |-> are the +1 and -1
+eigenvectors of the X operator.
+
+If the qubits were in the {|++>,|-->} subspace, False is appended to the measurement record.
+If the qubits were in the {|+->,|-+>} subspace, True is appended to the measurement record.
+Inverting one of the qubit targets inverts the result.
+
+Parens Arguments:
+
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
+
+Targets:
+
+    The pairs of qubits to measure in the X basis.
+
+    This operation accepts inverted qubit targets (like `!5` instead of `5`). Inverted
+    targets flip the measurement result.
+
+Examples:
+
+    # Measure the +XX observable of qubit 1 vs qubit 2.
+    MXX 1 2
+
+    # Measure the -XX observable of qubit 1 vs qubit 2.
+    MXX !1 2
+
+    # Do a noisy measurement of the +XX observable of qubit 2 vs qubit 3.
+    # The result recorded to the measurement record will be flipped 1% of the time.
+    MXX(0.01) 2 3
+
+    # Measure the +XX observable qubit 1 vs qubit 2, and also qubit 8 vs qubit 9
+    MXX 1 2 8 9
+
+    # Perform multiple noisy measurements.
+    # Each measurement has an independent 2% chance of being recorded wrong.
+    MXX(0.02) 2 3 5 7 11 19 17 4
+Stabilizer Generators:
+
+    X_ -> X_
+    _X -> _X
+    ZZ -> ZZ
+    XX -> rec[-1]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `MXX 0 1`
+    CX 0 1
+    H 0
+    M 0
+    H 0
+    CX 0 1
+    
+
+<a name="MYY"></a>
+### The 'MYY' Instruction
+
+Two-qubit Y basis parity measurement.
+
+This operation measures whether pairs of qubits are in the {|ii>,|jj>} subspace or in the
+{|ij>,|ji>} subspace of the two qubit state space. |i> and |j> are the +1 and -1
+eigenvectors of the Y operator.
+
+If the qubits were in the {|ii>,|jj>} subspace, False is appended to the measurement record.
+If the qubits were in the {|ij>,|ji>} subspace, True is appended to the measurement record.
+Inverting one of the qubit targets inverts the result.
+
+Parens Arguments:
+
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
+
+Targets:
+
+    The pairs of qubits to measure in the Y basis.
+
+    This operation accepts inverted qubit targets (like `!5` instead of `5`). Inverted
+    targets flip the measurement result.
+
+Examples:
+
+    # Measure the +YY observable of qubit 1 vs qubit 2.
+    MYY 1 2
+
+    # Measure the -YY observable of qubit 1 vs qubit 2.
+    MYY !1 2
+
+    # Do a noisy measurement of the +YY observable of qubit 2 vs qubit 3.
+    # The result recorded to the measurement record will be flipped 1% of the time.
+    MYY(0.01) 2 3
+
+    # Measure the +YY observable qubit 1 vs qubit 2, and also qubit 8 vs qubit 9
+    MYY 1 2 8 9
+
+    # Perform multiple noisy measurements.
+    # Each measurement has an independent 2% chance of being recorded wrong.
+    MYY(0.02) 2 3 5 7 11 19 17 4
+Stabilizer Generators:
+
+    XX -> XX
+    Y_ -> Y_
+    _Y -> _Y
+    YY -> rec[-1]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `MYY 0 1`
+    S 0 1
+    CX 0 1
+    H 0
+    M 0
+    S 1 1
+    H 0
+    CX 0 1
+    S 0 1
+    
+
+<a name="MZZ"></a>
+### The 'MZZ' Instruction
+
+Two-qubit Z basis parity measurement.
+
+This operation measures whether pairs of qubits are in the {|00>,|11>} subspace or in the
+{|01>,|10>} subspace of the two qubit state space. |0> and |1> are the +1 and -1
+eigenvectors of the Z operator.
+
+If the qubits were in the {|00>,|11>} subspace, False is appended to the measurement record.
+If the qubits were in the {|01>,|10>} subspace, True is appended to the measurement record.
+Inverting one of the qubit targets inverts the result.
+
+Parens Arguments:
+
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
+
+Targets:
+
+    The pairs of qubits to measure in the Z basis.
+
+    This operation accepts inverted qubit targets (like `!5` instead of `5`). Inverted
+    targets flip the measurement result.
+
+Examples:
+
+    # Measure the +ZZ observable of qubit 1 vs qubit 2.
+    MZZ 1 2
+
+    # Measure the -ZZ observable of qubit 1 vs qubit 2.
+    MZZ !1 2
+
+    # Do a noisy measurement of the +ZZ observable of qubit 2 vs qubit 3.
+    # The result recorded to the measurement record will be flipped 1% of the time.
+    MZZ(0.01) 2 3
+
+    # Measure the +ZZ observable qubit 1 vs qubit 2, and also qubit 8 vs qubit 9
+    MZZ 1 2 8 9
+
+    # Perform multiple noisy measurements.
+    # Each measurement has an independent 2% chance of being recorded wrong.
+    MZZ(0.02) 2 3 5 7 11 19 17 4
+Stabilizer Generators:
+
+    XX -> XX
+    Z_ -> Z_
+    _Z -> _Z
+    ZZ -> rec[-1]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `MZZ 0 1`
+    CX 0 1
+    M 1
+    CX 0 1
     
 
 ## Control Flow
@@ -2677,6 +2796,31 @@ Example:
         SHIFT_COORDS(1, 2)
         DETECTOR(0, 3) rec[-1]
     }
+
+<a name="MPAD"></a>
+### The 'MPAD' Instruction
+
+Pads the measurement record with the listed measurement results.
+
+This can be useful for ensuring measurements are aligned to word boundaries, or that the
+number of measurement bits produced per circuit layer is always the same even if the number
+of measured qubits varies.
+
+Targets:
+
+    Each target is a measurement result to add.
+    Targets should be the value 0 or the value 1.
+
+Examples:
+
+    # Append a False result to the measurement record.
+    MPAD 0
+
+    # Append a True result to the measurement record.
+    MPAD 1
+
+    # Append a series of results to the measurement record.
+    MPAD 0 0 1 0 1
 
 <a name="OBSERVABLE_INCLUDE"></a>
 ### The 'OBSERVABLE_INCLUDE' Instruction

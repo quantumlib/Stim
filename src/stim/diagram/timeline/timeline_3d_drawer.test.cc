@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
@@ -251,4 +252,10 @@ TEST(circuit_diagram_timeline_3d, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
     expect_diagram_is_identical_to_saved_file(circuit, "surface_code.gltf");
+}
+
+TEST(circuit_diagram_timeline_3d, test_circuit_all_ops) {
+    expect_diagram_is_identical_to_saved_file(
+        generate_test_circuit_with_all_operations(),
+        "circuit_all_ops_3d.gltf");
 }

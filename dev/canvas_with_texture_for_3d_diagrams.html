@@ -167,6 +167,11 @@ function draw(ctx) {
     drawRect(ctx, "SWAP", "#FFF", "#000", n++);
     drawRect(ctx, "Pauli_Err1", "#000", "#FFF", n++);
     drawRect(ctx, "Pauli_Err2", "#000", "#FFF", n++);
+
+    drawRect(ctx, "M_XX", "#F44", "#000", n++);
+    drawRect(ctx, "M_YY", "#4F4", "#000", n++);
+    drawRect(ctx, "M_ZZ", "#44F", "#000", n++);
+    drawRect(ctx, "M_PAD", "#888", "#000", n++);
 }
 
 draw(document.getElementById('cv').getContext('2d'))

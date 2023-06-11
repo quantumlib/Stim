@@ -22,7 +22,7 @@ using namespace stim;
 
 BENCHMARK(gate_data_hash_all_gate_names) {
     std::vector<std::string> names;
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         names.emplace_back(gate.name);
     }
     size_t result = 0;
