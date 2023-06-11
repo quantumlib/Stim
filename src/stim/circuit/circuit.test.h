@@ -14,28 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_DIAGRAM_GATE_DATA_SVG_H
-#define _STIM_DIAGRAM_GATE_DATA_SVG_H
+#ifndef _STIM_CIRCUIT_TEST_H
+#define _STIM_CIRCUIT_TEST_H
 
-#include <map>
-#include <string>
+#include "stim/circuit/circuit.h"
 
-namespace stim_draw_internal {
+namespace stim {
 
-struct SvgGateData {
-    uint16_t span;
-    std::string body;
-    std::string subscript;
-    std::string superscript;
-    std::string fill;
-    std::string text_color;
-    size_t font_size;
-    size_t sub_font_size;
-    int32_t y_shift;
+stim::Circuit generate_test_circuit_with_all_operations();
 
-    static std::map<std::string, SvgGateData> make_gate_data_map();
-};
-
-}  // namespace stim_draw_internal
+}  // namespace stim
 
 #endif

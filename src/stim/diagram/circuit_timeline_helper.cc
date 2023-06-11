@@ -51,7 +51,7 @@ void CircuitTimelineHelper::do_operation_with_target_combiners(const CircuitInst
         while (end < op.targets.size() && op.targets[end].is_combiner()) {
             end += 2;
         }
-        if (GATE_DATA.items[op.gate_type].flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
+        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
             do_record_measure_result(op.targets[start].qubit_value());
         }
         do_atomic_operation(op.gate_type, op.args, {&op.targets[start], &op.targets[end]});
@@ -66,13 +66,16 @@ void CircuitTimelineHelper::do_multi_qubit_atomic_operation(const CircuitInstruc
 void CircuitTimelineHelper::do_two_qubit_gate(const CircuitInstruction &op) {
     for (size_t k = 0; k < op.targets.size(); k += 2) {
         const GateTarget *p = &op.targets[k];
+        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
+            do_record_measure_result(p[0].qubit_value());
+        }
         do_atomic_operation(op.gate_type, op.args, {p, p + 2});
     }
 }
 
 void CircuitTimelineHelper::do_single_qubit_gate(const CircuitInstruction &op) {
     for (const auto &t : op.targets) {
-        if (GATE_DATA.items[op.gate_type].flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
+        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
             do_record_measure_result(t.qubit_value());
         }
         do_atomic_operation(op.gate_type, op.args, {&t});

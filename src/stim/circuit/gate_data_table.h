@@ -7,8 +7,6 @@
 
 namespace stim {
 
-constexpr const size_t NUM_DEFINED_GATES = 60;
-
 /// A class that maps each gate to a value.
 ///
 /// The only real difference between this class and a raw array is that this class makes it
@@ -34,11 +32,11 @@ struct GateVTable {
             data[gate_id] = value;
         }
 #ifndef NDEBUG
-        std::array<bool, 256> seen{};
+        std::array<bool, NUM_DEFINED_GATES> seen{};
         for (const auto &[gate_id, value] : gate_data_pairs) {
             seen[gate_id] = true;
         }
-        for (const auto &gate : GATE_DATA.gates()) {
+        for (const auto &gate : GATE_DATA.items) {
             if (!seen[gate.id]) {
                 throw std::invalid_argument(
                     "Missing gate data! A value was not defined for '" + std::string(gate.name) + "'.");

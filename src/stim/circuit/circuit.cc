@@ -174,12 +174,12 @@ uint64_t read_uint63_t(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
-    circuit.target_buf.append_tail(GateTarget::qubit(read_uint24_t(c, read_char)));
+inline GateTarget read_raw_qubit_target(int &c, SOURCE read_char) {
+    return GateTarget::qubit(read_uint24_t(c, read_char));
 }
 
 template <typename SOURCE>
-inline void read_measurement_record_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline GateTarget read_measurement_record_target(int &c, SOURCE read_char) {
     if (c != 'r' || read_char() != 'e' || read_char() != 'c' || read_char() != '[' || read_char() != '-') {
         throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
@@ -189,11 +189,11 @@ inline void read_measurement_record_target_into(int &c, SOURCE read_char, Circui
         throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
     c = read_char();
-    circuit.target_buf.append_tail({lookback | TARGET_RECORD_BIT});
+    return GateTarget{lookback | TARGET_RECORD_BIT};
 }
 
 template <typename SOURCE>
-inline void read_sweep_bit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline GateTarget read_sweep_bit_target(int &c, SOURCE read_char) {
     if (c != 's' || read_char() != 'w' || read_char() != 'e' || read_char() != 'e' || read_char() != 'p' ||
         read_char() != '[') {
         throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
@@ -204,11 +204,11 @@ inline void read_sweep_bit_target_into(int &c, SOURCE read_char, Circuit &circui
         throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
     }
     c = read_char();
-    circuit.target_buf.append_tail({lookback | TARGET_SWEEP_BIT});
+    return GateTarget{lookback | TARGET_SWEEP_BIT};
 }
 
 template <typename SOURCE>
-inline void read_pauli_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline GateTarget read_pauli_target(int &c, SOURCE read_char) {
     uint32_t m = 0;
     if (c == 'x' || c == 'X') {
         m = TARGET_PAULI_X_BIT;
@@ -226,64 +226,79 @@ inline void read_pauli_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     }
     uint32_t q = read_uint24_t(c, read_char);
 
-    circuit.target_buf.append_tail({q | m});
+    return {q | m};
 }
 
 template <typename SOURCE>
-inline void read_inverted_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline GateTarget read_inverted_target(int &c, SOURCE read_char) {
     assert(c == '!');
     c = read_char();
+    GateTarget t;
     if (c == 'X' || c == 'x' || c == 'Y' || c == 'y' || c == 'Z' || c == 'z') {
-        read_pauli_target_into(c, read_char, circuit);
+        t = read_pauli_target(c, read_char);
     } else {
-        read_raw_qubit_target_into(c, read_char, circuit);
+        t = read_raw_qubit_target(c, read_char);
     }
-    circuit.target_buf.tail.back().data ^= TARGET_INVERTED_BIT;
+    t.data ^= TARGET_INVERTED_BIT;
+    return t;
+}
+
+template <typename SOURCE>
+inline GateTarget read_single_target(int &c, SOURCE read_char) {
+    switch (c) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            return read_raw_qubit_target(c, read_char);
+        case 'r':
+            return read_measurement_record_target(c, read_char);
+        case '!':
+            return read_inverted_target(c, read_char);
+        case 'X':
+        case 'Y':
+        case 'Z':
+        case 'x':
+        case 'y':
+        case 'z':
+            return read_pauli_target(c, read_char);
+        case '*':
+            c = read_char();
+            return GateTarget::combiner();
+        case 's':
+            return read_sweep_bit_target(c, read_char);
+        default:
+            throw std::invalid_argument("Unrecognized target prefix '" + std::string(1, c) + "'.");
+    }
+}
+
+GateTarget GateTarget::from_target_str(const char *text) {
+    int c = text[0];
+    size_t k = 1;
+    auto t = read_single_target(
+        c,
+        [&]() {
+            return text[k] != 0 ? text[k++] : EOF;
+        });
+    if (c != EOF) {
+        throw std::invalid_argument("Unparsed text at end of " + std::string(text));
+    }
+    return t;
 }
 
 template <typename SOURCE>
 inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     bool need_space = true;
     while (read_until_next_line_arg(c, read_char, need_space)) {
-        need_space = true;
-        switch (c) {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                read_raw_qubit_target_into(c, read_char, circuit);
-                break;
-            case 'r':
-                read_measurement_record_target_into(c, read_char, circuit);
-                break;
-            case '!':
-                read_inverted_target_into(c, read_char, circuit);
-                break;
-            case 'X':
-            case 'Y':
-            case 'Z':
-            case 'x':
-            case 'y':
-            case 'z':
-                read_pauli_target_into(c, read_char, circuit);
-                break;
-            case '*':
-                circuit.target_buf.append_tail(GateTarget::combiner());
-                c = read_char();
-                need_space = false;
-                break;
-            case 's':
-                read_sweep_bit_target_into(c, read_char, circuit);
-                break;
-            default:
-                throw std::invalid_argument("Unrecognized target prefix '" + std::string(1, c) + "'.");
-        }
+        GateTarget t = read_single_target(c, read_char);
+        circuit.target_buf.append_tail(t);
+        need_space = !t.is_combiner();
     }
 }
 
@@ -795,10 +810,10 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     Circuit result;
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
-        if (flags & GATE_PRODUCES_NOISY_RESULTS) {
+        if (flags & GATE_PRODUCES_RESULTS) {
             // Drop result flip probability.
             result.operations.push_back({op.gate_type, {}, op.targets});
-        } else if (!(flags & GATE_IS_NOISE)) {
+        } else if (!(flags & GATE_IS_NOISY)) {
             // Keep noiseless operations.
             result.operations.push_back(op);
         }
@@ -813,7 +828,7 @@ Circuit Circuit::without_noise() const {
     Circuit result;
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
-        if (flags & GATE_PRODUCES_NOISY_RESULTS) {
+        if (flags & GATE_PRODUCES_RESULTS) {
             // Drop result flip probabilities.
             auto targets = result.target_buf.take_copy(op.targets);
             result.safe_append(op.gate_type, targets, {});
@@ -821,7 +836,7 @@ Circuit Circuit::without_noise() const {
             auto args = result.arg_buf.take_copy(op.args);
             auto targets = result.target_buf.take_copy(op.targets);
             result.operations.push_back({op.gate_type, args, targets});
-        } else if (!(flags & GATE_IS_NOISE)) {
+        } else if (!(flags & GATE_IS_NOISY)) {
             // Keep noiseless operations.
             auto args = result.arg_buf.take_copy(op.args);
             auto targets = result.target_buf.take_copy(op.targets);
@@ -897,7 +912,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
             // Unitary gates always have an inverse.
         } else if (op.gate_type == GateType::TICK) {
             // Ticks are self-inverse.
-        } else if (flags & GATE_IS_NOISE) {
+        } else if (flags & GATE_IS_NOISY) {
             // Noise isn't invertible, but it is weakly invertible.
             // ELSE_CORRELATED_ERROR isn't implemented due to complex order dependencies.
             if (!allow_weak_inverse || op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
@@ -906,7 +921,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
                     "For example it contains a '" +
                     op.str() + "' instruction.");
             }
-        } else if (flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
+        } else if (flags & (GATE_IS_RESET | GATE_PRODUCES_RESULTS)) {
             // Dissipative operations aren't invertible, but they are weakly invertible.
             if (!allow_weak_inverse) {
                 throw std::invalid_argument(

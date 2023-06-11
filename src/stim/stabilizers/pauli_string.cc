@@ -86,7 +86,7 @@ PauliString PauliString::from_func(bool sign, size_t num_qubits, const std::func
             x = false;
             z = false;
         } else {
-            throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
+            throw std::invalid_argument("Unrecognized pauli character. " + std::to_string(c));
         }
         result.xs.u64[i / 64] ^= (uint64_t)x << (i & 63);
         result.zs.u64[i / 64] ^= (uint64_t)z << (i & 63);

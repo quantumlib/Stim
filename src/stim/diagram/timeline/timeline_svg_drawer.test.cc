@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
@@ -324,4 +325,29 @@ TEST(diagram_timeline_svg_drawer, make_diagram_write_to) {
     DiagramTimelineSvgDrawer::make_diagram_write_to(
         circuit, ss, 0, circuit.count_ticks(), SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
     expect_string_is_identical_to_saved_file(ss.str(), "detslice-with-ops_surface_code.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, test_circuit_all_ops_time_slice) {
+    auto circuit = generate_test_circuit_with_all_operations();
+    CoordFilter filter;
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_SLICE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "circuit_all_ops_timeslice.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, test_circuit_all_ops_time_line) {
+    auto circuit = generate_test_circuit_with_all_operations();
+    CoordFilter filter;
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIMELINE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "circuit_all_ops_timeline.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, test_circuit_all_ops_detslice) {
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    auto circuit = generate_test_circuit_with_all_operations();
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "circuit_all_ops_detslice.svg");
 }

@@ -10,6 +10,7 @@
 #include "stim/circuit/gate_data_table.h"
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/cmd/command_detect.h"
 #include "stim/cmd/command_diagram.h"

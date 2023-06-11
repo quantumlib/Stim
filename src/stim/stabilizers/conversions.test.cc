@@ -468,7 +468,7 @@ TEST(conversions, tableau_to_circuit) {
 }
 
 TEST(conversions, unitary_to_tableau_vs_gate_data) {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             EXPECT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
         }
@@ -478,7 +478,7 @@ TEST(conversions, unitary_to_tableau_vs_gate_data) {
 TEST(conversions, tableau_to_unitary_vs_gate_data) {
     VectorSimulator v1(2);
     VectorSimulator v2(2);
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             auto actual = tableau_to_unitary(gate.tableau(), true);
             auto expected = gate.unitary();
