@@ -751,7 +751,7 @@ EXAMPLES
             --tick {} \
             --in surface_code.stim \
             --out video_frame_{}.svg \
-            ::: {50..150}
+            ::: {0050..0150}
 
         >>> # Third, use ffmpeg to turn the frames into a GIF.
         >>> # (note: the complex filter argument is optional; it turns the background white)
