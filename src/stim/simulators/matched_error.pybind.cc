@@ -14,9 +14,9 @@
 
 #include "stim/simulators/matched_error.pybind.h"
 
-#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/circuit/gate_target.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/matched_error.h"
