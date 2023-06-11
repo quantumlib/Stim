@@ -2619,7 +2619,7 @@ class CompiledMeasurementSampler:
         shots: int,
         *,
         bit_packed: bool = False,
-    ) -> object:
+    ) -> np.ndarray:
         """Samples a batch of measurement samples from the circuit.
 
         Args:
@@ -2654,7 +2654,7 @@ class CompiledMeasurementSampler:
     def sample_bit_packed(
         self,
         shots: int,
-    ) -> object:
+    ) -> np.ndarray:
         """[DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
 
         Samples a bit packed batch of measurement samples from the circuit.
