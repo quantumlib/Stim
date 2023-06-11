@@ -170,17 +170,17 @@ def test_target_methods_accept_gate_targets():
 
     assert stim.target_x(stim.GateTarget(5)) == stim.target_x(5)
     assert stim.target_x(stim.target_inv(stim.GateTarget(5))) == stim.target_x(5, invert=True)
-    assert stim.target_x(stim.GateTarget(5), invert=True) == stim.target_x(5)
+    assert stim.target_x(stim.GateTarget(5), invert=True) == stim.target_x(5, invert=True)
     assert stim.target_x(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_x(5)
 
     assert stim.target_y(stim.GateTarget(5)) == stim.target_y(5)
     assert stim.target_y(stim.target_inv(stim.GateTarget(5))) == stim.target_y(5, invert=True)
-    assert stim.target_y(stim.GateTarget(5), invert=True) == stim.target_y(5)
+    assert stim.target_y(stim.GateTarget(5), invert=True) == stim.target_y(5, invert=True)
     assert stim.target_y(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_y(5)
 
     assert stim.target_z(stim.GateTarget(5)) == stim.target_z(5)
     assert stim.target_z(stim.target_inv(stim.GateTarget(5))) == stim.target_z(5, invert=True)
-    assert stim.target_z(stim.GateTarget(5), invert=True) == stim.target_z(5)
+    assert stim.target_z(stim.GateTarget(5), invert=True) == stim.target_z(5, invert=True)
     assert stim.target_z(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_z(5)
 
     with pytest.raises(ValueError):
