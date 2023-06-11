@@ -101,28 +101,28 @@ void ExposedTableauSimulator::do_tableau(const ExposedTableau &tableau, const em
 }
 
 void ExposedTableauSimulator::X(uint32_t target) {
-    sim.X(safe_targets(sim, GateType::X, target));
+    sim.do_X(safe_targets(sim, GateType::X, target));
 }
 void ExposedTableauSimulator::Y(uint32_t target) {
-    sim.Y(safe_targets(sim, GateType::Y, target));
+    sim.do_Y(safe_targets(sim, GateType::Y, target));
 }
 void ExposedTableauSimulator::Z(uint32_t target) {
-    sim.Z(safe_targets(sim, GateType::Z, target));
+    sim.do_Z(safe_targets(sim, GateType::Z, target));
 }
 void ExposedTableauSimulator::H(uint32_t target) {
-    sim.H_XZ(safe_targets(sim, GateType::H, target));
+    sim.do_H_XZ(safe_targets(sim, GateType::H, target));
 }
 void ExposedTableauSimulator::CNOT(uint32_t control, uint32_t target) {
-    sim.ZCX(safe_targets(sim, GateType::CX, control, target));
+    sim.do_ZCX(safe_targets(sim, GateType::CX, control, target));
 }
 void ExposedTableauSimulator::SWAP(uint32_t target1, uint32_t target2) {
-    sim.SWAP(safe_targets(sim, GateType::SWAP, target1, target2));
+    sim.do_SWAP(safe_targets(sim, GateType::SWAP, target1, target2));
 }
 void ExposedTableauSimulator::CY(uint32_t control, uint32_t target) {
-    sim.ZCY(safe_targets(sim, GateType::CY, control, target));
+    sim.do_ZCY(safe_targets(sim, GateType::CY, control, target));
 }
 void ExposedTableauSimulator::CZ(uint32_t control, uint32_t target) {
-    sim.ZCZ(safe_targets(sim, GateType::CZ, control, target));
+    sim.do_ZCZ(safe_targets(sim, GateType::CZ, control, target));
 }
 
 ExposedTableau ExposedTableauSimulator::current_inverse_tableau() const {

@@ -272,11 +272,11 @@ def _stim_append_pauli_measurement_gate(
     new_targets = []
     for t, p in zip(targets, obs.pauli_mask):
         if p == 1:
-            t = stim.target_x(t)
+            t = stim.target_x(t, invert=not new_targets and obs.coefficient == -1)
         elif p == 2:
-            t = stim.target_y(t)
+            t = stim.target_y(t, invert=not new_targets and obs.coefficient == -1)
         elif p == 3:
-            t = stim.target_z(t)
+            t = stim.target_z(t, invert=not new_targets and obs.coefficient == -1)
         else:
             raise NotImplementedError(f"obs={obs!r}")
         new_targets.append(t)
@@ -284,10 +284,7 @@ def _stim_append_pauli_measurement_gate(
     new_targets.pop()
 
     # Inverted result?
-    if obs.coefficient == -1:
-        new_targets[0] |= stim.target_inv(new_targets[0])
-        pass
-    elif obs.coefficient != 1:
+    if obs.coefficient != 1 and obs.coefficient != -1:
         raise NotImplementedError(f"obs.coefficient={obs.coefficient!r} not in [1, -1]")
 
     circuit.append_operation("MPP", new_targets)
