@@ -99,10 +99,9 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
         result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);
     }
     std::vector<std::string> aliases;
-    for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
-        auto other_id = GATE_DATA.items[k].id;
-        if (other_id == gate.id && other_id != k) {
-            aliases.push_back(GATE_DATA.items[k].name);
+    for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (h.id == gate.id && std::string(gate.name) != std::string(h.expected_name)) {
+            aliases.push_back(h.expected_name);
         }
     }
     if (!aliases.empty()) {
@@ -124,8 +123,10 @@ pybind11::object raw_format_data_solo(const FileFormatData &data) {
 
 pybind11::dict raw_gate_data() {
     pybind11::dict result;
-    for (const auto &gate : GATE_DATA.gates()) {
-        result[gate.name] = raw_gate_data_solo(gate);
+    for (const auto &gate : GATE_DATA.items) {
+        if (gate.id != NOT_A_GATE) {
+            result[gate.name] = raw_gate_data_solo(gate);
+        }
     }
     return result;
 }

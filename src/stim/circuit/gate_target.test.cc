@@ -192,3 +192,27 @@ TEST(gate_target, equality) {
     ASSERT_FALSE(GateTarget{1} < GateTarget{0});
     ASSERT_FALSE(GateTarget{0} < GateTarget{0});
 }
+
+TEST(gate_target, from_target_str) {
+    ASSERT_EQ(GateTarget::from_target_str("5"), GateTarget::qubit(5));
+    ASSERT_EQ(GateTarget::from_target_str("rec[-3]"), GateTarget::rec(-3));
+}
+
+TEST(gate_target, target_str_round_trip) {
+    std::vector<GateTarget> targets{
+        GateTarget::qubit(2),
+        GateTarget::qubit(3, true),
+        GateTarget::sweep_bit(5),
+        GateTarget::rec(-7),
+        GateTarget::x(11),
+        GateTarget::x(13, true),
+        GateTarget::y(17),
+        GateTarget::y(19, true),
+        GateTarget::z(23),
+        GateTarget::z(29, true),
+        GateTarget::combiner(),
+    };
+    for (const auto &t : targets) {
+        ASSERT_EQ(GateTarget::from_target_str(t.target_str().c_str()), t) << t;
+    }
+}

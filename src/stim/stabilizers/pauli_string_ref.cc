@@ -203,6 +203,8 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
                 throw std::invalid_argument(ss.str());
             }
         }
+    } else if (operation.gate_type == GateType::MPAD) {
+        // No effect.
     } else if (operation.gate_type == GateType::MPP) {
         size_t start = 0;
         const auto &targets = operation.targets;
@@ -229,7 +231,7 @@ void PauliStringRef::after_inplace(const CircuitInstruction &operation, bool inv
             }
             start = end;
         }
-    } else if (gate_data.flags & GATE_PRODUCES_NOISY_RESULTS) {
+    } else if (gate_data.flags & GATE_PRODUCES_RESULTS) {
         bool x_dep, z_dep;
         if (operation.gate_type == GateType::M) {
             x_dep = true;

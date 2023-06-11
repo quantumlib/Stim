@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_target.h"
 
 using namespace stim;
@@ -201,8 +202,8 @@ std::string stim::targets_str(SpanRef<const GateTarget> targets) {
     return out.str();
 }
 
-std::string stim::target_str(GateTarget t) {
+std::string GateTarget::target_str() const {
     std::stringstream out;
-    t.write_succinct(out);
+    write_succinct(out);
     return out.str();
 }

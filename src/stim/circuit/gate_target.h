@@ -43,6 +43,7 @@ struct GateTarget {
     static GateTarget rec(int32_t lookback);
     static GateTarget sweep_bit(uint32_t index);
     static GateTarget combiner();
+    static GateTarget from_target_str(const char *text);
 
     int32_t rec_offset() const;
     bool has_qubit_value() const;
@@ -60,13 +61,13 @@ struct GateTarget {
     bool operator<(const GateTarget &other) const;
     std::string str() const;
     std::string repr() const;
+    std::string target_str() const;
 
     void write_succinct(std::ostream &out) const;
 };
 
 void write_targets(std::ostream &out, SpanRef<const GateTarget> targets);
 std::string targets_str(SpanRef<const GateTarget> targets);
-std::string target_str(GateTarget t);
 
 std::ostream &operator<<(std::ostream &out, const GateTarget &t);
 

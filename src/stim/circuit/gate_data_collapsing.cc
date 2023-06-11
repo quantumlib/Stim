@@ -27,7 +27,7 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             GateType::MX,
             GateType::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -64,7 +64,7 @@ Examples:
     MX(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"X -> +m xor chance(p)", "X -> +X"},
+                    {"X -> rec[-1]", "X -> +X"},
                     R"CIRCUIT(
 H 0
 M 0
@@ -80,7 +80,7 @@ H 0
             GateType::MY,
             GateType::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -117,7 +117,7 @@ Examples:
     MY(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Y -> m xor chance(p)", "Y -> +Y"},
+                    {"Y -> rec[-1]", "Y -> +Y"},
                     R"CIRCUIT(
 S 0
 S 0
@@ -137,7 +137,7 @@ S 0
             GateType::M,
             GateType::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -177,7 +177,7 @@ Examples:
     MZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Z -> m xor chance(p)", "Z -> +Z"},
+                    {"Z -> rec[-1]", "Z -> +Z"},
                     R"CIRCUIT(
 M 0
 )CIRCUIT",
@@ -194,7 +194,7 @@ M 0
             GateType::MRX,
             GateType::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -232,7 +232,7 @@ Examples:
     MRX(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"X -> m xor chance(p)", "1 -> +X"},
+                    {"X -> rec[-1]", "1 -> +X"},
                     R"CIRCUIT(
 H 0
 M 0
@@ -249,7 +249,7 @@ H 0
             GateType::MRY,
             GateType::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -287,14 +287,14 @@ Examples:
     MRY(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Y -> m xor chance(p)", "1 -> +Y"},
+                    {"Y -> rec[-1]", "1 -> +Y"},
                     R"CIRCUIT(
 S 0
 S 0
 S 0
 H 0
-R 0
 M 0
+R 0
 H 0
 S 0
 )CIRCUIT",
@@ -308,7 +308,7 @@ S 0
             GateType::MR,
             GateType::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -349,7 +349,7 @@ Examples:
     MRZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Z -> m xor chance(p)", "1 -> +Z"},
+                    {"Z -> rec[-1]", "1 -> +Z"},
                     R"CIRCUIT(
 M 0
 R 0
@@ -497,7 +497,7 @@ R 0
             GateType::MPP,
             GateType::MPP,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -533,7 +533,7 @@ Examples:
 
 )MARKDOWN",
                     {},
-                    {"P -> m xor chance(p)", "P -> P"},
+                    {},
                     nullptr,
                 };
             },

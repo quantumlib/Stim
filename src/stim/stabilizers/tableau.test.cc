@@ -180,7 +180,7 @@ TEST(tableau, str) {
 }
 
 TEST(tableau, gate_tableau_data_vs_unitary_data) {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(tableau_agrees_with_unitary(gate.tableau(), gate.unitary())) << gate.name;
         }
@@ -188,7 +188,7 @@ TEST(tableau, gate_tableau_data_vs_unitary_data) {
 }
 
 TEST(tableau, inverse_data) {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             auto &inv_gate = gate.inverse();
             Tableau tab = gate.tableau();
@@ -1144,7 +1144,7 @@ TEST(tableau, unitary_big_endian) {
 }
 
 TEST(tableau, unitary_vs_gate_data) {
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             std::vector<std::complex<float>> flat_expected;
             for (const auto &row : gate.unitary()) {

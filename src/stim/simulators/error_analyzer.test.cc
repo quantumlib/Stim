@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/test_util.test.h"
@@ -317,9 +318,9 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
     for (size_t k = 0; k < 16; k++) {
         data.push_back(GateTarget::qubit(k));
     }
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            e.rev_do_gate({gate.id, {}, data});
+            e.undo_gate({gate.id, {}, data});
             f.do_gate({gate.inverse().id, {}, data});
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
@@ -3263,4 +3264,102 @@ TEST(ErrorAnalyzer, measurement_before_beginning) {
     ASSERT_THROW(
         { ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, false, false, false); },
         std::invalid_argument);
+}
+
+TEST(ErrorAnalyzer, mpad) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            M(0.125) 5
+            MPAD 0 1
+            DETECTOR rec[-1] rec[-2]
+            DETECTOR rec[-3]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.125) D1
+            detector D0
+        )DEM"));
+}
+
+TEST(ErrorAnalyzer, mxx) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RX 0 1
+            MXX(0.125) 0 1
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.125) D0
+        )DEM"));
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RX 0 1 2 3
+            X_ERROR(0.125) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.375) 2
+            MXX 0 1 !2 !3
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.375) D1
+        )DEM"));
+}
+
+TEST(ErrorAnalyzer, myy) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RY 0 1
+            MYY(0.125) 0 1
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.125) D0
+        )DEM"));
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RY 0 1 2 3
+            Y_ERROR(0.125) 0
+            X_ERROR(0.25) 1
+            Z_ERROR(0.375) 2
+            MYY 0 1 !2 !3
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.375) D1
+        )DEM"));
+}
+
+TEST(ErrorAnalyzer, mzz) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RZ 0 1
+            MZZ(0.125) 0 1
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.125) D0
+        )DEM"));
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+            RZ 0 1 2 3
+            Z_ERROR(0.125) 0
+            Y_ERROR(0.25) 1
+            X_ERROR(0.375) 2
+            MZZ 0 1 !2 !3
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )CIRCUIT"), false, false, false, false, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.375) D1
+        )DEM"));
+}
+
+TEST(ErrorAnalyzer, runs_on_general_circuit) {
+    auto circuit = generate_test_circuit_with_all_operations();
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, false, false, true, false, false);
+    ASSERT_GT(dem.instructions.size(), 0);
 }
