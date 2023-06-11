@@ -233,7 +233,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
         return;
     }
     if (gate.id == GateType::MPP) {
-        out << "Stabilizer Generators (for MPP X0*Y1*Z2 X3*X4):\n";
+        out << "Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):\n";
     } else {
         out << "Stabilizer Generators:\n";
     }

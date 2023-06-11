@@ -2124,7 +2124,7 @@ Examples:
     # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
     MPP(0.001) Z1*Z2 X1*X2
 
-Stabilizer Generators (for MPP X0*Y1*Z2 X3*X4):
+Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):
 
     XYZ__ -> rec[-2]
     ___XX -> rec[-1]
