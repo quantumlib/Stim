@@ -646,6 +646,76 @@ class Circuit:
             >>> c2 == c1
             True
         """
+    def count_determined_measurements(
+        self,
+    ) -> int:
+        """Counts the number of predictable measurements in the circuit.
+
+        This method ignores any noise in the circuit.
+
+        This method works by performing a tableau stabilizer simulation of the circuit
+        and, before each measurement is simulated, checking if its expectation is
+        non-zero.
+
+        A measurement is predictable if its result can be predicted by using other
+        measurements that have already been performed, assuming the circuit is executed
+        without any noise.
+
+        Note that, when multiple measurements occur at the same time, re-ordering the
+        order they are resolved can change which specific measurements are predictable
+        but won't change how many of them were predictable in total.
+
+        The number of predictable measurements is a useful quantity because it's
+        related to the number of detectors and observables that a circuit should
+        declare. If circuit.num_detectors + circuit.num_observables is less than
+        circuit.count_determined_measurements(), this is a warning sign that you've
+        missed some detector declarations.
+
+        The exact relationship between the number of determined measurements and the
+        number of detectors and observables can differ from code to code. For example,
+        the toric code has an extra redundant measurement compared to the surface code
+        because in the toric code the last X stabilizer to be measured is equal to the
+        product of all other X stabilizers even in the first round when initializing in
+        the Z basis. Typically this relationship is not declared as a detector, because
+        it's not local, or as an observable, because it doesn't store a qubit.
+
+        Returns:
+            The number of measurements that were predictable.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     M 0
+            ... ''').count_determined_measurements()
+            1
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     H 0
+            ...     M 0
+            ... ''').count_determined_measurements()
+            0
+
+            >>> stim.Circuit('''
+            ...     R 0 1
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ... ''').count_determined_measurements()
+            2
+
+            >>> circuit = stim.Circuit.generated(
+            ...     "surface_code:rotated_memory_x",
+            ...     distance=5,
+            ...     rounds=9,
+            ... )
+            >>> circuit.count_determined_measurements()
+            217
+            >>> circuit.num_detectors + circuit.num_observables
+            217
+        """
     def detector_error_model(
         self,
         *,
