@@ -58,11 +58,11 @@ def test_targets():
 
 
 def test_gate_data():
-    data = stim._UNSTABLE_raw_gate_data()
+    data = stim.gate_data()
     assert len(data) == 64
-    assert data["CX"]["name"] == "CX"
-    assert data["CX"]["aliases"] == ["CNOT", "ZCX"]
-    assert data["X"]["unitary_matrix"] == [[0, 1], [1, 0]]
+    assert data["CX"].name == "CX"
+    assert data["CX"].aliases == ["CNOT", "CX", "ZCX"]
+    assert data["X"].is_unitary
     assert "CNOT" not in data
 
 

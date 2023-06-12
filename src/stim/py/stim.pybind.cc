@@ -105,54 +105,12 @@ int stim_main(const std::vector<std::string> &args) {
     return stim::main(argv.size(), argv.data());
 }
 
-pybind11::object raw_gate_data_solo(const Gate &gate) {
-    pybind11::dict result;
-    auto f = gate.extra_data_func;
-    if (f == nullptr) {
-        f = GATE_DATA.at(gate.name).extra_data_func;
-    }
-    auto extra = f();
-
-    result["name"] = gate.name;
-    result["category"] = extra.category;
-    result["help"] = extra.help;
-    if (gate.flags & GATE_IS_UNITARY) {
-        result["unitary_matrix"] = gate.unitary();
-        result["stabilizer_tableau"] = gate.tableau<MAX_BITWORD_WIDTH>();
-    }
-    if (extra.h_s_cx_m_r_decomposition != nullptr) {
-        result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);
-    }
-    std::vector<std::string> aliases;
-    for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (h.id == gate.id && std::string(gate.name) != std::string(h.expected_name)) {
-            aliases.push_back(h.expected_name);
-        }
-    }
-    if (!aliases.empty()) {
-        std::sort(aliases.begin(), aliases.end());
-        result["aliases"] = aliases;
-    }
-
-    return result;
-}
-
 pybind11::object raw_format_data_solo(const FileFormatData &data) {
     pybind11::dict result;
     result["name"] = data.name;
     result["parse_example"] = data.help_python_parse;
     result["save_example"] = data.help_python_save;
     result["help"] = data.help;
-    return result;
-}
-
-pybind11::dict raw_gate_data() {
-    pybind11::dict result;
-    for (const auto &gate : GATE_DATA.items) {
-        if (gate.id != NOT_A_GATE) {
-            result[gate.name] = raw_gate_data_solo(gate);
-        }
-    }
     return result;
 }
 
@@ -437,7 +395,6 @@ void top_level(pybind11::module &m) {
         )DOC")
             .data());
 
-    m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
 }
 

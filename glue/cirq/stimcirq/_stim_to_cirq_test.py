@@ -223,9 +223,7 @@ def test_circuit_diagram():
 
 
 def test_all_known_gates_explicitly_handled():
-    gates = []
-    for gate in stim._UNSTABLE_raw_gate_data():
-        gates.append(gate)
+    gates = stim.gate_data()
     handled = CircuitTranslationTracker.get_handler_table().keys()
     for gate_name in gates:
         assert gate_name in handled, gate_name
