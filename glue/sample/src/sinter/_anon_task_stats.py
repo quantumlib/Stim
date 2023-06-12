@@ -83,12 +83,12 @@ class AnonTaskStats:
                 if self.classified_errors is not None:
                     combined_classified_errors += self.classified_errors
                 else:
-                    combined_classified_errors[None] += self.errors
+                    combined_classified_errors[""] += self.errors
             if other.errors > 0:
                 if other.classified_errors is not None:
                     combined_classified_errors += other.classified_errors
                 else:
-                    combined_classified_errors[None] += other.errors
+                    combined_classified_errors[""] += other.errors
 
         return AnonTaskStats(
             shots=self.shots + other.shots,
