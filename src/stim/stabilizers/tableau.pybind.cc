@@ -271,6 +271,15 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
             Converts the tableau into a unitary matrix.
 
+            For an n-qubit tableau, this method performs O(n 4^n) work. It uses the state
+            channel duality to transform the tableau into a list of stabilizers, then
+            generates a random state vector and projects it into the +1 eigenspace of each
+            stabilizer.
+
+            Note that tableaus don't have a defined global phase, so the result's global
+            phase may be different from what you expect. For example, the square of
+            SQRT_X's unitary might equal -X instead of +X.
+
             Args:
                 endian:
                     "little": The first qubit is the least significant (corresponds
@@ -663,9 +672,9 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return tableau_to_circuit(self, method);
         },
         pybind11::kw_only(),
-        pybind11::arg("method"),
+        pybind11::arg("method") = "elimination",
         clean_doc_string(R"DOC(
-            @signature def to_circuit(self, *, method: str) -> stim.Circuit:
+            @signature def to_circuit(self, *, method: str = 'elimination') -> stim.Circuit:
             Synthesizes a circuit that implements the tableau's Clifford operation.
 
             The circuits returned by this method are not guaranteed to be stable

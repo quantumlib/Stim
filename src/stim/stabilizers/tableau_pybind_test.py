@@ -742,6 +742,7 @@ def test_from_unitary_matrix():
 
 def test_to_circuit_vs_from_circuit():
     t = stim.Tableau.random(4)
+    assert t.to_circuit() is not None
     c = t.to_circuit(method="elimination")
     sim = stim.TableauSimulator()
     sim.do_circuit(c)
