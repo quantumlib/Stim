@@ -77,6 +77,7 @@
 #include "stim/search/hyper/node.h"
 #include "stim/search/hyper/search_state.h"
 #include "stim/search/search.h"
+#include "stim/simulators/count_determined_measurements.h"
 #include "stim/simulators/dem_sampler.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
