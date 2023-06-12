@@ -87,7 +87,7 @@ struct Coord {
 
     static std::pair<Coord<DIM>, Coord<DIM>> min_max(stim::SpanRef<const Coord<DIM>> coords) {
         if (coords.empty()) {
-            throw std::invalid_argument("coords.empty()");
+            return {{}, {}};
         }
         Coord<DIM> v_min;
         Coord<DIM> v_max;
