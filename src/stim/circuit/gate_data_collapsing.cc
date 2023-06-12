@@ -14,7 +14,6 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_data.h"
-#include "stim/circuit/gate_target.h"
 
 using namespace stim;
 
@@ -27,7 +26,7 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             GateType::MX,
             GateType::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -80,7 +79,7 @@ H 0
             GateType::MY,
             GateType::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -137,7 +136,7 @@ S 0
             GateType::M,
             GateType::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -194,7 +193,7 @@ M 0
             GateType::MRX,
             GateType::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -249,7 +248,7 @@ H 0
             GateType::MRY,
             GateType::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -308,7 +307,7 @@ S 0
             GateType::MR,
             GateType::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -367,7 +366,7 @@ R 0
             GateType::RX,
             GateType::MRX,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -408,7 +407,7 @@ H 0
             GateType::RY,
             GateType::MRY,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -453,7 +452,7 @@ S 0
             GateType::R,
             GateType::MR,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",

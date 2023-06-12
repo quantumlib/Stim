@@ -15,6 +15,8 @@
 #include "stim/circuit/gate_data.pybind.h"
 
 #include "stim/stabilizers/tableau.pybind.h"
+#include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/py/base.pybind.h"
 #include "stim/str_util.h"
@@ -23,24 +25,6 @@ using namespace stim;
 using namespace stim_pybind;
 
 pybind11::class_<Gate> stim_pybind::pybind_gate_data(pybind11::module &m) {
-    m.def(
-        "gate_data",
-        [](const std::string &name) {
-            return GATE_DATA.at(name);
-        },
-        pybind11::arg("name"),
-        clean_doc_string(R"DOC(
-            Returns gate data for the given named gate.
-
-            Examples:
-                >>> import stim
-                >>> stim.gate_data('cnot').aliases
-                ['CNOT', 'CX', 'ZCX']
-                >>> stim.gate_data('cnot').is_two_qubit_gate
-                True
-        )DOC")
-            .data());
-
     return pybind11::class_<Gate>(
         m,
         "GateData",
@@ -67,6 +51,42 @@ pybind11::class_<Gate> stim_pybind::pybind_gate_data(pybind11::module &m) {
 }
 
 void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_<Gate> &c) {
+    m.def(
+        "gate_data",
+        [](const pybind11::object &name) -> pybind11::object {
+            if (!name.is_none()) {
+                return pybind11::cast(GATE_DATA.at(pybind11::cast<std::string>(name)));
+            }
+
+            std::map<std::string, Gate> result;
+            for (const auto &g : GATE_DATA.items) {
+                if (g.id != NOT_A_GATE) {
+                    result.insert({g.name, g});
+                }
+            }
+            return pybind11::cast(result);
+        },
+        pybind11::arg("name") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @overload def gate_data(name: str) -> stim.GateData:
+            @overload def gate_data() -> Dict[str, stim.GateData]:
+            @signature def gate_data(name: Optional[str] = None) -> Union[str, Dict[str, stim.GateData]]:
+            Returns gate data for the given named gate, or all gates.
+
+            Examples:
+                >>> import stim
+                >>> stim.gate_data('cnot').aliases
+                ['CNOT', 'CX', 'ZCX']
+                >>> stim.gate_data('cnot').is_two_qubit_gate
+                True
+                >>> gate_dict = stim.gate_data()
+                >>> len(gate_dict)
+                64
+                >>> gate_dict['MX'].is_dissipative
+                True
+        )DOC")
+            .data());
+
     c.def_property_readonly(
         "name",
         [](const Gate &self) -> const char * {
@@ -115,7 +135,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         "tableau",
         [](const Gate &self) -> pybind11::object {
             if (self.flags & GATE_IS_UNITARY) {
-                return pybind11::cast(self.tableau());
+                return pybind11::cast(self.tableau<MAX_BITWORD_WIDTH>());
             }
             return pybind11::none();
         },
@@ -222,12 +242,184 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 False
                 >>> stim.gate_data('X_ERROR').is_unitary
                 False
-                >>> stim.gate_data('CORRElATED_ERROR').is_unitary
+                >>> stim.gate_data('CORRELATED_ERROR').is_unitary
                 False
                 >>> stim.gate_data('MPP').is_unitary
                 False
                 >>> stim.gate_data('DETECTOR').is_unitary
                 False
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_parens_arguments_range",
+        [](const Gate &self) -> pybind11::object {
+            auto r = pybind11::module::import("builtins").attr("range");
+            if (self.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
+                return r(2);
+            }
+            if (self.arg_count == ARG_COUNT_SYGIL_ANY) {
+                return r(256);
+            }
+            return r(self.arg_count, self.arg_count + 1);
+        },
+        clean_doc_string(R"DOC(
+            @signature def num_parens_arguments_range(self) -> range:
+            Returns whether or not the gate is a measurement or reset.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('M').num_parens_arguments_range
+                range(0, 2)
+                >>> list(stim.gate_data('M').num_parens_arguments_range)
+                [0, 1]
+                >>> list(stim.gate_data('R').num_parens_arguments_range)
+                [0]
+                >>> list(stim.gate_data('H').num_parens_arguments_range)
+                [0]
+                >>> list(stim.gate_data('X_ERROR').num_parens_arguments_range)
+                [1]
+                >>> list(stim.gate_data('PAULI_CHANNEL_1').num_parens_arguments_range)
+                [3]
+                >>> list(stim.gate_data('PAULI_CHANNEL_2').num_parens_arguments_range)
+                [15]
+                >>> stim.gate_data('DETECTOR').num_parens_arguments_range
+                range(0, 256)
+                >>> list(stim.gate_data('OBSERVABLE_INCLUDE').num_parens_arguments_range)
+                [1]
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "is_dissipative",
+        [](const Gate &self) -> bool {
+            return self.flags & (GATE_PRODUCES_RESULTS | GATE_IS_RESET);
+        },
+        clean_doc_string(R"DOC(
+            Returns whether or not the gate is a measurement or reset.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('M').is_dissipative
+                True
+                >>> stim.gate_data('R').is_dissipative
+                True
+                >>> stim.gate_data('MR').is_dissipative
+                True
+                >>> stim.gate_data('MXX').is_dissipative
+                True
+                >>> stim.gate_data('MPP').is_dissipative
+                True
+
+                >>> stim.gate_data('H').is_dissipative
+                False
+                >>> stim.gate_data('CX').is_dissipative
+                False
+                >>> stim.gate_data('DEPOLARIZE2').is_dissipative
+                False
+                >>> stim.gate_data('X_ERROR').is_dissipative
+                False
+                >>> stim.gate_data('CORRELATED_ERROR').is_dissipative
+                False
+                >>> stim.gate_data('DETECTOR').is_dissipative
+                False
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "is_single_qubit_gate",
+        [](const Gate &self) -> bool {
+            return self.flags & GATE_IS_SINGLE_QUBIT_GATE;
+        },
+        clean_doc_string(R"DOC(
+            Returns whether or not the gate is a single qubit gate.
+
+            Single qubit gates apply separately to each of their targets.
+
+            Variable-qubit gates like CORRELATED_ERROR and MPP are not
+            considered single qubit gates.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('H').is_single_qubit_gate
+                True
+                >>> stim.gate_data('R').is_single_qubit_gate
+                True
+                >>> stim.gate_data('M').is_single_qubit_gate
+                True
+                >>> stim.gate_data('X_ERROR').is_single_qubit_gate
+                True
+
+                >>> stim.gate_data('CX').is_single_qubit_gate
+                False
+                >>> stim.gate_data('MXX').is_single_qubit_gate
+                False
+                >>> stim.gate_data('CORRELATED_ERROR').is_single_qubit_gate
+                False
+                >>> stim.gate_data('MPP').is_single_qubit_gate
+                False
+                >>> stim.gate_data('DETECTOR').is_single_qubit_gate
+                False
+                >>> stim.gate_data('TICK').is_single_qubit_gate
+                False
+                >>> stim.gate_data('REPEAT').is_single_qubit_gate
+                False
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "__unstable_flows",
+        [](const Gate &self) -> pybind11::object {
+            auto f = self.flows();
+            if (f.empty()) {
+                return pybind11::none();
+            }
+            std::vector<pybind11::object> results;
+            for (const auto &e : f) {
+                results.push_back(pybind11::cast(e.str()));
+            }
+            return pybind11::cast(results);
+        },
+        clean_doc_string(R"DOC(
+            [DEPRECATED]
+            This method is not actually deprecated it's just still in development.
+            Its API is not yet finalized and is subject to sudden change.
+            ---
+
+            Returns the stabilizer flows of the gate, or else None.
+
+            Although some variable-qubit gates and and pauli-targeting gates
+            like MPP have stabilizer flows, this method returns None for them
+            because it does not have the necessary context.
+
+            A stabilizer flow describes an input-output relationship that the
+            gate satisfies, where an input PauliString is transformed into an
+            output PauliString possibly mediated by measurement results.
+
+            Examples:
+                >>> import stim
+
+                >>> for e in stim.gate_data('H').__unstable_flows:
+                ...     print(e)
+                +X -> +Z
+                +Z -> +X
+
+                >>> for e in stim.gate_data('ISWAP').__unstable_flows:
+                ...     print(e)
+                +X_ -> +ZY
+                +Z_ -> +_Z
+                +_X -> +YZ
+                +_Z -> +Z_
+
+                >>> for e in stim.gate_data('MXX').__unstable_flows:
+                ...     print(e)
+                +X_ -> +X_
+                +_X -> +_X
+                +ZZ -> +ZZ
+                +XX -> rec[-1]
         )DOC")
             .data());
 
@@ -241,7 +433,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
             Two qubit gates must be given an even number of targets.
 
-            Multi-qubit gates like CORRELATED_ERROR and MPP are not
+            Variable-qubit gates like CORRELATED_ERROR and MPP are not
             considered two qubit gates.
 
             Examples:
@@ -260,7 +452,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 False
                 >>> stim.gate_data('X_ERROR').is_two_qubit_gate
                 False
-                >>> stim.gate_data('CORRElATED_ERROR').is_two_qubit_gate
+                >>> stim.gate_data('CORRELATED_ERROR').is_two_qubit_gate
                 False
                 >>> stim.gate_data('MPP').is_two_qubit_gate
                 False
@@ -290,7 +482,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 True
                 >>> stim.gate_data('X_ERROR').is_noisy_gate
                 True
-                >>> stim.gate_data('CORRElATED_ERROR').is_noisy_gate
+                >>> stim.gate_data('CORRELATED_ERROR').is_noisy_gate
                 True
                 >>> stim.gate_data('MPP').is_noisy_gate
                 True
@@ -307,39 +499,36 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             .data());
 
     c.def_property_readonly(
-        "is_measurement_gate",
+        "produces_measurements",
         [](const Gate &self) -> bool {
             return self.flags & GATE_PRODUCES_RESULTS;
         },
         clean_doc_string(R"DOC(
             Returns whether or not the gate produces measurement results.
 
-            Note that measurement+result operations are considered
-            measurement operations.
-
             Examples:
                 >>> import stim
 
-                >>> stim.gate_data('M').is_measurement_gate
+                >>> stim.gate_data('M').produces_measurements
                 True
-                >>> stim.gate_data('MRY').is_measurement_gate
+                >>> stim.gate_data('MRY').produces_measurements
                 True
-                >>> stim.gate_data('MXX').is_measurement_gate
+                >>> stim.gate_data('MXX').produces_measurements
                 True
-                >>> stim.gate_data('MPP').is_measurement_gate
+                >>> stim.gate_data('MPP').produces_measurements
                 True
 
-                >>> stim.gate_data('H').is_measurement_gate
+                >>> stim.gate_data('H').produces_measurements
                 False
-                >>> stim.gate_data('CX').is_measurement_gate
+                >>> stim.gate_data('CX').produces_measurements
                 False
-                >>> stim.gate_data('R').is_measurement_gate
+                >>> stim.gate_data('R').produces_measurements
                 False
-                >>> stim.gate_data('X_ERROR').is_measurement_gate
+                >>> stim.gate_data('X_ERROR').produces_measurements
                 False
-                >>> stim.gate_data('CORRElATED_ERROR').is_measurement_gate
+                >>> stim.gate_data('CORRELATED_ERROR').produces_measurements
                 False
-                >>> stim.gate_data('DETECTOR').is_measurement_gate
+                >>> stim.gate_data('DETECTOR').produces_measurements
                 False
         )DOC")
             .data());
@@ -358,7 +547,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             Examples:
                 >>> import stim
 
-                >>> stim.gate_data('CORRElATED_ERROR').takes_pauli_targets
+                >>> stim.gate_data('CORRELATED_ERROR').takes_pauli_targets
                 True
                 >>> stim.gate_data('MPP').takes_pauli_targets
                 True
@@ -415,7 +604,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 False
                 >>> stim.gate_data('X_ERROR').takes_measurement_record_targets
                 False
-                >>> stim.gate_data('CORRElATED_ERROR').takes_measurement_record_targets
+                >>> stim.gate_data('CORRELATED_ERROR').takes_measurement_record_targets
                 False
                 >>> stim.gate_data('MPP').takes_measurement_record_targets
                 False

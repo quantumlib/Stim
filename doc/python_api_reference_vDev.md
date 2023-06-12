@@ -168,6 +168,20 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
+- [`stim.GateData`](#stim.GateData)
+    - [`stim.GateData.aliases`](#stim.GateData.aliases)
+    - [`stim.GateData.is_dissipative`](#stim.GateData.is_dissipative)
+    - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
+    - [`stim.GateData.is_single_qubit_gate`](#stim.GateData.is_single_qubit_gate)
+    - [`stim.GateData.is_two_qubit_gate`](#stim.GateData.is_two_qubit_gate)
+    - [`stim.GateData.is_unitary`](#stim.GateData.is_unitary)
+    - [`stim.GateData.name`](#stim.GateData.name)
+    - [`stim.GateData.num_parens_arguments_range`](#stim.GateData.num_parens_arguments_range)
+    - [`stim.GateData.produces_measurements`](#stim.GateData.produces_measurements)
+    - [`stim.GateData.tableau`](#stim.GateData.tableau)
+    - [`stim.GateData.takes_measurement_record_targets`](#stim.GateData.takes_measurement_record_targets)
+    - [`stim.GateData.takes_pauli_targets`](#stim.GateData.takes_pauli_targets)
+    - [`stim.GateData.unitary`](#stim.GateData.unitary)
 - [`stim.GateTarget`](#stim.GateTarget)
     - [`stim.GateTarget.__eq__`](#stim.GateTarget.__eq__)
     - [`stim.GateTarget.__init__`](#stim.GateTarget.__init__)
@@ -334,6 +348,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.zcx`](#stim.TableauSimulator.zcx)
     - [`stim.TableauSimulator.zcy`](#stim.TableauSimulator.zcy)
     - [`stim.TableauSimulator.zcz`](#stim.TableauSimulator.zcz)
+- [`stim.gate_data`](#stim.gate_data)
 - [`stim.main`](#stim.main)
 - [`stim.read_shot_data_file`](#stim.read_shot_data_file)
 - [`stim.target_combiner`](#stim.target_combiner)
@@ -5629,6 +5644,501 @@ def record_index(
     """The measurement record index of the flipped measurement.
     For example, the fifth measurement in a circuit has a measurement
     record index of 4.
+    """
+```
+
+<a name="stim.GateData"></a>
+```python
+# stim.GateData
+
+# (at top-level in the stim module)
+class GateData:
+    """Details about a gate supported by stim.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('h').name
+        'H'
+        >>> stim.gate_data('h').is_unitary
+        True
+        >>> stim.gate_data('h').tableau
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z"),
+            ],
+            zs=[
+                stim.PauliString("+X"),
+            ],
+        )
+    """
+```
+
+<a name="stim.GateData.aliases"></a>
+```python
+# stim.GateData.aliases
+
+# (in class stim.GateData)
+@property
+def aliases(
+    self,
+) -> List[str]:
+    """Returns all aliases that can be used to name the gate.
+
+    Although gates can be referred to by lower case and mixed
+    case named, the result only includes upper cased aliases.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('H').aliases
+        ['H', 'H_XZ']
+        >>> stim.gate_data('cnot').aliases
+        ['CNOT', 'CX', 'ZCX']
+    """
+```
+
+<a name="stim.GateData.is_dissipative"></a>
+```python
+# stim.GateData.is_dissipative
+
+# (in class stim.GateData)
+@property
+def is_dissipative(
+    self,
+) -> bool:
+    """Returns whether or not the gate is a measurement or reset.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('M').is_dissipative
+        True
+        >>> stim.gate_data('R').is_dissipative
+        True
+        >>> stim.gate_data('MR').is_dissipative
+        True
+        >>> stim.gate_data('MXX').is_dissipative
+        True
+        >>> stim.gate_data('MPP').is_dissipative
+        True
+
+        >>> stim.gate_data('H').is_dissipative
+        False
+        >>> stim.gate_data('CX').is_dissipative
+        False
+        >>> stim.gate_data('DEPOLARIZE2').is_dissipative
+        False
+        >>> stim.gate_data('X_ERROR').is_dissipative
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').is_dissipative
+        False
+        >>> stim.gate_data('DETECTOR').is_dissipative
+        False
+    """
+```
+
+<a name="stim.GateData.is_noisy_gate"></a>
+```python
+# stim.GateData.is_noisy_gate
+
+# (in class stim.GateData)
+@property
+def is_noisy_gate(
+    self,
+) -> bool:
+    """Returns whether or not the gate can produce noise.
+
+    Note that measurement operations are considered noisy,
+    because for example `M(0.001) 2 3 5` will include
+    noise that flips its result 0.1% of the time.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('M').is_noisy_gate
+        True
+        >>> stim.gate_data('MXX').is_noisy_gate
+        True
+        >>> stim.gate_data('X_ERROR').is_noisy_gate
+        True
+        >>> stim.gate_data('CORRELATED_ERROR').is_noisy_gate
+        True
+        >>> stim.gate_data('MPP').is_noisy_gate
+        True
+
+        >>> stim.gate_data('H').is_noisy_gate
+        False
+        >>> stim.gate_data('CX').is_noisy_gate
+        False
+        >>> stim.gate_data('R').is_noisy_gate
+        False
+        >>> stim.gate_data('DETECTOR').is_noisy_gate
+        False
+    """
+```
+
+<a name="stim.GateData.is_single_qubit_gate"></a>
+```python
+# stim.GateData.is_single_qubit_gate
+
+# (in class stim.GateData)
+@property
+def is_single_qubit_gate(
+    self,
+) -> bool:
+    """Returns whether or not the gate is a single qubit gate.
+
+    Single qubit gates apply separately to each of their targets.
+
+    Variable-qubit gates like CORRELATED_ERROR and MPP are not
+    considered single qubit gates.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').is_single_qubit_gate
+        True
+        >>> stim.gate_data('R').is_single_qubit_gate
+        True
+        >>> stim.gate_data('M').is_single_qubit_gate
+        True
+        >>> stim.gate_data('X_ERROR').is_single_qubit_gate
+        True
+
+        >>> stim.gate_data('CX').is_single_qubit_gate
+        False
+        >>> stim.gate_data('MXX').is_single_qubit_gate
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').is_single_qubit_gate
+        False
+        >>> stim.gate_data('MPP').is_single_qubit_gate
+        False
+        >>> stim.gate_data('DETECTOR').is_single_qubit_gate
+        False
+        >>> stim.gate_data('TICK').is_single_qubit_gate
+        False
+        >>> stim.gate_data('REPEAT').is_single_qubit_gate
+        False
+    """
+```
+
+<a name="stim.GateData.is_two_qubit_gate"></a>
+```python
+# stim.GateData.is_two_qubit_gate
+
+# (in class stim.GateData)
+@property
+def is_two_qubit_gate(
+    self,
+) -> bool:
+    """Returns whether or not the gate is a two qubit gate.
+
+    Two qubit gates must be given an even number of targets.
+
+    Variable-qubit gates like CORRELATED_ERROR and MPP are not
+    considered two qubit gates.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('CX').is_two_qubit_gate
+        True
+        >>> stim.gate_data('MXX').is_two_qubit_gate
+        True
+
+        >>> stim.gate_data('H').is_two_qubit_gate
+        False
+        >>> stim.gate_data('R').is_two_qubit_gate
+        False
+        >>> stim.gate_data('M').is_two_qubit_gate
+        False
+        >>> stim.gate_data('X_ERROR').is_two_qubit_gate
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').is_two_qubit_gate
+        False
+        >>> stim.gate_data('MPP').is_two_qubit_gate
+        False
+        >>> stim.gate_data('DETECTOR').is_two_qubit_gate
+        False
+    """
+```
+
+<a name="stim.GateData.is_unitary"></a>
+```python
+# stim.GateData.is_unitary
+
+# (in class stim.GateData)
+@property
+def is_unitary(
+    self,
+) -> bool:
+    """Returns whether or not the gate is a unitary gate.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').is_unitary
+        True
+        >>> stim.gate_data('CX').is_unitary
+        True
+
+        >>> stim.gate_data('R').is_unitary
+        False
+        >>> stim.gate_data('M').is_unitary
+        False
+        >>> stim.gate_data('MXX').is_unitary
+        False
+        >>> stim.gate_data('X_ERROR').is_unitary
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').is_unitary
+        False
+        >>> stim.gate_data('MPP').is_unitary
+        False
+        >>> stim.gate_data('DETECTOR').is_unitary
+        False
+    """
+```
+
+<a name="stim.GateData.name"></a>
+```python
+# stim.GateData.name
+
+# (in class stim.GateData)
+@property
+def name(
+    self,
+) -> str:
+    """Returns the canonical name of the gate.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('H').name
+        'H'
+        >>> stim.gate_data('cnot').name
+        'CX'
+    """
+```
+
+<a name="stim.GateData.num_parens_arguments_range"></a>
+```python
+# stim.GateData.num_parens_arguments_range
+
+# (in class stim.GateData)
+@property
+def num_parens_arguments_range(
+    self,
+) -> range:
+    """Returns whether or not the gate is a measurement or reset.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('M').num_parens_arguments_range
+        range(0, 2)
+        >>> list(stim.gate_data('M').num_parens_arguments_range)
+        [0, 1]
+        >>> list(stim.gate_data('R').num_parens_arguments_range)
+        [0]
+        >>> list(stim.gate_data('H').num_parens_arguments_range)
+        [0]
+        >>> list(stim.gate_data('X_ERROR').num_parens_arguments_range)
+        [1]
+        >>> list(stim.gate_data('PAULI_CHANNEL_1').num_parens_arguments_range)
+        [3]
+        >>> list(stim.gate_data('PAULI_CHANNEL_2').num_parens_arguments_range)
+        [15]
+        >>> stim.gate_data('DETECTOR').num_parens_arguments_range
+        range(0, 256)
+        >>> list(stim.gate_data('OBSERVABLE_INCLUDE').num_parens_arguments_range)
+        [1]
+    """
+```
+
+<a name="stim.GateData.produces_measurements"></a>
+```python
+# stim.GateData.produces_measurements
+
+# (in class stim.GateData)
+@property
+def produces_measurements(
+    self,
+) -> bool:
+    """Returns whether or not the gate produces measurement results.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('M').produces_measurements
+        True
+        >>> stim.gate_data('MRY').produces_measurements
+        True
+        >>> stim.gate_data('MXX').produces_measurements
+        True
+        >>> stim.gate_data('MPP').produces_measurements
+        True
+
+        >>> stim.gate_data('H').produces_measurements
+        False
+        >>> stim.gate_data('CX').produces_measurements
+        False
+        >>> stim.gate_data('R').produces_measurements
+        False
+        >>> stim.gate_data('X_ERROR').produces_measurements
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').produces_measurements
+        False
+        >>> stim.gate_data('DETECTOR').produces_measurements
+        False
+    """
+```
+
+<a name="stim.GateData.tableau"></a>
+```python
+# stim.GateData.tableau
+
+# (in class stim.GateData)
+@property
+def tableau(
+    self,
+) -> Optional[stim.Tableau]:
+    """Returns the gate's tableau, or None if the gate has no tableau.
+
+    Examples:
+        >>> import stim
+        >>> print(stim.gate_data('M').tableau)
+        None
+        >>> stim.gate_data('H').tableau
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z"),
+            ],
+            zs=[
+                stim.PauliString("+X"),
+            ],
+        )
+        >>> stim.gate_data('ISWAP').tableau
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+ZY"),
+                stim.PauliString("+YZ"),
+            ],
+            zs=[
+                stim.PauliString("+_Z"),
+                stim.PauliString("+Z_"),
+            ],
+        )
+    """
+```
+
+<a name="stim.GateData.takes_measurement_record_targets"></a>
+```python
+# stim.GateData.takes_measurement_record_targets
+
+# (in class stim.GateData)
+@property
+def takes_measurement_record_targets(
+    self,
+) -> bool:
+    """Returns whether or not the gate can accept rec targets.
+
+    For example, `CX` can take a measurement record target
+    like `CX rec[-1] 1`.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('CX').takes_measurement_record_targets
+        True
+        >>> stim.gate_data('DETECTOR').takes_measurement_record_targets
+        True
+
+        >>> stim.gate_data('H').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('SWAP').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('R').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('M').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('MRY').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('MXX').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('X_ERROR').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').takes_measurement_record_targets
+        False
+        >>> stim.gate_data('MPP').takes_measurement_record_targets
+        False
+    """
+```
+
+<a name="stim.GateData.takes_pauli_targets"></a>
+```python
+# stim.GateData.takes_pauli_targets
+
+# (in class stim.GateData)
+@property
+def takes_pauli_targets(
+    self,
+) -> bool:
+    """Returns whether or not the gate expects pauli targets.
+
+    For example, `CORRELATED_ERROR` takes targets like `X0` and `Y1`
+    instead of `0` or `1`.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('CORRELATED_ERROR').takes_pauli_targets
+        True
+        >>> stim.gate_data('MPP').takes_pauli_targets
+        True
+
+        >>> stim.gate_data('H').takes_pauli_targets
+        False
+        >>> stim.gate_data('CX').takes_pauli_targets
+        False
+        >>> stim.gate_data('R').takes_pauli_targets
+        False
+        >>> stim.gate_data('M').takes_pauli_targets
+        False
+        >>> stim.gate_data('MRY').takes_pauli_targets
+        False
+        >>> stim.gate_data('MXX').takes_pauli_targets
+        False
+        >>> stim.gate_data('X_ERROR').takes_pauli_targets
+        False
+        >>> stim.gate_data('DETECTOR').takes_pauli_targets
+        False
+    """
+```
+
+<a name="stim.GateData.unitary"></a>
+```python
+# stim.GateData.unitary
+
+# (in class stim.GateData)
+@property
+def unitary(
+    self,
+) -> Optional[np.ndarray]:
+    """Returns the gate's unitary matrix, or None if the gate isn't unitary.
+
+    Examples:
+        >>> import stim
+
+        >>> print(stim.gate_data('M').unitary)
+        None
+
+        >>> stim.gate_data('X').unitary
+        array([[0.+0.j, 1.+0.j],
+               [1.+0.j, 0.+0.j]], dtype=complex64)
+
+        >>> stim.gate_data('ISWAP').unitary
+        array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+               [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j],
+               [0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
+               [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j]], dtype=complex64)
     """
 ```
 
@@ -11109,6 +11619,39 @@ def zcz(
         *targets: The indices of the qubits to target with the gate.
             Applies the gate to the first two targets, then the next two targets,
             and so forth. There must be an even number of targets.
+    """
+```
+
+<a name="stim.gate_data"></a>
+```python
+# stim.gate_data
+
+# (at top-level in the stim module)
+@overload
+def gate_data(
+    name: str,
+) -> stim.GateData:
+    pass
+@overload
+def gate_data(
+) -> Dict[str, stim.GateData]:
+    pass
+def gate_data(
+    name: Optional[str] = None,
+) -> Union[str, Dict[str, stim.GateData]]:
+    """Returns gate data for the given named gate, or all gates.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('cnot').aliases
+        ['CNOT', 'CX', 'ZCX']
+        >>> stim.gate_data('cnot').is_two_qubit_gate
+        True
+        >>> gate_dict = stim.gate_data()
+        >>> len(gate_dict)
+        64
+        >>> gate_dict['MX'].is_dissipative
+        True
     """
 ```
 

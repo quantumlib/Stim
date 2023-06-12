@@ -24,7 +24,7 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             GateType::DEPOLARIZE1,
             GateType::DEPOLARIZE1,
             1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -146,7 +146,7 @@ Examples:
             GateType::X_ERROR,
             GateType::X_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -180,7 +180,7 @@ Pauli Mixture:
             GateType::Y_ERROR,
             GateType::Y_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -214,7 +214,7 @@ Pauli Mixture:
             GateType::Z_ERROR,
             GateType::Z_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -248,7 +248,7 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_1,
             GateType::PAULI_CHANNEL_1,
             3,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
