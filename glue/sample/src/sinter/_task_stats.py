@@ -53,16 +53,19 @@ class TaskStats:
     classified_errors: Optional[collections.Counter] = None
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        assert self.strong_id == other.strong_id
+        if self.strong_id != other.strong_id:
+            raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
+        total = self.to_anon_stats() + other.to_anon_stats()
+
         return TaskStats(
             decoder=self.decoder,
             strong_id=self.strong_id,
             json_metadata=self.json_metadata,
-            shots=self.shots + other.shots,
-            errors=self.errors + other.errors,
-            discards=self.discards + other.discards,
-            seconds=self.seconds + other.seconds,
-            classified_errors=None if self.classified_errors is None or other.classified_errors is None else self.classified_errors + other.classified_errors,
+            shots=total.shots,
+            errors=total.errors,
+            discards=total.discards,
+            seconds=total.seconds,
+            classified_errors=total.classified_errors,
         )
 
     def to_anon_stats(self) -> AnonTaskStats:

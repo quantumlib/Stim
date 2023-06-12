@@ -74,10 +74,26 @@ class AnonTaskStats:
         """
         if not isinstance(other, AnonTaskStats):
             return NotImplemented
+
+        if self.classified_errors is None and other.classified_errors is None:
+            combined_classified_errors = None
+        else:
+            combined_classified_errors = collections.Counter()
+            if self.errors > 0:
+                if self.classified_errors is not None:
+                    combined_classified_errors += self.classified_errors
+                else:
+                    combined_classified_errors[""] += self.errors
+            if other.errors > 0:
+                if other.classified_errors is not None:
+                    combined_classified_errors += other.classified_errors
+                else:
+                    combined_classified_errors[""] += other.errors
+
         return AnonTaskStats(
             shots=self.shots + other.shots,
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
-            classified_errors=None if self.classified_errors is None or other.classified_errors is None else other.classified_errors,
+            classified_errors=combined_classified_errors,
         )
