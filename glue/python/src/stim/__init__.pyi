@@ -663,7 +663,7 @@ class Circuit:
 
         Note that, when multiple measurements occur at the same time, re-ordering the
         order they are resolved can change which specific measurements are predictable
-        but won't change how many of them were predictable.
+        but won't change how many of them were predictable in total.
 
         The number of predictable measurements is a useful quantity because it's
         related to the number of detectors and observables that a circuit should
