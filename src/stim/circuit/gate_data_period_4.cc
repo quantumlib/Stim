@@ -28,7 +28,7 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
             GateType::SQRT_X,
             GateType::SQRT_X_DAG,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -62,7 +62,7 @@ H 0
             GateType::SQRT_X_DAG,
             GateType::SQRT_X,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -96,7 +96,7 @@ S 0
             GateType::SQRT_Y,
             GateType::SQRT_Y_DAG,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -130,7 +130,7 @@ H 0
             GateType::SQRT_Y_DAG,
             GateType::SQRT_Y,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -164,7 +164,7 @@ S 0
             GateType::S,
             GateType::S_DAG,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -197,7 +197,7 @@ S 0
             GateType::S_DAG,
             GateType::S,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",

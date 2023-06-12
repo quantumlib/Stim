@@ -11,13 +11,13 @@ _tmp = _tmp._UNSTABLE_detect_march()
 # NOTE: avx2 disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
 # if _tmp == 'avx2':
 #     from stim._stim_avx2 import *
-#     from stim._stim_avx2 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
+#     from stim._stim_avx2 import _UNSTABLE_raw_format_data, __version__
 if _tmp == 'avx2' or _tmp == 'sse2':
     from stim._stim_sse2 import *
-    from stim._stim_sse2 import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
+    from stim._stim_sse2 import _UNSTABLE_raw_format_data, __version__
 else:
     from stim._stim_polyfill import *
-    from stim._stim_polyfill import _UNSTABLE_raw_gate_data, _UNSTABLE_raw_format_data, __version__
+    from stim._stim_polyfill import _UNSTABLE_raw_format_data, __version__
 del _tmp
 
 

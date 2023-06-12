@@ -28,7 +28,7 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
             GateType::C_XYZ,
             GateType::C_ZYX,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -62,7 +62,7 @@ H 0
             GateType::C_ZYX,
             GateType::C_XYZ,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",

@@ -29,7 +29,7 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
             GateType::H,
             GateType::H,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -62,7 +62,7 @@ H 0
             GateType::H_XY,
             GateType::H_XY,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
@@ -97,7 +97,7 @@ S 0
             GateType::H_YZ,
             GateType::H_YZ,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "B_Single Qubit Clifford Gates",
