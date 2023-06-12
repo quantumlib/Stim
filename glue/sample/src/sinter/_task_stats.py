@@ -53,7 +53,8 @@ class TaskStats:
     classified_errors: Optional[collections.Counter] = None
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        assert self.strong_id == other.strong_id
+        if self.strong_id != other.strong_id:
+            raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
         return TaskStats(
             decoder=self.decoder,
             strong_id=self.strong_id,

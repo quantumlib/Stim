@@ -79,5 +79,5 @@ class AnonTaskStats:
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
-            classified_errors=None if self.classified_errors is None or other.classified_errors is None else other.classified_errors,
+            classified_errors=None if self.classified_errors is None or other.classified_errors is None else (self.classified_errors + other.classified_errors),
         )
