@@ -193,6 +193,8 @@ enum GateFlags : uint16_t {
     // Annotations like DETECTOR aren't strictly speaking identity operations, but they can be ignored by code that only
     // cares about effects that happen to qubits (as opposed to in the classical control system).
     GATE_HAS_NO_EFFECT_ON_QUBITS = 1 << 14,
+    // Whether or not the gate trivially broadcasts over targets.
+    GATE_IS_SINGLE_QUBIT_GATE = 1 << 15,
 };
 
 struct ExtraGateData {
