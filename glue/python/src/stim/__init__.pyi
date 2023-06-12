@@ -685,25 +685,25 @@ class Circuit:
         Examples:
             >>> import stim
 
-            >>> stim.Circuit("""
-            ... R 0
-            ... M 0
-            ... """).count_determined_measurements()
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     M 0
+            ... ''').count_determined_measurements()
             1
 
-            >>> stim.Circuit("""
-            ... R 0
-            ... H 0
-            ... M 0
-            ... """).count_determined_measurements()
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     H 0
+            ...     M 0
+            ... ''').count_determined_measurements()
             0
 
-            >>> stim.Circuit("""
-            ... R 0 1
-            ... MZZ 0 1
-            ... MYY 0 1
-            ... MXX 0 1
-            ... """).count_determined_measurements()
+            >>> stim.Circuit('''
+            ...     R 0 1
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ... ''').count_determined_measurements()
             2
 
             >>> circuit = stim.Circuit.generated(
