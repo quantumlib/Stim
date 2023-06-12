@@ -4719,7 +4719,7 @@ class GateData:
             False
         """
     @property
-    def unitary(
+    def unitary_matrix(
         self,
     ) -> Optional[np.ndarray]:
         """Returns the gate's unitary matrix, or None if the gate isn't unitary.
@@ -4727,14 +4727,14 @@ class GateData:
         Examples:
             >>> import stim
 
-            >>> print(stim.gate_data('M').unitary)
+            >>> print(stim.gate_data('M').unitary_matrix)
             None
 
-            >>> stim.gate_data('X').unitary
+            >>> stim.gate_data('X').unitary_matrix
             array([[0.+0.j, 1.+0.j],
                    [1.+0.j, 0.+0.j]], dtype=complex64)
 
-            >>> stim.gate_data('ISWAP').unitary
+            >>> stim.gate_data('ISWAP').unitary_matrix
             array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
                    [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j],
                    [0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
@@ -7005,7 +7005,7 @@ class Tableau:
     def to_circuit(
         self,
         *,
-        method: str,
+        method: str = 'elimination',
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -7311,6 +7311,15 @@ class Tableau:
         endian: str,
     ) -> np.ndarray[np.complex64]:
         """Converts the tableau into a unitary matrix.
+
+        For an n-qubit tableau, this method performs O(n 4^n) work. It uses the state
+        channel duality to transform the tableau into a list of stabilizers, then
+        generates a random state vector and projects it into the +1 eigenspace of each
+        stabilizer.
+
+        Note that tableaus don't have a defined global phase, so the result's global
+        phase may be different from what you expect. For example, the square of
+        SQRT_X's unitary might equal -X instead of +X.
 
         Args:
             endian:

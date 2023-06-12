@@ -172,7 +172,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
 
     c.def_property_readonly(
-        "unitary",
+        "unitary_matrix",
         [](const Gate &self) -> pybind11::object {
             if (self.flags & GATE_IS_UNITARY) {
                 auto r = self.unitary();
@@ -197,20 +197,20 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             return pybind11::none();
         },
         clean_doc_string(R"DOC(
-            @signature def unitary(self) -> Optional[np.ndarray]:
+            @signature def unitary_matrix(self) -> Optional[np.ndarray]:
             Returns the gate's unitary matrix, or None if the gate isn't unitary.
 
             Examples:
                 >>> import stim
 
-                >>> print(stim.gate_data('M').unitary)
+                >>> print(stim.gate_data('M').unitary_matrix)
                 None
 
-                >>> stim.gate_data('X').unitary
+                >>> stim.gate_data('X').unitary_matrix
                 array([[0.+0.j, 1.+0.j],
                        [1.+0.j, 0.+0.j]], dtype=complex64)
 
-                >>> stim.gate_data('ISWAP').unitary
+                >>> stim.gate_data('ISWAP').unitary_matrix
                 array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
                        [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j],
                        [0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
