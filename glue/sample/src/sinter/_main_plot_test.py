@@ -379,3 +379,34 @@ def test_m_fields():
             "test",
         ])
         assert (d / "output.png").exists()
+
+
+def test_split_custom_counts():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata,custom_counts
+                 1000,   400,       0,   1.00,magical,000000001,"{""f"":1}",
+                 1000,   400,       0,   1.00,magical,000000002,"{""f"":2}","{""a"":3}"
+                 1000,   400,       0,   1.00,magical,000000003,"{""f"":3}","{""b"":3,""c"":4}"
+                 1000,   400,       0,   1.00,magical,000000005,"{""f"":5}",
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+            "--xaxis",
+            "values",
+            "--x_func",
+            "m.f",
+            "--group_func",
+            "m.g",
+            "--subtitle",
+            "test",
+            "--split_custom_counts",
+        ])
+        assert (d / "output.png").exists()

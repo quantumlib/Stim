@@ -49,7 +49,8 @@ def iter_collect(*,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
-                 split_errors: bool = False,
+                 count_observable_error_combos: bool = False,
+                 count_detection_events: bool = False,
                  custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
                  ) -> Iterator['sinter.Progress']:
     """Iterates error correction statistics collected from worker processes.
@@ -81,10 +82,16 @@ def iter_collect(*,
             after this many errors have been seen in samples taken from the
             circuit. The actual number sampled errors may be larger due to
             batching.
-        split_errors: Defaults to False. When set to to True, the returned
-            TaskStats instances will have a non-None `classified_errors` field
-            where keys are bitmasks identifying which observables flipped and
-            values are the number of errors where that happened.
+        count_observable_error_combos: Defaults to False. When set to to True,
+            the returned stats will have a custom counts field with keys
+            like `obs_mistake_mask=E_E__` counting how many times specific
+            combinations of observables were mispredicted by the decoder.
+        count_detection_events: Defaults to False. When set to True, the
+            returned stats will have a custom counts field withs the
+            key `detection_events` counting the number of times a detector fired
+            and also `detectors_checked` counting the number of detectors that
+            were executed. The detection fraction is the ratio of these two
+            numbers.
         start_batch_size: Defaults to None (collector's choice). The very
             first shots taken from the circuit will use a batch of this
             size, and no other batches will be taken in parallel. Once this
@@ -162,7 +169,8 @@ def iter_collect(*,
                 max_batch_size=max_batch_size,
             ),
             decoders=decoders,
-            split_errors=split_errors,
+            count_observable_error_combos=count_observable_error_combos,
+            count_detection_events=count_detection_events,
             additional_existing_data=additional_existing_data,
             custom_decoders=custom_decoders) as manager:
         try:
@@ -208,7 +216,8 @@ def collect(*,
             progress_callback: Optional[Callable[['sinter.Progress'], None]] = None,
             max_shots: Optional[int] = None,
             max_errors: Optional[int] = None,
-            split_errors: bool = False,
+            count_observable_error_combos: bool = False,
+            count_detection_events: bool = False,
             decoders: Optional[Iterable[str]] = None,
             max_batch_seconds: Optional[int] = None,
             max_batch_size: Optional[int] = None,
@@ -235,7 +244,7 @@ def collect(*,
             max_shots and max_errors.
         progress_callback: Defaults to None (unused). If specified, then each
             time new sample statistics are acquired from a worker this method
-            will be invoked with the new sinter.SamplerStats.
+            will be invoked with the new `sinter.TaskStats`.
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
@@ -243,10 +252,16 @@ def collect(*,
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
             iterable and each Task has its decoder set to None.
-        split_errors: Defaults to False. When set to to True, the returned
-            TaskStats instances will have a non-None `classified_errors` field
-            where keys are bitmasks identifying which observables flipped and
-            values are the number of errors where that happened.
+        count_observable_error_combos: Defaults to False. When set to to True,
+            the returned stats will have a custom counts field with keys
+            like `obs_mistake_mask=E_E__` counting how many times specific
+            combinations of observables were mispredicted by the decoder.
+        count_detection_events: Defaults to False. When set to True, the
+            returned stats will have a custom counts field withs the
+            key `detection_events` counting the number of times a detector fired
+            and also `detectors_checked` counting the number of detectors that
+            were executed. The detection fraction is the ratio of these two
+            numbers.
         max_shots: Defaults to None (unused). Stops the sampling process
             after this many samples have been taken from the circuit.
         max_errors: Defaults to None (unused). Stops the sampling process
@@ -352,7 +367,8 @@ def collect(*,
             max_batch_seconds=max_batch_seconds,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
-            split_errors=split_errors,
+            count_observable_error_combos=count_observable_error_combos,
+            count_detection_events=count_detection_events,
             decoders=decoders,
             tasks=tasks,
             hint_num_tasks=hint_num_tasks,

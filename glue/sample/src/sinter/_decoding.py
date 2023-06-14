@@ -81,18 +81,34 @@ def _streaming_count_mistakes(
         *,
         num_shots: int,
         num_obs: int,
+        num_det: int,
         postselected_observable_mask: Optional[np.ndarray] = None,
+        dets_in: pathlib.Path,
         obs_in: pathlib.Path,
         predictions_in: pathlib.Path,
-        out_obs_to_num_errors: Optional[collections.Counter],
-) -> Tuple[int, int]:
+        count_detection_events: bool,
+        count_observable_error_combos: bool,
+) -> Tuple[int, int, collections.Counter]:
 
+    num_det_bytes = math.ceil(num_det / 8)
     num_obs_bytes = math.ceil(num_obs / 8)
-    num_shots_left = num_shots
     num_errors = 0
     num_discards = 0
+    custom_counts = collections.Counter()
+    if count_detection_events:
+        with open(dets_in, 'rb') as dets_in_f:
+            num_shots_left = num_shots
+            while num_shots_left:
+                batch_size = min(num_shots_left, math.ceil(10**6 / max(num_obs, 1)))
+                det_data = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes * batch_size)
+                for b in range(8):
+                    custom_counts['detection_events'] += np.count_nonzero(det_data & (1 << b))
+                num_shots_left -= batch_size
+        custom_counts['detectors_checked'] += num_shots * num_det
+
     with open(obs_in, 'rb') as obs_in_f:
         with open(predictions_in, 'rb') as predictions_in_f:
+            num_shots_left = num_shots
             while num_shots_left:
                 batch_size = min(num_shots_left, math.ceil(10**6 / max(num_obs, 1)))
 
@@ -108,14 +124,14 @@ def _streaming_count_mistakes(
                     err_mask &= ~discard_mask
                     num_discards += np.count_nonzero(discard_mask)
 
-                if out_obs_to_num_errors is not None:
+                if count_observable_error_combos:
                     for misprediction_arr in cmp_table[err_mask]:
-                        err_key = ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
-                        out_obs_to_num_errors[err_key] += 1
+                        err_key = "obs_mistake_mask=" + ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
+                        custom_counts[err_key] += 1
 
                 num_errors += np.count_nonzero(err_mask)
                 num_shots_left -= batch_size
-    return num_discards, num_errors
+    return num_discards, num_errors, custom_counts
 
 
 def sample_decode(*,
@@ -125,7 +141,8 @@ def sample_decode(*,
                   dem_path: Union[None, str, pathlib.Path],
                   post_mask: Optional[np.ndarray] = None,
                   postselected_observable_mask: Optional[np.ndarray] = None,
-                  split_errors: bool = False,
+                  count_observable_error_combos: bool = False,
+                  count_detection_events: bool = False,
                   num_shots: int,
                   decoder: str,
                   tmp_dir: Union[str, pathlib.Path, None] = None,
@@ -149,10 +166,16 @@ def sample_decode(*,
         postselected_observable_mask: Bit packed mask indicating which observables to
             postselect on. If the decoder incorrectly predicts any of these observables, the
             shot is discarded instead of counted as an error.
-        split_errors: Defaults to False. When set to to True, the returned
-            AnonTaskStats will have a non-None `classified_errors` field where
-            keys are an integer with the k'th bit set to 1 if the k'th
-            observable was mispredicted.
+        count_observable_error_combos: Defaults to False. When set to to True,
+            the returned AnonTaskStats will have a custom counts field with keys
+            like `obs_mistake_mask=E_E__` counting how many times specific
+            combinations of observables were mispredicted by the decoder.
+        count_detection_events: Defaults to False. When set to True, the
+            returned AnonTaskStats will have a custom counts field withs the
+            key `detection_events` counting the number of times a detector fired
+            and also `detectors_checked` counting the number of detectors that
+            were executed. The detection fraction is the ratio of these two
+            numbers.
         num_shots: The number of sample shots to take from the circuit.
         decoder: The name of the decoder to use. Allowed values are:
             "pymatching":
@@ -206,10 +229,12 @@ def sample_decode(*,
             postselected_observable_mask=postselected_observable_mask,
             compiled_decoder=compiled_decoder,
             total_num_shots=num_shots,
+            num_det=circuit.num_detectors,
             mini_batch_size=1024,
             start_time_monotonic=start_time,
-            split_errors=split_errors,
             num_obs=circuit.num_observables,
+            count_observable_error_combos=count_observable_error_combos,
+            count_detection_events=count_detection_events,
         )
     except NotImplementedError:
         assert __private__unstable__force_decode_on_disk or __private__unstable__force_decode_on_disk is None
@@ -223,7 +248,8 @@ def sample_decode(*,
             decoder_obj=decoder_obj,
             tmp_dir=tmp_dir,
             start_time_monotonic=start_time,
-            split_errors=split_errors,
+            count_observable_error_combos=count_observable_error_combos,
+            count_detection_events=count_detection_events,
         )
 
 
@@ -233,18 +259,20 @@ def _sample_decode_helper_using_memory(
     post_mask: Optional[np.ndarray],
     postselected_observable_mask: Optional[np.ndarray],
     num_obs: int,
+    num_det: int,
     total_num_shots: int,
     mini_batch_size: int,
     compiled_decoder: CompiledDecoder,
     start_time_monotonic: float,
-    split_errors: bool,
+    count_observable_error_combos: bool,
+    count_detection_events: bool,
 ) -> AnonTaskStats:
     sampler: stim.CompiledDetectorSampler = circuit.compile_detector_sampler()
 
     out_num_discards = 0
     out_num_errors = 0
     shots_left = total_num_shots
-    out_obs_to_num_errors = collections.Counter() if split_errors else None
+    custom_counts = collections.Counter()
     while shots_left > 0:
         cur_num_shots = min(shots_left, mini_batch_size)
         dets_data, obs_data = sampler.sample(shots=cur_num_shots, separate_observables=True, bit_packed=True)
@@ -273,19 +301,24 @@ def _sample_decode_helper_using_memory(
         # Count how many mistakes the decoder made on non-discarded shots.
         mispredictions = obs_data ^ predict_data
         err_mask = np.any(mispredictions, axis=1)
-        if split_errors:
+        if count_detection_events:
+            for b in range(8):
+                custom_counts['detection_events'] += np.count_nonzero(dets_data & (1 << b))
+        if count_observable_error_combos:
             for misprediction_arr in mispredictions[err_mask]:
-                err_key = ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
-                out_obs_to_num_errors[err_key] += 1
+                err_key = "obs_mistake_mask=" + ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
+                custom_counts[err_key] += 1
         out_num_errors += np.count_nonzero(err_mask)
         shots_left -= cur_num_shots
 
+    if count_detection_events:
+        custom_counts['detectors_checked'] += num_det * total_num_shots
     return AnonTaskStats(
         shots=total_num_shots,
         errors=out_num_errors,
         discards=out_num_discards,
         seconds=time.monotonic() - start_time_monotonic,
-        classified_errors=out_obs_to_num_errors,
+        custom_counts=custom_counts,
     )
 
 
@@ -300,7 +333,8 @@ def _sample_decode_helper_using_disk(
     decoder_obj: Decoder,
     tmp_dir: Union[str, pathlib.Path, None],
     start_time_monotonic: float,
-    split_errors: bool,
+    count_observable_error_combos: bool,
+    count_detection_events: bool,
 ) -> AnonTaskStats:
     with contextlib.ExitStack() as exit_stack:
         if tmp_dir is None:
@@ -363,14 +397,16 @@ def _sample_decode_helper_using_disk(
         )
 
         # Count how many predictions matched the actual observable data.
-        out_obs_to_num_errors = collections.Counter() if split_errors else None
-        num_obs_discards, num_errors = _streaming_count_mistakes(
+        num_obs_discards, num_errors, custom_counts = _streaming_count_mistakes(
             num_shots=num_kept_shots,
             num_obs=num_obs,
+            num_det=num_dets,
+            dets_in=dets_all_path,
             obs_in=obs_used_path,
             predictions_in=predictions_path,
             postselected_observable_mask=postselected_observable_mask,
-            out_obs_to_num_errors=out_obs_to_num_errors,
+            count_detection_events=count_detection_events,
+            count_observable_error_combos=count_observable_error_combos,
         )
 
         return AnonTaskStats(
@@ -378,5 +414,5 @@ def _sample_decode_helper_using_disk(
             errors=num_errors,
             discards=num_obs_discards + num_det_discards,
             seconds=time.monotonic() - start_time_monotonic,
-            classified_errors=out_obs_to_num_errors,
+            custom_counts=custom_counts,
         )

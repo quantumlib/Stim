@@ -28,7 +28,7 @@ def test_to_csv_line():
         discards=4,
         seconds=5,
     )
-    assert v.to_csv_line() == str(v) == '        22,         3,         4,       5,pymatching,test,"{""a"":[1,2,3]}"'
+    assert v.to_csv_line() == str(v) == '        22,         3,         4,       5,pymatching,test,"{""a"":[1,2,3]}",'
 
 
 def test_to_anon_stats():
@@ -53,7 +53,7 @@ def test_add():
         errors=30,
         discards=40,
         seconds=50,
-        classified_errors=collections.Counter({'a': 10, 'b': 20}),
+        custom_counts=collections.Counter({'a': 10, 'b': 20}),
     )
     b = sinter.TaskStats(
         decoder='pymatching',
@@ -63,7 +63,7 @@ def test_add():
         errors=4,
         discards=3,
         seconds=2,
-        classified_errors=collections.Counter({'a': 1, 'c': 3}),
+        custom_counts=collections.Counter({'a': 1, 'c': 3}),
     )
     c = sinter.TaskStats(
         decoder='pymatching',
@@ -73,7 +73,7 @@ def test_add():
         errors=34,
         discards=43,
         seconds=52,
-        classified_errors=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
+        custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
     )
     assert a + b == c
     with pytest.raises(ValueError):
@@ -85,5 +85,5 @@ def test_add():
             errors=34,
             discards=43,
             seconds=52,
-            classified_errors=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
+            custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
         )

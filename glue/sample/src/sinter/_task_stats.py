@@ -1,5 +1,7 @@
 import collections
 import dataclasses
+from types import NoneType
+from typing import Counter
 from typing import List
 from typing import Optional
 
@@ -32,12 +34,14 @@ class TaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
-        classified_errors: Defaults to None. When data is collecting using
-            `--split_errors`, this counter has keys corresponding to observed
-            symptoms and values corresponding to how often those errors
-            occurred. The total of all the values is equal to the total number
-            of errors. For example, the key 'E_E' means observable 0 and
-            observable 2 flipped.
+        custom_counts: A counter mapping string keys to integer values. Used for
+            tracking arbitrary values, such as per-observable error counts or
+            the number of times detectors fired. The meaning of the information
+            in the counts is not specified; the only requirement is that it
+            should be correct to add each key's counts when merging statistics.
+
+            Although this field is an editable object, it's invalid to edit the
+            counter after the stats object is initialized.
     """
 
     # Information describing the problem that was sampled.
@@ -46,11 +50,26 @@ class TaskStats:
     json_metadata: JSON_TYPE
 
     # Information describing the results of sampling.
-    shots: int
-    errors: int
-    discards: int
-    seconds: float
-    classified_errors: Optional[collections.Counter] = None
+    shots: int = 0
+    errors: int = 0
+    discards: int = 0
+    seconds: float = 0
+    custom_counts: Counter[str] = dataclasses.field(default_factory=collections.Counter)
+
+    def __post_init__(self):
+        assert isinstance(self.errors, int)
+        assert isinstance(self.shots, int)
+        assert isinstance(self.discards, int)
+        assert isinstance(self.seconds, (int, float))
+        assert isinstance(self.custom_counts, collections.Counter)
+        assert isinstance(self.decoder, str)
+        assert isinstance(self.strong_id, str)
+        assert isinstance(self.json_metadata, (NoneType, int, float, str, dict, list, tuple))
+        assert self.errors >= 0
+        assert self.discards >= 0
+        assert self.seconds >= 0
+        assert self.shots >= self.errors + self.discards
+        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
         if self.strong_id != other.strong_id:
@@ -65,7 +84,7 @@ class TaskStats:
             errors=total.errors,
             discards=total.discards,
             seconds=total.seconds,
-            classified_errors=total.classified_errors,
+            custom_counts=total.custom_counts,
         )
 
     def to_anon_stats(self) -> AnonTaskStats:
@@ -90,7 +109,7 @@ class TaskStats:
             errors=self.errors,
             discards=self.discards,
             seconds=self.seconds,
-            classified_errors=self.classified_errors,
+            custom_counts=self.custom_counts.copy(),
         )
 
     def to_csv_line(self) -> str:
@@ -114,19 +133,20 @@ class TaskStats:
         """
         return csv_line(
             shots=self.shots,
-            errors={str(k): v for k, v in self.classified_errors.items()} if self.classified_errors is not None else self.errors,
+            errors=self.errors,
             seconds=self.seconds,
             discards=self.discards,
             strong_id=self.strong_id,
             decoder=self.decoder,
             json_metadata=self.json_metadata,
+            custom_counts=self.custom_counts,
         )
 
-    def _split_errors(self) -> List['TaskStats']:
-        if self.classified_errors is None:
+    def _split_custom_counts(self) -> List['TaskStats']:
+        if not self.custom_counts:
             return [self]
         result = []
-        for k, v in self.classified_errors.items():
+        for k, v in self.custom_counts.items():
             result.append(TaskStats(
                 strong_id=f'{self.strong_id}:{k}',
                 decoder=self.decoder,
@@ -135,7 +155,7 @@ class TaskStats:
                 errors=v,
                 discards=self.discards,
                 seconds=self.seconds,
-                classified_errors=collections.Counter({k: v}),
+                custom_counts=collections.Counter({k: v}),
             ))
         return result
 
@@ -147,8 +167,14 @@ class TaskStats:
         terms.append(f'strong_id={self.strong_id!r}')
         terms.append(f'decoder={self.decoder!r}')
         terms.append(f'json_metadata={self.json_metadata!r}')
-        terms.append(f'shots={self.shots!r}')
-        terms.append(f'errors={self.errors!r}')
-        terms.append(f'discards={self.discards!r}')
-        terms.append(f'seconds={self.seconds!r}')
+        if self.shots:
+            terms.append(f'shots={self.shots!r}')
+        if self.errors:
+            terms.append(f'errors={self.errors!r}')
+        if self.discards:
+            terms.append(f'discards={self.discards!r}')
+        if self.seconds:
+            terms.append(f'seconds={self.seconds!r}')
+        if self.custom_counts:
+            terms.append(f'custom_counts={self.custom_counts!r}')
         return f'sinter.TaskStats({", ".join(terms)})'

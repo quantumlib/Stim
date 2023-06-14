@@ -55,27 +55,30 @@ class ExistingData:
         reader = csv.DictReader(path_or_file)
         reader.fieldnames = [e.strip() for e in reader.fieldnames]
         actual_fields = set(reader.fieldnames)
-        if actual_fields != expected_fields:
+        if not (expected_fields <= actual_fields):
             raise ValueError(
                 f"Bad CSV data. "
                 f"Got columns {sorted(actual_fields)!r} "
                 f"but expected columns {sorted(expected_fields)!r}")
+        has_custom_counts = 'custom_counts' in actual_fields
         result = ExistingData()
         for row in reader:
-            errs = json.loads(row['errors'])
-            if isinstance(errs, int):
-                num_errors = errs
-                classified_errors = None
-            elif isinstance(errs, dict):
-                num_errors = sum(errs.values())
-                classified_errors = collections.Counter(errs)
+            if has_custom_counts:
+                custom_counts = row['custom_counts']
+                if custom_counts is None or custom_counts == '':
+                    custom_counts = collections.Counter()
+                else:
+                    custom_counts = json.loads(custom_counts)
+                    if not isinstance(custom_counts, dict) or not all(isinstance(k, str) or not isinstance(v, int) for k, v in custom_counts.items()):
+                        raise ValueError(f"{row['custom_counts']=} isn't empty or a dictionary from string keys to integer values.")
+                    custom_counts = collections.Counter(custom_counts)
             else:
-                raise NotImplementedError(f"{row['errors']=}")
+                custom_counts = collections.Counter()
             result.add_sample(TaskStats(
                 shots=int(row['shots']),
                 discards=int(row['discards']),
-                errors=num_errors,
-                classified_errors=classified_errors,
+                errors=int(row['errors']),
+                custom_counts=custom_counts,
                 seconds=float(row['seconds']),
                 strong_id=row['strong_id'],
                 decoder=row['decoder'],

@@ -1,6 +1,6 @@
 import collections
 import dataclasses
-from typing import Optional
+from typing import Counter
 
 
 @dataclasses.dataclass(frozen=True)
@@ -14,31 +14,33 @@ class AnonTaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
-        classified_errors: Defaults to None. When data is collecting using
-            `--split_errors`, this counter has keys corresponding to observed
-            symptoms and values corresponding to how often those errors
-            occurred. The total of all the values is equal to the total number
-            of errors. For example, the key 'E_E' means observable 0 and
-            observable 2 flipped.
+        custom_counts: A counter mapping string keys to integer values. Used for
+            tracking arbitrary values, such as per-observable error counts or
+            the number of times detectors fired. The meaning of the information
+            in the counts is not specified; the only requirement is that it
+            should be correct to add each key's counts when merging statistics.
+
+            Although this field is an editable object, it's invalid to edit the
+            counter after the stats object is initialized.
     """
 
     shots: int = 0
     errors: int = 0
     discards: int = 0
     seconds: float = 0
-    classified_errors: Optional[collections.Counter] = None
+    custom_counts: Counter[str] = dataclasses.field(default_factory=collections.Counter)
 
     def __post_init__(self):
         assert isinstance(self.errors, int)
         assert isinstance(self.shots, int)
         assert isinstance(self.discards, int)
         assert isinstance(self.seconds, (int, float))
+        assert isinstance(self.custom_counts, collections.Counter)
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        if self.classified_errors is not None:
-            assert sum(self.classified_errors.values()) == self.errors
+        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
 
     def __repr__(self) -> str:
         terms = []
@@ -50,8 +52,8 @@ class AnonTaskStats:
             terms.append(f'discards={self.discards!r}')
         if self.seconds != 0:
             terms.append(f'seconds={self.seconds!r}')
-        if self.classified_errors is not None:
-            terms.append(f'classified_errors={self.classified_errors!r}')
+        if self.custom_counts:
+            terms.append(f'custom_counts={self.custom_counts!r}')
         return f'sinter.AnonTaskStats({", ".join(terms)})'
 
     def __add__(self, other: 'AnonTaskStats') -> 'AnonTaskStats':
@@ -75,25 +77,10 @@ class AnonTaskStats:
         if not isinstance(other, AnonTaskStats):
             return NotImplemented
 
-        if self.classified_errors is None and other.classified_errors is None:
-            combined_classified_errors = None
-        else:
-            combined_classified_errors = collections.Counter()
-            if self.errors > 0:
-                if self.classified_errors is not None:
-                    combined_classified_errors += self.classified_errors
-                else:
-                    combined_classified_errors[""] += self.errors
-            if other.errors > 0:
-                if other.classified_errors is not None:
-                    combined_classified_errors += other.classified_errors
-                else:
-                    combined_classified_errors[""] += other.errors
-
         return AnonTaskStats(
             shots=self.shots + other.shots,
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
-            classified_errors=combined_classified_errors,
+            custom_counts=self.custom_counts + other.custom_counts,
         )

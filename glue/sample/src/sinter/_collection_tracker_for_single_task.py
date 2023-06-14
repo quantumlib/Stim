@@ -19,12 +19,14 @@ class CollectionTrackerForSingleTask:
             self,
             *,
             task: Task,
-            split_errors: bool,
+            count_observable_error_combos: bool,
+            count_detection_events: bool,
             circuit_path: str,
             dem_path: str,
             existing_data: ExistingData):
         self.unfilled_task = task
-        self.split_errors = split_errors
+        self.count_observable_error_combos = count_observable_error_combos
+        self.count_detection_events = count_detection_events
         self.task_strong_id = None
         self.circuit_path = circuit_path
         self.dem_path = dem_path
@@ -162,7 +164,8 @@ class CollectionTrackerForSingleTask:
                 json_metadata=self.unfilled_task.json_metadata,
                 strong_id=None,
                 num_shots=-1,
-                split_errors=self.split_errors,
+                count_observable_error_combos=self.count_observable_error_combos,
+                count_detection_events=self.count_detection_events,
             )
 
         # Wait to have *some* data before starting to sample in parallel.
@@ -182,7 +185,8 @@ class CollectionTrackerForSingleTask:
             postselected_observables_mask=self.unfilled_task.postselected_observables_mask,
             json_metadata=self.unfilled_task.json_metadata,
             num_shots=num_shots,
-            split_errors=self.split_errors,
+            count_observable_error_combos=self.count_observable_error_combos,
+            count_detection_events=self.count_detection_events,
         )
 
     def status(self) -> str:
