@@ -24,6 +24,7 @@ def csv_line(*,
              decoder: Any,
              strong_id: Any,
              json_metadata: JSON_TYPE,
+             custom_counts: JSON_TYPE,
              is_header: bool = False) -> str:
     if isinstance(seconds, float):
         if seconds < 1:
@@ -36,6 +37,14 @@ def csv_line(*,
         json_metadata = json.dumps(json_metadata,
                                    separators=(',', ':'),
                                    sort_keys=True)
+        if custom_counts:
+            custom_counts = escape_csv(
+                json.dumps(custom_counts,
+                           separators=(',', ':'),
+                           sort_keys=True), None)
+        else:
+            custom_counts = ''
+
 
     shots = escape_csv(shots, 10)
     if isinstance(errors, (dict, collections.Counter)):
@@ -52,7 +61,8 @@ def csv_line(*,
             f'{seconds},'
             f'{decoder},'
             f'{strong_id},'
-            f'{json_metadata}')
+            f'{json_metadata},'
+            f'{custom_counts}')
 
 
 CSV_HEADER = csv_line(shots='shots',
@@ -62,4 +72,5 @@ CSV_HEADER = csv_line(shots='shots',
                       strong_id='strong_id',
                       decoder='decoder',
                       json_metadata='json_metadata',
+                      custom_counts='custom_counts',
                       is_header=True)

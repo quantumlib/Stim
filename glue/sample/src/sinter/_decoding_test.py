@@ -281,17 +281,45 @@ def test_error_splitting(decoder: str, required_import: str, force_streaming: Op
         post_mask=None,
         num_shots=10000,
         decoder=decoder,
-        split_errors=True,
+        count_observable_error_combos=True,
         __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert result.discards == 0
-    assert result.classified_errors is not None
+    assert set(result.custom_counts.keys()) == {'obs_mistake_mask=E_', 'obs_mistake_mask=_E', 'obs_mistake_mask=EE'}
     if decoder != 'vacuous':
         np.testing.assert_allclose(result.errors / result.shots, 1 - 0.8 * 0.9, atol=0.05)
-        assert set(result.classified_errors.keys()) == {'E_', '_E', 'EE'}
-        np.testing.assert_allclose(result.classified_errors['E_'] / result.shots, 0.1 * 0.2, atol=0.05)
-        np.testing.assert_allclose(result.classified_errors['_E'] / result.shots, 0.1 * 0.8, atol=0.05)
-        np.testing.assert_allclose(result.classified_errors['EE'] / result.shots, 0.9 * 0.2, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=E_'] / result.shots, 0.1 * 0.2, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=_E'] / result.shots, 0.1 * 0.8, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=EE'] / result.shots, 0.9 * 0.2, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_detector_counting(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        num_shots=10000,
+        decoder=decoder,
+        count_detection_events=True,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    assert result.discards == 0
+    assert result.custom_counts['detectors_checked'] == 20000
+    assert 0.3 * 10000 * 0.5 <= result.custom_counts['detection_events'] <= 0.3 * 10000 * 2.0
+    assert set(result.custom_counts.keys()) == {'detectors_checked', 'detection_events'}
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)

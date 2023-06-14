@@ -1,4 +1,3 @@
-import collections
 import math
 from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict, Sequence, cast
 import argparse
@@ -196,9 +195,9 @@ def parse_args(args: List[str]) -> Any:
                         help='Customize the Y axis label. '
                              'Prefix [log] for logarithmic scale. '
                              'Prefix [sqrt] for square root scale.')
-    parser.add_argument('--split_errors',
+    parser.add_argument('--split_custom_counts',
                         action='store_true',
-                        help='When a stat has classified errors, this causes each classification to be a separate statistic.\n')
+                        help='When a stat has custom counts, this splits it into multiple copies of the stat with each one having exactly one of the custom counts.\n')
     parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
@@ -649,11 +648,11 @@ def main_plot(*, command_line_args: List[str]):
     for file in getattr(args, 'in'):
         total += ExistingData.from_file(file)
 
-    if args.split_errors:
+    if args.split_custom_counts:
         total.data = {
             s.strong_id: s
             for v in total.data.values()
-            for s in v._split_errors()
+            for s in v._split_custom_counts()
         }
 
     fig, _ = _plot_helper(
