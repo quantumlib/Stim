@@ -122,8 +122,8 @@ def stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
         >>> stats = sinter.stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, discards=0, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, discards=0, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
     result = ExistingData()
     for p in paths_or_files:
@@ -163,8 +163,8 @@ def read_stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
         >>> stats = sinter.read_stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, discards=0, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, discards=0, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
     result = ExistingData()
     for p in paths_or_files:

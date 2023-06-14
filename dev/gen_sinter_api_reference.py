@@ -38,7 +38,7 @@ def main():
     print(f'''
 ```python
 # Types used by the method definitions.
-from typing import overload, TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import overload, TYPE_CHECKING, Any, Counter, Dict, Iterable, List, Optional, Tuple, Union
 import abc
 import dataclasses
 import io

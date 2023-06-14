@@ -48,7 +48,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`sinter.stats_from_csv_files`](#sinter.stats_from_csv_files)
 ```python
 # Types used by the method definitions.
-from typing import overload, TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import overload, TYPE_CHECKING, Any, Counter, Dict, Iterable, List, Optional, Tuple, Union
 import abc
 import dataclasses
 import io
@@ -73,18 +73,20 @@ class AnonTaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
-        classified_errors: Defaults to None. When data is collecting using
-            `--split_errors`, this counter has keys corresponding to observed
-            symptoms and values corresponding to how often those errors
-            occurred. The total of all the values is equal to the total number
-            of errors. For example, the key 'E_E' means observable 0 and
-            observable 2 flipped.
+        custom_counts: A counter mapping string keys to integer values. Used for
+            tracking arbitrary values, such as per-observable error counts or
+            the number of times detectors fired. The meaning of the information
+            in the counts is not specified; the only requirement is that it
+            should be correct to add each key's counts when merging statistics.
+
+            Although this field is an editable object, it's invalid to edit the
+            counter after the stats object is initialized.
     """
     shots: int = 0
     errors: int = 0
     discards: int = 0
     seconds: float = 0
-    classified_errors: Optional[collections.Counter] = None
+    custom_counts: Counter[str]
 ```
 
 <a name="sinter.AnonTaskStats.__add__"></a>
@@ -120,7 +122,7 @@ def __add__(
 # sinter.CSV_HEADER
 
 # (at top-level in the sinter module)
-CSV_HEADER: str = '     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata'
+CSV_HEADER: str = '     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts'
 ```
 
 <a name="sinter.CollectionOptions"></a>
@@ -663,21 +665,23 @@ class TaskStats:
             discarded a task is not an error.
         seconds: The amount of CPU core time spent sampling the tasks, in
             seconds.
-        classified_errors: Defaults to None. When data is collecting using
-            `--split_errors`, this counter has keys corresponding to observed
-            symptoms and values corresponding to how often those errors
-            occurred. The total of all the values is equal to the total number
-            of errors. For example, the key 'E_E' means observable 0 and
-            observable 2 flipped.
+        custom_counts: A counter mapping string keys to integer values. Used for
+            tracking arbitrary values, such as per-observable error counts or
+            the number of times detectors fired. The meaning of the information
+            in the counts is not specified; the only requirement is that it
+            should be correct to add each key's counts when merging statistics.
+
+            Although this field is an editable object, it's invalid to edit the
+            counter after the stats object is initialized.
     """
     strong_id: str
     decoder: str
     json_metadata: Any
-    shots: int
-    errors: int
-    discards: int
-    seconds: float
-    classified_errors: Optional[collections.Counter] = None
+    shots: int = 0
+    errors: int = 0
+    discards: int = 0
+    seconds: float = 0
+    custom_counts: Counter[str]
 ```
 
 <a name="sinter.TaskStats.to_anon_stats"></a>
@@ -724,13 +728,12 @@ def to_csv_line(
         ...     decoder='pymatching',
         ...     shots=22,
         ...     errors=3,
-        ...     discards=4,
         ...     seconds=5,
         ... )
         >>> print(sinter.CSV_HEADER)
-             shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
+             shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts
         >>> print(stat.to_csv_line())
-                22,         3,         4,       5,pymatching,test,"{""a"":[1,2,3]}"
+                22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
     """
 ```
 
@@ -790,7 +793,8 @@ def collect(
     progress_callback: Optional[Callable[[sinter.Progress], NoneType]] = None,
     max_shots: Optional[int] = None,
     max_errors: Optional[int] = None,
-    split_errors: bool = False,
+    count_observable_error_combos: bool = False,
+    count_detection_events: bool = False,
     decoders: Optional[Iterable[str]] = None,
     max_batch_seconds: Optional[int] = None,
     max_batch_size: Optional[int] = None,
@@ -817,7 +821,7 @@ def collect(
             max_shots and max_errors.
         progress_callback: Defaults to None (unused). If specified, then each
             time new sample statistics are acquired from a worker this method
-            will be invoked with the new sinter.SamplerStats.
+            will be invoked with the new `sinter.TaskStats`.
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
@@ -825,10 +829,16 @@ def collect(
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
             iterable and each Task has its decoder set to None.
-        split_errors: Defaults to False. When set to to True, the returned
-            TaskStats instances will have a non-None `classified_errors` field
-            where keys are bitmasks identifying which observables flipped and
-            values are the number of errors where that happened.
+        count_observable_error_combos: Defaults to False. When set to to True,
+            the returned stats will have a custom counts field with keys
+            like `obs_mistake_mask=E_E__` counting how many times specific
+            combinations of observables were mispredicted by the decoder.
+        count_detection_events: Defaults to False. When set to True, the
+            returned stats will have a custom counts field withs the
+            key `detection_events` counting the number of times a detector fired
+            and also `detectors_checked` counting the number of detectors that
+            were executed. The detection fraction is the ratio of these two
+            numbers.
         max_shots: Defaults to None (unused). Stops the sampling process
             after this many samples have been taken from the circuit.
         max_errors: Defaults to None (unused). Stops the sampling process
@@ -1106,7 +1116,8 @@ def iter_collect(
     max_batch_seconds: Optional[int] = None,
     max_batch_size: Optional[int] = None,
     start_batch_size: Optional[int] = None,
-    split_errors: bool = False,
+    count_observable_error_combos: bool = False,
+    count_detection_events: bool = False,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
 ) -> Iterator[sinter.Progress]:
     """Iterates error correction statistics collected from worker processes.
@@ -1138,10 +1149,16 @@ def iter_collect(
             after this many errors have been seen in samples taken from the
             circuit. The actual number sampled errors may be larger due to
             batching.
-        split_errors: Defaults to False. When set to to True, the returned
-            TaskStats instances will have a non-None `classified_errors` field
-            where keys are bitmasks identifying which observables flipped and
-            values are the number of errors where that happened.
+        count_observable_error_combos: Defaults to False. When set to to True,
+            the returned stats will have a custom counts field with keys
+            like `obs_mistake_mask=E_E__` counting how many times specific
+            combinations of observables were mispredicted by the decoder.
+        count_detection_events: Defaults to False. When set to True, the
+            returned stats will have a custom counts field withs the
+            key `detection_events` counting the number of times a detector fired
+            and also `detectors_checked` counting the number of detectors that
+            were executed. The detection fraction is the ratio of these two
+            numbers.
         start_batch_size: Defaults to None (collector's choice). The very
             first shots taken from the circuit will use a batch of this
             size, and no other batches will be taken in parallel. Once this
@@ -1660,8 +1677,8 @@ def read_stats_from_csv_files(
         >>> stats = sinter.read_stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, discards=0, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, discards=0, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
 ```
 
@@ -1774,7 +1791,7 @@ def stats_from_csv_files(
         >>> stats = sinter.stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, discards=0, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, discards=0, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
 ```
