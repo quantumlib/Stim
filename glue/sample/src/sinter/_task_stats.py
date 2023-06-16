@@ -1,6 +1,5 @@
 import collections
 import dataclasses
-from types import NoneType
 from typing import Counter
 from typing import List
 from typing import Optional
@@ -64,7 +63,8 @@ class TaskStats:
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
-        assert isinstance(self.json_metadata, (NoneType, int, float, str, dict, list, tuple))
+        # Don't rely on types module for NoneType since its presence depends on python version.
+        assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0
