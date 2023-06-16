@@ -8,9 +8,6 @@ from sinter._anon_task_stats import AnonTaskStats
 from sinter._json_type import JSON_TYPE
 from sinter._csv_out import csv_line
 
-# Don't rely on types module for NoneType since it depends on python version.
-NoneType = type(None)
-
 
 @dataclasses.dataclass(frozen=True)
 class TaskStats:
@@ -66,7 +63,8 @@ class TaskStats:
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
-        assert isinstance(self.json_metadata, (NoneType, int, float, str, dict, list, tuple))
+        # Don't rely on types module for NoneType since its presence depends on python version.
+        assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0
