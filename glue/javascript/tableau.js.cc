@@ -7,14 +7,14 @@
 
 using namespace stim;
 
-ExposedTableau::ExposedTableau(Tableau tableau) : tableau(tableau) {
+ExposedTableau::ExposedTableau(Tableau<MAX_BITWORD_WIDTH> tableau) : tableau(tableau) {
 }
 
 ExposedTableau::ExposedTableau(int n) : tableau(n) {
 }
 
 ExposedTableau ExposedTableau::random(int n) {
-    return ExposedTableau(Tableau::random(n, JS_BIND_SHARED_RNG()));
+    return ExposedTableau(Tableau<MAX_BITWORD_WIDTH>::random(n, JS_BIND_SHARED_RNG()));
 }
 
 ExposedTableau ExposedTableau::from_named_gate(const std::string &name) {
@@ -22,7 +22,7 @@ ExposedTableau ExposedTableau::from_named_gate(const std::string &name) {
     if (!(gate.flags & GATE_IS_UNITARY)) {
         throw std::out_of_range("Recognized name, but not unitary: " + name);
     }
-    return ExposedTableau(gate.tableau());
+    return ExposedTableau(gate.tableau<MAX_BITWORD_WIDTH>());
 }
 
 std::string ExposedTableau::str() const {
@@ -75,7 +75,7 @@ ExposedTableau ExposedTableau::from_conjugated_generators_xs_zs(
             throw std::invalid_argument("z.length != zs.length");
         }
     }
-    Tableau result(n);
+    Tableau<MAX_BITWORD_WIDTH> result(n);
     for (size_t q = 0; q < n; q++) {
         result.xs[q] = xs[q].pauli_string;
         result.zs[q] = zs[q].pauli_string;

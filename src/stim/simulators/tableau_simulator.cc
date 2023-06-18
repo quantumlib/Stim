@@ -19,81 +19,16 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/vector_simulator.h"
 
 using namespace stim;
 
-constexpr GateVTable<void (TableauSimulator::*)(const CircuitInstruction &)> tableau_simulator_vtable_data() {
-    return {{{
-        {GateType::DETECTOR, &TableauSimulator::I},
-        {GateType::OBSERVABLE_INCLUDE, &TableauSimulator::I},
-        {GateType::TICK, &TableauSimulator::I},
-        {GateType::QUBIT_COORDS, &TableauSimulator::I},
-        {GateType::SHIFT_COORDS, &TableauSimulator::I},
-        {GateType::REPEAT, &TableauSimulator::I},
-        {GateType::MX, &TableauSimulator::measure_x},
-        {GateType::MY, &TableauSimulator::measure_y},
-        {GateType::M, &TableauSimulator::measure_z},
-        {GateType::MRX, &TableauSimulator::measure_reset_x},
-        {GateType::MRY, &TableauSimulator::measure_reset_y},
-        {GateType::MR, &TableauSimulator::measure_reset_z},
-        {GateType::RX, &TableauSimulator::reset_x},
-        {GateType::RY, &TableauSimulator::reset_y},
-        {GateType::R, &TableauSimulator::reset_z},
-        {GateType::MPP, &TableauSimulator::MPP},
-        {GateType::XCX, &TableauSimulator::XCX},
-        {GateType::XCY, &TableauSimulator::XCY},
-        {GateType::XCZ, &TableauSimulator::XCZ},
-        {GateType::YCX, &TableauSimulator::YCX},
-        {GateType::YCY, &TableauSimulator::YCY},
-        {GateType::YCZ, &TableauSimulator::YCZ},
-        {GateType::CX, &TableauSimulator::ZCX},
-        {GateType::CY, &TableauSimulator::ZCY},
-        {GateType::CZ, &TableauSimulator::ZCZ},
-        {GateType::H, &TableauSimulator::H_XZ},
-        {GateType::H_XY, &TableauSimulator::H_XY},
-        {GateType::H_YZ, &TableauSimulator::H_YZ},
-        {GateType::DEPOLARIZE1, &TableauSimulator::DEPOLARIZE1},
-        {GateType::DEPOLARIZE2, &TableauSimulator::DEPOLARIZE2},
-        {GateType::X_ERROR, &TableauSimulator::X_ERROR},
-        {GateType::Y_ERROR, &TableauSimulator::Y_ERROR},
-        {GateType::Z_ERROR, &TableauSimulator::Z_ERROR},
-        {GateType::PAULI_CHANNEL_1, &TableauSimulator::PAULI_CHANNEL_1},
-        {GateType::PAULI_CHANNEL_2, &TableauSimulator::PAULI_CHANNEL_2},
-        {GateType::E, &TableauSimulator::CORRELATED_ERROR},
-        {GateType::ELSE_CORRELATED_ERROR, &TableauSimulator::ELSE_CORRELATED_ERROR},
-        {GateType::I, &TableauSimulator::I},
-        {GateType::X, &TableauSimulator::X},
-        {GateType::Y, &TableauSimulator::Y},
-        {GateType::Z, &TableauSimulator::Z},
-        {GateType::C_XYZ, &TableauSimulator::C_XYZ},
-        {GateType::C_ZYX, &TableauSimulator::C_ZYX},
-        {GateType::SQRT_X, &TableauSimulator::SQRT_X},
-        {GateType::SQRT_X_DAG, &TableauSimulator::SQRT_X_DAG},
-        {GateType::SQRT_Y, &TableauSimulator::SQRT_Y},
-        {GateType::SQRT_Y_DAG, &TableauSimulator::SQRT_Y_DAG},
-        {GateType::S, &TableauSimulator::SQRT_Z},
-        {GateType::S_DAG, &TableauSimulator::SQRT_Z_DAG},
-        {GateType::SQRT_XX, &TableauSimulator::SQRT_XX},
-        {GateType::SQRT_XX_DAG, &TableauSimulator::SQRT_XX_DAG},
-        {GateType::SQRT_YY, &TableauSimulator::SQRT_YY},
-        {GateType::SQRT_YY_DAG, &TableauSimulator::SQRT_YY_DAG},
-        {GateType::SQRT_ZZ, &TableauSimulator::SQRT_ZZ},
-        {GateType::SQRT_ZZ_DAG, &TableauSimulator::SQRT_ZZ_DAG},
-        {GateType::SWAP, &TableauSimulator::SWAP},
-        {GateType::ISWAP, &TableauSimulator::ISWAP},
-        {GateType::ISWAP_DAG, &TableauSimulator::ISWAP_DAG},
-        {GateType::CXSWAP, &TableauSimulator::CXSWAP},
-        {GateType::SWAPCX, &TableauSimulator::SWAPCX},
-    }}};
-}
-
 TableauSimulator::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
-    : inv_state(Tableau::identity(num_qubits)),
+    : inv_state(Tableau<MAX_BITWORD_WIDTH>::identity(num_qubits)),
       rng(std::move(rng)),
       sign_bias(sign_bias),
       measurement_record(std::move(record)),
-      last_correlated_error_occurred(false),
-      gate_vtable(tableau_simulator_vtable_data()) {
+      last_correlated_error_occurred(false) {
 }
 
 TableauSimulator::TableauSimulator(const TableauSimulator &other, std::mt19937_64 rng)
@@ -101,8 +36,7 @@ TableauSimulator::TableauSimulator(const TableauSimulator &other, std::mt19937_6
       rng(std::move(rng)),
       sign_bias(other.sign_bias),
       measurement_record(other.measurement_record),
-      last_correlated_error_occurred(other.last_correlated_error_occurred),
-      gate_vtable(tableau_simulator_vtable_data()) {
+      last_correlated_error_occurred(other.last_correlated_error_occurred) {
 }
 
 bool TableauSimulator::is_deterministic_x(size_t target) const {
@@ -117,21 +51,21 @@ bool TableauSimulator::is_deterministic_z(size_t target) const {
     return !inv_state.zs[target].xs.not_zero();
 }
 
-void TableauSimulator::MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation<MAX_BITWORD_WIDTH>(
+void TableauSimulator::do_MPP(const CircuitInstruction &target_data) {
+    decompose_mpp_operation(
         target_data,
         inv_state.num_qubits,
         [&](const CircuitInstruction &h_xz,
             const CircuitInstruction &h_yz,
             const CircuitInstruction &cnot,
             const CircuitInstruction &meas) {
-            H_XZ(h_xz);
-            H_YZ(h_yz);
-            ZCX(cnot);
-            measure_z(meas);
-            ZCX(cnot);
-            H_YZ(h_yz);
-            H_XZ(h_xz);
+            do_H_XZ(h_xz);
+            do_H_YZ(h_yz);
+            do_ZCX(cnot);
+            do_MZ(meas);
+            do_ZCX(cnot);
+            do_H_YZ(h_yz);
+            do_H_XZ(h_xz);
         });
 }
 
@@ -151,7 +85,7 @@ void TableauSimulator::postselect_helper(
     {
         uint8_t old_bias = sign_bias;
         sign_bias = desired_result ? -1 : +1;
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         while (finished < targets.size()) {
             size_t q = (size_t)targets[finished].qubit_value();
             collapse_qubit_z(q, temp_transposed);
@@ -192,7 +126,7 @@ void TableauSimulator::postselect_z(SpanRef<const GateTarget> targets, bool desi
     postselect_helper(targets, desired_result, GateType::I, "0", "1");
 }
 
-void TableauSimulator::measure_x(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MX(const CircuitInstruction &target_data) {
     // Ensure measurement observables are collapsed.
     collapse_x(target_data.targets);
 
@@ -206,7 +140,112 @@ void TableauSimulator::measure_x(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-void TableauSimulator::measure_y(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MXX_disjoint_controls_segment(
+    const CircuitInstruction &inst) {
+
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+
+    // Ensure measurement observables are collapsed.
+    collapse_x(inst.targets, 2);
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        GateTarget t1 = inst.targets[k];
+        GateTarget t2 = inst.targets[k + 1];
+        auto q = t1.qubit_value();
+        bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
+        bool b = inv_state.xs.signs[q] ^ flipped;
+        measurement_record.record_result(b);
+    }
+    noisify_new_measurements(inst.args, inst.targets.size() / 2);
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+}
+
+void TableauSimulator::do_MYY_disjoint_controls_segment(
+    const CircuitInstruction &inst) {
+
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+
+    // Ensure measurement observables are collapsed.
+    collapse_y(inst.targets, 2);
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        GateTarget t1 = inst.targets[k];
+        GateTarget t2 = inst.targets[k + 1];
+        auto q = t1.qubit_value();
+        bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
+        bool b = inv_state.eval_y_obs(q).sign ^ flipped;
+        measurement_record.record_result(b);
+    }
+    noisify_new_measurements(inst.args, inst.targets.size() / 2);
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+}
+
+void TableauSimulator::do_MZZ_disjoint_controls_segment(
+    const CircuitInstruction &inst) {
+
+    // Transform from 2 qubit measurements to single qubit measurements.
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+
+    // Ensure measurement observables are collapsed.
+    collapse_z(inst.targets, 2);
+
+    // Record measurement results.
+    for (size_t k = 0; k < inst.targets.size(); k += 2) {
+        GateTarget t1 = inst.targets[k];
+        GateTarget t2 = inst.targets[k + 1];
+        auto q = t1.qubit_value();
+        bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
+        bool b = inv_state.zs.signs[q] ^ flipped;
+        measurement_record.record_result(b);
+    }
+    noisify_new_measurements(inst.args, inst.targets.size() / 2);
+
+    // Untransform from single qubit measurements back to 2 qubit measurements.
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+}
+
+void TableauSimulator::do_MXX(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        inv_state.num_qubits,
+        [&](CircuitInstruction segment){
+            do_MXX_disjoint_controls_segment(segment);
+        });
+}
+
+void TableauSimulator::do_MYY(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        inv_state.num_qubits,
+        [&](CircuitInstruction segment){
+            do_MYY_disjoint_controls_segment(segment);
+        });
+}
+
+void TableauSimulator::do_MZZ(const CircuitInstruction &inst) {
+    decompose_pair_instruction_into_segments_with_single_use_controls(
+        inst,
+        inv_state.num_qubits,
+        [&](CircuitInstruction segment){
+            do_MZZ_disjoint_controls_segment(segment);
+        });
+}
+
+void TableauSimulator::do_MPAD(const CircuitInstruction &inst) {
+    for (const auto &t : inst.targets) {
+        measurement_record.record_result(t.qubit_value() != 0);
+    }
+}
+
+void TableauSimulator::do_MY(const CircuitInstruction &target_data) {
     // Ensure measurement observables are collapsed.
     collapse_y(target_data.targets);
 
@@ -220,7 +259,7 @@ void TableauSimulator::measure_y(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-void TableauSimulator::measure_z(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MZ(const CircuitInstruction &target_data) {
     // Ensure measurement observables are collapsed.
     collapse_z(target_data.targets);
 
@@ -234,7 +273,7 @@ void TableauSimulator::measure_z(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-bool TableauSimulator::measure_pauli_string(const PauliStringRef pauli_string, double flip_probability) {
+bool TableauSimulator::measure_pauli_string(const PauliStringRef<MAX_BITWORD_WIDTH> pauli_string, double flip_probability) {
     if (!(0 <= flip_probability && flip_probability <= 1)) {
         throw std::invalid_argument("Need 0 <= flip_probability <= 1");
     }
@@ -265,12 +304,12 @@ bool TableauSimulator::measure_pauli_string(const PauliStringRef pauli_string, d
         measurement_record.record_result(std::bernoulli_distribution(p)(rng));
     } else {
         targets.pop_back();
-        MPP(CircuitInstruction{GateType::MPP, &p, targets});
+        do_MPP(CircuitInstruction{GateType::MPP, &p, targets});
     }
     return measurement_record.lookback(1);
 }
 
-void TableauSimulator::measure_reset_x(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MRX(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
 
     // Ensure measurement observables are collapsed.
@@ -288,7 +327,7 @@ void TableauSimulator::measure_reset_x(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-void TableauSimulator::measure_reset_y(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MRY(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
 
     // Ensure measurement observables are collapsed.
@@ -306,7 +345,7 @@ void TableauSimulator::measure_reset_y(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-void TableauSimulator::measure_reset_z(const CircuitInstruction &target_data) {
+void TableauSimulator::do_MRZ(const CircuitInstruction &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
 
     // Ensure measurement observables are collapsed.
@@ -324,17 +363,20 @@ void TableauSimulator::measure_reset_z(const CircuitInstruction &target_data) {
     noisify_new_measurements(target_data);
 }
 
-void TableauSimulator::noisify_new_measurements(const CircuitInstruction &target_data) {
-    if (target_data.args.empty()) {
+void TableauSimulator::noisify_new_measurements(SpanRef<const double> args, size_t num_targets) {
+    if (args.empty()) {
         return;
     }
     size_t last = measurement_record.storage.size() - 1;
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets.size(), rng, [&](size_t k) {
+    RareErrorIterator::for_samples(args[0], num_targets, rng, [&](size_t k) {
         measurement_record.storage[last - k] = !measurement_record.storage[last - k];
     });
 }
+void TableauSimulator::noisify_new_measurements(const CircuitInstruction &target_data) {
+    noisify_new_measurements(target_data.args, target_data.targets.size());
+}
 
-void TableauSimulator::reset_x(const CircuitInstruction &target_data) {
+void TableauSimulator::do_RX(const CircuitInstruction &target_data) {
     // Collapse the qubits to be reset.
     collapse_x(target_data.targets);
 
@@ -345,7 +387,7 @@ void TableauSimulator::reset_x(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::reset_y(const CircuitInstruction &target_data) {
+void TableauSimulator::do_RY(const CircuitInstruction &target_data) {
     // Collapse the qubits to be reset.
     collapse_y(target_data.targets);
 
@@ -357,7 +399,7 @@ void TableauSimulator::reset_y(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::reset_z(const CircuitInstruction &target_data) {
+void TableauSimulator::do_RZ(const CircuitInstruction &target_data) {
     // Collapse the qubits to be reset.
     collapse_z(target_data.targets);
 
@@ -368,31 +410,31 @@ void TableauSimulator::reset_z(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::I(const CircuitInstruction &target_data) {
+void TableauSimulator::do_I(const CircuitInstruction &target_data) {
 }
 
-void TableauSimulator::H_XZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_H_XZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XZ(q.data);
     }
 }
 
-void TableauSimulator::H_XY(const CircuitInstruction &target_data) {
+void TableauSimulator::do_H_XY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XY(q.data);
     }
 }
 
-void TableauSimulator::H_YZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_H_YZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_YZ(q.data);
     }
 }
 
-void TableauSimulator::C_XYZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_C_XYZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -400,7 +442,7 @@ void TableauSimulator::C_XYZ(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::C_ZYX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_C_ZYX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -408,7 +450,7 @@ void TableauSimulator::C_ZYX(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_Z(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_Z(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -416,7 +458,7 @@ void TableauSimulator::SQRT_Z(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_Z_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_Z_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -424,11 +466,11 @@ void TableauSimulator::SQRT_Z_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-PauliString TableauSimulator::peek_bloch(uint32_t target) const {
-    PauliStringRef x = inv_state.xs[target];
-    PauliStringRef z = inv_state.zs[target];
+PauliString<MAX_BITWORD_WIDTH> TableauSimulator::peek_bloch(uint32_t target) const {
+    PauliStringRef<MAX_BITWORD_WIDTH> x = inv_state.xs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> z = inv_state.zs[target];
 
-    PauliString result(1);
+    PauliString<MAX_BITWORD_WIDTH> result(1);
     if (!x.xs.not_zero()) {
         result.sign = x.sign;
         result.xs[0] = true;
@@ -436,7 +478,7 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
         result.sign = z.sign;
         result.zs[0] = true;
     } else if (x.xs == z.xs) {
-        PauliString y = inv_state.eval_y_obs(target);
+        PauliString<MAX_BITWORD_WIDTH> y = inv_state.eval_y_obs(target);
         result.sign = y.sign;
         result.xs[0] = true;
         result.zs[0] = true;
@@ -446,21 +488,21 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
 }
 
 int8_t TableauSimulator::peek_x(uint32_t target) const {
-    PauliStringRef x = inv_state.xs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> x = inv_state.xs[target];
     return x.xs.not_zero() ? 0 : x.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_y(uint32_t target) const {
-    PauliString y = inv_state.eval_y_obs(target);
+    PauliString<MAX_BITWORD_WIDTH> y = inv_state.eval_y_obs(target);
     return y.xs.not_zero() ? 0 : y.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_z(uint32_t target) const {
-    PauliStringRef z = inv_state.zs[target];
+    PauliStringRef<MAX_BITWORD_WIDTH> z = inv_state.zs[target];
     return z.xs.not_zero() ? 0 : z.sign ? -1 : +1;
 }
 
-void TableauSimulator::SQRT_X(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_X(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -468,7 +510,7 @@ void TableauSimulator::SQRT_X(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_X_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_X_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -476,7 +518,7 @@ void TableauSimulator::SQRT_X_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_Y(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_Y(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -484,7 +526,7 @@ void TableauSimulator::SQRT_Y(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_Y_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_Y_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -502,6 +544,8 @@ bool TableauSimulator::read_measurement_record(uint32_t encoded_target) const {
 }
 
 void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
+    c &= ~TARGET_INVERTED_BIT;
+    t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         inv_state.prepend_ZCX(c, t);
     } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
@@ -514,6 +558,8 @@ void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
 }
 
 void TableauSimulator::single_cy(uint32_t c, uint32_t t) {
+    c &= ~TARGET_INVERTED_BIT;
+    t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         inv_state.prepend_ZCY(c, t);
     } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
@@ -525,7 +571,7 @@ void TableauSimulator::single_cy(uint32_t c, uint32_t t) {
     }
 }
 
-void TableauSimulator::ZCX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ZCX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -533,7 +579,7 @@ void TableauSimulator::ZCX(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::ZCY(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ZCY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -541,12 +587,14 @@ void TableauSimulator::ZCY(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::ZCZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ZCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k].data;
         auto q2 = targets[k + 1].data;
+        q1 &= ~TARGET_INVERTED_BIT;
+        q2 &= ~TARGET_INVERTED_BIT;
         if (!((q1 | q2) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             inv_state.prepend_ZCZ(q1, q2);
             continue;
@@ -564,7 +612,7 @@ void TableauSimulator::ZCZ(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SWAP(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SWAP(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -574,7 +622,7 @@ void TableauSimulator::SWAP(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::CXSWAP(const CircuitInstruction &target_data) {
+void TableauSimulator::do_CXSWAP(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -585,7 +633,7 @@ void TableauSimulator::CXSWAP(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SWAPCX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SWAPCX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -596,7 +644,7 @@ void TableauSimulator::SWAPCX(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::ISWAP(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ISWAP(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -607,7 +655,7 @@ void TableauSimulator::ISWAP(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::ISWAP_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ISWAP_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -618,7 +666,7 @@ void TableauSimulator::ISWAP_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::XCX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_XCX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -628,7 +676,7 @@ void TableauSimulator::XCX(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_ZZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_ZZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -639,7 +687,7 @@ void TableauSimulator::SQRT_ZZ(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_ZZ_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_ZZ_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -650,7 +698,7 @@ void TableauSimulator::SQRT_ZZ_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_YY(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_YY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -661,7 +709,7 @@ void TableauSimulator::SQRT_YY(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_YY_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_YY_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -672,7 +720,7 @@ void TableauSimulator::SQRT_YY_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_XX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_XX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -683,7 +731,7 @@ void TableauSimulator::SQRT_XX(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::SQRT_XX_DAG(const CircuitInstruction &target_data) {
+void TableauSimulator::do_SQRT_XX_DAG(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -694,7 +742,7 @@ void TableauSimulator::SQRT_XX_DAG(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::XCY(const CircuitInstruction &target_data) {
+void TableauSimulator::do_XCY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -703,14 +751,14 @@ void TableauSimulator::XCY(const CircuitInstruction &target_data) {
         inv_state.prepend_XCY(q1, q2);
     }
 }
-void TableauSimulator::XCZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_XCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         single_cx(targets[k + 1].data, targets[k].data);
     }
 }
-void TableauSimulator::YCX(const CircuitInstruction &target_data) {
+void TableauSimulator::do_YCX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -719,7 +767,7 @@ void TableauSimulator::YCX(const CircuitInstruction &target_data) {
         inv_state.prepend_YCX(q1, q2);
     }
 }
-void TableauSimulator::YCY(const CircuitInstruction &target_data) {
+void TableauSimulator::do_YCY(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -728,7 +776,7 @@ void TableauSimulator::YCY(const CircuitInstruction &target_data) {
         inv_state.prepend_YCY(q1, q2);
     }
 }
-void TableauSimulator::YCZ(const CircuitInstruction &target_data) {
+void TableauSimulator::do_YCZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -736,7 +784,7 @@ void TableauSimulator::YCZ(const CircuitInstruction &target_data) {
     }
 }
 
-void TableauSimulator::DEPOLARIZE1(const CircuitInstruction &target_data) {
+void TableauSimulator::do_DEPOLARIZE1(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         auto p = 1 + (rng() % 3);
         inv_state.xs.signs[q.data] ^= p & 1;
@@ -744,7 +792,7 @@ void TableauSimulator::DEPOLARIZE1(const CircuitInstruction &target_data) {
     });
 }
 
-void TableauSimulator::DEPOLARIZE2(const CircuitInstruction &target_data) {
+void TableauSimulator::do_DEPOLARIZE2(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     auto n = targets.size() >> 1;
@@ -759,26 +807,26 @@ void TableauSimulator::DEPOLARIZE2(const CircuitInstruction &target_data) {
     });
 }
 
-void TableauSimulator::X_ERROR(const CircuitInstruction &target_data) {
+void TableauSimulator::do_X_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.zs.signs[q.data] ^= true;
     });
 }
 
-void TableauSimulator::Y_ERROR(const CircuitInstruction &target_data) {
+void TableauSimulator::do_Y_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.xs.signs[q.data] ^= true;
         inv_state.zs.signs[q.data] ^= true;
     });
 }
 
-void TableauSimulator::Z_ERROR(const CircuitInstruction &target_data) {
+void TableauSimulator::do_Z_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.xs.signs[q.data] ^= true;
     });
 }
 
-void TableauSimulator::PAULI_CHANNEL_1(const CircuitInstruction &target_data) {
+void TableauSimulator::do_PAULI_CHANNEL_1(const CircuitInstruction &target_data) {
     bool tmp = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<1>(
         target_data,
@@ -786,12 +834,12 @@ void TableauSimulator::PAULI_CHANNEL_1(const CircuitInstruction &target_data) {
             last_correlated_error_occurred = false;
         },
         [&](const CircuitInstruction &d) {
-            ELSE_CORRELATED_ERROR(d);
+            do_ELSE_CORRELATED_ERROR(d);
         });
     last_correlated_error_occurred = tmp;
 }
 
-void TableauSimulator::PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
+void TableauSimulator::do_PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
     bool tmp = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<2>(
         target_data,
@@ -799,17 +847,17 @@ void TableauSimulator::PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
             last_correlated_error_occurred = false;
         },
         [&](const CircuitInstruction &d) {
-            ELSE_CORRELATED_ERROR(d);
+            do_ELSE_CORRELATED_ERROR(d);
         });
     last_correlated_error_occurred = tmp;
 }
 
-void TableauSimulator::CORRELATED_ERROR(const CircuitInstruction &target_data) {
+void TableauSimulator::do_CORRELATED_ERROR(const CircuitInstruction &target_data) {
     last_correlated_error_occurred = false;
-    ELSE_CORRELATED_ERROR(target_data);
+    do_ELSE_CORRELATED_ERROR(target_data);
 }
 
-void TableauSimulator::ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data) {
+void TableauSimulator::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data) {
     if (last_correlated_error_occurred) {
         return;
     }
@@ -828,21 +876,21 @@ void TableauSimulator::ELSE_CORRELATED_ERROR(const CircuitInstruction &target_da
     }
 }
 
-void TableauSimulator::X(const CircuitInstruction &target_data) {
+void TableauSimulator::do_X(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_X(q.data);
     }
 }
 
-void TableauSimulator::Y(const CircuitInstruction &target_data) {
+void TableauSimulator::do_Y(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Y(q.data);
     }
 }
 
-void TableauSimulator::Z(const CircuitInstruction &target_data) {
+void TableauSimulator::do_Z(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Z(q.data);
@@ -906,14 +954,14 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
 
 VectorSimulator TableauSimulator::to_vector_sim() const {
     auto inv = inv_state.inverse();
-    std::vector<PauliStringRef> stabilizers;
+    std::vector<PauliStringRef<MAX_BITWORD_WIDTH>> stabilizers;
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return VectorSimulator::from_stabilizers(stabilizers);
+    return VectorSimulator::from_stabilizers<MAX_BITWORD_WIDTH>(stabilizers);
 }
 
-void TableauSimulator::apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets) {
+void TableauSimulator::apply_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, const std::vector<size_t> &targets) {
     inv_state.inplace_scatter_prepend(tableau.inverse(), targets);
 }
 
@@ -927,10 +975,11 @@ std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_e
     return sim.state;
 }
 
-void TableauSimulator::collapse_x(SpanRef<const GateTarget> targets) {
+void TableauSimulator::collapse_x(SpanRef<const GateTarget> targets, size_t stride) {
     // Find targets that need to be collapsed.
     std::set<GateTarget> unique_collapse_targets;
-    for (GateTarget t : targets) {
+    for (size_t k = 0; k < targets.size(); k += stride) {
+        GateTarget t = targets[k];
         t.data &= TARGET_VALUE_MASK;
         if (!is_deterministic_x(t.data)) {
             unique_collapse_targets.insert(t);
@@ -940,21 +989,22 @@ void TableauSimulator::collapse_x(SpanRef<const GateTarget> targets) {
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        H_XZ({GateType::H, {}, collapse_targets});
+        do_H_XZ({GateType::H, {}, collapse_targets});
         {
-            TableauTransposedRaii temp_transposed(inv_state);
+            TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
         }
-        H_XZ({GateType::H, {}, collapse_targets});
+        do_H_XZ({GateType::H, {}, collapse_targets});
     }
 }
 
-void TableauSimulator::collapse_y(SpanRef<const GateTarget> targets) {
+void TableauSimulator::collapse_y(SpanRef<const GateTarget> targets, size_t stride) {
     // Find targets that need to be collapsed.
     std::set<GateTarget> unique_collapse_targets;
-    for (GateTarget t : targets) {
+    for (size_t k = 0; k < targets.size(); k += stride) {
+        GateTarget t = targets[k];
         t.data &= TARGET_VALUE_MASK;
         if (!is_deterministic_y(t.data)) {
             unique_collapse_targets.insert(t);
@@ -964,22 +1014,23 @@ void TableauSimulator::collapse_y(SpanRef<const GateTarget> targets) {
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        H_YZ({GateType::H_YZ, {}, collapse_targets});
+        do_H_YZ({GateType::H_YZ, {}, collapse_targets});
         {
-            TableauTransposedRaii temp_transposed(inv_state);
+            TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
         }
-        H_YZ({GateType::H_YZ, {}, collapse_targets});
+        do_H_YZ({GateType::H_YZ, {}, collapse_targets});
     }
 }
 
-void TableauSimulator::collapse_z(SpanRef<const GateTarget> targets) {
+void TableauSimulator::collapse_z(SpanRef<const GateTarget> targets, size_t stride) {
     // Find targets that need to be collapsed.
     std::vector<GateTarget> collapse_targets;
     collapse_targets.reserve(targets.size());
-    for (GateTarget t : targets) {
+    for (size_t k = 0; k < targets.size(); k += stride) {
+        GateTarget t = targets[k];
         t.data &= TARGET_VALUE_MASK;
         if (!is_deterministic_z(t.data)) {
             collapse_targets.push_back(t);
@@ -988,14 +1039,14 @@ void TableauSimulator::collapse_z(SpanRef<const GateTarget> targets) {
 
     // Only pay the cost of transposing if collapsing is needed.
     if (!collapse_targets.empty()) {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         for (auto target : collapse_targets) {
             collapse_qubit_z(target.data, temp_transposed);
         }
     }
 }
 
-size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
+size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii) {
     auto n = inv_state.num_qubits;
 
     // Search for any stabilizer generator that anti-commutes with the measurement observable.
@@ -1032,7 +1083,7 @@ size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii &
     return pivot;
 }
 
-void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
+void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii) {
     // Force T(Z_target) to be a product of Z operations.
     collapse_qubit_z(target, transposed_raii);
 
@@ -1091,7 +1142,7 @@ simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Ci
     return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
 }
 
-void TableauSimulator::paulis(const PauliString &paulis) {
+void TableauSimulator::paulis(const PauliString<MAX_BITWORD_WIDTH> &paulis) {
     auto nw = paulis.xs.num_simd_words;
     inv_state.zs.signs.word_range_ref(0, nw) ^= paulis.xs;
     inv_state.xs.signs.word_range_ref(0, nw) ^= paulis.zs;
@@ -1116,14 +1167,14 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
 
     // Collapse qubits past the new size and ensure the internal state totally decouples them.
     {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         for (size_t q = new_num_qubits; q < inv_state.num_qubits; q++) {
             collapse_isolate_qubit_z(q, temp_transposed);
         }
     }
 
-    Tableau old_state = std::move(inv_state);
-    inv_state = Tableau(new_num_qubits);
+    Tableau<MAX_BITWORD_WIDTH> old_state = std::move(inv_state);
+    inv_state = Tableau<MAX_BITWORD_WIDTH>(new_num_qubits);
     inv_state.xs.signs.truncated_overwrite_from(old_state.xs.signs, new_num_qubits);
     inv_state.zs.signs.truncated_overwrite_from(old_state.zs.signs, new_num_qubits);
     for (size_t q = 0; q < new_num_qubits; q++) {
@@ -1134,14 +1185,14 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(GateTarget target) {
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_z(GateTarget target) {
     bool flipped = target.is_inverted_result_target();
     uint32_t q = target.qubit_value();
-    PauliString kickback(0);
+    PauliString<MAX_BITWORD_WIDTH> kickback(0);
     bool has_kickback = !is_deterministic_z(q);  // Note: do this before transposing the state!
 
     {
-        TableauTransposedRaii temp_transposed(inv_state);
+        TableauTransposedRaii<MAX_BITWORD_WIDTH> temp_transposed(inv_state);
         if (has_kickback) {
             size_t pivot = collapse_qubit_z(q, temp_transposed);
             kickback = temp_transposed.unsigned_x_input(pivot);
@@ -1156,10 +1207,10 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(GateTarget tar
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(GateTarget target) {
-    H_YZ({GateType::H, {}, &target});
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_y(GateTarget target) {
+    do_H_YZ({GateType::H, {}, &target});
     auto result = measure_kickback_z(target);
-    H_YZ({GateType::H, {}, &target});
+    do_H_YZ({GateType::H, {}, &target});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_YZ.
         result.second.xs[target.qubit_value()] ^= result.second.zs[target.qubit_value()];
@@ -1167,10 +1218,10 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(GateTarget tar
     return result;
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(GateTarget target) {
-    H_XZ({GateType::H, {}, &target});
+std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::measure_kickback_x(GateTarget target) {
+    do_H_XZ({GateType::H, {}, &target});
     auto result = measure_kickback_z(target);
-    H_XZ({GateType::H, {}, &target});
+    do_H_XZ({GateType::H, {}, &target});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_XZ.
         result.second.xs[target.qubit_value()].swap_with(result.second.zs[target.qubit_value()]);
@@ -1178,10 +1229,10 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(GateTarget tar
     return result;
 }
 
-std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
-    Tableau t = inv_state.inverse();
+std::vector<PauliString<MAX_BITWORD_WIDTH>> TableauSimulator::canonical_stabilizers() const {
+    Tableau<MAX_BITWORD_WIDTH> t = inv_state.inverse();
     size_t n = t.num_qubits;
-    std::vector<PauliString> stabilizers;
+    std::vector<PauliString<MAX_BITWORD_WIDTH>> stabilizers;
     for (size_t k = 0; k < n; k++) {
         stabilizers.push_back(t.zs[k]);
     }
@@ -1210,15 +1261,15 @@ std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
     return stabilizers;
 }
 
-int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &observable) const {
-    stim::TableauSimulator state = *this;
+int8_t TableauSimulator::peek_observable_expectation(const PauliString<MAX_BITWORD_WIDTH> &observable) const {
+    TableauSimulator state = *this;
 
     // Kick the observable onto an ancilla qubit's Z observable.
     auto n = (uint32_t)std::max(state.inv_state.num_qubits, observable.num_qubits);
     state.ensure_large_enough_for_qubits(n + 1);
     GateTarget anc{n};
     if (observable.sign) {
-        state.X({GateType::X, {}, &anc});
+        state.do_X({GateType::X, {}, &anc});
     }
     for (size_t i = 0; i < observable.num_qubits; i++) {
         int p = observable.xs[i] + (observable.zs[i] << 1);
@@ -1238,6 +1289,206 @@ int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &ob
     if (!state.is_deterministic_z(anc.data)) {
         return 0;
     }
-    state.measure_z({GateType::M, {}, &anc});
+    state.do_MZ({GateType::M, {}, &anc});
     return state.measurement_record.storage.back() ? -1 : +1;
+}
+
+void TableauSimulator::do_gate(const CircuitInstruction &inst) {
+    switch(inst.gate_type) {
+        case GateType::DETECTOR:
+            do_I(inst);
+            break;
+        case GateType::OBSERVABLE_INCLUDE:
+            do_I(inst);
+            break;
+        case GateType::TICK:
+            do_I(inst);
+            break;
+        case GateType::QUBIT_COORDS:
+            do_I(inst);
+            break;
+        case GateType::SHIFT_COORDS:
+            do_I(inst);
+            break;
+        case GateType::REPEAT:
+            do_I(inst);
+            break;
+        case GateType::MX:
+            do_MX(inst);
+            break;
+        case GateType::MY:
+            do_MY(inst);
+            break;
+        case GateType::M:
+            do_MZ(inst);
+            break;
+        case GateType::MRX:
+            do_MRX(inst);
+            break;
+        case GateType::MRY:
+            do_MRY(inst);
+            break;
+        case GateType::MR:
+            do_MRZ(inst);
+            break;
+        case GateType::RX:
+            do_RX(inst);
+            break;
+        case GateType::RY:
+            do_RY(inst);
+            break;
+        case GateType::R:
+            do_RZ(inst);
+            break;
+        case GateType::MPP:
+            do_MPP(inst);
+            break;
+        case GateType::MXX:
+            do_MXX(inst);
+            break;
+        case GateType::MYY:
+            do_MYY(inst);
+            break;
+        case GateType::MZZ:
+            do_MZZ(inst);
+            break;
+        case GateType::MPAD:
+            do_MPAD(inst);
+            break;
+        case GateType::XCX:
+            do_XCX(inst);
+            break;
+        case GateType::XCY:
+            do_XCY(inst);
+            break;
+        case GateType::XCZ:
+            do_XCZ(inst);
+            break;
+        case GateType::YCX:
+            do_YCX(inst);
+            break;
+        case GateType::YCY:
+            do_YCY(inst);
+            break;
+        case GateType::YCZ:
+            do_YCZ(inst);
+            break;
+        case GateType::CX:
+            do_ZCX(inst);
+            break;
+        case GateType::CY:
+            do_ZCY(inst);
+            break;
+        case GateType::CZ:
+            do_ZCZ(inst);
+            break;
+        case GateType::H:
+            do_H_XZ(inst);
+            break;
+        case GateType::H_XY:
+            do_H_XY(inst);
+            break;
+        case GateType::H_YZ:
+            do_H_YZ(inst);
+            break;
+        case GateType::DEPOLARIZE1:
+            do_DEPOLARIZE1(inst);
+            break;
+        case GateType::DEPOLARIZE2:
+            do_DEPOLARIZE2(inst);
+            break;
+        case GateType::X_ERROR:
+            do_X_ERROR(inst);
+            break;
+        case GateType::Y_ERROR:
+            do_Y_ERROR(inst);
+            break;
+        case GateType::Z_ERROR:
+            do_Z_ERROR(inst);
+            break;
+        case GateType::PAULI_CHANNEL_1:
+            do_PAULI_CHANNEL_1(inst);
+            break;
+        case GateType::PAULI_CHANNEL_2:
+            do_PAULI_CHANNEL_2(inst);
+            break;
+        case GateType::E:
+            do_CORRELATED_ERROR(inst);
+            break;
+        case GateType::ELSE_CORRELATED_ERROR:
+            do_ELSE_CORRELATED_ERROR(inst);
+            break;
+        case GateType::I:
+            do_I(inst);
+            break;
+        case GateType::X:
+            do_X(inst);
+            break;
+        case GateType::Y:
+            do_Y(inst);
+            break;
+        case GateType::Z:
+            do_Z(inst);
+            break;
+        case GateType::C_XYZ:
+            do_C_XYZ(inst);
+            break;
+        case GateType::C_ZYX:
+            do_C_ZYX(inst);
+            break;
+        case GateType::SQRT_X:
+            do_SQRT_X(inst);
+            break;
+        case GateType::SQRT_X_DAG:
+            do_SQRT_X_DAG(inst);
+            break;
+        case GateType::SQRT_Y:
+            do_SQRT_Y(inst);
+            break;
+        case GateType::SQRT_Y_DAG:
+            do_SQRT_Y_DAG(inst);
+            break;
+        case GateType::S:
+            do_SQRT_Z(inst);
+            break;
+        case GateType::S_DAG:
+            do_SQRT_Z_DAG(inst);
+            break;
+        case GateType::SQRT_XX:
+            do_SQRT_XX(inst);
+            break;
+        case GateType::SQRT_XX_DAG:
+            do_SQRT_XX_DAG(inst);
+            break;
+        case GateType::SQRT_YY:
+            do_SQRT_YY(inst);
+            break;
+        case GateType::SQRT_YY_DAG:
+            do_SQRT_YY_DAG(inst);
+            break;
+        case GateType::SQRT_ZZ:
+            do_SQRT_ZZ(inst);
+            break;
+        case GateType::SQRT_ZZ_DAG:
+            do_SQRT_ZZ_DAG(inst);
+            break;
+        case GateType::SWAP:
+            do_SWAP(inst);
+            break;
+        case GateType::ISWAP:
+            do_ISWAP(inst);
+            break;
+        case GateType::ISWAP_DAG:
+            do_ISWAP_DAG(inst);
+            break;
+        case GateType::CXSWAP:
+            do_CXSWAP(inst);
+            break;
+        case GateType::SWAPCX:
+            do_SWAPCX(inst);
+            break;
+        default:
+            throw std::invalid_argument(
+                "Not implemented by TableauSimulator::do_gate: " + std::string(GATE_DATA.items[inst.gate_type].name));
+    }
 }

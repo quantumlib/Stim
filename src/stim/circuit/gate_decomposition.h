@@ -25,7 +25,34 @@
 
 namespace stim {
 
-template <size_t W>
+/// Decomposes MPP operations into sequences of simpler operations with the same effect.
+///
+/// The idea is that an instruction like
+///
+///     MPP X0*Z1*Y2 X3*X4 Y0*Y1*Y2*Y3*Y4
+///
+/// can be decomposed into a sequence of instructions like
+///
+///     H_XZ 0 3 4
+///     H_YZ 2
+///     CX 1 0 2 0 4 3
+///     M 0 3
+///     CX 1 0 2 0 4 3
+///     H_YZ 2
+///     H_XZ 0 3 4
+///
+///     H_YZ 0 1 2 3 4
+///     CX 1 0 2 0 3 0 4 0
+///     M 0
+///     CX 1 0 2 0 3 0 4 0
+///     H_YZ 0 1 2 3 4
+///
+/// This is tedious to do, so this method does it for you.
+///
+/// Args:
+///     mpp_op: The operation to decompose.
+///     num_qubits: The number of qubits in the system. All targets must be less than this.
+///     callback: The method told each chunk of the decomposition.
 void decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
@@ -33,79 +60,42 @@ void decompose_mpp_operation(
         const CircuitInstruction &h_xz,
         const CircuitInstruction &h_yz,
         const CircuitInstruction &cnot,
-        const CircuitInstruction &meas)> &callback) {
-    simd_bits<W> used(num_qubits);
-    simd_bits<W> inner_used(num_qubits);
-    std::vector<GateTarget> h_xz;
-    std::vector<GateTarget> h_yz;
-    std::vector<GateTarget> cnot;
-    std::vector<GateTarget> meas;
+        const CircuitInstruction &meas)> &callback);
 
-    size_t start = 0;
-    while (start < mpp_op.targets.size()) {
-        size_t end = start + 1;
-        while (end < mpp_op.targets.size() && mpp_op.targets[end].is_combiner()) {
-            end += 2;
-        }
-
-        // Determine which qubits are being touched by the next group.
-        inner_used.clear();
-        for (size_t i = start; i < end; i += 2) {
-            auto t = mpp_op.targets[i];
-            if (inner_used[t.qubit_value()]) {
-                throw std::invalid_argument(
-                    "A pauli product specified the same qubit twice.\n"
-                    "The operation: " +
-                    mpp_op.str());
-            }
-            inner_used[t.qubit_value()] = true;
-        }
-
-        // If there's overlap with previous groups, the previous groups have to be flushed first.
-        if (inner_used.intersects(used)) {
-            callback(
-                CircuitInstruction{GateType::H, {}, h_xz},
-                CircuitInstruction{GateType::H_YZ, {}, h_yz},
-                CircuitInstruction{GateType::CX, {}, cnot},
-                CircuitInstruction{GateType::M, mpp_op.args, meas});
-            h_xz.clear();
-            h_yz.clear();
-            cnot.clear();
-            meas.clear();
-            used.clear();
-        }
-        used |= inner_used;
-
-        // Append operations that are equivalent to the desired measurement.
-        for (size_t i = start; i < end; i += 2) {
-            auto t = mpp_op.targets[i];
-            auto q = t.qubit_value();
-            if (t.data & TARGET_PAULI_X_BIT) {
-                if (t.data & TARGET_PAULI_Z_BIT) {
-                    h_yz.push_back({q});
-                } else {
-                    h_xz.push_back({q});
-                }
-            }
-            if (i == start) {
-                meas.push_back({q});
-            } else {
-                cnot.push_back({q});
-                cnot.push_back({meas.back().qubit_value()});
-            }
-            meas.back().data ^= t.data & TARGET_INVERTED_BIT;
-        }
-
-        start = end;
-    }
-
-    // Flush remaining groups.
-    callback(
-        CircuitInstruction{GateType::H, {}, h_xz},
-        CircuitInstruction{GateType::H_YZ, {}, h_yz},
-        CircuitInstruction{GateType::CX, {}, cnot},
-        CircuitInstruction{GateType::M, mpp_op.args, meas});
-}
+/// Finds contiguous segments where the first target of each pair is used once.
+///
+/// This is used when decomposing operations like MXX into CX and MX. The CX
+/// gates can overlap on their targets, but the measurements can't overlap with
+/// each other and the measurements can't overlap with the controls of the CX
+/// gates.
+///
+/// The idea is that an instruction like
+///
+///     MXX 0 1 0 2 3 5 4 5 3 4
+///
+/// can be decomposed into a sequence of instructions like
+///
+///     CX 0 1
+///     MX 0
+///     CX 0 1
+///
+///     CX 0 2 3 5 4 5
+///     MX 0 3 4
+///     CX 0 2 3 5 4 5
+///
+///     CX 3 4
+///     MX 3
+///     CX 3 4
+///
+/// Args:
+///     num_qubits: The number of qubits in the system. All targets in the circuit
+///         instruction must be less than this.
+///     inst: The circuit instruction to decompose.
+///     callback: The method called with each decomposed segment.
+void decompose_pair_instruction_into_segments_with_single_use_controls(
+        const CircuitInstruction &inst,
+        size_t num_qubits,
+        const std::function<void(CircuitInstruction)> &callback);
 
 }  // namespace stim
 

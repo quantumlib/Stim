@@ -181,15 +181,16 @@ def predict_discards_bit_packed(
 
     Args:
         dem: The detector error model the detector data applies to.
-            This is also where coordinate data is read from, in order to determine
-            which detectors to postselect as not having fired.
-        dets_bit_packed: A uint8 numpy array with shape (num_shots, math.ceil(num_dets / 8)).
-            Contains bit packed detection event data.
-        postselect_detectors_with_non_zero_4th_coord: Determines how postselection is done.
-            Currently, this is the only option so it has to be set to True.
-            Any detector from the detector error model that specifies coordinate data with
-            at least four coordinates where the fourth coordinate (coord index 3) is non-zero
-            will be postselected.
+            This is also where coordinate data is read from, in order to
+            determine which detectors to postselect as not having fired.
+        dets_bit_packed: A uint8 numpy array with shape
+            (num_shots, math.ceil(num_dets / 8)). Contains bit packed detection
+            event data.
+        postselect_detectors_with_non_zero_4th_coord: Determines how
+            postselection is done. Currently, this is the only option so it has
+            to be set to True. Any detector from the detector error model that
+            specifies coordinate data with at least four coordinates where the
+            fourth coordinate (coord index 3) is non-zero will be postselected.
 
     Returns:
         A numpy bool_ array with shape (num_shots,) where False means not discarded and
@@ -220,19 +221,23 @@ def predict_observables(
     dets: np.ndarray,
     decoder: str,
     bit_pack_result: bool = False,
+    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
 ) -> np.ndarray:
-    """Predicts which observables were flipped based on detection event data by using a decoder.
+    """Predicts which observables were flipped based on detection event data.
 
     Args:
         dem: The detector error model the detector data applies to.
-            This is also where coordinate data is read from, in order to determine
-            which detectors to postselect as not having fired.
+            This is also where coordinate data is read from, in order to
+            determine which detectors to postselect as not having fired.
         dets: The detection event data. Can be bit packed or not bit packed.
-            If dtype=np.bool_ then shape=(num_shots, num_detectors).
-            If dtype=np.uint8 then shape=(num_shots, math.ceil(num_detectors / 8)).
+            If dtype=np.bool_ then shape=(num_shots, num_detectors)
+            If dtype=np.uint8 then shape=(num_shots, math.ceil(num_detectors/8))
         decoder: The decoder to use for decoding, e.g. "pymatching".
         bit_pack_result: Defaults to False. Determines if the result is bit packed
             or not.
+        custom_decoders: Custom decoders that can be used if requested by name.
+            If not specified, only decoders built into sinter, such as
+            'pymatching' and 'fusion_blossom', can be used.
 
     Returns:
         If bit_packed_result=False (default):
@@ -241,13 +246,43 @@ def predict_observables(
         If bit_packed_result=True:
             dtype=np.uint8
             shape=(num_shots, math.ceil(num_observables / 8))
+
+    Examples:
+        >>> import numpy as np
+        >>> import sinter
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.1) D0 L0
+        ...     error(0.1) D0 D1
+        ...     error(0.1) D1
+        ... ''')
+        >>> sinter.predict_observables(
+        ...     dem=dem,
+        ...     dets=np.array([
+        ...         [False, False],
+        ...         [True, False],
+        ...         [False, True],
+        ...         [True, True],
+        ...     ], dtype=np.bool_),
+        ...     decoder='vacuous',  # try replacing with 'pymatching'
+        ...     bit_pack_result=False,
+        ... )
+        array([[False],
+               [False],
+               [False],
+               [False]])
     """
 
     if dets.dtype == np.bool_:
         dets = np.packbits(dets, axis=1, bitorder='little')
-    result = predict_observables_bit_packed(dem=dem, dets_bit_packed=dets, decoder=decoder)
+    result = predict_observables_bit_packed(
+        dem=dem,
+        dets_bit_packed=dets,
+        decoder=decoder,
+        custom_decoders=custom_decoders,
+    )
     if not bit_pack_result:
-        result = np.unpackbits(result, axis=1, bitorder='little', count=dem.num_observables)
+        return np.unpackbits(result, axis=1, bitorder='little', count=dem.num_observables).astype(np.bool_)
     return result
 
 
@@ -258,16 +293,18 @@ def predict_observables_bit_packed(
     decoder: str,
     custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
 ) -> np.ndarray:
-    """Predicts which observables were flipped based on detection event data by using a decoder.
+    """Predicts which observables were flipped based on detection event data.
 
-    This is a specialization of `sinter.predict_observables`, without optional bit packing.
+    This method predates `sinter.predict_observables` gaining optional bit
+    packing arguments.
 
     Args:
         dem: The detector error model the detector data applies to.
-            This is also where coordinate data is read from, in order to determine
-            which detectors to postselect as not having fired.
-        dets_bit_packed: A uint8 numpy array with shape (num_shots, math.ceil(num_dets / 8)).
-            Contains bit packed detection event data.
+            This is also where coordinate data is read from, in order to
+            determine which detectors to postselect as not having fired.
+        dets_bit_packed: A uint8 numpy array with shape
+            (num_shots, math.ceil(num_dets / 8)). Contains bit packed detection
+            event data.
         decoder: The decoder to use for decoding, e.g. "pymatching".
         custom_decoders: Custom decoders that can be used if requested by name.
             If not specified, only decoders built into sinter, such as
@@ -276,6 +313,30 @@ def predict_observables_bit_packed(
     Returns:
         A numpy uint8 array with shape (num_shots, math.ceil(num_obs / 8)).
         Contains bit packed observable prediction data.
+
+    Examples:
+        >>> import numpy as np
+        >>> import sinter
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.1) D0 L0
+        ...     error(0.1) D0 D1
+        ...     error(0.1) D1
+        ... ''')
+        >>> sinter.predict_observables_bit_packed(
+        ...     dem=dem,
+        ...     dets_bit_packed=np.array([
+        ...         [0b00],
+        ...         [0b01],
+        ...         [0b10],
+        ...         [0b11],
+        ...     ], dtype=np.uint8),
+        ...     decoder='vacuous',  # try replacing with 'pymatching'
+        ... )
+        array([[0],
+               [0],
+               [0],
+               [0]], dtype=uint8)
     """
 
     decode_obj: Optional[Decoder] = None

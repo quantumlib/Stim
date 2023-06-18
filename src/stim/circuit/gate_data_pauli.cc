@@ -28,7 +28,7 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
             GateType::I,
             GateType::I,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "A_Pauli Gates",
@@ -60,7 +60,7 @@ Targets:
             GateType::X,
             GateType::X,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "A_Pauli Gates",
@@ -95,7 +95,7 @@ H 0
             GateType::Y,
             GateType::Y,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "A_Pauli Gates",
@@ -131,7 +131,7 @@ H 0
             GateType::Z,
             GateType::Z,
             0,
-            GATE_IS_UNITARY,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             []() -> ExtraGateData {
                 return {
                     "A_Pauli Gates",

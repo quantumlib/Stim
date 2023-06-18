@@ -57,6 +57,11 @@ stim::Circuit _read_circuit(RaiiFile &in, int argc, const char **argv) {
 }
 
 stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
+    if (find_bool_argument("--remove_noise", argc, argv)) {
+        throw std::invalid_argument(
+            "--remove_noise is incompatible with match graph diagrams, because the noise is needed to produce the match graph.");
+    }
+
     std::string content;
     while (true) {
         int c = getc(in.f);
@@ -73,10 +78,12 @@ stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
     }
 
     auto circuit = Circuit(content.data());
-    if (find_bool_argument("--remove_noise", argc, argv)) {
-        circuit = circuit.without_noise();
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+    if (dem.count_errors() == 0) {
+        std::cerr << "Warning: the detector error model derived from the circuit had no errors.\n"
+                     "Did you input a noiseless circuit instead of a noisy one?\n";
     }
-    return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+    return dem;
 }
 
 std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
@@ -278,7 +285,7 @@ SubCommandHelp stim::command_diagram_help() {
             --tick {} \
             --in surface_code.stim \
             --out video_frame_{}.svg \
-            ::: {50..150}
+            ::: {0050..0150}
 
         >>> # Third, use ffmpeg to turn the frames into a GIF.
         >>> # (note: the complex filter argument is optional; it turns the background white)

@@ -223,9 +223,7 @@ def test_circuit_diagram():
 
 
 def test_all_known_gates_explicitly_handled():
-    gates = []
-    for gate in stim._UNSTABLE_raw_gate_data():
-        gates.append(gate)
+    gates = stim.gate_data()
     handled = CircuitTranslationTracker.get_handler_table().keys()
     for gate_name in gates:
         assert gate_name in handled, gate_name
@@ -590,6 +588,7 @@ def test_single_repeat_loops_always_flattened():
         ),
     )) == stim.Circuit("H 0\nTICK")
 
+
 def test_circuit_operations_always_in_isolated_moment():
     stim_circuit = stim.Circuit(
         """
@@ -603,10 +602,45 @@ def test_circuit_operations_always_in_isolated_moment():
     qs = cirq.LineQubit.range(4)
     expected_cirq_circuit = cirq.Circuit(
         cirq.CircuitOperation(
-            circuit=cirq.FrozenCircuit([cirq.H(qs[0]),cirq.H(qs[1])]), 
-            repetitions=2, 
+            circuit=cirq.FrozenCircuit([cirq.H(qs[0]),cirq.H(qs[1])]),
+            repetitions=2,
             use_repetition_ids=False
         ),
         cirq.Moment(cirq.H(qs[2]),cirq.H(qs[3])),
     )
     assert cirq_circuit == expected_cirq_circuit
+
+
+@pytest.mark.skip(reason="blocked by https://github.com/quantumlib/Cirq/issues/6136")
+def test_stim_circuit_to_cirq_circuit_mpad():
+    stim_circuit = stim.Circuit("""
+        MPAD 0 1
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert cirq_circuit == cirq.Circuit(
+        cirq.PauliMeasurementGate(cirq.DensePauliString(""), key="0").on(),
+        cirq.PauliMeasurementGate(-cirq.DensePauliString(""), key="1").on(),
+    )
+
+
+def test_stim_circuit_to_cirq_circuit_mxx_myy_mzz():
+    stim_circuit = stim.Circuit("""
+        MXX 0 1
+        MYY 0 !1
+        MZZ !0 1
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    a, b = cirq.LineQubit.range(2)
+    assert cirq_circuit == cirq.Circuit(
+        cirq.PauliMeasurementGate(cirq.DensePauliString("XX"), key='0').on(a, b),
+        cirq.PauliMeasurementGate(-cirq.DensePauliString("YY"), key='1').on(a, b),
+        cirq.PauliMeasurementGate(-cirq.DensePauliString("ZZ"), key='2').on(a, b),
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit("""
+        MPP X0*X1
+        TICK
+        MPP !Y0*Y1
+        TICK
+        MPP !Z0*Z1
+        TICK
+    """)

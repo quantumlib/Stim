@@ -68,5 +68,10 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"PAULI_CHANNEL_2[0]", {16, "PAULI_CHANNEL_2", "0", "", "pink", "black", 0, 10}});
     result.insert({"PAULI_CHANNEL_2[1]", {16, "PAULI_CHANNEL_2", "1", "", "pink", "black", 0, 10}});
 
+    result.insert({"MXX", {1, "M", "XX", "", "black", "white", 18, 18, -6}});
+    result.insert({"MYY", {1, "M", "YY", "", "black", "white", 18, 18, -6}});
+    result.insert({"MZZ", {1, "M", "ZZ", "", "black", "white", 18, 18, -6}});
+    result.insert({"MPAD", {1, "M", "PAD", "", "gray", "white", 18, 12, -6}});
+
     return result;
 }

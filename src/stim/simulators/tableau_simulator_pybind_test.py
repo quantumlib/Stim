@@ -697,3 +697,12 @@ def test_depolarize2_error():
 
     with pytest.raises(ValueError, match='Unexpected argument'):
         s.depolarize2(1, p=1, q=2)
+
+
+def test_bad_inverse_padding_issue_is_fixed():
+    circuit = stim.Circuit()
+    circuit.append("H", range(467))
+    sim = stim.TableauSimulator()
+    sim.do(circuit)
+    stabs = sim.canonical_stabilizers()
+    assert stabs[-1] == stim.PauliString(466 * '_' + 'X')

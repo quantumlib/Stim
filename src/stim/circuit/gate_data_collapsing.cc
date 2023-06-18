@@ -14,7 +14,6 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_data.h"
-#include "stim/circuit/gate_target.h"
 
 using namespace stim;
 
@@ -27,7 +26,7 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             GateType::MX,
             GateType::MX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -64,7 +63,7 @@ Examples:
     MX(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"X -> +m xor chance(p)", "X -> +X"},
+                    {"X -> rec[-1]", "X -> +X"},
                     R"CIRCUIT(
 H 0
 M 0
@@ -80,7 +79,7 @@ H 0
             GateType::MY,
             GateType::MY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -117,7 +116,7 @@ Examples:
     MY(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Y -> m xor chance(p)", "Y -> +Y"},
+                    {"Y -> rec[-1]", "Y -> +Y"},
                     R"CIRCUIT(
 S 0
 S 0
@@ -137,7 +136,7 @@ S 0
             GateType::M,
             GateType::M,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -177,7 +176,7 @@ Examples:
     MZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Z -> m xor chance(p)", "Z -> +Z"},
+                    {"Z -> rec[-1]", "Z -> +Z"},
                     R"CIRCUIT(
 M 0
 )CIRCUIT",
@@ -194,7 +193,7 @@ M 0
             GateType::MRX,
             GateType::MRX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -232,7 +231,7 @@ Examples:
     MRX(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"X -> m xor chance(p)", "1 -> +X"},
+                    {"X -> rec[-1]", "1 -> +X"},
                     R"CIRCUIT(
 H 0
 M 0
@@ -249,7 +248,7 @@ H 0
             GateType::MRY,
             GateType::MRY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -287,14 +286,14 @@ Examples:
     MRY(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Y -> m xor chance(p)", "1 -> +Y"},
+                    {"Y -> rec[-1]", "1 -> +Y"},
                     R"CIRCUIT(
 S 0
 S 0
 S 0
 H 0
-R 0
 M 0
+R 0
 H 0
 S 0
 )CIRCUIT",
@@ -308,7 +307,7 @@ S 0
             GateType::MR,
             GateType::MR,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -349,7 +348,7 @@ Examples:
     MRZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
-                    {"Z -> m xor chance(p)", "1 -> +Z"},
+                    {"Z -> rec[-1]", "1 -> +Z"},
                     R"CIRCUIT(
 M 0
 R 0
@@ -367,7 +366,7 @@ R 0
             GateType::RX,
             GateType::MRX,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -408,7 +407,7 @@ H 0
             GateType::RY,
             GateType::MRY,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -453,7 +452,7 @@ S 0
             GateType::R,
             GateType::MR,
             0,
-            GATE_IS_RESET,
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -497,7 +496,7 @@ R 0
             GateType::MPP,
             GateType::MPP,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
+            (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -533,8 +532,27 @@ Examples:
 
 )MARKDOWN",
                     {},
-                    {"P -> m xor chance(p)", "P -> P"},
-                    nullptr,
+                    {
+                        "XYZ__ -> rec[-2]",
+                        "___XX -> rec[-1]",
+                        "X____ -> X____",
+                        "_Y___ -> _Y___",
+                        "__Z__ -> __Z__",
+                        "___X_ -> ___X_",
+                        "____X -> ____X",
+                        "ZZ___ -> ZZ___",
+                        "_XX__ -> _XX__",
+                        "___ZZ -> ___ZZ",
+                    },
+                    R"CIRCUIT(
+S 1 1 1
+H 0 1 3 4
+CX 2 0 1 0 4 3
+M 0 3
+CX 2 0 1 0 4 3
+H 0 1 3 4
+S 1
+)CIRCUIT",
                 };
             },
         });

@@ -48,7 +48,6 @@ cc_library(
         "-std=c++17",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_binary(
@@ -60,7 +59,6 @@ cc_binary(
         "-O3",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_binary(
@@ -72,7 +70,6 @@ cc_binary(
         "-O3",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
 )
 
 cc_test(
@@ -84,7 +81,6 @@ cc_test(
     ],
     data = glob(["testdata/**"]),
     includes = ["src/"],
-    linkopts = ["-lpthread"],
     deps = [
         "@gtest",
         "@gtest//:gtest_main",
@@ -100,10 +96,9 @@ cc_binary(
         "-fvisibility=hidden",
         "-march=native",
         "-DSTIM_PYBIND11_MODULE_NAME=stim",
-        "-DVERSION_INFO=0.0.dev",
+        "-DVERSION_INFO=0.0.dev0",
     ],
     includes = ["src/"],
-    linkopts = ["-lpthread"],
     linkshared = 1,
     deps = ["@pybind11"],
 )
@@ -112,6 +107,6 @@ py_wheel(
     name = "stim_dev_wheel",
     distribution = "stim",
     requires = ["numpy"],
-    version = "dev",
+    version = "0.0.dev0",
     deps = [":stim.so"],
 )

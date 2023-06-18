@@ -178,6 +178,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::kw_only(),
         pybind11::arg("bit_packed") = false,
         clean_doc_string(R"DOC(
+            @signature def sample(self, shots: int, *, bit_packed: bool = False) -> np.ndarray:
             Samples a batch of measurement samples from the circuit.
 
             Args:
@@ -219,6 +220,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::arg("shots"),
         clean_doc_string(R"DOC(
             [DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
+            @signature def sample_bit_packed(self, shots: int) -> np.ndarray:
 
             Samples a bit packed batch of measurement samples from the circuit.
 

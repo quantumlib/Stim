@@ -24,18 +24,24 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             GateType::DEPOLARIZE1,
             GateType::DEPOLARIZE1,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
                     R"MARKDOWN(
 The single qubit depolarizing channel.
 
+Applies a single-qubit depolarizing error with the given probability.
+When a single-qubit depolarizing error is applied, a random Pauli
+error (except for I) is chosen and applied. Note that this means
+maximal mixing occurs when the probability parameter is set to 75%,
+rather than at 100%.
+
 Applies a randomly chosen Pauli with a given probability.
 
 Parens Arguments:
 
-    A single float specifying the depolarization strength.
+    A single float (p) specifying the depolarization strength.
 
 Targets:
 
@@ -47,6 +53,18 @@ Pauli Mixture:
     p/3: X
     p/3: Y
     p/3: Z
+
+Examples:
+
+    # Apply 1-qubit depolarization to qubit 0 using p=1%
+    DEPOLARIZE2(0.01) 0
+
+    # Apply 1-qubit depolarization to qubit 2
+    # Separately apply 1-qubit depolarization to qubits 3 and 5
+    DEPOLARIZE1(0.01) 2 3 5
+
+    # Maximally mix qubits 0 through 2
+    DEPOLARIZE1(0.75) 0 1 2
 )MARKDOWN",
                     {},
                     {},
@@ -62,18 +80,22 @@ Pauli Mixture:
             GateType::DEPOLARIZE2,
             GateType::DEPOLARIZE2,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
                     R"MARKDOWN(
 The two qubit depolarizing channel.
 
-Applies a randomly chosen two-qubit Pauli product with a given probability.
+Applies a two-qubit depolarizing error with the given probability.
+When a two-qubit depolarizing error is applied, a random pair of Pauli
+errors (except for II) is chosen and applied. Note that this means
+maximal mixing occurs when the probability parameter is set to 93.75%,
+rather than at 100%.
 
 Parens Arguments:
 
-    A single float specifying the depolarization strength.
+    A single float (p) specifying the depolarization strength.
 
 Targets:
 
@@ -97,6 +119,18 @@ Pauli Mixture:
     p/15: ZX
     p/15: ZY
     p/15: ZZ
+
+Examples:
+
+    # Apply 2-qubit depolarization to qubit 0 and qubit 1 using p=1%
+    DEPOLARIZE2(0.01) 0 1
+
+    # Apply 2-qubit depolarization to qubit 2 and qubit 3
+    # Separately apply 2-qubit depolarization to qubit 5 and qubit 7
+    DEPOLARIZE2(0.01) 2 3 5 7
+
+    # Maximally mix qubits 0 through 3
+    DEPOLARIZE2(0.9375) 0 1 2 3
 )MARKDOWN",
                     {},
                     {},
@@ -112,7 +146,7 @@ Pauli Mixture:
             GateType::X_ERROR,
             GateType::X_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -146,7 +180,7 @@ Pauli Mixture:
             GateType::Y_ERROR,
             GateType::Y_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -180,7 +214,7 @@ Pauli Mixture:
             GateType::Z_ERROR,
             GateType::Z_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -214,7 +248,7 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_1,
             GateType::PAULI_CHANNEL_1,
             3,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -259,7 +293,7 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_2,
             GateType::PAULI_CHANNEL_2,
             15,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -332,7 +366,7 @@ Pauli Mixture:
             GateType::E,
             GateType::E,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -375,7 +409,7 @@ Example:
             GateType::ELSE_CORRELATED_ERROR,
             GateType::ELSE_CORRELATED_ERROR,
             1,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

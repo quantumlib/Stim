@@ -412,7 +412,7 @@ For example:
 # from the repository root in a python virtual environment
 bazel build :stim_dev_wheel
 pip uninstall stim --yes
-pip install bazel-bin/stim-dev-py3-none-any.whl
+pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
 ```
 
 Note that you need to repeat the above steps each time you make a change to
@@ -523,7 +523,7 @@ Bazel can be used to create dev versions of the stim python wheel:
 ```bash
 # from the repository root:
 bazel build stim_dev_wheel
-# output is at bazel-bin/stim-dev-py3-none-any.whl
+# output is at bazel-bin/stim-0.0.dev0-py3-none-any.whl
 ```
 
 ## <a name="pypackage.stim.python"></a>python packaging `stim` with python setup.py

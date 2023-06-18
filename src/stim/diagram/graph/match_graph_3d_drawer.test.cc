@@ -79,3 +79,10 @@ TEST(match_graph_drawer_3d, missing_coordinates) {
     diagram.to_gltf_scene().to_json().write(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "match_graph_no_coords.gltf");
 }
+
+TEST(match_graph_drawer_3d, works_on_empty) {
+    auto diagram = dem_match_graph_to_basic_3d_diagram(DetectorErrorModel());
+    std::stringstream ss;
+    diagram.to_gltf_scene().to_json().write(ss);
+    expect_string_is_identical_to_saved_file(ss.str(), "empty_match_graph.gltf");
+}

@@ -331,4 +331,45 @@ Example:
                 };
             },
         });
+
+    add_gate(
+        failed,
+        Gate{
+            "MPAD",
+            GateType::MPAD,
+            GateType::MPAD,
+            0,
+            GATE_PRODUCES_RESULTS,
+            []() -> ExtraGateData {
+                return {
+                    "Z_Annotations",
+                    R"MARKDOWN(
+Pads the measurement record with the listed measurement results.
+
+This can be useful for ensuring measurements are aligned to word boundaries, or that the
+number of measurement bits produced per circuit layer is always the same even if the number
+of measured qubits varies.
+
+Targets:
+
+    Each target is a measurement result to add.
+    Targets should be the value 0 or the value 1.
+
+Examples:
+
+    # Append a False result to the measurement record.
+    MPAD 0
+
+    # Append a True result to the measurement record.
+    MPAD 1
+
+    # Append a series of results to the measurement record.
+    MPAD 0 0 1 0 1
+)MARKDOWN",
+                    {},
+                    {},
+                    nullptr,
+                };
+            },
+        });
 }

@@ -9,12 +9,15 @@ src/stim/circuit/gate_data_collapsing.cc
 src/stim/circuit/gate_data_controlled.cc
 src/stim/circuit/gate_data_hada.cc
 src/stim/circuit/gate_data_noisy.cc
+src/stim/circuit/gate_data_pair_measure.cc
 src/stim/circuit/gate_data_pauli.cc
 src/stim/circuit/gate_data_period_3.cc
 src/stim/circuit/gate_data_period_4.cc
 src/stim/circuit/gate_data_pp.cc
 src/stim/circuit/gate_data_swaps.cc
+src/stim/circuit/gate_decomposition.cc
 src/stim/circuit/gate_target.cc
+src/stim/circuit/stabilizer_flow.cc
 src/stim/cmd/command_analyze_errors.cc
 src/stim/cmd/command_detect.cc
 src/stim/cmd/command_diagram.cc
@@ -71,6 +74,7 @@ src/stim/search/hyper/edge.cc
 src/stim/search/hyper/graph.cc
 src/stim/search/hyper/node.cc
 src/stim/search/hyper/search_state.cc
+src/stim/simulators/count_determined_measurements.cc
 src/stim/simulators/dem_sampler.cc
 src/stim/simulators/error_analyzer.cc
 src/stim/simulators/error_matcher.cc
@@ -82,10 +86,3 @@ src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/tableau_simulator.cc
 src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
-src/stim/stabilizers/conversions.cc
-src/stim/stabilizers/pauli_string.cc
-src/stim/stabilizers/pauli_string_ref.cc
-src/stim/stabilizers/tableau.cc
-src/stim/stabilizers/tableau_iter.cc
-src/stim/stabilizers/tableau_specialized_prepend.cc
-src/stim/stabilizers/tableau_transposed_raii.cc

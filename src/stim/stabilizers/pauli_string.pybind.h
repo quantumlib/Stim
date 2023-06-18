@@ -23,11 +23,11 @@
 namespace stim_pybind {
 
 struct PyPauliString {
-    stim::PauliString value;
+    stim::PauliString<stim::MAX_BITWORD_WIDTH> value;
     bool imag;
 
-    PyPauliString(const stim::PauliStringRef val, bool imag = false);
-    PyPauliString(stim::PauliString &&val, bool imag = false);
+    PyPauliString(const stim::PauliStringRef<stim::MAX_BITWORD_WIDTH> val, bool imag = false);
+    PyPauliString(stim::PauliString<stim::MAX_BITWORD_WIDTH> &&val, bool imag = false);
 
     static PyPauliString from_text(const char *c);
     std::complex<float> get_phase() const;

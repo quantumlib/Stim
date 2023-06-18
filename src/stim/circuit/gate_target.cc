@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_target.h"
 
 using namespace stim;
@@ -201,8 +202,21 @@ std::string stim::targets_str(SpanRef<const GateTarget> targets) {
     return out.str();
 }
 
-std::string stim::target_str(GateTarget t) {
+std::string GateTarget::target_str() const {
     std::stringstream out;
-    t.write_succinct(out);
+    write_succinct(out);
     return out.str();
+}
+
+GateTarget GateTarget::operator!() const {
+    if (data & (TARGET_COMBINER | TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument("Target '" + str() + "' doesn't have a defined inverse.");
+    }
+    return GateTarget{data ^ TARGET_INVERTED_BIT};
+}
+
+char GateTarget::pauli_type() const {
+    assert(TARGET_PAULI_X_BIT == (1 << 30));
+    assert(TARGET_PAULI_Z_BIT == (1 << 29));
+    return "IZXY"[(data >> 29) & 3];
 }

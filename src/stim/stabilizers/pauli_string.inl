@@ -20,26 +20,31 @@
 
 #include "stim/mem/simd_util.h"
 
-using namespace stim;
+namespace stim {
 
-PauliString::operator const PauliStringRef() const {
+template <size_t W>
+PauliString<W>::operator const PauliStringRef<W>() const {
     return ref();
 }
 
-PauliString::operator PauliStringRef() {
+template <size_t W>
+PauliString<W>::operator PauliStringRef<W>() {
     return ref();
 }
 
-PauliString::PauliString(size_t num_qubits) : num_qubits(num_qubits), sign(false), xs(num_qubits), zs(num_qubits) {
+template <size_t W>
+PauliString<W>::PauliString(size_t num_qubits) : num_qubits(num_qubits), sign(false), xs(num_qubits), zs(num_qubits) {
 }
 
-PauliString::PauliString(const PauliStringRef &other)
+template <size_t W>
+PauliString<W>::PauliString(const PauliStringRef<W> &other)
     : num_qubits(other.num_qubits), sign((bool)other.sign), xs(other.xs), zs(other.zs) {
 }
 
-const PauliStringRef PauliString::ref() const {
-    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return PauliStringRef(
+template <size_t W>
+const PauliStringRef<W> PauliString<W>::ref() const {
+    size_t nw = (num_qubits + W - 1) / W;
+    return PauliStringRef<W>(
         num_qubits,
         // HACK: const correctness is temporarily removed, but immediately restored.
         bit_ref((bool *)&sign, 0),
@@ -47,27 +52,27 @@ const PauliStringRef PauliString::ref() const {
         zs.word_range_ref(0, nw));
 }
 
-PauliStringRef PauliString::ref() {
-    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return PauliStringRef(num_qubits, bit_ref(&sign, 0), xs.word_range_ref(0, nw), zs.word_range_ref(0, nw));
+template <size_t W>
+PauliStringRef<W> PauliString<W>::ref() {
+    size_t nw = (num_qubits + W - 1) / W;
+    return PauliStringRef<W>(num_qubits, bit_ref(&sign, 0), xs.word_range_ref(0, nw), zs.word_range_ref(0, nw));
 }
 
-std::string PauliString::str() const {
+template <size_t W>
+std::string PauliString<W>::str() const {
     return ref().str();
 }
 
-PauliString &PauliString::operator=(const PauliStringRef &other) noexcept {
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(const PauliStringRef<W> &other) noexcept {
     (*this).~PauliString();
     new (this) PauliString(other);
     return *this;
 }
 
-std::ostream &stim::operator<<(std::ostream &out, const PauliString &ps) {
-    return out << ps.ref();
-}
-
-PauliString PauliString::from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func) {
-    PauliString result(num_qubits);
+template <size_t W>
+PauliString<W> PauliString<W>::from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func) {
+    PauliString<W> result(num_qubits);
     result.sign = sign;
     for (size_t i = 0; i < num_qubits; i++) {
         char c = func(i);
@@ -86,7 +91,7 @@ PauliString PauliString::from_func(bool sign, size_t num_qubits, const std::func
             x = false;
             z = false;
         } else {
-            throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
+            throw std::invalid_argument("Unrecognized pauli character. " + std::to_string(c));
         }
         result.xs.u64[i / 64] ^= (uint64_t)x << (i & 63);
         result.zs.u64[i / 64] ^= (uint64_t)z << (i & 63);
@@ -94,7 +99,8 @@ PauliString PauliString::from_func(bool sign, size_t num_qubits, const std::func
     return result;
 }
 
-PauliString PauliString::from_str(const char *text) {
+template <size_t W>
+PauliString<W> PauliString<W>::from_str(const char *text) {
     auto sign = text[0] == '-';
     if (text[0] == '+' || text[0] == '-') {
         text++;
@@ -104,7 +110,8 @@ PauliString PauliString::from_str(const char *text) {
     });
 }
 
-PauliString PauliString::random(size_t num_qubits, std::mt19937_64 &rng) {
+template <size_t W>
+PauliString<W> PauliString<W>::random(size_t num_qubits, std::mt19937_64 &rng) {
     auto result = PauliString(num_qubits);
     result.xs.randomize(num_qubits, rng);
     result.zs.randomize(num_qubits, rng);
@@ -112,21 +119,28 @@ PauliString PauliString::random(size_t num_qubits, std::mt19937_64 &rng) {
     return result;
 }
 
-bool PauliString::operator==(const PauliStringRef &other) const {
+template <size_t W>
+bool PauliString<W>::operator==(const PauliStringRef<W> &other) const {
     return ref() == other;
 }
-bool PauliString::operator==(const PauliString &other) const {
+
+template <size_t W>
+bool PauliString<W>::operator==(const PauliString<W> &other) const {
     return ref() == other.ref();
 }
 
-bool PauliString::operator!=(const PauliStringRef &other) const {
+template <size_t W>
+bool PauliString<W>::operator!=(const PauliStringRef<W> &other) const {
     return ref() != other;
 }
-bool PauliString::operator!=(const PauliString &other) const {
+
+template <size_t W>
+bool PauliString<W>::operator!=(const PauliString<W> &other) const {
     return ref() != other.ref();
 }
 
-void PauliString::ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor) {
+template <size_t W>
+void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor) {
     assert(resize_pad_factor >= 1);
     if (min_num_qubits <= num_qubits) {
         return;
@@ -137,8 +151,8 @@ void PauliString::ensure_num_qubits(size_t min_num_qubits, double resize_pad_fac
     }
 
     size_t new_num_qubits = (size_t)(min_num_qubits * resize_pad_factor);
-    simd_bits<MAX_BITWORD_WIDTH> new_xs(new_num_qubits);
-    simd_bits<MAX_BITWORD_WIDTH> new_zs(new_num_qubits);
+    simd_bits<W> new_xs(new_num_qubits);
+    simd_bits<W> new_zs(new_num_qubits);
     new_xs.truncated_overwrite_from(xs, num_qubits);
     new_zs.truncated_overwrite_from(zs, num_qubits);
     xs = std::move(new_xs);
@@ -146,7 +160,8 @@ void PauliString::ensure_num_qubits(size_t min_num_qubits, double resize_pad_fac
     num_qubits = min_num_qubits;
 }
 
-uint8_t PauliString::py_get_item(int64_t index) const {
+template <size_t W>
+uint8_t PauliString<W>::py_get_item(int64_t index) const {
     if (index < 0) {
         index += num_qubits;
     }
@@ -159,7 +174,8 @@ uint8_t PauliString::py_get_item(int64_t index) const {
     return pauli_xz_to_xyz(x, z);
 }
 
-PauliString PauliString::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
+template <size_t W>
+PauliString<W> PauliString<W>::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
     assert(slice_length >= 0);
     assert(slice_length == 0 || start >= 0);
     return PauliString::from_func(false, slice_length, [&](size_t i) {
@@ -167,3 +183,10 @@ PauliString PauliString::py_get_slice(int64_t start, int64_t step, int64_t slice
         return "_XZY"[xs[j] + zs[j] * 2];
     });
 }
+
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const PauliString<W> &ps) {
+    return out << ps.ref();
+}
+
+}  // namespace stim

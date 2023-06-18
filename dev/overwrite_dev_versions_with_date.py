@@ -7,7 +7,7 @@
 #########################################################
 # Example usage (from repo root):
 #
-# ./glue/python/overwrite_dev_version_with_date.sh
+# ./dev/overwrite_dev_versions_with_date.sh
 #########################################################
 
 import os
@@ -24,7 +24,7 @@ def main():
     # (Requires the existing version to have a 'dev' suffix.)
     # (Uses the timestamp of the HEAD commit, to ensure consistency when run multiple times.)
     with open('setup.py') as f:
-        maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^version = '[^']+'", line)]
+        maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^__version__ = '[^']+'", line)]
         maj_version, min_version, patch = maj_min_version_line.split()[-1].strip("'").split('.')
         if 'dev' not in patch:
             return  # Do nothing for non-dev versions.
@@ -35,14 +35,17 @@ def main():
     package_setup_files = [
         "setup.py",
         "glue/cirq/setup.py",
+        "glue/cirq/stimcirq/__init__.py",
+        "glue/zx/stimzx/__init__.py",
         "glue/zx/setup.py",
         "glue/sample/setup.py",
+        "glue/sample/src/sinter/__init__.py",
     ]
     for path in package_setup_files:
         with open(path) as f:
             content = f.read()
         assert maj_min_version_line in content
-        content = content.replace(maj_min_version_line, f"version = '{new_version}'")
+        content = content.replace(maj_min_version_line, f"__version__ = '{new_version}'")
         with open(path, 'w') as f:
             print(content, file=f, end='')
 

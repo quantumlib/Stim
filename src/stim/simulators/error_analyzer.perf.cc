@@ -37,7 +37,7 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100) {
             0.0,
             false,
             true);
-        analyzer.run_circuit(circuit);
+        analyzer.undo_circuit(circuit);
     }).goal_millis(320);
 }
 
@@ -59,7 +59,7 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100_find_reducible_er
             0.0,
             false,
             true);
-        analyzer.run_circuit(circuit);
+        analyzer.undo_circuit(circuit);
     }).goal_millis(450);
 }
 
@@ -81,6 +81,6 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100000000_find_loops)
             0.0,
             false,
             true);
-        analyzer.run_circuit(circuit);
+        analyzer.undo_circuit(circuit);
     }).goal_millis(15);
 }

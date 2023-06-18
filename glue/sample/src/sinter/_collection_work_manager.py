@@ -21,6 +21,8 @@ class CollectionWorkManager:
                  tasks_iter: Iterator[Task],
                  global_collection_options: CollectionOptions,
                  additional_existing_data: Optional[ExistingData],
+                 count_observable_error_combos: bool,
+                 count_detection_events: bool,
                  decoders: Optional[Iterable[str]],
                  custom_decoders: Dict[str, Decoder]):
         self.custom_decoders = custom_decoders
@@ -40,6 +42,8 @@ class CollectionWorkManager:
         self.finished_count = 0
         self.deployed_jobs: Dict[int, WorkIn] = {}
         self.next_job_id = 0
+        self.count_observable_error_combos = count_observable_error_combos
+        self.count_detection_events = count_detection_events
 
         self.tasks_with_decoder_iter: Iterator[Task] = _iter_tasks_with_assigned_decoders(
             tasks_iter=tasks_iter,
@@ -137,6 +141,7 @@ class CollectionWorkManager:
                 json_metadata=work_in.json_metadata,
                 shots=stats.shots,
                 errors=stats.errors,
+                custom_counts=stats.custom_counts,
                 discards=stats.discards,
                 seconds=stats.seconds,
             )
@@ -155,6 +160,8 @@ class CollectionWorkManager:
                 circuit_path=str((self.tmp_dir / f'circuit_{self.next_collector_key}.stim').absolute()),
                 dem_path=str((self.tmp_dir / f'dem_{self.next_collector_key}.dem').absolute()),
                 existing_data=self.additional_existing_data,
+                count_detection_events=self.count_detection_events,
+                count_observable_error_combos=self.count_observable_error_combos,
             )
             if collector.is_done():
                 self.finished_count += 1

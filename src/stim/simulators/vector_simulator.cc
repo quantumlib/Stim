@@ -18,7 +18,6 @@
 
 #include "stim/circuit/gate_data.h"
 #include "stim/mem/simd_util.h"
-#include "stim/probability_util.h"
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
@@ -28,7 +27,7 @@ VectorSimulator::VectorSimulator(size_t num_qubits) {
     state[0] = 1;
 }
 
-std::vector<std::complex<float>> mat_vec_mul(
+inline std::vector<std::complex<float>> mat_vec_mul(
     const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<std::complex<float>> &vec) {
     std::vector<std::complex<float>> result;
     for (size_t row = 0; row < vec.size(); row++) {
@@ -86,99 +85,6 @@ void VectorSimulator::apply(const std::string &gate, size_t qubit1, size_t qubit
     } catch (const std::out_of_range &) {
         throw std::out_of_range("Two qubit gate isn't supported by VectorSimulator: " + gate);
     }
-}
-
-void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
-    if (gate.sign) {
-        for (auto &e : state) {
-            e *= -1;
-        }
-    }
-    for (size_t k = 0; k < gate.num_qubits; k++) {
-        bool x = gate.xs[k];
-        bool z = gate.zs[k];
-        size_t q = qubit_offset + k;
-        if (x && z) {
-            apply("Y", q);
-        } else if (x) {
-            apply("X", q);
-        } else if (z) {
-            apply("Z", q);
-        }
-    }
-}
-
-std::vector<std::complex<float>> VectorSimulator::state_vector_from_stabilizers(
-    const std::vector<PauliStringRef> &stabilizers, float norm2) {
-    size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
-    VectorSimulator sim(num_qubits);
-
-    // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
-    std::uniform_real_distribution<float> dist(-1.0, +1.0);
-
-    auto rng = externally_seeded_rng();
-    for (auto &s : sim.state) {
-        s = {dist(rng), dist(rng)};
-    }
-
-    // Project out the non-overlapping parts.
-    for (const auto &p : stabilizers) {
-        sim.project(p);
-    }
-    if (stabilizers.empty()) {
-        sim.project(PauliString(0));
-    }
-
-    sim.canonicalize_assuming_stabilizer_state(norm2);
-
-    return sim.state;
-}
-
-VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> &stabilizers) {
-    VectorSimulator result(0);
-    result.state = state_vector_from_stabilizers(stabilizers, 1);
-    return result;
-}
-
-float VectorSimulator::project(const PauliStringRef &observable) {
-    assert(1ULL << observable.num_qubits == state.size());
-    auto basis_change = [&]() {
-        for (size_t k = 0; k < observable.num_qubits; k++) {
-            if (observable.xs[k]) {
-                if (observable.zs[k]) {
-                    apply("H_YZ", k);
-                } else {
-                    apply("H_XZ", k);
-                }
-            }
-        }
-    };
-
-    uint64_t mask = 0;
-    for (size_t k = 0; k < observable.num_qubits; k++) {
-        if (observable.xs[k] || observable.zs[k]) {
-            mask |= 1ULL << k;
-        }
-    }
-
-    basis_change();
-    float mag2 = 0;
-    for (size_t i = 0; i < state.size(); i++) {
-        bool reject = observable.sign;
-        reject ^= (popcnt64(i & mask) & 1) != 0;
-        if (reject) {
-            state[i] = 0;
-        } else {
-            mag2 += state[i].real() * state[i].real() + state[i].imag() * state[i].imag();
-        }
-    }
-    assert(mag2 > 1e-8);
-    auto w = sqrtf(mag2);
-    for (size_t i = 0; i < state.size(); i++) {
-        state[i] /= w;
-    }
-    basis_change();
-    return mag2;
 }
 
 void VectorSimulator::smooth_stabilizer_state(std::complex<float> base_value) {
@@ -282,6 +188,7 @@ void VectorSimulator::canonicalize_assuming_stabilizer_state(double norm2) {
         v *= scale;
     }
 }
+
 void VectorSimulator::do_unitary_circuit(const Circuit &circuit) {
     std::vector<size_t> targets1{1};
     std::vector<size_t> targets2{1, 2};

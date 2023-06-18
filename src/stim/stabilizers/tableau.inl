@@ -20,15 +20,15 @@
 #include <iostream>
 #include <map>
 #include <random>
-#include <thread>
 
 #include "stim/circuit/gate_data.h"
-#include "stim/simulators/vector_simulator.h"
+
 #include "stim/stabilizers/pauli_string.h"
 
-using namespace stim;
+namespace stim {
 
-void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
+template <size_t W>
+void Tableau<W>::expand(size_t new_num_qubits, double resize_pad_factor) {
     // If the new qubits fit inside the padding, just extend into it.
     assert(new_num_qubits >= num_qubits);
     assert(resize_pad_factor >= 1);
@@ -48,14 +48,14 @@ void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
     // Move state to temporary storage then re-allocate to make room for additional qubits.
     size_t old_num_simd_words = xs.xt.num_simd_words_major;
     size_t old_num_qubits = num_qubits;
-    Tableau old_state = std::move(*this);
-    *this = Tableau((size_t)(new_num_qubits * resize_pad_factor));
+    Tableau<W> old_state = std::move(*this);
+    *this = Tableau<W>((size_t)(new_num_qubits * resize_pad_factor));
     this->num_qubits = new_num_qubits;
     this->xs.num_qubits = new_num_qubits;
     this->zs.num_qubits = new_num_qubits;
 
     // Copy stored state back into new larger space.
-    auto partial_copy = [=](simd_bits_range_ref<MAX_BITWORD_WIDTH> dst, simd_bits_range_ref<MAX_BITWORD_WIDTH> src) {
+    auto partial_copy = [=](simd_bits_range_ref<W> dst, simd_bits_range_ref<W> src) {
         dst.word_range_ref(0, old_num_simd_words) = src;
     };
     partial_copy(xs.signs, old_state.xs.signs);
@@ -68,20 +68,23 @@ void Tableau::expand(size_t new_num_qubits, double resize_pad_factor) {
     }
 }
 
-PauliStringRef TableauHalf::operator[](size_t input_qubit) {
-    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return PauliStringRef(
+template <size_t W>
+PauliStringRef<W> TableauHalf<W>::operator[](size_t input_qubit) {
+    size_t nw = (num_qubits + W - 1) / W;
+    return PauliStringRef<W>(
         num_qubits, signs[input_qubit], xt[input_qubit].word_range_ref(0, nw), zt[input_qubit].word_range_ref(0, nw));
 }
 
-const PauliStringRef TableauHalf::operator[](size_t input_qubit) const {
-    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
-    return PauliStringRef(
+template <size_t W>
+const PauliStringRef<W> TableauHalf<W>::operator[](size_t input_qubit) const {
+    size_t nw = (num_qubits + W - 1) / W;
+    return PauliStringRef<W>(
         num_qubits, signs[input_qubit], xt[input_qubit].word_range_ref(0, nw), zt[input_qubit].word_range_ref(0, nw));
 }
 
-PauliString Tableau::eval_y_obs(size_t qubit) const {
-    PauliString result(xs[qubit]);
+template <size_t W>
+PauliString<W> Tableau<W>::eval_y_obs(size_t qubit) const {
+    PauliString<W> result(xs[qubit]);
     uint8_t log_i = result.ref().inplace_right_mul_returning_log_i_scalar(zs[qubit]);
     log_i++;
     assert((log_i & 1) == 0);
@@ -91,46 +94,53 @@ PauliString Tableau::eval_y_obs(size_t qubit) const {
     return result;
 }
 
-Tableau::Tableau(size_t num_qubits) : num_qubits(num_qubits), xs(num_qubits), zs(num_qubits) {
+template <size_t W>
+Tableau<W>::Tableau(size_t num_qubits) : num_qubits(num_qubits), xs(num_qubits), zs(num_qubits) {
     for (size_t q = 0; q < num_qubits; q++) {
         xs.xt[q][q] = true;
         zs.zt[q][q] = true;
     }
 }
 
-TableauHalf::TableauHalf(size_t num_qubits)
+template <size_t W>
+TableauHalf<W>::TableauHalf(size_t num_qubits)
     : num_qubits(num_qubits), xt(num_qubits, num_qubits), zt(num_qubits, num_qubits), signs(num_qubits) {
 }
 
-Tableau Tableau::identity(size_t num_qubits) {
-    return Tableau(num_qubits);
+template <size_t W>
+Tableau<W> Tableau<W>::identity(size_t num_qubits) {
+    return Tableau<W>(num_qubits);
 }
 
-Tableau Tableau::from_pauli_string(const PauliString &pauli_string) {
-    Tableau tableau = identity(pauli_string.num_qubits);
+template <size_t W>
+Tableau<W> Tableau<W>::from_pauli_string(const PauliString<W> &pauli_string) {
+    Tableau<W> tableau = identity(pauli_string.num_qubits);
     tableau.xs.signs = pauli_string.zs;
     tableau.zs.signs = pauli_string.xs;
     return tableau;
 }
 
-Tableau Tableau::gate1(const char *x, const char *z) {
-    Tableau result(1);
-    result.xs[0] = PauliString::from_str(x);
-    result.zs[0] = PauliString::from_str(z);
+template <size_t W>
+Tableau<W> Tableau<W>::gate1(const char *x, const char *z) {
+    Tableau<W> result(1);
+    result.xs[0] = PauliString<W>::from_str(x);
+    result.zs[0] = PauliString<W>::from_str(z);
     assert((bool)result.zs[0].sign == (z[0] == '-'));
     return result;
 }
 
-Tableau Tableau::gate2(const char *x1, const char *z1, const char *x2, const char *z2) {
-    Tableau result(2);
-    result.xs[0] = PauliString::from_str(x1);
-    result.zs[0] = PauliString::from_str(z1);
-    result.xs[1] = PauliString::from_str(x2);
-    result.zs[1] = PauliString::from_str(z2);
+template <size_t W>
+Tableau<W> Tableau<W>::gate2(const char *x1, const char *z1, const char *x2, const char *z2) {
+    Tableau<W> result(2);
+    result.xs[0] = PauliString<W>::from_str(x1);
+    result.zs[0] = PauliString<W>::from_str(z1);
+    result.xs[1] = PauliString<W>::from_str(x2);
+    result.zs[1] = PauliString<W>::from_str(z2);
     return result;
 }
 
-std::ostream &stim::operator<<(std::ostream &out, const Tableau &t) {
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const Tableau<W> &t) {
     out << "+-";
     for (size_t k = 0; k < t.num_qubits; k++) {
         out << 'x';
@@ -156,16 +166,18 @@ std::ostream &stim::operator<<(std::ostream &out, const Tableau &t) {
     return out;
 }
 
-std::string Tableau::str() const {
+template <size_t W>
+std::string Tableau<W>::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits) {
+template <size_t W>
+void Tableau<W>::inplace_scatter_append(const Tableau<W> &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
     if (&operation == this) {
-        Tableau independent_copy(operation);
+        Tableau<W> independent_copy(operation);
         inplace_scatter_append(independent_copy, target_qubits);
         return;
     }
@@ -193,8 +205,9 @@ bool truncated_tableau_equals(size_t n, const simd_bit_table<W> &t1, const simd_
     return true;
 }
 
-bool Tableau::operator==(const Tableau &other) const {
-    size_t nw = (num_qubits + MAX_BITWORD_WIDTH - 1) / MAX_BITWORD_WIDTH;
+template <size_t W>
+bool Tableau<W>::operator==(const Tableau<W> &other) const {
+    size_t nw = (num_qubits + W - 1) / W;
     return num_qubits == other.num_qubits && truncated_tableau_equals(num_qubits, xs.xt, other.xs.xt) &&
            truncated_tableau_equals(num_qubits, xs.zt, other.xs.zt) &&
            truncated_tableau_equals(num_qubits, zs.xt, other.zs.xt) &&
@@ -203,20 +216,22 @@ bool Tableau::operator==(const Tableau &other) const {
            zs.signs.word_range_ref(0, nw) == other.zs.signs.word_range_ref(0, nw);
 }
 
-bool Tableau::operator!=(const Tableau &other) const {
+template <size_t W>
+bool Tableau<W>::operator!=(const Tableau<W> &other) const {
     return !(*this == other);
 }
 
-void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits) {
+template <size_t W>
+void Tableau<W>::inplace_scatter_prepend(const Tableau<W> &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
     if (&operation == this) {
-        Tableau independent_copy(operation);
+        Tableau<W> independent_copy(operation);
         inplace_scatter_prepend(independent_copy, target_qubits);
         return;
     }
 
-    std::vector<PauliString> new_x;
-    std::vector<PauliString> new_z;
+    std::vector<PauliString<W>> new_x;
+    std::vector<PauliString<W>> new_z;
     new_x.reserve(operation.num_qubits);
     new_z.reserve(operation.num_qubits);
     for (size_t q = 0; q < operation.num_qubits; q++) {
@@ -229,10 +244,11 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     }
 }
 
-PauliString Tableau::scatter_eval(
-    const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
+template <size_t W>
+PauliString<W> Tableau<W>::scatter_eval(
+    const PauliStringRef<W> &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.num_qubits == scattered_indices.size());
-    auto result = PauliString(num_qubits);
+    auto result = PauliString<W>(num_qubits);
     result.sign = gathered_input.sign;
     for (size_t k_gathered = 0; k_gathered < gathered_input.num_qubits; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
@@ -256,7 +272,8 @@ PauliString Tableau::scatter_eval(
     return result;
 }
 
-PauliString Tableau::operator()(const PauliStringRef &p) const {
+template <size_t W>
+PauliString<W> Tableau<W>::operator()(const PauliStringRef<W> &p) const {
     if (p.num_qubits != num_qubits) {
         throw std::out_of_range("pauli_string.num_qubits != tableau.num_qubits");
     }
@@ -267,9 +284,10 @@ PauliString Tableau::operator()(const PauliStringRef &p) const {
     return scatter_eval(p, indices);
 }
 
-void Tableau::apply_within(PauliStringRef &target, SpanRef<const size_t> target_qubits) const {
+template <size_t W>
+void Tableau<W>::apply_within(PauliStringRef<W> &target, SpanRef<const size_t> target_qubits) const {
     assert(num_qubits == target_qubits.size());
-    auto inp = PauliString(num_qubits);
+    auto inp = PauliString<W>(num_qubits);
     target.gather_into(inp, target_qubits);
     auto out = (*this)(inp);
     out.ref().scatter_into(target, target_qubits);
@@ -281,7 +299,7 @@ void Tableau::apply_within(PauliStringRef &target, SpanRef<const size_t> target_
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std::mt19937_64 &gen) {
+inline std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std::mt19937_64 &gen) {
     auto uni = std::uniform_real_distribution<double>(0, 1);
 
     std::vector<bool> hada;
@@ -311,12 +329,13 @@ std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std:
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
+template <size_t W>
+simd_bit_table<W> random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
     auto hs_pair = sample_qmallows(n, rng);
     const auto &hada = hs_pair.first;
     const auto &perm = hs_pair.second;
 
-    simd_bit_table<MAX_BITWORD_WIDTH> symmetric(n, n);
+    simd_bit_table<W> symmetric(n, n);
     for (size_t row = 0; row < n; row++) {
         symmetric[row].randomize(row + 1, rng);
         for (size_t col = 0; col < row; col++) {
@@ -324,7 +343,7 @@ simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::m
         }
     }
 
-    simd_bit_table<MAX_BITWORD_WIDTH> symmetric_m(n, n);
+    simd_bit_table<W> symmetric_m(n, n);
     for (size_t row = 0; row < n; row++) {
         symmetric_m[row].randomize(row + 1, rng);
         symmetric_m[row][row] &= hada[row];
@@ -337,12 +356,12 @@ simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::m
         }
     }
 
-    auto lower = simd_bit_table<MAX_BITWORD_WIDTH>::identity(n);
+    auto lower = simd_bit_table<W>::identity(n);
     for (size_t row = 0; row < n; row++) {
         lower[row].randomize(row, rng);
     }
 
-    auto lower_m = simd_bit_table<MAX_BITWORD_WIDTH>::identity(n);
+    auto lower_m = simd_bit_table<W>::identity(n);
     for (size_t row = 0; row < n; row++) {
         lower_m[row].randomize(row, rng);
         for (size_t col = 0; col < row; col++) {
@@ -362,11 +381,11 @@ simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::m
     inv_m.do_square_transpose();
 
     auto fused =
-        simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod, inv);
-    auto fused_m = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(
-        n, lower_m, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod_m, inv_m);
+        simd_bit_table<W>::from_quadrants(n, lower, simd_bit_table<W>(n, n), prod, inv);
+    auto fused_m = simd_bit_table<W>::from_quadrants(
+        n, lower_m, simd_bit_table<W>(n, n), prod_m, inv_m);
 
-    simd_bit_table<MAX_BITWORD_WIDTH> u(2 * n, 2 * n);
+    simd_bit_table<W> u(2 * n, 2 * n);
 
     // Apply permutation.
     for (size_t row = 0; row < n; row++) {
@@ -383,8 +402,9 @@ simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::m
     return fused_m.square_mat_mul(u, 2 * n);
 }
 
-Tableau Tableau::random(size_t num_qubits, std::mt19937_64 &rng) {
-    auto raw = random_stabilizer_tableau_raw(num_qubits, rng);
+template <size_t W>
+Tableau<W> Tableau<W>::random(size_t num_qubits, std::mt19937_64 &rng) {
+    auto raw = random_stabilizer_tableau_raw<W>(num_qubits, rng);
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
@@ -399,7 +419,8 @@ Tableau Tableau::random(size_t num_qubits, std::mt19937_64 &rng) {
     return result;
 }
 
-bool Tableau::satisfies_invariants() const {
+template <size_t W>
+bool Tableau<W>::satisfies_invariants() const {
     for (size_t q1 = 0; q1 < num_qubits; q1++) {
         auto x1 = xs[q1];
         auto z1 = zs[q1];
@@ -417,7 +438,8 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
-bool Tableau::is_pauli_product() const {
+template <size_t W>
+bool Tableau<W>::is_pauli_product() const {
     size_t pop_count = xs.xt.data.popcnt() + xs.zt.data.popcnt() + zs.xt.data.popcnt() + zs.zt.data.popcnt();
 
     if (pop_count != 2 * num_qubits) {
@@ -437,19 +459,24 @@ bool Tableau::is_pauli_product() const {
     return true;
 }
 
-PauliString Tableau::to_pauli_string() const {
+template <size_t W>
+PauliString<W> Tableau<W>::to_pauli_string() const {
     if (!is_pauli_product()) {
         throw std::invalid_argument("The Tableau isn't equivalent to a Pauli product.");
     }
 
-    PauliString pauli_string(num_qubits);
+    PauliString<W> pauli_string(num_qubits);
     pauli_string.xs = zs.signs;
     pauli_string.zs = xs.signs;
     return pauli_string;
 }
 
-Tableau Tableau::inverse(bool skip_signs) const {
-    Tableau result(num_qubits);
+template <size_t W>
+Tableau<W> Tableau<W>::inverse(bool skip_signs) const {
+    Tableau<W> result(xs.xt.num_major_bits_padded());
+    result.num_qubits = num_qubits;
+    result.xs.num_qubits = num_qubits;
+    result.zs.num_qubits = num_qubits;
 
     // Transpose data with xx zz swap tweak.
     result.xs.xt.data = zs.zt.data;
@@ -460,7 +487,7 @@ Tableau Tableau::inverse(bool skip_signs) const {
 
     // Fix signs by checking for consistent round trips.
     if (!skip_signs) {
-        PauliString singleton(num_qubits);
+        PauliString<W> singleton(num_qubits);
         for (size_t k = 0; k < num_qubits; k++) {
             singleton.xs[k] = true;
             bool x_round_trip_sign = (*this)(result(singleton)).sign;
@@ -477,32 +504,18 @@ Tableau Tableau::inverse(bool skip_signs) const {
     return result;
 }
 
-void Tableau::do_transpose_quadrants() {
-    if (num_qubits >= 1024) {
-        std::thread t1([&]() {
-            xs.xt.do_square_transpose();
-        });
-        std::thread t2([&]() {
-            xs.zt.do_square_transpose();
-        });
-        std::thread t3([&]() {
-            zs.xt.do_square_transpose();
-        });
-        zs.zt.do_square_transpose();
-        t1.join();
-        t2.join();
-        t3.join();
-    } else {
-        xs.xt.do_square_transpose();
-        xs.zt.do_square_transpose();
-        zs.xt.do_square_transpose();
-        zs.zt.do_square_transpose();
-    }
+template <size_t W>
+void Tableau<W>::do_transpose_quadrants() {
+    xs.xt.do_square_transpose();
+    xs.zt.do_square_transpose();
+    zs.xt.do_square_transpose();
+    zs.zt.do_square_transpose();
 }
 
-Tableau Tableau::then(const Tableau &second) const {
+template <size_t W>
+Tableau<W> Tableau<W>::then(const Tableau<W> &second) const {
     assert(num_qubits == second.num_qubits);
-    Tableau result(num_qubits);
+    Tableau<W> result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
         result.xs[q] = second(xs[q]);
         result.zs[q] = second(zs[q]);
@@ -510,10 +523,11 @@ Tableau Tableau::then(const Tableau &second) const {
     return result;
 }
 
-Tableau Tableau::raised_to(int64_t exponent) const {
-    Tableau result(num_qubits);
+template <size_t W>
+Tableau<W> Tableau<W>::raised_to(int64_t exponent) const {
+    Tableau<W> result(num_qubits);
     if (exponent) {
-        Tableau square = *this;
+        Tableau<W> square = *this;
 
         if (exponent < 0) {
             square = square.inverse();
@@ -534,13 +548,15 @@ Tableau Tableau::raised_to(int64_t exponent) const {
     return result;
 }
 
-Tableau Tableau::operator+(const Tableau &second) const {
-    Tableau copy = *this;
+template <size_t W>
+Tableau<W> Tableau<W>::operator+(const Tableau<W> &second) const {
+    Tableau<W> copy = *this;
     copy += second;
     return copy;
 }
 
-Tableau &Tableau::operator+=(const Tableau &second) {
+template <size_t W>
+Tableau<W> &Tableau<W>::operator+=(const Tableau<W> &second) {
     size_t n = num_qubits;
     expand(n + second.num_qubits, 1.1);
     for (size_t i = 0; i < second.num_qubits; i++) {
@@ -556,41 +572,45 @@ Tableau &Tableau::operator+=(const Tableau &second) {
     return *this;
 }
 
-uint8_t Tableau::x_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::x_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
     if (output_index >= num_qubits) {
         throw std::invalid_argument("output_index >= len(tableau)");
     }
-    PauliStringRef x = xs[input_index];
+    PauliStringRef<W> x = xs[input_index];
     return pauli_xz_to_xyz(x.xs[output_index], x.zs[output_index]);
 }
 
-uint8_t Tableau::y_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::y_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
     if (output_index >= num_qubits) {
         throw std::invalid_argument("output_index >= len(tableau)");
     }
-    PauliStringRef x = xs[input_index];
-    PauliStringRef z = zs[input_index];
+    PauliStringRef<W> x = xs[input_index];
+    PauliStringRef<W> z = zs[input_index];
     return pauli_xz_to_xyz(x.xs[output_index] ^ z.xs[output_index], x.zs[output_index] ^ z.zs[output_index]);
 }
 
-uint8_t Tableau::z_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::z_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
     if (output_index >= num_qubits) {
         throw std::invalid_argument("output_index >= len(tableau)");
     }
-    PauliStringRef z = zs[input_index];
+    PauliStringRef<W> z = zs[input_index];
     return pauli_xz_to_xyz(z.xs[output_index], z.zs[output_index]);
 }
 
-uint8_t Tableau::inverse_x_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::inverse_x_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
@@ -600,19 +620,21 @@ uint8_t Tableau::inverse_x_output_pauli_xyz(size_t input_index, size_t output_in
     return pauli_xz_to_xyz(zs[output_index].zs[input_index], xs[output_index].zs[input_index]);
 }
 
-uint8_t Tableau::inverse_y_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::inverse_y_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
     if (output_index >= num_qubits) {
         throw std::invalid_argument("output_index >= len(tableau)");
     }
-    PauliStringRef x = xs[output_index];
-    PauliStringRef z = zs[output_index];
+    PauliStringRef<W> x = xs[output_index];
+    PauliStringRef<W> z = zs[output_index];
     return pauli_xz_to_xyz(z.zs[input_index] ^ z.xs[input_index], x.zs[input_index] ^ x.xs[input_index]);
 }
 
-uint8_t Tableau::inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const {
+template <size_t W>
+uint8_t Tableau<W>::inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
@@ -622,11 +644,12 @@ uint8_t Tableau::inverse_z_output_pauli_xyz(size_t input_index, size_t output_in
     return pauli_xz_to_xyz(zs[output_index].xs[input_index], xs[output_index].xs[input_index]);
 }
 
-PauliString Tableau::inverse_x_output(size_t input_index, bool skip_sign) const {
+template <size_t W>
+PauliString<W> Tableau<W>::inverse_x_output(size_t input_index, bool skip_sign) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
-    PauliString result(num_qubits);
+    PauliString<W> result(num_qubits);
     for (size_t k = 0; k < num_qubits; k++) {
         result.xs[k] = zs[k].zs[input_index];
         result.zs[k] = xs[k].zs[input_index];
@@ -637,11 +660,12 @@ PauliString Tableau::inverse_x_output(size_t input_index, bool skip_sign) const 
     return result;
 }
 
-PauliString Tableau::inverse_y_output(size_t input_index, bool skip_sign) const {
+template <size_t W>
+PauliString<W> Tableau<W>::inverse_y_output(size_t input_index, bool skip_sign) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
-    PauliString result(num_qubits);
+    PauliString<W> result(num_qubits);
     for (size_t k = 0; k < num_qubits; k++) {
         result.xs[k] = zs[k].zs[input_index] ^ zs[k].xs[input_index];
         result.zs[k] = xs[k].zs[input_index] ^ xs[k].xs[input_index];
@@ -652,11 +676,12 @@ PauliString Tableau::inverse_y_output(size_t input_index, bool skip_sign) const 
     return result;
 }
 
-PauliString Tableau::inverse_z_output(size_t input_index, bool skip_sign) const {
+template <size_t W>
+PauliString<W> Tableau<W>::inverse_z_output(size_t input_index, bool skip_sign) const {
     if (input_index >= num_qubits) {
         throw std::invalid_argument("input_index >= len(tableau)");
     }
-    PauliString result(num_qubits);
+    PauliString<W> result(num_qubits);
     for (size_t k = 0; k < num_qubits; k++) {
         result.xs[k] = zs[k].xs[input_index];
         result.zs[k] = xs[k].xs[input_index];
@@ -667,15 +692,14 @@ PauliString Tableau::inverse_z_output(size_t input_index, bool skip_sign) const 
     return result;
 }
 
-std::vector<std::complex<float>> Tableau::to_flat_unitary_matrix(bool little_endian) const {
-    VectorSimulator sim(2 * num_qubits);
-
-    std::vector<PauliString> pauli_strings;
+template <size_t W>
+std::vector<std::complex<float>> Tableau<W>::to_flat_unitary_matrix(bool little_endian) const {
+    std::vector<PauliString<W>> pauli_strings;
     size_t nw = xs[0].xs.num_simd_words;
 
     // Add X transformation stabilizers.
     for (size_t k = 0; k < num_qubits; k++) {
-        PauliString p(num_qubits * 2);
+        PauliString<W> p(num_qubits * 2);
         p.xs.word_range_ref(0, nw) = xs[k].xs;
         p.zs.word_range_ref(0, nw) = xs[k].zs;
         p.sign = xs[k].sign;
@@ -685,7 +709,7 @@ std::vector<std::complex<float>> Tableau::to_flat_unitary_matrix(bool little_end
 
     // Add Z transformation stabilizers.
     for (size_t k = 0; k < num_qubits; k++) {
-        PauliString p(num_qubits * 2);
+        PauliString<W> p(num_qubits * 2);
         p.xs.word_range_ref(0, nw) = zs[k].xs;
         p.zs.word_range_ref(0, nw) = zs[k].zs;
         p.sign = zs[k].sign;
@@ -710,19 +734,23 @@ std::vector<std::complex<float>> Tableau::to_flat_unitary_matrix(bool little_end
     }
 
     // Turn it into a vector.
-    std::vector<PauliStringRef> refs;
+    std::vector<PauliStringRef<W>> refs;
     for (const auto &e : pauli_strings) {
         refs.push_back(e.ref());
     }
 
-    return VectorSimulator::state_vector_from_stabilizers(refs, 1 << num_qubits);
+    return VectorSimulator::state_vector_from_stabilizers<W>(refs, 1 << num_qubits);
 }
 
-PauliString Tableau::y_output(size_t input_index) const {
+template <size_t W>
+PauliString<W> Tableau<W>::y_output(size_t input_index) const {
     uint8_t log_i = 1;
-    PauliString result = xs[input_index];
+    PauliString<W> result = xs[input_index];
     log_i += result.ref().inplace_right_mul_returning_log_i_scalar(zs[input_index]);
     assert((log_i & 1) == 0);
     result.sign ^= (log_i & 2) != 0;
     return result;
 }
+
+}  // namespace stim
+

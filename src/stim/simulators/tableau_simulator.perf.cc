@@ -30,7 +30,7 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     CircuitInstruction op_data{GateType::CX, {}, targets};
 
     benchmark_go([&]() {
-        sim.ZCX(op_data);
+        sim.do_ZCX(op_data);
     })
         .goal_millis(5)
         .show_rate("OpQubits", targets.size());

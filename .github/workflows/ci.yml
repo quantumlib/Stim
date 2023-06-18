@@ -148,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - run: python glue/python/overwrite_dev_version_with_date.py
+      - run: python dev/overwrite_dev_versions_with_date.py
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
@@ -311,16 +311,18 @@ jobs:
         with:
           node-version: 16.x
       - run: bazel build :stim_dev_wheel
-      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
-      - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
-      - run: diff <(python glue/python/generate_stub_file.py -dev) glue/python/src/stim/__init__.pyi
-      - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
+      - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
+      - run: diff <(python dev/gen_stim_api_reference.py -dev) doc/python_api_reference_vDev.md
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) glue/python/src/stim/__init__.pyi
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) doc/stim.pyi
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
       - run: python doc/stim.pyi
       - run: npm install -g rollup@3.21.2 uglify-js@3.17.4
       - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc
+      - run: pip install -e glue/sample
+      - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
     steps:
@@ -337,7 +339,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :stim_dev_wheel
-      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
+      - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install pytest
       - run: pytest src
       - run: dev/doctest_proper.py --module stim
@@ -348,7 +350,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :stim_dev_wheel
-      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
+      - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
@@ -360,7 +362,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :stim_dev_wheel
-      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
+      - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/sample
       - run: pip install pytest pymatching fusion-blossom~=0.1.4
       - run: pytest glue/sample
@@ -373,7 +375,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :stim_dev_wheel
-      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
+      - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/zx
       - run: pip install pytest
       - run: pytest glue/zx

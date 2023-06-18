@@ -1,3 +1,4 @@
+import collections
 import pathlib
 import tempfile
 
@@ -143,7 +144,7 @@ def test_main_collect_with_custom_decoder():
                 "--decoders",
                 "NOTEXIST",
                 "--custom_decoders_module_function",
-                "sinter._main_test:_make_custom_decoders",
+                "sinter._main_collect_test:_make_custom_decoders",
                 "--processes",
                 "2",
                 "--quiet",
@@ -161,7 +162,7 @@ def test_main_collect_with_custom_decoder():
             "--decoders",
             "alternate",
             "--custom_decoders_module_function",
-            "sinter._main_test:_make_custom_decoders",
+            "sinter._main_collect_test:_make_custom_decoders",
             "--processes",
             "2",
             "--quiet",
@@ -256,33 +257,81 @@ def test_main_collect_comma_separated_key_values():
         ])
 
 
-def test_main_predict():
+def test_main_collect_count_observable_error_combos():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
-        with open(d / f'input.dets', 'w') as f:
+        with open(d / 'a=3.stim', 'w') as f:
             print("""
-shot D0
-shot
-            """, file=f)
-        with open(d / f'input.dem', 'w') as f:
-            print("""
-error(0.1) D0 L0
+                X_ERROR(0.1) 0
+                X_ERROR(0.2) 1
+                M 0 1
+                OBSERVABLE_INCLUDE(0) rec[-1]
+                OBSERVABLE_INCLUDE(1) rec[-2]
             """, file=f)
 
+        # Collects requested stats.
         main(command_line_args=[
-            "predict",
-            "--dets",
-            str(d / "input.dets"),
-            "--dem",
-            str(d / "input.dem"),
-            "--decoder",
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "100000",
+            "--metadata_func",
+            "sinter.comma_separated_key_values(path)",
+            "--max_errors",
+            "10000",
+            "--decoders",
             "pymatching",
-            "--dets_format",
-            "dets",
-            "--obs_out",
-            str(d / "output.01"),
-            "--obs_out_format",
-            "01",
+            "--count_observable_error_combos",
+            "--processes",
+            "4",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
         ])
-        with open(d / 'output.01') as f:
-            assert f.read() == '1\n0\n'
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
+        item, = data
+        assert set(item.custom_counts.keys()) == {"obs_mistake_mask=E_", "obs_mistake_mask=_E", "obs_mistake_mask=EE"}
+        assert 0.1*0.8 - 0.01 < item.custom_counts['obs_mistake_mask=_E'] / item.shots < 0.1*0.8 + 0.01
+        assert 0.9*0.2 - 0.01 < item.custom_counts['obs_mistake_mask=E_'] / item.shots < 0.9*0.2 + 0.01
+        assert 0.1*0.2 - 0.01 < item.custom_counts['obs_mistake_mask=EE'] / item.shots < 0.1*0.2 + 0.01
+
+
+def test_main_collect_count_detection_events():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / 'a=3.stim', 'w') as f:
+            print("""
+                X_ERROR(0.1) 0
+                X_ERROR(0.2) 1
+                M 0 1
+                OBSERVABLE_INCLUDE(0) rec[-1]
+                OBSERVABLE_INCLUDE(1) rec[-2]
+                DETECTOR rec[-2]
+            """, file=f)
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "100000",
+            "--metadata_func",
+            "sinter.comma_separated_key_values(path)",
+            "--decoders",
+            "pymatching",
+            "--count_detection_events",
+            "--processes",
+            "4",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
+        item, = data
+        assert set(item.custom_counts.keys()) == {"detection_events", "detectors_checked"}
+        assert item.custom_counts['detectors_checked'] == 100000
+        assert 100000 * 0.1 * 0.5 < item.custom_counts['detection_events'] < 100000 * 0.1 * 1.5

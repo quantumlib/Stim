@@ -1,7 +1,7 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
 # (This a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
+from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
 if TYPE_CHECKING:
     import io
     import pathlib
@@ -40,7 +40,6 @@ class Circuit:
         ...    DETECTOR rec[-1] rec[-2]
         ... ''').compile_detector_sampler().sample(shots=1)
         array([[False]])
-
     """
     def __add__(
         self,
@@ -646,6 +645,76 @@ class Circuit:
             False
             >>> c2 == c1
             True
+        """
+    def count_determined_measurements(
+        self,
+    ) -> int:
+        """Counts the number of predictable measurements in the circuit.
+
+        This method ignores any noise in the circuit.
+
+        This method works by performing a tableau stabilizer simulation of the circuit
+        and, before each measurement is simulated, checking if its expectation is
+        non-zero.
+
+        A measurement is predictable if its result can be predicted by using other
+        measurements that have already been performed, assuming the circuit is executed
+        without any noise.
+
+        Note that, when multiple measurements occur at the same time, re-ordering the
+        order they are resolved can change which specific measurements are predictable
+        but won't change how many of them were predictable in total.
+
+        The number of predictable measurements is a useful quantity because it's
+        related to the number of detectors and observables that a circuit should
+        declare. If circuit.num_detectors + circuit.num_observables is less than
+        circuit.count_determined_measurements(), this is a warning sign that you've
+        missed some detector declarations.
+
+        The exact relationship between the number of determined measurements and the
+        number of detectors and observables can differ from code to code. For example,
+        the toric code has an extra redundant measurement compared to the surface code
+        because in the toric code the last X stabilizer to be measured is equal to the
+        product of all other X stabilizers even in the first round when initializing in
+        the Z basis. Typically this relationship is not declared as a detector, because
+        it's not local, or as an observable, because it doesn't store a qubit.
+
+        Returns:
+            The number of measurements that were predictable.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     M 0
+            ... ''').count_determined_measurements()
+            1
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     H 0
+            ...     M 0
+            ... ''').count_determined_measurements()
+            0
+
+            >>> stim.Circuit('''
+            ...     R 0 1
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ... ''').count_determined_measurements()
+            2
+
+            >>> circuit = stim.Circuit.generated(
+            ...     "surface_code:rotated_memory_x",
+            ...     distance=5,
+            ...     rounds=9,
+            ... )
+            >>> circuit.count_determined_measurements()
+            217
+            >>> circuit.num_detectors + circuit.num_observables
+            217
         """
     def detector_error_model(
         self,
@@ -2620,7 +2689,7 @@ class CompiledMeasurementSampler:
         shots: int,
         *,
         bit_packed: bool = False,
-    ) -> object:
+    ) -> np.ndarray:
         """Samples a batch of measurement samples from the circuit.
 
         Args:
@@ -2655,7 +2724,7 @@ class CompiledMeasurementSampler:
     def sample_bit_packed(
         self,
         shots: int,
-    ) -> object:
+    ) -> np.ndarray:
         """[DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
 
         Samples a bit packed batch of measurement samples from the circuit.
@@ -4233,6 +4302,444 @@ class FlippedMeasurement:
         For example, the fifth measurement in a circuit has a measurement
         record index of 4.
         """
+class GateData:
+    """Details about a gate supported by stim.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('h').name
+        'H'
+        >>> stim.gate_data('h').is_unitary
+        True
+        >>> stim.gate_data('h').tableau
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z"),
+            ],
+            zs=[
+                stim.PauliString("+X"),
+            ],
+        )
+    """
+    @property
+    def __unstable_flows(
+        self,
+    ) -> object:
+        """[DEPRECATED]
+        This method is not actually deprecated it's just still in development.
+        Its API is not yet finalized and is subject to sudden change.
+        ---
+
+        Returns the stabilizer flows of the gate, or else None.
+
+        Although some variable-qubit gates and and pauli-targeting gates
+        like MPP have stabilizer flows, this method returns None for them
+        because it does not have the necessary context.
+
+        A stabilizer flow describes an input-output relationship that the
+        gate satisfies, where an input PauliString is transformed into an
+        output PauliString possibly mediated by measurement results.
+
+        Examples:
+            >>> import stim
+
+            >>> for e in stim.gate_data('H').__unstable_flows:
+            ...     print(e)
+            +X -> +Z
+            +Z -> +X
+
+            >>> for e in stim.gate_data('ISWAP').__unstable_flows:
+            ...     print(e)
+            +X_ -> +ZY
+            +Z_ -> +_Z
+            +_X -> +YZ
+            +_Z -> +Z_
+
+            >>> for e in stim.gate_data('MXX').__unstable_flows:
+            ...     print(e)
+            +X_ -> +X_
+            +_X -> +_X
+            +ZZ -> +ZZ
+            +XX -> rec[-1]
+        """
+    @property
+    def aliases(
+        self,
+    ) -> List[str]:
+        """Returns all aliases that can be used to name the gate.
+
+        Although gates can be referred to by lower case and mixed
+        case named, the result only includes upper cased aliases.
+
+        Examples:
+            >>> import stim
+            >>> stim.gate_data('H').aliases
+            ['H', 'H_XZ']
+            >>> stim.gate_data('cnot').aliases
+            ['CNOT', 'CX', 'ZCX']
+        """
+    @property
+    def is_dissipative(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate is a measurement or reset.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('M').is_dissipative
+            True
+            >>> stim.gate_data('R').is_dissipative
+            True
+            >>> stim.gate_data('MR').is_dissipative
+            True
+            >>> stim.gate_data('MXX').is_dissipative
+            True
+            >>> stim.gate_data('MPP').is_dissipative
+            True
+
+            >>> stim.gate_data('H').is_dissipative
+            False
+            >>> stim.gate_data('CX').is_dissipative
+            False
+            >>> stim.gate_data('DEPOLARIZE2').is_dissipative
+            False
+            >>> stim.gate_data('X_ERROR').is_dissipative
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').is_dissipative
+            False
+            >>> stim.gate_data('DETECTOR').is_dissipative
+            False
+        """
+    @property
+    def is_noisy_gate(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate can produce noise.
+
+        Note that measurement operations are considered noisy,
+        because for example `M(0.001) 2 3 5` will include
+        noise that flips its result 0.1% of the time.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('M').is_noisy_gate
+            True
+            >>> stim.gate_data('MXX').is_noisy_gate
+            True
+            >>> stim.gate_data('X_ERROR').is_noisy_gate
+            True
+            >>> stim.gate_data('CORRELATED_ERROR').is_noisy_gate
+            True
+            >>> stim.gate_data('MPP').is_noisy_gate
+            True
+
+            >>> stim.gate_data('H').is_noisy_gate
+            False
+            >>> stim.gate_data('CX').is_noisy_gate
+            False
+            >>> stim.gate_data('R').is_noisy_gate
+            False
+            >>> stim.gate_data('DETECTOR').is_noisy_gate
+            False
+        """
+    @property
+    def is_single_qubit_gate(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate is a single qubit gate.
+
+        Single qubit gates apply separately to each of their targets.
+
+        Variable-qubit gates like CORRELATED_ERROR and MPP are not
+        considered single qubit gates.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('H').is_single_qubit_gate
+            True
+            >>> stim.gate_data('R').is_single_qubit_gate
+            True
+            >>> stim.gate_data('M').is_single_qubit_gate
+            True
+            >>> stim.gate_data('X_ERROR').is_single_qubit_gate
+            True
+
+            >>> stim.gate_data('CX').is_single_qubit_gate
+            False
+            >>> stim.gate_data('MXX').is_single_qubit_gate
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').is_single_qubit_gate
+            False
+            >>> stim.gate_data('MPP').is_single_qubit_gate
+            False
+            >>> stim.gate_data('DETECTOR').is_single_qubit_gate
+            False
+            >>> stim.gate_data('TICK').is_single_qubit_gate
+            False
+            >>> stim.gate_data('REPEAT').is_single_qubit_gate
+            False
+        """
+    @property
+    def is_two_qubit_gate(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate is a two qubit gate.
+
+        Two qubit gates must be given an even number of targets.
+
+        Variable-qubit gates like CORRELATED_ERROR and MPP are not
+        considered two qubit gates.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('CX').is_two_qubit_gate
+            True
+            >>> stim.gate_data('MXX').is_two_qubit_gate
+            True
+
+            >>> stim.gate_data('H').is_two_qubit_gate
+            False
+            >>> stim.gate_data('R').is_two_qubit_gate
+            False
+            >>> stim.gate_data('M').is_two_qubit_gate
+            False
+            >>> stim.gate_data('X_ERROR').is_two_qubit_gate
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').is_two_qubit_gate
+            False
+            >>> stim.gate_data('MPP').is_two_qubit_gate
+            False
+            >>> stim.gate_data('DETECTOR').is_two_qubit_gate
+            False
+        """
+    @property
+    def is_unitary(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate is a unitary gate.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('H').is_unitary
+            True
+            >>> stim.gate_data('CX').is_unitary
+            True
+
+            >>> stim.gate_data('R').is_unitary
+            False
+            >>> stim.gate_data('M').is_unitary
+            False
+            >>> stim.gate_data('MXX').is_unitary
+            False
+            >>> stim.gate_data('X_ERROR').is_unitary
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').is_unitary
+            False
+            >>> stim.gate_data('MPP').is_unitary
+            False
+            >>> stim.gate_data('DETECTOR').is_unitary
+            False
+        """
+    @property
+    def name(
+        self,
+    ) -> str:
+        """Returns the canonical name of the gate.
+
+        Examples:
+            >>> import stim
+            >>> stim.gate_data('H').name
+            'H'
+            >>> stim.gate_data('cnot').name
+            'CX'
+        """
+    @property
+    def num_parens_arguments_range(
+        self,
+    ) -> range:
+        """Returns whether or not the gate is a measurement or reset.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('M').num_parens_arguments_range
+            range(0, 2)
+            >>> list(stim.gate_data('M').num_parens_arguments_range)
+            [0, 1]
+            >>> list(stim.gate_data('R').num_parens_arguments_range)
+            [0]
+            >>> list(stim.gate_data('H').num_parens_arguments_range)
+            [0]
+            >>> list(stim.gate_data('X_ERROR').num_parens_arguments_range)
+            [1]
+            >>> list(stim.gate_data('PAULI_CHANNEL_1').num_parens_arguments_range)
+            [3]
+            >>> list(stim.gate_data('PAULI_CHANNEL_2').num_parens_arguments_range)
+            [15]
+            >>> stim.gate_data('DETECTOR').num_parens_arguments_range
+            range(0, 256)
+            >>> list(stim.gate_data('OBSERVABLE_INCLUDE').num_parens_arguments_range)
+            [1]
+        """
+    @property
+    def produces_measurements(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate produces measurement results.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('M').produces_measurements
+            True
+            >>> stim.gate_data('MRY').produces_measurements
+            True
+            >>> stim.gate_data('MXX').produces_measurements
+            True
+            >>> stim.gate_data('MPP').produces_measurements
+            True
+
+            >>> stim.gate_data('H').produces_measurements
+            False
+            >>> stim.gate_data('CX').produces_measurements
+            False
+            >>> stim.gate_data('R').produces_measurements
+            False
+            >>> stim.gate_data('X_ERROR').produces_measurements
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').produces_measurements
+            False
+            >>> stim.gate_data('DETECTOR').produces_measurements
+            False
+        """
+    @property
+    def tableau(
+        self,
+    ) -> Optional[stim.Tableau]:
+        """Returns the gate's tableau, or None if the gate has no tableau.
+
+        Examples:
+            >>> import stim
+            >>> print(stim.gate_data('M').tableau)
+            None
+            >>> stim.gate_data('H').tableau
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("+Z"),
+                ],
+                zs=[
+                    stim.PauliString("+X"),
+                ],
+            )
+            >>> stim.gate_data('ISWAP').tableau
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("+ZY"),
+                    stim.PauliString("+YZ"),
+                ],
+                zs=[
+                    stim.PauliString("+_Z"),
+                    stim.PauliString("+Z_"),
+                ],
+            )
+        """
+    @property
+    def takes_measurement_record_targets(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate can accept rec targets.
+
+        For example, `CX` can take a measurement record target
+        like `CX rec[-1] 1`.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('CX').takes_measurement_record_targets
+            True
+            >>> stim.gate_data('DETECTOR').takes_measurement_record_targets
+            True
+
+            >>> stim.gate_data('H').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('SWAP').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('R').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('M').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('MRY').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('MXX').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('X_ERROR').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('CORRELATED_ERROR').takes_measurement_record_targets
+            False
+            >>> stim.gate_data('MPP').takes_measurement_record_targets
+            False
+        """
+    @property
+    def takes_pauli_targets(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate expects pauli targets.
+
+        For example, `CORRELATED_ERROR` takes targets like `X0` and `Y1`
+        instead of `0` or `1`.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('CORRELATED_ERROR').takes_pauli_targets
+            True
+            >>> stim.gate_data('MPP').takes_pauli_targets
+            True
+
+            >>> stim.gate_data('H').takes_pauli_targets
+            False
+            >>> stim.gate_data('CX').takes_pauli_targets
+            False
+            >>> stim.gate_data('R').takes_pauli_targets
+            False
+            >>> stim.gate_data('M').takes_pauli_targets
+            False
+            >>> stim.gate_data('MRY').takes_pauli_targets
+            False
+            >>> stim.gate_data('MXX').takes_pauli_targets
+            False
+            >>> stim.gate_data('X_ERROR').takes_pauli_targets
+            False
+            >>> stim.gate_data('DETECTOR').takes_pauli_targets
+            False
+        """
+    @property
+    def unitary_matrix(
+        self,
+    ) -> Optional[np.ndarray]:
+        """Returns the gate's unitary matrix, or None if the gate isn't unitary.
+
+        Examples:
+            >>> import stim
+
+            >>> print(stim.gate_data('M').unitary_matrix)
+            None
+
+            >>> stim.gate_data('X').unitary_matrix
+            array([[0.+0.j, 1.+0.j],
+                   [1.+0.j, 0.+0.j]], dtype=complex64)
+
+            >>> stim.gate_data('ISWAP').unitary_matrix
+            array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j],
+                   [0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j]], dtype=complex64)
+        """
 class GateTarget:
     """Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 
@@ -4276,70 +4783,238 @@ class GateTarget:
     def is_combiner(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_combiner()`.
+        """Returns whether or not this is a combiner target like `*`.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_combiner
+            False
+            >>> stim.target_inv(7).is_combiner
+            False
+            >>> stim.target_x(8).is_combiner
+            False
+            >>> stim.target_y(2).is_combiner
+            False
+            >>> stim.target_z(3).is_combiner
+            False
+            >>> stim.target_sweep_bit(9).is_combiner
+            False
+            >>> stim.target_rec(-5).is_combiner
+            False
+            >>> stim.target_combiner().is_combiner
+            True
         """
     @property
     def is_inverted_result_target(
         self,
     ) -> bool:
-        """Returns whether or not this is an inverted target.
+        """Returns whether or not this is an inverted target like `!5` or `!X4`.
 
-        Inverted targets include inverted qubit targets `stim.target_inv(5)`
-        (`!5` in a circuit file) and inverted Pauli targets like
-        `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_inverted_result_target
+            False
+            >>> stim.target_inv(7).is_inverted_result_target
+            True
+            >>> stim.target_x(8).is_inverted_result_target
+            False
+            >>> stim.target_x(8, invert=True).is_inverted_result_target
+            True
+            >>> stim.target_y(2).is_inverted_result_target
+            False
+            >>> stim.target_z(3).is_inverted_result_target
+            False
+            >>> stim.target_sweep_bit(9).is_inverted_result_target
+            False
+            >>> stim.target_rec(-5).is_inverted_result_target
+            False
         """
     @property
     def is_measurement_record_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a measurement record target.
+        """Returns whether or not this is a measurement record target like `rec[-5]`.
 
-        The value returned by `stim.target_rec(-5)`, which would be `rec[-5]` in a
-        circuit file, is a measurement record target.
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_measurement_record_target
+            False
+            >>> stim.target_inv(7).is_measurement_record_target
+            False
+            >>> stim.target_x(8).is_measurement_record_target
+            False
+            >>> stim.target_y(2).is_measurement_record_target
+            False
+            >>> stim.target_z(3).is_measurement_record_target
+            False
+            >>> stim.target_sweep_bit(9).is_measurement_record_target
+            False
+            >>> stim.target_rec(-5).is_measurement_record_target
+            True
         """
     @property
     def is_qubit_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a (possibly inverted) qubit target.
+        """Returns whether or not this is a qubit target like `5` or `!6`.
 
-        For example, `5` on its own in a stim circuit is a raw qubit target.
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_qubit_target
+            True
+            >>> stim.target_inv(7).is_qubit_target
+            True
+            >>> stim.target_x(8).is_qubit_target
+            False
+            >>> stim.target_y(2).is_qubit_target
+            False
+            >>> stim.target_z(3).is_qubit_target
+            False
+            >>> stim.target_sweep_bit(9).is_qubit_target
+            False
+            >>> stim.target_rec(-5).is_qubit_target
+            False
         """
     @property
     def is_sweep_bit_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a sweep bit target.
+        """Returns whether or not this is a sweep bit target like `sweep[4]`.
 
-        For example, `sweep[5]` in a circuit file is a sweep target, and the value
-        returned by `stim.target_sweep_bit` is a sweep target.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_sweep_bit_target
+            False
+            >>> stim.target_inv(7).is_sweep_bit_target
+            False
+            >>> stim.target_x(8).is_sweep_bit_target
+            False
+            >>> stim.target_y(2).is_sweep_bit_target
+            False
+            >>> stim.target_z(3).is_sweep_bit_target
+            False
+            >>> stim.target_sweep_bit(9).is_sweep_bit_target
+            True
+            >>> stim.target_rec(-5).is_sweep_bit_target
+            False
         """
     @property
     def is_x_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a (possibly inverted) X pauli target.
+        """Returns whether or not this is an X pauli target like `X2` or `!X7`.
 
-        For example, `X5` in a stim circuit is a X Pauli target. The value returned by
-        `stim.target_x` is a X pauli target.
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_x_target
+            False
+            >>> stim.target_inv(7).is_x_target
+            False
+            >>> stim.target_x(8).is_x_target
+            True
+            >>> stim.target_y(2).is_x_target
+            False
+            >>> stim.target_z(3).is_x_target
+            False
+            >>> stim.target_sweep_bit(9).is_x_target
+            False
+            >>> stim.target_rec(-5).is_x_target
+            False
         """
     @property
     def is_y_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a (possibly inverted) Y pauli target.
+        """Returns whether or not this is a Y pauli target like `Y2` or `!Y7`.
 
-        For example, `Y5` in a stim circuit is a Y Pauli target. The value returned by
-        `stim.target_y` is a Y pauli target.
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_y_target
+            False
+            >>> stim.target_inv(7).is_y_target
+            False
+            >>> stim.target_x(8).is_y_target
+            False
+            >>> stim.target_y(2).is_y_target
+            True
+            >>> stim.target_z(3).is_y_target
+            False
+            >>> stim.target_sweep_bit(9).is_y_target
+            False
+            >>> stim.target_rec(-5).is_y_target
+            False
         """
     @property
     def is_z_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a (possibly inverted) Z pauli target.
+        """Returns whether or not this is a Z pauli target like `Z2` or `!Z7`.
 
-        For example, `Z5` in a stim circuit is a Z Pauli target. The value returned by
-        `stim.target_z` is a Z pauli target.
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).is_z_target
+            False
+            >>> stim.target_inv(7).is_z_target
+            False
+            >>> stim.target_x(8).is_z_target
+            False
+            >>> stim.target_y(2).is_z_target
+            False
+            >>> stim.target_z(3).is_z_target
+            True
+            >>> stim.target_sweep_bit(9).is_z_target
+            False
+            >>> stim.target_rec(-5).is_z_target
+            False
+        """
+    @property
+    def pauli_type(
+        self,
+    ) -> str:
+        """Returns whether this is an 'X', 'Y', or 'Z' target.
+
+        For non-pauli targets, this property evaluates to 'I'.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).pauli_type
+            'I'
+            >>> stim.target_inv(7).pauli_type
+            'I'
+            >>> stim.target_x(8).pauli_type
+            'X'
+            >>> stim.target_y(2).pauli_type
+            'Y'
+            >>> stim.target_z(3).pauli_type
+            'Z'
+            >>> stim.target_sweep_bit(9).pauli_type
+            'I'
+            >>> stim.target_rec(-5).pauli_type
+            'I'
+        """
+    @property
+    def qubit_value(
+        self,
+    ) -> Optional[int]:
+        """Returns the integer value of the targeted qubit, or else None.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).qubit_value
+            6
+            >>> stim.target_inv(7).qubit_value
+            7
+            >>> stim.target_x(8).qubit_value
+            8
+            >>> stim.target_y(2).qubit_value
+            2
+            >>> stim.target_z(3).qubit_value
+            3
+            >>> print(stim.target_sweep_bit(9).qubit_value)
+            None
+            >>> print(stim.target_rec(-5).qubit_value)
+            None
         """
     @property
     def value(
@@ -4349,6 +5024,23 @@ class GateTarget:
 
         This is non-negative integer for qubit targets, and a negative integer for
         measurement record targets.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateTarget(6).value
+            6
+            >>> stim.target_inv(7).value
+            7
+            >>> stim.target_x(8).value
+            8
+            >>> stim.target_y(2).value
+            2
+            >>> stim.target_z(3).value
+            3
+            >>> stim.target_sweep_bit(9).value
+            9
+            >>> stim.target_rec(-5).value
+            -5
         """
 class GateTargetWithCoords:
     """A gate target with associated coordinate information.
@@ -6313,7 +7005,7 @@ class Tableau:
     def to_circuit(
         self,
         *,
-        method: str,
+        method: str = 'elimination',
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -6619,6 +7311,15 @@ class Tableau:
         endian: str,
     ) -> np.ndarray[np.complex64]:
         """Converts the tableau into a unitary matrix.
+
+        For an n-qubit tableau, this method performs O(n 4^n) work. It uses the state
+        channel duality to transform the tableau into a list of stabilizers, then
+        generates a random state vector and projects it into the +1 eigenspace of each
+        stabilizer.
+
+        Note that tableaus don't have a defined global phase, so the result's global
+        phase may be different from what you expect. For example, the square of
+        SQRT_X's unitary might equal -X instead of +X.
 
         Args:
             endian:
@@ -8372,6 +9073,32 @@ class TableauSimulator:
                 Applies the gate to the first two targets, then the next two targets,
                 and so forth. There must be an even number of targets.
         """
+@overload
+def gate_data(
+    name: str,
+) -> stim.GateData:
+    pass
+@overload
+def gate_data(
+) -> Dict[str, stim.GateData]:
+    pass
+def gate_data(
+    name: Optional[str] = None,
+) -> Union[str, Dict[str, stim.GateData]]:
+    """Returns gate data for the given named gate, or all gates.
+
+    Examples:
+        >>> import stim
+        >>> stim.gate_data('cnot').aliases
+        ['CNOT', 'CX', 'ZCX']
+        >>> stim.gate_data('cnot').is_two_qubit_gate
+        True
+        >>> gate_dict = stim.gate_data()
+        >>> len(gate_dict)
+        64
+        >>> gate_dict['MX'].is_dissipative
+        True
+    """
 def main(
     *,
     command_line_args: List[str],
@@ -8568,7 +9295,7 @@ def target_combiner(
         ''')
     """
 def target_inv(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
 ) -> stim.GateTarget:
     """Returns a target flagged as inverted.
 
@@ -8695,7 +9422,7 @@ def target_sweep_bit(
         ''')
     """
 def target_x(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli X target that can be passed into `stim.Circuit.append`.
@@ -8721,7 +9448,7 @@ def target_x(
         ''')
     """
 def target_y(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
@@ -8747,7 +9474,7 @@ def target_y(
         ''')
     """
 def target_z(
-    qubit_index: int,
+    qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
 ) -> stim.GateTarget:
     """Returns a Pauli Z target that can be passed into `stim.Circuit.append`.

@@ -16,12 +16,13 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
 SparseUnsignedRevFrameTracker _tracker_from_pauli_string(const char *text) {
-    auto p = PauliString::from_str(text);
+    auto p = PauliString<MAX_BITWORD_WIDTH>::from_str(text);
     SparseUnsignedRevFrameTracker result(p.num_qubits, 0, 0);
     for (size_t q = 0; q < p.num_qubits; q++) {
         if (p.xs[q]) {
@@ -37,7 +38,7 @@ SparseUnsignedRevFrameTracker _tracker_from_pauli_string(const char *text) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_h) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("H").tableau();
+    auto tableau = GATE_DATA.at("H").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -59,7 +60,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_h) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_s) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("S").tableau();
+    auto tableau = GATE_DATA.at("S").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -81,7 +82,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_s) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_c_xyz) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0};
-    Tableau tableau = GATE_DATA.at("C_XYZ").tableau();
+    auto tableau = GATE_DATA.at("C_XYZ").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("I");
     actual.undo_tableau(tableau, targets);
@@ -103,7 +104,7 @@ TEST(SparseUnsignedRevFrameTracker, undo_tableau_c_xyz) {
 TEST(SparseUnsignedRevFrameTracker, undo_tableau_cx) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     std::vector<uint32_t> targets{0, 1};
-    Tableau tableau = GATE_DATA.at("CX").tableau();
+    auto tableau = GATE_DATA.at("CX").tableau<MAX_BITWORD_WIDTH>();
 
     actual = _tracker_from_pauli_string("II");
     actual.undo_tableau(tableau, targets);
@@ -140,7 +141,7 @@ static std::vector<GateTarget> qubit_targets(const std::vector<uint32_t> &target
 
 TEST(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau) {
     auto &rng = SHARED_TEST_RNG();
-    for (const auto &gate : GATE_DATA.gates()) {
+    for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
             size_t n = (gate.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
             SparseUnsignedRevFrameTracker tracker_gate(n + 3, 0, 0);
@@ -164,7 +165,7 @@ TEST(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau) {
                 targets.push_back(n - k + 1);
             }
             tracker_gate.undo_gate({gate.id, {}, qubit_targets(targets)});
-            tracker_tableau.undo_tableau(gate.tableau(), targets);
+            tracker_tableau.undo_tableau(gate.tableau<MAX_BITWORD_WIDTH>(), targets);
             EXPECT_EQ(tracker_gate, tracker_tableau) << gate.name;
         }
     }
@@ -582,4 +583,106 @@ TEST(SparseUnsignedRevFrameTracker, undo_circuit_loop_big_period) {
     ASSERT_EQ(actual.zs[0].sorted_items, std::vector<DemTarget>{DemTarget::observable_id(3)});
     ASSERT_EQ(actual.num_measurements_in_past, 5000000000000ULL - 3000000000003ULL - 1500);
     ASSERT_EQ(actual.num_detectors_in_past, 4000000000000ULL - 1000000000001ULL - 500);
+}
+
+TEST(SparseUnsignedRevFrameTracker, mpad) {
+    SparseUnsignedRevFrameTracker actual(0, 0, 0);
+    SparseUnsignedRevFrameTracker expected(0, 0, 0);
+
+    actual = _tracker_from_pauli_string("IIZ");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::relative_detector_id(5));
+    actual.undo_MPAD({GateType::MRY, {}, qubit_targets({0})});
+
+    expected = _tracker_from_pauli_string("IIZ");
+    expected.num_measurements_in_past = 1;
+
+    ASSERT_EQ(actual, expected);
+}
+
+TEST(SparseUnsignedRevFrameTracker, mxx) {
+    SparseUnsignedRevFrameTracker actual(0, 0, 0);
+    SparseUnsignedRevFrameTracker expected(0, 0, 0);
+
+    actual = _tracker_from_pauli_string("III");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MXX 0 1"));
+    expected = _tracker_from_pauli_string("XXI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("ZZI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MXX !0 !1"));
+    expected = _tracker_from_pauli_string("YYI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("ZXI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    ASSERT_THROW({ actual.undo_circuit(Circuit("MXX 0 1")); }, std::invalid_argument);
+}
+
+TEST(SparseUnsignedRevFrameTracker, myy) {
+    SparseUnsignedRevFrameTracker actual(0, 0, 0);
+    SparseUnsignedRevFrameTracker expected(0, 0, 0);
+
+    actual = _tracker_from_pauli_string("III");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MYY 0 1"));
+    expected = _tracker_from_pauli_string("YYI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("ZZI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MYY !0 !1"));
+    expected = _tracker_from_pauli_string("XXI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("ZYI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    ASSERT_THROW({ actual.undo_circuit(Circuit("MYY 0 1")); }, std::invalid_argument);
+}
+
+
+TEST(SparseUnsignedRevFrameTracker, mzz) {
+    SparseUnsignedRevFrameTracker actual(0, 0, 0);
+    SparseUnsignedRevFrameTracker expected(0, 0, 0);
+
+    actual = _tracker_from_pauli_string("III");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MZZ 0 1"));
+    expected = _tracker_from_pauli_string("ZZI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("XXI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    actual.undo_circuit(Circuit("MZZ !0 !1"));
+    expected = _tracker_from_pauli_string("YYI");
+    expected.num_measurements_in_past = 1;
+    ASSERT_EQ(actual, expected);
+
+    actual = _tracker_from_pauli_string("ZYI");
+    actual.num_measurements_in_past = 2;
+    actual.rec_bits[1].xor_item(DemTarget::observable_id(0));
+    ASSERT_THROW({ actual.undo_circuit(Circuit("MZZ 0 1")); }, std::invalid_argument);
+}
+
+TEST(SparseUnsignedRevFrameTracker, runs_on_general_circuit) {
+    auto circuit = generate_test_circuit_with_all_operations();
+    SparseUnsignedRevFrameTracker s(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors());
+    s.undo_circuit(circuit);
+    ASSERT_EQ(s.num_measurements_in_past, 0);
+    ASSERT_EQ(s.num_detectors_in_past, 0);
 }

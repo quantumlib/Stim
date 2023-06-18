@@ -11,6 +11,7 @@ from sinter._decoding import sample_decode
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 
 _DECODER_KEY_AND_PACKAGE = [
+    ('vacuous', 'sinter'),
     ('pymatching', 'pymatching'),
     ('fusion_blossom', 'fusion_blossom'),
     ('internal', 'gqec'),
@@ -43,7 +44,8 @@ def test_decode_repetition_code(decoder: str, required_import: str, force_stream
         decoder=decoder,
     )
     assert result.discards == 0
-    assert 1 <= result.errors <= 100
+    if decoder != 'vacuous':
+        assert 1 <= result.errors <= 100
     assert result.shots == 1000
 
 
@@ -66,7 +68,8 @@ def test_decode_surface_code(decoder: str, required_import: str, force_streaming
         decoder=decoder,
         __private__unstable__force_decode_on_disk=force_streaming,
     )
-    assert 0 <= stats.errors <= 50
+    if decoder != 'vacuous':
+        assert 0 <= stats.errors <= 50
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
@@ -230,7 +233,8 @@ def test_post_selection(decoder: str, required_import: str, force_streaming: Opt
         __private__unstable__force_decode_on_disk=force_streaming,
     )
     assert 1050 <= result.discards <= 1350
-    assert 40 <= result.errors <= 160
+    if decoder != 'vacuous':
+        assert 40 <= result.errors <= 160
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
@@ -255,7 +259,67 @@ def test_observable_post_selection(decoder: str, required_import: str, force_str
         __private__unstable__force_decode_on_disk=force_streaming,
     )
     np.testing.assert_allclose(result.discards / result.shots, 0.2, atol=0.1)
-    np.testing.assert_allclose(result.errors / (result.shots - result.discards), 0.1, atol=0.05)
+    if decoder != 'vacuous':
+        np.testing.assert_allclose(result.errors / (result.shots - result.discards), 0.1, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_error_splitting(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        num_shots=10000,
+        decoder=decoder,
+        count_observable_error_combos=True,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    assert result.discards == 0
+    assert set(result.custom_counts.keys()) == {'obs_mistake_mask=E_', 'obs_mistake_mask=_E', 'obs_mistake_mask=EE'}
+    if decoder != 'vacuous':
+        np.testing.assert_allclose(result.errors / result.shots, 1 - 0.8 * 0.9, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=E_'] / result.shots, 0.1 * 0.2, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=_E'] / result.shots, 0.1 * 0.8, atol=0.05)
+        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=EE'] / result.shots, 0.9 * 0.2, atol=0.05)
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_detector_counting(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    circuit = stim.Circuit("""
+        X_ERROR(0.1) 0
+        X_ERROR(0.2) 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+    """)
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=None,
+        num_shots=10000,
+        decoder=decoder,
+        count_detection_events=True,
+        __private__unstable__force_decode_on_disk=force_streaming,
+    )
+    assert result.discards == 0
+    assert result.custom_counts['detectors_checked'] == 20000
+    assert 0.3 * 10000 * 0.5 <= result.custom_counts['detection_events'] <= 0.3 * 10000 * 2.0
+    assert set(result.custom_counts.keys()) == {'detectors_checked', 'detection_events'}
 
 
 @pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
@@ -278,13 +342,14 @@ def test_decode_fails_correctly(decoder: str, required_import: str, force_stream
         with open(d / 'bad_dets.b8', 'wb') as f:
             f.write(b'!')
 
-        with pytest.raises(Exception):
-            decoder_obj.decode_via_files(
-                num_shots=1,
-                num_dets=dem.num_detectors,
-                num_obs=dem.num_observables,
-                dem_path=d / 'dem.dem',
-                dets_b8_in_path=d / 'bad_dets.b8',
-                obs_predictions_b8_out_path=d / 'predict.b8',
-                tmp_dir=d,
-            )
+        if decoder != 'vacuous':
+            with pytest.raises(Exception):
+                decoder_obj.decode_via_files(
+                    num_shots=1,
+                    num_dets=dem.num_detectors,
+                    num_obs=dem.num_observables,
+                    dem_path=d / 'dem.dem',
+                    dets_b8_in_path=d / 'bad_dets.b8',
+                    obs_predictions_b8_out_path=d / 'predict.b8',
+                    tmp_dir=d,
+                )

@@ -21,7 +21,7 @@ using namespace stim;
 BENCHMARK(tableau_iter_unsigned_3q) {
     size_t c = 0;
     benchmark_go([&]() {
-        TableauIterator iter(3, false);
+        TableauIterator<MAX_BITWORD_WIDTH> iter(3, false);
         while (iter.iter_next()) {
             c += iter.result.num_qubits;
         }
@@ -36,7 +36,7 @@ BENCHMARK(tableau_iter_unsigned_3q) {
 BENCHMARK(tableau_iter_all_3q) {
     size_t c = 0;
     benchmark_go([&]() {
-        TableauIterator iter(3, true);
+        TableauIterator<MAX_BITWORD_WIDTH> iter(3, true);
         while (iter.iter_next()) {
             c += iter.result.num_qubits;
         }

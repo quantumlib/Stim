@@ -24,6 +24,8 @@ class WorkIn:
             postselection_mask: 'Optional[np.ndarray]',
             postselected_observables_mask: 'Optional[np.ndarray]',
             json_metadata: 'JSON_TYPE',
+            count_observable_error_combos: bool,
+            count_detection_events: bool,
             num_shots: int):
         self.work_key = work_key
         self.circuit_path = circuit_path
@@ -33,6 +35,8 @@ class WorkIn:
         self.postselection_mask = postselection_mask
         self.postselected_observables_mask = postselected_observables_mask
         self.json_metadata = json_metadata
+        self.count_observable_error_combos = count_observable_error_combos
+        self.count_detection_events = count_detection_events
         self.num_shots = num_shots
 
     def with_work_key(self, work_key: Any) -> 'WorkIn':
@@ -46,6 +50,8 @@ class WorkIn:
             json_metadata=self.json_metadata,
             strong_id=self.strong_id,
             num_shots=self.num_shots,
+            count_observable_error_combos=self.count_observable_error_combos,
+            count_detection_events=self.count_detection_events,
         )
 
 
@@ -147,6 +153,8 @@ def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Dec
         post_mask=work.postselection_mask,
         postselected_observable_mask=work.postselected_observables_mask,
         decoder=work.decoder,
+        count_observable_error_combos=work.count_observable_error_combos,
+        count_detection_events=work.count_detection_events,
         tmp_dir=child_dir,
         custom_decoders=custom_decoders,
     )
