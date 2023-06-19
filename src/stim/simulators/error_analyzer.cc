@@ -744,8 +744,8 @@ void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] >= 3.0 / 4.0) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).");
+    if (dat.args[0] > 3.0 / 4.0) {
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).");
     }
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
@@ -762,8 +762,8 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] >= 15.0 / 16.0) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability >= 15/16).");
+    if (dat.args[0] > 15.0 / 16.0) {
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability > 15/16).");
     }
     double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
