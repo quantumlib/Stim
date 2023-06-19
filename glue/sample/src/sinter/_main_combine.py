@@ -19,6 +19,9 @@ def main_combine(*, command_line_args: List[str]):
                              '    metadata (default): sort ascending by metadata.'
                              '    preserve: match order of input rows.\n'
                              '    error: sort ascending by error rate')
+    parser.add_argument('--strip_custom_counts',
+                        help='Removes custom counts from the output.',
+                        action='store_true')
     parser.add_argument('rest',
                         nargs=argparse.REMAINDER,
                         type=str,
@@ -32,17 +35,33 @@ def main_combine(*, command_line_args: List[str]):
     else:
         total = ExistingData.from_file(sys.stdin)
 
+    total = list(total.data.values())
+
+    if args.strip_custom_counts:
+        total = [
+            sinter.TaskStats(
+                strong_id=task.strong_id,
+                decoder=task.decoder,
+                json_metadata=task.json_metadata,
+                shots=task.shots,
+                errors=task.errors,
+                discards=task.discards,
+                seconds=task.seconds,
+            )
+            for task in total
+        ]
+
     if args.order == 'metadata':
-        output = sorted(total.data.values(), key=lambda e: better_sorted_str_terms(json.dumps(e.json_metadata, separators=(',', ':'), sort_keys=True)))
+        output = sorted(total, key=lambda e: better_sorted_str_terms(json.dumps(e.json_metadata, separators=(',', ':'), sort_keys=True)))
     elif args.order == 'preserve':
-        output = list(total.data.values())
+        output = list(total)
     elif args.order == 'error':
         def err_rate_key(stats: sinter.TaskStats) -> Any:
             num_kept = stats.shots - stats.discards
             err_rate = 0 if num_kept == 0 else stats.errors / num_kept
             discard_rate = 0 if stats.shots == 0 else stats.discards / stats.shots
             return err_rate, discard_rate
-        output = sorted(total.data.values(), key=err_rate_key)
+        output = sorted(total, key=err_rate_key)
     else:
         raise NotImplementedError(f'order={args.order}')
 

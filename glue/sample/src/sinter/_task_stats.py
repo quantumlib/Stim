@@ -1,8 +1,6 @@
 import collections
 import dataclasses
-from typing import Counter
-from typing import List
-from typing import Optional
+from typing import Counter, List
 
 from sinter._anon_task_stats import AnonTaskStats
 from sinter._json_type import JSON_TYPE

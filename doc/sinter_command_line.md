@@ -33,7 +33,8 @@ SYNOPSIS
         [--postselected_detectors_predicate PYTHON_EXPRESSION] \
         [--postselected_observables_predicate PYTHON_EXPRESSION] \
         [--quiet] \
-        [--split_errors] \
+        [--count_detection_events] \
+        [--count_observable_error_combos] \
         [--start_batch_size int]
 
 DESCRIPTION
@@ -115,9 +116,14 @@ OPTIONS
         Examples:
             --postselected_observables_predicate "False"
             --postselected_observables_predicate "metadata['d'] == 5 and index >= 2"
-    --split_errors
-        Causes errors to be grouped by the observable mispredictions that caused
-        the error.
+    --count_observable_error_combos
+        When set, the returned stats will include custom counts like
+        `obs_mistake_mask=E_E__` counting how many times the decoder made each
+        pattern of observable mistakes.
+    --count_detection_events
+        When set, the returned stats will include custom counts
+        `detectors_checked` and `detection_events`. The detection fraction is
+        the ratio of these two numbers.
     --quiet
         Disables writing progress to stderr.
     --also_print_results_to_stdout
@@ -174,7 +180,10 @@ NAME
 
 SYNOPSIS
     sinter combine \
-        FILEPATH [...]
+        FILEPATH [...] \
+        \
+        [--order preserve|metadata|error] \
+        [--strip_custom_counts]
 
 DESCRIPTION
     Loads sample statistics from one or more CSV statistics files (produced by
@@ -184,6 +193,14 @@ DESCRIPTION
 OPTIONS
     filepaths
         The locations of statistics files with rows aggregate together.
+    --order
+        Decides how to sort the output data.
+        The options are:
+            metadata (default): Orders by the json_metadata column.
+            preserve: Keeps the same order as the input.
+            error: Orders by the error rate.
+    --strip_custom_counts
+        Removes custom_counts data from the output. 
 
 
 EXAMPLES
@@ -245,7 +262,7 @@ SYNOPSIS
         [--fig_size float float] \
         [--highlight_max_likelihood_factor float] \
         [--plot_args_func PYTHON_EXPRESSION] \
-        [--split_errors] \
+        [--split_custom_counts] \
         [--subtitle "{common}"|text] \
         [--title text] \
         [--type "error_rate"|"discard_rate"|"custom_y" [...] \
@@ -415,16 +432,35 @@ OPTIONS
     --in IN [IN ...]      Input files to get data from.
     --type {error_rate,discard_rate,custom_y} [{error_rate,discard_rate,custom_y} ...]
         Picks the figures to include.
-    --out OUT             Output file to write the plot to. The file extension determines the type of image. Either this or --show must be specified.
-    --xaxis XAXIS         Customize the X axis label. Prefix [log] for logarithmic scale. Prefix [sqrt] for square root scale.
-    --yaxis YAXIS         Customize the Y axis label. Prefix [log] for logarithmic scale. Prefix [sqrt] for square root scale.
-    --split_errors        When a stat has classified errors, this causes each classification to be a separate statistic.
-    --show                Displays the plot in a window. Either this or --out must be specified.
-    --ymin YMIN           Sets the minimum value of the y axis (max always 1).
-    --title TITLE         Sets the title of the plot.
-    --subtitle SUBTITLE   Sets the subtitle of the plot. Note: The pattern "{common}" will expand to text including all json metadata values that are the same across all stats.
+    --out OUT
+        Output file to write the plot to.
+        The file extension determines the type of image.
+        Either this or --show must be specified.
+    --xaxis XAXIS
+        Customize the X axis label.
+        Prefix [log] for logarithmic scale.
+        Prefix [sqrt] for square root scale.
+    --yaxis YAXIS
+        Customize the Y axis label.
+        Prefix [log] for logarithmic scale.
+        Prefix [sqrt] for square root scale.
+    --split_custom_counts
+        When a stat has custom counts, this splits it into multiple copies of
+        the stat with each one having exactly one of the custom counts.
+    --show
+        Displays the plot in a window. Either this or --out must be specified.
+    --ymin YMIN
+        Sets the minimum value of the y axis (max always 1).
+    --title TITLE
+        Sets the title of the plot.
+    --subtitle SUBTITLE
+        Sets the subtitle of the plot. Note: The pattern "{common}" will expand
+        to text including all json metadata values that are the same across all
+        stats.
     --highlight_max_likelihood_factor HIGHLIGHT_MAX_LIKELIHOOD_FACTOR
-        The relative likelihood ratio that determines the color highlights around curves. Set this to 1 or larger. Set to 1 to disable highlighting.
+        The relative likelihood ratio that determines the color highlights
+        around curves. Set this to 1 or larger. Set to 1 to disable
+        highlighting.
 
 
 EXAMPLES
