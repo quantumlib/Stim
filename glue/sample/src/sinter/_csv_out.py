@@ -4,8 +4,6 @@ import io
 import json
 from typing import Any, Optional
 
-from sinter._json_type import JSON_TYPE
-
 
 def escape_csv(text: Any, width: Optional[int]) -> str:
     output = io.StringIO()
@@ -23,8 +21,8 @@ def csv_line(*,
              seconds: Any,
              decoder: Any,
              strong_id: Any,
-             json_metadata: JSON_TYPE,
-             custom_counts: JSON_TYPE,
+             json_metadata: Any,
+             custom_counts: Any,
              is_header: bool = False) -> str:
     if isinstance(seconds, float):
         if seconds < 1:

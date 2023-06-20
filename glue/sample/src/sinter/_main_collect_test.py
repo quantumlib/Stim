@@ -335,3 +335,87 @@ def test_main_collect_count_detection_events():
         assert set(item.custom_counts.keys()) == {"detection_events", "detectors_checked"}
         assert item.custom_counts['detectors_checked'] == 100000
         assert 100000 * 0.1 * 0.5 < item.custom_counts['detection_events'] < 100000 * 0.1 * 1.5
+
+
+def test_cpu_pin():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / 'a=3.stim', 'w') as f:
+            print("""
+                X_ERROR(0.1) 0
+                X_ERROR(0.2) 1
+                M 0 1
+                OBSERVABLE_INCLUDE(0) rec[-1]
+                OBSERVABLE_INCLUDE(1) rec[-2]
+                DETECTOR rec[-2]
+            """, file=f)
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "100000",
+            "--metadata_func",
+            "auto",
+            "--decoders",
+            "pymatching",
+            "--count_detection_events",
+            "--processes",
+            "4",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+            "--allowed_cpu_affinity_ids",
+            "0",
+            "range(1, 9, 2)",
+            "[4, 20]"
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
+        item, = data
+        assert set(item.custom_counts.keys()) == {"detection_events", "detectors_checked"}
+        assert item.custom_counts['detectors_checked'] == 100000
+        assert 100000 * 0.1 * 0.5 < item.custom_counts['detection_events'] < 100000 * 0.1 * 1.5
+
+
+def test_custom_error_stopping_count():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        stim.Circuit.generated(
+            'repetition_code:memory',
+            rounds=25,
+            distance=5,
+            after_clifford_depolarization=0.1,
+        ).to_file(d / 'a=3.stim')
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "100_000_000_000_000",
+            "--quiet",
+            "--max_errors",
+            "1_000_000",
+            "--metadata_func",
+            "auto",
+            "--decoders",
+            "vacuous",
+            "--count_detection_events",
+            "--processes",
+            "4",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+            "--custom_error_count_key",
+            "detection_events",
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
+        item, = data
+        # Would normally need >1_000_000 shots to see 1_000_000 errors.
+        assert item.shots < 100_000
+        assert item.errors < 90_000
+        assert item.custom_counts['detection_events'] > 1_000_000

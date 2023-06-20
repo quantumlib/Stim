@@ -228,7 +228,6 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
         text = text.replace("'stim.Circuit'", "stim.Circuit")
         text = text.replace("'stim.DetectorErrorModel'", "stim.DetectorErrorModel")
         text = text.replace("'sinter.CollectionOptions'", "sinter.CollectionOptions")
-        text = text.replace('''Union[Dict[str, ForwardRef('JSON_TYPE')], List[ForwardRef('JSON_TYPE')], str, int, float]''', 'Any')
         text = text.replace("'sinter.Fit'", 'sinter.Fit')
 
         # Replace default value lambdas with their source.

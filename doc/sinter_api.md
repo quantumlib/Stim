@@ -802,6 +802,8 @@ def collect(
     print_progress: bool = False,
     hint_num_tasks: Optional[int] = None,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> List[sinter.TaskStats]:
     """Collects statistics from the given tasks, using multiprocessing.
 
@@ -864,6 +866,11 @@ def collect(
             used if requested by name by a task or by the decoders list.
             If not specified, only decoders with support built into sinter, such
             as 'pymatching' and 'fusion_blossom', can be used.
+        custom_error_count_key: Makes `max_errors` apply to `stat.custom_counts[key]`
+            instead of `stat.errors`.
+        allowed_cpu_affinity_ids: Controls which CPUs the workers can be pinned to. The
+            set of allowed IDs should be at least as large as the number of workers, though
+            this is not strictly required. If not set, defaults to all CPUs being allowed.
 
     Returns:
         A list of sample statistics, one from each problem. The list is not in
@@ -1119,6 +1126,8 @@ def iter_collect(
     count_observable_error_combos: bool = False,
     count_detection_events: bool = False,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> Iterator[sinter.Progress]:
     """Iterates error correction statistics collected from worker processes.
 
@@ -1175,6 +1184,11 @@ def iter_collect(
         custom_decoders: Custom decoders that can be used if requested by name.
             If not specified, only decoders built into sinter, such as
             'pymatching' and 'fusion_blossom', can be used.
+        custom_error_count_key: Makes `max_errors` apply to `stat.custom_counts[key]`
+            instead of `stat.errors`.
+        allowed_cpu_affinity_ids: Controls which CPUs the workers can be pinned to. The
+            set of allowed IDs should be at least as large as the number of workers, though
+            this is not strictly required. If not set, defaults to all CPUs being allowed.
 
     Yields:
         sinter.Progress instances recording incremental statistical data as it

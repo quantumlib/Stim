@@ -6,7 +6,6 @@ import math
 import numpy as np
 
 from sinter._collection_options import CollectionOptions
-from sinter._json_type import JSON_TYPE
 
 if TYPE_CHECKING:
     import sinter
@@ -69,7 +68,7 @@ class Task:
         detector_error_model: Optional['stim.DetectorErrorModel'] = None,
         postselection_mask: Optional[np.ndarray] = None,
         postselected_observables_mask: Optional[np.ndarray] = None,
-        json_metadata: JSON_TYPE = None,
+        json_metadata: Any = None,
         collection_options: 'sinter.CollectionOptions' = CollectionOptions(),
         skip_validation: bool = False,
         _unvalidated_strong_id: Optional[str] = None,
