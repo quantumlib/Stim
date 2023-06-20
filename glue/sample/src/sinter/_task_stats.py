@@ -137,20 +137,23 @@ class TaskStats:
             custom_counts=self.custom_counts,
         )
 
-    def _split_custom_counts(self) -> List['TaskStats']:
-        if not self.custom_counts:
-            return [self]
+    def _split_custom_counts(self, custom_keys: List[str]) -> List['TaskStats']:
         result = []
-        for k, v in self.custom_counts.items():
+        for k in custom_keys:
+            m = self.json_metadata
+            if isinstance(m, dict):
+                m = dict(m)
+                m.setdefault('custom_error_count_key', k)
+                m.setdefault('original_error_count', self.errors)
             result.append(TaskStats(
                 strong_id=f'{self.strong_id}:{k}',
                 decoder=self.decoder,
-                json_metadata=self.json_metadata,
+                json_metadata=m,
                 shots=self.shots,
-                errors=v,
+                errors=self.custom_counts[k],
                 discards=self.discards,
                 seconds=self.seconds,
-                custom_counts=collections.Counter({k: v}),
+                custom_counts=self.custom_counts,
             ))
         return result
 

@@ -67,6 +67,7 @@ def parse_args(args: List[str]) -> Any:
                         help='The decoder to use to predict observables from detection events.')
     parser.add_argument('--custom_decoders_module_function',
                         default=None,
+                        nargs='+',
                         help='Use the syntax "module:function" to "import function from module" '
                              'and use the result of "function()" as the custom_decoders '
                              'dictionary. The dictionary must map strings to stim.Decoder '
@@ -223,15 +224,19 @@ def parse_args(args: List[str]) -> Any:
             filename='postselected_detectors_predicate:command_line_arg',
             mode='eval'))
     if a.custom_decoders_module_function is not None:
-        terms = a.custom_decoders_module_function.split(':')
-        if len(terms) != 2:
-            raise ValueError("--custom_decoders_module_function didn't have exactly one colon "
-                             "separating a module name from a function name. Expected an argument "
-                             "of the form --custom_decoders_module_function 'module:function'")
-        module, function = terms
-        vals = {'__name__': '[]'}
-        exec(f"from {module} import {function} as _custom_decoders", vals)
-        a.custom_decoders = vals['_custom_decoders']()
+        all_custom_decoders = {}
+        for entry in a.custom_decoders_module_function:
+            terms = entry.split(':')
+            if len(terms) != 2:
+                raise ValueError("--custom_decoders_module_function didn't have exactly one colon "
+                                 "separating a module name from a function name. Expected an argument "
+                                 "of the form --custom_decoders_module_function 'module:function'")
+            module, function = terms
+            vals = {'__name__': '[]'}
+            exec(f"from {module} import {function} as _custom_decoders", vals)
+            custom_decoders = vals['_custom_decoders']()
+            all_custom_decoders = {**all_custom_decoders, **custom_decoders}
+        a.custom_decoders = all_custom_decoders
     else:
         a.custom_decoders = None
     for decoder in a.decoders:

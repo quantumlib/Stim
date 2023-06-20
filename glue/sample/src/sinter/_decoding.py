@@ -238,19 +238,20 @@ def sample_decode(*,
         )
     except NotImplementedError:
         assert __private__unstable__force_decode_on_disk or __private__unstable__force_decode_on_disk is None
-        return _sample_decode_helper_using_disk(
-            circuit=circuit,
-            dem=dem,
-            dem_path=dem_path,
-            post_mask=post_mask,
-            postselected_observable_mask=postselected_observable_mask,
-            num_shots=num_shots,
-            decoder_obj=decoder_obj,
-            tmp_dir=tmp_dir,
-            start_time_monotonic=start_time,
-            count_observable_error_combos=count_observable_error_combos,
-            count_detection_events=count_detection_events,
-        )
+        pass
+    return _sample_decode_helper_using_disk(
+        circuit=circuit,
+        dem=dem,
+        dem_path=dem_path,
+        post_mask=post_mask,
+        postselected_observable_mask=postselected_observable_mask,
+        num_shots=num_shots,
+        decoder_obj=decoder_obj,
+        tmp_dir=tmp_dir,
+        start_time_monotonic=start_time,
+        count_observable_error_combos=count_observable_error_combos,
+        count_detection_events=count_detection_events,
+    )
 
 
 def _sample_decode_helper_using_memory(

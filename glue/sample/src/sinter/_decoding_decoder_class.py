@@ -37,6 +37,10 @@ class CompiledDecoder(metaclass=abc.ABCMeta):
                 where `num_shots` is the number of shots to decoder and `dem` is
                 the detector error model this instance was compiled to decode.
 
+                It's guaranteed that the data will be laid out in memory so that
+                detection events within a shot are contiguous in memory (i.e.
+                that bit_packed_detection_event_data.strides[1] == 1).
+
         Returns:
             Bit packed observable flip data stored as a bit packed numpy array.
             The numpy array must have the following dtype/shape:
