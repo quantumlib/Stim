@@ -2350,7 +2350,7 @@ TEST(ErrorAnalyzer, context_clues_for_errors) {
     ASSERT_EQ(
         "",
         check_catch<std::invalid_argument>(
-            "Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).\n"
+            "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
             "\n"
             "Circuit stack trace:\n"
             "    at instruction #2 [which is DEPOLARIZE1(1) 0]",
@@ -2371,7 +2371,7 @@ TEST(ErrorAnalyzer, context_clues_for_errors) {
     ASSERT_EQ(
         "",
         check_catch<std::invalid_argument>(
-            "Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).\n"
+            "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
             "\n"
             "Circuit stack trace:\n"
             "    at instruction #3 [which is a REPEAT 500 block]\n"

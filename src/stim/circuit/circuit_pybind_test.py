@@ -1380,3 +1380,49 @@ def test_reference_sample():
     expected_padded = np.zeros_like(unpacked)
     expected_padded[:len(expected)] = expected
     np.testing.assert_array_equal(unpacked, expected_padded)
+
+
+def test_max_mix_depolarization_is_allowed_in_dem_conversion_without_args():
+    assert stim.Circuit("""
+        H 0
+        CX 0 1
+        DEPOLARIZE1(0.75) 0
+        CX 0 1
+        H 0
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    """).detector_error_model(approximate_disjoint_errors=True) == stim.DetectorErrorModel("""
+        error(0.5) D0
+        error(0.5) D0 D1
+        error(0.5) D1
+    """)
+
+    assert stim.Circuit("""
+        H 0 1
+        CX 0 2 1 3
+        DEPOLARIZE2(0.9375) 0 1
+        CX 0 2 1 3
+        H 0 1
+        M 0 1 2 3
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        DETECTOR rec[-4]
+    """).detector_error_model() == stim.DetectorErrorModel("""
+        error(0.5) D0
+        error(0.5) D0 D1
+        error(0.5) D0 D1 D2
+        error(0.5) D0 D1 D2 D3
+        error(0.5) D0 D1 D3
+        error(0.5) D0 D2
+        error(0.5) D0 D2 D3
+        error(0.5) D0 D3
+        error(0.5) D1
+        error(0.5) D1 D2
+        error(0.5) D1 D2 D3
+        error(0.5) D1 D3
+        error(0.5) D2
+        error(0.5) D2 D3
+        error(0.5) D3
+    """)
