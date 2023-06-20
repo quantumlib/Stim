@@ -1,9 +1,8 @@
 import collections
 import dataclasses
-from typing import Counter, List
+from typing import Counter, List, Any
 
 from sinter._anon_task_stats import AnonTaskStats
-from sinter._json_type import JSON_TYPE
 from sinter._csv_out import csv_line
 
 
@@ -44,7 +43,7 @@ class TaskStats:
     # Information describing the problem that was sampled.
     strong_id: str
     decoder: str
-    json_metadata: JSON_TYPE
+    json_metadata: Any
 
     # Information describing the results of sampling.
     shots: int = 0
@@ -61,7 +60,6 @@ class TaskStats:
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
-        # Don't rely on types module for NoneType since its presence depends on python version.
         assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
         assert self.errors >= 0
         assert self.discards >= 0

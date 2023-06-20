@@ -42,22 +42,22 @@ DESCRIPTION
     them using the given decoders, and report CSV statistics on error rates.
 
 OPTIONS
-    --circuits CIRCUITS [CIRCUITS ...]
+    --circuits FILEPATH [ANOTHER_FILEPATH ...]
         Circuit files to sample from and decode. This parameter can be given
         multiple arguments.
-    --decoders DECODERS [DECODERS ...]
+    --decoders NAME [ANOTHER_NAME ...]
         The decoder to use to predict observables from detection events.
-    --custom_decoders_module_function CUSTOM_DECODERS_MODULE_FUNCTION
+    --custom_decoders_module_function MODULE_NAME:FUNCTION_NAME
         Use the syntax "module:function" to "import function from module" and
         use the result of "function()" as the custom_decoders dictionary. The
         dictionary must map strings to stim.Decoder instances.
-    --max_shots MAX_SHOTS
+    --max_shots INT
         Sampling of a circuit will stop if this many shots have been taken.
-    --max_errors MAX_ERRORS
+    --max_errors INT
         Sampling of a circuit will stop if this many errors have been seen.
-    --processes PROCESSES
+    --processes INT
         Number of processes to use for simultaneous sampling and decoding.
-    --save_resume_filepath SAVE_RESUME_FILEPATH
+    --save_resume_filepath FILEPATH
         Activates MERGE mode. If save_resume_filepath doesn't exist, initializes
         it with a CSV header. CSV data already at save_resume_filepath counts
         towards max_shots and max_errors.
@@ -66,22 +66,22 @@ OPTIONS
         restarted and it will pick up where it left off. Note that MERGE mode is
         idempotent: if sufficient data has been collected, no additional work is
         done when run again.
-    --start_batch_size START_BATCH_SIZE
+    --start_batch_size INT
         Initial number of samples to batch together into one job. Starting small
         prevents over-sampling of circuits above threshold. The allowed batch
         size increases exponentially from this starting point.
-    --max_batch_size MAX_BATCH_SIZE
+    --max_batch_size INT
         Maximum number of samples to batch together into one job. Bigger values
         increase the delay between jobs finishing. Smaller values decrease the
         amount of aggregation of results, increasing the amount of output
         information.
-    --max_batch_seconds MAX_BATCH_SECONDS
+    --max_batch_seconds INT
         Limits number of shots in a batch so that the estimated runtime of the
         batch is below this amount.
     --postselect_detectors_with_non_zero_4th_coord
         Turns on detector postselection. If any detector with a non-zero 4th
         coordinate fires, the shot is discarded.
-    --postselected_detectors_predicate POSTSELECTED_DETECTORS_PREDICATE
+    --postselected_detectors_predicate PYTHON_EXPRESSION
         Specifies a predicate used to decide which detectors to postselect. When
         a postselected detector produces a detection event, the shot is
         discarded instead of being given to the decoder. The number of discarded
@@ -100,7 +100,7 @@ OPTIONS
         Examples:
             --postselected_detectors_predicate "coords[2] == 0"
             --postselected_detectors_predicate "coords[3] < metadata['postselection_level']"
-    --postselected_observables_predicate POSTSELECTED_OBSERVABLES_PREDICATE
+    --postselected_observables_predicate PYTHON_EXPRESSION
         Specifies a predicate used to decide which observables to postselect.
         When a decoder mispredicts a postselected observable, the shot is
         discarded instead of counting as an error.
@@ -128,10 +128,10 @@ OPTIONS
         Disables writing progress to stderr.
     --also_print_results_to_stdout
         Even if writing to a file, also write results to stdout.
-    --existing_data_filepaths [EXISTING_DATA_FILEPATHS ...]
+    --existing_data_filepaths [FILEPATH ...]
         CSV data from these files counts towards max_shots and max_errors. This
         parameter can be given multiple arguments.
-    --metadata_func METADATA_FUNC
+    --metadata_func PYTHON_EXPRESSION
         A python expression that associates json metadata with a circuit's
         results. Set to "auto" to use "sinter.comma_separated_key_values(path)".
         
@@ -152,6 +152,14 @@ OPTIONS
             --metadata_func "{'path': path}"
             --metadata_func "auto"
             --metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"
+    --custom_error_count_key NAME
+        Makes `--max_errors` apply to `stat.custom_counts[key]` instead of to `stat.errors`.
+    --allowed_cpu_affinity_ids PYTHON_EXPRESSION [ANOTHER_PYTHON_EXPRESSION ...],
+        Controls which CPUs workers can be pinned to. By default, any CPU can be pinned to.
+        Specifying this argument makes it so that only the given CPU ids can be pinned. The
+        given arguments will be evaluated as python expressions. The expressions 
+        should be integers or iterables of integers. So values like "1" and "[1, 2, 4]" and
+        "range(5, 30)" all work.
 
 EXAMPLES
     Example #1

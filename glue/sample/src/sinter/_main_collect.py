@@ -1,7 +1,7 @@
 import argparse
 import math
 import sys
-from typing import Iterator, Any, Tuple, List, Callable, FrozenSet, Optional
+from typing import Iterator, Any, Tuple, List, Callable, Optional
 from typing import cast
 
 import numpy as np
@@ -156,6 +156,21 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
+    parser.add_argument('--custom_error_count_key',
+                        type=str,
+                        help='Makes --max_errors apply to `stat.custom_counts[key]` '
+                             'instead of to `stat.errors`.',
+                        default=None)
+    parser.add_argument('--allowed_cpu_affinity_ids',
+                        type=str,
+                        nargs='+',
+                        help='Controls which CPUs workers can be pinned to. By default, all'
+                             ' CPUs are used. Specifying this argument makes it so that '
+                             'only the given CPU ids can be pinned. The given arguments '
+                             ' will be evaluated as python expressions. The expressions '
+                             'should be integers or iterables of integers. So values like'
+                             ' "1" and "[1, 2, 4]" and "range(5, 30)" all work.',
+                        default=None)
     parser.add_argument('--also_print_results_to_stdout',
                         help='Even if writing to a file, also write results to stdout.',
                         action='store_true')
@@ -228,7 +243,21 @@ def parse_args(args: List[str]) -> Any:
             else:
                 message += f"Available custom decoders: {sorted(a.custom_decoders.keys())}."
             raise ValueError(message)
-
+    if a.allowed_cpu_affinity_ids is not None:
+        vals: List[int] = []
+        e: str
+        for e in a.allowed_cpu_affinity_ids:
+            try:
+                v = eval(e, {}, {})
+                if isinstance(v, int):
+                    vals.append(v)
+                elif all(isinstance(e, int) for e in v):
+                    vals.extend(v)
+                else:
+                    raise ValueError("Not an integer or iterable of integers.")
+            except Exception as ex:
+                raise ValueError("Failed to eval {e!r} for --allowed_cpu_affinity_ids") from ex
+        a.allowed_cpu_affinity_ids = vals
     return a
 
 
@@ -297,6 +326,8 @@ def main_collect(*, command_line_args: List[str]):
             max_batch_size=args.max_batch_size,
             start_batch_size=args.start_batch_size,
             custom_decoders=args.custom_decoders,
+            custom_error_count_key=args.custom_error_count_key,
+            allowed_cpu_affinity_ids=args.allowed_cpu_affinity_ids,
         )
     except KeyboardInterrupt:
         pass

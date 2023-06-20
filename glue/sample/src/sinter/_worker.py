@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     import pathlib
     import sinter
     import stim
-    from sinter._json_type import JSON_TYPE
 
 
 class WorkIn:
@@ -23,7 +22,7 @@ class WorkIn:
             strong_id: Optional[str],
             postselection_mask: 'Optional[np.ndarray]',
             postselected_observables_mask: 'Optional[np.ndarray]',
-            json_metadata: 'JSON_TYPE',
+            json_metadata: Any,
             count_observable_error_combos: bool,
             count_detection_events: bool,
             num_shots: int):

@@ -23,7 +23,9 @@ class CollectionTrackerForSingleTask:
             count_detection_events: bool,
             circuit_path: str,
             dem_path: str,
-            existing_data: ExistingData):
+            existing_data: ExistingData,
+            custom_error_count_key: Optional[str],
+    ):
         self.unfilled_task = task
         self.count_observable_error_combos = count_observable_error_combos
         self.count_detection_events = count_detection_events
@@ -35,6 +37,7 @@ class CollectionTrackerForSingleTask:
         self.deployed_shots = 0
         self.waiting_for_worker_computing_dem_and_strong_id = False
         self.deployed_processes = 0
+        self.custom_error_count_key = custom_error_count_key
 
         task.circuit.to_file(circuit_path)
         if task.detector_error_model is not None:
@@ -58,12 +61,18 @@ class CollectionTrackerForSingleTask:
         if self.copts.max_shots is not None:
             result = self.copts.max_shots - self.finished_stats.shots
 
-        if self.finished_stats.errors and self.copts.max_errors is not None:
-            shots_per_error = self.finished_stats.shots / self.finished_stats.errors
-            errors_left = self.copts.max_errors - self.finished_stats.errors
+        errs = self._seen_errors()
+        if errs and self.copts.max_errors is not None:
+            shots_per_error = self.finished_stats.shots / errs
+            errors_left = self.copts.max_errors - errs
             result = min(result, errors_left * shots_per_error * safety_factor_on_shots_per_error)
 
         return result
+
+    def _seen_errors(self) -> int:
+        if self.custom_error_count_key is not None:
+            return self.finished_stats.custom_counts.get(self.custom_error_count_key, 0)
+        return self.finished_stats.errors
 
     def expected_time_per_shot(self) -> Optional[float]:
         if self.finished_stats.shots == 0:
@@ -71,7 +80,7 @@ class CollectionTrackerForSingleTask:
         return self.finished_stats.seconds / self.finished_stats.shots
 
     def expected_errors_per_shot(self) -> Optional[float]:
-        return (self.finished_stats.errors + 1) / (self.finished_stats.shots + 1)
+        return (self._seen_errors() + 1) / (self.finished_stats.shots + 1)
 
     def expected_time_remaining(self) -> Optional[float]:
         dt = self.expected_time_per_shot()
@@ -98,7 +107,7 @@ class CollectionTrackerForSingleTask:
         enough_shots = False
         if self.copts.max_shots is not None and self.finished_stats.shots >= self.copts.max_shots:
             enough_shots = True
-        if self.copts.max_errors is not None and self.finished_stats.errors >= self.copts.max_errors:
+        if self.copts.max_errors is not None and self._seen_errors() >= self.copts.max_errors:
             enough_shots = True
         return enough_shots and self.deployed_shots == 0
 
@@ -125,7 +134,7 @@ class CollectionTrackerForSingleTask:
 
         # Don't take more errors than requested.
         if self.copts.max_errors is not None:
-            errors_left = self.copts.max_errors - self.finished_stats.errors
+            errors_left = self.copts.max_errors - self._seen_errors()
             errors_left += 2  # oversample once count gets low
             de = self.expected_errors_per_shot()
             yield errors_left / de - self.deployed_shots
@@ -206,7 +215,7 @@ class CollectionTrackerForSingleTask:
             if self.copts.max_shots is not None:
                 terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
             if self.copts.max_errors is not None:
-                terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
+                terms.append(f'errors_left={max(0, self.copts.max_errors - self._seen_errors())}'.ljust(20))
         if isinstance(self.unfilled_task.json_metadata, dict):
             keys = self.unfilled_task.json_metadata.keys()
             try:
@@ -219,18 +228,3 @@ class CollectionTrackerForSingleTask:
         terms.append(meta_desc)
 
         return ''.join(terms)
-
-
-def next_shot_count(prev_data: AnonTaskStats,
-                    cur_batch_size: int,
-                    max_batch_size: Optional[int],
-                    max_errors: Optional[int],
-                    max_shots: Optional[int]) -> int:
-    result = cur_batch_size
-    if max_shots is not None:
-        result = min(result, max_shots - prev_data.shots)
-    if prev_data.errors and max_errors is not None:
-        result = min(result, math.ceil(1.1 * (max_errors - prev_data.errors) * prev_data.shots / prev_data.errors))
-    if max_batch_size is not None:
-        result = min(result, max_batch_size)
-    return result
