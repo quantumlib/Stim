@@ -20,6 +20,7 @@
 
 #include "stim/circuit/circuit.test.h"
 #include "stim/gen/gen_rep_code.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/test_util.test.h"
 
@@ -289,11 +290,11 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                         1e-4));
 }
 
-TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
+TEST_EACH_WORD_SIZE_W(ErrorAnalyzer, unitary_gates_match_frame_simulator, {
     CircuitStats stats;
     stats.num_qubits = 16;
     stats.num_measurements = 100;
-    FrameSimulator f(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 16, SHARED_TEST_RNG());
+    FrameSimulator<W> f(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 16, SHARED_TEST_RNG());
     ErrorAnalyzer e(100, 1, 16, 100, false, false, false, 0.0, false, true);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
@@ -340,7 +341,7 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
             }
         }
     }
-}
+})
 
 TEST(ErrorAnalyzer, reversed_operation_order) {
     ASSERT_EQ(

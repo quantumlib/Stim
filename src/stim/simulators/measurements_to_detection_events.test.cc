@@ -15,6 +15,7 @@
 #include "stim/simulators/measurements_to_detection_events.h"
 
 #include <stim/gen/gen_surface_code.h>
+#include "stim/mem/simd_word.test.h"
 
 #include "gtest/gtest.h"
 
@@ -22,10 +23,10 @@
 
 using namespace stim;
 
-TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
-    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(1, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> converted(1, 256);
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, single_detector_no_sweep_data, {
+    simd_bit_table<W> measurement_data(1, 256);
+    simd_bit_table<W> sweep_data(0, 256);
+    simd_bit_table<W> converted(1, 256);
 
     // Matches false expectation.
     ASSERT_EQ(
@@ -38,7 +39,7 @@ TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
             )CIRCUIT"),
             false,
             false),
-        simd_bit_table<MAX_BITWORD_WIDTH>::from_text("0", 1, 256));
+        simd_bit_table<W>::from_text("0", 1, 256));
 
     // Violates true expectation.
     converted = measurements_to_detection_events(
@@ -140,10 +141,10 @@ TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
         false,
         false);
     ASSERT_EQ(converted[0][0], false);
-}
+})
 
-TEST(measurements_to_detection_events, sweep_data) {
-    auto expected = simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"DETECTOR_DATA(
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, sweep_data, {
+    auto expected = simd_bit_table<W>::from_text(R"DETECTOR_DATA(
             ..1.....1
             111....1.
             .._1..1..
@@ -162,7 +163,7 @@ TEST(measurements_to_detection_events, sweep_data) {
 
     ASSERT_EQ(
         measurements_to_detection_events(
-            simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"MEASUREMENT_DATA(
+            simd_bit_table<W>::from_text(R"MEASUREMENT_DATA(
                 .........1
                 ........1.
                 .......1..
@@ -176,7 +177,7 @@ TEST(measurements_to_detection_events, sweep_data) {
                 ..........
             )MEASUREMENT_DATA")
                 .transposed(),
-            simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"SWEEP_DATA(
+            simd_bit_table<W>::from_text(R"SWEEP_DATA(
                 ....
                 1...
                 .1..
@@ -212,12 +213,12 @@ TEST(measurements_to_detection_events, sweep_data) {
             false)
             .transposed(),
         expected);
-}
+})
 
-TEST(measurements_to_detection_events, empty_cases) {
-    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, empty_cases, {
+    simd_bit_table<W> measurement_data(256, 256);
+    simd_bit_table<W> converted(256, 256);
+    simd_bit_table<W> sweep_data(0, 256);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -240,12 +241,12 @@ TEST(measurements_to_detection_events, empty_cases) {
         false);
     ASSERT_EQ(converted.num_major_bits_padded(), 0);
     ASSERT_EQ(converted.num_minor_bits_padded(), 256);
-}
+})
 
-TEST(measurements_to_detection_events, big_shots) {
-    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 512);
-    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 512);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 512);
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, big_shots, {
+    simd_bit_table<W> measurement_data(256, 512);
+    simd_bit_table<W> converted(256, 512);
+    simd_bit_table<W> sweep_data(0, 512);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -267,12 +268,12 @@ TEST(measurements_to_detection_events, big_shots) {
     ASSERT_EQ(converted[99].popcnt(), 512);
     ASSERT_EQ(converted[100].popcnt(), 0);
     ASSERT_EQ(converted[101].popcnt(), 0);
-}
+})
 
-TEST(measurements_to_detection_events, big_data) {
-    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(512, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> converted(512, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, big_data, {
+    simd_bit_table<W> measurement_data(512, 256);
+    simd_bit_table<W> converted(512, 256);
+    simd_bit_table<W> sweep_data(0, 256);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -294,13 +295,13 @@ TEST(measurements_to_detection_events, big_data) {
     ASSERT_EQ(converted[399].popcnt(), 256);
     ASSERT_EQ(converted[400].popcnt(), 0);
     ASSERT_EQ(converted[401].popcnt(), 0);
-}
+})
 
-TEST(measurements_to_detection_events, append_observables) {
-    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
-    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 256);
-    size_t min_bits = sizeof(simd_word<MAX_BITWORD_WIDTH>) * 8;
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, append_observables, {
+    simd_bit_table<W> measurement_data(256, 256);
+    simd_bit_table<W> sweep_data(0, 256);
+    simd_bit_table<W> converted(256, 256);
+    size_t min_bits = sizeof(simd_word<W>) * 8;
 
     // Appended.
     converted = measurements_to_detection_events(
@@ -367,15 +368,15 @@ TEST(measurements_to_detection_events, append_observables) {
     ASSERT_EQ(converted[1][0], 1);
     ASSERT_EQ(converted[9][0], 0);
     ASSERT_EQ(converted[11][0], 0);
-}
+})
 
-TEST(measurements_to_detection_events, file_01_to_dets_no_obs) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, file_01_to_dets_no_obs, {
     FILE *in = tmpfile();
     fprintf(in, "%s", "0\n0\n1\n");
     rewind(in);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         nullptr,
@@ -396,15 +397,15 @@ TEST(measurements_to_detection_events, file_01_to_dets_no_obs) {
         SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(out), "shot D0 D2\nshot D0 D2\nshot\n");
     fclose(in);
-}
+})
 
-TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, file_01_to_dets_yes_obs, {
     FILE *in = tmpfile();
     fprintf(in, "%s", "0\n0\n1\n");
     rewind(in);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         nullptr,
@@ -425,9 +426,9 @@ TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
         SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "shot D0 D2 L9\nshot D0 D2 L9\nshot\n");
-}
+})
 
-TEST(measurements_to_detection_events, with_error_propagation) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, with_error_propagation, {
     FILE *in = tmpfile();
     fprintf(
         in,
@@ -464,7 +465,7 @@ TEST(measurements_to_detection_events, with_error_propagation) {
     rewind(in_sweep_bits);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         in_sweep_bits,
@@ -503,9 +504,9 @@ TEST(measurements_to_detection_events, with_error_propagation) {
         "shot\n"     // Two excited measurements is not a detection.
         "shot D0\n"  // All together still flips.
     );
-}
+})
 
-TEST(measurements_to_detection_events, many_shots) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, many_shots, {
     FILE *in = tmpfile();
     std::string expected;
     for (size_t k = 0; k < 500; k++) {
@@ -515,7 +516,7 @@ TEST(measurements_to_detection_events, many_shots) {
     rewind(in);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         nullptr,
@@ -534,9 +535,9 @@ TEST(measurements_to_detection_events, many_shots) {
         SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), expected);
-}
+})
 
-TEST(measurements_to_detection_events, many_measurements_and_detectors) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, many_measurements_and_detectors, {
     FILE *in = tmpfile();
     std::string expected = "shot";
     for (size_t k = 0; k < 500; k++) {
@@ -548,7 +549,7 @@ TEST(measurements_to_detection_events, many_measurements_and_detectors) {
     rewind(in);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         nullptr,
@@ -568,15 +569,15 @@ TEST(measurements_to_detection_events, many_measurements_and_detectors) {
         SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), expected);
-}
+})
 
-TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, file_01_to_01_yes_obs, {
     FILE *in = tmpfile();
     fprintf(in, "%s", "0\n0\n1\n");
     rewind(in);
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         nullptr,
@@ -597,14 +598,14 @@ TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
         SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "1010000000001\n1010000000001\n0000000000000\n");
-}
+})
 
-TEST(measurements_to_detection_events, empty_input_01_empty_sweep_b8) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, empty_input_01_empty_sweep_b8, {
     FILE *in = tmpfile();
     FILE *sweep = tmpfile();
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         sweep,
@@ -619,16 +620,16 @@ TEST(measurements_to_detection_events, empty_input_01_empty_sweep_b8) {
     fclose(in);
     fclose(sweep);
     ASSERT_EQ(rewind_read_close(out), "");
-}
+})
 
-TEST(measurements_to_detection_events, some_input_01_empty_sweep_b8) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, some_input_01_empty_sweep_b8, {
     FILE *in = tmpfile();
     fprintf(in, "%s", "\n\n");
     rewind(in);
     FILE *sweep = tmpfile();
     FILE *out = tmpfile();
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<W>(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
         sweep,
@@ -643,16 +644,16 @@ TEST(measurements_to_detection_events, some_input_01_empty_sweep_b8) {
     fclose(in);
     fclose(sweep);
     ASSERT_EQ(rewind_read_close(out), "\n\n");
-}
+})
 
-TEST(measurements_to_detection_events, empty_input_b8_empty_sweep_b8) {
+TEST_EACH_WORD_SIZE_W(measurements_to_detection_events, empty_input_b8_empty_sweep_b8, {
     FILE *in = tmpfile();
     FILE *sweep = tmpfile();
     FILE *out = tmpfile();
 
     ASSERT_THROW(
         {
-            stream_measurements_to_detection_events(
+            stream_measurements_to_detection_events<W>(
                 in,
                 SampleFormat::SAMPLE_FORMAT_B8,
                 sweep,
@@ -669,4 +670,4 @@ TEST(measurements_to_detection_events, empty_input_b8_empty_sweep_b8) {
     fclose(in);
     fclose(sweep);
     ASSERT_EQ(rewind_read_close(out), "");
-}
+})

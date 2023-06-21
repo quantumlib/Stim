@@ -63,7 +63,7 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     RaiiFile detections_out(detection_events_filepath.data(), "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
 
-    stim::stream_measurements_to_detection_events_helper(
+    stream_measurements_to_detection_events_helper<MAX_BITWORD_WIDTH>(
         file_in.f,
         format_in,
         sweep_bits_in.f,
@@ -157,7 +157,7 @@ CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_mea
     const Circuit &circuit, bool skip_reference_sample) {
     simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
                                                   ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                                  : TableauSimulator::reference_sample_circuit(circuit);
+                                                  : TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
     return CompiledMeasurementsToDetectionEventsConverter(ref_sample, circuit, skip_reference_sample);
 }
 

@@ -69,7 +69,7 @@ int stim::command_m2d(int argc, const char **argv) {
         obs_out = nullptr;
     }
 
-    stream_measurements_to_detection_events(
+    stream_measurements_to_detection_events<MAX_BITWORD_WIDTH>(
         in,
         in_format.id,
         sweep_in,

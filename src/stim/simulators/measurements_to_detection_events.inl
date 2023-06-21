@@ -25,15 +25,16 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 
-using namespace stim;
+namespace stim {
 
-void stim::measurements_to_detection_events_helper(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
-    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
-    simd_bit_table<MAX_BITWORD_WIDTH> &out_detection_results__minor_shot_index,
+template <size_t W>
+void measurements_to_detection_events_helper(
+    const simd_bit_table<W> &measurements__minor_shot_index,
+    const simd_bit_table<W> &sweep_bits__minor_shot_index,
+    simd_bit_table<W> &out_detection_results__minor_shot_index,
     const Circuit &noiseless_circuit,
     CircuitStats circuit_stats,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bits<W> &reference_sample,
     bool append_observables) {
     // Tables should agree on the batch size.
     size_t batch_size = out_detection_results__minor_shot_index.num_minor_bits_padded();
@@ -59,7 +60,7 @@ void stim::measurements_to_detection_events_helper(
     // expected parity of detectors involving that measurement. This can vary from shot to shot.
     std::mt19937_64 rng1(0);
     std::mt19937_64 rng2(0);  // Used to sanity check that rng1 isn't called.
-    FrameSimulator frame_sim(circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, rng1);
+    FrameSimulator<W> frame_sim(circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, rng1);
     frame_sim.sweep_table = sweep_bits__minor_shot_index;
     frame_sim.guarantee_anticommutation_via_frame_randomization = false;
 
@@ -70,7 +71,7 @@ void stim::measurements_to_detection_events_helper(
 
         switch (op.gate_type) {
             case GateType::DETECTOR: {
-                simd_bits_range_ref<MAX_BITWORD_WIDTH> out_row =
+                simd_bits_range_ref<W> out_row =
                     out_detection_results__minor_shot_index[detector_offset];
                 detector_offset++;
 
@@ -93,7 +94,7 @@ void stim::measurements_to_detection_events_helper(
                 break;
             }
             case GateType::OBSERVABLE_INCLUDE: {
-                simd_bits_range_ref<MAX_BITWORD_WIDTH> obs_row = frame_sim.obs_record[(uint64_t)op.args[0]];
+                simd_bits_range_ref<W> obs_row = frame_sim.obs_record[(uint64_t)op.args[0]];
                 bool expectation = false;
                 for (const auto &t : op.targets) {
                     uint32_t lookback = t.data & TARGET_VALUE_MASK;
@@ -125,18 +126,19 @@ void stim::measurements_to_detection_events_helper(
     }
 }
 
-simd_bit_table<MAX_BITWORD_WIDTH> stim::measurements_to_detection_events(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
-    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
+template <size_t W>
+simd_bit_table<W> measurements_to_detection_events(
+    const simd_bit_table<W> &measurements__minor_shot_index,
+    const simd_bit_table<W> &sweep_bits__minor_shot_index,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample) {
     CircuitStats circuit_stats = circuit.compute_stats();
-    simd_bits<MAX_BITWORD_WIDTH> reference_sample(circuit_stats.num_measurements);
+    simd_bits<W> reference_sample(circuit_stats.num_measurements);
     if (!skip_reference_sample) {
-        reference_sample = TableauSimulator::reference_sample_circuit(circuit);
+        reference_sample = TableauSimulator<W>::reference_sample_circuit(circuit);
     }
-    simd_bit_table<MAX_BITWORD_WIDTH> out(
+    simd_bit_table<W> out(
         circuit_stats.num_detectors + circuit_stats.num_observables * append_observables,
         measurements__minor_shot_index.num_minor_bits_padded());
     measurements_to_detection_events_helper(
@@ -150,7 +152,8 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim::measurements_to_detection_events(
     return out;
 }
 
-void stim::stream_measurements_to_detection_events(
+template <size_t W>
+void stream_measurements_to_detection_events(
     FILE *measurements_in,
     SampleFormat measurements_in_format,
     FILE *optional_sweep_bits_in,
@@ -164,13 +167,13 @@ void stim::stream_measurements_to_detection_events(
     SampleFormat obs_out_format) {
     // Circuit metadata.
     CircuitStats circuit_stats = circuit.compute_stats();
-    simd_bits<MAX_BITWORD_WIDTH> reference_sample(circuit_stats.num_measurements);
+    simd_bits<W> reference_sample(circuit_stats.num_measurements);
     Circuit noiseless_circuit = circuit.aliased_noiseless_circuit();
     if (!skip_reference_sample) {
-        reference_sample = TableauSimulator::reference_sample_circuit(circuit);
+        reference_sample = TableauSimulator<W>::reference_sample_circuit(circuit);
     }
 
-    stream_measurements_to_detection_events_helper(
+    stream_measurements_to_detection_events_helper<W>(
         measurements_in,
         measurements_in_format,
         optional_sweep_bits_in,
@@ -185,7 +188,8 @@ void stim::stream_measurements_to_detection_events(
         obs_out_format);
 }
 
-void stim::stream_measurements_to_detection_events_helper(
+template <size_t W>
+void stream_measurements_to_detection_events_helper(
     FILE *measurements_in,
     SampleFormat measurements_in_format,
     FILE *optional_sweep_bits_in,
@@ -195,7 +199,7 @@ void stim::stream_measurements_to_detection_events_helper(
     const Circuit &noiseless_circuit,
     CircuitStats circuit_stats,
     bool append_observables,
-    simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample,
+    simd_bits_range_ref<W> reference_sample,
     FILE *obs_out,
     SampleFormat obs_out_format) {
     bool internally_append_observables = append_observables || obs_out != nullptr;
@@ -205,8 +209,8 @@ void stim::stream_measurements_to_detection_events_helper(
     size_t num_buffered_shots = 1024;
 
     // Readers / writers.
-    auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(measurements_in, measurements_in_format, circuit_stats.num_measurements);
-    std::unique_ptr<MeasureRecordReader<MAX_BITWORD_WIDTH>> sweep_data_reader;
+    auto reader = MeasureRecordReader<W>::make(measurements_in, measurements_in_format, circuit_stats.num_measurements);
+    std::unique_ptr<MeasureRecordReader<W>> sweep_data_reader;
     std::unique_ptr<MeasureRecordWriter> obs_writer;
     if (obs_out != nullptr) {
         obs_writer = MeasureRecordWriter::make(obs_out, obs_out_format);
@@ -214,15 +218,15 @@ void stim::stream_measurements_to_detection_events_helper(
     auto writer = MeasureRecordWriter::make(results_out, results_out_format);
     if (optional_sweep_bits_in != nullptr) {
         sweep_data_reader =
-            MeasureRecordReader<MAX_BITWORD_WIDTH>::make(optional_sweep_bits_in, sweep_bits_in_format, circuit_stats.num_sweep_bits);
+            MeasureRecordReader<W>::make(optional_sweep_bits_in, sweep_bits_in_format, circuit_stats.num_sweep_bits);
     }
 
     // Buffers and transposed buffers.
-    simd_bit_table<MAX_BITWORD_WIDTH> measurements__minor_shot_index(
+    simd_bit_table<W> measurements__minor_shot_index(
         circuit_stats.num_measurements, num_buffered_shots);
-    simd_bit_table<MAX_BITWORD_WIDTH> out__minor_shot_index(num_out_bits_including_any_obs, num_buffered_shots);
-    simd_bit_table<MAX_BITWORD_WIDTH> out__major_shot_index(num_buffered_shots, num_out_bits_including_any_obs);
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
+    simd_bit_table<W> out__minor_shot_index(num_out_bits_including_any_obs, num_buffered_shots);
+    simd_bit_table<W> out__major_shot_index(num_buffered_shots, num_out_bits_including_any_obs);
+    simd_bit_table<W> sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
     if (reader->expects_empty_serialized_data_for_each_shot()) {
         throw std::invalid_argument(
             "Can't tell how many shots are in the measurement data.\n"
@@ -255,7 +259,7 @@ void stim::stream_measurements_to_detection_events_helper(
 
         // Convert measurement data into detection event data.
         out__minor_shot_index.clear();
-        measurements_to_detection_events_helper(
+        measurements_to_detection_events_helper<W>(
             measurements__minor_shot_index,
             sweep_bits__minor_shot_index,
             out__minor_shot_index,
@@ -267,7 +271,7 @@ void stim::stream_measurements_to_detection_events_helper(
 
         // Write detection event data.
         for (size_t k = 0; k < record_count; k++) {
-            simd_bits_range_ref<MAX_BITWORD_WIDTH> record = out__major_shot_index[k];
+            simd_bits_range_ref<W> record = out__major_shot_index[k];
             writer->begin_result_type('D');
             writer->write_bits(record.u8, circuit_stats.num_detectors);
             if (append_observables) {
@@ -288,3 +292,5 @@ void stim::stream_measurements_to_detection_events_helper(
         }
     }
 }
+
+}  // namespace stim

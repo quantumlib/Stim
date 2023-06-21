@@ -24,7 +24,6 @@
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"
 #include "stim/mem/span_ref.h"
-#include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {

@@ -36,6 +36,12 @@ namespace stim {
 template <size_t W>
 struct Tableau;
 
+template <size_t W>
+struct StabilizerFlow;
+
+template <size_t W>
+struct PauliString;
+
 /// Used for gates' argument count to indicate that a gate takes a variable number of
 /// arguments. This is relevant to coordinate data on detectors and qubits, where there may
 /// be any number of coordinates.
@@ -220,8 +226,6 @@ struct ExtraGateData {
         const char *h_s_cx_m_r_decomposition);
 };
 
-struct StabilizerFlow;
-
 struct Gate {
     const char *name;
     ExtraGateData (*extra_data_func)(void);
@@ -258,7 +262,31 @@ struct Gate {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
     }
 
-    std::vector<StabilizerFlow> flows() const;
+    template <size_t W>
+    std::vector<StabilizerFlow<W>> flows() const {
+        if (flags & GATE_IS_UNITARY) {
+            auto t = tableau<W>();
+            if (flags & GATE_TARGETS_PAIRS) {
+                return {
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
+                };
+            }
+            return {
+                StabilizerFlow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
+                StabilizerFlow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
+            };
+        }
+        std::vector<StabilizerFlow<W>> out;
+        auto data = extra_data_func();
+        for (const auto &c : data.flow_data) {
+            out.push_back(StabilizerFlow<W>::from_str(c));
+        }
+        return out;
+    }
+
     std::vector<std::vector<std::complex<float>>> unitary() const;
 };
 

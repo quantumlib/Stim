@@ -21,8 +21,8 @@
 
 namespace stim_pybind {
 
-pybind11::class_<stim::TableauSimulator> pybind_tableau_simulator(pybind11::module &m);
-void pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<stim::TableauSimulator> &c);
+pybind11::class_<stim::TableauSimulator<stim::MAX_BITWORD_WIDTH>> pybind_tableau_simulator(pybind11::module &m);
+void pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<stim::TableauSimulator<stim::MAX_BITWORD_WIDTH>> &c);
 
 }  // namespace stim_pybind
 

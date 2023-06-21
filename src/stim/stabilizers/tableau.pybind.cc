@@ -2120,7 +2120,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
             std::mt19937_64 unused_rng{0};
-            TableauSimulator sim(unused_rng, self.num_qubits);
+            TableauSimulator<MAX_BITWORD_WIDTH> sim(unused_rng, self.num_qubits);
             sim.inv_state = self.inverse(false);
             auto complex_vec = sim.to_state_vector(little_endian);
 
