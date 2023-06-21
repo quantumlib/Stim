@@ -4,6 +4,8 @@ from typing import Optional
 
 import numpy as np
 import pytest
+
+import sinter
 import stim
 
 from sinter._collection import post_selection_mask_from_4th_coord
@@ -353,3 +355,17 @@ def test_decode_fails_correctly(decoder: str, required_import: str, force_stream
                     obs_predictions_b8_out_path=d / 'predict.b8',
                     tmp_dir=d,
                 )
+
+
+@pytest.mark.parametrize('decoder,required_import,force_streaming', DECODER_CASES)
+def test_full_scale(decoder: str, required_import: str, force_streaming: Optional[bool]):
+    pytest.importorskip(required_import)
+    result, = sinter.collect(
+        num_workers=2,
+        tasks=[sinter.Task(circuit=stim.Circuit())],
+        decoders=[decoder],
+        max_shots=1000,
+    )
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0

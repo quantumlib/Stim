@@ -10,8 +10,8 @@ googletest-download/*
 googletest-src
 cmake_install.cmake
 Makefile
-lib/*
-out/*
+lib
+out
 stim.cbp
 data/*
 _deps/*
@@ -19,16 +19,16 @@ bazel-*
 python_build_stim/*
 *.egg-*
 stim.cpython*
-**/dist/*
+dist
 MANIFEST
 *.whl
 *.swp
-**/__pycache__/**
+__pycache__
 pip-wheel-metadata/*
 wheelhouse/*
 *.pyd
-venv/*
-.venv/*
+venv
+.venv
 **/LastTest.log
 *.so
 .clwb/*
@@ -37,7 +37,9 @@ coverage/*
 cmake-build-debug-coverage/*
 # clangd generated files
 compile_commands.json
-.cache/*
+.cache
 build.ninja
 .ninja_deps
 .ninja_log
+.pytest_cache
+node_modules
