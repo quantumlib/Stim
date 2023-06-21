@@ -407,6 +407,8 @@ def test_split_custom_counts():
             "m.g",
             "--subtitle",
             "test",
-            "--split_custom_counts",
+            "--custom_error_count_keys",
+            "a",
+            "b",
         ])
         assert (d / "output.png").exists()
