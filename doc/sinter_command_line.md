@@ -35,7 +35,9 @@ SYNOPSIS
         [--quiet] \
         [--count_detection_events] \
         [--count_observable_error_combos] \
-        [--start_batch_size int]
+        [--start_batch_size int] \
+        [--custom_error_count_key NAME] \
+        [--allowed_cpu_affinity_ids PYTHON_EXPRESSION [ANOTHER_PYTHON_EXPRESSION ...]]
 
 DESCRIPTION
     Uses python multiprocessing to collect shots from the given circuit, decode
@@ -270,7 +272,7 @@ SYNOPSIS
         [--fig_size float float] \
         [--highlight_max_likelihood_factor float] \
         [--plot_args_func PYTHON_EXPRESSION] \
-        [--split_custom_counts] \
+        [--custom_error_count_keys] \
         [--subtitle "{common}"|text] \
         [--title text] \
         [--type "error_rate"|"discard_rate"|"custom_y" [...] \
