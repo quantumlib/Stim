@@ -20,12 +20,13 @@
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/main_namespaced.test.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
-TEST(command_gen, no_noise_no_detections) {
+TEST_EACH_WORD_SIZE_W(command_gen, no_noise_no_detections, {
     std::vector<uint32_t> distances{2, 3, 4, 5, 6, 7, 15};
     std::vector<uint32_t> rounds{1, 2, 3, 4, 5, 6, 20};
     std::map<std::string, std::pair<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)>> funcs{
@@ -45,13 +46,13 @@ TEST(command_gen, no_noise_no_detections) {
                 CircuitGenParameters params(r, d, func.second.first);
                 auto circuit = func.second.second(params).circuit;
                 auto [det_samples, obs_samples] =
-                    sample_batch_detection_events<MAX_BITWORD_WIDTH>(circuit, 256, SHARED_TEST_RNG());
+                    sample_batch_detection_events<W>(circuit, 256, SHARED_TEST_RNG());
                 EXPECT_FALSE(det_samples.data.not_zero() || obs_samples.data.not_zero())
                     << "d=" << d << ", r=" << r << ", task=" << func.second.first << ", func=" << func.first;
             }
         }
     }
-}
+})
 
 TEST(command_gen, execute) {
     ASSERT_TRUE(matches(
