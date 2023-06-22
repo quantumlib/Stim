@@ -19,7 +19,7 @@ SYNOPSIS
     sinter collect \
         --circuits FILEPATH [...] \
         --decoders pymatching|fusion_blossom|...  [...] \
-        --processes int \
+        --processes int|"auto" \
         [--max_shots int] \
         [--max_errors int] \
         [--save_resume_filepath FILEPATH] \
@@ -278,7 +278,10 @@ SYNOPSIS
         [--type "error_rate"|"discard_rate"|"custom_y" [...] \
         [--xaxis "text"|"[log]text"|"[sqrt]text"] \
         [--yaxis "text"|"[log]text"|"[sqrt]text"] \
-        [--ymin float]
+        [--xmin float] \
+        [--xmax float] \
+        [--ymin float] \
+        [--line_fits]
 
 DESCRIPTION
     Creates a plot of statistics collected by `sinter collect` by grouping data
@@ -459,9 +462,13 @@ OPTIONS
         the stat with each one having exactly one of the custom counts.
     --show
         Displays the plot in a window. Either this or --out must be specified.
-    --ymin YMIN
+    --ymin float
         Sets the minimum value of the y axis (max always 1).
-    --title TITLE
+    --xmin float
+        Forces the minimum value of the x axis.
+    --xmax float
+        Forces the maximum value of the x axis.
+    --title text
         Sets the title of the plot.
     --subtitle SUBTITLE
         Sets the subtitle of the plot. Note: The pattern "{common}" will expand
@@ -471,7 +478,11 @@ OPTIONS
         The relative likelihood ratio that determines the color highlights
         around curves. Set this to 1 or larger. Set to 1 to disable
         highlighting.
-
+    --line_fits: Adds a least-squared line fit to each curve. Note that the fit
+        is always done according to the scaling of the plot. For example, on
+        a semilog y plot it will be fitting a line to (x, log(y)). Data points
+        are not weighted in any way. On a log plot, data points at infinity are
+        not included in the fit.
 
 EXAMPLES
     Example #1

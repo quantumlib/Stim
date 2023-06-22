@@ -81,6 +81,7 @@
 #include "stim/simulators/dem_sampler.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
+#include "stim/simulators/force_streaming.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/matched_error.h"

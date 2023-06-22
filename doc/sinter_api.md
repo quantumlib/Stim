@@ -1387,6 +1387,7 @@ def plot_error_rate(
     filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
+    line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -1424,6 +1425,9 @@ def plot_error_rate(
         highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
+        line_fits: Defaults to None. Set this to a tuple (x_scale, y_scale) to include a dashed line
+            fit to every curve. The scales determine how to transform the coordinates before
+            performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
     """
 ```
 
