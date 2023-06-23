@@ -186,7 +186,7 @@ def iter_collect(*,
         try:
             yield Progress(
                 new_stats=(),
-                status_message="Starting workers..."
+                status_message=f"Starting {num_workers} workers..."
             )
             manager.start_workers(num_workers)
 

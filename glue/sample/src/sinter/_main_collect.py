@@ -1,5 +1,6 @@
 import argparse
 import math
+import os
 import sys
 from typing import Iterator, Any, Tuple, List, Callable, Optional
 from typing import cast
@@ -82,8 +83,10 @@ def parse_args(args: List[str]) -> Any:
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('--processes',
                         required=True,
-                        type=int,
-                        help='Number of processes to use for simultaneous sampling and decoding.')
+                        type=str,
+                        help='Number of processes to use for simultaneous sampling and decoding. '
+                             'Must be either a number or "auto" which sets it to the number of '
+                             'CPUs on the machine.')
     parser.add_argument('--save_resume_filepath',
                         type=str,
                         default=None,
@@ -313,9 +316,18 @@ def main_collect(*, command_line_args: List[str]):
         else:
             printer.show_latest_progress(msg)
 
+    if args.processes == 'auto':
+        num_workers = os.cpu_count()
+    else:
+        try:
+            num_workers = int(args.processes)
+        except ValueError:
+            num_workers = 0
+        if num_workers < 1:
+            raise ValueError(f'--processes must be a non-negative integer, or "auto", but was: {args.processes}')
     try:
         collect(
-            num_workers=args.processes,
+            num_workers=num_workers,
             hint_num_tasks=num_tasks,
             tasks=iter_tasks,
             print_progress=False,

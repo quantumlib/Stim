@@ -209,6 +209,14 @@ def parse_args(args: List[str]) -> Any:
                         action='store_true',
                         help='Displays the plot in a window.\n'
                              'Either this or --out must be specified.')
+    parser.add_argument('--xmin',
+                        default=None,
+                        type=float,
+                        help='Forces the minimum value of the x axis.')
+    parser.add_argument('--xmax',
+                        default=None,
+                        type=float,
+                        help='Forces the maximum value of the x axis.')
     parser.add_argument('--ymin',
                         default=None,
                         type=float,
@@ -229,6 +237,9 @@ def parse_args(args: List[str]) -> Any:
                         default=1000,
                         help='The relative likelihood ratio that determines the color highlights around curves.\n'
                              'Set this to 1 or larger. Set to 1 to disable highlighting.')
+    parser.add_argument('--line_fits',
+                        action='store_true',
+                        help='Adds dashed line fits to every curve.')
 
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
@@ -343,6 +354,7 @@ def _pick_min_max(
         forced_min: Optional[float],
         forced_max: Optional[float],
         want_positive: bool,
+        want_strictly_positive: bool,
 ) -> Tuple[float, float]:
     assert default_max >= default_min
     vs = [
@@ -361,6 +373,8 @@ def _pick_min_max(
         max_v = forced_max
         min_v = min(min_v, max_v)
     if want_positive:
+        assert min_v >= 0
+    if want_strictly_positive:
         assert min_v > 0
     assert max_v >= min_v
 
@@ -379,9 +393,9 @@ def _set_axis_scale_label_ticks(
         forced_min_v: Optional[float] = None,
         forced_max_v: Optional[float] = None,
         plotted_stats: Sequence['sinter.TaskStats'],
-):
+) -> Optional[str]:
     if ax is None:
-        return
+        return None
     set_scale = ax.set_yscale if y_not_x else ax.set_xscale
     set_label = ax.set_ylabel if y_not_x else ax.set_xlabel
     set_lim = cast(Callable[[Optional[float], Optional[float]], None], ax.set_ylim if y_not_x else ax.set_xlim)
@@ -403,10 +417,11 @@ def _set_axis_scale_label_ticks(
         forced_min=forced_min_v,
         forced_max=forced_max_v,
         want_positive=scale_name != 'linear',
+        want_strictly_positive=scale_name == 'log',
     )
 
     if scale_name == 'linear':
-        pass
+        set_lim(min_v, max_v)
     elif scale_name == 'log':
         set_scale('log')
         min_v, max_v, major_ticks, minor_ticks = _log_ticks(min_v, max_v)
@@ -422,6 +437,7 @@ def _set_axis_scale_label_ticks(
         set_ticks(minor_ticks, minor=True)
     else:
         raise NotImplemented(f'{scale_name=}')
+    return scale_name
 
 
 def _common_json_properties(stats: List['sinter.TaskStats']) -> Dict[str, Any]:
@@ -458,10 +474,13 @@ def _plot_helper(
     xaxis: str,
     yaxis: Optional[str],
     min_y: Optional[float],
+    max_x: Optional[float],
+    min_x: Optional[float],
     title: Optional[str],
     subtitle: Optional[str],
     fig_size: Optional[Tuple[int, int]],
     plot_args_func: Callable[[int, Any, List['sinter.TaskStats']], Dict[str, Any]],
+    line_fits: bool,
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -515,32 +534,24 @@ def _plot_helper(
         pieces = failure_units_per_shot_func(stat)
         return shot_error_rate_to_piece_error_rate(err_rate, pieces=pieces)
 
+    x_scale_name: Optional[str] = None
     for ax in [ax_err, ax_dis, ax_cus]:
-        _set_axis_scale_label_ticks(
+        x_scale_name = x_scale_name or _set_axis_scale_label_ticks(
             ax=ax,
             y_not_x=False,
             axis_label=xaxis,
             default_scale='linear',
             default_min_v=1,
             default_max_v=10,
-            forced_max_v=None,
-            forced_min_v=None,
+            forced_max_v=max_x,
+            forced_min_v=min_x,
             plotted_stats=plotted_stats,
             v_func=x_func,
         )
 
+    y_scale_name: Optional[str] = None
     if ax_err is not None:
-        plot_error_rate(
-            ax=ax_err,
-            stats=plotted_stats,
-            group_func=group_func,
-            x_func=x_func,
-            failure_units_per_shot_func=failure_units_per_shot_func,
-            failure_values_func=failure_values_func,
-            highlight_max_likelihood_factor=highlight_max_likelihood_factor,
-            plot_args_func=plot_args_func,
-        )
-        _set_axis_scale_label_ticks(
+        y_scale_name = y_scale_name or _set_axis_scale_label_ticks(
             ax=ax_err,
             y_not_x=True,
             axis_label=f"Logical Error Rate (per {failure_unit})" if yaxis is None else yaxis,
@@ -551,6 +562,19 @@ def _plot_helper(
             forced_min_v=min_y,
             plotted_stats=plotted_stats,
             v_func=stat_to_err_rate,
+        )
+        assert x_scale_name is not None
+        assert y_scale_name is not None
+        plot_error_rate(
+            ax=ax_err,
+            stats=plotted_stats,
+            group_func=group_func,
+            x_func=x_func,
+            failure_units_per_shot_func=failure_units_per_shot_func,
+            failure_values_func=failure_values_func,
+            highlight_max_likelihood_factor=highlight_max_likelihood_factor,
+            plot_args_func=plot_args_func,
+            line_fits=None if not line_fits else (x_scale_name, y_scale_name),
         )
         ax_err.grid(which='major', color='#000000')
         ax_err.grid(which='minor', color='#DDDDDD')
@@ -578,16 +602,7 @@ def _plot_helper(
 
     if ax_cus is not None:
         assert y_func is not None
-        plot_custom(
-            ax=ax_cus,
-            stats=plotted_stats,
-            x_func=x_func,
-            y_func=y_func,
-            group_func=group_func,
-            filter_func=filter_func,
-            plot_args_func=plot_args_func,
-        )
-        _set_axis_scale_label_ticks(
+        y_scale_name = y_scale_name or _set_axis_scale_label_ticks(
             ax=ax_cus,
             y_not_x=True,
             axis_label='custom' if yaxis is None else yaxis,
@@ -596,6 +611,16 @@ def _plot_helper(
             default_max_v=1,
             plotted_stats=plotted_stats,
             v_func=y_func,
+        )
+        plot_custom(
+            ax=ax_cus,
+            stats=plotted_stats,
+            x_func=x_func,
+            y_func=y_func,
+            group_func=group_func,
+            filter_func=filter_func,
+            plot_args_func=plot_args_func,
+            line_fits=None if not line_fits else (x_scale_name, y_scale_name),
         )
         ax_cus.grid(which='major', color='#000000')
         ax_cus.grid(which='minor', color='#DDDDDD')
@@ -728,9 +753,12 @@ def main_plot(*, command_line_args: List[str]):
         yaxis=args.yaxis,
         fig_size=args.fig_size,
         min_y=args.ymin,
+        max_x=args.xmax,
+        min_x=args.xmin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
         title=args.title,
         subtitle=args.subtitle,
+        line_fits=args.line_fits,
     )
     if args.out is not None:
         fig.savefig(args.out)

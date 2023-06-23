@@ -1,6 +1,9 @@
 import math
-from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
+import sys
+from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union, Literal, Tuple
 from typing import cast
+
+import numpy as np
 
 from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate, Fit
 
@@ -239,6 +242,7 @@ def plot_error_rate(
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
         highlight_max_likelihood_factor: Optional[float] = 1e3,
+        line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -276,6 +280,9 @@ def plot_error_rate(
         highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
+        line_fits: Defaults to None. Set this to a tuple (x_scale, y_scale) to include a dashed line
+            fit to every curve. The scales determine how to transform the coordinates before
+            performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
     """
     if highlight_max_likelihood_factor is None:
         highlight_max_likelihood_factor = 1
@@ -312,7 +319,19 @@ def plot_error_rate(
         group_func=group_func,
         filter_func=filter_func,
         plot_args_func=plot_args_func,
+        line_fits=line_fits,
     )
+
+
+def _rescale(v: np.ndarray, scale: str, invert: bool) -> np.ndarray:
+    if scale == 'linear':
+        return v
+    elif scale == 'log':
+        return np.exp(v) if invert else np.log(v)
+    elif scale == 'sqrt':
+        return v**2 if invert else np.sqrt(v)
+    else:
+        raise NotImplementedError(f'{scale=}')
 
 
 def plot_custom(
@@ -324,6 +343,7 @@ def plot_custom(
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
+        line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -355,6 +375,9 @@ def plot_custom(
                         else 'blue'
                     ),
                 }
+        line_fits: Defaults to None. Set this to a tuple (x_scale, y_scale) to include a dashed line
+            fit to every curve. The scales determine how to transform the coordinates before
+            performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
     """
 
     # Backwards compatibility to when the group stats argument wasn't present.
@@ -395,23 +418,50 @@ def plot_custom(
                 xs.append(x)
                 ys.append(y)
 
-        kwargs = dict(plot_args_func(k, curve_id, this_group_stats))
-        if 'label' not in kwargs and curve_id is not None:
-            kwargs['label'] = str(curve_id)
-        if 'marker' not in kwargs:
-            kwargs['marker'] = MARKERS[k]
+        kwargs: Dict[str, Any] = dict(plot_args_func(k, curve_id, this_group_stats))
+        kwargs.setdefault('marker', MARKERS[k])
+        if curve_id is not None:
+            kwargs.setdefault('label', str(curve_id))
+            kwargs.setdefault('color', f'C{k}')
+        kwargs.setdefault('color', 'black')
         ax.plot(xs, ys, **kwargs)
+
+        if line_fits is not None and len(xs) >= 2:
+            x_scale, y_scale = line_fits
+            fit_xs = _rescale(xs, x_scale, False)
+            fit_ys = _rescale(ys, y_scale, False)
+
+            from scipy.stats import linregress
+            line_fit = linregress(fit_xs, fit_ys)
+
+            x0 = fit_xs[0]
+            x1 = fit_xs[-1]
+            dx = x1 - x0
+            x0 -= dx*10
+            x1 += dx*10
+            if x0 < 0 <= fit_xs[0] > x0 and x_scale == 'sqrt':
+                x0 = 0
+
+            out_xs = np.linspace(x0, x1, 1000)
+            out_ys = out_xs * line_fit.slope + line_fit.intercept
+            out_xs = _rescale(out_xs, x_scale, True)
+            out_ys = _rescale(out_ys, y_scale, True)
+
+            line_kwargs = kwargs.copy()
+            line_kwargs.pop('marker', None)
+            line_kwargs.pop('label', None)
+            line_kwargs['linestyle'] = '--'
+            line_kwargs.setdefault('linewidth', 1)
+            line_kwargs['linewidth'] /= 2
+            ax.plot(out_xs, out_ys, **line_kwargs)
+
         if saw_fit:
-            if 'zorder' not in kwargs:
-                kwargs['zorder'] = 0
-            if 'alpha' not in kwargs:
-                kwargs['alpha'] = 1
-            kwargs['zorder'] -= 100
-            kwargs['alpha'] *= 0.25
-            if 'marker' in kwargs:
-                del kwargs['marker']
-            if 'linestyle' in kwargs:
-                del kwargs['linestyle']
-            if 'label' in kwargs:
-                del kwargs['label']
-            ax.fill_between(xs_range, ys_low, ys_high, **kwargs)
+            fit_kwargs = kwargs.copy()
+            fit_kwargs.setdefault('zorder', 0)
+            fit_kwargs.setdefault('alpha', 1)
+            fit_kwargs['zorder'] -= 100
+            fit_kwargs['alpha'] *= 0.25
+            fit_kwargs.pop('marker', None)
+            fit_kwargs.pop('linestyle', None)
+            fit_kwargs.pop('label', None)
+            ax.fill_between(xs_range, ys_low, ys_high, **fit_kwargs)

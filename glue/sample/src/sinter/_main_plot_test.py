@@ -412,3 +412,34 @@ def test_split_custom_counts():
             "b",
         ])
         assert (d / "output.png").exists()
+
+
+def test_line_fits():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+                shots,errors,discards,seconds,decoder,strong_id,json_metadata,custom_counts
+                 1000,   400,       0,   1.00,magical,000000001,"{""a"":1,""b"":1}",
+                 1000,   400,       0,   1.00,magical,000000002,"{""a"":2,""b"":1}"
+            """.strip(), file=f)
+
+        main(command_line_args=[
+            "plot",
+            "--in",
+            str(d / "input.csv"),
+            "--out",
+            str(d / "output.png"),
+            "--xaxis",
+            "values",
+            "--x_func",
+            "m.a",
+            "--group_func",
+            "m.b",
+            "--xmin",
+            "0",
+            "--xmax",
+            "10",
+            "--line_fits"
+        ])
+        assert (d / "output.png").exists()

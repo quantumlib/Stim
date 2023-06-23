@@ -1,3 +1,6 @@
+#ifndef _STIM_SIMULATORS_FORCE_STREAMING_H
+#define _STIM_SIMULATORS_FORCE_STREAMING_H
+
 #include <cstdint>
 
 namespace stim {
@@ -11,3 +14,5 @@ struct DebugForceResultStreamingRaii {
 };
 
 }
+
+#endif

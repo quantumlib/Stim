@@ -419,3 +419,34 @@ def test_custom_error_stopping_count():
         assert item.shots < 100_000
         assert item.errors < 90_000
         assert item.custom_counts['detection_events'] > 1_000_000
+
+
+def test_auto_processes():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        stim.Circuit.generated(
+            'repetition_code:memory',
+            rounds=5,
+            distance=3,
+            after_clifford_depolarization=0.1,
+        ).to_file(d / 'a=3.stim')
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "200",
+            "--quiet",
+            "--metadata_func",
+            "auto",
+            "--decoders",
+            "vacuous",
+            "--processes",
+            "auto",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
