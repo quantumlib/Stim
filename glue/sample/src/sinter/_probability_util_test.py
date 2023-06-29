@@ -28,7 +28,7 @@ from sinter._probability_util import comma_separated_key_values
     }.items(),
 )
 def test_log_factorial(arg, result):
-    np.testing.assert_allclose(log_factorial(arg), result, rtol=1e-5)
+    np.testing.assert_allclose(log_factorial(arg), result, rtol=1e-11)
 
 
 @pytest.mark.parametrize(

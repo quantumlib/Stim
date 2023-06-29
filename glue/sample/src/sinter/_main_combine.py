@@ -1,4 +1,5 @@
 import argparse
+import collections
 import json
 
 import sys
@@ -47,6 +48,20 @@ def main_combine(*, command_line_args: List[str]):
                 errors=task.errors,
                 discards=task.discards,
                 seconds=task.seconds,
+            )
+            for task in total
+        ]
+    else:
+        total = [
+            sinter.TaskStats(
+                strong_id=task.strong_id,
+                decoder=task.decoder,
+                json_metadata=task.json_metadata,
+                shots=task.shots,
+                errors=task.errors,
+                discards=task.discards,
+                seconds=task.seconds,
+                custom_counts=collections.Counter(dict(sorted(task.custom_counts.items(), key=better_sorted_str_terms))),
             )
             for task in total
         ]
