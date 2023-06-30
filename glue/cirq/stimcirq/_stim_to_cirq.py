@@ -482,6 +482,9 @@ class CircuitTranslationTracker:
             "MPAD": CircuitTranslationTracker.process_mpad,
             "DETECTOR": CircuitTranslationTracker.process_detector,
             "OBSERVABLE_INCLUDE": CircuitTranslationTracker.process_observable_include,
+            "HERALDED_ERASE": not_impl(
+                "Converting HERALDED_ERASE to cirq is not supported."
+            ),
         }
 
 
