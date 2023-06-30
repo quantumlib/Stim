@@ -8,6 +8,7 @@ src/stim/circuit/gate_data_blocks.cc
 src/stim/circuit/gate_data_collapsing.cc
 src/stim/circuit/gate_data_controlled.cc
 src/stim/circuit/gate_data_hada.cc
+src/stim/circuit/gate_data_heralded.cc
 src/stim/circuit/gate_data_noisy.cc
 src/stim/circuit/gate_data_pair_measure.cc
 src/stim/circuit/gate_data_pauli.cc

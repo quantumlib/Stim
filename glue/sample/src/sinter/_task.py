@@ -1,8 +1,11 @@
+import pathlib
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import hashlib
 import json
 import math
+from typing import Union
+
 import numpy as np
 
 from sinter._collection_options import CollectionOptions
@@ -71,7 +74,7 @@ class Task:
         json_metadata: Any = None,
         collection_options: 'sinter.CollectionOptions' = CollectionOptions(),
         skip_validation: bool = False,
-        circuit_path: Optional[str] = None,
+        circuit_path: Optional[Union[str, pathlib.Path]] = None,
         _unvalidated_strong_id: Optional[str] = None,
     ) -> None:
         """
@@ -151,7 +154,7 @@ class Task:
                     raise ValueError(f"not isinstance(postselected_observables_mask={postselected_observables_mask!r}, np.ndarray)")
                 if postselected_observables_mask.dtype != np.uint8:
                     raise ValueError(f"postselected_observables_mask.dtype={postselected_observables_mask.dtype!r} != np.uint8")
-        self.circuit_path = circuit_path
+        self.circuit_path = None if circuit_path is None else pathlib.Path(circuit_path)
         self.circuit = circuit
         self.decoder = decoder
         self.detector_error_model = detector_error_model

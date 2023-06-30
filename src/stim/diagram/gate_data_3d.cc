@@ -449,6 +449,7 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("MYY", 11, 9),
         f("MZZ", 12, 9),
         f("MPAD", 13, 9),
+        f("HERALDED_ERASE", 14, 9),
 
         make_x_control_mesh(),
         make_y_control_mesh(),

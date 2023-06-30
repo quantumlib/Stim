@@ -41,10 +41,10 @@ void MeasureRecordBatch<W>::reserve_space_for_results(size_t count) {
 }
 
 template <size_t W>
-void MeasureRecordBatch<W>::reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng) {
-    size_t count = target_data.targets.size();
+void MeasureRecordBatch<W>::reserve_noisy_space_for_results(const CircuitInstruction &inst, std::mt19937_64 &rng) {
+    size_t count = inst.targets.size();
     reserve_space_for_results(count);
-    float p = target_data.args.empty() ? 0 : target_data.args[0];
+    float p = inst.args.empty() ? 0 : inst.args[0];
     biased_randomize_bits(p, storage[stored].u64, storage[stored + count].u64, rng);
 }
 

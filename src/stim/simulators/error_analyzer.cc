@@ -61,6 +61,9 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::MR:
             undo_MRZ(inst);
             break;
+        case GateType::HERALDED_ERASE:
+            undo_HERALDED_ERASE(inst);
+            break;
         case GateType::RX:
             undo_RX(inst);
             break;
@@ -315,6 +318,22 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
         xor_sorted_measurement_error(d.range(), dat);
         tracker.zs[q].xor_sorted_items(d.range());
         check_for_gauge(tracker.xs[q], context_op, q);
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
+    }
+}
+
+void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        tracker.num_measurements_in_past--;
+
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        if (accumulate_errors) {
+            double p = dat.args[0] * 0.25;
+            add_error_combinations<3>(
+                {0, 0, 0, 0, p, p, p, p},
+                {tracker.xs[q].range(), tracker.zs[q].range(), d.range()});
+        }
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }

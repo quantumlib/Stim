@@ -778,6 +778,13 @@ TEST(circuit, count_measurements) {
         )CIRCUIT")
             .count_measurements(),
         3);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            HERALDED_ERASE(0.01) 0 1 2
+        )CIRCUIT")
+            .count_measurements(),
+        3);
 }
 
 TEST(circuit, preserves_repetition_blocks) {
@@ -1047,6 +1054,7 @@ TEST(circuit, aliased_noiseless_circuit) {
         H 0
         X_ERROR(0.1) 0
         M(0.05) 0
+        M(0.15) 1
         REPEAT 100 {
             CNOT 0 1
             DEPOLARIZE2(0.1) 0 1
@@ -1056,7 +1064,7 @@ TEST(circuit, aliased_noiseless_circuit) {
     Circuit noiseless = initial.aliased_noiseless_circuit();
     ASSERT_EQ(noiseless, Circuit(R"CIRCUIT(
         H 0
-        M 0
+        M 0 1
         REPEAT 100 {
             CNOT 0 1
             MPP X0*X1 Z0 Z1
@@ -1070,6 +1078,26 @@ TEST(circuit, aliased_noiseless_circuit) {
     ASSERT_EQ(c1, c2);
 
     ASSERT_EQ(Circuit("H 0\nX_ERROR(0.01) 0\nH 0").without_noise(), Circuit("H 0 0"));
+}
+
+TEST(circuit, noiseless_heralded_erase) {
+    Circuit noisy(R"CIRCUIT(
+        M 0 1
+        MPAD 1
+        HERALDED_ERASE(0.01) 2 3 0 1
+        MPAD 1
+        M 2 0
+        DETECTOR rec[-1] rec[-8]
+    )CIRCUIT");
+    Circuit noiseless(R"CIRCUIT(
+        M 0 1
+        MPAD 1 0 0 0 0 1
+        M 2 0
+        DETECTOR rec[-1] rec[-8]
+    )CIRCUIT");
+
+    ASSERT_EQ(noisy.aliased_noiseless_circuit(), noiseless);
+    ASSERT_EQ(noisy.without_noise(), noiseless);
 }
 
 TEST(circuit, validate_nan_probability) {
@@ -1623,6 +1651,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         X_ERROR(0.01) 0
         Y_ERROR(0.02) 1
         Z_ERROR(0.03) 2
+        HERALDED_ERASE(0.04) 3
         TICK
 
         # Collapsing Gates

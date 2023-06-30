@@ -4,6 +4,7 @@ import contextlib
 import multiprocessing
 import pathlib
 import tempfile
+import stim
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
 from sinter._decoding_decoder_class import Decoder
@@ -242,6 +243,18 @@ def _iter_tasks_with_assigned_decoders(
     global_collections_options: CollectionOptions,
 ) -> Iterator[Task]:
     for task in tasks_iter:
+        if task.circuit is None:
+            task = Task(
+                circuit=stim.Circuit.from_file(task.circuit_path),
+                decoder=task.decoder,
+                detector_error_model=task.detector_error_model,
+                postselection_mask=task.postselection_mask,
+                postselected_observables_mask=task.postselected_observables_mask,
+                json_metadata=task.json_metadata,
+                collection_options=task.collection_options,
+                circuit_path=task.circuit_path,
+            )
+
         if task.decoder is None and default_decoders is None:
             raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
         task_decoders = []

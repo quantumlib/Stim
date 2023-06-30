@@ -38,6 +38,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_collapsing(failed);
     add_gate_data_controlled(failed);
     add_gate_data_hada(failed);
+    add_gate_data_heralded(failed);
     add_gate_data_noisy(failed);
     add_gate_data_pauli(failed);
     add_gate_data_period_3(failed);

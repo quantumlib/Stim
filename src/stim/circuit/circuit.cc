@@ -338,6 +338,14 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
     circuit.operations.push_back({gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail()});
 }
 
+void Circuit::try_fuse_last_two_ops() {
+    auto &ops = operations;
+    size_t n = ops.size();
+    if (n > 1 && ops[n - 2].can_fuse(ops[n - 1])) {
+        fuse_data(ops[n - 2].targets, ops[n - 1].targets, target_buf);
+        ops.pop_back();
+    }
+}
 template <typename SOURCE>
 void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION read_condition) {
     auto &ops = circuit.operations;
@@ -383,10 +391,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         }
 
         // Fuse operations.
-        if (ops.size() > 1 && ops[ops.size() - 2].can_fuse(new_op)) {
-            fuse_data(ops[ops.size() - 2].targets, new_op.targets, circuit.target_buf);
-            ops.pop_back();
-        }
+        circuit.try_fuse_last_two_ops();
     } while (read_condition != READ_AS_LITTLE_AS_POSSIBLE);
 }
 
@@ -811,12 +816,26 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
-            // Drop result flip probability.
-            result.operations.push_back({op.gate_type, {}, op.targets});
+            if (op.gate_type == GateType::HERALDED_ERASE) {
+                // Replace heralded errors with fixed MPAD.
+                result.target_buf.ensure_available(op.targets.size());
+                auto &tail = result.target_buf.tail;
+                tail.ptr_end = tail.ptr_start + op.targets.size();
+                memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
+                result.operations.push_back(CircuitInstruction{GateType::MPAD, {}, result.target_buf.commit_tail()});
+                result.try_fuse_last_two_ops();
+            } else {
+                // Drop result flip probability.
+                result.operations.push_back({op.gate_type, {}, op.targets});
+            }
         } else if (!(flags & GATE_IS_NOISY)) {
             // Keep noiseless operations.
             result.operations.push_back(op);
         }
+
+        // Because some operations are rewritten into others, and some become fusable due to
+        // arguments getting removed, just keep trying to fuse things.
+        result.try_fuse_last_two_ops();
     }
     for (const auto &block : blocks) {
         result.blocks.push_back(block.aliased_noiseless_circuit());
@@ -829,9 +848,18 @@ Circuit Circuit::without_noise() const {
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
-            // Drop result flip probabilities.
-            auto targets = result.target_buf.take_copy(op.targets);
-            result.safe_append(op.gate_type, targets, {});
+            if (op.gate_type == GateType::HERALDED_ERASE) {
+                // Replace heralded errors with fixed MPAD.
+                result.target_buf.ensure_available(op.targets.size());
+                auto &tail = result.target_buf.tail;
+                tail.ptr_end = tail.ptr_start + op.targets.size();
+                memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
+                result.operations.push_back(CircuitInstruction{GateType::MPAD, {}, result.target_buf.commit_tail()});
+            } else {
+                // Drop result flip probabilities.
+                auto targets = result.target_buf.take_copy(op.targets);
+                result.safe_append(op.gate_type, targets, {});
+            }
         } else if (op.gate_type == GateType::REPEAT) {
             auto args = result.arg_buf.take_copy(op.args);
             auto targets = result.target_buf.take_copy(op.targets);
@@ -842,6 +870,10 @@ Circuit Circuit::without_noise() const {
             auto targets = result.target_buf.take_copy(op.targets);
             result.safe_append(op.gate_type, targets, args);
         }
+
+        // Because some operations are rewritten into others, and some become fusable due to
+        // arguments getting removed, just keep trying to fuse things.
+        result.try_fuse_last_two_ops();
     }
     for (const auto &block : blocks) {
         result.blocks.push_back(block.without_noise());

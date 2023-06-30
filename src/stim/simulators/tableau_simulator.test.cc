@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/vector_simulator.h"
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
+#include "stim/mem/simd_word.test.h"
+#include "stim/simulators/vector_simulator.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -2318,4 +2319,27 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, mzz, {
 
     sim.expand_do_circuit(Circuit("MZZ 1 2 3 4 2 3 1 3"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{x12, x34, x23, x13}));
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, runs_on_general_circuit, {
+    auto circuit = generate_test_circuit_with_all_operations();
+    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    sim.expand_do_circuit(circuit);
+    ASSERT_GT(sim.inv_state.xs.num_qubits, 1);
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
+    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_ERASE(0) 0 1 2 3 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 0, 0, 0, 0, 0, 0, 0}));
+    sim.measurement_record.storage.clear();
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_ERASE(1) 0 1 2 3 4 5 6 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
+    ASSERT_NE(sim.inv_state, Tableau<W>(14));
 })

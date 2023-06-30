@@ -81,7 +81,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 65;
+constexpr const size_t NUM_DEFINED_GATES = 66;
 
 enum GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -129,6 +129,8 @@ enum GateType : uint8_t {
     PAULI_CHANNEL_2,
     E,  // alias when parsing: CORRELATED_ERROR
     ELSE_CORRELATED_ERROR,
+    // Heralded noise channels
+    HERALDED_ERASE,
     // Pauli gates
     I,
     X,
@@ -290,77 +292,6 @@ struct Gate {
     std::vector<std::vector<std::complex<float>>> unitary() const;
 };
 
-struct StringView {
-    const char *c;
-    size_t n;
-
-    StringView(const char *c, size_t n) : c(c), n(n) {
-    }
-
-    StringView(std::string &v) : c(&v[0]), n(v.size()) {
-    }
-
-    inline StringView substr(size_t offset) const {
-        return {c + offset, n - offset};
-    }
-
-    inline StringView substr(size_t offset, size_t length) const {
-        return {c + offset, length};
-    }
-
-    inline StringView &operator=(const std::string &other) {
-        c = (char *)&other[0];
-        n = other.size();
-        return *this;
-    }
-
-    inline const char &operator[](size_t index) const {
-        return c[index];
-    }
-
-    inline bool operator==(const std::string &other) const {
-        return n == other.size() && memcmp(c, other.data(), n) == 0;
-    }
-
-    inline bool operator!=(const std::string &other) const {
-        return !(*this == other);
-    }
-
-    inline bool operator==(const char *other) const {
-        size_t k = 0;
-        for (; k < n; k++) {
-            if (other[k] != c[k]) {
-                return false;
-            }
-        }
-        return other[k] == '\0';
-    }
-
-    inline bool operator!=(const char *other) const {
-        return !(*this == other);
-    }
-
-    inline std::string str() const {
-        return std::string(c, n);
-    }
-};
-
-inline std::string operator+(const StringView &a, const char *b) {
-    return a.str() + b;
-}
-
-inline std::string operator+(const char *a, const StringView &b) {
-    return a + b.str();
-}
-
-inline std::string operator+(const StringView &a, const std::string &b) {
-    return a.str() + b;
-}
-
-inline std::string operator+(const std::string &a, const StringView &b) {
-    return a + b.str();
-}
-
 inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {
     if (bucket_name == nullptr || bucket_len != text_len) {
         return true;
@@ -384,6 +315,7 @@ struct GateDataMap {
     void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
     void add_gate_data_annotations(bool &failed);
     void add_gate_data_blocks(bool &failed);
+    void add_gate_data_heralded(bool &failed);
     void add_gate_data_collapsing(bool &failed);
     void add_gate_data_controlled(bool &failed);
     void add_gate_data_hada(bool &failed);
@@ -412,10 +344,6 @@ struct GateDataMap {
 
     inline const Gate &at(const char *text) const {
         return at(text, strlen(text));
-    }
-
-    inline const Gate &at(StringView text) const {
-        return at(text.c, text.n);
     }
 
     inline const Gate &at(const std::string &text) const {
