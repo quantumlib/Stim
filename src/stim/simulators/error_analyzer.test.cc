@@ -3468,6 +3468,26 @@ TEST(ErrorAnalyzer, heralded_erase) {
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
+            M 0
+            HERALDED_ERASE(0.25) 9 0 9 9 9
+            M 0
+            DETECTOR rec[-1] rec[-7]
+            DETECTOR rec[-5]
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"DEM(
+            error(0.1171875) D0 D1
+            error(0.1171875) D1
+        )DEM"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             MPAD 0
             MPAD 0
             MPP Z20*Z21*Z30*Z31
