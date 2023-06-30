@@ -177,5 +177,7 @@ TEST(command_diagram, warn_about_noiseless_match_graphs) {
     ASSERT_NE(result.find("--remove_noise is incompatible"), std::string::npos);
 
     result = run_captured_stim_main({"diagram", "--type", "matchgraph-3d"}, "H 0");
-    ASSERT_NE(result.find("[stderr=Warning: the detector error model derived from the circuit had no errors"), std::string::npos);
+    ASSERT_NE(
+        result.find("[stderr=Warning: the detector error model derived from the circuit had no errors"),
+        std::string::npos);
 }

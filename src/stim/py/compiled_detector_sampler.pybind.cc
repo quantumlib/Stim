@@ -26,7 +26,10 @@ using namespace stim;
 using namespace stim_pybind;
 
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::shared_ptr<std::mt19937_64> init_prng)
-    : circuit_stats(init_circuit.compute_stats()), circuit(std::move(init_circuit)), prng(init_prng), frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, *prng) {
+    : circuit_stats(init_circuit.compute_stats()),
+      circuit(std::move(init_circuit)),
+      prng(init_prng),
+      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, *prng) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(

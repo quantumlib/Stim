@@ -144,7 +144,7 @@ enum GateType : uint8_t {
     SQRT_X_DAG,
     SQRT_Y,
     SQRT_Y_DAG,
-    S,  // alias when parsing: SQRT_Z
+    S,      // alias when parsing: SQRT_Z
     S_DAG,  // alias when parsing: SQRT_Z_DAG
     // Pauli product gates
     SQRT_XX,

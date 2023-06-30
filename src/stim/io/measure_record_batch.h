@@ -56,11 +56,9 @@ struct MeasureRecordBatch {
     /// Hints that measurements can be written to the given writer.
     ///
     /// For performance reasons, they may not be written until a large enough block has been accumulated.
-    void intermediate_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
+    void intermediate_write_unwritten_results_to(MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Forces measurements to be written to the given writer, and to tell the writer the measurements are ending.
-    void final_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
+    void final_write_unwritten_results_to(MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Looks up a historical batch measurement.
     ///
     /// Returns:

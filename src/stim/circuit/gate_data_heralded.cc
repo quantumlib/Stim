@@ -24,7 +24,8 @@ void GateDataMap::add_gate_data_heralded(bool &failed) {
             GateType::HERALDED_ERASE,
             GateType::HERALDED_ERASE,
             1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_PRODUCES_RESULTS),
+            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
+                        GATE_PRODUCES_RESULTS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",

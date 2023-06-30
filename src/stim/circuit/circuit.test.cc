@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/circuit.test.h"
 
 #include "gtest/gtest.h"
+
+#include "stim/circuit/circuit.test.h"
 
 using namespace stim;
 
@@ -762,15 +763,9 @@ TEST(circuit, count_measurements) {
             .count_measurement_results(),
         3);
 
-    ASSERT_EQ(
-        Circuit("MXX 0 1 2 3").operations[0].count_measurement_results(),
-        2);
-    ASSERT_EQ(
-        Circuit("MYY 0 1 2 3").operations[0].count_measurement_results(),
-        2);
-    ASSERT_EQ(
-        Circuit("MZZ 0 1 2 3").operations[0].count_measurement_results(),
-        2);
+    ASSERT_EQ(Circuit("MXX 0 1 2 3").operations[0].count_measurement_results(), 2);
+    ASSERT_EQ(Circuit("MYY 0 1 2 3").operations[0].count_measurement_results(), 2);
+    ASSERT_EQ(Circuit("MZZ 0 1 2 3").operations[0].count_measurement_results(), 2);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(

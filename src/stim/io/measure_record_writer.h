@@ -101,9 +101,7 @@ struct MeasureRecordWriterFormatDets : MeasureRecordWriter {
 
 template <size_t W>
 simd_bit_table<W> transposed_vs_ref(
-    size_t num_samples_raw,
-    const simd_bit_table<W> &table,
-    const simd_bits<W> &reference_sample) {
+    size_t num_samples_raw, const simd_bit_table<W> &table, const simd_bits<W> &reference_sample) {
     auto result = table.transposed();
     for (size_t s = 0; s < num_samples_raw; s++) {
         result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;

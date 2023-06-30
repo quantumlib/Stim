@@ -22,202 +22,287 @@
 
 using namespace stim;
 
-
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, single_qubit_measurements_baseline, {
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
-    )CIRCUIT")), 0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MX 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MRX 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0
         MX 0
-    )CIRCUIT")), 0);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0
         MRX 0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0
         MY 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0
         MRY 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MY 0
-    )CIRCUIT")), 0);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MRY 0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0
         MZ 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0
         MRZ 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MZ 0
-    )CIRCUIT")), 0);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MRZ 0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 })
 
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, pair_measurements_baseline, {
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0 1
         MXX 0 1
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0 1
         MXX 0 1
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0 1
         MYY 0 1
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0 1
         MYY 0 1
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0 1
         MZZ 0 1
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0 1
         MZZ 0 1
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 })
 
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, mpp_baseline, {
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MPP X0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0
         MPP X0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RY 0
         MPP Y0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MPP Y0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RZ 0
         MPP Z0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MPP Z0
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         RY 1
         RZ 2
         MPP X0*Y1*Z2
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         RX 1
         RZ 2
         MPP X0*Y1*Z2
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 })
 
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, converge, {
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MX 0 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MY 0 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MZ 0 0
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MRX 0 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MRY 0 0
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0
         MRZ 0 0
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MXX 0 1 0 1
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MYY 0 1 0 1
-    )CIRCUIT")), 1);
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0 1
         MZZ 0 1 0 1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MXX 0 1
         MYY 0 1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MPP X0*X1 Y0*Y1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MPP X0*X1 X1*X2 !X0*X2
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         REPEAT 3 {
             MPP X0*X1
         }
-    )CIRCUIT")), 2);
+    )CIRCUIT")),
+        2);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MXX 0 1
         MX 0 1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         MYY 0 1
         MY 0 1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(count_determined_measurements<W>(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
         RX 0 1
         MZZ 0 1
         MZ 0 1
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 })
 
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, surface_code, {

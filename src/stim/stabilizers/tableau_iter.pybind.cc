@@ -39,7 +39,8 @@ pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_tableau
     return c;
 }
 
-void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>> &c) {
+void stim_pybind::pybind_tableau_iter_methods(
+    pybind11::module &m, pybind11::class_<TableauIterator<MAX_BITWORD_WIDTH>> &c) {
     c.def(
         "__iter__",
         [](TableauIterator<MAX_BITWORD_WIDTH> &self) -> TableauIterator<MAX_BITWORD_WIDTH> {

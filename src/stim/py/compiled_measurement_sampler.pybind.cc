@@ -71,9 +71,9 @@ CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     const pybind11::object &seed,
     const pybind11::object &reference_sample) {
     if (reference_sample.is_none()) {
-        simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
-                                                      ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                                      : TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
+        simd_bits<MAX_BITWORD_WIDTH> ref_sample =
+            skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
+                                  : TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
         return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
     } else {
         if (skip_reference_sample) {

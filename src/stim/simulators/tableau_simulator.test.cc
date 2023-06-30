@@ -462,7 +462,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_canonical, {
 })
 
 template <size_t W>
-bool vec_sim_corroborates_measurement_process(const Tableau<W> &state, const std::vector<uint32_t> &measurement_targets) {
+bool vec_sim_corroborates_measurement_process(
+    const Tableau<W> &state, const std::vector<uint32_t> &measurement_targets) {
     TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 2);
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
@@ -2197,20 +2198,11 @@ void expect_same_final_state(const Tableau<W> &start, const Circuit &c1, const C
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx_myy_mzz_vs_mpp_unsigned, {
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MXX 1 3 1 2 3 4"),
-        Circuit("MPP X1*X3 X1*X2 X3*X4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MXX 1 3 1 2 3 4"), Circuit("MPP X1*X3 X1*X2 X3*X4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MYY 1 3 1 2 3 4"),
-        Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MYY 1 3 1 2 3 4"), Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MZZ 1 3 1 2 3 4"),
-        Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MZZ 1 3 1 2 3 4"), Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"), true);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx, {

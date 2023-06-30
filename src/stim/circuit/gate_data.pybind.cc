@@ -14,11 +14,11 @@
 
 #include "stim/circuit/gate_data.pybind.h"
 
-#include "stim/stabilizers/tableau.pybind.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/py/base.pybind.h"
+#include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/tableau.pybind.h"
 #include "stim/str_util.h"
 
 using namespace stim;
@@ -170,7 +170,6 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         )DOC")
             .data());
 
-
     c.def_property_readonly(
         "unitary_matrix",
         [](const Gate &self) -> pybind11::object {
@@ -180,7 +179,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 std::complex<float> *buffer = new std::complex<float>[n * n];
                 for (size_t a = 0; a < n; a++) {
                     for (size_t b = 0; b < n; b++) {
-                        buffer[b + a*n] = r[a][b];
+                        buffer[b + a * n] = r[a][b];
                     }
                 }
 
@@ -190,7 +189,8 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
                 return pybind11::array_t<std::complex<float>>(
                     {(pybind11::ssize_t)n, (pybind11::ssize_t)n},
-                    {(pybind11::ssize_t)(n * sizeof(std::complex<float>)), (pybind11::ssize_t)sizeof(std::complex<float>)},
+                    {(pybind11::ssize_t)(n * sizeof(std::complex<float>)),
+                     (pybind11::ssize_t)sizeof(std::complex<float>)},
                     buffer,
                     free_when_done);
             }

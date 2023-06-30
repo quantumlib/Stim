@@ -109,7 +109,8 @@ BENCHMARK(FrameSimulator_surface_code_rotated_memory_z_d11_r100_batch1024) {
     auto circuit = generate_surface_code_circuit(params).circuit;
 
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator<MAX_BITWORD_WIDTH> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, 1024, rng);
+    FrameSimulator<MAX_BITWORD_WIDTH> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, 1024, rng);
 
     benchmark_go([&]() {
         sim.reset_all_and_run(circuit);

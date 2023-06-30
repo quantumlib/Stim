@@ -102,8 +102,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, bulk_operations_consistent_with_tableau_da
 })
 
 template <size_t W>
-bool is_output_possible_promising_no_bare_resets(
-    const Circuit &circuit, const simd_bits_range_ref<W> output) {
+bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref<W> output) {
     auto tableau_sim = TableauSimulator<W>(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
@@ -1013,8 +1012,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, resets_vs_measurements, {
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table<W> t =
-            sample_batch_measurements(Circuit(circuit), ref, 100, SHARED_TEST_RNG(), true);
+        simd_bit_table<W> t = sample_batch_measurements(Circuit(circuit), ref, 100, SHARED_TEST_RNG(), true);
         return !t.data.not_zero();
     };
 
@@ -1452,7 +1450,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, reconfigure_for, {
         DETECTOR rec[-1]
     )CIRCUIT");
 
-    FrameSimulator<W> frame_sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
+    FrameSimulator<W> frame_sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, SHARED_TEST_RNG());
     frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
     frame_sim.reset_all_and_run(circuit);
     ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
@@ -1463,11 +1462,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mpad, {
         MPAD 0 1
     )CIRCUIT");
     auto sample = sample_batch_measurements(
-        circuit,
-        TableauSimulator<W>::reference_sample_circuit(circuit),
-        100,
-        SHARED_TEST_RNG(),
-        false);
+        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, SHARED_TEST_RNG(), false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[0][k], false);
         ASSERT_EQ(sample[1][k], true);
@@ -1484,11 +1479,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_basis, {
         MZZ 0 1
     )CIRCUIT");
     auto sample = sample_batch_measurements(
-        circuit,
-        TableauSimulator<W>::reference_sample_circuit(circuit),
-        100,
-        SHARED_TEST_RNG(),
-        false);
+        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, SHARED_TEST_RNG(), false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[0][k], false);
         ASSERT_EQ(sample[1][k], false);
@@ -1503,11 +1494,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_inversion, {
         MZZ 0 1 0 !1 !0 1 !0 !1
     )CIRCUIT");
     auto sample = sample_batch_measurements(
-        circuit,
-        TableauSimulator<W>::reference_sample_circuit(circuit),
-        100,
-        SHARED_TEST_RNG(),
-        false);
+        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, SHARED_TEST_RNG(), false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[1][k], !sample[0][k]);
         ASSERT_EQ(sample[2][k], !sample[0][k]);
@@ -1525,11 +1512,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_inversion, {
 TEST_EACH_WORD_SIZE_W(FrameSimulator, runs_on_general_circuit, {
     auto circuit = generate_test_circuit_with_all_operations();
     auto sample = sample_batch_measurements(
-        circuit,
-        TableauSimulator<W>::reference_sample_circuit(circuit),
-        100,
-        SHARED_TEST_RNG(),
-        false);
+        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, SHARED_TEST_RNG(), false);
     ASSERT_GT(sample.num_simd_words_minor, 0);
     ASSERT_GT(sample.num_simd_words_major, 0);
 })
@@ -1547,7 +1530,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_erase_detect_statistics, {
     )CIRCUIT");
     size_t n;
     std::array<size_t, 8> bins{};
-    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, SHARED_TEST_RNG());
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, SHARED_TEST_RNG());
     for (n = 0; n < 1024 * 256; n += 1024) {
         sim.reset_all_and_run(circuit);
         auto sample = sim.det_record.storage.transposed();

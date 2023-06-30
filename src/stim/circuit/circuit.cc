@@ -281,11 +281,9 @@ inline GateTarget read_single_target(int &c, SOURCE read_char) {
 GateTarget GateTarget::from_target_str(const char *text) {
     int c = text[0];
     size_t k = 1;
-    auto t = read_single_target(
-        c,
-        [&]() {
-            return text[k] != 0 ? text[k++] : EOF;
-        });
+    auto t = read_single_target(c, [&]() {
+        return text[k] != 0 ? text[k++] : EOF;
+    });
     if (c != EOF) {
         throw std::invalid_argument("Unparsed text at end of " + std::string(text));
     }

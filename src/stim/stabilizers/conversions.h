@@ -146,7 +146,10 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
 ///     The Z outputs of the tableau will be the given stabilizers (skipping any redundant ones).
 template <size_t W>
 Tableau<W> stabilizers_to_tableau(
-    const std::vector<stim::PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert);
+    const std::vector<stim::PauliString<W>> &stabilizers,
+    bool allow_redundant,
+    bool allow_underconstrained,
+    bool invert);
 
 }  // namespace stim
 
