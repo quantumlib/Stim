@@ -20,5 +20,6 @@ src/stim/simulators/matched_error.pybind.cc
 src/stim/simulators/measurements_to_detection_events.pybind.cc
 src/stim/simulators/tableau_simulator.pybind.cc
 src/stim/stabilizers/pauli_string.pybind.cc
+src/stim/stabilizers/pauli_string_iter.pybind.cc
 src/stim/stabilizers/tableau.pybind.cc
 src/stim/stabilizers/tableau_iter.pybind.cc

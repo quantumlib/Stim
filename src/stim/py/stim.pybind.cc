@@ -36,6 +36,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/pauli_string_iter.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
@@ -419,6 +420,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_pauli_string = pybind_pauli_string(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
+    auto c_pauli_string_iter = pybind_pauli_string_iter(m);
 
     auto c_circuit_gate_target = pybind_circuit_gate_target(m);
     auto c_gate_data = pybind_gate_data(m);
@@ -455,6 +457,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_methods(m, c_circuit);
 
     pybind_tableau_iter_methods(m, c_tableau_iter);
+    pybind_pauli_string_iter_methods(m, c_pauli_string_iter);
     pybind_dem_sampler_methods(m, c_dem_sampler);
 
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);

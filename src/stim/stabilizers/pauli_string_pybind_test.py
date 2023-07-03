@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import itertools
+
 import numpy as np
-import stim
 import pytest
+
+import stim
 
 
 def test_identity():
@@ -832,4 +834,114 @@ def test_before_after():
     assert before.after(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == after
     assert after.before(stim.Circuit("C_XYZ 1 4 6")) == before
     assert after.before(stim.Circuit("C_XYZ 1 4 6")[0]) == before
-    assert after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before
+    assert (
+        after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before
+    )
+
+
+
+
+def test_iter_all_next_qubit_permutation():
+    pauli_it = stim.PauliString.iter_all(
+        4,
+        min_weight=2,
+        max_weight=2,
+    )
+    perm = pauli_it.next_qubit_permutation()
+    # 0101
+    assert np.allclose(perm, [True, False, True, False])
+    # 0110
+    perm = pauli_it.next_qubit_permutation()
+    assert np.allclose(perm, [False, True, True, False])
+    # 1001
+    perm = pauli_it.next_qubit_permutation()
+    assert np.allclose(perm, [True, False, False, True])
+
+
+def test_iter_all_seed_iterator():
+    pauli_it = stim.PauliString.iter_all(
+        4,
+        min_weight=2,
+        max_weight=2,
+    )
+    # 0101 -> 0110
+    seed = np.array([True, False, True, False])
+    pauli_it.seed_iterator(seed)
+    perm = pauli_it.next_qubit_permutation()
+    assert np.allclose(perm, [False, True, True, False])
+
+def next_permutation(v):
+    t = (v | (v - 1)) + 1
+    w = t | ((((t & -t) // (v & -v)) >> 1) - 1)
+    return w
+
+def to_py_int(bool_arr):
+    return int("".join(f"{int(b)}" for b in bool_arr[::-1]), 2)
+
+@pytest.mark.parametrize(
+    "num_qubits,min_weight",
+    [(10_000, 8), (513, 9), (128, 18), (80, 54), (1023, 1000), (513, 121)],
+)
+def test_iter_all_random_permutation(num_qubits, min_weight):
+    pauli_it = stim.PauliString.iter_all(
+        num_qubits,
+        min_weight=min_weight,
+        max_weight=min_weight,
+    )
+    seed = np.array([False] * num_qubits)
+    set_bits = np.random.choice(range(num_qubits), size=min_weight, replace=False)
+    seed[set_bits] = True
+    assert sum(seed) == min_weight
+    pauli_it.seed_iterator(seed)
+    stim_perm = pauli_it.next_qubit_permutation()
+
+    ref_perm = to_py_int(seed)
+    expected_py = next_permutation(ref_perm)
+    assert expected_py == to_py_int(stim_perm)
+
+def find_set_bits(bits, num_qubits):
+    set_bits = []
+    for bit in range(num_qubits):
+        if (bits & (1 << bit)):
+            set_bits.append(bit)
+    return set_bits
+
+
+@pytest.mark.parametrize(
+    "num_qubits,min_weight,max_weight",
+    [(4, 3, 4), (8, 0, 8), (72, 1, 2), (129, 1, 2), (1023, 0, 1), (128, 1, 1)],
+)
+def test_iter_all(num_qubits, min_weight, max_weight):
+    terms = ["X", "Z", "Y"]
+    pauli_it = list(stim.PauliString.iter_all(
+        num_qubits, min_weight=min_weight, max_weight=max_weight
+    ))
+    pauli_py = []
+    cur_perm = 0
+    for weight in range(min_weight, max_weight + 1):
+        # Find all possible locations for the 3^weight pauli products
+        if weight == 0:
+            pauli_py.append([])
+            cur_perm = (1 << (weight + 1)) - 1
+            continue
+        elif cur_perm == 0:
+            cur_perm = (1 << weight) - 1
+        # for i in range(8):
+        while True:
+            set_bits = find_set_bits(cur_perm, num_qubits)
+            for i in range(3**weight):
+                tern_rep = np.base_repr(i, 3)
+                pauli = [f"{terms[int(it)]}{qb}" for it, qb in zip(f"{tern_rep:0>{weight}}"[::-1], set_bits)]
+                pauli_py.append(pauli)
+            if cur_perm == (((1 << weight) - 1) << (num_qubits-weight)):
+                break
+            cur_perm = next_permutation(cur_perm)
+        cur_perm = (1 << (weight + 1)) - 1
+
+    assert len(pauli_it) == len(pauli_py)
+    for i, (stim_p, py_p) in enumerate(zip(pauli_it, pauli_py)):
+        stim_string = ["_"] * num_qubits
+        for pauli in py_p[::-1]:
+            pauli_type, indx = pauli[0], int(pauli[1:])
+            stim_string[indx] = pauli_type
+        assert stim_p == stim.PauliString("".join(s for s in stim_string))

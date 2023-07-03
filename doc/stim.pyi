@@ -5805,6 +5805,38 @@ class PauliString:
             stim.PauliString("+XZ")
         """
     @staticmethod
+    def iter_all(
+        num_qubits: int,
+        *,
+        min_weight: Optional[int] = None,
+        max_weight: Optional[int] = None,
+    ) -> stim.PauliStringIterator:
+        """Returns an iterator that iterates over all PauliStrings.
+
+        The length of PauliString and its weight (the number of
+        non-identity terms) are controlled by num_qubits and
+        min_/max_weight.
+
+        Args:
+            num_qubits: The number of qubits the Pauli string acts on.
+            min_weight: The minimum weight PauliString to consider. If None
+                min_weight is set to zero and the identity string is included.
+            max_weight: The maximum weight PauliString to consider. If None
+                then max_weight is set to num_qubits.
+
+        Returns:
+            An Iterable[stim.PauliString] that yields the requested PauliStrings.
+
+        Examples:
+            >>> import stim
+            >>> pauli_iter = stim.PauliString.iter_all(10, min_weight=2, max_weight=3)
+            >>> n = 0
+            >>> for pauli_string in pauli_iter:
+            ...     n += 1
+            >>> n
+            3645
+        """
+    @staticmethod
     def random(
         num_qubits: int,
         *,
@@ -5975,6 +6007,66 @@ class PauliString:
                    [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
                    [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                    [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
+        """
+class PauliStringIterator:
+    """Iterates over all possible pauli_strings of weight specfied by
+    min_weight and max_weight.
+
+    Returns:
+        An Iterable[stim.PauliString] that yields the requested Pauli
+            string.
+
+    Examples:
+        >>> import stim
+        >>> pauli_iter = stim.PauliString.iter_all(10, min_weight=2, max_weight=3)
+        >>> n = 0
+        >>> for pauli_string in pauli_iter:
+        ...     n += 1
+        >>> n
+        3645
+    """
+    def __iter__(
+        self,
+    ) -> stim.PauliStringIterator:
+        """Returns an independent copy of the pauli string iterator.
+        """
+    def __next__(
+        self,
+    ) -> stim.PauliString:
+        """Returns the next iterated pauli string.
+        """
+    def next_qubit_permutation(
+        self,
+    ) -> object:
+        """Get the next permutation of qubit labels.
+
+        It's alot easier to test more complicated edge cases in python
+        which largely arise due to the algorithm for generating the next
+        permutation. The user should probably not interact with this function.
+
+        Returns:
+            next_perm: numpy boolean array which represents the next qubit permutation
+
+        Examples:
+            >>> import stim
+            >>> pauli_iter = stim.PauliString.iter_all(5, min_weight=3, max_weight=5)
+            >>> pauli_iter.next_qubit_permutation()
+            array([ True,  True, False,  True, False])
+        """
+    def seed_iterator(
+        self,
+        arg0: object,
+    ) -> None:
+        """Seed the iterator with a given qubit pattern.
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+            >>> pauli_iter = stim.PauliString.iter_all(4, min_weight=2, max_weight=2)
+            >>> seed = np.array([False, True, True, False])
+            >>> pauli_iter.seed_iterator(seed)
+            >>> pauli_iter.next_qubit_permutation()
+            array([ True, False, False,  True])
         """
 class Tableau:
     """A stabilizer tableau.

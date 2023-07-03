@@ -18,6 +18,7 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/stabilizers/tableau.h"
 
 using namespace stim;
@@ -214,7 +215,6 @@ bool PyPauliString::operator==(const PyPauliString &other) const {
 bool PyPauliString::operator!=(const PyPauliString &other) const {
     return !(*this == other);
 }
-
 
 std::complex<float> PyPauliString::get_phase() const {
     std::complex<float> result{value.sign ? -1.0f : +1.0f};
@@ -582,6 +582,55 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
             Returns:
                 The sampled Pauli string.
+        )DOC")
+            .data());
+
+    c.def_static(
+        "iter_all",
+        [](size_t num_qubits, pybind11::object &min_weight, pybind11::object &max_weight) {
+            size_t _max_weight, _min_weight;
+            if (max_weight.is_none()) {
+                _max_weight = num_qubits;
+            } else {
+                _max_weight = pybind11::cast<size_t>(max_weight);
+            }
+            if (min_weight.is_none()) {
+                _min_weight = 0;
+            } else {
+                _min_weight = pybind11::cast<size_t>(min_weight);
+            }
+            return PauliStringIterator<MAX_BITWORD_WIDTH>(num_qubits, _min_weight, _max_weight);
+        },
+        pybind11::arg("num_qubits"),
+        pybind11::kw_only(),
+        pybind11::arg("min_weight") = pybind11::none(),
+        pybind11::arg("max_weight") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def iter_all(num_qubits: int, *, min_weight: Optional[int] = None, max_weight: Optional[int] = None) -> stim.PauliStringIterator:
+            Returns an iterator that iterates over all PauliStrings.
+
+            The length of PauliString and its weight (the number of
+            non-identity terms) are controlled by num_qubits and
+            min_/max_weight.
+
+            Args:
+                num_qubits: The number of qubits the Pauli string acts on.
+                min_weight: The minimum weight PauliString to consider. If None
+                    min_weight is set to zero and the identity string is included.
+                max_weight: The maximum weight PauliString to consider. If None
+                    then max_weight is set to num_qubits.
+
+            Returns:
+                An Iterable[stim.PauliString] that yields the requested PauliStrings.
+
+            Examples:
+                >>> import stim
+                >>> pauli_iter = stim.PauliString.iter_all(10, min_weight=2, max_weight=3)
+                >>> n = 0
+                >>> for pauli_string in pauli_iter:
+                ...     n += 1
+                >>> n
+                3645
         )DOC")
             .data());
 
