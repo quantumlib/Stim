@@ -298,3 +298,55 @@ void stim_pybind::memcpy_bits_from_numpy_to_simd(
 
     throw std::invalid_argument("Expected a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
 }
+
+size_t stim_pybind::numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t max_n = arr.shape(0) * 8;
+            size_t min_n = max_n == 0 ? 0 : max_n - 7;
+            if (expected_size == SIZE_MAX) {
+                throw std::invalid_argument(
+                    "Need to specify expected number of pauli terms (the `num_qubits` argument) when bit packing.\n"
+                    "A numpy array is bit packed (has dtype=np.uint8) but `num_qubits=None`.");
+            }
+            if (expected_size < min_n || expected_size > max_n) {
+                std::stringstream ss;
+                ss << "Numpy array has dtype=np.uint8 (meaning it is bit packed) and shape=";
+                ss << arr.shape(0) << " (meaning it has between " << min_n << " and " << max_n << " bits)";
+                ss << " but len=" << expected_size << " is outside that range.";
+                throw std::invalid_argument(ss.str());
+            }
+            return expected_size;
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t num_bits = arr.shape(0);
+            if (expected_size != SIZE_MAX && num_bits != expected_size) {
+                std::stringstream ss;
+                ss << "Numpy array has dtype=bool_ and shape=" << num_bits
+                   << " which is different from the given len=" << expected_size;
+                ss << ".\nEither don't specify len (as it is not needed when using bool_ arrays) or ensure the given "
+                      "len agrees with the given array shapes.";
+                throw std::invalid_argument(ss.str());
+            }
+            return num_bits;
+        }
+    }
+    throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
+}
+
+size_t stim_pybind::numpy_pair_to_size(
+    const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size) {
+    size_t n0 = SIZE_MAX;
+    if (!expected_size.is_none()) {
+        n0 = pybind11::cast<size_t>(expected_size);
+    }
+    size_t n1 = numpy_to_size(numpy_array1, n0);
+    size_t n2 = numpy_to_size(numpy_array2, n0);
+    if (n1 != n2) {
+        throw std::invalid_argument("Inconsistent array shapes.");
+    }
+    return n2;
+}
