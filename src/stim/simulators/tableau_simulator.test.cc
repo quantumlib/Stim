@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/vector_simulator.h"
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
+#include "stim/mem/simd_word.test.h"
+#include "stim/simulators/vector_simulator.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -461,7 +462,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_canonical, {
 })
 
 template <size_t W>
-bool vec_sim_corroborates_measurement_process(const Tableau<W> &state, const std::vector<uint32_t> &measurement_targets) {
+bool vec_sim_corroborates_measurement_process(
+    const Tableau<W> &state, const std::vector<uint32_t> &measurement_targets) {
     TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 2);
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
@@ -2196,20 +2198,11 @@ void expect_same_final_state(const Tableau<W> &start, const Circuit &c1, const C
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx_myy_mzz_vs_mpp_unsigned, {
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MXX 1 3 1 2 3 4"),
-        Circuit("MPP X1*X3 X1*X2 X3*X4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MXX 1 3 1 2 3 4"), Circuit("MPP X1*X3 X1*X2 X3*X4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MYY 1 3 1 2 3 4"),
-        Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MYY 1 3 1 2 3 4"), Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()),
-        Circuit("MZZ 1 3 1 2 3 4"),
-        Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"),
-        true);
+        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MZZ 1 3 1 2 3 4"), Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"), true);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx, {
@@ -2318,4 +2311,27 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, mzz, {
 
     sim.expand_do_circuit(Circuit("MZZ 1 2 3 4 2 3 1 3"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{x12, x34, x23, x13}));
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, runs_on_general_circuit, {
+    auto circuit = generate_test_circuit_with_all_operations();
+    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    sim.expand_do_circuit(circuit);
+    ASSERT_GT(sim.inv_state.xs.num_qubits, 1);
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
+    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_ERASE(0) 0 1 2 3 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 0, 0, 0, 0, 0, 0, 0}));
+    sim.measurement_record.storage.clear();
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_ERASE(1) 0 1 2 3 4 5 6 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
+    ASSERT_NE(sim.inv_state, Tableau<W>(14));
 })

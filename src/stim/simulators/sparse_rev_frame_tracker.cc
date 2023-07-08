@@ -212,6 +212,9 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::MPAD:
             undo_MPAD(inst);
             break;
+        case GateType::HERALDED_ERASE:
+            undo_MPAD(inst);
+            break;
         default:
             throw std::invalid_argument(
                 "Not implemented by SparseUnsignedRevFrameTracker::undo_gate: " +
@@ -500,9 +503,7 @@ void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -516,9 +517,7 @@ void SparseUnsignedRevFrameTracker::undo_MYY(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -532,9 +531,7 @@ void SparseUnsignedRevFrameTracker::undo_MZZ(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
 }
@@ -793,7 +790,8 @@ void SparseUnsignedRevFrameTracker::undo_ISWAP(const CircuitInstruction &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets) {
+void SparseUnsignedRevFrameTracker::undo_tableau(
+    const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets) {
     size_t n = tableau.num_qubits;
     if (n != targets.size()) {
         throw new std::invalid_argument("tableau.num_qubits != targets.size()");

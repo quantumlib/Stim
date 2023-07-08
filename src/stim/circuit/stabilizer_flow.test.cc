@@ -58,15 +58,14 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, str_and_from_str, {
     ASSERT_EQ(flow.str(), s);
     ASSERT_EQ(StabilizerFlow<W>::from_str(s), flow);
 
-    ASSERT_EQ(StabilizerFlow<W>::from_str("1 -> rec[-1]"), (StabilizerFlow<W>{
-        PauliString<W>(0),
-        PauliString<W>(0),
-        {GateTarget::rec(-1)}
-    }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("1 -> rec[-1]"),
+        (StabilizerFlow<W>{PauliString<W>(0), PauliString<W>(0), {GateTarget::rec(-1)}}));
 
-    ASSERT_EQ(StabilizerFlow<W>::from_str("-1 -> -X xor rec[-1] xor rec[-3]"), (StabilizerFlow<W>{
-        PauliString<W>::from_str("-"),
-        PauliString<W>::from_str("-X"),
-        {GateTarget::rec(-1), GateTarget::rec(-3)}
-    }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("-1 -> -X xor rec[-1] xor rec[-3]"),
+        (StabilizerFlow<W>{
+            PauliString<W>::from_str("-"),
+            PauliString<W>::from_str("-X"),
+            {GateTarget::rec(-1), GateTarget::rec(-3)}}));
 })

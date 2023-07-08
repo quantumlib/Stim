@@ -111,7 +111,8 @@ struct simd_bit_table {
     /// Concatenates the contents of the two tables, along the major axis.
     simd_bit_table<W> concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const;
     /// Overwrites a range of the table with a range from another table with the same minor size.
-    void overwrite_major_range_with(size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const;
+    void overwrite_major_range_with(
+        size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const;
 
     /// Sets all bits in the table to zero.
     void clear();

@@ -107,9 +107,9 @@ void FrameSimulator<W>::reset_all_and_run(const Circuit &circuit) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_MX(const CircuitInstruction &target_data) {
-    m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_MX(const CircuitInstruction &inst) {
+    m_record.reserve_noisy_space_for_results(inst, rng);
+    for (auto t : inst.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(z_table[q]);
         if (guarantee_anticommutation_via_frame_randomization) {
@@ -119,9 +119,9 @@ void FrameSimulator<W>::do_MX(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_MY(const CircuitInstruction &target_data) {
-    m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_MY(const CircuitInstruction &inst) {
+    m_record.reserve_noisy_space_for_results(inst, rng);
+    for (auto t : inst.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         x_table[q] ^= z_table[q];
         m_record.xor_record_reserved_result(x_table[q]);
@@ -133,9 +133,9 @@ void FrameSimulator<W>::do_MY(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_MZ(const CircuitInstruction &target_data) {
-    m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_MZ(const CircuitInstruction &inst) {
+    m_record.reserve_noisy_space_for_results(inst, rng);
+    for (auto t : inst.targets) {
         auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(x_table[q]);
         if (guarantee_anticommutation_via_frame_randomization) {
@@ -145,8 +145,8 @@ void FrameSimulator<W>::do_MZ(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_RX(const CircuitInstruction &target_data) {
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_RX(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
         auto q = t.data;
         if (guarantee_anticommutation_via_frame_randomization) {
             x_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -156,10 +156,10 @@ void FrameSimulator<W>::do_RX(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_DETECTOR(const CircuitInstruction &target_data) {
+void FrameSimulator<W>::do_DETECTOR(const CircuitInstruction &inst) {
     if (keeping_detection_data) {
         auto r = det_record.record_zero_result_to_edit();
-        for (auto t : target_data.targets) {
+        for (auto t : inst.targets) {
             uint32_t lookback = t.data & TARGET_VALUE_MASK;
             r ^= m_record.lookback(lookback);
         }
@@ -167,10 +167,10 @@ void FrameSimulator<W>::do_DETECTOR(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_OBSERVABLE_INCLUDE(const CircuitInstruction &target_data) {
+void FrameSimulator<W>::do_OBSERVABLE_INCLUDE(const CircuitInstruction &inst) {
     if (keeping_detection_data) {
-        auto r = obs_record[(size_t)target_data.args[0]];
-        for (auto t : target_data.targets) {
+        auto r = obs_record[(size_t)inst.args[0]];
+        for (auto t : inst.targets) {
             uint32_t lookback = t.data & TARGET_VALUE_MASK;
             r ^= m_record.lookback(lookback);
         }
@@ -178,8 +178,8 @@ void FrameSimulator<W>::do_OBSERVABLE_INCLUDE(const CircuitInstruction &target_d
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_RY(const CircuitInstruction &target_data) {
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_RY(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
         auto q = t.data;
         if (guarantee_anticommutation_via_frame_randomization) {
             z_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -189,8 +189,8 @@ void FrameSimulator<W>::do_RY(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void FrameSimulator<W>::do_RZ(const CircuitInstruction &target_data) {
-    for (auto t : target_data.targets) {
+void FrameSimulator<W>::do_RZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
         auto q = t.data;
         x_table[q].clear();
         if (guarantee_anticommutation_via_frame_randomization) {
@@ -696,6 +696,34 @@ void FrameSimulator<W>::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &targe
 }
 
 template <size_t W>
+void FrameSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    m_record.reserve_space_for_results(nt);
+    for (size_t k = 0; k < nt; k++) {
+        m_record.storage[m_record.stored + k].clear();
+    }
+
+    uint64_t rng_buf = 0;
+    size_t buf_size = 0;
+    RareErrorIterator::for_samples(inst.args[0], nt * batch_size, rng, [&](size_t s) {
+        auto shot = s % batch_size;
+        auto target = s / batch_size;
+        auto qubit = inst.targets[target].qubit_value();
+        if (buf_size == 0) {
+            rng_buf = rng();
+            buf_size = 64;
+        }
+        x_table[qubit][shot] ^= (bool)(rng_buf & 1);
+        z_table[qubit][shot] ^= (bool)(rng_buf & 2);
+        m_record.storage[m_record.stored + target][shot] = 1;
+        rng_buf >>= 2;
+        buf_size -= 2;
+    });
+    m_record.stored += nt;
+    m_record.unwritten += nt;
+}
+
+template <size_t W>
 void FrameSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
@@ -967,6 +995,9 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::SWAPCX:
             do_SWAPCX(inst);
+            break;
+        case GateType::HERALDED_ERASE:
+            do_HERALDED_ERASE(inst);
             break;
         default:
             throw std::invalid_argument("Not implemented: " + inst.str());

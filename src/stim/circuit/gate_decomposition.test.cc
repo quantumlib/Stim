@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_decomposition.h"
 
 #include "gtest/gtest.h"
+
+#include "stim/circuit/circuit.h"
 
 using namespace stim;
 
 TEST(gate_decomposition, decompose_mpp_operation) {
     Circuit out;
-    auto append_into_circuit = [&](
-            const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
+    auto append_into_circuit = [&](const CircuitInstruction &h_xz,
+                                   const CircuitInstruction &h_yz,
+                                   const CircuitInstruction &cnot,
+                                   const CircuitInstruction &meas) {
         out.safe_append(h_xz);
         out.safe_append(h_yz);
         out.safe_append(cnot);
@@ -36,9 +36,7 @@ TEST(gate_decomposition, decompose_mpp_operation) {
         out.append_from_text("TICK");
     };
     decompose_mpp_operation(
-        Circuit("MPP(0.125) X0*X1*X2 Z3*Z4*Z5 X2*Y4 Z3 Z3 Z4*Z5").operations[0],
-        10,
-        append_into_circuit);
+        Circuit("MPP(0.125) X0*X1*X2 Z3*Z4*Z5 X2*Y4 Z3 Z3 Z4*Z5").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         H 0 1 2
         H_YZ
@@ -69,10 +67,7 @@ TEST(gate_decomposition, decompose_mpp_operation) {
     )CIRCUIT"));
 
     out.clear();
-    decompose_mpp_operation(
-        Circuit("MPP X0*Z1*Y2 X3*X4 Y0*Y1*Y2*Y3*Y4").operations[0],
-        10,
-        append_into_circuit);
+    decompose_mpp_operation(Circuit("MPP X0*Z1*Y2 X3*X4 Y0*Y1*Y2*Y3*Y4").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         H 0 3 4
         H_YZ 2
@@ -107,9 +102,7 @@ TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_us
         out.append_from_text("TICK");
     };
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        Circuit("MXX(0.125) 0 1 0 2 3 5 4 5 3 4").operations[0],
-        10,
-        append_into_circuit);
+        Circuit("MXX(0.125) 0 1 0 2 3 5 4 5 3 4").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         CX 0 1
         MX(0.125) 0

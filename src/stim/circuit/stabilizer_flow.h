@@ -50,10 +50,7 @@ struct StabilizerFlow {
 ///     k'th flow passed all checks.
 template <size_t W>
 std::vector<bool> check_if_circuit_has_stabilizer_flows(
-    size_t num_samples,
-    std::mt19937_64 &rng,
-    const Circuit &circuit,
-    const std::vector<StabilizerFlow<W>> flows);
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const std::vector<StabilizerFlow<W>> flows);
 
 template <size_t W>
 std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow);

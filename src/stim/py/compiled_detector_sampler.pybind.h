@@ -19,9 +19,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "stim/simulators/frame_simulator.h"
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/simulators/frame_simulator.h"
 
 namespace stim_pybind {
 

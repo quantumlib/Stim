@@ -213,10 +213,7 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
     float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2.0f;
     float h = GATE_RADIUS * 2.0f;
     size_t n = utf8_char_count(data.body) + utf8_char_count(data.subscript) + +utf8_char_count(data.superscript);
-    auto font_size = data.font_size != 0        ? data.font_size
-        : n == 1                   ? 30
-        : n >= 4 && data.span == 1 ? 12
-                                   : 16;
+    auto font_size = data.font_size != 0 ? data.font_size : n == 1 ? 30 : n >= 4 && data.span == 1 ? 12 : 16;
     svg_out << "<rect";
     write_key_val(svg_out, "x", cx - w * 0.5);
     write_key_val(svg_out, "y", cy - h * 0.5);

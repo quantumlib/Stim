@@ -44,19 +44,17 @@ template <size_t W>
 struct FrameSimulator {
     size_t num_qubits;  // Number of qubits being tracked.
     bool keeping_detection_data;
-    size_t batch_size;  // Number of instances being tracked.
-    simd_bit_table<W>
-        x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
-    simd_bit_table<W>
-        z_table;                    // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    size_t batch_size;                 // Number of instances being tracked.
+    simd_bit_table<W> x_table;         // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
+    simd_bit_table<W> z_table;         // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
     MeasureRecordBatch<W> m_record;    // The measurement record.
     MeasureRecordBatch<W> det_record;  // Detection event record.
-    simd_bit_table<W> obs_record;  // Accumulating observable flip record.
-    simd_bits<W> rng_buffer;       // Workspace used when sampling error processes.
-    simd_bits<W> tmp_storage;      // Workspace used when sampling compound error processes.
+    simd_bit_table<W> obs_record;      // Accumulating observable flip record.
+    simd_bits<W> rng_buffer;           // Workspace used when sampling error processes.
+    simd_bits<W> tmp_storage;          // Workspace used when sampling compound error processes.
     simd_bits<W> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<W> sweep_table;                // Shot-to-shot configuration data.
-    std::mt19937_64 &rng;  // Random number generator used for generating entropy.
+    std::mt19937_64 &rng;                         // Random number generator used for generating entropy.
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -136,6 +134,7 @@ struct FrameSimulator {
     void do_PAULI_CHANNEL_2(const CircuitInstruction &inst);
     void do_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_ELSE_CORRELATED_ERROR(const CircuitInstruction &inst);
+    void do_HERALDED_ERASE(const CircuitInstruction &inst);
 
    private:
     void do_MXX_disjoint_controls_segment(const CircuitInstruction &inst);

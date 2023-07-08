@@ -652,7 +652,6 @@ TEST(SparseUnsignedRevFrameTracker, myy) {
     ASSERT_THROW({ actual.undo_circuit(Circuit("MYY 0 1")); }, std::invalid_argument);
 }
 
-
 TEST(SparseUnsignedRevFrameTracker, mzz) {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
     SparseUnsignedRevFrameTracker expected(0, 0, 0);

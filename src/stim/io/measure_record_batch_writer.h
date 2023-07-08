@@ -60,8 +60,8 @@ struct MeasureRecordBatchWriter {
 
     /// Writes multiple separate measurement results to each MeasureRecordWriter.
     ///
-    /// This method can be called after calling `batch_write_bit<W>`, but for performance reasons it is recommended to not
-    /// do this since it can result in the individual writers doing extra work due to not being on byte boundaries.
+    /// This method can be called after calling `batch_write_bit<W>`, but for performance reasons it is recommended to
+    /// not do this since it can result in the individual writers doing extra work due to not being on byte boundaries.
     ///
     /// Args:
     ///     table: The measurement results.

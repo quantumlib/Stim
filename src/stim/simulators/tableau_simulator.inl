@@ -884,6 +884,28 @@ void TableauSimulator<W>::do_DEPOLARIZE2(const CircuitInstruction &target_data) 
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    size_t offset = measurement_record.storage.size();
+    measurement_record.storage.insert(measurement_record.storage.end(), nt, false);
+
+    uint64_t rng_buf = 0;
+    size_t buf_size = 0;
+    RareErrorIterator::for_samples(inst.args[0], nt, rng, [&](size_t target) {
+        auto qubit = inst.targets[target].qubit_value();
+        if (buf_size == 0) {
+            rng_buf = rng();
+            buf_size = 64;
+        }
+        inv_state.xs.signs[qubit] ^= (bool)(rng_buf & 1);
+        inv_state.zs.signs[qubit] ^= (bool)(rng_buf & 2);
+        measurement_record.storage[offset + target] = true;
+        rng_buf >>= 2;
+        buf_size -= 2;
+    });
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_X_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.zs.signs[q.data] ^= true;
@@ -1594,6 +1616,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::SWAPCX:
             do_SWAPCX(inst);
+            break;
+        case GateType::HERALDED_ERASE:
+            do_HERALDED_ERASE(inst);
             break;
         default:
             throw std::invalid_argument(

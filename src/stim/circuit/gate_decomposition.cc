@@ -16,7 +16,6 @@
 
 #include "stim/circuit/gate_decomposition.h"
 
-
 using namespace stim;
 
 void stim::decompose_mpp_operation(
@@ -101,9 +100,7 @@ void stim::decompose_mpp_operation(
 }
 
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
-        const CircuitInstruction &inst,
-        size_t num_qubits,
-        const std::function<void(CircuitInstruction)> &callback) {
+    const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));
     size_t done = 0;
     size_t k = 0;

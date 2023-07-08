@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_target.h"
+
+#include "stim/circuit/circuit.h"
 
 using namespace stim;
 

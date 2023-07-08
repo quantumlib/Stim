@@ -13,6 +13,6 @@ struct DebugForceResultStreamingRaii {
     ~DebugForceResultStreamingRaii();
 };
 
-}
+}  // namespace stim
 
 #endif

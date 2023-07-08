@@ -56,11 +56,9 @@ struct MeasureRecordBatch {
     /// Hints that measurements can be written to the given writer.
     ///
     /// For performance reasons, they may not be written until a large enough block has been accumulated.
-    void intermediate_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
+    void intermediate_write_unwritten_results_to(MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Forces measurements to be written to the given writer, and to tell the writer the measurements are ending.
-    void final_write_unwritten_results_to(
-        MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
+    void final_write_unwritten_results_to(MeasureRecordBatchWriter &writer, simd_bits_range_ref<W> ref_sample);
     /// Looks up a historical batch measurement.
     ///
     /// Returns:
@@ -73,7 +71,7 @@ struct MeasureRecordBatch {
     /// Appends a batch measurement result into storage.
     void record_result(simd_bits_range_ref<W> result);
     /// Reserves space for storing measurement results. Initializes bits to be noisy with the given probability.
-    void reserve_noisy_space_for_results(const CircuitInstruction &target_data, std::mt19937_64 &rng);
+    void reserve_noisy_space_for_results(const CircuitInstruction &inst, std::mt19937_64 &rng);
     /// Ensures there is enough space for storing a number of measurement results, without moving memory.
     void reserve_space_for_results(size_t count);
     /// Resets the record to an empty state.

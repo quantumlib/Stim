@@ -14,11 +14,11 @@
 
 #include "stim/circuit/gate_data.pybind.h"
 
-#include "stim/stabilizers/tableau.pybind.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/py/base.pybind.h"
+#include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/tableau.pybind.h"
 #include "stim/str_util.h"
 
 using namespace stim;
@@ -81,8 +81,8 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 True
                 >>> gate_dict = stim.gate_data()
                 >>> len(gate_dict)
-                64
-                >>> gate_dict['MX'].is_dissipative
+                65
+                >>> gate_dict['MX'].produces_measurements
                 True
         )DOC")
             .data());
@@ -170,7 +170,6 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         )DOC")
             .data());
 
-
     c.def_property_readonly(
         "unitary_matrix",
         [](const Gate &self) -> pybind11::object {
@@ -180,7 +179,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 std::complex<float> *buffer = new std::complex<float>[n * n];
                 for (size_t a = 0; a < n; a++) {
                     for (size_t b = 0; b < n; b++) {
-                        buffer[b + a*n] = r[a][b];
+                        buffer[b + a * n] = r[a][b];
                     }
                 }
 
@@ -190,7 +189,8 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
                 return pybind11::array_t<std::complex<float>>(
                     {(pybind11::ssize_t)n, (pybind11::ssize_t)n},
-                    {(pybind11::ssize_t)(n * sizeof(std::complex<float>)), (pybind11::ssize_t)sizeof(std::complex<float>)},
+                    {(pybind11::ssize_t)(n * sizeof(std::complex<float>)),
+                     (pybind11::ssize_t)sizeof(std::complex<float>)},
                     buffer,
                     free_when_done);
             }
@@ -292,38 +292,42 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             .data());
 
     c.def_property_readonly(
-        "is_dissipative",
+        "is_reset",
         [](const Gate &self) -> bool {
-            return self.flags & (GATE_PRODUCES_RESULTS | GATE_IS_RESET);
+            return self.flags & GATE_IS_RESET;
         },
         clean_doc_string(R"DOC(
-            Returns whether or not the gate is a measurement or reset.
+            Returns whether or not the gate resets qubits in any basis.
 
             Examples:
                 >>> import stim
 
-                >>> stim.gate_data('M').is_dissipative
+                >>> stim.gate_data('R').is_reset
                 True
-                >>> stim.gate_data('R').is_dissipative
+                >>> stim.gate_data('RX').is_reset
                 True
-                >>> stim.gate_data('MR').is_dissipative
-                True
-                >>> stim.gate_data('MXX').is_dissipative
-                True
-                >>> stim.gate_data('MPP').is_dissipative
+                >>> stim.gate_data('MR').is_reset
                 True
 
-                >>> stim.gate_data('H').is_dissipative
+                >>> stim.gate_data('M').is_reset
                 False
-                >>> stim.gate_data('CX').is_dissipative
+                >>> stim.gate_data('MXX').is_reset
                 False
-                >>> stim.gate_data('DEPOLARIZE2').is_dissipative
+                >>> stim.gate_data('MPP').is_reset
                 False
-                >>> stim.gate_data('X_ERROR').is_dissipative
+                >>> stim.gate_data('H').is_reset
                 False
-                >>> stim.gate_data('CORRELATED_ERROR').is_dissipative
+                >>> stim.gate_data('CX').is_reset
                 False
-                >>> stim.gate_data('DETECTOR').is_dissipative
+                >>> stim.gate_data('HERALDED_ERASE').is_reset
+                False
+                >>> stim.gate_data('DEPOLARIZE2').is_reset
+                False
+                >>> stim.gate_data('X_ERROR').is_reset
+                False
+                >>> stim.gate_data('CORRELATED_ERROR').is_reset
+                False
+                >>> stim.gate_data('DETECTOR').is_reset
                 False
         )DOC")
             .data());
@@ -516,6 +520,8 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 >>> stim.gate_data('MXX').produces_measurements
                 True
                 >>> stim.gate_data('MPP').produces_measurements
+                True
+                >>> stim.gate_data('HERALDED_ERASE').produces_measurements
                 True
 
                 >>> stim.gate_data('H').produces_measurements

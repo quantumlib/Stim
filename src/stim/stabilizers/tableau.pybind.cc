@@ -881,7 +881,9 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "append",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self,
+           const Tableau<MAX_BITWORD_WIDTH> &gate,
+           const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -985,7 +987,9 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "prepend",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self,
+           const Tableau<MAX_BITWORD_WIDTH> &gate,
+           const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -1940,7 +1944,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 }
                 converted_stabilizers.push_back(p.value);
             }
-            return stabilizers_to_tableau<MAX_BITWORD_WIDTH>(converted_stabilizers, allow_redundant, allow_underconstrained, false);
+            return stabilizers_to_tableau<MAX_BITWORD_WIDTH>(
+                converted_stabilizers, allow_redundant, allow_underconstrained, false);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),

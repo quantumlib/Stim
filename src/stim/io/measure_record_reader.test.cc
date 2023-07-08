@@ -180,7 +180,8 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits_WriteRead, {
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_HITS);
     rewind(tmp);
     ASSERT_EQ(
-        num_bytes * 8 - 1, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
+        num_bytes * 8 - 1,
+        read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -194,7 +195,8 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_WriteRead, {
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_DETS);
     rewind(tmp);
     ASSERT_EQ(
-        num_bytes * 8 - 1, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
+        num_bytes * 8 - 1,
+        read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -429,8 +431,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_records_into_RoundTrip, {
     size_t n_shots = 100;
     size_t n_results = 512 - 8;
 
-    auto shot_maj_data =
-        simd_bit_table<W>::random(n_shots, n_results, SHARED_TEST_RNG());
+    auto shot_maj_data = simd_bit_table<W>::random(n_shots, n_results, SHARED_TEST_RNG());
     auto shot_min_data = shot_maj_data.transposed();
     for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
@@ -711,8 +712,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_file_data_into_shot_table_vs_wri
 
         RaiiTempNamedFile tmp;
         FILE *f = fopen(tmp.path.c_str(), "wb");
-        write_table_data<W>(
-            f, num_shots, bits_per_shot, simd_bits<W>(0), expected_transposed, format, 'M', 'M', 0);
+        write_table_data<W>(f, num_shots, bits_per_shot, simd_bits<W>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);
 
         f = fopen(tmp.path.c_str(), "rb");

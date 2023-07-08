@@ -59,7 +59,8 @@ stim::Circuit _read_circuit(RaiiFile &in, int argc, const char **argv) {
 stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
     if (find_bool_argument("--remove_noise", argc, argv)) {
         throw std::invalid_argument(
-            "--remove_noise is incompatible with match graph diagrams, because the noise is needed to produce the match graph.");
+            "--remove_noise is incompatible with match graph diagrams, because the noise is needed to produce the "
+            "match graph.");
     }
 
     std::string content;

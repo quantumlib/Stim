@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include "stim/io/measure_record_batch.h"
+
 #include "gtest/gtest.h"
 
-#include "stim/io/measure_record_batch.h"
 #include "stim/mem/simd_word.test.h"
 
 using namespace stim;

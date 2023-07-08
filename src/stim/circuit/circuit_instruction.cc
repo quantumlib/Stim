@@ -16,9 +16,9 @@
 
 #include <utility>
 
+#include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
-#include "stim/circuit/circuit.h"
 
 using namespace stim;
 

@@ -35,8 +35,8 @@ struct CommutingPauliStringIterator {
 
     // Fields tracking progress of the iteration.
     PauliString<W> current;                  // The current Pauli string being considered.
-    size_t next_output_index;             // Next thing to return from buffer.
-    size_t filled_output;                 // Number of used entries in buffer.
+    size_t next_output_index;                // Next thing to return from buffer.
+    size_t filled_output;                    // Number of used entries in buffer.
     std::vector<PauliString<W>> output_buf;  // Pre-allocated buffer.
 
     CommutingPauliStringIterator(size_t num_qubits);

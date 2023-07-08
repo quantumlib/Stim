@@ -475,7 +475,7 @@ class Task:
 def __init__(
     self,
     *,
-    circuit: stim.Circuit,
+    circuit: Optional[ForwardRef(stim.Circuit)] = None,
     decoder: Optional[str] = None,
     detector_error_model: Optional[ForwardRef(stim.DetectorErrorModel)] = None,
     postselection_mask: Optional[np.ndarray] = None,
@@ -483,6 +483,7 @@ def __init__(
     json_metadata: Any = None,
     collection_options: sinter.CollectionOptions = sinter.CollectionOptions(),
     skip_validation: bool = False,
+    circuit_path: Union[str, pathlib.Path, NoneType] = None,
     _unvalidated_strong_id: Optional[str] = None,
 ) -> None:
     """
@@ -523,6 +524,9 @@ def __init__(
             Setting this argument to True will skip doing the consistency
             checks. Note that this can result in confusing errors later, if
             the arguments are not actually consistent.
+        circuit_path: Typically set to None. If the circuit isn't specified,
+            this is the filepath to read it from. Not included in the strong
+            id.
         _unvalidated_strong_id: Must be set to None unless `skip_validation`
             is set to True. Otherwise, if this is specified then it should
             be equal to the value returned by self.strong_id().
@@ -1277,7 +1281,7 @@ def log_binomial(
     Examples:
         >>> import sinter
         >>> sinter.log_binomial(p=0.5, n=100, hits=50)
-        array(-2.5283785, dtype=float32)
+        array(-2.5308785, dtype=float32)
         >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
         array(-216626.97, dtype=float32)
         >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)
@@ -1299,13 +1303,11 @@ def log_factorial(
 ) -> float:
     """Approximates $\ln(n!)$; the natural logarithm of a factorial.
 
-    Uses Stirling's approximation for large n.
-
     Args:
         n: The input to the factorial.
 
     Returns:
-        Evaluates $ln(n!)$ using Stirling's approximation.
+        Evaluates $ln(n!)$ using `math.lgamma(n+1)`.
 
     Examples:
         >>> import sinter
@@ -1314,9 +1316,9 @@ def log_factorial(
         >>> sinter.log_factorial(1)
         0.0
         >>> sinter.log_factorial(2)
-        0.6931471805599453
+        0.693147180559945
         >>> sinter.log_factorial(100)
-        363.7385422250079
+        363.73937555556347
     """
 ```
 

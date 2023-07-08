@@ -134,7 +134,8 @@ struct Tableau {
     PauliString<W> operator()(const PauliStringRef<W> &p) const;
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliString<W> scatter_eval(const PauliStringRef<W> &gathered_input, const std::vector<size_t> &scattered_indices) const;
+    PauliString<W> scatter_eval(
+        const PauliStringRef<W> &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Returns a tableau equivalent to the composition of two tableaus of the same size.
     Tableau<W> then(const Tableau<W> &second) const;

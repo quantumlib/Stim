@@ -3269,12 +3269,19 @@ TEST(ErrorAnalyzer, measurement_before_beginning) {
 
 TEST(ErrorAnalyzer, mpad) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             M(0.125) 5
             MPAD 0 1
             DETECTOR rec[-1] rec[-2]
             DETECTOR rec[-3]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.125) D1
             detector D0
@@ -3283,16 +3290,24 @@ TEST(ErrorAnalyzer, mpad) {
 
 TEST(ErrorAnalyzer, mxx) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0 1
             MXX(0.125) 0 1
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.125) D0
         )DEM"));
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0 1 2 3
             X_ERROR(0.125) 0
             Y_ERROR(0.25) 1
@@ -3300,7 +3315,13 @@ TEST(ErrorAnalyzer, mxx) {
             MXX 0 1 !2 !3
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.25) D0
             error(0.375) D1
@@ -3309,16 +3330,24 @@ TEST(ErrorAnalyzer, mxx) {
 
 TEST(ErrorAnalyzer, myy) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0 1
             MYY(0.125) 0 1
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.125) D0
         )DEM"));
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0 1 2 3
             Y_ERROR(0.125) 0
             X_ERROR(0.25) 1
@@ -3326,7 +3355,13 @@ TEST(ErrorAnalyzer, myy) {
             MYY 0 1 !2 !3
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.25) D0
             error(0.375) D1
@@ -3335,16 +3370,24 @@ TEST(ErrorAnalyzer, myy) {
 
 TEST(ErrorAnalyzer, mzz) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0 1
             MZZ(0.125) 0 1
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.125) D0
         )DEM"));
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(Circuit(R"CIRCUIT(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0 1 2 3
             Z_ERROR(0.125) 0
             Y_ERROR(0.25) 1
@@ -3352,10 +3395,127 @@ TEST(ErrorAnalyzer, mzz) {
             MZZ 0 1 !2 !3
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"DEM(
             error(0.25) D0
             error(0.375) D1
+        )DEM"));
+}
+
+TEST(ErrorAnalyzer, heralded_erase) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+            MZZ 0 1
+            MXX 0 1
+            HERALDED_ERASE(0.25) 0
+            MZZ 0 1
+            MXX 0 1
+            DETECTOR rec[-1] rec[-4]
+            DETECTOR rec[-2] rec[-5]
+            DETECTOR rec[-3]
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"DEM(
+            error(0.0625) D0 D1 D2
+            error(0.0625) D0 D2
+            error(0.0625) D1 D2
+            error(0.0625) D2
+        )DEM"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+            MPP X10*X11*X20*X21
+            MPP Z11*Z12*Z21*Z22
+            MPP Z20*Z21*Z30*Z31
+            MPP X21*X22*X31*X32
+            HERALDED_ERASE(0.25) 21
+            MPP X10*X11*X20*X21
+            MPP Z11*Z12*Z21*Z22
+            MPP Z20*Z21*Z30*Z31
+            MPP X21*X22*X31*X32
+            DETECTOR rec[-1] rec[-6]
+            DETECTOR rec[-2] rec[-7]
+            DETECTOR rec[-3] rec[-8]
+            DETECTOR rec[-4] rec[-9]
+            DETECTOR rec[-5]
+        )CIRCUIT"),
+            true,
+            false,
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"DEM(
+            error(0.0625) D0 D3 ^ D1 D2 ^ D4
+            error(0.0625) D0 D3 ^ D4
+            error(0.0625) D1 D2 ^ D4
+            error(0.0625) D4
+        )DEM"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+            M 0
+            HERALDED_ERASE(0.25) 9 0 9 9 9
+            M 0
+            DETECTOR rec[-1] rec[-7]
+            DETECTOR rec[-5]
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"DEM(
+            error(0.1171875) D0 D1
+            error(0.1171875) D1
+        )DEM"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+            MPAD 0
+            MPAD 0
+            MPP Z20*Z21*Z30*Z31
+            MPP X21*X22*X31*X32
+            HERALDED_ERASE(0.25) 21
+            MPAD 0
+            MPAD 0
+            MPP Z20*Z21*Z30*Z31
+            MPP X21*X22*X31*X32
+            DETECTOR rec[-1] rec[-6]
+            DETECTOR rec[-2] rec[-7]
+            DETECTOR rec[-3] rec[-8]
+            DETECTOR rec[-4] rec[-9]
+            DETECTOR rec[-5]
+        )CIRCUIT"),
+            true,
+            false,
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"DEM(
+            error(0.0625) D0 ^ D1 ^ D4
+            error(0.0625) D0 ^ D4
+            error(0.0625) D1 ^ D4
+            error(0.0625) D4
+            detector D2
+            detector D3
         )DEM"));
 }
 

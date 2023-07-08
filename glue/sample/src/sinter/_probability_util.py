@@ -41,7 +41,7 @@ def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarra
     Examples:
         >>> import sinter
         >>> sinter.log_binomial(p=0.5, n=100, hits=50)
-        array(-2.5283785, dtype=float32)
+        array(-2.5308785, dtype=float32)
         >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
         array(-216626.97, dtype=float32)
         >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)
@@ -77,13 +77,11 @@ def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarra
 def log_factorial(n: int) -> float:
     r"""Approximates $\ln(n!)$; the natural logarithm of a factorial.
 
-    Uses Stirling's approximation for large n.
-
     Args:
         n: The input to the factorial.
 
     Returns:
-        Evaluates $ln(n!)$ using Stirling's approximation.
+        Evaluates $ln(n!)$ using `math.lgamma(n+1)`.
 
     Examples:
         >>> import sinter
@@ -92,15 +90,11 @@ def log_factorial(n: int) -> float:
         >>> sinter.log_factorial(1)
         0.0
         >>> sinter.log_factorial(2)
-        0.6931471805599453
+        0.693147180559945
         >>> sinter.log_factorial(100)
-        363.7385422250079
+        363.73937555556347
     """
-    if n <= 1:
-        return 0.0
-    if n < 20:
-        return sum(math.log(k) for k in range(1, n + 1))
-    return (n + 0.5) * math.log(n) - n + math.log(2 * np.pi) / 2
+    return math.lgamma(n + 1)
 
 
 def binary_search(*, func: Callable[[int], float], min_x: int, max_x: int, target: float) -> int:
