@@ -22,18 +22,24 @@
 
 using namespace stim;
 
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
+
 TEST(sparse_shot, equality) {
     ASSERT_TRUE((SparseShot{}) == (SparseShot{}));
     ASSERT_FALSE((SparseShot{}) != (SparseShot{}));
-    ASSERT_TRUE((SparseShot{}) != (SparseShot{{2}, 0}));
-    ASSERT_FALSE((SparseShot{}) == (SparseShot{{2}, 0}));
+    ASSERT_TRUE((SparseShot{}) != (SparseShot{{2}, obs_mask(0)}));
+    ASSERT_FALSE((SparseShot{}) == (SparseShot{{2}, obs_mask(0)}));
 
-    ASSERT_EQ((SparseShot{{1, 2, 3}, 4}), (SparseShot{{1, 2, 3}, 4}));
-    ASSERT_NE((SparseShot{{1, 2, 3}, 4}), (SparseShot{{1, 2, 3}, 5}));
-    ASSERT_NE((SparseShot{{1, 2, 3}, 4}), (SparseShot{{1, 2, 4}, 4}));
-    ASSERT_NE((SparseShot{{1, 2, 3}, 4}), (SparseShot{{1, 2}, 4}));
+    ASSERT_EQ((SparseShot{{1, 2, 3}, obs_mask(4)}), (SparseShot{{1, 2, 3}, obs_mask(4)}));
+    ASSERT_NE((SparseShot{{1, 2, 3}, obs_mask(4)}), (SparseShot{{1, 2, 3}, obs_mask(5)}));
+    ASSERT_NE((SparseShot{{1, 2, 3}, obs_mask(4)}), (SparseShot{{1, 2, 4}, obs_mask(4)}));
+    ASSERT_NE((SparseShot{{1, 2, 3}, obs_mask(4)}), (SparseShot{{1, 2}, obs_mask(4)}));
 }
 
 TEST(sparse_shot, str) {
-    ASSERT_EQ((SparseShot{{1, 2, 3}, 4}.str()), "SparseShot{{1, 2, 3}, 4}");
+    ASSERT_EQ((SparseShot{{1, 2, 3}, obs_mask(4)}.str()), "SparseShot{{1, 2, 3}, __1_____________________________________________________________}");
 }

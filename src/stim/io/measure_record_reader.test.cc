@@ -348,6 +348,28 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_MultipleShortRecords, {
     ASSERT_FALSE(reader->start_and_read_entire_record(buf));
 })
 
+TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_HugeObservables, {
+    FILE *tmp = tmpfile_with_contents("shot L1000\nshot D2 L999\n");
+    auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 0, 10, 1500);
+
+    simd_bits<64> expected(1500);
+    simd_bits<W> buf(2);
+    SparseShot s;
+    bool b = reader->start_and_read_entire_record(s);
+    ASSERT_TRUE(b);
+    ASSERT_EQ(s.hits, (std::vector<uint64_t>{}));
+    expected[1000] = true;
+    ASSERT_EQ(s.obs_mask, expected);
+
+    s.clear();
+    b = reader->start_and_read_entire_record(s);
+    ASSERT_TRUE(b);
+    ASSERT_EQ(s.hits, (std::vector<uint64_t>{2}));
+    expected.clear();
+    expected[999] = true;
+    ASSERT_EQ(s.obs_mask, expected);
+})
+
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0, {
     FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L1 L2\n");
     auto reader = MeasureRecordReader<W>::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
@@ -370,7 +392,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0, 
     SparseShot sparse;
     reader->start_and_read_entire_record(sparse);
     ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{0, 3, 5}));
-    ASSERT_EQ(sparse.obs_mask, 6);
+    ASSERT_EQ(sparse.obs_mask.ptr_simd[0], 6);
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_InvalidInput, {
@@ -542,6 +564,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record, {
     simd_bits<W> test_data(n);
     biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), SHARED_TEST_RNG());
     SparseShot sparse_test_data;
+    sparse_test_data.obs_mask = simd_bits<64>(no);
     for (size_t k = 0; k < nd; k++) {
         if (test_data[k]) {
             sparse_test_data.hits.push_back(k);
@@ -549,7 +572,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record, {
     }
     for (size_t k = 0; k < no; k++) {
         if (test_data[k + nd]) {
-            sparse_test_data.obs_mask |= 1 << k;
+            sparse_test_data.obs_mask[k] = true;
         }
     }
 

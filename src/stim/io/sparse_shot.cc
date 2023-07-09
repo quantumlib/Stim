@@ -23,12 +23,12 @@ using namespace stim;
 
 SparseShot::SparseShot() : hits(), obs_mask(0) {
 }
-SparseShot::SparseShot(std::vector<uint64_t> hits, uint32_t obs_mask) : hits(hits), obs_mask(obs_mask) {
+SparseShot::SparseShot(std::vector<uint64_t> hits, simd_bits<64> obs_mask) : hits(std::move(hits)), obs_mask(std::move(obs_mask)) {
 }
 
 void SparseShot::clear() {
     hits.clear();
-    obs_mask = 0;
+    obs_mask.clear();
 }
 
 bool SparseShot::operator==(const SparseShot &other) const {

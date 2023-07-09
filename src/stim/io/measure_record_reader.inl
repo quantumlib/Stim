@@ -77,7 +77,7 @@ void MeasureRecordReader<W>::move_obs_in_shots_to_mask_assuming_sorted(SparseSho
 
     size_t nd = num_measurements + num_detectors;
     size_t n = nd + num_observables;
-    shot.obs_mask = 0;
+    shot.obs_mask.clear();
     while (!shot.hits.empty()) {
         auto top = shot.hits.back();
         if (top < nd) {
@@ -87,7 +87,7 @@ void MeasureRecordReader<W>::move_obs_in_shots_to_mask_assuming_sorted(SparseSho
             throw std::invalid_argument("Hit index from data is too large.");
         }
         shot.hits.pop_back();
-        shot.obs_mask ^= 1 << (top - nd);
+        shot.obs_mask[top - nd] ^= true;
     }
 }
 
@@ -123,6 +123,9 @@ bool MeasureRecordReaderFormat01<W>::start_and_read_entire_record(
 
 template <size_t W>
 bool MeasureRecordReaderFormat01<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     bool result = start_and_read_entire_record_helper(
         [&](size_t k) {
         },
@@ -253,6 +256,9 @@ size_t MeasureRecordReaderFormatB8<W>::read_into_table_with_minor_shot_index(
 
 template <size_t W>
 bool MeasureRecordReaderFormatB8<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     size_t n = this->bits_per_record();
     size_t nb = (n + 7) >> 3;
     if (n == 0) {
@@ -310,6 +316,9 @@ bool MeasureRecordReaderFormatHits<W>::start_and_read_entire_record(
 
 template <size_t W>
 bool MeasureRecordReaderFormatHits<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     size_t m = this->bits_per_record();
     size_t nmd = this->num_measurements + this->num_detectors;
     return start_and_read_entire_record_helper([&](size_t bit_index) {
@@ -319,7 +328,7 @@ bool MeasureRecordReaderFormatHits<W>::start_and_read_entire_record(SparseShot &
         if (bit_index < nmd) {
             cleared_out.hits.push_back(bit_index);
         } else {
-            cleared_out.obs_mask ^= 1 << (bit_index - nmd);
+            cleared_out.obs_mask[bit_index - nmd] ^= true;
         }
     });
 }
@@ -400,6 +409,9 @@ bool MeasureRecordReaderFormatR8<W>::start_and_read_entire_record(
 
 template <size_t W>
 bool MeasureRecordReaderFormatR8<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     bool result = start_and_read_entire_record_helper([&](size_t bit_index) {
         cleared_out.hits.push_back(bit_index);
     });
@@ -475,12 +487,15 @@ bool MeasureRecordReaderFormatDets<W>::start_and_read_entire_record(
 
 template <size_t W>
 bool MeasureRecordReaderFormatDets<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     size_t obs_start = this->num_measurements + this->num_detectors;
     return start_and_read_entire_record_helper([&](size_t bit_index) {
         if (bit_index < obs_start) {
             cleared_out.hits.push_back(bit_index);
         } else {
-            cleared_out.obs_mask ^= 1 << (bit_index - obs_start);
+            cleared_out.obs_mask[bit_index - obs_start] ^= true;
         }
     });
 }
@@ -643,6 +658,9 @@ bool MeasureRecordReaderFormatPTB64<W>::start_and_read_entire_record(
 
 template <size_t W>
 bool MeasureRecordReaderFormatPTB64<W>::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (cleared_out.obs_mask.num_bits_padded() < this->num_observables) {
+        cleared_out.obs_mask = simd_bits<64>(this->num_observables);
+    }
     if (num_unread_shots_in_buf == 0) {
         load_cache();
     }
