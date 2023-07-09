@@ -77,10 +77,10 @@ struct bitword<256> {
 
     std::array<uint64_t, 4> to_u64_array() const {
         return std::array<uint64_t, 4>{
-            _mm256_extract_epi64(val, 0),
-            _mm256_extract_epi64(val, 1),
-            _mm256_extract_epi64(val, 2),
-            _mm256_extract_epi64(val, 3),
+            (uint64_t)_mm256_extract_epi64(val, 0),
+            (uint64_t)_mm256_extract_epi64(val, 1),
+            (uint64_t)_mm256_extract_epi64(val, 2),
+            (uint64_t)_mm256_extract_epi64(val, 3),
         };
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)

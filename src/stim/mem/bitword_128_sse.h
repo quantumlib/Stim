@@ -77,8 +77,8 @@ struct bitword<128> {
 
     std::array<uint64_t, 2> to_u64_array() const {
         return std::array<uint64_t, 2>{
-            _mm_extract_epi64(val, 0),
-            _mm_extract_epi64(val, 1),
+            (uint64_t)_mm_extract_epi64(val, 0),
+            (uint64_t)_mm_extract_epi64(val, 1),
         };
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
@@ -211,8 +211,8 @@ struct bitword<128> {
         inplace_transpose_block_pass64(data, stride);
     }
 };
-#endif
 
 }  // namespace stim
 
+#endif
 #endif
