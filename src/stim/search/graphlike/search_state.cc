@@ -29,10 +29,10 @@ std::string SearchState::str() const {
     return result.str();
 }
 
-SearchState::SearchState() : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(0) {
+SearchState::SearchState(size_t num_observables) : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(num_observables) {
 }
-SearchState::SearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask)
-    : det_active(det_active), det_held(det_held), obs_mask(obs_mask) {
+SearchState::SearchState(uint64_t det_active, uint64_t det_held, simd_bits<64> obs_mask)
+    : det_active(det_active), det_held(det_held), obs_mask(std::move(obs_mask)) {
 }
 
 bool SearchState::is_undetected() const {
@@ -41,11 +41,11 @@ bool SearchState::is_undetected() const {
 
 SearchState SearchState::canonical() const {
     if (det_active < det_held) {
-        return {det_active, det_held, obs_mask};
+        return SearchState{det_active, det_held, obs_mask};
     } else if (det_active > det_held) {
-        return {det_held, det_active, obs_mask};
+        return SearchState{det_held, det_active, obs_mask};
     } else {
-        return {NO_NODE_INDEX, NO_NODE_INDEX, obs_mask};
+        return SearchState{NO_NODE_INDEX, NO_NODE_INDEX, obs_mask};
     }
 }
 
@@ -62,14 +62,11 @@ void SearchState::append_transition_as_error_instruction_to(const SearchState &o
     }
 
     // Extract logical observable indices.
-    uint64_t dif_mask = obs_mask ^ other.obs_mask;
-    size_t obs_id = 0;
-    while (dif_mask) {
-        if (dif_mask & 1) {
-            out.target_buf.append_tail(DemTarget::observable_id(obs_id));
+    auto dif_mask = obs_mask ^ other.obs_mask;
+    for (size_t k = 0; k < dif_mask.num_bits_padded(); k++) {
+        if (dif_mask[k]) {
+            out.target_buf.append_tail(DemTarget::observable_id(k));
         }
-        dif_mask >>= 1;
-        obs_id++;
     }
 
     out.arg_buf.append_tail(1);
@@ -110,14 +107,10 @@ std::ostream &stim::impl_search_graphlike::operator<<(std::ostream &out, const S
         }
     }
 
-    uint64_t dif_mask = v.obs_mask;
-    size_t obs_id = 0;
-    while (dif_mask) {
-        if (dif_mask & 1) {
-            out << "L" << obs_id << " ";
+    for (size_t k = 0; k < v.obs_mask.num_bits_padded(); k++) {
+        if (v.obs_mask[k]) {
+            out << "L" << k << " ";
         }
-        dif_mask >>= 1;
-        obs_id++;
     }
 
     return out;

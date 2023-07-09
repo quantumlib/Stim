@@ -28,18 +28,18 @@ std::string Graph::str() const {
 }
 
 void Graph::add_edge_from_dem_targets(SpanRef<const DemTarget> targets, size_t dont_explore_edges_with_degree_above) {
-    Edge edge{{}, 0};
+    Edge edge{{}, simd_bits<64>(num_observables)};
     for (const auto &t : targets) {
         if (t.is_relative_detector_id()) {
             edge.nodes.xor_item(t.val());
         } else if (t.is_observable_id()) {
-            edge.crossing_observable_mask ^= 1 << t.val();
+            edge.crossing_observable_mask[t.val()] ^= true;
         }
     }
     if (edge.nodes.size() > dont_explore_edges_with_degree_above) {
         return;
     }
-    if (edge.nodes.empty() && edge.crossing_observable_mask) {
+    if (edge.nodes.empty() && edge.crossing_observable_mask.not_zero()) {
         distance_1_error_mask = edge.crossing_observable_mask;
     }
     for (const auto &n : edge.nodes) {
@@ -48,11 +48,7 @@ void Graph::add_edge_from_dem_targets(SpanRef<const DemTarget> targets, size_t d
 }
 
 Graph Graph::from_dem(const DetectorErrorModel &model, size_t dont_explore_edges_with_degree_above) {
-    if (model.count_observables() > 64) {
-        throw std::invalid_argument("NotImplemented: detector error model has more than 64 observables.");
-    }
-
-    Graph result(model.count_detectors());
+    Graph result(model.count_detectors(), model.count_observables());
     model.iter_flatten_error_instructions([&](const DemInstruction &e) {
         if (e.arg_data[0] != 0) {
             result.add_edge_from_dem_targets(e.target_data, dont_explore_edges_with_degree_above);
@@ -61,17 +57,17 @@ Graph Graph::from_dem(const DetectorErrorModel &model, size_t dont_explore_edges
     return result;
 }
 bool Graph::operator==(const Graph &other) const {
-    return nodes == other.nodes && distance_1_error_mask == other.distance_1_error_mask;
+    return nodes == other.nodes && num_observables == other.num_observables && distance_1_error_mask == other.distance_1_error_mask;
 }
 bool Graph::operator!=(const Graph &other) const {
     return !(*this == other);
 }
 
-Graph::Graph(size_t node_count) : nodes(node_count), distance_1_error_mask(0) {
+Graph::Graph(size_t node_count, size_t num_observables) : nodes(node_count), num_observables(num_observables), distance_1_error_mask(simd_bits<64>(num_observables)) {
 }
 
-Graph::Graph(std::vector<Node> nodes, uint64_t distance_1_error_mask)
-    : nodes(std::move(nodes)), distance_1_error_mask(distance_1_error_mask) {
+Graph::Graph(std::vector<Node> nodes, size_t num_observables, simd_bits<64> distance_1_error_mask)
+    : nodes(std::move(nodes)), num_observables(num_observables), distance_1_error_mask(std::move(distance_1_error_mask)) {
 }
 
 std::ostream &stim::impl_search_hyper::operator<<(std::ostream &out, const Graph &v) {

@@ -19,11 +19,17 @@
 using namespace stim;
 using namespace stim::impl_search_hyper;
 
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
+
 TEST(search_decay, Edge) {
-    Edge e1{{{}}, 0};
-    Edge e2{{{1}}, 0};
-    Edge e3{{{}}, 1};
-    Edge e4{{{1, 2}}, 5};
+    Edge e1{{{}}, obs_mask(0)};
+    Edge e2{{{1}}, obs_mask(0)};
+    Edge e3{{{}}, obs_mask(1)};
+    Edge e4{{{1, 2}}, obs_mask(5)};
     ASSERT_EQ(e1.str(), "[silent]");
     ASSERT_EQ(e2.str(), "[boundary] D1");
     ASSERT_EQ(e3.str(), "[silent] L0");
@@ -34,7 +40,7 @@ TEST(search_decay, Edge) {
     ASSERT_FALSE(e1 == e2);
     ASSERT_FALSE(!(e1 == e1));
 
-    ASSERT_EQ(e1, (Edge{{{}}, 0}));
+    ASSERT_EQ(e1, (Edge{{{}}, obs_mask(0)}));
     ASSERT_EQ(e2, e2);
     ASSERT_EQ(e3, e3);
     ASSERT_NE(e1, e3);

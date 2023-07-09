@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/test_util.test.h"
 

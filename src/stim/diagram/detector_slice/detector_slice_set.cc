@@ -55,7 +55,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Circu
         uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;
         uint64_t reps = op.repeat_block_rep_count();
         uint64_t ticks_per_iteration = loop_body.count_ticks();
-        uint64_t skipped_iterations = std::min(reps, max_skip / ticks_per_iteration);
+        uint64_t skipped_iterations = max_skip == 0 ? 0 : ticks_per_iteration == 0 ? reps : std::min(reps, max_skip / ticks_per_iteration);
         if (skipped_iterations) {
             // We can allow the analyzer to fold parts of the loop we aren't yielding.
             tracker.undo_loop(loop_body, skipped_iterations);

@@ -19,6 +19,7 @@
 
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
+#include "stim/mem/simd_bits.h"
 
 namespace stim {
 
@@ -26,7 +27,7 @@ namespace impl_search_hyper {
 
 struct SearchState {
     SparseXorVec<uint64_t> dets;
-    uint64_t obs_mask;
+    simd_bits<64> obs_mask;
 
     void append_transition_as_error_instruction_to(const SearchState &other, DetectorErrorModel &out) const;
     bool operator==(const SearchState &other) const;

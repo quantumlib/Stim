@@ -1426,3 +1426,18 @@ def test_max_mix_depolarization_is_allowed_in_dem_conversion_without_args():
         error(0.5) D2 D3
         error(0.5) D3
     """)
+
+
+def test_shortest_graphlike_error_many_obs():
+    c = stim.Circuit("""
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        X_ERROR(0.1) 0 1 2 3 4
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        DETECTOR rec[-1] rec[-5]
+        DETECTOR rec[-2] rec[-6]
+        DETECTOR rec[-3] rec[-7]
+        DETECTOR rec[-4] rec[-8]
+        M 4
+        OBSERVABLE_INCLUDE(1200) rec[-1]
+    """)
+    assert len(c.shortest_graphlike_error()) == 5

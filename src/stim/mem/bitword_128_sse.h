@@ -16,21 +16,18 @@
 
 #ifndef _STIM_MEM_SIMD_WORD_128_SSE_H
 #define _STIM_MEM_SIMD_WORD_128_SSE_H
-
-/// Implements `simd_word` using SSE+SSE2 intrinsic instructions.
-/// For example, `_mm_set1_epi8` is SSE2.
+#ifdef __SSE2__
 
 #include <algorithm>
+#include <array>
 #include <immintrin.h>
+#include <sstream>
+#include <stdexcept>
 
+#include "stim/mem/simd_word.h"
 #include "stim/mem/simd_util.h"
 
 namespace stim {
-
-template <size_t bit_size>
-struct bitword;
-
-#ifdef __SSE2__
 
 /// Implements a 128 bit bitword using SSE instructions.
 template <>
@@ -55,6 +52,12 @@ struct bitword<128> {
     }
     inline bitword<128>(__m128i val) : val(val) {
     }
+    inline bitword<128>(uint64_t val) : val{_mm_set_epi64x(0, val)} {
+    }
+    inline bitword<128>(int64_t val) : val{_mm_set_epi64x(-(val < 0), val)} {
+    }
+    inline bitword<128>(int val) : val{_mm_set_epi64x(-(val < 0), val)} {
+    }
 
     inline static bitword<128> tile8(uint8_t pattern) {
         return {_mm_set1_epi8(pattern)};
@@ -72,8 +75,37 @@ struct bitword<128> {
         return {_mm_set1_epi64x(pattern)};
     }
 
+    std::array<uint64_t, 2> to_u64_array() const {
+        // I would use '_mm_extract_epi64' here but when using `-O3` it causes the compilation
+        // to fail in continuous integration. It seems to be a bug in the compiler, where
+        // it thinks it can't inline the intrinsic. Failures were on linux systems with
+        // gcc 12.2.0
+        uint64_t w0 = u64[0];
+        uint64_t w1 = u64[1];
+        return std::array<uint64_t, 2>{(uint64_t)w0, (uint64_t)w1};
+    }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
-        return u64[0] | u64[1];
+        auto words = to_u64_array();
+        return (bool)(words[0] | words[1]);
+    }
+    inline operator int() const {  // NOLINT(hicpp-explicit-conversions)
+        return (int64_t)*this;
+    }
+    inline operator uint64_t() const {  // NOLINT(hicpp-explicit-conversions)
+        auto words = to_u64_array();
+        if (words[1]) {
+            throw std::invalid_argument("Too large for uint64_t");
+        }
+        return words[0];
+    }
+    inline operator int64_t() const {  // NOLINT(hicpp-explicit-conversions)
+        auto words = to_u64_array();
+        int64_t result = (int64_t)words[0];
+        uint64_t expected = result < 0 ? (uint64_t)-1 : (uint64_t)0;
+        if (words[1] != expected) {
+            throw std::invalid_argument("Out of bounds of int64_t");
+        }
+        return result;
     }
 
     inline bitword<128> &operator^=(const bitword<128> &other) {
@@ -111,6 +143,42 @@ struct bitword<128> {
         return popcnt64(u64[0]) + popcnt64(u64[1]);
     }
 
+    inline bitword<128> shifted(int offset) const {
+        auto w = to_u64_array();
+        while (offset <= -64) {
+            w[0] = w[1];
+            w[1] = 0;
+            offset += 64;
+        }
+        while (offset >= 64) {
+            w[1] = w[0];
+            w[0] = 0;
+            offset -= 64;
+        }
+        __m128i low2high;
+        __m128i high2low;
+        if (offset < 0) {
+            low2high = _mm_set_epi64x(0, w[1]);
+            high2low = _mm_set_epi64x(w[1], w[0]);
+            offset += 64;
+        } else {
+            low2high = _mm_set_epi64x(w[1], w[0]);
+            high2low = _mm_set_epi64x(w[0], 0);
+        }
+        uint64_t m = (uint64_t{1} << offset) - uint64_t{1};
+        low2high = _mm_slli_epi64(low2high, offset);
+        high2low = _mm_srli_epi64(high2low, 64 - offset);
+        low2high = _mm_and_si128(low2high, _mm_set1_epi64x(~m));
+        high2low = _mm_and_si128(high2low, _mm_set1_epi64x(m));
+        return _mm_or_si128(low2high, high2low);
+    }
+
+    inline std::string str() const {
+        std::stringstream out;
+        out << *this;
+        return out.str();
+    }
+
     template <uint64_t shift>
     static void inplace_transpose_block_pass(bitword<128> *data, size_t stride, __m128i mask) {
         for (size_t k = 0; k < 128; k++) {
@@ -146,8 +214,8 @@ struct bitword<128> {
         inplace_transpose_block_pass64(data, stride);
     }
 };
-#endif
 
 }  // namespace stim
 
+#endif
 #endif

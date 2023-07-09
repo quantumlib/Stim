@@ -18,6 +18,7 @@
 #define _STIM_SEARCH_GRAPHLIKE_SEARCH_STATE_H
 
 #include "stim/dem/detector_error_model.h"
+#include "stim/mem/simd_bits.h"
 
 namespace stim {
 
@@ -26,10 +27,11 @@ namespace impl_search_graphlike {
 struct SearchState {
     uint64_t det_active;  // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
     uint64_t det_held;    // The detection event being left in the same place (or NO_NODE_INDEX).
-    uint64_t obs_mask;    // The accumulated frame changes from moving the detection events around.
+    simd_bits<64> obs_mask;    // The accumulated frame changes from moving the detection events around.
 
-    SearchState();
-    SearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask);
+    SearchState() = delete;
+    SearchState(size_t num_observables);
+    SearchState(uint64_t det_active, uint64_t det_held, simd_bits<64> obs_mask);
     bool is_undetected() const;
     SearchState canonical() const;
     void append_transition_as_error_instruction_to(const SearchState &other, DetectorErrorModel &out) const;

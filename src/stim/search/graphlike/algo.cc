@@ -26,11 +26,11 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState final_state) {
+DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, const SearchState &final_state) {
     DetectorErrorModel out;
     auto cur_state = final_state;
     while (true) {
-        auto prev_state = back_map.at(cur_state);
+        const auto &prev_state = back_map.at(cur_state);
         cur_state.append_transition_as_error_instruction_to(prev_state, out);
         if (prev_state.is_undetected()) {
             break;
@@ -45,26 +45,27 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
     const DetectorErrorModel &model, bool ignore_ungraphlike_errors) {
     Graph graph = Graph::from_dem(model, ignore_ungraphlike_errors);
 
-    if (graph.distance_1_error_mask) {
+    SearchState empty_search_state(graph.num_observables);
+    if (graph.distance_1_error_mask.not_zero()) {
         DetectorErrorModel out;
         SearchState s1(NO_NODE_INDEX, NO_NODE_INDEX, graph.distance_1_error_mask);
-        s1.append_transition_as_error_instruction_to({}, out);
+        s1.append_transition_as_error_instruction_to(empty_search_state, out);
         return out;
     }
 
     std::queue<SearchState> queue;
     std::map<SearchState, SearchState> back_map;
     // Mark the vacuous dead-end state as already seen.
-    back_map.emplace(SearchState(), SearchState());
+    back_map.emplace(empty_search_state, empty_search_state);
 
     // Search starts from any and all edges crossing an observable.
     for (size_t node1 = 0; node1 < graph.nodes.size(); node1++) {
         for (const auto &e : graph.nodes[node1].edges) {
             uint64_t node2 = e.opposite_node_index;
-            if (node1 < node2 && e.crossing_observable_mask) {
+            if (node1 < node2 && e.crossing_observable_mask.not_zero()) {
                 SearchState start{node1, node2, e.crossing_observable_mask};
                 queue.push(start);
-                back_map.emplace(start, SearchState());
+                back_map.emplace(start, empty_search_state);
             }
         }
     }
@@ -79,7 +80,7 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
                 continue;
             }
             if (next.is_undetected()) {
-                assert(next.obs_mask);  // Otherwise, it would have already been in back_map.
+                assert(next.obs_mask.not_zero());  // Otherwise, it would have already been in back_map.
                 return backtrack_path(back_map, next);
             } else {
                 if (next.det_active == NO_NODE_INDEX) {

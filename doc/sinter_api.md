@@ -1712,15 +1712,16 @@ def read_stats_from_csv_files(
 
 # (at top-level in the sinter module)
 def shot_error_rate_to_piece_error_rate(
-    shot_error_rate: float,
+    shot_error_rate: Union[float, ForwardRef(sinter.Fit)],
     *,
     pieces: float,
     values: float = 1,
-) -> float:
+) -> Union[float, ForwardRef(sinter.Fit)]:
     """Convert from total error rate to per-piece error rate.
 
     Args:
-        shot_error_rate: The rate at which shots fail.
+        shot_error_rate: The rate at which shots fail. If this is set to a sinter.Fit,
+            the conversion broadcasts over the low,best,high of the fit.
         pieces: The number of xor-pieces we want to subdivide each shot into,
             as if each piece was an independent chance for the shot to fail and
             the total chance of a shot failing was the xor of each piece

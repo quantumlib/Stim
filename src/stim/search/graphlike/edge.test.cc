@@ -21,11 +21,17 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
+
 TEST(search_graphlike, Edge) {
-    Edge e1{NO_NODE_INDEX, 0};
-    Edge e2{1, 0};
-    Edge e3{NO_NODE_INDEX, 1};
-    Edge e4{NO_NODE_INDEX, 5};
+    Edge e1{NO_NODE_INDEX, obs_mask(0)};
+    Edge e2{1, obs_mask(0)};
+    Edge e3{NO_NODE_INDEX, obs_mask(1)};
+    Edge e4{NO_NODE_INDEX, obs_mask(5)};
     ASSERT_EQ(e1.str(), "[boundary]");
     ASSERT_EQ(e2.str(), "D1");
     ASSERT_EQ(e3.str(), "[boundary] L0");
@@ -36,7 +42,7 @@ TEST(search_graphlike, Edge) {
     ASSERT_FALSE(e1 == e2);
     ASSERT_FALSE(!(e1 == e1));
 
-    ASSERT_EQ(e1, (Edge{NO_NODE_INDEX, 0}));
+    ASSERT_EQ(e1, (Edge{NO_NODE_INDEX, obs_mask(0)}));
     ASSERT_EQ(e2, e2);
     ASSERT_EQ(e3, e3);
     ASSERT_NE(e1, e3);
