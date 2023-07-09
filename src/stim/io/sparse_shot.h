@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "stim/mem/simd_bits.h"
+
 namespace stim {
 
 /// Stores shot data sparsely, as a list of locations of 1 bits in the shot.
@@ -34,10 +36,10 @@ struct SparseShot {
 
     /// When reading detection event data with observables appended, the observables go into this mask.
     /// The observable with index k goes into the 1<<k bit.
-    uint32_t obs_mask;
+    simd_bits<64> obs_mask;
 
     SparseShot();
-    SparseShot(std::vector<uint64_t> hits, uint32_t obs_mask = 0);
+    SparseShot(std::vector<uint64_t> hits, simd_bits<64> obs_mask);
 
     void clear();
     bool operator==(const SparseShot &other) const;

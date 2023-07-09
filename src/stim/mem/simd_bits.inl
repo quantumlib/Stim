@@ -284,4 +284,9 @@ size_t simd_bits<W>::popcnt() const {
     return simd_bits_range_ref<W>(*this).popcnt();
 }
 
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const simd_bits<W> m) {
+    return out << simd_bits_range_ref<W>(m);
+}
+
 }

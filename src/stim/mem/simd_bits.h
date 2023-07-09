@@ -174,6 +174,9 @@ simd_bits<W> operator|(const simd_bits<W> a, const simd_bits<W> b);
 template <size_t W>
 simd_bits<W> operator&(const simd_bits<W> a, const simd_bits<W> b);
 
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const simd_bits<W> m);
+
 }  // namespace stim
 
 #include "stim/mem/simd_bits.inl"
