@@ -76,10 +76,9 @@ struct bitword<128> {
     }
 
     std::array<uint64_t, 2> to_u64_array() const {
-        return std::array<uint64_t, 2>{
-            (uint64_t)_mm_extract_epi64(val, 0),
-            (uint64_t)_mm_extract_epi64(val, 1),
-        };
+        uint64_t w0 = _mm_extract_epi64(val, 0);
+        uint64_t w1 = _mm_extract_epi64(val, 1);
+        return std::array<uint64_t, 2>{w0, w1};
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
