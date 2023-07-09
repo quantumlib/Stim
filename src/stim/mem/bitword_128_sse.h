@@ -76,9 +76,13 @@ struct bitword<128> {
     }
 
     std::array<uint64_t, 2> to_u64_array() const {
-        uint64_t w0 = _mm_extract_epi64(val, 0);
-        uint64_t w1 = _mm_extract_epi64(val, 1);
-        return std::array<uint64_t, 2>{w0, w1};
+        // I would use '_mm_extract_epi64' here but when using `-O3` it causes the compilation
+        // to fail in continuous integration. It seems to be a bug in the compiler, where
+        // it thinks it can't inline the intrinsic. Failures were on linux systems with
+        // gcc 12.2.0
+        uint64_t w0 = u64[0];
+        uint64_t w1 = u64[1];
+        return std::array<uint64_t, 2>{(uint64_t)w0, (uint64_t)w1};
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
