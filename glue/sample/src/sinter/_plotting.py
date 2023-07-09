@@ -426,7 +426,7 @@ def plot_custom(
         kwargs.setdefault('color', 'black')
         ax.plot(xs, ys, **kwargs)
 
-        if line_fits is not None and len(xs) >= 2:
+        if line_fits is not None and len(set(xs)) >= 2:
             x_scale, y_scale = line_fits
             fit_xs = _rescale(xs, x_scale, False)
             fit_ys = _rescale(ys, y_scale, False)

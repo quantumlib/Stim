@@ -19,10 +19,16 @@
 using namespace stim;
 using namespace stim::impl_search_hyper;
 
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
+
 TEST(search_decay, Node) {
     Node n1{};
-    Node n2{{Edge{{{2}}, 0}}};
-    Node n3{{Edge{{{1, 3}}, 5}, Edge{{{3}}, 8}}};
+    Node n2{{Edge{{{2}}, obs_mask(0)}}};
+    Node n3{{Edge{{{1, 3}}, obs_mask(5)}, Edge{{{3}}, obs_mask(8)}}};
     ASSERT_EQ(n1.str(), "");
     ASSERT_EQ(n2.str(), "    [boundary] D2\n");
     ASSERT_EQ(n3.str(), "    D1 D3 L0 L2\n    [boundary] D3 L3\n");

@@ -310,3 +310,13 @@ TEST_EACH_WORD_SIZE_W(simd_bits, prefix_ref, {
     prefix[0] = true;
     ASSERT_TRUE(data[0]);
 })
+
+TEST_EACH_WORD_SIZE_W(simd_bits, out_of_place_bit_masking, {
+    simd_bits<W> m0(4);
+    simd_bits<W> m1(4);
+    m0.ptr_simd[0] = simd_word<W>(0b0101);
+    m1.ptr_simd[0] = simd_word<W>(0b0011);
+    ASSERT_EQ((m0 & m1).ptr_simd[0], 0b0001);
+    ASSERT_EQ((m0 | m1).ptr_simd[0], 0b0111);
+    ASSERT_EQ((m0 ^ m1).ptr_simd[0], 0b0110);
+})

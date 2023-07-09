@@ -1,7 +1,7 @@
 import dataclasses
 import math
 import pathlib
-from typing import Any, Dict, Union, Callable, Sequence, TYPE_CHECKING
+from typing import Any, Dict, Union, Callable, Sequence, TYPE_CHECKING, overload
 
 import numpy as np
 
@@ -363,11 +363,18 @@ def fit_binomial(
     return Fit(best=num_hits / num_shots, low=low / num_shots, high=high / num_shots)
 
 
+@overload
 def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float, values: float = 1) -> float:
+    pass
+@overload
+def shot_error_rate_to_piece_error_rate(shot_error_rate: 'sinter.Fit', *, pieces: float, values: float = 1) -> 'sinter.Fit':
+    pass
+def shot_error_rate_to_piece_error_rate(shot_error_rate: Union[float, 'sinter.Fit'], *, pieces: float, values: float = 1) -> Union[float, 'sinter.Fit']:
     """Convert from total error rate to per-piece error rate.
 
     Args:
-        shot_error_rate: The rate at which shots fail.
+        shot_error_rate: The rate at which shots fail. If this is set to a sinter.Fit,
+            the conversion broadcasts over the low,best,high of the fit.
         pieces: The number of xor-pieces we want to subdivide each shot into,
             as if each piece was an independent chance for the shot to fail and
             the total chance of a shot failing was the xor of each piece
@@ -418,6 +425,14 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float
         ... )
         0.12052311142021144
     """
+
+    if isinstance(shot_error_rate, Fit):
+        return Fit(
+            low=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.low, pieces=pieces, values=values),
+            best=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.best, pieces=pieces, values=values),
+            high=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.high, pieces=pieces, values=values),
+        )
+
     if not (0 <= shot_error_rate <= 1):
         raise ValueError(f'need (0 <= shot_error_rate={shot_error_rate} <= 1)')
     if pieces <= 0:

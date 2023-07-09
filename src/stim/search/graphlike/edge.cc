@@ -40,14 +40,11 @@ std::ostream &stim::impl_search_graphlike::operator<<(std::ostream &out, const E
     } else {
         out << "D" << v.opposite_node_index;
     }
-    size_t obs_id = 0;
-    uint64_t m = v.crossing_observable_mask;
-    while (m) {
-        if (m & 1) {
-            out << " L" << obs_id;
+    auto m = v.crossing_observable_mask;
+    for (size_t k = 0; k < m.num_bits_padded(); k++) {
+        if (m[k]) {
+            out << " L" << k;
         }
-        m >>= 1;
-        obs_id++;
     }
     return out;
 }

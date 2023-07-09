@@ -35,14 +35,11 @@ void SearchState::append_transition_as_error_instruction_to(const SearchState &o
     }
 
     // Extract logical observable indices.
-    uint64_t dif_mask = obs_mask ^ other.obs_mask;
-    size_t obs_id = 0;
-    while (dif_mask) {
-        if (dif_mask & 1) {
-            out.target_buf.append_tail(DemTarget::observable_id(obs_id));
+    auto dif_mask = obs_mask ^ other.obs_mask;
+    for (size_t k = 0; k < dif_mask.num_bits_padded(); k++) {
+        if (dif_mask[k]) {
+            out.target_buf.append_tail(DemTarget::observable_id(k));
         }
-        dif_mask >>= 1;
-        obs_id++;
     }
 
     // Default probability to 1.
@@ -74,14 +71,10 @@ std::ostream &stim::impl_search_hyper::operator<<(std::ostream &out, const Searc
         }
     }
 
-    uint64_t dif_mask = v.obs_mask;
-    size_t obs_id = 0;
-    while (dif_mask) {
-        if (dif_mask & 1) {
-            out << "L" << obs_id << " ";
+    for (size_t k = 0; k < v.obs_mask.num_bits_padded(); k++) {
+        if (v.obs_mask[k]) {
+            out << "L" << k << " ";
         }
-        dif_mask >>= 1;
-        obs_id++;
     }
 
     return out;

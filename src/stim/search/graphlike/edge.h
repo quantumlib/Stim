@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include "stim/mem/simd_bits.h"
 
 namespace stim {
 
@@ -28,7 +29,7 @@ namespace impl_search_graphlike {
 /// A graphlike edge from a detector error model.
 struct Edge {
     uint64_t opposite_node_index;
-    uint64_t crossing_observable_mask;
+    simd_bits<64> crossing_observable_mask;
     std::string str() const;
     bool operator==(const Edge &other) const;
     bool operator!=(const Edge &other) const;

@@ -16,23 +16,20 @@
 
 #ifndef _STIM_MEM_SIMD_WORD_256_AVX_H
 #define _STIM_MEM_SIMD_WORD_256_AVX_H
+#if __AVX2__
 
-/// Implements `simd_word` using AVX+AVX2 intrinsic instructions.
-/// For example, `_mm256_xor_si256` is AVX2.
-
+#include <array>
 #include <immintrin.h>
 #include <iostream>
+#include <stdexcept>
+#include <sstream>
 
+#include "stim/mem/bitword.h"
 #include "stim/mem/simd_util.h"
 
 namespace stim {
 
-template <size_t bit_size>
-struct bitword;
-
-#if __AVX2__
-
-/// Implements a 128 bit bitword using AVX instructions.
+/// Implements a 256 bit bitword using AVX instructions.
 template <>
 struct bitword<256> {
     constexpr static size_t BIT_SIZE = 256;
@@ -55,6 +52,12 @@ struct bitword<256> {
     }
     inline bitword<256>(__m256i val) : val(val) {
     }
+    inline bitword<256>(uint64_t val) : val{_mm256_set_epi64x(0, 0, 0, val)} {
+    }
+    inline bitword<256>(int64_t val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
+    }
+    inline bitword<256>(int val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
+    }
 
     inline static bitword<256> tile8(uint8_t pattern) {
         return {_mm256_set1_epi8(pattern)};
@@ -72,8 +75,36 @@ struct bitword<256> {
         return {_mm256_set1_epi64x(pattern)};
     }
 
+    std::array<uint64_t, 4> to_u64_array() const {
+        return std::array<uint64_t, 4>{
+            _mm256_extract_epi64(val, 0),
+            _mm256_extract_epi64(val, 1),
+            _mm256_extract_epi64(val, 2),
+            _mm256_extract_epi64(val, 3),
+        };
+    }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
-        return u64[0] | u64[1] | u64[2] | u64[3];
+        auto words = to_u64_array();
+        return (bool)(words[0] | words[1] | words[2] | words[3]);
+    }
+    inline operator int() const {  // NOLINT(hicpp-explicit-conversions)
+        return (int64_t)*this;
+    }
+    inline operator uint64_t() const {  // NOLINT(hicpp-explicit-conversions)
+        auto words = to_u64_array();
+        if (words[1] || words[2] || words[3]) {
+            throw std::invalid_argument("Too large for uint64_t");
+        }
+        return words[0];
+    }
+    inline operator int64_t() const {  // NOLINT(hicpp-explicit-conversions)
+        auto words = to_u64_array();
+        int64_t result = (int64_t)words[0];
+        uint64_t expected = result < 0 ? (uint64_t)-1 : (uint64_t)0;
+        if (words[1] != expected || words[2] != expected || words[3] != expected) {
+            throw std::invalid_argument("Out of bounds of int64_t");
+        }
+        return result;
     }
 
     inline bitword<256> &operator^=(const bitword<256> &other) {
@@ -110,6 +141,71 @@ struct bitword<256> {
     inline uint16_t popcount() const {
         return stim::popcnt64(u64[0]) + stim::popcnt64(u64[1]) + stim::popcnt64(u64[2]) +
                (uint16_t)stim::popcnt64(u64[3]);
+    }
+
+    inline bitword<256> shifted(int offset) const {
+        auto w = to_u64_array();
+        while (offset <= -64) {
+            w[0] = w[1];
+            w[1] = w[2];
+            w[2] = w[3];
+            w[3] = 0;
+            offset += 64;
+        }
+        while (offset >= 64) {
+            w[3] = w[2];
+            w[2] = w[1];
+            w[1] = w[0];
+            w[0] = 0;
+            offset -= 64;
+        }
+        __m256i low2high;
+        __m256i high2low;
+        if (offset < 0) {
+            low2high = _mm256_set_epi64x(0, w[3], w[2], w[1]);
+            high2low = _mm256_set_epi64x(w[3], w[2], w[1], w[0]);
+            offset += 64;
+        } else {
+            low2high = _mm256_set_epi64x(w[3], w[2], w[1], w[0]);
+            high2low = _mm256_set_epi64x(w[2], w[1], w[0], 0);
+        }
+        uint64_t m = (uint64_t{1} << offset) - uint64_t{1};
+        low2high = _mm256_slli_epi64(low2high, offset);
+        high2low = _mm256_srli_epi64(high2low, 64 - offset);
+        low2high = _mm256_and_si256(low2high, _mm256_set1_epi64x(~m));
+        high2low = _mm256_and_si256(high2low, _mm256_set1_epi64x(m));
+        return _mm256_or_si256(low2high, high2low);
+    }
+
+    inline std::string str() const {
+        std::stringstream out;
+        out << *this;
+        return out.str();
+    }
+
+    inline bool operator==(const bitword<256> &other) const {
+        return to_u64_array() == other.to_u64_array();
+    }
+    inline bool operator!=(const bitword<256> &other) const {
+        return !(*this == other);
+    }
+    inline bool operator==(int other) const {
+        return *this == (bitword<256>)other;
+    }
+    inline bool operator!=(int other) const {
+        return *this != (bitword<256>)other;
+    }
+    inline bool operator==(uint64_t other) const {
+        return *this == (bitword<256>)other;
+    }
+    inline bool operator!=(uint64_t other) const {
+        return *this != (bitword<256>)other;
+    }
+    inline bool operator==(int64_t other) const {
+        return *this == (bitword<256>)other;
+    }
+    inline bool operator!=(int64_t other) const {
+        return *this != (bitword<256>)other;
     }
 
     template <uint64_t shift>
@@ -153,8 +249,8 @@ struct bitword<256> {
         inplace_transpose_block_pass_64_and_128(data, stride);
     }
 };
-#endif
 
 }  // namespace stim
 
+#endif
 #endif
