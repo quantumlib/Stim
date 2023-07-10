@@ -70,18 +70,20 @@ TEST(gate_data, hash_matches_storage_location) {
     }
 }
 
-std::pair<std::vector<PauliString<MAX_BITWORD_WIDTH>>, std::vector<PauliString<MAX_BITWORD_WIDTH>>>
+template <size_t W>
+std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>>
 circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
-    TableauSimulator<MAX_BITWORD_WIDTH> sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
-    TableauSimulator<MAX_BITWORD_WIDTH> sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
+    TableauSimulator<W> sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
+    TableauSimulator<W> sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
     sim1.expand_do_circuit(circuit);
     sim2.expand_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};
 }
 
+template <size_t W>
 bool is_decomposition_correct(const Gate &gate) {
     const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
     if (decomposition == nullptr) {
@@ -101,10 +103,10 @@ bool is_decomposition_correct(const Gate &gate) {
 
     Circuit circuit1 = epr;
     circuit1.safe_append_u(gate.name, qs);
-    auto v1 = circuit_output_eq_val(circuit1);
+    auto v1 = circuit_output_eq_val<W>(circuit1);
 
     Circuit circuit2 = epr + Circuit(decomposition);
-    auto v2 = circuit_output_eq_val(circuit2);
+    auto v2 = circuit_output_eq_val<W>(circuit2);
     for (const auto &op : circuit2.operations) {
         if (op.gate_type != GateType::CX && op.gate_type != GateType::H && op.gate_type != GateType::S &&
             op.gate_type != GateType::M && op.gate_type != GateType::R) {
@@ -115,17 +117,17 @@ bool is_decomposition_correct(const Gate &gate) {
     return v1 == v2;
 }
 
-TEST(gate_data, decompositions_are_correct) {
+TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
     for (const auto &g : GATE_DATA.items) {
         auto data = g.extra_data_func();
         if (g.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(data.h_s_cx_m_r_decomposition != nullptr) << g.name;
         }
         if (data.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
-            EXPECT_TRUE(is_decomposition_correct(g)) << g.name;
+            EXPECT_TRUE(is_decomposition_correct<W>(g)) << g.name;
         }
     }
-}
+})
 
 TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
