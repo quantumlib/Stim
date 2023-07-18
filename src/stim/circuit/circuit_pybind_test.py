@@ -719,7 +719,7 @@ def test_shortest_graphlike_error_msgs():
             match="Circuit defines no observables. Circuit defines no error instructions. Circuit defines no detectors."
     ):
         stim.Circuit().shortest_graphlike_error()
-        
+
     c = stim.Circuit("""
         M 0
         OBSERVABLE_INCLUDE rec[-1]
