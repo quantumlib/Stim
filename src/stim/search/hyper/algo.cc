@@ -103,5 +103,16 @@ DetectorErrorModel stim::find_undetectable_logical_error(
         }
     }
 
-    throw std::invalid_argument("Failed to find any logical errors.");
+    std::sstream err_msg;
+    err_msg << "Failed to find any logical errors."
+    if (graph.num_observables == 0) {
+        err_msg << " Circuit defines no observables."
+    }
+    if (graph.edges.size() == 0) {
+        err_msg << " Circuit defines no error instructions."
+    }
+    if (graph.nodes.size() == 0) {
+        err_msg << " Circuit defines no detectors."
+    }
+    throw std::invalid_argument(err_msg);
 }

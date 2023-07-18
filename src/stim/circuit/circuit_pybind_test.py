@@ -713,6 +713,44 @@ def test_shortest_graphlike_error_empty():
         stim.Circuit().shortest_graphlike_error()
 
 
+def test_shortest_graphlike_error_msgs():
+    with pytest.raises(
+            ValueError,
+            match="Circuit defines no observables. Circuit defines no error instructions. Circuit defines no detectors."
+    ):
+        stim.Circuit().shortest_graphlike_error()
+        
+    c = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no error instructions. Circuit defines no detectors."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR 0
+        M 0
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables. Circuit defines no detectors."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no error instructions."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables."):
+        c.shortest_graphlike_error()
+
+
 def test_search_for_undetectable_logical_errors_empty():
     with pytest.raises(ValueError, match="Failed to find"):
         stim.Circuit().search_for_undetectable_logical_errors(
