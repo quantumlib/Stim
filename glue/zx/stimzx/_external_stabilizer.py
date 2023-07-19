@@ -21,7 +21,7 @@ class ExternalStabilizer:
 
         return ExternalStabilizer(
             input=dual[:num_inputs],
-            output=dual[num_inputs:],
+            output=dual[num_inputs:] * sign,
         )
 
     @staticmethod
