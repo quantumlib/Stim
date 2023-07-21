@@ -134,7 +134,7 @@ in---X---Z(-pi/2)---out
     expected.add_edge(4, 5)
     expected.add_edge(5, 6)
     expected.add_edge(6, 7)
-    nx.testing.assert_graphs_equal(actual, expected)
+    assert nx.utils.graphs_equal(actual, expected)
 
     actual = text_diagram_to_networkx_graph("""
         Z-*
@@ -146,4 +146,4 @@ in---X---Z(-pi/2)---out
     expected.add_node(1, value='X')
     expected.add_edge(0, 1)
     expected.add_edge(0, 1)
-    nx.testing.assert_graphs_equal(actual, expected)
+    assert nx.utils.graphs_equal(actual, expected)
