@@ -165,6 +165,7 @@ void PauliStringIterator<W>::next_qubit_permutation(simd_bits<W> &cur_perm) {
 
 template <size_t W>
 bool PauliStringIterator<W>::iter_all_cur_perm(std::vector<int> &set_bits) {
+    // This will overflow for large cur_w.
     size_t num_terms = static_cast<size_t>(pow(3, cur_w));
     result.xs.clear();
     result.zs.clear();
@@ -219,7 +220,7 @@ bool PauliStringIterator<W>::iter_next_weight() {
         size_t max_word = (result.num_qubits + 64 - 1) / 64 - 1;
         // If num_qubits is a multiple of 64 we can't left shift by 64 without overflowing, hence the need to specify
         // all set bits manually.
-        uint64_t val = result.num_qubits % 64 == 0 ? ~0ULL : (1ULL << result.num_qubits - max_word * 64) - 1;
+        uint64_t val = result.num_qubits % 64 == 0 ? ~0ULL : (1ULL << (result.num_qubits - max_word * 64)) - 1;
         ones_mask_with_val(terminal, val, max_word);
         // if cur_w == num_qubits then terminal already will hold the correct mask value
         if (result.num_qubits != cur_w) {
