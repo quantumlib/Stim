@@ -716,34 +716,34 @@ def test_shortest_graphlike_error_empty():
 def test_shortest_graphlike_error_msgs():
     with pytest.raises(
             ValueError,
-            match="Circuit defines no observables. Circuit defines no error instructions. Circuit defines no detectors."
+            match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."
     ):
         stim.Circuit().shortest_graphlike_error()
 
     c = stim.Circuit("""
         M 0
-        OBSERVABLE_INCLUDE rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    with pytest.raises(ValueError, match="Circuit defines no error instructions. Circuit defines no detectors."):
+    with pytest.raises(ValueError, match="Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
         c.shortest_graphlike_error()
 
     c = stim.Circuit("""
-        X_ERROR 0
+        X_ERROR(0.1) 0
         M 0
     """)
-    with pytest.raises(ValueError, match="Circuit defines no observables. Circuit defines no detectors."):
+    with pytest.raises(ValueError, match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
         c.shortest_graphlike_error()
 
     c = stim.Circuit("""
         M 0
         DETECTOR rec[-1]
-        OBSERVABLE_INCLUDE rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    with pytest.raises(ValueError, match="Circuit defines no error instructions."):
+    with pytest.raises(ValueError, match="Circuit defines no errors that can flip detectors or observables."):
         c.shortest_graphlike_error()
 
     c = stim.Circuit("""
-        X_ERROR 0
+        X_ERROR(0.1) 0
         M 0
         DETECTOR rec[-1]
     """)
@@ -754,6 +754,66 @@ def test_shortest_graphlike_error_msgs():
 def test_search_for_undetectable_logical_errors_empty():
     with pytest.raises(ValueError, match="Failed to find"):
         stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+
+def test_search_for_undetectable_logical_errors_msgs():
+    with pytest.raises(
+            ValueError,
+            match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."
+    ):
+        stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError,
+                       match="Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+    """)
+    with pytest.raises(ValueError,
+                       match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables."):
+        c.search_for_undetectable_logical_errors(
             dont_explore_edges_increasing_symptom_degree=True,
             dont_explore_edges_with_degree_above=4,
             dont_explore_detection_event_sets_with_size_above=4,

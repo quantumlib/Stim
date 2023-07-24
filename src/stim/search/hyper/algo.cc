@@ -105,19 +105,19 @@ DetectorErrorModel stim::find_undetectable_logical_error(
     }
 
     std::stringstream err_msg;
-    err_msg << "Failed to find any logical errors.";
+    err_msg << "Failed to find any graphlike logical errors.";
     if (graph.num_observables == 0) {
         err_msg << " Circuit defines no observables.";
+    }
+    if (graph.nodes.size() == 0) {
+        err_msg << " Circuit defines no detectors.";
     }
     bool edges = 0;
     for (const auto &n : graph.nodes) {
         edges |= ( n.edges.size() > 0 );
     }
     if ( !edges ) {
-        err_msg << " Circuit defines no error instructions.";
-    }
-    if (graph.nodes.size() == 0) {
-        err_msg << " Circuit defines no detectors.";
+        err_msg << " Circuit defines no errors that can flip detectors or observables.";
     }
     throw std::invalid_argument(err_msg.str());
 }
