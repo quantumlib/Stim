@@ -1250,7 +1250,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
            const pybind11::object &zs,
            const pybind11::object &sign,
            const pybind11::object &num_qubits) -> PyPauliString {
-            size_t n = numpy_pair_to_size(xs, zs, num_qubits);
+            size_t n = size_of_bit_packable_numpy_arrays(xs, zs, num_qubits);
             PyPauliString result{PauliString<MAX_BITWORD_WIDTH>(n)};
             memcpy_bits_from_numpy_to_simd(n, xs, result.value.xs);
             memcpy_bits_from_numpy_to_simd(n, zs, result.value.zs);

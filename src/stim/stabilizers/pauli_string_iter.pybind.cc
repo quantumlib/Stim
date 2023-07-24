@@ -73,17 +73,19 @@ void stim_pybind::pybind_pauli_string_iter_methods(
             .data());
 
     c.def(
-        "next_qubit_permutation",
+        "__internal_next_qubit_permutation",
         [](PauliStringIterator<stim::MAX_BITWORD_WIDTH> &self) {
             self.next_qubit_permutation(self.cur_perm);
             return simd_bits_to_numpy(self.cur_perm, self.result.num_qubits, false);
         },
         clean_doc_string(R"DOC(
-            Get the next permutation of qubit labels.
+            [DEPRECATED] Get the next permutation of qubit labels.
 
             It's alot easier to test more complicated edge cases in python
             which largely arise due to the algorithm for generating the next
-            permutation. The user should probably not interact with this function.
+            permutation.
+
+            The user should not interact with this function.
 
             Returns:
                 next_perm: numpy boolean array which represents the next qubit permutation

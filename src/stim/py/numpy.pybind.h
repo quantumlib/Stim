@@ -31,8 +31,8 @@ pybind11::object simd_bits_to_numpy(
     stim::simd_bits_range_ref<stim::MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed);
 void memcpy_bits_from_numpy_to_simd(
     size_t num_bits, const pybind11::object &src, stim::simd_bits_range_ref<stim::MAX_BITWORD_WIDTH> dst);
-size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size);
-size_t numpy_pair_to_size(
+size_t bit_count_of_bit_packable_numpy_array(const pybind11::object &numpy_array, size_t expected_size);
+size_t size_of_bit_packable_numpy_arrays(
     const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size);
 
 }  // namespace stim_pybind

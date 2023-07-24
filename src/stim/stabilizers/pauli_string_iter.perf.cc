@@ -19,17 +19,16 @@
 using namespace stim;
 
 BENCHMARK(PauliStringIter) {
-    size_t num_qubits = 128;
-    size_t min_weight = 1;
-    size_t max_weight = 2;
-    PauliStringIterator<MAX_BITWORD_WIDTH> iter(num_qubits, min_weight, max_weight);
-    size_t c = 0;
+    size_t num_qubits = 63;
+    size_t min_weight = 3;
+    size_t max_weight = 3;
     benchmark_go([&]() {
+        PauliStringIterator<MAX_BITWORD_WIDTH> iter(num_qubits, min_weight, max_weight);
+        size_t c = 0;
         while (iter.iter_next()) {
             c += iter.result.num_qubits;
-            std::cout << iter.result << std::endl;
         }
     })
-        .goal_millis(200)
-        .show_rate("PaulisPerSecond", 1000);
+        .goal_millis(350)
+        .show_rate("PaulisPerSecond", 8.1883305e8);
 }

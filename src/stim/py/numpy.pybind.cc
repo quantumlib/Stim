@@ -299,7 +299,7 @@ void stim_pybind::memcpy_bits_from_numpy_to_simd(
     throw std::invalid_argument("Expected a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
 }
 
-size_t stim_pybind::numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) {
+size_t stim_pybind::bit_count_of_bit_packable_numpy_array(const pybind11::object &numpy_array, size_t expected_size) {
     if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
         auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
         if (arr.ndim() == 1) {
@@ -337,14 +337,14 @@ size_t stim_pybind::numpy_to_size(const pybind11::object &numpy_array, size_t ex
     throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool_");
 }
 
-size_t stim_pybind::numpy_pair_to_size(
+size_t stim_pybind::size_of_bit_packable_numpy_arrays(
     const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size) {
     size_t n0 = SIZE_MAX;
     if (!expected_size.is_none()) {
         n0 = pybind11::cast<size_t>(expected_size);
     }
-    size_t n1 = numpy_to_size(numpy_array1, n0);
-    size_t n2 = numpy_to_size(numpy_array2, n0);
+    size_t n1 = bit_count_of_bit_packable_numpy_array(numpy_array1, n0);
+    size_t n2 = bit_count_of_bit_packable_numpy_array(numpy_array2, n0);
     if (n1 != n2) {
         throw std::invalid_argument("Inconsistent array shapes.");
     }
