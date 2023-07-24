@@ -236,8 +236,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.PauliStringIterator`](#stim.PauliStringIterator)
     - [`stim.PauliStringIterator.__iter__`](#stim.PauliStringIterator.__iter__)
     - [`stim.PauliStringIterator.__next__`](#stim.PauliStringIterator.__next__)
-    - [`stim.PauliStringIterator.next_qubit_permutation`](#stim.PauliStringIterator.next_qubit_permutation)
-    - [`stim.PauliStringIterator.seed_iterator`](#stim.PauliStringIterator.seed_iterator)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -7883,53 +7881,6 @@ def __next__(
     self,
 ) -> stim.PauliString:
     """Returns the next iterated pauli string.
-    """
-```
-
-<a name="stim.PauliStringIterator.next_qubit_permutation"></a>
-```python
-# stim.PauliStringIterator.next_qubit_permutation
-
-# (in class stim.PauliStringIterator)
-def next_qubit_permutation(
-    self,
-) -> object:
-    """Get the next permutation of qubit labels.
-
-    It's alot easier to test more complicated edge cases in python
-    which largely arise due to the algorithm for generating the next
-    permutation. The user should probably not interact with this function.
-
-    Returns:
-        next_perm: numpy boolean array which represents the next qubit permutation
-
-    Examples:
-        >>> import stim
-        >>> pauli_iter = stim.PauliString.iter_all(5, min_weight=3, max_weight=5)
-        >>> pauli_iter.next_qubit_permutation()
-        array([ True,  True, False,  True, False])
-    """
-```
-
-<a name="stim.PauliStringIterator.seed_iterator"></a>
-```python
-# stim.PauliStringIterator.seed_iterator
-
-# (in class stim.PauliStringIterator)
-def seed_iterator(
-    self,
-    arg0: object,
-) -> None:
-    """Seed the iterator with a given qubit pattern.
-
-    Examples:
-        >>> import stim
-        >>> import numpy as np
-        >>> pauli_iter = stim.PauliString.iter_all(4, min_weight=2, max_weight=2)
-        >>> seed = np.array([False, True, True, False])
-        >>> pauli_iter.seed_iterator(seed)
-        >>> pauli_iter.next_qubit_permutation()
-        array([ True, False, False,  True])
     """
 ```
 

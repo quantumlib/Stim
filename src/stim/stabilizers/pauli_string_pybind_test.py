@@ -847,28 +847,15 @@ def test_iter_all_next_qubit_permutation():
         min_weight=2,
         max_weight=2,
     )
-    perm = pauli_it.next_qubit_permutation()
+    perm = pauli_it.__internal_next_qubit_permutation()
     # 0101
     assert np.allclose(perm, [True, False, True, False])
     # 0110
-    perm = pauli_it.next_qubit_permutation()
+    perm = pauli_it.__internal_next_qubit_permutation()
     assert np.allclose(perm, [False, True, True, False])
     # 1001
-    perm = pauli_it.next_qubit_permutation()
+    perm = pauli_it.__internal_next_qubit_permutation()
     assert np.allclose(perm, [True, False, False, True])
-
-
-def test_iter_all_seed_iterator():
-    pauli_it = stim.PauliString.iter_all(
-        4,
-        min_weight=2,
-        max_weight=2,
-    )
-    # 0101 -> 0110
-    seed = np.array([True, False, True, False])
-    pauli_it.seed_iterator(seed)
-    perm = pauli_it.next_qubit_permutation()
-    assert np.allclose(perm, [False, True, True, False])
 
 def next_permutation(v):
     t = (v | (v - 1)) + 1
@@ -888,14 +875,15 @@ def test_iter_all_random_permutation(num_qubits, min_weight):
         min_weight=min_weight,
         max_weight=min_weight,
     )
-    seed = np.array([False] * num_qubits)
+    # Pick a starting point at random
+    cur_perm = np.array([False] * num_qubits)
     set_bits = np.random.choice(range(num_qubits), size=min_weight, replace=False)
-    seed[set_bits] = True
-    assert sum(seed) == min_weight
-    pauli_it.seed_iterator(seed)
-    stim_perm = pauli_it.next_qubit_permutation()
+    cur_perm[set_bits] = True
+    assert sum(cur_perm) == min_weight
+    pauli_it.__internal_set_current_permutation(cur_perm)
+    stim_perm = pauli_it.__internal_next_qubit_permutation()
 
-    ref_perm = to_py_int(seed)
+    ref_perm = to_py_int(cur_perm)
     expected_py = next_permutation(ref_perm)
     assert expected_py == to_py_int(stim_perm)
 

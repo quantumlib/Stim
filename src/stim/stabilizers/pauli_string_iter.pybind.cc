@@ -99,13 +99,17 @@ void stim_pybind::pybind_pauli_string_iter_methods(
             .data());
 
     c.def(
-        "seed_iterator",
+        "__internal_set_current_permutation",
         [](PauliStringIterator<stim::MAX_BITWORD_WIDTH> &self, const pybind11::object &permutation) {
-            size_t n = numpy_to_size(permutation, self.result.num_qubits);
+            size_t n = bit_count_of_bit_packable_numpy_array(permutation, self.result.num_qubits);
             stim_pybind::memcpy_bits_from_numpy_to_simd(n, permutation, self.cur_perm);
         },
         clean_doc_string(R"DOC(
-            Seed the iterator with a given qubit pattern.
+            [DEPRECATED] Set the iterators current qubit permutation.
+
+            This is helpful for testing the next permutation code for long
+            bitstrings with larger weight w as we can skip ahead to potential
+            edge cases.
 
             Examples:
                 >>> import stim

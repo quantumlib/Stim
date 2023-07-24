@@ -6025,24 +6025,16 @@ class PauliStringIterator:
         >>> n
         3645
     """
-    def __iter__(
-        self,
-    ) -> stim.PauliStringIterator:
-        """Returns an independent copy of the pauli string iterator.
-        """
-    def __next__(
-        self,
-    ) -> stim.PauliString:
-        """Returns the next iterated pauli string.
-        """
-    def next_qubit_permutation(
+    def __internal_next_qubit_permutation(
         self,
     ) -> object:
-        """Get the next permutation of qubit labels.
+        """[DEPRECATED] Get the next permutation of qubit labels.
 
         It's alot easier to test more complicated edge cases in python
         which largely arise due to the algorithm for generating the next
-        permutation. The user should probably not interact with this function.
+        permutation.
+
+        The user should not interact with this function.
 
         Returns:
             next_perm: numpy boolean array which represents the next qubit permutation
@@ -6053,11 +6045,15 @@ class PauliStringIterator:
             >>> pauli_iter.next_qubit_permutation()
             array([ True,  True, False,  True, False])
         """
-    def seed_iterator(
+    def __internal_set_current_permutation(
         self,
         arg0: object,
     ) -> None:
-        """Seed the iterator with a given qubit pattern.
+        """[DEPRECATED] Set the iterators current qubit permutation.
+
+        This is helpful for testing the next permutation code for long
+        bitstrings with larger weight w as we can skip ahead to potential
+        edge cases.
 
         Examples:
             >>> import stim
@@ -6067,6 +6063,16 @@ class PauliStringIterator:
             >>> pauli_iter.seed_iterator(seed)
             >>> pauli_iter.next_qubit_permutation()
             array([ True, False, False,  True])
+        """
+    def __iter__(
+        self,
+    ) -> stim.PauliStringIterator:
+        """Returns an independent copy of the pauli string iterator.
+        """
+    def __next__(
+        self,
+    ) -> stim.PauliString:
+        """Returns the next iterated pauli string.
         """
 class Tableau:
     """A stabilizer tableau.
