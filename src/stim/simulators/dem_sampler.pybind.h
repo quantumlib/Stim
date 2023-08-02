@@ -21,8 +21,8 @@
 
 namespace stim_pybind {
 
-pybind11::class_<stim::DemSampler> pybind_dem_sampler(pybind11::module &m);
-void pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<stim::DemSampler> &c);
+pybind11::class_<stim::DemSampler<stim::MAX_BITWORD_WIDTH>> pybind_dem_sampler(pybind11::module &m);
+void pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<stim::DemSampler<stim::MAX_BITWORD_WIDTH>> &c);
 
 }  // namespace stim_pybind
 

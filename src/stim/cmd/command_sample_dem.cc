@@ -75,7 +75,7 @@ int stim::command_sample_dem(int argc, const char **argv) {
     auto dem = DetectorErrorModel::from_file(in.f);
     in.done();
 
-    DemSampler sampler(std::move(dem), optionally_seeded_rng(argc, argv), 1024);
+    DemSampler<MAX_BITWORD_WIDTH> sampler(std::move(dem), optionally_seeded_rng(argc, argv), 1024);
     sampler.sample_write(
         num_shots,
         out.f,
