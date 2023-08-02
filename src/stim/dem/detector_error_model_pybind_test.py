@@ -274,6 +274,44 @@ def test_shortest_graphlike_error_rep_code():
     assert len(model.shortest_graphlike_error()) == 7
 
 
+def test_shortest_graphlike_error_msgs():
+    with pytest.raises(
+            ValueError,
+            match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."
+    ):
+        stim.Circuit().detector_error_model(decompose_errors=True).shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.detector_error_model(decompose_errors=True).shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.detector_error_model(decompose_errors=True).shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no errors that can flip detectors or observables."):
+        c.detector_error_model(decompose_errors=True).shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables."):
+        c.detector_error_model(decompose_errors=True).shortest_graphlike_error()
+
+
 def test_coords():
     circuit = stim.Circuit("""
         M 0
