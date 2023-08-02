@@ -19,8 +19,9 @@
 
 using namespace stim;
 
-class ConvertTest : public testing::TestWithParam<
-                        std::tuple<std::tuple<std::string, std::string>, std::tuple<std::string, std::string>>> {
+class ConvertTest
+    : public testing::TestWithParam<
+          std::tuple<std::string, std::tuple<std::string, std::string>, std::tuple<std::string, std::string>>> {
    protected:
     void SetUp() override {
         tmp.write_contents(R"CIRCUIT(
@@ -34,9 +35,6 @@ class ConvertTest : public testing::TestWithParam<
 
     RaiiTempNamedFile tmp;
 };
-
-class ConvertMeasurementsTest : public ConvertTest {};
-class ConvertDetectionsTest : public ConvertTest {};
 
 std::vector<std::tuple<std::string, std::string>> measurement_parameters{
     std::make_tuple("01", "00\n01\n10\n11\n"),
@@ -52,9 +50,10 @@ std::vector<std::tuple<std::string, std::string>> detection_parameters{
     std::make_tuple("hits", "0\n0,1,4\n\n1,4\n"),
     std::make_tuple("r8", std::string({0x00, 0x04, 0x00, 0x00, 0x02, 0x00, 0x05, 0x01, 0x02, 0x00}))};
 
-TEST_P(ConvertMeasurementsTest, convert) {
-    auto [in_format, in_data] = std::get<0>(GetParam());
-    auto [out_format, out_data] = std::get<1>(GetParam());
+TEST_P(ConvertTest, convert) {
+    std::string types = std::get<0>(GetParam());
+    auto [in_format, in_data] = std::get<1>(GetParam());
+    auto [out_format, out_data] = std::get<2>(GetParam());
     ASSERT_EQ(
         run_captured_stim_main(
             {"convert",
@@ -62,42 +61,28 @@ TEST_P(ConvertMeasurementsTest, convert) {
              ("--out_format=" + out_format).c_str(),
              "--circuit",
              tmp.path.data(),
-             "--types=M"},
+             ("--types=" + types).c_str()},
             in_data),
         out_data);
 }
 
-TEST_P(ConvertDetectionsTest, convert) {
-    auto [in_format, in_data] = std::get<0>(GetParam());
-    auto [out_format, out_data] = std::get<1>(GetParam());
-    ASSERT_EQ(
-        run_captured_stim_main(
-            {"convert",
-             ("--in_format=" + in_format).c_str(),
-             ("--out_format=" + out_format).c_str(),
-             "--circuit",
-             tmp.path.data(),
-             "--types=DL"},
-            in_data),
-        out_data);
+template <typename T>
+std::string GenerateTestParameterName(const testing::TestParamInfo<T>& info) {
+    std::string from = std::get<0>(std::get<1>(info.param));
+    std::string to = std::get<0>(std::get<2>(info.param));
+    return from + "_to_" + to;
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ConvertMeasurementsTests,
-    ConvertMeasurementsTest,
-    testing::Combine(testing::ValuesIn(measurement_parameters), testing::ValuesIn(measurement_parameters)),
-    [](const testing::TestParamInfo<ConvertMeasurementsTest::ParamType>& info) {
-        std::string from = std::get<0>(std::get<0>(info.param));
-        std::string to = std::get<0>(std::get<1>(info.param));
-        return from + "_to_" + to;
-    });
+    ConvertMeasurements,
+    ConvertTest,
+    testing::Combine(
+        testing::Values("M"), testing::ValuesIn(measurement_parameters), testing::ValuesIn(measurement_parameters)),
+    GenerateTestParameterName<ConvertTest::ParamType>);
 
 INSTANTIATE_TEST_SUITE_P(
-    ConvertDetectionsTests,
-    ConvertDetectionsTest,
-    testing::Combine(testing::ValuesIn(detection_parameters), testing::ValuesIn(detection_parameters)),
-    [](const testing::TestParamInfo<ConvertDetectionsTest::ParamType>& info) {
-        std::string from = std::get<0>(std::get<0>(info.param));
-        std::string to = std::get<0>(std::get<1>(info.param));
-        return from + "_to_" + to;
-    });
+    ConvertDetections,
+    ConvertTest,
+    testing::Combine(
+        testing::Values("DL"), testing::ValuesIn(detection_parameters), testing::ValuesIn(detection_parameters)),
+    GenerateTestParameterName<ConvertTest::ParamType>);
