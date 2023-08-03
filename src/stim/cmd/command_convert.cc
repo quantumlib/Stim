@@ -116,6 +116,9 @@ SubCommandHelp stim::command_convert_help() {
     result.subcommand_name = "convert";
     result.description = clean_doc_string(R"PARAGRAPH(
         Convert data between result formats.
+
+        See the various formats here:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     )PARAGRAPH");
 
     result.examples.push_back(clean_doc_string(R"PARAGRAPH(
