@@ -47,11 +47,29 @@ int stim::command_convert(int argc, const char **argv) {
     fclose(circuit_file);
     CircuitStats circuit_stats = circuit.compute_stats();
 
-    const char *types = require_find_argument("--types", argc, argv);
+    std::string types = require_find_argument("--types", argc, argv);
     bool include_measurements = false, include_detectors = false, include_observables = false;
-    include_measurements = strchr(types, 'M') != nullptr;
-    include_detectors = strchr(types, 'D') != nullptr;
-    include_observables = strchr(types, 'L') != nullptr;
+    for (const char c : types) {
+        bool found_duplicate = false;
+        if (c == 'M') {
+            found_duplicate = include_measurements;
+            include_measurements = true;
+        } else if (c == 'D') {
+            found_duplicate = include_detectors;
+            include_detectors = true;
+        } else if (c == 'L') {
+            found_duplicate = include_observables;
+            include_observables = true;
+        } else {
+            std::cerr << "\033[31mUnknown type passed to --types\n";
+            return EXIT_FAILURE;
+        }
+
+        if (found_duplicate) {
+            std::cerr << "\033[31mEach type in types should only be specified once\n";
+            return EXIT_FAILURE;
+        }
+    }
 
     auto reader = MeasureRecordReader<MAX_BITWORD_WIDTH>::make(
         in,

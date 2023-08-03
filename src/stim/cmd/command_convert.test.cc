@@ -86,3 +86,17 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(
         testing::Values("DL"), testing::ValuesIn(detection_parameters), testing::ValuesIn(detection_parameters)),
     GenerateTestParameterName<ConvertTest::ParamType>);
+
+TEST(command_convert, convert_invalid_types) {
+    RaiiTempNamedFile tmp("");
+
+    ASSERT_TRUE(matches(
+        run_captured_stim_main(
+            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.data(), "--types=N"}, ""),
+        ".*Unknown type passed to --types.*"));
+
+    ASSERT_TRUE(matches(
+        run_captured_stim_main(
+            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.data(), "--types=MM"}, ""),
+        ".*Each type in types should only be specified once.*"));
+}
