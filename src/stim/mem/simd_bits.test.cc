@@ -160,6 +160,101 @@ TEST_EACH_WORD_SIZE_W(simd_bits, xor_assignment, {
     }
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
+    simd_bits<W> m0(512);
+    simd_bits<W> m1(512);
+    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
+        m0.u64[2 * k] = 0xFFFFFFFFFFFFFFFFULL;
+        m0.u64[2 * k + 1] = 0x0F0F0F0F0F0F0F0FULL;
+        m1.u64[2 * k] = 0xFFFFFFFFFFFFFFFFULL;
+        m1.u64[2 * k + 1] = 0x0F0F0F0F0F0F0F0FULL;
+    }
+    m0 += m1;
+    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
+        ASSERT_EQ(m0.u64[2 * k], 0xFFFFFFFFFFFFFFFEULL);
+        ASSERT_EQ(m0.u64[2 * k + 1], 0x1E1E1E1E1E1E1E1FULL);
+    }
+    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
+        m1.u64[2 * k] = 0ULL;
+        m1.u64[2 * k + 1] = 0ULL;
+    }
+    m0 += m1;
+    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
+        ASSERT_EQ(m0.u64[2 * k], 0xFFFFFFFFFFFFFFFEULL);
+        ASSERT_EQ(m0.u64[2 * k + 1], 0x1E1E1E1E1E1E1E1FULL);
+    }
+    m0.clear();
+    m1.clear();
+    m1.u64[0] = uint64_t{1};
+    for (int i = 0; i < 512; i++) {
+        m0 += m1;
+    }
+    ASSERT_EQ(m0.u64[0], uint64_t{1} << 9);
+    m0.clear();
+    m0.u64[0] = 0xFFFFFFFFFFFFFFFFULL;
+    m0 += m1;
+    ASSERT_EQ(m0.u64[0], 0);
+    ASSERT_EQ(m0.u64[1], 1);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
+    simd_bits<W> m0(512);
+    m0.u64[m0.num_u64_padded() - 1] = uint64_t{1} << 63;
+    m0 >>= 64;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w != m0.num_u64_padded() - 2) {
+            ASSERT_EQ(m0.u64[w], 0ULL);
+        } else {
+            ASSERT_EQ(m0.u64[w], uint64_t{1} << 63);
+        }
+    }
+    m0.clear();
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        m0.u64[w] = 0xAAAAAAAAAAAAAAAA;
+    }
+    m0 >>= 1;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        ASSERT_EQ(m0.u64[w], 0x5555555555555555);
+    }
+    m0.clear();
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        m0.u64[w] = 0xAAAAAAAAAAAAAAAA;
+    }
+    m0 >>= 128;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w < 6) {
+            ASSERT_EQ(m0.u64[w], 0xAAAAAAAAAAAAAAAA);
+        } else {
+            ASSERT_EQ(m0.u64[w], 0ULL);
+        }
+    }
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
+    simd_bits<W> m0(512);
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        m0.u64[w] = 0xAAAAAAAAAAAAAAAAULL;
+    }
+    m0 <<= 1;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w == 0) {
+            ASSERT_EQ(m0.u64[w], 0x5555555555555554ULL);
+        } else {
+            ASSERT_EQ(m0.u64[w], 0x5555555555555555ULL);
+        }
+    }
+    m0 <<= 63;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w == 0) {
+            ASSERT_EQ(m0.u64[w], 0ULL);
+        } else {
+            ASSERT_EQ(m0.u64[w], 0xAAAAAAAAAAAAAAAAULL);
+        }
+    }
+    m0 <<= 488;
+    ASSERT_TRUE(!m0.not_zero());
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits, assignment, {
     simd_bits<W> m0(512);
     simd_bits<W> m1(512);

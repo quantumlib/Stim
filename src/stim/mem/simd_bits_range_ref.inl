@@ -55,6 +55,63 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator=(const simd_bits_range_r
 }
 
 template <size_t W>
+simd_bits_range_ref<W> simd_bits_range_ref<W>::operator+=(const simd_bits_range_ref<W> other) {
+    size_t num_u64 = num_u64_padded();
+    for (size_t w = 0; w < num_u64 - 1; w++) {
+        u64[w] += other.u64[w];
+        u64[w + 1] += (u64[w] < other.u64[w]);
+    }
+    u64[num_u64 - 1] += other.u64[num_u64 - 1];
+    return *this;
+}
+
+template <size_t W>
+simd_bits_range_ref<W> simd_bits_range_ref<W>::operator>>=(int offset) {
+    uint64_t incoming_word;
+    uint64_t cur_word;
+    while (offset >= 64) {
+        incoming_word = 0ULL;
+        for (int w = num_u64_padded() - 1; w >= 0; w--) {
+            cur_word = u64[w];
+            u64[w] = incoming_word;
+            incoming_word = cur_word;
+        }
+        offset -= 64;
+    }
+    incoming_word = 0ULL;
+    for (int w = num_u64_padded() - 1; w >= 0; w--) {
+        cur_word = u64[w];
+        u64[w] >>= offset;
+        u64[w] |= incoming_word;
+        incoming_word = cur_word & ((uint64_t{1} << offset) - 1);
+    }
+    return *this;
+}
+
+template <size_t W>
+simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
+    uint64_t incoming_word;
+    uint64_t cur_word;
+    while (offset >= 64) {
+        incoming_word = 0ULL;
+        for (int w = 0; w < num_u64_padded(); w++) {
+            cur_word = u64[w];
+            u64[w] = incoming_word;
+            incoming_word = cur_word;
+        }
+        offset -= 64;
+    }
+    incoming_word = 0ULL;
+    for (int w = 0; w < num_u64_padded(); w++) {
+        cur_word = u64[w];
+        u64[w] <<= offset;
+        u64[w] |= incoming_word;
+        incoming_word = (cur_word >> 64 - offset);
+    }
+    return *this;
+}
+
+template <size_t W>
 void simd_bits_range_ref<W>::swap_with(simd_bits_range_ref<W> other) {
     for_each_word(other, [](bitword<W> &w0, bitword<W> &w1) {
         std::swap(w0, w1);
@@ -153,4 +210,4 @@ bool simd_bits_range_ref<W>::intersects(const simd_bits_range_ref<W> other) cons
     return v != 0;
 }
 
-}
+}  // namespace stim
