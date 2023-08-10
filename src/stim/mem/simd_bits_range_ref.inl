@@ -106,7 +106,7 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
         cur_word = u64[w];
         u64[w] <<= offset;
         u64[w] |= incoming_word;
-        incoming_word = (cur_word >> 64 - offset);
+        incoming_word = (cur_word >> (64 - offset));
     }
     return *this;
 }
