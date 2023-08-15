@@ -69,6 +69,9 @@ template <size_t W>
 simd_bits_range_ref<W> simd_bits_range_ref<W>::operator>>=(int offset) {
     uint64_t incoming_word;
     uint64_t cur_word;
+    if (offset == 0) {
+        return *this;
+    }
     while (offset >= 64) {
         incoming_word = 0ULL;
         for (int w = num_u64_padded() - 1; w >= 0; w--) {
@@ -78,11 +81,14 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator>>=(int offset) {
         }
         offset -= 64;
     }
+    if (offset == 0) {
+        return *this;
+    }
     incoming_word = 0ULL;
     for (int w = num_u64_padded() - 1; w >= 0; w--) {
         cur_word = u64[w];
         u64[w] >>= offset;
-        u64[w] |= incoming_word;
+        u64[w] |= incoming_word << (64 - offset);
         incoming_word = cur_word & ((uint64_t{1} << offset) - 1);
     }
     return *this;
@@ -92,6 +98,9 @@ template <size_t W>
 simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
     uint64_t incoming_word;
     uint64_t cur_word;
+    if (offset == 0) {
+        return *this;
+    }
     while (offset >= 64) {
         incoming_word = 0ULL;
         for (int w = 0; w < num_u64_padded(); w++) {
@@ -100,6 +109,9 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
             incoming_word = cur_word;
         }
         offset -= 64;
+    }
+    if (offset == 0) {
+        return *this;
     }
     incoming_word = 0ULL;
     for (int w = 0; w < num_u64_padded(); w++) {

@@ -175,9 +175,16 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, add_assignment, {
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>) / 2);
     simd_bits_range_ref<W> m1((bitword<W> *)&data[4], sizeof(data) / sizeof(bitword<W>) / 2);
     m0 += m1;
-    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
-        ASSERT_EQ(m0.u64[2 * k], 0xFFFFFFFFFFFFFFFEULL);
-        ASSERT_EQ(m0.u64[2 * k + 1], 0x1E1E1E1E1E1E1E1FULL);
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word % 2 == 0) {
+            ASSERT_EQ(pattern, 0xFFFFFFFFFFFFFFFEULL);
+        } else {
+            ASSERT_EQ(pattern, 0x1E1E1E1E1E1E1E1FULL);
+        }
     }
 })
 
@@ -194,8 +201,12 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, right_shift_assignment, {
     };
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>));
     m0 >>= 1;
-    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
-        ASSERT_EQ(m0.u64[w], 0x5555555555555555ULL);
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        ASSERT_EQ(pattern, 0x5555555555555555ULL);
     }
     m0 >>= 511;
     ASSERT_TRUE(!m0.not_zero());
@@ -214,11 +225,15 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, left_shift_assignment, {
     };
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>));
     m0 <<= 1;
-    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
-        if (w == 0) {
-            ASSERT_EQ(m0.u64[w], 0x5555555555555554ULL);
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word == 0) {
+            ASSERT_EQ(pattern, 0x5555555555555554ULL);
         } else {
-            ASSERT_EQ(m0.u64[w], 0x5555555555555555ULL);
+            ASSERT_EQ(pattern, 0x5555555555555555ULL);
         }
     }
     m0 <<= 63;
@@ -227,6 +242,17 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, left_shift_assignment, {
             ASSERT_EQ(m0.u64[w], 0ULL);
         } else {
             ASSERT_EQ(m0.u64[w], 0xAAAAAAAAAAAAAAAAULL);
+        }
+    }
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word == 0) {
+            ASSERT_EQ(pattern, 0ULL);
+        } else {
+            ASSERT_EQ(pattern, 0xAAAAAAAAAAAAAAAAULL);
         }
     }
     m0 <<= 488;
