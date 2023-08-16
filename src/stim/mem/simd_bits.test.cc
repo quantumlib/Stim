@@ -291,7 +291,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
         simd_bits<W> m1(num_bits), m2(num_bits);
         m1.randomize(num_bits, rng);
         m2 = m1;
-        std::uniform_int_distribution dist_shift(1, (int)m1.num_bits_padded());
+        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
         size_t shift = dist_shift(rng);
         m1 >>= shift;
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
@@ -338,7 +338,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
         simd_bits<W> m1(num_bits), m2(num_bits);
         m1.randomize(num_bits, rng);
         m2 = m1;
-        std::uniform_int_distribution dist_shift(1, (int)m1.num_bits_padded());
+        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
         size_t shift = dist_shift(rng);
         m1 <<= shift;
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
