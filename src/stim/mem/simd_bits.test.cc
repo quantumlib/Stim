@@ -297,6 +297,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
             ASSERT_EQ(m1[k], m2[k + shift]);
         }
+        for (size_t k = m1.num_bits_padded() - shift; k < m1.num_bits_padded(); k++) {
+            ASSERT_EQ(m1[k], 0);
+        }
     }
 })
 
@@ -343,6 +346,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
         m1 <<= shift;
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
             ASSERT_EQ(m1[k + shift], m2[k]);
+        }
+        for (size_t k = 0; k < shift; k++) {
+            ASSERT_EQ(m1[k], 0);
         }
     }
 })
