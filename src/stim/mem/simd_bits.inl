@@ -251,6 +251,24 @@ simd_bits<W> &simd_bits<W>::operator|=(const simd_bits_range_ref<W> other) {
 }
 
 template <size_t W>
+simd_bits<W> &simd_bits<W>::operator+=(const simd_bits_range_ref<W> other) {
+    simd_bits_range_ref<W>(*this) += other;
+    return *this;
+}
+
+template <size_t W>
+simd_bits<W> &simd_bits<W>::operator>>=(int offset) {
+    simd_bits_range_ref<W>(*this) >>= offset;
+    return *this;
+}
+
+template <size_t W>
+simd_bits<W> &simd_bits<W>::operator<<=(int offset) {
+    simd_bits_range_ref<W>(*this) <<= offset;
+    return *this;
+}
+
+template <size_t W>
 bool simd_bits<W>::not_zero() const {
     return simd_bits_range_ref<W>(*this).not_zero();
 }
@@ -289,4 +307,4 @@ std::ostream &operator<<(std::ostream &out, const simd_bits<W> m) {
     return out << simd_bits_range_ref<W>(m);
 }
 
-}
+}  // namespace stim
