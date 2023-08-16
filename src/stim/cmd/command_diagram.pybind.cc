@@ -44,28 +44,58 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
     return c;
 }
 
+std::string escape_html_for_srcdoc(const std::string& src) {
+    // From https://stackoverflow.com/a/9907752
+    std::stringstream dst;
+    for (char ch : src) {
+        switch (ch) {
+            case '&': dst << "&amp;"; break;
+            case '\'': dst << "&apos;"; break;
+            case '"': dst << "&quot;"; break;
+            case '<': dst << "&lt;"; break;
+            case '>': dst << "&gt;"; break;
+            default: dst << ch; break;
+        }
+    }
+    return dst.str();
+}
+
 void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c) {
     c.def("_repr_html_", [](const DiagramHelper &self) -> pybind11::object {
+        std::string output = "None";
         if (self.type == DIAGRAM_TYPE_TEXT) {
             return pybind11::cast("<pre>" + self.content + "</pre>");
         }
         if (self.type == DIAGRAM_TYPE_SVG) {
-            std::stringstream out;
-            out << R"HTML(<div style="border: 1px dashed gray; margin-bottom: 50px; height: 512px; resize: both; overflow: hidden">)HTML";
-            out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
-            write_data_as_base64_to(self.content.data(), self.content.size(), out);
-            out << R"HTML("/></div>)HTML";
-            return pybind11::cast(out.str());
+            return pybind11::none();
+            // This commented out code would wrap the SVG in a little thing with a resizable tab.
+            // That's convenient, but it breaks things like github showing the image.
+            // std::stringstream out;
+            // out << R"HTML(<div style="border: 1px dashed gray; margin-bottom: 50px; height: 512px; resize: both; overflow: hidden">)HTML";
+            // out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
+            // write_data_as_base64_to(self.content.data(), self.content.size(), out);
+            // out << R"HTML("/></div>)HTML";
+            // output = out.str();
         }
         if (self.type == DIAGRAM_TYPE_GLTF) {
             std::stringstream out;
             write_html_viewer_for_gltf_data(self.content, out);
-            return pybind11::cast(out.str());
+            output = out.str();
         }
         if (self.type == DIAGRAM_TYPE_HTML) {
-            return pybind11::cast(self.content);
+            output = self.content;
         }
-        return pybind11::none();
+	if (output == "None"){
+	    return pybind11::none();
+        }
+
+        // Wrap the output into an iframe.
+        // In a Jupyter notebook this is very important, because it prevents output
+        // cells from seeing each others' elements when finding elements by id.
+        // Because, for some insane reason, Jupyter notebooks don't isolate the cells
+        // from each other by default! Colab does the right thing at least...
+        std::string framed = R"HTML(<iframe style="width: 100%; height: 300px; overflow: hidden; resize: both; border: 1px dashed gray;" frameBorder="0" srcdoc=")HTML" + escape_html_for_srcdoc(output) + R"HTML("></iframe>)HTML";
+        return pybind11::cast(framed);
     });
     c.def("_repr_svg_", [](const DiagramHelper &self) -> pybind11::object {
         if (self.type != DIAGRAM_TYPE_SVG) {
