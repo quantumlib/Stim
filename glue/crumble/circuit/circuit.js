@@ -225,30 +225,30 @@ class Circuit {
                 return;
             } else if (name === 'XCZ') {
                 reverse_pairs = true;
-                name = 'CX'
+                name = 'CX';
             } else if (name === 'SWAPCX') {
                 reverse_pairs = true;
-                name = 'CXSWAP'
+                name = 'CXSWAP';
             } else if (name === 'CNOT') {
-                name = 'CX'
+                name = 'CX';
             } else if (name === 'RZ') {
-                name = 'R'
+                name = 'R';
             } else if (name === 'MZ') {
-                name = 'M'
+                name = 'M';
             } else if (name === 'MRZ') {
-                name = 'MR'
+                name = 'MR';
             } else if (name === 'ZCX') {
-                name = 'CX'
+                name = 'CX';
             } else if (name === 'ZCY') {
-                name = 'CY'
+                name = 'CY';
             } else if (name === 'ZCZ') {
-                name = 'CZ'
+                name = 'CZ';
             } else if (name === 'YCX') {
                 reverse_pairs = true;
-                name = 'XCY'
+                name = 'XCY';
             } else if (name === 'YCZ') {
                 reverse_pairs = true;
-                name = 'CY'
+                name = 'CY';
             } else if (name === 'TICK') {
                 layers.push(new Layer());
                 return;
