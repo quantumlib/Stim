@@ -27,7 +27,7 @@ std::string Graph::str() const {
     return result.str();
 }
 
-void Graph::add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask) {
+void Graph::add_outward_edge(size_t src, uint64_t dst, const simd_bits<64> &obs_mask) {
     assert(src < nodes.size());
     auto &node = nodes[src];
 
@@ -45,7 +45,7 @@ void Graph::add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask) {
 void Graph::add_edges_from_targets_with_no_separators(
     SpanRef<const DemTarget> targets, bool ignore_ungraphlike_errors) {
     FixedCapVector<uint64_t, 2> detectors;
-    uint64_t obs_mask = 0;
+    simd_bits<64> obs_mask(num_observables);
 
     // Collect detectors and observables.
     for (const auto &t : targets) {
@@ -62,7 +62,7 @@ void Graph::add_edges_from_targets_with_no_separators(
             }
             detectors.push_back(t.raw_id());
         } else if (t.is_observable_id()) {
-            obs_mask ^= 1ULL << t.raw_id();
+            obs_mask[t.raw_id()] ^= true;
         }
     }
 
@@ -72,7 +72,7 @@ void Graph::add_edges_from_targets_with_no_separators(
     } else if (detectors.size() == 2) {
         add_outward_edge(detectors[0], detectors[1], obs_mask);
         add_outward_edge(detectors[1], detectors[0], obs_mask);
-    } else if (detectors.empty() && obs_mask && distance_1_error_mask == 0) {
+    } else if (detectors.empty() && !distance_1_error_mask.not_zero() && obs_mask.not_zero()) {
         distance_1_error_mask = obs_mask;
     }
 }
@@ -96,12 +96,7 @@ void Graph::add_edges_from_separable_targets(SpanRef<const DemTarget> targets, b
 }
 
 Graph Graph::from_dem(const DetectorErrorModel &model, bool ignore_ungraphlike_errors) {
-    if (model.count_observables() > 64) {
-        throw std::invalid_argument(
-            "NotImplemented: shortest_graphlike_undetectable_logical_error with more than 64 observables.");
-    }
-
-    Graph result(model.count_detectors());
+    Graph result(model.count_detectors(), model.count_observables());
     model.iter_flatten_error_instructions([&](const DemInstruction &e) {
         if (e.arg_data[0] != 0) {
             result.add_edges_from_separable_targets(e.target_data, ignore_ungraphlike_errors);
@@ -110,17 +105,17 @@ Graph Graph::from_dem(const DetectorErrorModel &model, bool ignore_ungraphlike_e
     return result;
 }
 bool Graph::operator==(const Graph &other) const {
-    return nodes == other.nodes && distance_1_error_mask == other.distance_1_error_mask;
+    return nodes == other.nodes && num_observables == other.num_observables && distance_1_error_mask == other.distance_1_error_mask;
 }
 bool Graph::operator!=(const Graph &other) const {
     return !(*this == other);
 }
 
-Graph::Graph(size_t node_count) : nodes(node_count), distance_1_error_mask(0) {
+Graph::Graph(size_t node_count, size_t num_observables) : nodes(node_count), num_observables(num_observables), distance_1_error_mask(num_observables) {
 }
 
-Graph::Graph(std::vector<Node> nodes, uint64_t distance_1_error_mask)
-    : nodes(std::move(nodes)), distance_1_error_mask(distance_1_error_mask) {
+Graph::Graph(std::vector<Node> nodes, size_t num_observables, simd_bits<64> distance_1_error_mask)
+    : nodes(std::move(nodes)), num_observables(num_observables), distance_1_error_mask(std::move(distance_1_error_mask)) {
 }
 
 std::ostream &stim::impl_search_graphlike::operator<<(std::ostream &out, const Graph &v) {

@@ -20,7 +20,6 @@
 #include <random>
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record_batch.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -39,22 +38,23 @@ enum FrameSimulatorMode {
 /// This simulator tracks, for each qubit, whether or not that qubit is bit flipped and/or phase flipped.
 /// Instead of reporting qubit measurements, it reports whether a measurement is inverted or not.
 /// This requires a set of reference measurements to diff against.
+///
+/// The template parameter, W, represents the SIMD width
+template <size_t W>
 struct FrameSimulator {
     size_t num_qubits;  // Number of qubits being tracked.
     bool keeping_detection_data;
-    size_t batch_size;  // Number of instances being tracked.
-    simd_bit_table<MAX_BITWORD_WIDTH>
-        x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
-    simd_bit_table<MAX_BITWORD_WIDTH>
-        z_table;                    // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
-    MeasureRecordBatch<MAX_BITWORD_WIDTH> m_record;    // The measurement record.
-    MeasureRecordBatch<MAX_BITWORD_WIDTH> det_record;  // Detection event record.
-    simd_bit_table<MAX_BITWORD_WIDTH> obs_record;  // Accumulating observable flip record.
-    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;       // Workspace used when sampling error processes.
-    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;      // Workspace used when sampling compound error processes.
-    simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
-    simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
-    std::mt19937_64 &rng;  // Random number generator used for generating entropy.
+    size_t batch_size;                 // Number of instances being tracked.
+    simd_bit_table<W> x_table;         // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
+    simd_bit_table<W> z_table;         // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    MeasureRecordBatch<W> m_record;    // The measurement record.
+    MeasureRecordBatch<W> det_record;  // Detection event record.
+    simd_bit_table<W> obs_record;      // Accumulating observable flip record.
+    simd_bits<W> rng_buffer;           // Workspace used when sampling error processes.
+    simd_bits<W> tmp_storage;          // Workspace used when sampling compound error processes.
+    simd_bits<W> last_correlated_error_occurred;  // correlated error flag for each instance.
+    simd_bit_table<W> sweep_table;                // Shot-to-shot configuration data.
+    std::mt19937_64 &rng;                         // Random number generator used for generating entropy.
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -74,8 +74,8 @@ struct FrameSimulator {
     FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng);
     FrameSimulator() = delete;
 
-    PauliString<MAX_BITWORD_WIDTH> get_frame(size_t sample_index) const;
-    void set_frame(size_t sample_index, const PauliStringRef<MAX_BITWORD_WIDTH> &new_frame);
+    PauliString<W> get_frame(size_t sample_index) const;
+    void set_frame(size_t sample_index, const PauliStringRef<W> &new_frame);
     void configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size);
 
     void reset_all_and_run(const Circuit &circuit);
@@ -134,22 +134,19 @@ struct FrameSimulator {
     void do_PAULI_CHANNEL_2(const CircuitInstruction &inst);
     void do_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_ELSE_CORRELATED_ERROR(const CircuitInstruction &inst);
+    void do_HERALDED_ERASE(const CircuitInstruction &inst);
 
    private:
     void do_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
     void do_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
     void do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
-    void xor_control_bit_into(uint32_t control, simd_bits_range_ref<MAX_BITWORD_WIDTH> target);
+    void xor_control_bit_into(uint32_t control, simd_bits_range_ref<W> target);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
 };
 
-bool should_use_streaming_because_bit_count_is_too_large_to_store(uint64_t result_count);
-struct DebugForceResultStreamingRaii {
-    DebugForceResultStreamingRaii();
-    ~DebugForceResultStreamingRaii();
-};
-
 }  // namespace stim
+
+#include "stim/simulators/frame_simulator.inl"
 
 #endif

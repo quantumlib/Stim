@@ -47,18 +47,14 @@ std::ostream &stim::impl_search_hyper::operator<<(std::ostream &out, const Edge 
         sep = true;
         out << "D" << t;
     }
-    size_t obs_id = 0;
-    uint64_t m = v.crossing_observable_mask;
-    while (m) {
-        if (m & 1) {
+    for (size_t k = 0; k < v.crossing_observable_mask.num_bits_padded(); k++) {
+        if (v.crossing_observable_mask[k]) {
             if (sep) {
                 out << ' ';
             }
             sep = true;
-            out << "L" << obs_id;
+            out << "L" << k;
         }
-        m >>= 1;
-        obs_id++;
     }
     return out;
 }

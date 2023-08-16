@@ -1,7 +1,8 @@
 import argparse
 import math
+import os
 import sys
-from typing import Iterator, Any, Tuple, List, Callable, FrozenSet, Optional
+from typing import Iterator, Any, Tuple, List, Callable, Optional
 from typing import cast
 
 import numpy as np
@@ -67,6 +68,7 @@ def parse_args(args: List[str]) -> Any:
                         help='The decoder to use to predict observables from detection events.')
     parser.add_argument('--custom_decoders_module_function',
                         default=None,
+                        nargs='+',
                         help='Use the syntax "module:function" to "import function from module" '
                              'and use the result of "function()" as the custom_decoders '
                              'dictionary. The dictionary must map strings to stim.Decoder '
@@ -81,8 +83,10 @@ def parse_args(args: List[str]) -> Any:
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('--processes',
                         required=True,
-                        type=int,
-                        help='Number of processes to use for simultaneous sampling and decoding.')
+                        type=str,
+                        help='Number of processes to use for simultaneous sampling and decoding. '
+                             'Must be either a number or "auto" which sets it to the number of '
+                             'CPUs on the machine.')
     parser.add_argument('--save_resume_filepath',
                         type=str,
                         default=None,
@@ -156,6 +160,21 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
+    parser.add_argument('--custom_error_count_key',
+                        type=str,
+                        help='Makes --max_errors apply to `stat.custom_counts[key]` '
+                             'instead of to `stat.errors`.',
+                        default=None)
+    parser.add_argument('--allowed_cpu_affinity_ids',
+                        type=str,
+                        nargs='+',
+                        help='Controls which CPUs workers can be pinned to. By default, all'
+                             ' CPUs are used. Specifying this argument makes it so that '
+                             'only the given CPU ids can be pinned. The given arguments '
+                             ' will be evaluated as python expressions. The expressions '
+                             'should be integers or iterables of integers. So values like'
+                             ' "1" and "[1, 2, 4]" and "range(5, 30)" all work.',
+                        default=None)
     parser.add_argument('--also_print_results_to_stdout',
                         help='Even if writing to a file, also write results to stdout.',
                         action='store_true')
@@ -208,15 +227,19 @@ def parse_args(args: List[str]) -> Any:
             filename='postselected_detectors_predicate:command_line_arg',
             mode='eval'))
     if a.custom_decoders_module_function is not None:
-        terms = a.custom_decoders_module_function.split(':')
-        if len(terms) != 2:
-            raise ValueError("--custom_decoders_module_function didn't have exactly one colon "
-                             "separating a module name from a function name. Expected an argument "
-                             "of the form --custom_decoders_module_function 'module:function'")
-        module, function = terms
-        vals = {'__name__': '[]'}
-        exec(f"from {module} import {function} as _custom_decoders", vals)
-        a.custom_decoders = vals['_custom_decoders']()
+        all_custom_decoders = {}
+        for entry in a.custom_decoders_module_function:
+            terms = entry.split(':')
+            if len(terms) != 2:
+                raise ValueError("--custom_decoders_module_function didn't have exactly one colon "
+                                 "separating a module name from a function name. Expected an argument "
+                                 "of the form --custom_decoders_module_function 'module:function'")
+            module, function = terms
+            vals = {'__name__': '[]'}
+            exec(f"from {module} import {function} as _custom_decoders", vals)
+            custom_decoders = vals['_custom_decoders']()
+            all_custom_decoders = {**all_custom_decoders, **custom_decoders}
+        a.custom_decoders = all_custom_decoders
     else:
         a.custom_decoders = None
     for decoder in a.decoders:
@@ -228,7 +251,21 @@ def parse_args(args: List[str]) -> Any:
             else:
                 message += f"Available custom decoders: {sorted(a.custom_decoders.keys())}."
             raise ValueError(message)
-
+    if a.allowed_cpu_affinity_ids is not None:
+        vals: List[int] = []
+        e: str
+        for e in a.allowed_cpu_affinity_ids:
+            try:
+                v = eval(e, {}, {})
+                if isinstance(v, int):
+                    vals.append(v)
+                elif all(isinstance(e, int) for e in v):
+                    vals.extend(v)
+                else:
+                    raise ValueError("Not an integer or iterable of integers.")
+            except Exception as ex:
+                raise ValueError("Failed to eval {e!r} for --allowed_cpu_affinity_ids") from ex
+        a.allowed_cpu_affinity_ids = vals
     return a
 
 
@@ -279,9 +316,18 @@ def main_collect(*, command_line_args: List[str]):
         else:
             printer.show_latest_progress(msg)
 
+    if args.processes == 'auto':
+        num_workers = os.cpu_count()
+    else:
+        try:
+            num_workers = int(args.processes)
+        except ValueError:
+            num_workers = 0
+        if num_workers < 1:
+            raise ValueError(f'--processes must be a non-negative integer, or "auto", but was: {args.processes}')
     try:
         collect(
-            num_workers=args.processes,
+            num_workers=num_workers,
             hint_num_tasks=num_tasks,
             tasks=iter_tasks,
             print_progress=False,
@@ -297,6 +343,8 @@ def main_collect(*, command_line_args: List[str]):
             max_batch_size=args.max_batch_size,
             start_batch_size=args.start_batch_size,
             custom_decoders=args.custom_decoders,
+            custom_error_count_key=args.custom_error_count_key,
+            allowed_cpu_affinity_ids=args.allowed_cpu_affinity_ids,
         )
     except KeyboardInterrupt:
         pass

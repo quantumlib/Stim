@@ -1,11 +1,8 @@
 import collections
 import dataclasses
-from typing import Counter
-from typing import List
-from typing import Optional
+from typing import Counter, List, Any
 
 from sinter._anon_task_stats import AnonTaskStats
-from sinter._json_type import JSON_TYPE
 from sinter._csv_out import csv_line
 
 
@@ -46,7 +43,7 @@ class TaskStats:
     # Information describing the problem that was sampled.
     strong_id: str
     decoder: str
-    json_metadata: JSON_TYPE
+    json_metadata: Any
 
     # Information describing the results of sampling.
     shots: int = 0
@@ -63,7 +60,6 @@ class TaskStats:
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
-        # Don't rely on types module for NoneType since its presence depends on python version.
         assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
         assert self.errors >= 0
         assert self.discards >= 0
@@ -141,20 +137,23 @@ class TaskStats:
             custom_counts=self.custom_counts,
         )
 
-    def _split_custom_counts(self) -> List['TaskStats']:
-        if not self.custom_counts:
-            return [self]
+    def _split_custom_counts(self, custom_keys: List[str]) -> List['TaskStats']:
         result = []
-        for k, v in self.custom_counts.items():
+        for k in custom_keys:
+            m = self.json_metadata
+            if isinstance(m, dict):
+                m = dict(m)
+                m.setdefault('custom_error_count_key', k)
+                m.setdefault('original_error_count', self.errors)
             result.append(TaskStats(
                 strong_id=f'{self.strong_id}:{k}',
                 decoder=self.decoder,
-                json_metadata=self.json_metadata,
+                json_metadata=m,
                 shots=self.shots,
-                errors=v,
+                errors=self.custom_counts[k],
                 discards=self.discards,
                 seconds=self.seconds,
-                custom_counts=collections.Counter({k: v}),
+                custom_counts=self.custom_counts,
             ))
         return result
 

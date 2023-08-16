@@ -212,6 +212,9 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::MPAD:
             undo_MPAD(inst);
             break;
+        case GateType::HERALDED_ERASE:
+            undo_MPAD(inst);
+            break;
         default:
             throw std::invalid_argument(
                 "Not implemented by SparseUnsignedRevFrameTracker::undo_gate: " +
@@ -226,15 +229,6 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       rec_bits(),
       num_measurements_in_past(num_measurements_in_past),
       num_detectors_in_past(num_detectors_in_past) {
-}
-
-PauliString<MAX_BITWORD_WIDTH> SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarget target) const {
-    PauliString<MAX_BITWORD_WIDTH> result(xs.size());
-    for (size_t q = 0; q < xs.size(); q++) {
-        result.xs[q] = std::find(xs[q].begin(), xs[q].end(), target) != xs[q].end();
-        result.zs[q] = std::find(zs[q].begin(), zs[q].end(), target) != zs[q].end();
-    }
-    return result;
 }
 
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
@@ -500,9 +494,7 @@ void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -516,9 +508,7 @@ void SparseUnsignedRevFrameTracker::undo_MYY(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -532,9 +522,7 @@ void SparseUnsignedRevFrameTracker::undo_MZZ(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
 }
@@ -790,50 +778,6 @@ void SparseUnsignedRevFrameTracker::undo_ISWAP(const CircuitInstruction &dat) {
         zs[b] ^= xs[b];
         std::swap(xs[a], xs[b]);
         std::swap(zs[a], zs[b]);
-    }
-}
-
-void SparseUnsignedRevFrameTracker::undo_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets) {
-    size_t n = tableau.num_qubits;
-    if (n != targets.size()) {
-        throw new std::invalid_argument("tableau.num_qubits != targets.size()");
-    }
-    std::set<uint32_t> target_set;
-    for (size_t k = 0; k < n; k++) {
-        if (!target_set.insert(targets[k]).second) {
-            throw new std::invalid_argument("duplicate target");
-        }
-    }
-
-    std::vector<SparseXorVec<DemTarget>> old_xs;
-    std::vector<SparseXorVec<DemTarget>> old_zs;
-    old_xs.reserve(n);
-    old_zs.reserve(n);
-    for (size_t k = 0; k < n; k++) {
-        old_xs.push_back(std::move(xs[targets[k]]));
-        old_zs.push_back(std::move(zs[targets[k]]));
-        xs[targets[k]].clear();
-        zs[targets[k]].clear();
-    }
-
-    for (size_t i = 0; i < n; i++) {
-        for (size_t j = 0; j < n; j++) {
-            uint64_t px = tableau.inverse_x_output_pauli_xyz(j, i);
-            if (px == 1 || px == 2) {
-                xs[targets[i]] ^= old_xs[j];
-            }
-            if (px == 2 || px == 3) {
-                zs[targets[i]] ^= old_xs[j];
-            }
-
-            uint64_t pz = tableau.inverse_z_output_pauli_xyz(j, i);
-            if (pz == 1 || pz == 2) {
-                xs[targets[i]] ^= old_zs[j];
-            }
-            if (pz == 2 || pz == 3) {
-                zs[targets[i]] ^= old_zs[j];
-            }
-        }
     }
 }
 

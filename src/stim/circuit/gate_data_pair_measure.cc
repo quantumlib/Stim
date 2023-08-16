@@ -25,7 +25,8 @@ void GateDataMap::add_gate_data_pair_measure(bool &failed) {
             GateType::MXX,
             GateType::MXX,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Pair Measurement Gates",
@@ -97,7 +98,8 @@ CX 0 1
             GateType::MYY,
             GateType::MYY,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Pair Measurement Gates",
@@ -172,7 +174,8 @@ S 0 1
             GateType::MZZ,
             GateType::MZZ,
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Pair Measurement Gates",

@@ -51,7 +51,8 @@ TEST_EACH_WORD_SIZE_W(tableau, gate1, {
 })
 
 template <size_t W>
-bool tableau_agrees_with_unitary(const Tableau<W> &tableau, const std::vector<std::vector<std::complex<float>>> &unitary) {
+bool tableau_agrees_with_unitary(
+    const Tableau<W> &tableau, const std::vector<std::vector<std::complex<float>>> &unitary) {
     auto n = tableau.num_qubits;
     assert(unitary.size() == 1ULL << n);
 

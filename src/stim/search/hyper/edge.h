@@ -22,6 +22,7 @@
 #include <string>
 
 #include "stim/mem/sparse_xor_vec.h"
+#include "stim/mem/simd_bits.h"
 
 namespace stim {
 
@@ -29,7 +30,7 @@ namespace impl_search_hyper {
 
 struct Edge {
     SparseXorVec<uint64_t> nodes;
-    uint64_t crossing_observable_mask;
+    simd_bits<64> crossing_observable_mask;
     std::string str() const;
     bool operator==(const Edge &other) const;
     bool operator!=(const Edge &other) const;

@@ -22,7 +22,7 @@ struct JsCircuitInstruction {
     }
 };
 
-static JsCircuitInstruction args_to_targets(TableauSimulator &self, GateType gate_type, const emscripten::val &args) {
+static JsCircuitInstruction args_to_targets(TableauSimulator<MAX_BITWORD_WIDTH> &self, GateType gate_type, const emscripten::val &args) {
     std::vector<uint32_t> result = emscripten::convertJSArrayToNumberVector<uint32_t>(args);
     uint32_t max_q = 0;
     for (uint32_t q : result) {
@@ -35,13 +35,13 @@ static JsCircuitInstruction args_to_targets(TableauSimulator &self, GateType gat
     return JsCircuitInstruction(gate_type, result);
 }
 
-static JsCircuitInstruction safe_targets(TableauSimulator &self, GateType gate_type, uint32_t target) {
+static JsCircuitInstruction safe_targets(TableauSimulator<MAX_BITWORD_WIDTH> &self, GateType gate_type, uint32_t target) {
     uint32_t max_q = target & TARGET_VALUE_MASK;
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
     return JsCircuitInstruction(gate_type, {GateTarget{target}});
 }
 
-static JsCircuitInstruction safe_targets(TableauSimulator &self, GateType gate_type, uint32_t target1, uint32_t target2) {
+static JsCircuitInstruction safe_targets(TableauSimulator<MAX_BITWORD_WIDTH> &self, GateType gate_type, uint32_t target1, uint32_t target2) {
     uint32_t max_q = std::max(target1 & TARGET_VALUE_MASK, target2 & TARGET_VALUE_MASK);
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
     if (target1 == target2) {
@@ -50,7 +50,7 @@ static JsCircuitInstruction safe_targets(TableauSimulator &self, GateType gate_t
     return JsCircuitInstruction(gate_type, {GateTarget{target1}, GateTarget{target2}});
 }
 
-static JsCircuitInstruction args_to_target_pairs(TableauSimulator &self, GateType gate_type, const emscripten::val &args) {
+static JsCircuitInstruction args_to_target_pairs(TableauSimulator<MAX_BITWORD_WIDTH> &self, GateType gate_type, const emscripten::val &args) {
     auto result = args_to_targets(self, gate_type, args);
     if (result.targets.size() & 1) {
         throw std::out_of_range("Two qubit operation requires an even number of targets.");

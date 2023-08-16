@@ -5,9 +5,10 @@
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
-using namespace stim;
+namespace stim {
 
-void _pauli_string_controlled_not(PauliStringRef<MAX_BITWORD_WIDTH> control, uint32_t target, Circuit &out) {
+template <size_t W>
+void _pauli_string_controlled_not(PauliStringRef<W> control, uint32_t target, Circuit &out) {
     for (uint32_t q = 0; q < (uint32_t)control.num_qubits; q++) {
         auto p = control.xs[q] + 2 * control.zs[q];
         if (p == 1) {
@@ -23,11 +24,12 @@ void _pauli_string_controlled_not(PauliStringRef<MAX_BITWORD_WIDTH> control, uin
     }
 }
 
+template <size_t W>
 bool _check_if_circuit_has_stabilizer_flow(
     size_t num_samples,
     std::mt19937_64 &rng,
     const Circuit &circuit,
-    const StabilizerFlow &flow) {
+    const StabilizerFlow<W> &flow) {
 
     uint32_t n = (uint32_t)circuit.count_qubits();
     n = std::max(n, (uint32_t)flow.input.num_qubits);
@@ -40,12 +42,12 @@ bool _check_if_circuit_has_stabilizer_flow(
         augmented_circuit.safe_append_u("DEPOLARIZE1", {k}, {0.75});
     }
     augmented_circuit.append_from_text("TICK");
-    _pauli_string_controlled_not(flow.input, n, augmented_circuit);
+    _pauli_string_controlled_not<W>(flow.input, n, augmented_circuit);
     augmented_circuit.append_from_text("TICK");
     augmented_circuit += circuit;
     augmented_circuit.append_from_text("TICK");
 
-    _pauli_string_controlled_not(flow.output, n, augmented_circuit);
+    _pauli_string_controlled_not<W>(flow.output, n, augmented_circuit);
     for (const auto &m : flow.measurement_outputs) {
         assert(m.is_measurement_record_target());
         std::vector<GateTarget> targets{m, GateTarget::qubit(n)};
@@ -55,7 +57,7 @@ bool _check_if_circuit_has_stabilizer_flow(
 
     auto out = sample_batch_measurements(
         augmented_circuit,
-        TableauSimulator::reference_sample_circuit(augmented_circuit),
+        TableauSimulator<W>::reference_sample_circuit(augmented_circuit),
         num_samples,
         rng,
         false);
@@ -64,11 +66,12 @@ bool _check_if_circuit_has_stabilizer_flow(
     return !out[m].not_zero();
 }
 
-std::vector<bool> stim::check_if_circuit_has_stabilizer_flows(
+template <size_t W>
+std::vector<bool> check_if_circuit_has_stabilizer_flows(
     size_t num_samples,
     std::mt19937_64 &rng,
     const Circuit &circuit,
-    const std::vector<StabilizerFlow> flows) {
+    const std::vector<StabilizerFlow<W>> flows) {
     std::vector<bool> result;
     for (const auto &flow : flows) {
         result.push_back(_check_if_circuit_has_stabilizer_flow(
@@ -77,7 +80,8 @@ std::vector<bool> stim::check_if_circuit_has_stabilizer_flows(
     return result;
 }
 
-StabilizerFlow StabilizerFlow::from_str(const char *text) {
+template <size_t W>
+StabilizerFlow<W> StabilizerFlow<W>::from_str(const char *text) {
     try {
         auto parts = split('>', text);
         if (parts.size() != 2 || parts[0].empty() || parts[0].back() != '-') {
@@ -87,18 +91,18 @@ StabilizerFlow StabilizerFlow::from_str(const char *text) {
         while (!parts[0].empty() && parts[0].back() == ' ') {
            parts[0].pop_back();
         }
-        PauliString input = parts[0] == "1" ? PauliString<MAX_BITWORD_WIDTH>(0) : parts[0] == "-1" ? PauliString<MAX_BITWORD_WIDTH>::from_str("-") : PauliString<MAX_BITWORD_WIDTH>::from_str(parts[0].c_str());
+        PauliString<W> input = parts[0] == "1" ? PauliString<W>(0) : parts[0] == "-1" ? PauliString<W>::from_str("-") : PauliString<W>::from_str(parts[0].c_str());
 
         parts = split(' ', parts[1]);
         size_t k = 0;
         while (k < parts.size() && parts[k].empty()) {
            k += 1;
         }
-        PauliString<MAX_BITWORD_WIDTH> output(0);
+        PauliString<W> output(0);
         std::vector<GateTarget> measurements;
 
         if (!parts[k].empty() && parts[k][0] != 'r') {
-           output = PauliString<MAX_BITWORD_WIDTH>::from_str(parts[k].c_str());
+           output = PauliString<W>::from_str(parts[k].c_str());
         } else {
            auto t = stim::GateTarget::from_target_str(parts[k].c_str());
            if (!t.is_measurement_record_target()) {
@@ -123,19 +127,26 @@ StabilizerFlow StabilizerFlow::from_str(const char *text) {
         throw std::invalid_argument("Invalid stabilizer flow text: '" + std::string(text) + "'.");
     }
 }
-bool StabilizerFlow::operator==(const StabilizerFlow &other) const {
+
+template <size_t W>
+bool StabilizerFlow<W>::operator==(const StabilizerFlow<W> &other) const {
      return input == other.input && output == other.output && measurement_outputs == other.measurement_outputs;
 }
-bool StabilizerFlow::operator!=(const StabilizerFlow &other) const {
+
+template <size_t W>
+bool StabilizerFlow<W>::operator!=(const StabilizerFlow<W> &other) const {
      return !(*this == other);
 }
-std::string StabilizerFlow::str() const {
+
+template <size_t W>
+std::string StabilizerFlow<W>::str() const {
     std::stringstream result;
     result << *this;
     return result.str();
 }
 
-std::ostream &stim::operator<<(std::ostream &out, const StabilizerFlow &flow) {
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow) {
     if (flow.input.num_qubits == 0) {
         if (flow.input.sign) {
            out << "-";
@@ -165,3 +176,5 @@ std::ostream &stim::operator<<(std::ostream &out, const StabilizerFlow &flow) {
     }
     return out;
 }
+
+}  // namespace stim

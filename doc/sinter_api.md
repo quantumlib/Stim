@@ -240,6 +240,10 @@ def decode_shots_bit_packed(
             where `num_shots` is the number of shots to decoder and `dem` is
             the detector error model this instance was compiled to decode.
 
+            It's guaranteed that the data will be laid out in memory so that
+            detection events within a shot are contiguous in memory (i.e.
+            that bit_packed_detection_event_data.strides[1] == 1).
+
     Returns:
         Bit packed observable flip data stored as a bit packed numpy array.
         The numpy array must have the following dtype/shape:
@@ -471,7 +475,7 @@ class Task:
 def __init__(
     self,
     *,
-    circuit: stim.Circuit,
+    circuit: Optional[ForwardRef(stim.Circuit)] = None,
     decoder: Optional[str] = None,
     detector_error_model: Optional[ForwardRef(stim.DetectorErrorModel)] = None,
     postselection_mask: Optional[np.ndarray] = None,
@@ -479,6 +483,7 @@ def __init__(
     json_metadata: Any = None,
     collection_options: sinter.CollectionOptions = sinter.CollectionOptions(),
     skip_validation: bool = False,
+    circuit_path: Union[str, pathlib.Path, NoneType] = None,
     _unvalidated_strong_id: Optional[str] = None,
 ) -> None:
     """
@@ -519,6 +524,9 @@ def __init__(
             Setting this argument to True will skip doing the consistency
             checks. Note that this can result in confusing errors later, if
             the arguments are not actually consistent.
+        circuit_path: Typically set to None. If the circuit isn't specified,
+            this is the filepath to read it from. Not included in the strong
+            id.
         _unvalidated_strong_id: Must be set to None unless `skip_validation`
             is set to True. Otherwise, if this is specified then it should
             be equal to the value returned by self.strong_id().
@@ -802,6 +810,8 @@ def collect(
     print_progress: bool = False,
     hint_num_tasks: Optional[int] = None,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> List[sinter.TaskStats]:
     """Collects statistics from the given tasks, using multiprocessing.
 
@@ -864,6 +874,11 @@ def collect(
             used if requested by name by a task or by the decoders list.
             If not specified, only decoders with support built into sinter, such
             as 'pymatching' and 'fusion_blossom', can be used.
+        custom_error_count_key: Makes `max_errors` apply to `stat.custom_counts[key]`
+            instead of `stat.errors`.
+        allowed_cpu_affinity_ids: Controls which CPUs the workers can be pinned to. The
+            set of allowed IDs should be at least as large as the number of workers, though
+            this is not strictly required. If not set, defaults to all CPUs being allowed.
 
     Returns:
         A list of sample statistics, one from each problem. The list is not in
@@ -1119,6 +1134,8 @@ def iter_collect(
     count_observable_error_combos: bool = False,
     count_detection_events: bool = False,
     custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> Iterator[sinter.Progress]:
     """Iterates error correction statistics collected from worker processes.
 
@@ -1175,6 +1192,11 @@ def iter_collect(
         custom_decoders: Custom decoders that can be used if requested by name.
             If not specified, only decoders built into sinter, such as
             'pymatching' and 'fusion_blossom', can be used.
+        custom_error_count_key: Makes `max_errors` apply to `stat.custom_counts[key]`
+            instead of `stat.errors`.
+        allowed_cpu_affinity_ids: Controls which CPUs the workers can be pinned to. The
+            set of allowed IDs should be at least as large as the number of workers, though
+            this is not strictly required. If not set, defaults to all CPUs being allowed.
 
     Yields:
         sinter.Progress instances recording incremental statistical data as it
@@ -1259,7 +1281,7 @@ def log_binomial(
     Examples:
         >>> import sinter
         >>> sinter.log_binomial(p=0.5, n=100, hits=50)
-        array(-2.5283785, dtype=float32)
+        array(-2.5308785, dtype=float32)
         >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
         array(-216626.97, dtype=float32)
         >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)
@@ -1281,13 +1303,11 @@ def log_factorial(
 ) -> float:
     """Approximates $\ln(n!)$; the natural logarithm of a factorial.
 
-    Uses Stirling's approximation for large n.
-
     Args:
         n: The input to the factorial.
 
     Returns:
-        Evaluates $ln(n!)$ using Stirling's approximation.
+        Evaluates $ln(n!)$ using `math.lgamma(n+1)`.
 
     Examples:
         >>> import sinter
@@ -1296,9 +1316,9 @@ def log_factorial(
         >>> sinter.log_factorial(1)
         0.0
         >>> sinter.log_factorial(2)
-        0.6931471805599453
+        0.693147180559945
         >>> sinter.log_factorial(100)
-        363.7385422250079
+        363.73937555556347
     """
 ```
 
@@ -1369,6 +1389,7 @@ def plot_error_rate(
     filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
+    line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -1406,6 +1427,9 @@ def plot_error_rate(
         highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
+        line_fits: Defaults to None. Set this to a tuple (x_scale, y_scale) to include a dashed line
+            fit to every curve. The scales determine how to transform the coordinates before
+            performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
     """
 ```
 
@@ -1688,15 +1712,16 @@ def read_stats_from_csv_files(
 
 # (at top-level in the sinter module)
 def shot_error_rate_to_piece_error_rate(
-    shot_error_rate: float,
+    shot_error_rate: Union[float, ForwardRef(sinter.Fit)],
     *,
     pieces: float,
     values: float = 1,
-) -> float:
+) -> Union[float, ForwardRef(sinter.Fit)]:
     """Convert from total error rate to per-piece error rate.
 
     Args:
-        shot_error_rate: The rate at which shots fail.
+        shot_error_rate: The rate at which shots fail. If this is set to a sinter.Fit,
+            the conversion broadcasts over the low,best,high of the fit.
         pieces: The number of xor-pieces we want to subdivide each shot into,
             as if each piece was an independent chance for the shot to fail and
             the total chance of a shot failing was the xor of each piece

@@ -19,10 +19,16 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
+
 TEST(search_graphlike, Node) {
     Node n1{};
-    Node n2{{Edge{NO_NODE_INDEX, 0}}};
-    Node n3{{Edge{1, 5}, Edge{NO_NODE_INDEX, 8}}};
+    Node n2{{Edge{NO_NODE_INDEX, obs_mask(0)}}};
+    Node n3{{Edge{1, obs_mask(5)}, Edge{NO_NODE_INDEX, obs_mask(8)}}};
     ASSERT_EQ(n1.str(), "");
     ASSERT_EQ(n2.str(), "    [boundary]\n");
     ASSERT_EQ(n3.str(), "    D1 L0 L2\n    [boundary] L3\n");

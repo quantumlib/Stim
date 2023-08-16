@@ -26,7 +26,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-void do_obj(TableauSimulator &self, const pybind11::object &obj) {
+template <size_t W>
+void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
         self.expand_do_circuit(pybind11::cast<Circuit>(obj));
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
@@ -47,11 +48,13 @@ void do_obj(TableauSimulator &self, const pybind11::object &obj) {
     }
 }
 
-TableauSimulator create_tableau_simulator(const pybind11::object &seed) {
-    return TableauSimulator(*make_py_seeded_rng(seed));
+template <size_t W>
+TableauSimulator<W> create_tableau_simulator(const pybind11::object &seed) {
+    return TableauSimulator<W>(*make_py_seeded_rng(seed));
 }
 
-std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pybind11::object &obj) {
+template <size_t W>
+std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator<W> &self, const pybind11::object &obj) {
     std::vector<GateTarget> arguments;
     uint32_t max_q = 0;
     try {
@@ -76,8 +79,9 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pyb
     return arguments;
 }
 
+template <size_t W>
 PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
-    TableauSimulator &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
+    TableauSimulator<W> &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     std::vector<GateTarget> targets;
     uint32_t max_q = 0;
     try {
@@ -105,12 +109,13 @@ PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
     return PyCircuitInstruction(gate_type, targets, gate_args_vec);
 }
 
+template <size_t W>
 PyCircuitInstruction build_two_qubit_gate_instruction_ensure_size(
-    TableauSimulator &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
+    TableauSimulator<W> &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }
-    auto result = build_single_qubit_gate_instruction_ensure_size(self, gate_type, args, gate_args);
+    auto result = build_single_qubit_gate_instruction_ensure_size<W>(self, gate_type, args, gate_args);
     for (size_t k = 0; k < result.targets.size(); k += 2) {
         if (result.targets[k] == result.targets[k + 1]) {
             throw std::invalid_argument("Two qubit operation can't target the same qubit twice.");
@@ -119,8 +124,8 @@ PyCircuitInstruction build_two_qubit_gate_instruction_ensure_size(
     return result;
 }
 
-pybind11::class_<TableauSimulator> stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
-    return pybind11::class_<TableauSimulator>(
+pybind11::class_<TableauSimulator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
+    return pybind11::class_<TableauSimulator<MAX_BITWORD_WIDTH>>(
         m,
         "TableauSimulator",
         clean_doc_string(R"DOC(
@@ -156,9 +161,10 @@ pybind11::class_<TableauSimulator> stim_pybind::pybind_tableau_simulator(pybind1
             .data());
 }
 
-void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<TableauSimulator> &c) {
+void stim_pybind::pybind_tableau_simulator_methods(
+    pybind11::module &m, pybind11::class_<TableauSimulator<MAX_BITWORD_WIDTH>> &c) {
     c.def(
-        pybind11::init(&create_tableau_simulator),
+        pybind11::init(&create_tableau_simulator<MAX_BITWORD_WIDTH>),
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(R"DOC(
@@ -209,7 +215,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "current_inverse_tableau",
-        [](TableauSimulator &self) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self) {
             return self.inv_state;
         },
         clean_doc_string(R"DOC(
@@ -248,7 +254,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "state_vector",
-        [](const TableauSimulator &self, const std::string &endian) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -325,7 +331,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "canonical_stabilizers",
-        [](const TableauSimulator &self) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self) {
             auto stabilizers = self.canonical_stabilizers();
             std::vector<PyPauliString> result;
             result.reserve(stabilizers.size());
@@ -385,7 +391,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "current_measurement_record",
-        [](const TableauSimulator &self) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self) {
             return self.measurement_record.storage;
         },
         clean_doc_string(R"DOC(
@@ -415,7 +421,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do",
-        &do_obj,
+        &do_obj<MAX_BITWORD_WIDTH>,
         pybind11::arg("circuit_or_pauli_string"),
         clean_doc_string(R"DOC(
             Applies a circuit or pauli string to the simulator's state.
@@ -445,7 +451,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do_pauli_string",
-        [](TableauSimulator &self, PyPauliString &pauli_string) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, PyPauliString &pauli_string) {
             self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
             self.paulis(pauli_string.value);
         },
@@ -467,7 +473,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do_circuit",
-        [](TableauSimulator &self, const Circuit &circuit) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const Circuit &circuit) {
             self.expand_do_circuit(circuit);
         },
         pybind11::arg("circuit"),
@@ -491,7 +497,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do_tableau",
-        [](TableauSimulator &self, const Tableau<MAX_BITWORD_WIDTH> &tableau, const std::vector<size_t> &targets) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self,
+           const Tableau<MAX_BITWORD_WIDTH> &tableau,
+           const std::vector<size_t> &targets) {
             if (targets.size() != tableau.num_qubits) {
                 throw std::invalid_argument("len(tableau) != len(targets)");
             }
@@ -554,8 +562,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "h",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_H_XZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::H, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_H_XZ(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::H, args));
         },
         clean_doc_string(R"DOC(
             Applies a Hadamard gate to the simulator's state.
@@ -567,12 +575,13 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "depolarize1",
-        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
             double p = pybind11::cast<double>(kwargs["p"]);
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_DEPOLARIZE1(build_single_qubit_gate_instruction_ensure_size(self, GateType::DEPOLARIZE1, args, &p));
+            self.do_DEPOLARIZE1(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
+                self, GateType::DEPOLARIZE1, args, &p));
         },
         clean_doc_string(R"DOC(
             @signature def depolarize1(self, *targets: int, p: float):
@@ -587,12 +596,13 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "depolarize2",
-        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
             double p = pybind11::cast<double>(kwargs["p"]);
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_DEPOLARIZE2(build_two_qubit_gate_instruction_ensure_size(self, GateType::DEPOLARIZE2, args, &p));
+            self.do_DEPOLARIZE2(
+                build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::DEPOLARIZE2, args, &p));
         },
         clean_doc_string(R"DOC(
             @signature def depolarize2(self, *targets: int, p: float):
@@ -609,12 +619,13 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "x_error",
-        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
             double p = pybind11::cast<double>(kwargs["p"]);
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_X_ERROR(build_single_qubit_gate_instruction_ensure_size(self, GateType::X_ERROR, args, {&p}));
+            self.do_X_ERROR(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
+                self, GateType::X_ERROR, args, {&p}));
         },
         clean_doc_string(R"DOC(
             @signature def x_error(self, *targets: int, p: float):
@@ -629,12 +640,13 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "y_error",
-        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
             double p = pybind11::cast<double>(kwargs["p"]);
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_Y_ERROR(build_single_qubit_gate_instruction_ensure_size(self, GateType::Y_ERROR, args, &p));
+            self.do_Y_ERROR(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::Y_ERROR, args, &p));
         },
         clean_doc_string(R"DOC(
             @signature def y_error(self, *targets: int, p: float):
@@ -649,12 +661,13 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "z_error",
-        [](TableauSimulator &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::args &args, const pybind11::kwargs &kwargs) {
             double p = pybind11::cast<double>(kwargs["p"]);
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_Z_ERROR(build_single_qubit_gate_instruction_ensure_size(self, GateType::Z_ERROR, args, &p));
+            self.do_Z_ERROR(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::Z_ERROR, args, &p));
         },
         clean_doc_string(R"DOC(
             @signature def y_error(self, *targets: int, p: float):
@@ -669,8 +682,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "h_xz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_H_XZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::H, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_H_XZ(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::H, args));
         },
         clean_doc_string(R"DOC(
             Applies a Hadamard gate to the simulator's state.
@@ -682,8 +695,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "c_xyz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_C_XYZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::C_XYZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_C_XYZ(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::C_XYZ, args));
         },
         clean_doc_string(R"DOC(
             Applies a C_XYZ gate to the simulator's state.
@@ -695,8 +709,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "c_zyx",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_C_ZYX(build_single_qubit_gate_instruction_ensure_size(self, GateType::C_ZYX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_C_ZYX(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::C_ZYX, args));
         },
         clean_doc_string(R"DOC(
             Applies a C_ZYX gate to the simulator's state.
@@ -708,8 +723,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "h_xy",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_H_XY(build_single_qubit_gate_instruction_ensure_size(self, GateType::H_XY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_H_XY(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::H_XY, args));
         },
         clean_doc_string(R"DOC(
             Applies an operation that swaps the X and Y axes to the simulator's state.
@@ -721,8 +737,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "h_yz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_H_YZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::H_YZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_H_YZ(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::H_YZ, args));
         },
         clean_doc_string(R"DOC(
             Applies an operation that swaps the Y and Z axes to the simulator's state.
@@ -734,8 +751,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "x",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_X(build_single_qubit_gate_instruction_ensure_size(self, GateType::X, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_X(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::X, args));
         },
         clean_doc_string(R"DOC(
             Applies a Pauli X gate to the simulator's state.
@@ -747,8 +764,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "y",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_Y(build_single_qubit_gate_instruction_ensure_size(self, GateType::Y, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_Y(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::Y, args));
         },
         clean_doc_string(R"DOC(
             Applies a Pauli Y gate to the simulator's state.
@@ -760,8 +777,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "z",
-        [](TableauSimulator &self, pybind11::args targets) {
-            self.do_Z(build_single_qubit_gate_instruction_ensure_size(self, GateType::Z, targets));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args targets) {
+            self.do_Z(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::Z, targets));
         },
         clean_doc_string(R"DOC(
             Applies a Pauli Z gate to the simulator's state.
@@ -773,8 +790,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "s",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_Z(build_single_qubit_gate_instruction_ensure_size(self, GateType::S, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_Z(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::S, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_Z gate to the simulator's state.
@@ -786,8 +803,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "s_dag",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_Z_DAG(build_single_qubit_gate_instruction_ensure_size(self, GateType::S_DAG, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_Z_DAG(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::S_DAG, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_Z_DAG gate to the simulator's state.
@@ -799,8 +817,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "sqrt_x",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_X(build_single_qubit_gate_instruction_ensure_size(self, GateType::SQRT_X, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_X(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::SQRT_X, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_X gate to the simulator's state.
@@ -812,8 +831,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "sqrt_x_dag",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_X_DAG(build_single_qubit_gate_instruction_ensure_size(self, GateType::SQRT_X_DAG, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_X_DAG(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::SQRT_X_DAG, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_X_DAG gate to the simulator's state.
@@ -825,8 +845,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "sqrt_y",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_Y(build_single_qubit_gate_instruction_ensure_size(self, GateType::SQRT_Y, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_Y(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::SQRT_Y, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_Y gate to the simulator's state.
@@ -838,8 +859,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "sqrt_y_dag",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SQRT_Y_DAG(build_single_qubit_gate_instruction_ensure_size(self, GateType::SQRT_Y_DAG, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SQRT_Y_DAG(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::SQRT_Y_DAG, args));
         },
         clean_doc_string(R"DOC(
             Applies a SQRT_Y_DAG gate to the simulator's state.
@@ -851,8 +873,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "swap",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_SWAP(build_two_qubit_gate_instruction_ensure_size(self, GateType::SWAP, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_SWAP(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::SWAP, args));
         },
         clean_doc_string(R"DOC(
             Applies a swap gate to the simulator's state.
@@ -866,8 +888,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "iswap",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ISWAP(build_two_qubit_gate_instruction_ensure_size(self, GateType::ISWAP, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ISWAP(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::ISWAP, args));
         },
         clean_doc_string(R"DOC(
             Applies an ISWAP gate to the simulator's state.
@@ -881,8 +903,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "iswap_dag",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ISWAP_DAG(build_two_qubit_gate_instruction_ensure_size(self, GateType::ISWAP_DAG, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ISWAP_DAG(
+                build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::ISWAP_DAG, args));
         },
         clean_doc_string(R"DOC(
             Applies an ISWAP_DAG gate to the simulator's state.
@@ -896,8 +919,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "cnot",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size(self, GateType::CX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CX, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
@@ -911,8 +934,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "zcx",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size(self, GateType::CX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CX, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
@@ -926,8 +949,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "cx",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size(self, GateType::CX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCX(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CX, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
@@ -941,8 +964,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "cz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCZ(build_two_qubit_gate_instruction_ensure_size(self, GateType::CZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCZ(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CZ, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled Z gate to the simulator's state.
@@ -956,8 +979,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "zcz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCZ(build_two_qubit_gate_instruction_ensure_size(self, GateType::CZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCZ(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CZ, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled Z gate to the simulator's state.
@@ -971,8 +994,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "cy",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCY(build_two_qubit_gate_instruction_ensure_size(self, GateType::CY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCY(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CY, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled Y gate to the simulator's state.
@@ -986,8 +1009,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "zcy",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_ZCY(build_two_qubit_gate_instruction_ensure_size(self, GateType::CY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_ZCY(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::CY, args));
         },
         clean_doc_string(R"DOC(
             Applies a controlled Y gate to the simulator's state.
@@ -1001,8 +1024,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "xcx",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_XCX(build_two_qubit_gate_instruction_ensure_size(self, GateType::XCX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_XCX(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::XCX, args));
         },
         clean_doc_string(R"DOC(
             Applies an X-controlled X gate to the simulator's state.
@@ -1016,8 +1039,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "xcy",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_XCY(build_two_qubit_gate_instruction_ensure_size(self, GateType::XCY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_XCY(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::XCY, args));
         },
         clean_doc_string(R"DOC(
             Applies an X-controlled Y gate to the simulator's state.
@@ -1031,8 +1054,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "xcz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_XCZ(build_two_qubit_gate_instruction_ensure_size(self, GateType::XCZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_XCZ(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::XCZ, args));
         },
         clean_doc_string(R"DOC(
             Applies an X-controlled Z gate to the simulator's state.
@@ -1046,8 +1069,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "ycx",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_YCX(build_two_qubit_gate_instruction_ensure_size(self, GateType::YCX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_YCX(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::YCX, args));
         },
         clean_doc_string(R"DOC(
             Applies a Y-controlled X gate to the simulator's state.
@@ -1061,8 +1084,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "ycy",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_YCY(build_two_qubit_gate_instruction_ensure_size(self, GateType::YCY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_YCY(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::YCY, args));
         },
         clean_doc_string(R"DOC(
             Applies a Y-controlled Y gate to the simulator's state.
@@ -1076,8 +1099,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "ycz",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_YCZ(build_two_qubit_gate_instruction_ensure_size(self, GateType::YCZ, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_YCZ(build_two_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::YCZ, args));
         },
         clean_doc_string(R"DOC(
             Applies a Y-controlled Z gate to the simulator's state.
@@ -1091,8 +1114,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "reset",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_RZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::R, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_RZ(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::R, args));
         },
         clean_doc_string(R"DOC(
             Resets qubits to the |0> state.
@@ -1112,8 +1135,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "reset_x",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_RX(build_single_qubit_gate_instruction_ensure_size(self, GateType::RX, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_RX(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::RX, args));
         },
         clean_doc_string(R"DOC(
             Resets qubits to the |+> state.
@@ -1132,8 +1155,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "reset_y",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_RY(build_single_qubit_gate_instruction_ensure_size(self, GateType::RY, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_RY(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::RY, args));
         },
         clean_doc_string(R"DOC(
             Resets qubits to the |i> state.
@@ -1152,8 +1175,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "reset_z",
-        [](TableauSimulator &self, pybind11::args args) {
-            self.do_RZ(build_single_qubit_gate_instruction_ensure_size(self, GateType::R, args));
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            self.do_RZ(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::R, args));
         },
         clean_doc_string(R"DOC(
             Resets qubits to the |0> state.
@@ -1173,7 +1196,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "peek_x",
-        [](TableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_x(target);
         },
@@ -1212,7 +1235,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "peek_y",
-        [](TableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_y(target);
         },
@@ -1251,7 +1274,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "peek_z",
-        [](TableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_z(target);
         },
@@ -1290,7 +1313,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "peek_bloch",
-        [](TableauSimulator &self, size_t target) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, size_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             return PyPauliString(self.peek_bloch(target));
         },
@@ -1342,7 +1365,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "peek_observable_expectation",
-        [](const TableauSimulator &self, const PyPauliString &observable) -> int8_t {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const PyPauliString &observable) -> int8_t {
             if (observable.imag) {
                 throw std::invalid_argument(
                     "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
@@ -1397,7 +1420,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "measure_observable",
-        [](TableauSimulator &self, const PyPauliString &observable, double flip_probability) -> bool {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self,
+           const PyPauliString &observable,
+           double flip_probability) -> bool {
             if (observable.imag) {
                 throw std::invalid_argument(
                     "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
@@ -1443,7 +1468,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "measure",
-        [](TableauSimulator &self, uint32_t target) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             GateTarget g{target};
             self.do_MZ(CircuitInstruction{GateType::M, {}, &g});
@@ -1469,8 +1494,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "measure_many",
-        [](TableauSimulator &self, pybind11::args args) {
-            auto converted_args = build_single_qubit_gate_instruction_ensure_size(self, GateType::M, args);
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::args args) {
+            auto converted_args =
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::M, args);
             self.do_MZ(converted_args);
             auto e = self.measurement_record.storage.end();
             return std::vector<bool>(e - converted_args.targets.size(), e);
@@ -1488,8 +1514,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "postselect_x",
-        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
-            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits<MAX_BITWORD_WIDTH>(self, targets);
             self.postselect_x(gate_targets, desired_value);
         },
         pybind11::arg("targets"),
@@ -1519,8 +1545,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "postselect_y",
-        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
-            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits<MAX_BITWORD_WIDTH>(self, targets);
             self.postselect_y(gate_targets, desired_value);
         },
         pybind11::arg("targets"),
@@ -1550,8 +1576,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "postselect_z",
-        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
-            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits<MAX_BITWORD_WIDTH>(self, targets);
             self.postselect_z(gate_targets, desired_value);
         },
         pybind11::arg("targets"),
@@ -1581,7 +1607,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def_property_readonly(
         "num_qubits",
-        [](const TableauSimulator &self) -> size_t {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.inv_state.num_qubits;
         },
         clean_doc_string(R"DOC(
@@ -1604,7 +1630,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "set_num_qubits",
-        [](TableauSimulator &self, uint32_t new_num_qubits) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t new_num_qubits) {
             self.set_num_qubits(new_num_qubits);
         },
         pybind11::arg("new_num_qubits"),
@@ -1646,7 +1672,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "set_inverse_tableau",
-        [](TableauSimulator &self, const Tableau<MAX_BITWORD_WIDTH> &new_inverse_tableau) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &new_inverse_tableau) {
             self.inv_state = new_inverse_tableau;
         },
         pybind11::arg("new_inverse_tableau"),
@@ -1678,17 +1704,17 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "copy",
-        [](const TableauSimulator &self, bool copy_rng, pybind11::object &seed) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, bool copy_rng, pybind11::object &seed) {
             if (copy_rng && !seed.is_none()) {
                 throw std::invalid_argument("seed and copy_rng are incompatible");
             }
 
             if (!copy_rng || !seed.is_none()) {
-                TableauSimulator copy_with_new_rng(self, *make_py_seeded_rng(seed));
+                TableauSimulator<MAX_BITWORD_WIDTH> copy_with_new_rng(self, *make_py_seeded_rng(seed));
                 return copy_with_new_rng;
             }
 
-            TableauSimulator copy = self;
+            TableauSimulator<MAX_BITWORD_WIDTH> copy = self;
             return copy;
         },
         pybind11::kw_only(),
@@ -1768,7 +1794,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "measure_kickback",
-        [](TableauSimulator &self, uint32_t target) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             auto result = self.measure_kickback_z({target});
             if (result.second.num_qubits == 0) {
@@ -1833,7 +1859,10 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "set_state_from_stabilizers",
-        [](TableauSimulator &self, pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self,
+           pybind11::object &stabilizers,
+           bool allow_redundant,
+           bool allow_underconstrained) {
             std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
                 const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
@@ -1842,8 +1871,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                 }
                 converted_stabilizers.push_back(p.value);
             }
-            self.inv_state =
-                stabilizers_to_tableau<MAX_BITWORD_WIDTH>(converted_stabilizers, allow_redundant, allow_underconstrained, true);
+            self.inv_state = stabilizers_to_tableau<MAX_BITWORD_WIDTH>(
+                converted_stabilizers, allow_redundant, allow_underconstrained, true);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),
@@ -1938,7 +1967,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "set_state_from_state_vector",
-        [](TableauSimulator &self, pybind11::object &state_vector, const std::string &endian) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::object &state_vector, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -1955,7 +1984,8 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
             self.inv_state =
                 circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                    stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false).inverse();
+                    stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false)
+                    .inverse();
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),

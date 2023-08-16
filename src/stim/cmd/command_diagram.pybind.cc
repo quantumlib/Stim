@@ -94,7 +94,7 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
         // cells from seeing each others' elements when finding elements by id.
         // Because, for some insane reason, Jupyter notebooks don't isolate the cells
         // from each other by default! Colab does the right thing at least...
-        std::string framed = R"HTML(<iframe style="width: 100%; overflow: hidden; resize: both; border: 1px dashed gray;" frameBorder="0" srcdoc=")HTML" + escape_html_for_srcdoc(output) + R"HTML("></iframe>)HTML";
+        std::string framed = R"HTML(<iframe style="width: 100%; height: 300px; overflow: hidden; resize: both; border: 1px dashed gray;" frameBorder="0" srcdoc=")HTML" + escape_html_for_srcdoc(output) + R"HTML("></iframe>)HTML";
         return pybind11::cast(framed);
     });
     c.def("_repr_svg_", [](const DiagramHelper &self) -> pybind11::object {

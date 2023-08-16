@@ -171,8 +171,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
 - [`stim.GateData`](#stim.GateData)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
-    - [`stim.GateData.is_dissipative`](#stim.GateData.is_dissipative)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
+    - [`stim.GateData.is_reset`](#stim.GateData.is_reset)
     - [`stim.GateData.is_single_qubit_gate`](#stim.GateData.is_single_qubit_gate)
     - [`stim.GateData.is_two_qubit_gate`](#stim.GateData.is_two_qubit_gate)
     - [`stim.GateData.is_unitary`](#stim.GateData.is_unitary)
@@ -5774,46 +5774,6 @@ def aliases(
     """
 ```
 
-<a name="stim.GateData.is_dissipative"></a>
-```python
-# stim.GateData.is_dissipative
-
-# (in class stim.GateData)
-@property
-def is_dissipative(
-    self,
-) -> bool:
-    """Returns whether or not the gate is a measurement or reset.
-
-    Examples:
-        >>> import stim
-
-        >>> stim.gate_data('M').is_dissipative
-        True
-        >>> stim.gate_data('R').is_dissipative
-        True
-        >>> stim.gate_data('MR').is_dissipative
-        True
-        >>> stim.gate_data('MXX').is_dissipative
-        True
-        >>> stim.gate_data('MPP').is_dissipative
-        True
-
-        >>> stim.gate_data('H').is_dissipative
-        False
-        >>> stim.gate_data('CX').is_dissipative
-        False
-        >>> stim.gate_data('DEPOLARIZE2').is_dissipative
-        False
-        >>> stim.gate_data('X_ERROR').is_dissipative
-        False
-        >>> stim.gate_data('CORRELATED_ERROR').is_dissipative
-        False
-        >>> stim.gate_data('DETECTOR').is_dissipative
-        False
-    """
-```
-
 <a name="stim.GateData.is_noisy_gate"></a>
 ```python
 # stim.GateData.is_noisy_gate
@@ -5850,6 +5810,50 @@ def is_noisy_gate(
         >>> stim.gate_data('R').is_noisy_gate
         False
         >>> stim.gate_data('DETECTOR').is_noisy_gate
+        False
+    """
+```
+
+<a name="stim.GateData.is_reset"></a>
+```python
+# stim.GateData.is_reset
+
+# (in class stim.GateData)
+@property
+def is_reset(
+    self,
+) -> bool:
+    """Returns whether or not the gate resets qubits in any basis.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('R').is_reset
+        True
+        >>> stim.gate_data('RX').is_reset
+        True
+        >>> stim.gate_data('MR').is_reset
+        True
+
+        >>> stim.gate_data('M').is_reset
+        False
+        >>> stim.gate_data('MXX').is_reset
+        False
+        >>> stim.gate_data('MPP').is_reset
+        False
+        >>> stim.gate_data('H').is_reset
+        False
+        >>> stim.gate_data('CX').is_reset
+        False
+        >>> stim.gate_data('HERALDED_ERASE').is_reset
+        False
+        >>> stim.gate_data('DEPOLARIZE2').is_reset
+        False
+        >>> stim.gate_data('X_ERROR').is_reset
+        False
+        >>> stim.gate_data('CORRELATED_ERROR').is_reset
+        False
+        >>> stim.gate_data('DETECTOR').is_reset
         False
     """
 ```
@@ -6005,7 +6009,7 @@ def name(
 def num_parens_arguments_range(
     self,
 ) -> range:
-    """Returns whether or not the gate is a measurement or reset.
+    """Returns the min/max parens arguments taken by the gate, as a python range.
 
     Examples:
         >>> import stim
@@ -6052,6 +6056,8 @@ def produces_measurements(
         >>> stim.gate_data('MXX').produces_measurements
         True
         >>> stim.gate_data('MPP').produces_measurements
+        True
+        >>> stim.gate_data('HERALDED_ERASE').produces_measurements
         True
 
         >>> stim.gate_data('H').produces_measurements
@@ -8465,8 +8471,8 @@ def from_stabilizers(
 # stim.Tableau.from_state_vector
 
 # (in class stim.Tableau)
+@staticmethod
 def from_state_vector(
-    self,
     state_vector: Iterable[float],
     *,
     endian: str,
@@ -9169,9 +9175,6 @@ def to_numpy(
             z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
             x_signs.shape = math.ceil(len(tableau) / 8)
             z_signs.shape = math.ceil(len(tableau) / 8)
-            *.dtype = = np.uint8
-            *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-            *_signs.shape = math.ceil(len(tableau) / 8)
             (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
             (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
             (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
@@ -11736,8 +11739,8 @@ def gate_data(
         True
         >>> gate_dict = stim.gate_data()
         >>> len(gate_dict)
-        64
-        >>> gate_dict['MX'].is_dissipative
+        65
+        >>> gate_dict['MX'].produces_measurements
         True
     """
 ```

@@ -111,7 +111,7 @@ pybind11::object raw_format_data_solo(const FileFormatData &data) {
     result["parse_example"] = data.help_python_parse;
     result["save_example"] = data.help_python_save;
     result["help"] = data.help;
-    return result;
+    return std::move(result);
 }
 
 pybind11::dict raw_format_data() {

@@ -31,10 +31,10 @@
 #include "command_sample_dem.h"
 #include "stim/arg_parse.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/tableau.h"
-#include "stim/circuit/stabilizer_flow.h"
 
 using namespace stim;
 
@@ -228,7 +228,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
 }
 
 void print_stabilizer_generators(Acc &out, const Gate &gate) {
-    auto flows = gate.flows();
+    auto flows = gate.flows<MAX_BITWORD_WIDTH>();
     if (flows.empty()) {
         return;
     }
@@ -238,7 +238,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
         out << "Stabilizer Generators:\n";
     }
     out.change_indent(+4);
-    for (const auto &flow : gate.flows()) {
+    for (const auto &flow : gate.flows<MAX_BITWORD_WIDTH>()) {
         auto s = flow.str();
         std::string no_plus;
         for (char c : s) {
@@ -391,7 +391,8 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     }
     auto data = gate.extra_data_func();
     out << data.help;
-    if (std::string(data.help).find("xample:\n") == std::string::npos && std::string(data.help).find("xamples:\n") == std::string::npos) {
+    if (std::string(data.help).find("xample:\n") == std::string::npos &&
+        std::string(data.help).find("xamples:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
     print_stabilizer_generators(out, gate);

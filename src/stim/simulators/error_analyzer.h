@@ -176,6 +176,7 @@ struct ErrorAnalyzer {
     void undo_MYY(const CircuitInstruction &inst);
     void undo_MZZ(const CircuitInstruction &inst);
     void undo_MPAD(const CircuitInstruction &inst);
+    void undo_HERALDED_ERASE(const CircuitInstruction &inst);
     void undo_MRX(const CircuitInstruction &inst);
     void undo_MRY(const CircuitInstruction &inst);
     void undo_MRZ(const CircuitInstruction &inst);

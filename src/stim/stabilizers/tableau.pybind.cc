@@ -382,9 +382,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
                     x_signs.shape = math.ceil(len(tableau) / 8)
                     z_signs.shape = math.ceil(len(tableau) / 8)
-                    *.dtype = = np.uint8
-                    *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-                    *_signs.shape = math.ceil(len(tableau) / 8)
                     (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
                     (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
                     (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
@@ -881,7 +878,9 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "append",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self,
+           const Tableau<MAX_BITWORD_WIDTH> &gate,
+           const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -985,7 +984,9 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "prepend",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const Tableau<MAX_BITWORD_WIDTH> &gate, const std::vector<size_t> targets) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self,
+           const Tableau<MAX_BITWORD_WIDTH> &gate,
+           const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
             if (targets.size() != gate.num_qubits) {
                 throw std::invalid_argument("len(targets) != len(gate)");
@@ -1940,7 +1941,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 }
                 converted_stabilizers.push_back(p.value);
             }
-            return stabilizers_to_tableau<MAX_BITWORD_WIDTH>(converted_stabilizers, allow_redundant, allow_underconstrained, false);
+            return stabilizers_to_tableau<MAX_BITWORD_WIDTH>(
+                converted_stabilizers, allow_redundant, allow_underconstrained, false);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),
@@ -2050,7 +2052,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
+            @signature def from_state_vector(state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
             Creates a tableau representing the stabilizer state of the given state vector.
 
             Args:
@@ -2120,7 +2122,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
             std::mt19937_64 unused_rng{0};
-            TableauSimulator sim(unused_rng, self.num_qubits);
+            TableauSimulator<MAX_BITWORD_WIDTH> sim(unused_rng, self.num_qubits);
             sim.inv_state = self.inverse(false);
             auto complex_vec = sim.to_state_vector(little_endian);
 

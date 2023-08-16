@@ -26,6 +26,9 @@
 namespace stim {
 
 /// Performs high performance bulk sampling of a detector error model.
+///
+/// The template parameter, W, represents the SIMD width
+template <size_t W>
 struct DemSampler {
     DetectorErrorModel model;
     uint64_t num_detectors;
@@ -33,9 +36,9 @@ struct DemSampler {
     uint64_t num_errors;
     std::mt19937_64 rng;
     // TODO: allow these buffers to be streamed instead of entirely stored in memory.
-    simd_bit_table<MAX_BITWORD_WIDTH> det_buffer;
-    simd_bit_table<MAX_BITWORD_WIDTH> obs_buffer;
-    simd_bit_table<MAX_BITWORD_WIDTH> err_buffer;
+    simd_bit_table<W> det_buffer;
+    simd_bit_table<W> obs_buffer;
+    simd_bit_table<W> err_buffer;
     size_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.
@@ -73,5 +76,7 @@ struct DemSampler {
 };
 
 }  // namespace stim
+
+#include "stim/simulators/dem_sampler.inl"
 
 #endif

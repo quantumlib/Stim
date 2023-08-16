@@ -15,10 +15,10 @@
  */
 
 #include "stim/io/measure_record_writer.h"
-#include "stim/mem/simd_word.test.h"
 
 #include "gtest/gtest.h"
 
+#include "stim/mem/simd_word.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;

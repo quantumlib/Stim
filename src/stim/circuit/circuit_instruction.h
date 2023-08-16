@@ -20,7 +20,6 @@
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/span_ref.h"
 
-
 namespace stim {
 
 struct Circuit;

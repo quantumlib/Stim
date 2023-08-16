@@ -6,13 +6,10 @@
 
 /**
  *
- * @param {!CanvasRenderingContext2D} ctx
- * @param {!string} text
- * @param {!string} fill
- * @param {!string} stroke
  * @param {!int} i
+ * @returns {{x: !number, y: !number}}
  */
-function drawRect(ctx, text, fill, stroke, i) {
+function pickRect(i) {
     if (i >= 6 * 16 && i < 9 * 16) {
         i -= 6 * 16;
         i = Math.floor(i / 3) + (i % 3) * 16;
@@ -20,6 +17,19 @@ function drawRect(ctx, text, fill, stroke, i) {
     }
     let x = i % 16;
     let y = Math.floor(i / 16);
+    return {x, y}
+}
+
+/**
+ *
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {!string} text
+ * @param {!string} fill
+ * @param {!string} stroke
+ * @param {!int} i
+ */
+function drawRect(ctx, text, fill, stroke, i) {
+    let {x, y} = pickRect(i);
     ctx.fillStyle = fill;
     ctx.fillRect(x * 32, y * 32, 32, 32);
 
@@ -81,11 +91,18 @@ function drawRect(ctx, text, fill, stroke, i) {
         }
         fontSize--;
     }
-
-    // ctx.strokeStyle = 'black';
-    // ctx.strokeRect(x * 32, y * 32, 32, 32);
 }
 
+function drawHeraldErase(ctx, i) {
+    let {x, y} = pickRect(i);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(x * 32, y * 32, 32, 32);
+    ctx.fillStyle = 'white';
+    ctx.font = '6pt serif';
+    ctx.fillText('HERALD', x * 32 + 16 - ctx.measureText('HERALD').width / 2, y * 32 + 11);
+    ctx.font = '7pt serif';
+    ctx.fillText('ERASE', x * 32 + 16 - ctx.measureText('ERASE').width / 2, y * 32 + 18);
+}
 
 /**
  * @param {!CanvasRenderingContext2D} ctx
@@ -172,6 +189,7 @@ function draw(ctx) {
     drawRect(ctx, "M_YY", "#4F4", "#000", n++);
     drawRect(ctx, "M_ZZ", "#44F", "#000", n++);
     drawRect(ctx, "M_PAD", "#888", "#000", n++);
+    drawHeraldErase(ctx, n++);
 }
 
 draw(document.getElementById('cv').getContext('2d'))

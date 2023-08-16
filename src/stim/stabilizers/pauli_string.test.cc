@@ -149,9 +149,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, multiplication, {
     ASSERT_EQ(xxi, PauliString<W>::from_str("-ZZY"));
 })
 
-TEST_EACH_WORD_SIZE_W(pauli_string, identity, {
-    ASSERT_EQ(PauliString<W>(5).str(), "+_____");
-})
+TEST_EACH_WORD_SIZE_W(pauli_string, identity, { ASSERT_EQ(PauliString<W>(5).str(), "+_____"); })
 
 TEST_EACH_WORD_SIZE_W(pauli_string, gather, {
     auto p = PauliString<W>::from_str("-____XXXXYYYYZZZZ");
@@ -222,10 +220,12 @@ TEST_EACH_WORD_SIZE_W(pauli_string, foreign_memory, {
     bool signs = false;
     size_t num_qubits = W * 2 - 12;
 
-    auto p1 = PauliStringRef<W>(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p1 =
+        PauliStringRef<W>(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
     auto p1b =
         new PauliStringRef<W>(num_qubits, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
-    auto p2 = PauliStringRef<W>(num_qubits, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
+    auto p2 =
+        PauliStringRef<W>(num_qubits, bit_ref(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
     PauliString<W> copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
@@ -624,7 +624,8 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_tableau, {
 
     ASSERT_THROW(
         {
-            PauliString<W>::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 1, 1});
+            PauliString<W>::from_str("+XZ_").ref().before(
+                GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 1, 1});
         },
         std::invalid_argument);
 

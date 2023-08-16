@@ -22,9 +22,10 @@
 #include "stim/io/measure_record_writer.h"
 #include "stim/probability_util.h"
 
-using namespace stim;
+namespace stim {
 
-DemSampler::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_t min_stripes)
+template <size_t W>
+DemSampler<W>::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_t min_stripes)
     : model(std::move(init_model)),
       num_detectors(model.count_detectors()),
       num_observables(model.count_observables()),
@@ -36,17 +37,19 @@ DemSampler::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_
       num_stripes(det_buffer.num_minor_bits_padded()) {
 }
 
-void DemSampler::set_min_stripes(size_t min_stripes) {
-    size_t new_num_stripes = min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(min_stripes);
+template <size_t W>
+void DemSampler<W>::set_min_stripes(size_t min_stripes) {
+    size_t new_num_stripes = min_bits_to_num_bits_padded<W>(min_stripes);
     if (new_num_stripes == num_stripes) {
         return;
     }
-    det_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_detectors, min_stripes),
-    obs_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_observables, min_stripes),
-    err_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_errors, min_stripes), num_stripes = new_num_stripes;
+    det_buffer = simd_bit_table<W>((size_t)num_detectors, min_stripes),
+    obs_buffer = simd_bit_table<W>((size_t)num_observables, min_stripes),
+    err_buffer = simd_bit_table<W>((size_t)num_errors, min_stripes), num_stripes = new_num_stripes;
 }
 
-void DemSampler::resample(bool replay_errors) {
+template <size_t W>
+void DemSampler<W>::resample(bool replay_errors) {
     det_buffer.clear();
     obs_buffer.clear();
     if (!replay_errors) {
@@ -54,7 +57,7 @@ void DemSampler::resample(bool replay_errors) {
     }
     size_t error_index = 0;
     model.iter_flatten_error_instructions([&](const DemInstruction &op) {
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> err_row = err_buffer[error_index];
+        simd_bits_range_ref<W> err_row = err_buffer[error_index];
         if (!replay_errors) {
             biased_randomize_bits((float)op.arg_data[0], err_row.u64, err_row.u64 + err_row.num_u64_padded(), rng);
         }
@@ -69,7 +72,8 @@ void DemSampler::resample(bool replay_errors) {
     });
 }
 
-void DemSampler::sample_write(
+template <size_t W>
+void DemSampler<W>::sample_write(
     size_t num_shots,
     FILE *det_out,
     SampleFormat det_out_format,
@@ -96,7 +100,7 @@ void DemSampler::sample_write(
                 err_out,
                 shots_left,
                 (size_t)num_errors,
-                simd_bits<MAX_BITWORD_WIDTH>(0),
+                simd_bits<W>(0),
                 err_buffer,
                 err_out_format,
                 'M',
@@ -109,7 +113,7 @@ void DemSampler::sample_write(
                 obs_out,
                 shots_left,
                 (size_t)num_observables,
-                simd_bits<MAX_BITWORD_WIDTH>(0),
+                simd_bits<W>(0),
                 obs_buffer,
                 obs_out_format,
                 'L',
@@ -122,7 +126,7 @@ void DemSampler::sample_write(
                 det_out,
                 shots_left,
                 (size_t)num_detectors,
-                simd_bits<MAX_BITWORD_WIDTH>(0),
+                simd_bits<W>(0),
                 det_buffer,
                 det_out_format,
                 'D',
@@ -131,3 +135,5 @@ void DemSampler::sample_write(
         }
     }
 }
+
+}  // namespace stim

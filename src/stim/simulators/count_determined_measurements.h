@@ -21,8 +21,11 @@
 
 namespace stim {
 
+template <size_t W>
 uint64_t count_determined_measurements(const Circuit &circuit);
 
 }  // namespace stim
+
+#include "stim/simulators/count_determined_measurements.inl"
 
 #endif

@@ -4,6 +4,7 @@ import contextlib
 import multiprocessing
 import pathlib
 import tempfile
+import stim
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
 from sinter._decoding_decoder_class import Decoder
@@ -17,20 +18,27 @@ from sinter._worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:
-    def __init__(self, *,
-                 tasks_iter: Iterator[Task],
-                 global_collection_options: CollectionOptions,
-                 additional_existing_data: Optional[ExistingData],
-                 count_observable_error_combos: bool,
-                 count_detection_events: bool,
-                 decoders: Optional[Iterable[str]],
-                 custom_decoders: Dict[str, Decoder]):
+    def __init__(
+        self,
+        *,
+        tasks_iter: Iterator[Task],
+        global_collection_options: CollectionOptions,
+        additional_existing_data: Optional[ExistingData],
+        count_observable_error_combos: bool,
+        count_detection_events: bool,
+        decoders: Optional[Iterable[str]],
+        custom_decoders: Dict[str, Decoder],
+        custom_error_count_key: Optional[str],
+        allowed_cpu_affinity_ids: Optional[List[int]],
+    ):
         self.custom_decoders = custom_decoders
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
         self.queue_to_workers: Optional[multiprocessing.Queue] = None
         self.additional_existing_data = ExistingData() if additional_existing_data is None else additional_existing_data
         self.tmp_dir: Optional[pathlib.Path] = None
         self.exit_stack: Optional[contextlib.ExitStack] = None
+        self.custom_error_count_key = custom_error_count_key
+        self.allowed_cpu_affinity_ids = None if allowed_cpu_affinity_ids is None else sorted(set(allowed_cpu_affinity_ids))
 
         self.global_collection_options = global_collection_options
         self.decoders: Optional[Tuple[str, ...]] = None if decoders is None else tuple(decoders)
@@ -64,11 +72,16 @@ class CollectionWorkManager:
             self.queue_from_workers.cancel_join_thread()
             self.queue_to_workers.cancel_join_thread()
 
-            num_cpus = os.cpu_count()
+            if self.allowed_cpu_affinity_ids is None:
+                cpus = range(os.cpu_count())
+            else:
+                num_cpus = os.cpu_count()
+                cpus = [e for e in self.allowed_cpu_affinity_ids if e < num_cpus]
             for index in range(num_workers):
+                cpu_pin = None if len(cpus) == 0 else cpus[index % len(cpus)]
                 w = multiprocessing.Process(
                     target=worker_loop,
-                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, self.custom_decoders, index % num_cpus))
+                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, self.custom_decoders, cpu_pin))
                 w.start()
                 self.workers.append(w)
         finally:
@@ -162,6 +175,7 @@ class CollectionWorkManager:
                 existing_data=self.additional_existing_data,
                 count_detection_events=self.count_detection_events,
                 count_observable_error_combos=self.count_observable_error_combos,
+                custom_error_count_key=self.custom_error_count_key,
             )
             if collector.is_done():
                 self.finished_count += 1
@@ -229,6 +243,18 @@ def _iter_tasks_with_assigned_decoders(
     global_collections_options: CollectionOptions,
 ) -> Iterator[Task]:
     for task in tasks_iter:
+        if task.circuit is None:
+            task = Task(
+                circuit=stim.Circuit.from_file(task.circuit_path),
+                decoder=task.decoder,
+                detector_error_model=task.detector_error_model,
+                postselection_mask=task.postselection_mask,
+                postselected_observables_mask=task.postselected_observables_mask,
+                json_metadata=task.json_metadata,
+                collection_options=task.collection_options,
+                circuit_path=task.circuit_path,
+            )
+
         if task.decoder is None and default_decoders is None:
             raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
         task_decoders = []

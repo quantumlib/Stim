@@ -54,11 +54,7 @@ struct PauliStringRef {
     /// Requires:
     ///     xs.num_bits_padded() == zs.num_bits_padded()
     ///     xs.num_simd_words == ceil(num_qubits / W)
-    PauliStringRef(
-        size_t num_qubits,
-        bit_ref sign,
-        simd_bits_range_ref<W> xs,
-        simd_bits_range_ref<W> zs);
+    PauliStringRef(size_t num_qubits, bit_ref sign, simd_bits_range_ref<W> xs, simd_bits_range_ref<W> zs);
 
     /// Equality.
     bool operator==(const PauliStringRef<W> &other) const;

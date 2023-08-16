@@ -19,80 +19,92 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-TEST(search_graphlike, DemAdjGraph_equality) {
-    ASSERT_TRUE(Graph(1) == Graph(1));
-    ASSERT_TRUE(Graph(1) != Graph(2));
-    ASSERT_FALSE(Graph(1) == Graph(2));
-    ASSERT_FALSE(Graph(1) != Graph(1));
+static simd_bits<64> obs_mask(uint64_t v) {
+    simd_bits<64> result(64);
+    result.ptr_simd[0] = v;
+    return result;
+}
 
-    Graph a(1);
-    Graph b(1);
+TEST(search_graphlike, DemAdjGraph_equality) {
+    ASSERT_TRUE(Graph(1, 5) == Graph(1, 5));
+    ASSERT_TRUE(Graph(1, 5) != Graph(2, 5));
+    ASSERT_TRUE(Graph(1, 5) != Graph(1, 4));
+    ASSERT_FALSE(Graph(1, 5) == Graph(2, 5));
+    ASSERT_FALSE(Graph(1, 5) != Graph(1, 5));
+
+    Graph a(1, 5);
+    Graph b(1, 5);
     ASSERT_EQ(a, b);
-    b.distance_1_error_mask = 1;
+    b.distance_1_error_mask = obs_mask(1);
     ASSERT_NE(a, b);
 }
 
 TEST(search_graphlike, DemAdjGraph_add_outward_edge) {
-    Graph g(3);
+    Graph g(3, 64);
 
-    g.add_outward_edge(1, 2, 3);
+    g.add_outward_edge(1, 2, obs_mask(3));
     ASSERT_EQ(
         g,
         (Graph{
             std::vector<Node>{
                 Node{},
-                Node{{Edge{2, 3}}},
+                Node{{Edge{2, obs_mask(3)}}},
                 Node{},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
-    g.add_outward_edge(1, 2, 3);
+    g.add_outward_edge(1, 2, obs_mask(3));
     ASSERT_EQ(
         g,
         (Graph{
             std::vector<Node>{
                 Node{},
-                Node{{Edge{2, 3}}},
+                Node{{Edge{2, obs_mask(3)}}},
                 Node{},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
-    g.add_outward_edge(1, 2, 4);
+    g.add_outward_edge(1, 2, obs_mask(4));
     ASSERT_EQ(
         g,
         (Graph{
             std::vector<Node>{
                 Node{},
-                Node{{Edge{2, 3}, Edge{2, 4}}},
+                Node{{Edge{2, obs_mask(3)}, Edge{2, obs_mask(4)}}},
                 Node{},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
-    g.add_outward_edge(2, 1, 3);
+    g.add_outward_edge(2, 1, obs_mask(3));
     ASSERT_EQ(
         g,
         (Graph{
             std::vector<Node>{
                 Node{},
-                Node{{Edge{2, 3}, Edge{2, 4}}},
-                Node{{Edge{1, 3}}},
+                Node{{Edge{2, obs_mask(3)}, Edge{2, obs_mask(4)}}},
+                Node{{Edge{1, obs_mask(3)}}},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
-    g.add_outward_edge(2, NO_NODE_INDEX, 3);
+    g.add_outward_edge(2, NO_NODE_INDEX, obs_mask(3));
     ASSERT_EQ(
         g,
         (Graph{
             std::vector<Node>{
                 Node{},
-                Node{{Edge{2, 3}, Edge{2, 4}}},
-                Node{{Edge{1, 3}, Edge{NO_NODE_INDEX, 3}}},
+                Node{{Edge{2, obs_mask(3)}, Edge{2, obs_mask(4)}}},
+                Node{{Edge{1, obs_mask(3)}, Edge{NO_NODE_INDEX, obs_mask(3)}}},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 }
 
 TEST(search_graphlike, DemAdjGraph_add_edges_from_targets_with_no_separators) {
-    Graph g(4);
+    Graph g(4, 64);
 
     g.add_edges_from_targets_with_no_separators(std::vector<DemTarget>{DemTarget::relative_detector_id(1)}, false);
 
@@ -101,11 +113,12 @@ TEST(search_graphlike, DemAdjGraph_add_edges_from_targets_with_no_separators) {
         (Graph{
             {
                 Node{},
-                Node{{Edge{NO_NODE_INDEX, 0}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}}},
                 Node{},
                 Node{},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
     g.add_edges_from_targets_with_no_separators(
         std::vector<DemTarget>{
@@ -120,11 +133,12 @@ TEST(search_graphlike, DemAdjGraph_add_edges_from_targets_with_no_separators) {
         (Graph{
             {
                 Node{},
-                Node{{Edge{NO_NODE_INDEX, 0}, Edge{3, 32}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}, Edge{3, obs_mask(32)}}},
                 Node{},
-                Node{{Edge{1, 32}}},
+                Node{{Edge{1, obs_mask(32)}}},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 
     g.add_edges_from_targets_with_no_separators(
         std::vector<DemTarget>{
@@ -138,11 +152,12 @@ TEST(search_graphlike, DemAdjGraph_add_edges_from_targets_with_no_separators) {
         (Graph{
             {
                 Node{},
-                Node{{Edge{NO_NODE_INDEX, 0}, Edge{3, 32}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}, Edge{3, obs_mask(32)}}},
                 Node{},
-                Node{{Edge{1, 32}}},
+                Node{{Edge{1, obs_mask(32)}}},
             },
-            (1 << 3) + (1 << 7)}));
+            64,
+            obs_mask((1 << 3) + (1 << 7))}));
 
     Graph same_g = g;
     std::vector<DemTarget> too_big{
@@ -160,11 +175,12 @@ TEST(search_graphlike, DemAdjGraph_str) {
     Graph g{
         {
             Node{},
-            Node{{Edge{NO_NODE_INDEX, 0}, Edge{3, 32}}},
+            Node{{Edge{NO_NODE_INDEX, obs_mask(0)}, Edge{3, obs_mask(32)}}},
             Node{},
-            Node{{Edge{1, 32}}},
+            Node{{Edge{1, obs_mask(32)}}},
         },
-        0};
+        64,
+        obs_mask(0)};
     ASSERT_EQ(
         g.str(),
         "0:\n"
@@ -177,7 +193,7 @@ TEST(search_graphlike, DemAdjGraph_str) {
 }
 
 TEST(search_graphlike, DemAdjGraph_add_edges_from_separable_targets) {
-    Graph g(4);
+    Graph g(4, 64);
 
     g.add_edges_from_separable_targets(
         std::vector<DemTarget>{
@@ -194,11 +210,12 @@ TEST(search_graphlike, DemAdjGraph_add_edges_from_separable_targets) {
         (Graph{
             {
                 Node{},
-                Node{{Edge{NO_NODE_INDEX, 0}, Edge{2, 16}}},
-                Node{{Edge{1, 16}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}, Edge{2, obs_mask(16)}}},
+                Node{{Edge{1, obs_mask(16)}}},
                 Node{},
             },
-            0}));
+            64,
+            obs_mask(0)}));
 }
 
 TEST(search_graphlike, DemAdjGraph_from_dem) {
@@ -217,22 +234,23 @@ TEST(search_graphlike, DemAdjGraph_from_dem) {
             false),
         Graph(
             {
-                Node{{Edge{NO_NODE_INDEX, 0}, Edge{1, 0}}},
-                Node{{Edge{0, 0}, Edge{2, 0}}},
-                Node{{Edge{1, 0}, Edge{3, 0}}},
-                Node{{Edge{2, 0}, Edge{NO_NODE_INDEX, 128}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}, Edge{1, obs_mask(0)}}},
+                Node{{Edge{0, obs_mask(0)}, Edge{2, obs_mask(0)}}},
+                Node{{Edge{1, obs_mask(0)}, Edge{3, obs_mask(0)}}},
+                Node{{Edge{2, obs_mask(0)}, Edge{NO_NODE_INDEX, obs_mask(128)}}},
                 Node{},
-                Node{{Edge{NO_NODE_INDEX, 0}}},
-                Node{{Edge{7, 4}}},
-                Node{{Edge{6, 4}}},
+                Node{{Edge{NO_NODE_INDEX, obs_mask(0)}}},
+                Node{{Edge{7, obs_mask(4)}}},
+                Node{{Edge{6, obs_mask(4)}}},
                 Node{},
             },
-            0));
+            8,
+            obs_mask(0)));
 }
 
 TEST(search_graphlike, add_edges_from_separable_targets_ignore) {
-    Graph actual(10);
-    Graph expected(10);
+    Graph actual(10, 64);
+    Graph expected(10, 64);
     DetectorErrorModel d(R"DEM(
         error(0.125) D0 ^ D4 D6
     )DEM");
@@ -240,8 +258,8 @@ TEST(search_graphlike, add_edges_from_separable_targets_ignore) {
     actual.add_edges_from_separable_targets(d.instructions[0].target_data, true);
     ASSERT_EQ(actual, expected);
     actual.add_edges_from_separable_targets(d.instructions[0].target_data, false);
-    expected.add_outward_edge(4, 6, 0);
-    expected.add_outward_edge(6, 4, 0);
-    expected.add_outward_edge(0, NO_NODE_INDEX, 0);
+    expected.add_outward_edge(4, 6, obs_mask(0));
+    expected.add_outward_edge(6, 4, obs_mask(0));
+    expected.add_outward_edge(0, NO_NODE_INDEX, obs_mask(0));
     ASSERT_EQ(actual, expected);
 }

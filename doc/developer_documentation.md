@@ -24,6 +24,7 @@ These notes generally assume you are on a Linux system.
     - [profiling with gcc and perf](#perf.profile)
 - [creating a python dev environment](#venv)
 - [running python unit tests](#test.pytest)
+    - [running sinter tests against a custom decoder](#test.pytest.sinter.custom)
 - [python packaging `stim`](#pypackage.stim)
     - [with cibuildwheels](#pypackage.stim.cibuildwheels)
     - [with bazel](#pypackage.stim.bazel)
@@ -422,6 +423,9 @@ Third, use `pip install -e` to install development references to the pure-python
 glue packages:
 
 ```
+# install test dependencies
+pip install pytest pymatching
+
 # install stimcirq dev reference:
 pip install -e glue/cirq
 
@@ -484,6 +488,23 @@ Test only `stimzx`:
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/zx
 dev/doctest_proper.py --module stimzx
+```
+
+## <a name="test.pytest.sinter.custom"></a>Running sinter's python unit tests against a custom decoder
+
+Some of sinter's python unit tests verify that a decoder is behaving correctly.
+It can be useful, when creating a custom decoder, to run these tests against the
+decoder.
+This can be done by setting the environment `SINTER_PYTEST_CUSTOM_DECODERS`
+variable to `custom_package:custom_method` where `custom_package` is a python
+package to import and `custom_method` is a method name implemented by that
+package that returns a `Dict[str, sinter.Decoder]`. This is the same form of
+argument that's given to `sinter collect --custom_decoders`.
+
+Example:
+
+```
+SINTER_PYTEST_CUSTOM_DECODERS="my_custom_package:my_custom_sinter_decoder_dict_method" pytest glue/sample
 ```
 
 
@@ -667,7 +688,7 @@ firefox out/all_stim_tests.html
 Run the following command from the repo root to auto-format all C++ code:
 
 ```bash
-find src | grep "\.\(cc\|h\)$" | grep -v "crumble_data.cc" | xargs clang-format -i
+find src | grep "\.\(cc\|h\)$" | grep -Pv "crumble_data.cc|gate_data_3d_texture_data.cc" | xargs clang-format -i
 ```
 
 # <a name="newfile"></a>Adding new C++ files

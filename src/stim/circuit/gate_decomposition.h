@@ -17,11 +17,10 @@
 #ifndef _STIM_GATE_DECOMPOSITION_H
 #define _STIM_GATE_DECOMPOSITION_H
 
+#include "stim/circuit/circuit_instruction.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
-#include "stim/circuit/circuit_instruction.h"
 #include "stim/mem/simd_bits.h"
-
 
 namespace stim {
 
@@ -93,9 +92,7 @@ void decompose_mpp_operation(
 ///     inst: The circuit instruction to decompose.
 ///     callback: The method called with each decomposed segment.
 void decompose_pair_instruction_into_segments_with_single_use_controls(
-        const CircuitInstruction &inst,
-        size_t num_qubits,
-        const std::function<void(CircuitInstruction)> &callback);
+    const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback);
 
 }  // namespace stim
 

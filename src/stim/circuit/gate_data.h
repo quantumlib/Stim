@@ -36,6 +36,12 @@ namespace stim {
 template <size_t W>
 struct Tableau;
 
+template <size_t W>
+struct StabilizerFlow;
+
+template <size_t W>
+struct PauliString;
+
 /// Used for gates' argument count to indicate that a gate takes a variable number of
 /// arguments. This is relevant to coordinate data on detectors and qubits, where there may
 /// be any number of coordinates.
@@ -75,7 +81,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 65;
+constexpr const size_t NUM_DEFINED_GATES = 66;
 
 enum GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -123,6 +129,8 @@ enum GateType : uint8_t {
     PAULI_CHANNEL_2,
     E,  // alias when parsing: CORRELATED_ERROR
     ELSE_CORRELATED_ERROR,
+    // Heralded noise channels
+    HERALDED_ERASE,
     // Pauli gates
     I,
     X,
@@ -136,7 +144,7 @@ enum GateType : uint8_t {
     SQRT_X_DAG,
     SQRT_Y,
     SQRT_Y_DAG,
-    S,  // alias when parsing: SQRT_Z
+    S,      // alias when parsing: SQRT_Z
     S_DAG,  // alias when parsing: SQRT_Z_DAG
     // Pauli product gates
     SQRT_XX,
@@ -220,8 +228,6 @@ struct ExtraGateData {
         const char *h_s_cx_m_r_decomposition);
 };
 
-struct StabilizerFlow;
-
 struct Gate {
     const char *name;
     ExtraGateData (*extra_data_func)(void);
@@ -258,80 +264,33 @@ struct Gate {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
     }
 
-    std::vector<StabilizerFlow> flows() const;
+    template <size_t W>
+    std::vector<StabilizerFlow<W>> flows() const {
+        if (flags & GATE_IS_UNITARY) {
+            auto t = tableau<W>();
+            if (flags & GATE_TARGETS_PAIRS) {
+                return {
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
+                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
+                };
+            }
+            return {
+                StabilizerFlow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
+                StabilizerFlow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
+            };
+        }
+        std::vector<StabilizerFlow<W>> out;
+        auto data = extra_data_func();
+        for (const auto &c : data.flow_data) {
+            out.push_back(StabilizerFlow<W>::from_str(c));
+        }
+        return out;
+    }
+
     std::vector<std::vector<std::complex<float>>> unitary() const;
 };
-
-struct StringView {
-    const char *c;
-    size_t n;
-
-    StringView(const char *c, size_t n) : c(c), n(n) {
-    }
-
-    StringView(std::string &v) : c(&v[0]), n(v.size()) {
-    }
-
-    inline StringView substr(size_t offset) const {
-        return {c + offset, n - offset};
-    }
-
-    inline StringView substr(size_t offset, size_t length) const {
-        return {c + offset, length};
-    }
-
-    inline StringView &operator=(const std::string &other) {
-        c = (char *)&other[0];
-        n = other.size();
-        return *this;
-    }
-
-    inline const char &operator[](size_t index) const {
-        return c[index];
-    }
-
-    inline bool operator==(const std::string &other) const {
-        return n == other.size() && memcmp(c, other.data(), n) == 0;
-    }
-
-    inline bool operator!=(const std::string &other) const {
-        return !(*this == other);
-    }
-
-    inline bool operator==(const char *other) const {
-        size_t k = 0;
-        for (; k < n; k++) {
-            if (other[k] != c[k]) {
-                return false;
-            }
-        }
-        return other[k] == '\0';
-    }
-
-    inline bool operator!=(const char *other) const {
-        return !(*this == other);
-    }
-
-    inline std::string str() const {
-        return std::string(c, n);
-    }
-};
-
-inline std::string operator+(const StringView &a, const char *b) {
-    return a.str() + b;
-}
-
-inline std::string operator+(const char *a, const StringView &b) {
-    return a + b.str();
-}
-
-inline std::string operator+(const StringView &a, const std::string &b) {
-    return a.str() + b;
-}
-
-inline std::string operator+(const std::string &a, const StringView &b) {
-    return a + b.str();
-}
 
 inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {
     if (bucket_name == nullptr || bucket_len != text_len) {
@@ -356,6 +315,7 @@ struct GateDataMap {
     void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
     void add_gate_data_annotations(bool &failed);
     void add_gate_data_blocks(bool &failed);
+    void add_gate_data_heralded(bool &failed);
     void add_gate_data_collapsing(bool &failed);
     void add_gate_data_controlled(bool &failed);
     void add_gate_data_hada(bool &failed);
@@ -384,10 +344,6 @@ struct GateDataMap {
 
     inline const Gate &at(const char *text) const {
         return at(text, strlen(text));
-    }
-
-    inline const Gate &at(StringView text) const {
-        return at(text.c, text.n);
     }
 
     inline const Gate &at(const std::string &text) const {

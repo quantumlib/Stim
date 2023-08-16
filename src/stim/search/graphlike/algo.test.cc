@@ -176,3 +176,20 @@ TEST(shortest_graphlike_undetectable_logical_error, repetition_code) {
 
     ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 7);
 }
+
+TEST(shortest_graphlike_undetectable_logical_error, many_observables) {
+    Circuit circuit(R"CIRCUIT(
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        X_ERROR(0.1) 0 1 2 3 4
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        DETECTOR rec[-1] rec[-5]
+        DETECTOR rec[-2] rec[-6]
+        DETECTOR rec[-3] rec[-7]
+        DETECTOR rec[-4] rec[-8]
+        M 4
+        OBSERVABLE_INCLUDE(1200) rec[-1]
+    )CIRCUIT");
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
+    auto err = stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false);
+    ASSERT_EQ(err.instructions.size(), 5);
+}

@@ -255,7 +255,5 @@ TEST(circuit_diagram_timeline_3d, surface_code) {
 }
 
 TEST(circuit_diagram_timeline_3d, test_circuit_all_ops) {
-    expect_diagram_is_identical_to_saved_file(
-        generate_test_circuit_with_all_operations(),
-        "circuit_all_ops_3d.gltf");
+    expect_diagram_is_identical_to_saved_file(generate_test_circuit_with_all_operations(), "circuit_all_ops_3d.gltf");
 }

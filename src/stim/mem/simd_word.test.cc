@@ -67,3 +67,83 @@ TEST_EACH_WORD_SIZE_W(simd_word_pick, operator_bool, {
         ASSERT_EQ((bool)w, false);
     }
 })
+
+TEST_EACH_WORD_SIZE_W(simd_word, integer_conversions, {
+    ASSERT_EQ((uint64_t)(simd_word<W>{23}), 23);
+    ASSERT_EQ((uint64_t)(simd_word<W>{(uint64_t)23}), 23);
+    ASSERT_EQ((int64_t)(simd_word<W>{(uint64_t)23}), 23);
+    ASSERT_EQ((uint64_t)(simd_word<W>{(int64_t)23}), 23);
+    ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)23}), 23);
+    ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)-23}), -23);
+    if (W > 64) {
+        ASSERT_THROW({
+            uint64_t u = (uint64_t)(simd_word<W>{(int64_t)-23});
+            std::cerr << u;
+        }, std::invalid_argument);
+    }
+
+    simd_word<W> w0{(uint64_t)0};
+    simd_word<W> w1{(uint64_t)1};
+    simd_word<W> w2{(uint64_t)2};
+    ASSERT_EQ((uint64_t)(w1 | w2), 3);
+    ASSERT_EQ((uint64_t)w1, 1);
+    ASSERT_EQ((uint64_t)w2, 2);
+    ASSERT_EQ((int)(w1 | w2), 3);
+    ASSERT_EQ((int)w0, 0);
+    ASSERT_EQ((int)w1, 1);
+    ASSERT_EQ((int)w2, 2);
+    ASSERT_EQ((bool)w0, false);
+    ASSERT_EQ((bool)w1, true);
+    ASSERT_EQ((bool)w2, true);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_word, equality, {
+    ASSERT_TRUE((simd_word<W>{1}) == (simd_word<W>{1}));
+    ASSERT_FALSE((simd_word<W>{1}) == (simd_word<W>{2}));
+    ASSERT_TRUE((simd_word<W>{1}) != (simd_word<W>{2}));
+    ASSERT_FALSE((simd_word<W>{1}) != (simd_word<W>{1}));
+})
+
+TEST_EACH_WORD_SIZE_W(simd_word, shifting, {
+    simd_word<W> w{1};
+
+    for (size_t k = 0; k < W; k++) {
+        std::array<uint64_t, W / 64> expected{};
+        expected[k / 64] = uint64_t{1} << (k % 64);
+        EXPECT_EQ((w << k).to_u64_array(), expected) << k;
+        if (k > 0) {
+            EXPECT_EQ(((w << (k - 1)) << 1).to_u64_array(), expected) << k;
+        }
+        EXPECT_EQ(w, (w << k) >> k) << k;
+    }
+
+    ASSERT_EQ(w << 0, 1);
+    ASSERT_EQ(w >> 0, 1);
+    ASSERT_EQ(w << 1, 2);
+    ASSERT_EQ(w >> 1, 0);
+    ASSERT_EQ(w << 2, 4);
+    ASSERT_EQ(w >> 2, 0);
+    ASSERT_EQ((w << 5) >> 5, 1);
+    ASSERT_EQ((w >> 5) << 5, 0);
+    ASSERT_EQ((w << (W - 1)) << 1, 0);
+    ASSERT_EQ((w << (W - 1)) >> (W - 1), 1);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_word, masking, {
+    simd_word<W> w{0b10011};
+    ASSERT_EQ((w & 1), 1);
+    ASSERT_EQ((w & 2), 2);
+    ASSERT_EQ((w & 4), 0);
+    ASSERT_EQ((w ^ 1), 0b10010);
+    ASSERT_EQ((w ^ 2), 0b10001);
+    ASSERT_EQ((w ^ 4), 0b10111);
+    ASSERT_EQ((w | 1), 0b10011);
+    ASSERT_EQ((w | 2), 0b10011);
+    ASSERT_EQ((w | 4), 0b10111);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_word, ordering, {
+    ASSERT_TRUE(simd_word<W>(1) < simd_word<W>(2));
+    ASSERT_TRUE(!(simd_word<W>(2) < simd_word<W>(2)));
+    ASSERT_TRUE(!(simd_word<W>(3) < simd_word<W>(2)));
+})

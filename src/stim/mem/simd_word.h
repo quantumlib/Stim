@@ -19,44 +19,18 @@
 #ifndef _STIM_MEM_SIMD_WORD_H
 #define _STIM_MEM_SIMD_WORD_H
 
+#include "stim/mem/bitword_64.h"
+#include "stim/mem/bitword_128_sse.h"
+#include "stim/mem/bitword_256_avx.h"
+
 namespace stim {
-
-/// A `bitword` is a bag of bits that can be operated on in a SIMD-esque fashion
-/// by individual CPU instructions.
-///
-/// This template would not have to exist, except that different architectures and
-/// operating systems expose different interfaces between native types like
-/// uint64_t and intrinsics like __m256i. For example, in some contexts, __m256i
-/// values can be operated on by operators (e.g. you can do `a ^= b`) while in
-/// other contexts this does not work. The bitword template implementations define
-/// a common set of methods required by stim to function, so that the same code
-/// can be compiled to use 256 bit registers or 64 bit registers as appropriate.
-template <size_t bit_size>
-struct bitword;
-
-}  // namespace stim
-
 #if __AVX2__
-#include "stim/mem/simd_word_128_sse.h"
-#include "stim/mem/simd_word_256_avx.h"
-#include "stim/mem/simd_word_64_std.h"
-namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 256;
-}  // namespace stim
 #elif __SSE2__
-#include "stim/mem/simd_word_128_sse.h"
-#include "stim/mem/simd_word_64_std.h"
-namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 128;
-}  // namespace stim
 #else
-#include "stim/mem/simd_word_64_std.h"
-namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 64;
-}  // namespace stim
 #endif
-
-namespace stim {
 
 template <size_t W>
 using simd_word = bitword<W>;

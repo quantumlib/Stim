@@ -22,7 +22,6 @@
 #include "stim/circuit/circuit.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_bit_table.h"
-#include "stim/simulators/frame_simulator.h"
 
 namespace stim {
 
@@ -46,7 +45,8 @@ namespace stim {
 ///     observable data. Each table is arranged as follows:
 ///         major axis (first index): detector index (or observable index)
 ///         minor axis (second index): shot index
-std::pair<simd_bit_table<MAX_BITWORD_WIDTH>, simd_bit_table<MAX_BITWORD_WIDTH>> sample_batch_detection_events(
+template <size_t W>
+std::pair<simd_bit_table<W>, simd_bit_table<W>> sample_batch_detection_events(
     const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
 
 /// Samples detection events from a circuit and writes them to a file.
@@ -64,6 +64,7 @@ std::pair<simd_bit_table<MAX_BITWORD_WIDTH>, simd_bit_table<MAX_BITWORD_WIDTH>> 
 ///     obs_out: An optional secondary file to write observable data to. Set to nullptr to
 ///         not use.
 ///     obs_out_format: The format to use when writing to the secondary file.
+template <size_t W>
 void sample_batch_detection_events_writing_results_to_disk(
     const Circuit &circuit,
     size_t num_shots,
@@ -99,9 +100,10 @@ void sample_batch_detection_events_writing_results_to_disk(
 ///     If transposed:
 ///         major axis (first index): shot index
 ///         minor axis (second index): measurement index
-simd_bit_table<MAX_BITWORD_WIDTH> sample_batch_measurements(
+template <size_t W>
+simd_bit_table<W> sample_batch_measurements(
     const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bits<W> &reference_sample,
     size_t num_samples,
     std::mt19937_64 &rng,
     bool transposed);
@@ -118,14 +120,17 @@ simd_bit_table<MAX_BITWORD_WIDTH> sample_batch_measurements(
 ///     out: The file to write the result data to.
 ///     format: The format to use when encoding the data into the file.
 ///     rng: Random number generator to use.
+template <size_t W>
 void sample_batch_measurements_writing_results_to_disk(
     const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bits<W> &reference_sample,
     uint64_t num_shots,
     FILE *out,
     SampleFormat format,
     std::mt19937_64 &rng);
 
 }  // namespace stim
+
+#include "stim/simulators/frame_simulator_util.inl"
 
 #endif

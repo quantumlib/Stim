@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <random>
 #include <sstream>
@@ -155,6 +156,83 @@ simd_bits<W>::operator const simd_bits_range_ref<W>() const {
 }
 
 template <size_t W>
+simd_bits<W> operator^(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b) {
+    assert(a.num_simd_words == b.num_simd_words);
+    simd_bits<W> result(a.num_bits_padded());
+    ((simd_bits_range_ref<W>)result).for_each_word(a, b, [](bitword<W> &w0, bitword<W> &w1, bitword<W> &w2) {
+        w0 = w1 ^ w2;
+    });
+    return result;
+}
+template <size_t W>
+simd_bits<W> operator|(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b) {
+    assert(a.num_simd_words == b.num_simd_words);
+    simd_bits<W> result(a.num_bits_padded());
+    ((simd_bits_range_ref<W>)result).for_each_word(a, b, [](bitword<W> &w0, bitword<W> &w1, bitword<W> &w2) {
+        w0 = w1 | w2;
+    });
+    return result;
+}
+template <size_t W>
+simd_bits<W> operator&(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b) {
+    assert(a.num_simd_words == b.num_simd_words);
+    simd_bits<W> result(a.num_bits_padded());
+    ((simd_bits_range_ref<W>)result).for_each_word(a, b, [](bitword<W> &w0, bitword<W> &w1, bitword<W> &w2) {
+        w0 = w1 & w2;
+    });
+    return result;
+}
+template <size_t W>
+simd_bits<W> operator^(const simd_bits<W> a, const simd_bits_range_ref<W> b) {
+    return (const simd_bits_range_ref<W>)a ^ (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator^(const simd_bits_range_ref<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a ^ (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator^(const simd_bits<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a ^ (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator|(const simd_bits<W> a, const simd_bits_range_ref<W> b) {
+    return (const simd_bits_range_ref<W>)a | (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator|(const simd_bits_range_ref<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a | (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator|(const simd_bits<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a | (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator&(const simd_bits<W> a, const simd_bits_range_ref<W> b) {
+    return (const simd_bits_range_ref<W>)a & (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator&(const simd_bits_range_ref<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a & (const simd_bits_range_ref<W>)b;
+}
+template <size_t W>
+simd_bits<W> operator&(const simd_bits<W> a, const simd_bits<W> b) {
+    return (const simd_bits_range_ref<W>)a & (const simd_bits_range_ref<W>)b;
+}
+
+template <size_t W>
+bool simd_bits<W>::operator<(const simd_bits_range_ref<W> other) const {
+    if (num_simd_words != other.num_simd_words) {
+        return num_simd_words < other.num_simd_words;
+    }
+    for (size_t k = 0; k < num_simd_words; k++) {
+        if (ptr_simd[k] != other.ptr_simd[k]) {
+            return ptr_simd[k] < other.ptr_simd[k];
+        }
+    }
+    return false;
+}
+
+template <size_t W>
 simd_bits<W> &simd_bits<W>::operator^=(const simd_bits_range_ref<W> other) {
     simd_bits_range_ref<W>(*this) ^= other;
     return *this;
@@ -204,6 +282,11 @@ void simd_bits<W>::destructive_resize(size_t new_min_bits) {
 template <size_t W>
 size_t simd_bits<W>::popcnt() const {
     return simd_bits_range_ref<W>(*this).popcnt();
+}
+
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const simd_bits<W> m) {
+    return out << simd_bits_range_ref<W>(m);
 }
 
 }

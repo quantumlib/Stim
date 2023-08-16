@@ -230,6 +230,31 @@ class PauliFrame {
     }
 
     /**
+     * @param {!string} bases
+     * @param {!Uint32Array} targets
+     */
+    do_mpp(bases, targets) {
+        let anticommutes = 0;
+        for (let k = 0; k < bases.length; k++) {
+            let t = targets[k];
+            let obs = bases[k];
+            if (obs === 'X') {
+                anticommutes ^= this.zs[t];
+            } else if (obs === 'Z') {
+                anticommutes ^= this.xs[t];
+            } else if (obs === 'Y') {
+                anticommutes ^= this.xs[t] ^ this.zs[t];
+            } else {
+                throw new Error(`Unrecognized measure obs: '${obs}'`);
+            }
+        }
+        for (let k = 0; k < bases.length; k++) {
+            let t = targets[k];
+            this.flags[t] |= anticommutes;
+        }
+    }
+
+    /**
      * @param {!string} observable
      * @param {!Array<!int>} targets
      */

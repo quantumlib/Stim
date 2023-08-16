@@ -19,7 +19,7 @@ SYNOPSIS
     sinter collect \
         --circuits FILEPATH [...] \
         --decoders pymatching|fusion_blossom|...  [...] \
-        --processes int \
+        --processes int|"auto" \
         [--max_shots int] \
         [--max_errors int] \
         [--save_resume_filepath FILEPATH] \
@@ -33,30 +33,33 @@ SYNOPSIS
         [--postselected_detectors_predicate PYTHON_EXPRESSION] \
         [--postselected_observables_predicate PYTHON_EXPRESSION] \
         [--quiet] \
-        [--split_errors] \
-        [--start_batch_size int]
+        [--count_detection_events] \
+        [--count_observable_error_combos] \
+        [--start_batch_size int] \
+        [--custom_error_count_key NAME] \
+        [--allowed_cpu_affinity_ids PYTHON_EXPRESSION [ANOTHER_PYTHON_EXPRESSION ...]]
 
 DESCRIPTION
     Uses python multiprocessing to collect shots from the given circuit, decode
     them using the given decoders, and report CSV statistics on error rates.
 
 OPTIONS
-    --circuits CIRCUITS [CIRCUITS ...]
+    --circuits FILEPATH [ANOTHER_FILEPATH ...]
         Circuit files to sample from and decode. This parameter can be given
         multiple arguments.
-    --decoders DECODERS [DECODERS ...]
+    --decoders NAME [ANOTHER_NAME ...]
         The decoder to use to predict observables from detection events.
-    --custom_decoders_module_function CUSTOM_DECODERS_MODULE_FUNCTION
+    --custom_decoders_module_function MODULE_NAME:FUNCTION_NAME
         Use the syntax "module:function" to "import function from module" and
         use the result of "function()" as the custom_decoders dictionary. The
         dictionary must map strings to stim.Decoder instances.
-    --max_shots MAX_SHOTS
+    --max_shots INT
         Sampling of a circuit will stop if this many shots have been taken.
-    --max_errors MAX_ERRORS
+    --max_errors INT
         Sampling of a circuit will stop if this many errors have been seen.
-    --processes PROCESSES
+    --processes INT
         Number of processes to use for simultaneous sampling and decoding.
-    --save_resume_filepath SAVE_RESUME_FILEPATH
+    --save_resume_filepath FILEPATH
         Activates MERGE mode. If save_resume_filepath doesn't exist, initializes
         it with a CSV header. CSV data already at save_resume_filepath counts
         towards max_shots and max_errors.
@@ -65,22 +68,22 @@ OPTIONS
         restarted and it will pick up where it left off. Note that MERGE mode is
         idempotent: if sufficient data has been collected, no additional work is
         done when run again.
-    --start_batch_size START_BATCH_SIZE
+    --start_batch_size INT
         Initial number of samples to batch together into one job. Starting small
         prevents over-sampling of circuits above threshold. The allowed batch
         size increases exponentially from this starting point.
-    --max_batch_size MAX_BATCH_SIZE
+    --max_batch_size INT
         Maximum number of samples to batch together into one job. Bigger values
         increase the delay between jobs finishing. Smaller values decrease the
         amount of aggregation of results, increasing the amount of output
         information.
-    --max_batch_seconds MAX_BATCH_SECONDS
+    --max_batch_seconds INT
         Limits number of shots in a batch so that the estimated runtime of the
         batch is below this amount.
     --postselect_detectors_with_non_zero_4th_coord
         Turns on detector postselection. If any detector with a non-zero 4th
         coordinate fires, the shot is discarded.
-    --postselected_detectors_predicate POSTSELECTED_DETECTORS_PREDICATE
+    --postselected_detectors_predicate PYTHON_EXPRESSION
         Specifies a predicate used to decide which detectors to postselect. When
         a postselected detector produces a detection event, the shot is
         discarded instead of being given to the decoder. The number of discarded
@@ -99,7 +102,7 @@ OPTIONS
         Examples:
             --postselected_detectors_predicate "coords[2] == 0"
             --postselected_detectors_predicate "coords[3] < metadata['postselection_level']"
-    --postselected_observables_predicate POSTSELECTED_OBSERVABLES_PREDICATE
+    --postselected_observables_predicate PYTHON_EXPRESSION
         Specifies a predicate used to decide which observables to postselect.
         When a decoder mispredicts a postselected observable, the shot is
         discarded instead of counting as an error.
@@ -115,17 +118,22 @@ OPTIONS
         Examples:
             --postselected_observables_predicate "False"
             --postselected_observables_predicate "metadata['d'] == 5 and index >= 2"
-    --split_errors
-        Causes errors to be grouped by the observable mispredictions that caused
-        the error.
+    --count_observable_error_combos
+        When set, the returned stats will include custom counts like
+        `obs_mistake_mask=E_E__` counting how many times the decoder made each
+        pattern of observable mistakes.
+    --count_detection_events
+        When set, the returned stats will include custom counts
+        `detectors_checked` and `detection_events`. The detection fraction is
+        the ratio of these two numbers.
     --quiet
         Disables writing progress to stderr.
     --also_print_results_to_stdout
         Even if writing to a file, also write results to stdout.
-    --existing_data_filepaths [EXISTING_DATA_FILEPATHS ...]
+    --existing_data_filepaths [FILEPATH ...]
         CSV data from these files counts towards max_shots and max_errors. This
         parameter can be given multiple arguments.
-    --metadata_func METADATA_FUNC
+    --metadata_func PYTHON_EXPRESSION
         A python expression that associates json metadata with a circuit's
         results. Set to "auto" to use "sinter.comma_separated_key_values(path)".
         
@@ -146,6 +154,14 @@ OPTIONS
             --metadata_func "{'path': path}"
             --metadata_func "auto"
             --metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"
+    --custom_error_count_key NAME
+        Makes `--max_errors` apply to `stat.custom_counts[key]` instead of to `stat.errors`.
+    --allowed_cpu_affinity_ids PYTHON_EXPRESSION [ANOTHER_PYTHON_EXPRESSION ...],
+        Controls which CPUs workers can be pinned to. By default, any CPU can be pinned to.
+        Specifying this argument makes it so that only the given CPU ids can be pinned. The
+        given arguments will be evaluated as python expressions. The expressions 
+        should be integers or iterables of integers. So values like "1" and "[1, 2, 4]" and
+        "range(5, 30)" all work.
 
 EXAMPLES
     Example #1
@@ -174,7 +190,10 @@ NAME
 
 SYNOPSIS
     sinter combine \
-        FILEPATH [...]
+        FILEPATH [...] \
+        \
+        [--order preserve|metadata|error] \
+        [--strip_custom_counts]
 
 DESCRIPTION
     Loads sample statistics from one or more CSV statistics files (produced by
@@ -184,6 +203,14 @@ DESCRIPTION
 OPTIONS
     filepaths
         The locations of statistics files with rows aggregate together.
+    --order
+        Decides how to sort the output data.
+        The options are:
+            metadata (default): Orders by the json_metadata column.
+            preserve: Keeps the same order as the input.
+            error: Orders by the error rate.
+    --strip_custom_counts
+        Removes custom_counts data from the output. 
 
 
 EXAMPLES
@@ -245,13 +272,16 @@ SYNOPSIS
         [--fig_size float float] \
         [--highlight_max_likelihood_factor float] \
         [--plot_args_func PYTHON_EXPRESSION] \
-        [--split_errors] \
+        [--custom_error_count_keys] \
         [--subtitle "{common}"|text] \
         [--title text] \
         [--type "error_rate"|"discard_rate"|"custom_y" [...] \
         [--xaxis "text"|"[log]text"|"[sqrt]text"] \
         [--yaxis "text"|"[log]text"|"[sqrt]text"] \
-        [--ymin float]
+        [--xmin float] \
+        [--xmax float] \
+        [--ymin float] \
+        [--line_fits]
 
 DESCRIPTION
     Creates a plot of statistics collected by `sinter collect` by grouping data
@@ -415,17 +445,44 @@ OPTIONS
     --in IN [IN ...]      Input files to get data from.
     --type {error_rate,discard_rate,custom_y} [{error_rate,discard_rate,custom_y} ...]
         Picks the figures to include.
-    --out OUT             Output file to write the plot to. The file extension determines the type of image. Either this or --show must be specified.
-    --xaxis XAXIS         Customize the X axis label. Prefix [log] for logarithmic scale. Prefix [sqrt] for square root scale.
-    --yaxis YAXIS         Customize the Y axis label. Prefix [log] for logarithmic scale. Prefix [sqrt] for square root scale.
-    --split_errors        When a stat has classified errors, this causes each classification to be a separate statistic.
-    --show                Displays the plot in a window. Either this or --out must be specified.
-    --ymin YMIN           Sets the minimum value of the y axis (max always 1).
-    --title TITLE         Sets the title of the plot.
-    --subtitle SUBTITLE   Sets the subtitle of the plot. Note: The pattern "{common}" will expand to text including all json metadata values that are the same across all stats.
+    --out OUT
+        Output file to write the plot to.
+        The file extension determines the type of image.
+        Either this or --show must be specified.
+    --xaxis XAXIS
+        Customize the X axis label.
+        Prefix [log] for logarithmic scale.
+        Prefix [sqrt] for square root scale.
+    --yaxis YAXIS
+        Customize the Y axis label.
+        Prefix [log] for logarithmic scale.
+        Prefix [sqrt] for square root scale.
+    --split_custom_counts
+        When a stat has custom counts, this splits it into multiple copies of
+        the stat with each one having exactly one of the custom counts.
+    --show
+        Displays the plot in a window. Either this or --out must be specified.
+    --ymin float
+        Sets the minimum value of the y axis (max always 1).
+    --xmin float
+        Forces the minimum value of the x axis.
+    --xmax float
+        Forces the maximum value of the x axis.
+    --title text
+        Sets the title of the plot.
+    --subtitle SUBTITLE
+        Sets the subtitle of the plot. Note: The pattern "{common}" will expand
+        to text including all json metadata values that are the same across all
+        stats.
     --highlight_max_likelihood_factor HIGHLIGHT_MAX_LIKELIHOOD_FACTOR
-        The relative likelihood ratio that determines the color highlights around curves. Set this to 1 or larger. Set to 1 to disable highlighting.
-
+        The relative likelihood ratio that determines the color highlights
+        around curves. Set this to 1 or larger. Set to 1 to disable
+        highlighting.
+    --line_fits: Adds a least-squared line fit to each curve. Note that the fit
+        is always done according to the scaling of the plot. For example, on
+        a semilog y plot it will be fitting a line to (x, log(y)). Data points
+        are not weighted in any way. On a log plot, data points at infinity are
+        not included in the fit.
 
 EXAMPLES
     Example #1

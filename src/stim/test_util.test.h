@@ -21,8 +21,6 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/stabilizers/pauli_string.h"
-
 std::mt19937_64 &SHARED_TEST_RNG();
 
 std::string rewind_read_close(FILE *f);

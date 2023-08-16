@@ -50,12 +50,12 @@ int stim::command_sample(int argc, const char **argv) {
     }
 
     if (num_shots == 1 && !skip_reference_sample) {
-        TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
+        TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(in, out, out_format.id, false, rng);
     } else if (num_shots > 0) {
         auto circuit = Circuit::from_file(in);
         simd_bits<MAX_BITWORD_WIDTH> ref(0);
         if (!skip_reference_sample) {
-            ref = TableauSimulator::reference_sample_circuit(circuit);
+            ref = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
         }
         sample_batch_measurements_writing_results_to_disk(circuit, ref, num_shots, out, out_format.id, rng);
     }

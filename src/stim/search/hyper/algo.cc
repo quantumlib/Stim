@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <sstream>
 
 #include "stim/search/graphlike/algo.h"
 #include "stim/search/hyper/edge.h"
@@ -52,27 +53,29 @@ DetectorErrorModel stim::find_undetectable_logical_error(
 
     Graph graph = Graph::from_dem(model, dont_explore_edges_with_degree_above);
 
-    if (graph.distance_1_error_mask) {
+    auto empty_search_state = SearchState{{}, simd_bits<64>(graph.num_observables)};
+
+    if (graph.distance_1_error_mask.not_zero()) {
         DetectorErrorModel out;
         SearchState s1{{}, graph.distance_1_error_mask};
-        s1.append_transition_as_error_instruction_to({}, out);
+        s1.append_transition_as_error_instruction_to(empty_search_state, out);
         return out;
     }
 
     std::queue<SearchState> queue;
     std::map<SearchState, SearchState> back_map;
     // Mark the vacuous dead-end state as already seen.
-    back_map.emplace(SearchState(), SearchState());
+    back_map.emplace(empty_search_state, empty_search_state);
 
     // Search starts from any and all edges crossing an observable.
     for (size_t node = 0; node < graph.nodes.size(); node++) {
         for (const auto &e : graph.nodes[node].edges) {
-            if (e.crossing_observable_mask && e.nodes.sorted_items[0] == node) {
+            if (e.crossing_observable_mask.not_zero() && e.nodes.sorted_items[0] == node) {
                 SearchState start{e.nodes, e.crossing_observable_mask};
                 if (start.dets.size() <= dont_explore_detection_event_sets_with_size_above) {
                     queue.push(start);
                 }
-                back_map.emplace(start, SearchState());
+                back_map.emplace(start, empty_search_state);
             }
         }
     }
@@ -94,12 +97,27 @@ DetectorErrorModel stim::find_undetectable_logical_error(
                 continue;
             }
             if (next.dets.empty()) {
-                assert(next.obs_mask);  // Otherwise, it would have already been in back_map.
+                assert(next.obs_mask.not_zero());  // Otherwise, it would have already been in back_map.
                 return backtrack_path(back_map, next);
             }
             queue.push(std::move(next));
         }
     }
 
-    throw std::invalid_argument("Failed to find any logical errors.");
+    std::stringstream err_msg;
+    err_msg << "Failed to find any graphlike logical errors.";
+    if (graph.num_observables == 0) {
+        err_msg << " Circuit defines no observables.";
+    }
+    if (graph.nodes.size() == 0) {
+        err_msg << " Circuit defines no detectors.";
+    }
+    bool edges = 0;
+    for (const auto &n : graph.nodes) {
+        edges |= ( n.edges.size() > 0 );
+    }
+    if ( !edges ) {
+        err_msg << " Circuit defines no errors that can flip detectors or observables.";
+    }
+    throw std::invalid_argument(err_msg.str());
 }

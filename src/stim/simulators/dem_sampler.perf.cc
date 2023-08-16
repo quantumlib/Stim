@@ -28,7 +28,7 @@ BENCHMARK(DemSampler_surface_code_rotated_memory_z_distance11_100rounds_1024stri
     auto circuit = generate_surface_code_circuit(params).circuit;
     auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     std::mt19937_64 rng(0);
-    DemSampler sampler(dem, std::mt19937_64(0), 1024);
+    DemSampler<MAX_BITWORD_WIDTH> sampler(dem, std::mt19937_64(0), 1024);
     size_t count = 0;
     benchmark_go([&]() {
         sampler.resample(false);

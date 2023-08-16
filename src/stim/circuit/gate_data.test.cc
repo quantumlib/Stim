@@ -16,8 +16,8 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
@@ -70,18 +70,20 @@ TEST(gate_data, hash_matches_storage_location) {
     }
 }
 
-std::pair<std::vector<PauliString<MAX_BITWORD_WIDTH>>, std::vector<PauliString<MAX_BITWORD_WIDTH>>>
+template <size_t W>
+std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>>
 circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
-    TableauSimulator sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
-    TableauSimulator sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
+    TableauSimulator<W> sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
+    TableauSimulator<W> sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
     sim1.expand_do_circuit(circuit);
     sim2.expand_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};
 }
 
+template <size_t W>
 bool is_decomposition_correct(const Gate &gate) {
     const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
     if (decomposition == nullptr) {
@@ -101,10 +103,10 @@ bool is_decomposition_correct(const Gate &gate) {
 
     Circuit circuit1 = epr;
     circuit1.safe_append_u(gate.name, qs);
-    auto v1 = circuit_output_eq_val(circuit1);
+    auto v1 = circuit_output_eq_val<W>(circuit1);
 
     Circuit circuit2 = epr + Circuit(decomposition);
-    auto v2 = circuit_output_eq_val(circuit2);
+    auto v2 = circuit_output_eq_val<W>(circuit2);
     for (const auto &op : circuit2.operations) {
         if (op.gate_type != GateType::CX && op.gate_type != GateType::H && op.gate_type != GateType::S &&
             op.gate_type != GateType::M && op.gate_type != GateType::R) {
@@ -115,17 +117,17 @@ bool is_decomposition_correct(const Gate &gate) {
     return v1 == v2;
 }
 
-TEST(gate_data, decompositions_are_correct) {
+TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
     for (const auto &g : GATE_DATA.items) {
         auto data = g.extra_data_func();
         if (g.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(data.h_s_cx_m_r_decomposition != nullptr) << g.name;
         }
         if (data.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
-            EXPECT_TRUE(is_decomposition_correct(g)) << g.name;
+            EXPECT_TRUE(is_decomposition_correct<W>(g)) << g.name;
         }
     }
-}
+})
 
 TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
@@ -137,43 +139,11 @@ TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     }
 })
 
-TEST(gate_data, stabilizer_flows_are_correct) {
+TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
     for (const auto &g : GATE_DATA.items) {
-         auto flows = g.flows();
-         if (flows.empty()) {
-            continue;
-         }
-         std::vector<GateTarget> targets;
-        if (g.id == GateType::MPP) {
-            targets.push_back(GateTarget::x(0));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::y(1));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::z(2));
-            targets.push_back(GateTarget::x(3));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::x(4));
-        } else {
-            targets.push_back(GateTarget::qubit(0));
-            if (g.flags & GATE_TARGETS_PAIRS) {
-               targets.push_back(GateTarget::qubit(1));
-            }
-        }
-
-         Circuit c;
-         c.safe_append(g.id, targets, {});
-         auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
-         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
-             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
-         }
-    }
-}
-
-TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
-    for (const auto &g : GATE_DATA.items) {
-        auto flows = g.flows();
+        auto flows = g.flows<W>();
         if (flows.empty()) {
-           continue;
+            continue;
         }
         std::vector<GateTarget> targets;
         if (g.id == GateType::MPP) {
@@ -188,7 +158,39 @@ TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
         } else {
             targets.push_back(GateTarget::qubit(0));
             if (g.flags & GATE_TARGETS_PAIRS) {
-               targets.push_back(GateTarget::qubit(1));
+                targets.push_back(GateTarget::qubit(1));
+            }
+        }
+
+        Circuit c;
+        c.safe_append(g.id, targets, {});
+        auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
+        for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
+            EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
+        }
+    }
+})
+
+TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit, {
+    for (const auto &g : GATE_DATA.items) {
+        auto flows = g.flows<W>();
+        if (flows.empty()) {
+            continue;
+        }
+        std::vector<GateTarget> targets;
+        if (g.id == GateType::MPP) {
+            targets.push_back(GateTarget::x(0));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::y(1));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::z(2));
+            targets.push_back(GateTarget::x(3));
+            targets.push_back(GateTarget::combiner());
+            targets.push_back(GateTarget::x(4));
+        } else {
+            targets.push_back(GateTarget::qubit(0));
+            if (g.flags & GATE_TARGETS_PAIRS) {
+                targets.push_back(GateTarget::qubit(1));
             }
         }
 
@@ -198,4 +200,4 @@ TEST(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];
         }
     }
-}
+})

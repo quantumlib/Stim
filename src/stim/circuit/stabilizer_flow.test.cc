@@ -17,12 +17,13 @@
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
-TEST(stabilizer_flow, check_if_circuit_has_stabilizer_flows) {
-    auto results = check_if_circuit_has_stabilizer_flows(
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_stabilizer_flows, {
+    auto results = check_if_circuit_has_stabilizer_flows<W>(
         256,
         SHARED_TEST_RNG(),
         Circuit(R"CIRCUIT(
@@ -31,41 +32,40 @@ TEST(stabilizer_flow, check_if_circuit_has_stabilizer_flows) {
             M 4
         )CIRCUIT"),
         {
-            StabilizerFlow::from_str("Z___ -> Z____"),
-            StabilizerFlow::from_str("_Z__ -> _Z__"),
-            StabilizerFlow::from_str("__Z_ -> __Z_"),
-            StabilizerFlow::from_str("___Z -> ___Z"),
-            StabilizerFlow::from_str("XX__ -> XX__"),
-            StabilizerFlow::from_str("XXXX -> XXXX"),
-            StabilizerFlow::from_str("XYZ_ -> XYZ_"),
-            StabilizerFlow::from_str("XXX_ -> XXX_"),
-            StabilizerFlow::from_str("ZZZZ -> ____ xor rec[-1]"),
-            StabilizerFlow::from_str("+___Z -> -___Z"),
-            StabilizerFlow::from_str("-___Z -> -___Z"),
-            StabilizerFlow::from_str("-___Z -> +___Z"),
+            StabilizerFlow<W>::from_str("Z___ -> Z____"),
+            StabilizerFlow<W>::from_str("_Z__ -> _Z__"),
+            StabilizerFlow<W>::from_str("__Z_ -> __Z_"),
+            StabilizerFlow<W>::from_str("___Z -> ___Z"),
+            StabilizerFlow<W>::from_str("XX__ -> XX__"),
+            StabilizerFlow<W>::from_str("XXXX -> XXXX"),
+            StabilizerFlow<W>::from_str("XYZ_ -> XYZ_"),
+            StabilizerFlow<W>::from_str("XXX_ -> XXX_"),
+            StabilizerFlow<W>::from_str("ZZZZ -> ____ xor rec[-1]"),
+            StabilizerFlow<W>::from_str("+___Z -> -___Z"),
+            StabilizerFlow<W>::from_str("-___Z -> -___Z"),
+            StabilizerFlow<W>::from_str("-___Z -> +___Z"),
         });
     ASSERT_EQ(results, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0}));
-}
+})
 
-TEST(stabilizer_flow, str_and_from_str) {
-    auto flow = StabilizerFlow{
-        PauliString<MAX_BITWORD_WIDTH>::from_str("XY"),
-        PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"),
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, str_and_from_str, {
+    auto flow = StabilizerFlow<W>{
+        PauliString<W>::from_str("XY"),
+        PauliString<W>::from_str("_Z"),
         {GateTarget::rec(-3)},
     };
     auto s = "+XY -> +_Z xor rec[-3]";
     ASSERT_EQ(flow.str(), s);
-    ASSERT_EQ(StabilizerFlow::from_str(s), flow);
+    ASSERT_EQ(StabilizerFlow<W>::from_str(s), flow);
 
-    ASSERT_EQ(StabilizerFlow::from_str("1 -> rec[-1]"), (StabilizerFlow{
-        PauliString<MAX_BITWORD_WIDTH>(0),
-        PauliString<MAX_BITWORD_WIDTH>(0),
-        {GateTarget::rec(-1)}
-    }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("1 -> rec[-1]"),
+        (StabilizerFlow<W>{PauliString<W>(0), PauliString<W>(0), {GateTarget::rec(-1)}}));
 
-    ASSERT_EQ(StabilizerFlow::from_str("-1 -> -X xor rec[-1] xor rec[-3]"), (StabilizerFlow{
-        PauliString<MAX_BITWORD_WIDTH>::from_str("-"),
-        PauliString<MAX_BITWORD_WIDTH>::from_str("-X"),
-        {GateTarget::rec(-1), GateTarget::rec(-3)}
-    }));
-}
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("-1 -> -X xor rec[-1] xor rec[-3]"),
+        (StabilizerFlow<W>{
+            PauliString<W>::from_str("-"),
+            PauliString<W>::from_str("-X"),
+            {GateTarget::rec(-1), GateTarget::rec(-3)}}));
+})

@@ -38,6 +38,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_collapsing(failed);
     add_gate_data_controlled(failed);
     add_gate_data_hada(failed);
+    add_gate_data_heralded(failed);
     add_gate_data_noisy(failed);
     add_gate_data_pauli(failed);
     add_gate_data_period_3(failed);
@@ -97,29 +98,6 @@ Gate::Gate(
       name_len((uint8_t)strlen(name)),
       id(gate_id),
       best_candidate_inverse_id(best_inverse_gate) {
-}
-std::vector<StabilizerFlow> Gate::flows() const {
-    if (flags & GATE_IS_UNITARY) {
-        auto t = tableau<MAX_BITWORD_WIDTH>();
-        if (flags & GATE_TARGETS_PAIRS) {
-            return {
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X_"), t.xs[0], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z_"), t.zs[0], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_X"), t.xs[1], {}},
-                StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("_Z"), t.zs[1], {}},
-            };
-        }
-        return {
-            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("X"), t.xs[0], {}},
-            StabilizerFlow{stim::PauliString<MAX_BITWORD_WIDTH>::from_str("Z"), t.zs[0], {}},
-        };
-    }
-    std::vector<StabilizerFlow> out;
-    auto data = extra_data_func();
-    for (const auto &c : data.flow_data) {
-        out.push_back(StabilizerFlow::from_str(c));
-    }
-    return out;
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {

@@ -18,11 +18,9 @@
 
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
-#include "stim/search/hyper/edge.h"
 #include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
-using namespace stim::impl_search_hyper;
 
 TEST(find_undetectable_logical_error, no_error) {
     // No error.
@@ -215,4 +213,21 @@ TEST(find_undetectable_logical_error, repetition_code) {
     auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
 
     ASSERT_EQ(stim::find_undetectable_logical_error(graphlike_model, 4, 4, false).instructions.size(), 7);
+}
+
+TEST(find_undetectable_logical_error, many_observables) {
+    Circuit circuit(R"CIRCUIT(
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        X_ERROR(0.1) 0 1 2 3 4
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        DETECTOR rec[-1] rec[-5]
+        DETECTOR rec[-2] rec[-6]
+        DETECTOR rec[-3] rec[-7]
+        DETECTOR rec[-4] rec[-8]
+        M 4
+        OBSERVABLE_INCLUDE(1200) rec[-1]
+    )CIRCUIT");
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
+    auto err = stim::find_undetectable_logical_error(graphlike_model, 4, 4, false);
+    ASSERT_EQ(err.instructions.size(), 5);
 }

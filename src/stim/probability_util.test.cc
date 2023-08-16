@@ -16,6 +16,8 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/mem/simd_bits.h"
+#include "stim/mem/simd_word.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -45,9 +47,9 @@ TEST(probability_util, sample_hit_indices) {
     }
 }
 
-TEST(probability_util, biased_random) {
+TEST_EACH_WORD_SIZE_W(probability_util, biased_random, {
     std::vector<float> probs{0, 0.01, 0.03, 0.1, 0.4, 0.49, 0.5, 0.6, 0.9, 0.99, 0.999, 1};
-    simd_bits<MAX_BITWORD_WIDTH> data(1000000);
+    simd_bits<W> data(1000000);
     size_t n = data.num_bits_padded();
     for (auto p : probs) {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), SHARED_TEST_RNG());
@@ -62,4 +64,4 @@ TEST(probability_util, biased_random) {
         EXPECT_TRUE(min_expected <= t && t <= max_expected)
             << min_expected / n << " < " << t / (float)n << " < " << max_expected / n << " for p=" << p;
     }
-}
+})

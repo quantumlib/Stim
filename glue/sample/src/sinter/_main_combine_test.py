@@ -131,3 +131,23 @@ shots,errors,discards,seconds,decoder,   strong_id,json_metadata
       4000,       600,         6,    6.00,pymatching,deadbeef1,"{""d"":9}",
       6000,       400,      4000,    10.0,pymatching,deadbeef2,"{""d"":200}",
 """
+
+
+def test_order_custom_counts():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+shots,errors,discards,seconds,decoder,   strong_id,json_metadata,custom_counts
+1000, 100,   4,       2.0,    pymatching,deadbeef0,[],"{""d4"":3,""d2"":30}"
+            """.strip(), file=f)
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "combine",
+                str(d / "input.csv"),
+            ])
+        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts
+      1000,       100,         4,    2.00,pymatching,deadbeef0,[],"{""d2"":30,""d4"":3}"
+"""

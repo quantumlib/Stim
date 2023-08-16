@@ -15,24 +15,27 @@
 #include "stim/simulators/frame_simulator_util.h"
 
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/force_streaming.h"
 
-using namespace stim;
+namespace stim {
 
-std::pair<simd_bit_table<MAX_BITWORD_WIDTH>, simd_bit_table<MAX_BITWORD_WIDTH>> stim::sample_batch_detection_events(
+template <size_t W>
+std::pair<simd_bit_table<W>, simd_bit_table<W>> sample_batch_detection_events(
     const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng) {
-    FrameSimulator sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, rng);
+    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, rng);
     sim.reset_all_and_run(circuit);
 
-    return std::pair<simd_bit_table<MAX_BITWORD_WIDTH>, simd_bit_table<MAX_BITWORD_WIDTH>>{
+    return std::pair<simd_bit_table<W>, simd_bit_table<W>>{
         std::move(sim.det_record.storage),
         std::move(sim.obs_record),
     };
 }
 
+template <size_t W>
 void rerun_frame_sim_while_streaming_dets_to_disk(
     const Circuit &circuit,
     CircuitStats circuit_stats,
-    FrameSimulator &sim,
+    FrameSimulator<W> &sim,
     size_t num_shots,
     bool prepend_observables,
     bool append_observables,
@@ -47,7 +50,7 @@ void rerun_frame_sim_while_streaming_dets_to_disk(
     }
 
     MeasureRecordBatchWriter writer(out, num_shots, format);
-    std::vector<simd_bits<MAX_BITWORD_WIDTH>> observables;
+    std::vector<simd_bits<W>> observables;
     sim.reset_all();
     writer.begin_result_type('D');
     circuit.for_each_operation([&](const CircuitInstruction &op) {
@@ -58,18 +61,18 @@ void rerun_frame_sim_while_streaming_dets_to_disk(
             if (sim.det_record.unwritten >= WRITE_SIZE) {
                 assert(sim.det_record.stored == WRITE_SIZE);
                 assert(sim.det_record.unwritten == WRITE_SIZE);
-                writer.batch_write_bytes<MAX_BITWORD_WIDTH>(sim.det_record.storage, WRITE_SIZE >> 6);
+                writer.batch_write_bytes<W>(sim.det_record.storage, WRITE_SIZE >> 6);
                 sim.det_record.clear();
             }
         }
     });
     for (size_t k = sim.det_record.stored - sim.det_record.unwritten; k < sim.det_record.stored; k++) {
-        writer.batch_write_bit<MAX_BITWORD_WIDTH>(sim.det_record.storage[k]);
+        writer.batch_write_bit<W>(sim.det_record.storage[k]);
     }
     if (append_observables) {
         writer.begin_result_type('L');
         for (size_t k = 0; k < circuit_stats.num_observables; k++) {
-            writer.batch_write_bit<MAX_BITWORD_WIDTH>(sim.obs_record[k]);
+            writer.batch_write_bit<W>(sim.obs_record[k]);
         }
     }
     writer.write_end();
@@ -79,7 +82,7 @@ void rerun_frame_sim_while_streaming_dets_to_disk(
             obs_out,
             num_shots,
             circuit_stats.num_observables,
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             sim.obs_record,
             obs_out_format,
             'L',
@@ -88,10 +91,11 @@ void rerun_frame_sim_while_streaming_dets_to_disk(
     }
 }
 
+template <size_t W>
 void rerun_frame_sim_while_streaming_measurements_to_disk(
     const Circuit &circuit,
-    FrameSimulator &sim,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    FrameSimulator<W> &sim,
+    const simd_bits<W> &reference_sample,
     size_t num_shots,
     FILE *out,
     SampleFormat format) {
@@ -104,11 +108,12 @@ void rerun_frame_sim_while_streaming_measurements_to_disk(
     sim.m_record.final_write_unwritten_results_to(writer, reference_sample);
 }
 
+template <size_t W>
 void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     const Circuit &circuit,
     const CircuitStats &circuit_stats,
-    FrameSimulator &frame_sim,
-    simd_bit_table<MAX_BITWORD_WIDTH> &out_concat_buf,
+    FrameSimulator<W> &frame_sim,
+    simd_bit_table<W> &out_concat_buf,
     size_t num_shots,
     bool prepend_observables,
     bool append_observables,
@@ -129,7 +134,7 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
             obs_out,
             num_shots,
             circuit_stats.num_observables,
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             frame_sim.obs_record,
             obs_out_format,
             'L',
@@ -155,7 +160,7 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
             out,
             num_shots,
             circuit_stats.num_observables + circuit_stats.num_detectors,
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             out_concat_buf,
             format,
             c1,
@@ -166,7 +171,7 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
             out,
             num_shots,
             circuit_stats.num_detectors,
-            simd_bits<MAX_BITWORD_WIDTH>(0),
+            simd_bits<W>(0),
             det_data,
             format,
             'D',
@@ -175,11 +180,12 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     }
 }
 
+template <size_t W>
 void rerun_frame_sim_in_memory_and_write_measurements_to_disk(
     const Circuit &circuit,
     CircuitStats circuit_stats,
-    FrameSimulator &frame_sim,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    FrameSimulator<W> &frame_sim,
+    const simd_bits<W> &reference_sample,
     size_t num_shots,
     FILE *out,
     SampleFormat format) {
@@ -190,7 +196,8 @@ void rerun_frame_sim_in_memory_and_write_measurements_to_disk(
         out, num_shots, circuit_stats.num_measurements, reference_sample, measure_data, format, 'M', 'M', 0);
 }
 
-void stim::sample_batch_detection_events_writing_results_to_disk(
+template <size_t W>
+void sample_batch_detection_events_writing_results_to_disk(
     const Circuit &circuit,
     size_t num_shots,
     bool prepend_observables,
@@ -210,32 +217,32 @@ void stim::sample_batch_detection_events_writing_results_to_disk(
     // Pick a batch size that's not so large that it would cause memory issues.
     size_t batch_size = 0;
     while (batch_size < 1024 && batch_size < num_shots) {
-        batch_size += MAX_BITWORD_WIDTH;
+        batch_size += W;
     }
     uint64_t memory_per_full_shot =
         2 * stats.num_qubits + 2 * stats.max_lookback + stats.num_observables + stats.num_detectors;
     while (batch_size > 0 &&
            should_use_streaming_because_bit_count_is_too_large_to_store(memory_per_full_shot * batch_size)) {
-        batch_size -= MAX_BITWORD_WIDTH;
+        batch_size -= W;
     }
 
     // If the batch size ended up at 0, the results won't fit in memory. Need to stream.
     bool streaming = batch_size == 0;
     if (streaming) {
-        batch_size = MAX_BITWORD_WIDTH;
+        batch_size = W;
     }
 
     // Create a correctly sized frame simulator.
-    FrameSimulator frame_sim(
+    FrameSimulator<W> frame_sim(
         stats,
         streaming ? FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK : FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY,
         batch_size,
         rng);
 
     // Run the frame simulator until as many shots as requested have been written.
-    simd_bit_table<MAX_BITWORD_WIDTH> out_concat_buf(0, 0);
+    simd_bit_table<W> out_concat_buf(0, 0);
     if (append_observables || prepend_observables) {
-        out_concat_buf = simd_bit_table<MAX_BITWORD_WIDTH>(stats.num_detectors + stats.num_observables, batch_size);
+        out_concat_buf = simd_bit_table<W>(stats.num_detectors + stats.num_observables, batch_size);
     }
     size_t shots_left = num_shots;
     while (shots_left) {
@@ -270,15 +277,16 @@ void stim::sample_batch_detection_events_writing_results_to_disk(
     }
 }
 
-simd_bit_table<MAX_BITWORD_WIDTH> stim::sample_batch_measurements(
+template <size_t W>
+simd_bit_table<W> sample_batch_measurements(
     const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bits<W> &reference_sample,
     size_t num_samples,
     std::mt19937_64 &rng,
     bool transposed) {
-    FrameSimulator sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, rng);
+    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, rng);
     sim.reset_all_and_run(circuit);
-    simd_bit_table<MAX_BITWORD_WIDTH> result = std::move(sim.m_record.storage);
+    simd_bit_table<W> result = std::move(sim.m_record.storage);
 
     if (reference_sample.not_zero()) {
         result = transposed_vs_ref(num_samples, result, reference_sample);
@@ -292,9 +300,10 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim::sample_batch_measurements(
     return result;
 }
 
-void stim::sample_batch_measurements_writing_results_to_disk(
+template <size_t W>
+void sample_batch_measurements_writing_results_to_disk(
     const Circuit &circuit,
-    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bits<W> &reference_sample,
     uint64_t num_shots,
     FILE *out,
     SampleFormat format,
@@ -309,22 +318,22 @@ void stim::sample_batch_measurements_writing_results_to_disk(
     // Pick a batch size that's not so large that it would cause memory issues.
     size_t batch_size = 0;
     while (batch_size < 1024 && batch_size < num_shots) {
-        batch_size += MAX_BITWORD_WIDTH;
+        batch_size += W;
     }
     uint64_t memory_per_full_shot = 2 * stats.num_qubits + stats.num_measurements;
     while (batch_size > 0 &&
            should_use_streaming_because_bit_count_is_too_large_to_store(memory_per_full_shot * batch_size)) {
-        batch_size -= MAX_BITWORD_WIDTH;
+        batch_size -= W;
     }
 
     // If the batch size ended up at 0, the results won't fit in memory. Need to stream.
     bool streaming = batch_size == 0;
     if (streaming) {
-        batch_size = MAX_BITWORD_WIDTH;
+        batch_size = W;
     }
 
     // Create a correctly sized frame simulator.
-    FrameSimulator frame_sim(
+    FrameSimulator<W> frame_sim(
         circuit.compute_stats(),
         streaming ? FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK : FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY,
         batch_size,
@@ -344,3 +353,5 @@ void stim::sample_batch_measurements_writing_results_to_disk(
         shots_left -= shots_performed;
     }
 }
+
+}  // namespace stim

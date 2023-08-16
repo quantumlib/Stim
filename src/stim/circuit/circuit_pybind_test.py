@@ -713,9 +713,107 @@ def test_shortest_graphlike_error_empty():
         stim.Circuit().shortest_graphlike_error()
 
 
+def test_shortest_graphlike_error_msgs():
+    with pytest.raises(
+            ValueError,
+            match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."
+    ):
+        stim.Circuit().shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no errors that can flip detectors or observables."):
+        c.shortest_graphlike_error()
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables."):
+        c.shortest_graphlike_error()
+
+
 def test_search_for_undetectable_logical_errors_empty():
     with pytest.raises(ValueError, match="Failed to find"):
         stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+
+def test_search_for_undetectable_logical_errors_msgs():
+    with pytest.raises(
+            ValueError,
+            match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."
+    ):
+        stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError,
+                       match="Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+    """)
+    with pytest.raises(ValueError,
+                       match="Circuit defines no observables. Circuit defines no detectors. Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no errors that can flip detectors or observables."):
+        c.search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Circuit defines no observables."):
+        c.search_for_undetectable_logical_errors(
             dont_explore_edges_increasing_symptom_degree=True,
             dont_explore_edges_with_degree_above=4,
             dont_explore_detection_event_sets_with_size_above=4,
@@ -1380,3 +1478,64 @@ def test_reference_sample():
     expected_padded = np.zeros_like(unpacked)
     expected_padded[:len(expected)] = expected
     np.testing.assert_array_equal(unpacked, expected_padded)
+
+
+def test_max_mix_depolarization_is_allowed_in_dem_conversion_without_args():
+    assert stim.Circuit("""
+        H 0
+        CX 0 1
+        DEPOLARIZE1(0.75) 0
+        CX 0 1
+        H 0
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    """).detector_error_model(approximate_disjoint_errors=True) == stim.DetectorErrorModel("""
+        error(0.5) D0
+        error(0.5) D0 D1
+        error(0.5) D1
+    """)
+
+    assert stim.Circuit("""
+        H 0 1
+        CX 0 2 1 3
+        DEPOLARIZE2(0.9375) 0 1
+        CX 0 2 1 3
+        H 0 1
+        M 0 1 2 3
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        DETECTOR rec[-4]
+    """).detector_error_model() == stim.DetectorErrorModel("""
+        error(0.5) D0
+        error(0.5) D0 D1
+        error(0.5) D0 D1 D2
+        error(0.5) D0 D1 D2 D3
+        error(0.5) D0 D1 D3
+        error(0.5) D0 D2
+        error(0.5) D0 D2 D3
+        error(0.5) D0 D3
+        error(0.5) D1
+        error(0.5) D1 D2
+        error(0.5) D1 D2 D3
+        error(0.5) D1 D3
+        error(0.5) D2
+        error(0.5) D2 D3
+        error(0.5) D3
+    """)
+
+
+def test_shortest_graphlike_error_many_obs():
+    c = stim.Circuit("""
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        X_ERROR(0.1) 0 1 2 3 4
+        MPP Z0*Z1 Z1*Z2 Z2*Z3 Z3*Z4
+        DETECTOR rec[-1] rec[-5]
+        DETECTOR rec[-2] rec[-6]
+        DETECTOR rec[-3] rec[-7]
+        DETECTOR rec[-4] rec[-8]
+        M 4
+        OBSERVABLE_INCLUDE(1200) rec[-1]
+    """)
+    assert len(c.shortest_graphlike_error()) == 5

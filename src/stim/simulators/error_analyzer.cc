@@ -61,6 +61,9 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::MR:
             undo_MRZ(inst);
             break;
+        case GateType::HERALDED_ERASE:
+            undo_HERALDED_ERASE(inst);
+            break;
         case GateType::RX:
             undo_RX(inst);
             break;
@@ -219,8 +222,7 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             break;
         default:
             throw std::invalid_argument(
-                "Not implemented by ErrorAnalyzer::undo_gate: " +
-                std::string(GATE_DATA.items[inst.gate_type].name));
+                "Not implemented by ErrorAnalyzer::undo_gate: " + std::string(GATE_DATA.items[inst.gate_type].name));
     }
 }
 
@@ -315,6 +317,21 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
         xor_sorted_measurement_error(d.range(), dat);
         tracker.zs[q].xor_sorted_items(d.range());
         check_for_gauge(tracker.xs[q], context_op, q);
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
+    }
+}
+
+void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        tracker.num_measurements_in_past--;
+
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        if (accumulate_errors) {
+            double p = dat.args[0] * 0.25;
+            add_error_combinations<3>(
+                {0, 0, 0, 0, p, p, p, p}, {tracker.xs[q].range(), tracker.zs[q].range(), d.range()});
+        }
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
@@ -744,8 +761,8 @@ void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] >= 3.0 / 4.0) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).");
+    if (dat.args[0] > 3.0 / 4.0) {
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).");
     }
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
@@ -762,8 +779,8 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] >= 15.0 / 16.0) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability >= 15/16).");
+    if (dat.args[0] > 15.0 / 16.0) {
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability > 15/16).");
     }
     double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
@@ -1542,7 +1559,8 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
             for (size_t k = meas.targets.size(); k--;) {
                 reversed_measure_targets.push_back(meas.targets[k]);
             }
-            undo_MZ_with_context({GateType::M, meas.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
+            undo_MZ_with_context(
+                {GateType::M, meas.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
             undo_ZCX(cnot);
             undo_H_YZ(h_yz);
             undo_H_XZ(h_xz);
@@ -1555,7 +1573,9 @@ void ErrorAnalyzer::undo_MXX_disjoint_controls_segment(const CircuitInstruction 
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MX_with_context(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}}, "an X-basis pair measurement (MXX)");
+        undo_MX_with_context(
+            CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            "an X-basis pair measurement (MXX)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
@@ -1568,7 +1588,9 @@ void ErrorAnalyzer::undo_MYY_disjoint_controls_segment(const CircuitInstruction 
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MY_with_context(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}}, "a Y-basis pair measurement (MYY)");
+        undo_MY_with_context(
+            CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            "a Y-basis pair measurement (MYY)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
@@ -1581,7 +1603,9 @@ void ErrorAnalyzer::undo_MZZ_disjoint_controls_segment(const CircuitInstruction 
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MZ_with_context(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}}, "a Z-basis pair measurement (MZ)");
+        undo_MZ_with_context(
+            CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            "a Z-basis pair measurement (MZ)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
@@ -1597,9 +1621,7 @@ void ErrorAnalyzer::undo_MXX(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        tracker.xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -1613,9 +1635,7 @@ void ErrorAnalyzer::undo_MYY(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        tracker.xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -1629,9 +1649,7 @@ void ErrorAnalyzer::undo_MZZ(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets},
-        tracker.xs.size(),
-        [&](CircuitInstruction segment){
+        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
 }

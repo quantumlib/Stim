@@ -214,23 +214,23 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_basic, {
     )CIRCUIT"));
 })
 
-TEST(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip) {
+TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip, {
     for (const auto &little_endian : std::vector<bool>{false, true}) {
         for (size_t n = 0; n < 10; n++) {
             // Pick a random stabilizer state.
-            TableauSimulator sim(SHARED_TEST_RNG(), n);
-            sim.inv_state = Tableau<MAX_BITWORD_WIDTH>::random(n, SHARED_TEST_RNG());
+            TableauSimulator<W> sim(SHARED_TEST_RNG(), n);
+            sim.inv_state = Tableau<W>::random(n, SHARED_TEST_RNG());
             auto desired_vec = sim.to_state_vector(little_endian);
 
             // Round trip through a circuit.
-            auto circuit = stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(desired_vec, little_endian);
-            auto actual_vec = circuit_to_output_state_vector<MAX_BITWORD_WIDTH>(circuit, little_endian);
+            auto circuit = stabilizer_state_vector_to_circuit<W>(desired_vec, little_endian);
+            auto actual_vec = circuit_to_output_state_vector<W>(circuit, little_endian);
             ASSERT_EQ(actual_vec, desired_vec) << "little_endian=" << little_endian << ", n=" << n;
         }
     }
-}
+})
 
-TEST(conversions, circuit_to_tableau_ignoring_gates) {
+TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau_ignoring_gates, {
     Circuit unitary(R"CIRCUIT(
         I 0
         X 0
@@ -315,45 +315,46 @@ TEST(conversions, circuit_to_tableau_ignoring_gates) {
         TICK
     )CIRCUIT");
 
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(unitary, false, false, false).num_qubits, 2);
+    ASSERT_EQ(circuit_to_tableau<W>(unitary, false, false, false).num_qubits, 2);
 
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(noise, false, false, false); }, std::invalid_argument);
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(noise, false, true, true); }, std::invalid_argument);
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(noise, true, false, false), Tableau<MAX_BITWORD_WIDTH>(2));
+    ASSERT_THROW({ circuit_to_tableau<W>(noise, false, false, false); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_to_tableau<W>(noise, false, true, true); }, std::invalid_argument);
+    ASSERT_EQ(circuit_to_tableau<W>(noise, true, false, false), Tableau<W>(2));
 
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(measure, false, false, false); }, std::invalid_argument);
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(measure, true, false, true); }, std::invalid_argument);
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(measure, false, true, false), Tableau<MAX_BITWORD_WIDTH>(1));
+    ASSERT_THROW({ circuit_to_tableau<W>(measure, false, false, false); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_to_tableau<W>(measure, true, false, true); }, std::invalid_argument);
+    ASSERT_EQ(circuit_to_tableau<W>(measure, false, true, false), Tableau<W>(1));
 
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(reset, false, false, false); }, std::invalid_argument);
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(reset, true, true, false); }, std::invalid_argument);
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(reset, false, false, true), Tableau<MAX_BITWORD_WIDTH>(1));
+    ASSERT_THROW({ circuit_to_tableau<W>(reset, false, false, false); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_to_tableau<W>(reset, true, true, false); }, std::invalid_argument);
+    ASSERT_EQ(circuit_to_tableau<W>(reset, false, false, true), Tableau<W>(1));
 
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(measure_reset, false, false, false); }, std::invalid_argument);
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(measure_reset, true, false, true); }, std::invalid_argument);
-    ASSERT_THROW({ circuit_to_tableau<MAX_BITWORD_WIDTH>(measure_reset, true, true, false); }, std::invalid_argument);
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(measure_reset, false, true, true), Tableau<MAX_BITWORD_WIDTH>(1));
+    ASSERT_THROW({ circuit_to_tableau<W>(measure_reset, false, false, false); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_to_tableau<W>(measure_reset, true, false, true); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_to_tableau<W>(measure_reset, true, true, false); }, std::invalid_argument);
+    ASSERT_EQ(circuit_to_tableau<W>(measure_reset, false, true, true), Tableau<W>(1));
 
-    ASSERT_EQ(circuit_to_tableau<MAX_BITWORD_WIDTH>(annotations, false, false, false), Tableau<MAX_BITWORD_WIDTH>(1));
+    ASSERT_EQ(circuit_to_tableau<W>(annotations, false, false, false), Tableau<W>(1));
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
+        circuit_to_tableau<W>(
+            annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
             .num_qubits,
         2);
-}
+})
 
-TEST(conversions, circuit_to_tableau) {
+TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau, {
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
         )CIRCUIT"),
             false,
             false,
             false),
-        Tableau<MAX_BITWORD_WIDTH>(0));
+        Tableau<W>(0));
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
             REPEAT 10 {
                 X 0
@@ -363,10 +364,10 @@ TEST(conversions, circuit_to_tableau) {
             false,
             false,
             false),
-        Tableau<MAX_BITWORD_WIDTH>(1));
+        Tableau<W>(1));
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
             REPEAT 11 {
                 X 0
@@ -376,20 +377,20 @@ TEST(conversions, circuit_to_tableau) {
             false,
             false,
             false),
-        GATE_DATA.at("X").tableau<MAX_BITWORD_WIDTH>());
+        GATE_DATA.at("X").tableau<W>());
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
             S 0
         )CIRCUIT"),
             false,
             false,
             false),
-        GATE_DATA.at("S").tableau<MAX_BITWORD_WIDTH>());
+        GATE_DATA.at("S").tableau<W>());
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
             SQRT_Y_DAG 1
             CZ 0 1
@@ -398,10 +399,10 @@ TEST(conversions, circuit_to_tableau) {
             false,
             false,
             false),
-        GATE_DATA.at("CX").tableau<MAX_BITWORD_WIDTH>());
+        GATE_DATA.at("CX").tableau<W>());
 
     ASSERT_EQ(
-        circuit_to_tableau<MAX_BITWORD_WIDTH>(
+        circuit_to_tableau<W>(
             Circuit(R"CIRCUIT(
             R 0
             X_ERROR(0.1) 0
@@ -413,28 +414,28 @@ TEST(conversions, circuit_to_tableau) {
             true,
             true,
             true),
-        GATE_DATA.at("CX").tableau<MAX_BITWORD_WIDTH>());
-}
+        GATE_DATA.at("CX").tableau<W>());
+})
 
-TEST(conversions, circuit_to_output_state_vector) {
-    ASSERT_EQ(circuit_to_output_state_vector<MAX_BITWORD_WIDTH>(Circuit(""), false),
-              (std::vector<std::complex<float>>{{1}}));
+TEST_EACH_WORD_SIZE_W(conversions, circuit_to_output_state_vector, {
     ASSERT_EQ(
-        circuit_to_output_state_vector<MAX_BITWORD_WIDTH>(Circuit("H 0 1"), false),
+        circuit_to_output_state_vector<W>(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
+    ASSERT_EQ(
+        circuit_to_output_state_vector<W>(Circuit("H 0 1"), false),
         (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector<MAX_BITWORD_WIDTH>(Circuit("X 1"), false),
+        circuit_to_output_state_vector<W>(Circuit("X 1"), false),
         (std::vector<std::complex<float>>{{0}, {1}, {0}, {0}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector<MAX_BITWORD_WIDTH>(Circuit("X 1"), true),
+        circuit_to_output_state_vector<W>(Circuit("X 1"), true),
         (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}}));
-}
+})
 
-TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
+TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau, {
     for (size_t n = 0; n < 10; n++) {
-        auto desired = Tableau<MAX_BITWORD_WIDTH>::random(n, SHARED_TEST_RNG());
-        Circuit circuit = tableau_to_circuit<MAX_BITWORD_WIDTH>(desired, "elimination");
-        auto actual = circuit_to_tableau<MAX_BITWORD_WIDTH>(circuit, false, false, false);
+        auto desired = Tableau<W>::random(n, SHARED_TEST_RNG());
+        Circuit circuit = tableau_to_circuit<W>(desired, "elimination");
+        auto actual = circuit_to_tableau<W>(circuit, false, false, false);
         ASSERT_EQ(actual, desired);
 
         for (const auto &op : circuit.operations) {
@@ -442,7 +443,7 @@ TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
                 << op;
         }
     }
-}
+})
 
 TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit, {
     ASSERT_EQ(tableau_to_circuit<W>(GATE_DATA.at("I").tableau<W>(), "elimination"), Circuit(R"CIRCUIT(
@@ -471,13 +472,14 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit, {
         )CIRCUIT"));
 })
 
-TEST(conversions, unitary_to_tableau_vs_gate_data) {
+TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_vs_gate_data, {
     for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            EXPECT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(gate.unitary(), true), gate.tableau<MAX_BITWORD_WIDTH>()) << gate.name;
+            EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>())
+                << gate.name;
         }
     }
-}
+})
 
 TEST_EACH_WORD_SIZE_W(conversions, tableau_to_unitary_vs_gate_data, {
     VectorSimulator v1(2);
@@ -505,34 +507,54 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_unitary_vs_gate_data, {
     }
 })
 
-TEST(conversions, unitary_vs_tableau_basic) {
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("XCZ").unitary(), false), GATE_DATA.at("ZCX").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("XCZ").unitary(), true), GATE_DATA.at("XCZ").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("ZCX").unitary(), false), GATE_DATA.at("XCZ").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("ZCX").unitary(), true), GATE_DATA.at("ZCX").tableau<MAX_BITWORD_WIDTH>());
+TEST_EACH_WORD_SIZE_W(conversions, unitary_vs_tableau_basic, {
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), false),
+        GATE_DATA.at("ZCX").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), true),
+        GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), false),
+        GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), true),
+        GATE_DATA.at("ZCX").tableau<W>());
 
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("XCY").unitary(), false), GATE_DATA.at("YCX").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("XCY").unitary(), true), GATE_DATA.at("XCY").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("YCX").unitary(), false), GATE_DATA.at("XCY").tableau<MAX_BITWORD_WIDTH>());
-    ASSERT_EQ(unitary_to_tableau<MAX_BITWORD_WIDTH>(GATE_DATA.at("YCX").unitary(), true), GATE_DATA.at("YCX").tableau<MAX_BITWORD_WIDTH>());
-}
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), false),
+        GATE_DATA.at("YCX").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), true),
+        GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), false),
+        GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(
+        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), true),
+        GATE_DATA.at("YCX").tableau<W>());
+})
 
-TEST(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary) {
+TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary, {
     for (bool little_endian : std::vector<bool>{false, true}) {
         for (size_t n = 0; n < 6; n++) {
-            auto desired = Tableau<MAX_BITWORD_WIDTH>::random(n, SHARED_TEST_RNG());
-            auto unitary = tableau_to_unitary<MAX_BITWORD_WIDTH>(desired, little_endian);
-            auto actual = unitary_to_tableau<MAX_BITWORD_WIDTH>(unitary, little_endian);
+            auto desired = Tableau<W>::random(n, SHARED_TEST_RNG());
+            auto unitary = tableau_to_unitary<W>(desired, little_endian);
+            auto actual = unitary_to_tableau<W>(unitary, little_endian);
             ASSERT_EQ(actual, desired) << "little_endian=" << little_endian << ", n=" << n;
         }
     }
-}
+})
 
-TEST(conversions, unitary_to_tableau_fail) {
-    ASSERT_THROW({ unitary_to_tableau<MAX_BITWORD_WIDTH>({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false); }, std::invalid_argument);
+TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fail, {
     ASSERT_THROW(
         {
-            unitary_to_tableau<MAX_BITWORD_WIDTH>(
+            unitary_to_tableau<W>({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false);
+        },
+        std::invalid_argument);
+    ASSERT_THROW(
+        {
+            unitary_to_tableau<W>(
                 {
                     {1, 0, 0, 0},
                     {0, 1, 0, 0},
@@ -544,7 +566,7 @@ TEST(conversions, unitary_to_tableau_fail) {
         std::invalid_argument);
     ASSERT_THROW(
         {
-            unitary_to_tableau<MAX_BITWORD_WIDTH>(
+            unitary_to_tableau<W>(
                 {
                     {1, 0, 0, 0, 0, 0, 0, 0},
                     {0, 1, 0, 0, 0, 0, 0, 0},
@@ -558,7 +580,7 @@ TEST(conversions, unitary_to_tableau_fail) {
                 false);
         },
         std::invalid_argument);
-}
+})
 
 TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_fuzz, {
     for (size_t n = 0; n < 10; n++) {
@@ -584,7 +606,8 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_partial_fuzz, {
             for (size_t k = 0; k < n - skipped; k++) {
                 expected_stabilizers.push_back(t.zs[k]);
             }
-            ASSERT_THROW({ stabilizers_to_tableau<W>(expected_stabilizers, false, false, false); }, std::invalid_argument);
+            ASSERT_THROW(
+                { stabilizers_to_tableau<W>(expected_stabilizers, false, false, false); }, std::invalid_argument);
             auto actual = stabilizers_to_tableau<W>(expected_stabilizers, false, true, false);
             for (size_t k = 0; k < n - skipped; k++) {
                 ASSERT_EQ(actual.zs[k], expected_stabilizers[k]);

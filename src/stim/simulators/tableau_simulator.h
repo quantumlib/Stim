@@ -32,8 +32,14 @@
 
 namespace stim {
 
+/// A stabilizer circuit simulator that tracks an inverse stabilizer tableau
+/// and allows interactive usage, where gates and measurements are applied
+/// on demand.
+///
+/// The template parameter, W, represents the SIMD width
+template <size_t W>
 struct TableauSimulator {
-    Tableau<MAX_BITWORD_WIDTH> inv_state;
+    Tableau<W> inv_state;
     std::mt19937_64 rng;
     int8_t sign_bias;
     MeasureRecord measurement_record;
@@ -54,9 +60,8 @@ struct TableauSimulator {
     /// Samples the given circuit in a deterministic fashion.
     ///
     /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
-    static simd_bits<MAX_BITWORD_WIDTH> reference_sample_circuit(const Circuit &circuit);
-    static simd_bits<MAX_BITWORD_WIDTH> sample_circuit(
-        const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
+    static simd_bits<W> reference_sample_circuit(const Circuit &circuit);
+    static simd_bits<W> sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
     static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.
@@ -80,7 +85,7 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     pauli_string: The observable to measure.
-    bool measure_pauli_string(const PauliStringRef<MAX_BITWORD_WIDTH> pauli_string, double flip_probability);
+    bool measure_pauli_string(const PauliStringRef<W> pauli_string, double flip_probability);
 
     /// Determines if a qubit's X observable commutes (vs anti-commutes) with the current stabilizer generators.
     bool is_deterministic_x(size_t target) const;
@@ -95,9 +100,9 @@ struct TableauSimulator {
     void expand_do_circuit(const Circuit &circuit, uint64_t reps = 1);
     void do_operation_ensure_size(const CircuitInstruction &operation);
 
-    void apply_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, const std::vector<size_t> &targets);
+    void apply_tableau(const Tableau<W> &tableau, const std::vector<size_t> &targets);
 
-    std::vector<PauliString<MAX_BITWORD_WIDTH>> canonical_stabilizers() const;
+    std::vector<PauliString<W>> canonical_stabilizers() const;
 
     void do_gate(const CircuitInstruction &inst);
 
@@ -139,6 +144,7 @@ struct TableauSimulator {
     void do_YCZ(const CircuitInstruction &inst);
     void do_DEPOLARIZE1(const CircuitInstruction &inst);
     void do_DEPOLARIZE2(const CircuitInstruction &inst);
+    void do_HERALDED_ERASE(const CircuitInstruction &inst);
     void do_X_ERROR(const CircuitInstruction &inst);
     void do_Y_ERROR(const CircuitInstruction &inst);
     void do_Z_ERROR(const CircuitInstruction &inst);
@@ -162,7 +168,7 @@ struct TableauSimulator {
     void do_MRZ(const CircuitInstruction &inst);
 
     /// Returns the single-qubit stabilizer of a target or, if it is entangled, the identity operation.
-    PauliString<MAX_BITWORD_WIDTH> peek_bloch(uint32_t target) const;
+    PauliString<W> peek_bloch(uint32_t target) const;
 
     /// Returns the expectation value of measuring the qubit in the X basis.
     int8_t peek_x(uint32_t target) const;
@@ -179,15 +185,15 @@ struct TableauSimulator {
     void postselect_z(SpanRef<const GateTarget> targets, bool desired_result);
 
     /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
-    void paulis(const PauliString<MAX_BITWORD_WIDTH> &paulis);
+    void paulis(const PauliString<W> &paulis);
 
     /// Performs a measurement and returns a kickback that flips between the possible post-measurement states.
     ///
     /// Deterministic measurements have no kickback.
     /// This is represented by setting the kickback to the empty Pauli string.
-    std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> measure_kickback_z(GateTarget target);
-    std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> measure_kickback_y(GateTarget target);
-    std::pair<bool, PauliString<MAX_BITWORD_WIDTH>> measure_kickback_x(GateTarget target);
+    std::pair<bool, PauliString<W>> measure_kickback_z(GateTarget target);
+    std::pair<bool, PauliString<W>> measure_kickback_y(GateTarget target);
+    std::pair<bool, PauliString<W>> measure_kickback_x(GateTarget target);
 
     bool read_measurement_record(uint32_t encoded_target) const;
     void single_cx(uint32_t c, uint32_t t);
@@ -208,7 +214,7 @@ struct TableauSimulator {
     /// Returns:
     ///    SIZE_MAX: Already collapsed.
     ///    Else: The pivot index. The start-of-time qubit whose X flips the measurement.
-    size_t collapse_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii);
+    size_t collapse_qubit_z(size_t target, TableauTransposedRaii<W> &transposed_raii);
 
     /// Collapses the given qubits into the X basis.
     ///
@@ -236,7 +242,7 @@ struct TableauSimulator {
     /// After this runs, it is guaranteed that the inverse tableau maps the target qubit's X and Z observables to
     /// themselves (possibly negated) and that it maps all other qubits to Pauli products not involving the target
     /// qubit.
-    void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii<MAX_BITWORD_WIDTH> &transposed_raii);
+    void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii<W> &transposed_raii);
 
     /// Determines the expected value of an observable (which will always be -1, 0, or +1).
     ///
@@ -250,7 +256,7 @@ struct TableauSimulator {
     ///     +1: Observable will be deterministically false when measured.
     ///     -1: Observable will be deterministically true when measured.
     ///     0: Observable will be random when measured.
-    int8_t peek_observable_expectation(const PauliString<MAX_BITWORD_WIDTH> &observable) const;
+    int8_t peek_observable_expectation(const PauliString<W> &observable) const;
 
    private:
     void do_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
@@ -302,5 +308,7 @@ void perform_pauli_errors_via_correlated_errors(
 }
 
 }  // namespace stim
+
+#include "stim/simulators/tableau_simulator.inl"
 
 #endif

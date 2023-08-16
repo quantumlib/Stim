@@ -135,3 +135,27 @@ def external_stabilizers_of_circuit(circuit: stim.Circuit) -> List[ExternalStabi
         p[k] = 3
         stabilizers.append(stim.PauliString(p) + t.z_output(k))
     return [ExternalStabilizer.from_dual(e, circuit.num_qubits) for e in stabilizers]
+
+
+def test_sign():
+    x, z = external_stabilizers_of_circuit(stim.Circuit("X 0"))
+    assert x.input == stim.PauliString("+X")
+    assert x.output == stim.PauliString("+X")
+    assert z.input == stim.PauliString("+Z")
+    assert z.output == stim.PauliString("-Z")
+
+    assert zx_graph_to_external_stabilizers(text_diagram_to_zx_graph(r"""
+        in---X---out
+    """)) == external_stabilizers_of_circuit(stim.Circuit("I 0"))
+
+    assert zx_graph_to_external_stabilizers(text_diagram_to_zx_graph(r"""
+        in---X(pi)---out
+    """)) == external_stabilizers_of_circuit(stim.Circuit("X 0"))
+
+    assert zx_graph_to_external_stabilizers(text_diagram_to_zx_graph(r"""
+        in---Z(pi)---out
+    """)) == external_stabilizers_of_circuit(stim.Circuit("Z 0"))
+
+    assert zx_graph_to_external_stabilizers(text_diagram_to_zx_graph(r"""
+        in---X(pi)---Z(pi)---out
+    """)) == external_stabilizers_of_circuit(stim.Circuit("Y 0"))

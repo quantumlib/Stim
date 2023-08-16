@@ -78,6 +78,9 @@ struct simd_bits {
     /// Determines whether or not any of the bits in the simd_bits are non-zero.
     bool not_zero() const;
 
+    // Arbitrary ordering.
+    bool operator<(const simd_bits_range_ref<W> other) const;
+
     void destructive_resize(size_t new_min_bits);
 
     /// Returns a reference to the bit at offset k.
@@ -145,6 +148,34 @@ struct simd_bits {
         return num_simd_words * W;
     }
 };
+
+template <size_t W>
+simd_bits<W> operator^(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator|(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator&(const simd_bits_range_ref<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator^(const simd_bits<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator|(const simd_bits<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator&(const simd_bits<W> a, const simd_bits_range_ref<W> b);
+template <size_t W>
+simd_bits<W> operator^(const simd_bits_range_ref<W> a, const simd_bits<W> b);
+template <size_t W>
+simd_bits<W> operator|(const simd_bits_range_ref<W> a, const simd_bits<W> b);
+template <size_t W>
+simd_bits<W> operator&(const simd_bits_range_ref<W> a, const simd_bits<W> b);
+template <size_t W>
+simd_bits<W> operator^(const simd_bits<W> a, const simd_bits<W> b);
+template <size_t W>
+simd_bits<W> operator|(const simd_bits<W> a, const simd_bits<W> b);
+template <size_t W>
+simd_bits<W> operator&(const simd_bits<W> a, const simd_bits<W> b);
+
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const simd_bits<W> m);
 
 }  // namespace stim
 
