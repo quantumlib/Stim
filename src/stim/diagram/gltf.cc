@@ -261,7 +261,6 @@ void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf
 
   <script type="module">
     let container = document.getElementById("stim-3d-viewer-scene-container");
-    let container2 = document.getElementById("stim-3d-viewer-scene-container-2");
     let downloadLink = document.getElementById("stim-3d-viewer-download-link");
     container.textContent = "Loading viewer...";
 
