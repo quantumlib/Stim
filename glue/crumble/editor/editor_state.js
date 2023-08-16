@@ -276,6 +276,40 @@ class EditorState {
     }
 
     /**
+     * @param {!Iterable<int>} affectedQubits
+     * @returns {!Map<!int, !string>}
+     * @private
+     */
+    _inferBases(affectedQubits) {
+        let inferredBases = new Map();
+        let layer = this.copyOfCurCircuit().layers[this.curLayer];
+        for (let q of [...affectedQubits]) {
+            let op = layer.id_ops.get(q);
+            if (op !== undefined) {
+                if (op.gate.name === 'RX' || op.gate.name === 'MX' || op.gate.name === 'MRX') {
+                    inferredBases.set(q, 'X');
+                } else if (op.gate.name === 'RY' || op.gate.name === 'MY' || op.gate.name === 'MRY') {
+                    inferredBases.set(q, 'Y');
+                } else if (op.gate.name === 'R' || op.gate.name === 'M' || op.gate.name === 'MR') {
+                    inferredBases.set(q, 'Z');
+                } else if (op.gate.name === 'MXX' || op.gate.name === 'MYY' || op.gate.name === 'MZZ') {
+                    let opBasis = op.gate.name[1];
+                    for (let q of op.id_targets) {
+                        inferredBases.set(q, opBasis);
+                    }
+                } else if (op.gate.name.startsWith('M') && op.gate.tableau_map === undefined && op.id_targets.length === op.gate.name.length - 1) {
+                    // MPP special case.
+                    for (let k = 0; k < op.id_targets.length; k++) {
+                        let q = op.id_targets[k];
+                        inferredBases.set(q, op.gate.name[k + 1]);
+                    }
+                }
+            }
+        }
+        return inferredBases;
+    }
+
+    /**
      * @param {!boolean} preview
      * @param {!int} markIndex
      */
@@ -288,25 +322,9 @@ class EditorState {
         }
 
         // Determine which qubits have forced basis based on their operation.
-        let forcedBases = new Map();
-        let layer = newCircuit.layers[this.curLayer];
-        for (let q of [...affectedQubits]) {
-            let op = layer.id_ops.get(q);
-            if (op !== undefined) {
-                if (op.gate.name === 'RX' || op.gate.name === 'MX' || op.gate.name === 'MRX') {
-                    forcedBases.set(q, 'X');
-                } else if (op.gate.name === 'RY' || op.gate.name === 'MY' || op.gate.name === 'MRY') {
-                    forcedBases.set(q, 'Y');
-                } else if (op.gate.name === 'R' || op.gate.name === 'M' || op.gate.name === 'MR') {
-                    forcedBases.set(q, 'Z');
-                } else if (op.gate.name === 'MXX' || op.gate.name === 'MYY' || op.gate.name === 'MZZ') {
-                    let opBasis = op.gate.name[1];
-                    for (let q of op.id_targets) {
-                        forcedBases.set(q, opBasis);
-                        affectedQubits.add(q);
-                    }
-                }
-            }
+        let forcedBases = this._inferBases(affectedQubits);
+        for (let q of forcedBases.keys()) {
+            affectedQubits.add(q);
         }
 
         // Pick a default basis for unforced qubits.
@@ -320,6 +338,7 @@ class EditorState {
         }
 
         // Mark each qubit with its inferred basis.
+        let layer = newCircuit.layers[this.curLayer];
         for (let q of affectedQubits) {
             let basis = forcedBases.get(q);
             if (basis === undefined) {
@@ -331,6 +350,31 @@ class EditorState {
                 new Float32Array([markIndex]),
                 new Uint32Array([q]),
             ));
+        }
+
+        this.commit_or_preview(newCircuit, preview);
+    }
+
+    /**
+     * @param {!boolean} preview
+     */
+    unmarkFocusInferBasis(preview) {
+        let newCircuit = this.copyOfCurCircuit().withCoordsIncluded(this.focusedSet.values());
+        let c2q = newCircuit.coordToQubitMap();
+        let affectedQubits = new Set();
+        for (let key of this.focusedSet.keys()) {
+            affectedQubits.add(c2q.get(key));
+        }
+
+        let inferredBases = this._inferBases(affectedQubits);
+        for (let q of inferredBases.keys()) {
+            affectedQubits.add(q);
+        }
+
+        for (let q of affectedQubits) {
+            if (q !== undefined) {
+                newCircuit.layers[this.curLayer].id_dropMarkersAt(q);
+            }
         }
 
         this.commit_or_preview(newCircuit, preview);
@@ -363,16 +407,21 @@ class EditorState {
         let newCircuit = this.copyOfCurCircuit();
         let [x, y] = xyToPos(this.curMouseX, this.curMouseY);
         let [minX, minY] = minXY(this.focusedSet.values());
+        let coords = [];
         if (x !== undefined && minX !== undefined && !this.focusedSet.has(`${x},${y}`)) {
             let dx = x - minX;
             let dy = y - minY;
 
-            let coords = [];
             for (let [vx, vy] of this.focusedSet.values()) {
                 coords.push([vx, vy]);
                 coords.push([vx + dx, vy + dy]);
             }
-
+        } else if (this.focusedSet.size === 2) {
+            for (let [vx, vy] of this.focusedSet.values()) {
+                coords.push([vx, vy]);
+            }
+        }
+        if (coords.length > 0) {
             newCircuit = newCircuit.withCoordsIncluded(coords)
             let c2q = newCircuit.coordToQubitMap();
             for (let k = 0; k < coords.length; k += 2) {
@@ -387,6 +436,7 @@ class EditorState {
                 ));
             }
         }
+
         this.commit_or_preview(newCircuit, preview);
     }
 

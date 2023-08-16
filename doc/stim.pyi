@@ -4566,7 +4566,7 @@ class GateData:
     def num_parens_arguments_range(
         self,
     ) -> range:
-        """Returns whether or not the gate is a measurement or reset.
+        """Returns the min/max parens arguments taken by the gate, as a python range.
 
         Examples:
             >>> import stim
@@ -6516,8 +6516,8 @@ class Tableau:
                 ],
             )
         """
+    @staticmethod
     def from_state_vector(
-        self,
         state_vector: Iterable[float],
         *,
         endian: str,
@@ -7122,9 +7122,6 @@ class Tableau:
                 z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
                 x_signs.shape = math.ceil(len(tableau) / 8)
                 z_signs.shape = math.ceil(len(tableau) / 8)
-                *.dtype = = np.uint8
-                *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-                *_signs.shape = math.ceil(len(tableau) / 8)
                 (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
                 (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
                 (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]

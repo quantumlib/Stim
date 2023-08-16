@@ -47,6 +47,19 @@ class Operation {
     pauliFrameAfter(before) {
         let m = this.gate.tableau_map;
         if (m === undefined) {
+            if (this.gate.name.startsWith('M')) {
+                let differences = 0;
+                for (let k = 0; k < before.length; k++) {
+                    let a = 'XYZ'.indexOf(before[k]);
+                    let b = 'XYZ'.indexOf(this.gate.name[k + 1]);
+                    if (a >= 0 && b >= 0 && a !== b) {
+                        differences++;
+                    }
+                }
+                if (differences % 2 !== 0) {
+                    return 'ERR:' + before;
+                }
+            }
             return before;
         }
         if (before.length !== this.gate.num_qubits) {

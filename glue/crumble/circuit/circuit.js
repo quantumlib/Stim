@@ -1,6 +1,7 @@
 import {Operation} from "./operation.js"
 import {GATE_MAP} from "../gates/gateset.js"
 import {Layer} from "./layer.js"
+import {make_mpp_gate} from '../gates/gateset_mpp.js';
 
 /**
  * @param {!Iterator<TItem>}items
@@ -22,6 +23,90 @@ function groupBy(items, func) {
     }
     return result;
 }
+
+/**
+ * @param {!string} targetText
+ * @returns {!Array.<!string>}
+ */
+function processTargetsTextIntoTargets(targetText) {
+    let targets = [];
+    let flush = () => {
+        if (curTarget !== '') {
+            targets.push(curTarget)
+            curTarget = '';
+        }
+    }
+    let curTarget = '';
+    for (let c of targetText) {
+        if (c === ' ') {
+            flush();
+        } else if (c === '*') {
+            flush();
+            targets.push('*');
+        } else {
+            curTarget += c;
+        }
+    }
+    flush();
+
+    return targets;
+}
+
+/**
+ * @param {!Array.<!string>} targets
+ * @returns {!Array.<!Array.<!string>>}
+ */
+function splitUncombinedTargets(targets) {
+    let result = [];
+    let start = 0;
+    while (start < targets.length) {
+        let end = start + 1;
+        while (end < targets.length && targets[end] === '*') {
+            end += 2;
+        }
+        if (end > targets.length) {
+            throw Error(`Dangling combiner in ${targets}.`);
+        }
+        let term = [];
+        for (let k = start; k < end; k += 2) {
+            if (targets[k] === '*') {
+                if (k === 0) {
+                    throw Error(`Leading combiner in ${targets}.`);
+                }
+                throw Error(`Adjacent combiners in ${targets}.`);
+            }
+            term.push(targets[k]);
+        }
+        result.push(term);
+        start = end;
+    }
+    return result;
+}
+
+/**
+ * @param {!Float32Array} args
+ * @param {!Array.<!string>} combinedTargets
+ * @returns {!Operation}
+ */
+function simplifiedMPP(args, combinedTargets) {
+    let bases = '';
+    let qubits = [];
+    for (let t of combinedTargets) {
+        if (t[0] === 'X' || t[0] === 'Y' || t[0] === 'Z') {
+            bases += t[0];
+            qubits.push(parseInt(t.substring(1)));
+        } else {
+            throw Error(`Non-Pauli target given to MPP: ${combinedTargets}`);
+        }
+    }
+
+    let gate = GATE_MAP.get('M' + bases);
+    if (gate === undefined) {
+        gate = make_mpp_gate(bases);
+    }
+    return new Operation(gate, args, new Uint32Array(qubits));
+}
+
 
 class Circuit {
     /**
@@ -124,7 +209,7 @@ class Circuit {
                 let [a, b] = ab.split('(');
                 name = a.trim();
                 args = b.split(',').map(e => e.trim()).map(parseFloat);
-                targets = c.split(' ').map(e => e.trim()).filter(e => e !== '');
+                targets = processTargetsTextIntoTargets(c);
             } else {
                 let ab = line.split(' ').map(e => e.trim()).filter(e => e !== '');
                 if (ab.length === 0) {
@@ -133,7 +218,7 @@ class Circuit {
                 let [a, ...b] = ab;
                 name = a.trim();
                 args = [];
-                targets = b.map(e => e.trim()).filter(e => e !== '');
+                targets = b.flatMap(processTargetsTextIntoTargets);
             }
             let reverse_pairs = false;
             if (name === '') {
@@ -168,29 +253,15 @@ class Circuit {
                 layers.push(new Layer());
                 return;
             } else if (name === 'MPP') {
+                let combinedTargets = splitUncombinedTargets(targets);
                 let layer = layers[layers.length - 1]
-                for (let targ of targets) {
-                    let name = 'M';
-                    let qubits = [];
-                    for (let term of targ.split('*')) {
-                        name += term[0];
-                        qubits.push(term.substring(1));
-                    }
-                    let gate = GATE_MAP.get(name);
-                    let a = new Float32Array(args);
-                    let layer = layers[layers.length - 1]
-                    if (gate !== undefined) {
-                        layer.put(new Operation(gate, a, new Uint32Array(qubits)));
-                    } else {
-                        console.warn("SPLIT MPP INTO INDIVIDUAL MEASUREMENTS");
-                        for (let k = 0; k < name.length - 1; k++) {
-                            let sub_gate = 'M' + name[k+1];
-                            if (sub_gate === 'MZ') {
-                                sub_gate = 'M';
-                            }
-                            gate = GATE_MAP.get(sub_gate);
-                            layer.put(new Operation(gate, a, new Uint32Array(qubits[k])));
-                        }
+                for (let combo of combinedTargets) {
+                    try {
+                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                    } catch (_) {
+                        layers.push(new Layer());
+                        layer = layers[layers.length - 1];
+                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
                     }
                 }
                 return;
@@ -243,7 +314,8 @@ class Circuit {
 
             let gate = GATE_MAP.get(name);
             if (gate === undefined) {
-                throw new Error("Unrecognized gate name in " + line);
+                console.warn("Unrecognized gate name in " + line);
+                return;
             }
             let a = new Float32Array(args);
 
@@ -450,24 +522,40 @@ class Circuit {
                 let group = opsByName.get(nameWithArgs);
                 let targetGroups = [];
 
-                if (GATE_MAP.get(nameWithArgs.split('(')[0]).can_fuse) {
-                    let flatTargetGroups = [];
-                    for (let op of group) {
-                        flatTargetGroups.push(...op.id_targets)
-                    }
-                    targetGroups.push(flatTargetGroups);
-                } else {
-                    for (let op of group) {
-                        targetGroups.push([...op.id_targets])
-                    }
-                }
+                let gateName = nameWithArgs.split('(')[0];
 
-                for (let targetGroup of targetGroups) {
-                    let line = [nameWithArgs];
-                    for (let t of targetGroup) {
-                        line.push(old2new.get(t));
+                let gate = GATE_MAP.get(gateName);
+                if (gate === undefined && gateName.startsWith('M')) {
+                    let line = ['MPP '];
+                    for (let op of group) {
+                        for (let k = 0; k < op.id_targets.length; k++) {
+                            line.push(gateName[k + 1] + old2new.get(op.id_targets[k]));
+                            line.push('*');
+                        }
+                        line.pop();
                     }
-                    out.push(line.join(' '));
+                    out.push(line.join(''));
+                } else {
+
+                    if (gate !== undefined && gate.can_fuse) {
+                        let flatTargetGroups = [];
+                        for (let op of group) {
+                            flatTargetGroups.push(...op.id_targets)
+                        }
+                        targetGroups.push(flatTargetGroups);
+                    } else {
+                        for (let op of group) {
+                            targetGroups.push([...op.id_targets])
+                        }
+                    }
+
+                    for (let targetGroup of targetGroups) {
+                        let line = [nameWithArgs];
+                        for (let t of targetGroup) {
+                            line.push(old2new.get(t));
+                        }
+                        out.push(line.join(' '));
+                    }
                 }
             }
             out.push(`TICK`);
@@ -530,4 +618,4 @@ class Circuit {
     }
 }
 
-export {Circuit};
+export {Circuit, processTargetsTextIntoTargets, splitUncombinedTargets};
