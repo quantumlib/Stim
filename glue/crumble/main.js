@@ -164,17 +164,7 @@ function makeChordHandlers() {
             editorState.force_redraw();
         }
     });
-    res.set(' ', preview => {
-        let c = editorState.copyOfCurCircuit();
-        let c2q = c.coordToQubitMap();
-        for (let v of editorState.focusedSet.keys()) {
-            let q = c2q.get(v);
-            if (q !== undefined) {
-                c.layers[editorState.curLayer].id_dropMarkersAt(q);
-            }
-        }
-        editorState.commit_or_preview(c, preview);
-    });
+    res.set(' ', preview => editorState.unmarkFocusInferBasis(preview));
     res.set('q', preview => { if (!preview) editorState.changeCurLayerTo(editorState.curLayer - 1); });
     res.set('e', preview => { if (!preview) editorState.changeCurLayerTo(editorState.curLayer + 1); });
 
