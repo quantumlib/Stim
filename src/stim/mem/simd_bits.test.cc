@@ -14,6 +14,8 @@
 
 #include "stim/mem/simd_bits.h"
 
+#include <random>
+
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_util.h"
@@ -222,12 +224,12 @@ TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
         m0[k] = all_set & (1ULL << k);
     }
     m0 += m1;
-    ASSERT_EQ(m0.u64[0], 0);
-    ASSERT_EQ(m0.u64[1], 1);
+    ASSERT_EQ(m0[0], 0);
+    ASSERT_EQ(m0[64], 1);
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
-    simd_bits<W> m0(512);
+    simd_bits<W> m0(512), m1(512);
     m0[511] = 1;
     m0 >>= 64;
     for (size_t word = 0; word < m0.num_u64_padded(); word++) {
@@ -240,6 +242,11 @@ TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
         } else {
             ASSERT_EQ(pattern, uint64_t{1} << 63);
         }
+    }
+    m1 = m0;
+    m1 >>= 0;
+    for (size_t k = 0; k < 512; k++) {
+        ASSERT_EQ(m0[k], m1[k]);
     }
     m0.clear();
     uint64_t on_off = 0xAAAAAAAAAAAAAAAAULL;
@@ -274,32 +281,36 @@ TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
             ASSERT_EQ(pattern, 0ULL);
         }
     }
-    m0.clear();
-    simd_bits<W> m1(512), m2(512);
-    m1.randomize(512, SHARED_TEST_RNG());
-    m2 = m1;
-    m1 >>= 1;
-    for (size_t k = 0; k < 511; k++) {
-        ASSERT_EQ(m1[k], m2[k + 1]);
-    }
-    m1.randomize(512, SHARED_TEST_RNG());
-    m2 = m1;
-    m1 >>= 10;
-    for (size_t k = 0; k < 501; k++) {
-        ASSERT_EQ(m1[k], m2[k + 10]);
-    }
-    m1 >>= 0;
-    for (size_t k = 0; k < 501; k++) {
-        ASSERT_EQ(m1[k], m2[k + 10]);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
+    auto rng = SHARED_TEST_RNG();
+    for (int i = 0; i < 5; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits), m2(num_bits);
+        m1.randomize(num_bits, rng);
+        m2 = m1;
+        std::uniform_int_distribution dist_shift(1, (int)m1.num_bits_padded());
+        size_t shift = dist_shift(rng);
+        m1 >>= shift;
+        for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
+            ASSERT_EQ(m1[k], m2[k + shift]);
+        }
     }
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
-    simd_bits<W> m0(512);
+    simd_bits<W> m0(512), m1(512);
     for (size_t w = 0; w < m0.num_u64_padded(); w++) {
         m0.u64[w] = 0xAAAAAAAAAAAAAAAAULL;
     }
     m0 <<= 1;
+    m1 = m0;
+    m1 <<= 0;
+    for (size_t k = 0; k < 512; k++) {
+        ASSERT_EQ(m0[k], m1[k]);
+    }
     for (size_t w = 0; w < m0.num_u64_padded(); w++) {
         if (w == 0) {
             ASSERT_EQ(m0.u64[w], 0x5555555555555554ULL);
@@ -317,22 +328,22 @@ TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
     }
     m0 <<= 488;
     ASSERT_TRUE(!m0.not_zero());
-    simd_bits<W> m1(448), m2(448);
-    m1.randomize(448, SHARED_TEST_RNG());
-    m2 = m1;
-    m1 <<= 1;
-    for (size_t k = 0; k < 448 - 1; k++) {
-        ASSERT_EQ(m1[k + 1], m2[k]);
-    }
-    m1.randomize(448, SHARED_TEST_RNG());
-    m2 = m1;
-    m1 <<= 10;
-    for (size_t k = 0; k < 448 - 10; k++) {
-        ASSERT_EQ(m1[k + 10], m2[k]);
-    }
-    m1 <<= 0;
-    for (size_t k = 0; k < 448 - 10; k++) {
-        ASSERT_EQ(m1[k + 10], m2[k]);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
+    auto rng = SHARED_TEST_RNG();
+    for (int i = 0; i < 5; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits), m2(num_bits);
+        m1.randomize(num_bits, rng);
+        m2 = m1;
+        std::uniform_int_distribution dist_shift(1, (int)m1.num_bits_padded());
+        size_t shift = dist_shift(rng);
+        m1 <<= shift;
+        for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
+            ASSERT_EQ(m1[k + shift], m2[k]);
+        }
     }
 })
 
