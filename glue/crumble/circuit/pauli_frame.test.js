@@ -1,6 +1,7 @@
 import {test, assertThat} from "../test/test_util.js"
 import {PauliFrame} from "./pauli_frame.js"
 import {GATE_MAP} from "../gates/gateset.js"
+import {make_mpp_gate} from "../gates/gateset_mpp.js"
 import {Operation} from "./operation.js";
 
 test("pauli_frame.to_from", () => {
@@ -30,7 +31,8 @@ test("pauli_frame.to_from_dicts", () => {
 });
 
 test("pauli_frame.do_gate_vs_old_frame_updates", () => {
-    for (let g of GATE_MAP.values()) {
+    let gates = [...GATE_MAP.values(), make_mpp_gate("XYY")];
+    for (let g of gates) {
         let before, after;
         if (g.num_qubits === 1) {
             before = new PauliFrame(4, g.num_qubits);
@@ -50,6 +52,19 @@ test("pauli_frame.do_gate_vs_old_frame_updates", () => {
 
         let before_strings = before.to_strings();
         let actual_after_strings = after.to_strings();
+
+        // Broadcast failure.
+        for (let k = 0; k < actual_after_strings.length; k++) {
+            let a = actual_after_strings[k];
+            if (a.indexOf('&') !== -1 || a.indexOf('!') !== -1 || a.indexOf('%') !== -1 || a.indexOf('$') !== -1) {
+                a = a.replaceAll('_', '!')
+                a = a.replaceAll('X', '%')
+                a = a.replaceAll('Y', '&')
+                a = a.replaceAll('Z', '$')
+                actual_after_strings[k] = a;
+            }
+        }
+
         let op = new Operation(g, new Float32Array(0), new Uint32Array([0, 1]));
         let expected_after_strings = [];
         for (let f = 0; f < before_strings.length; f++) {

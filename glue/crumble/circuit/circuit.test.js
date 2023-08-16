@@ -1,7 +1,8 @@
 import {test, assertThat} from "../test/test_util.js"
-import {Circuit} from "./circuit.js"
+import {Circuit, processTargetsTextIntoTargets, splitUncombinedTargets} from "./circuit.js"
 import {Operation} from "./operation.js";
 import {GATE_MAP} from "../gates/gateset.js";
+import {make_mpp_gate} from '../gates/gateset_mpp.js';
 
 test("circuit.fromStimCircuit", () => {
     let c1 = Circuit.fromStimCircuit(`
@@ -46,6 +47,37 @@ S 1 2
     `.trim());
 });
 
+test("circuit.fromStimCircuit_mpp", () => {
+    let c1 = Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 2) 0
+        QUBIT_COORDS(3, 4) 1
+        QUBIT_COORDS(5, 6) 2
+        MPP X0*Z1*Y2 X2*Y1
+    `);
+    assertThat(c1.qubitCoordData).isEqualTo(
+        new Float64Array([1, 2, 3, 4, 5, 6]));
+    assertThat(c1.layers.length).isEqualTo(2);
+    let op1 = new Operation(make_mpp_gate("XZY"), new Float32Array([]), new Uint32Array([0, 1, 2]));
+    assertThat(c1.layers[0].id_ops).isEqualTo(new Map([
+        [0, op1],
+        [1, op1],
+        [2, op1],
+    ]));
+    let op2 = new Operation(make_mpp_gate("XY"), new Float32Array([]), new Uint32Array([2, 1]));
+    assertThat(c1.layers[1].id_ops).isEqualTo(new Map([
+        [1, op2],
+        [2, op2],
+    ]));
+    assertThat(c1.toStimCircuit()).isEqualTo(`
+QUBIT_COORDS(1, 2) 0
+QUBIT_COORDS(3, 4) 1
+QUBIT_COORDS(5, 6) 2
+MPP X0*Z1*Y2
+TICK
+MPP X2*Y1
+    `.trim());
+});
+
 test('circuit.coordToQubitMap', () => {
     let c = Circuit.fromStimCircuit(`
         QUBIT_COORDS(5, 6) 1
@@ -58,6 +90,24 @@ test('circuit.coordToQubitMap', () => {
         ['10,7', 2],
         ['20,17', 0],
     ]));
+});
+
+test('circuit.processTargetsTextIntoTargets', () => {
+    assertThat(processTargetsTextIntoTargets('')).isEqualTo([]);
+    assertThat(processTargetsTextIntoTargets(' X0*X1')).isEqualTo(['X0', '*', 'X1']);
+    assertThat(processTargetsTextIntoTargets(' 0 1 2')).isEqualTo(['0', '1', '2']);
+    assertThat(processTargetsTextIntoTargets(' X0*X1*Z3 Y1 Y2*Y4')).isEqualTo(['X0', '*', 'X1', '*', 'Z3', 'Y1', 'Y2', '*', 'Y4']);
+});
+
+test('circuit.splitUncombinedTargets', () => {
+    assertThat(splitUncombinedTargets([])).isEqualTo([]);
+    assertThat(splitUncombinedTargets(['X1'])).isEqualTo([['X1']]);
+    assertThat(splitUncombinedTargets(['X1', 'X2'])).isEqualTo([['X1'], ['X2']]);
+    assertThat(splitUncombinedTargets(['X1', '*', 'X2'])).isEqualTo([['X1', 'X2']]);
+    assertThat(splitUncombinedTargets(['X1', '*', 'X2', 'Y1', '*', 'Y2', '*', 'Y3', 'Z1', 'Z2', '*', 'Z3'])).isEqualTo([['X1', 'X2'], ['Y1', 'Y2', 'Y3'], ['Z1'], ['Z2', 'Z3']]);
+    assertThat(() => splitUncombinedTargets(['X1', '*', '*', 'X2'])).throwsAnExceptionThat().matches(/Adjacent combiners/);
+    assertThat(() => splitUncombinedTargets(['X1', '*'])).throwsAnExceptionThat().matches(/Dangling combiner/);
+    assertThat(() => splitUncombinedTargets(['*', 'X1'])).throwsAnExceptionThat().matches(/Leading combiner/);
 });
 
 test('circuit.withCoordsIncluded', () => {

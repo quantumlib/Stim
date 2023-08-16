@@ -265,7 +265,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         },
         clean_doc_string(R"DOC(
             @signature def num_parens_arguments_range(self) -> range:
-            Returns whether or not the gate is a measurement or reset.
+            Returns the min/max parens arguments taken by the gate, as a python range.
 
             Examples:
                 >>> import stim
