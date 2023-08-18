@@ -14,6 +14,8 @@
 
 #include "stim/mem/simd_bits.h"
 
+#include <random>
+
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_util.h"
@@ -157,6 +159,197 @@ TEST_EACH_WORD_SIZE_W(simd_bits, xor_assignment, {
     m2 ^= m1;
     for (size_t k = 0; k < m0.num_u64_padded(); k++) {
         ASSERT_EQ(m2.u64[k], m0.u64[k] ^ m1.u64[k]);
+    }
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
+    simd_bits<W> m0(512);
+    simd_bits<W> m1(512);
+    uint64_t all_set = 0xFFFFFFFFFFFFFFFFULL;
+    uint64_t on_off = 0x0F0F0F0F0F0F0F0FULL;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        for (size_t k = 0; k < 64; k++) {
+            if (word % 2 == 0) {
+                m0[word * 64 + k] = all_set & (1ULL << k);
+                m1[word * 64 + k] = all_set & (1ULL << k);
+            } else {
+                m0[word * 64 + k] = (bool)(on_off & (1ULL << k));
+                m1[word * 64 + k] = (bool)(on_off & (1ULL << k));
+            }
+        }
+    }
+    m0 += m1;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word % 2 == 0) {
+            ASSERT_EQ(pattern, 0xFFFFFFFFFFFFFFFEULL);
+        } else {
+            ASSERT_EQ(pattern, 0x1E1E1E1E1E1E1E1FULL);
+        }
+    }
+    for (size_t k = 0; k < m0.num_u64_padded() / 2; k++) {
+        m1.u64[2 * k] = 0ULL;
+        m1.u64[2 * k + 1] = 0ULL;
+    }
+    m0 += m1;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word % 2 == 0) {
+            ASSERT_EQ(pattern, 0xFFFFFFFFFFFFFFFEULL);
+        } else {
+            ASSERT_EQ(pattern, 0x1E1E1E1E1E1E1E1FULL);
+        }
+    }
+    m0.clear();
+    m1.clear();
+    m1[0] = 1;
+    for (int i = 0; i < 512; i++) {
+        m0 += m1;
+    }
+    for (size_t k = 0; k < 64; k++) {
+        if (k == 9) {
+            ASSERT_EQ(m0[k], 1);
+        } else {
+            ASSERT_EQ(m0[k], 0);
+        }
+    }
+    m0.clear();
+    for (size_t k = 0; k < 64; k++) {
+        m0[k] = all_set & (1ULL << k);
+    }
+    m0 += m1;
+    ASSERT_EQ(m0[0], 0);
+    ASSERT_EQ(m0[64], 1);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
+    simd_bits<W> m0(512), m1(512);
+    m0[511] = 1;
+    m0 >>= 64;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word != m0.num_u64_padded() - 2) {
+            ASSERT_EQ(pattern, 0ULL);
+        } else {
+            ASSERT_EQ(pattern, uint64_t{1} << 63);
+        }
+    }
+    m1 = m0;
+    m1 >>= 0;
+    for (size_t k = 0; k < 512; k++) {
+        ASSERT_EQ(m0[k], m1[k]);
+    }
+    m0.clear();
+    uint64_t on_off = 0xAAAAAAAAAAAAAAAAULL;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        for (size_t k = 0; k < 64; k++) {
+            m0[word * 64 + k] = (bool)(on_off & (1ULL << k));
+        }
+    }
+    m0 >>= 1;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        ASSERT_EQ(pattern, 0x5555555555555555ULL);
+    }
+    m0.clear();
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        for (size_t k = 0; k < 64; k++) {
+            m0[word * 64 + k] = (bool)(on_off & (1ULL << k));
+        }
+    }
+    m0 >>= 128;
+    for (size_t word = 0; word < m0.num_u64_padded(); word++) {
+        uint64_t pattern = 0ULL;
+        for (size_t k = 0; k < 64; k++) {
+            pattern |= (uint64_t{m0[word * 64 + k]} << k);
+        }
+        if (word < 6) {
+            ASSERT_EQ(pattern, 0xAAAAAAAAAAAAAAAA);
+        } else {
+            ASSERT_EQ(pattern, 0ULL);
+        }
+    }
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
+    auto rng = SHARED_TEST_RNG();
+    for (int i = 0; i < 5; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits), m2(num_bits);
+        m1.randomize(num_bits, rng);
+        m2 = m1;
+        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
+        size_t shift = dist_shift(rng);
+        m1 >>= shift;
+        for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
+            ASSERT_EQ(m1[k], m2[k + shift]);
+        }
+        for (size_t k = m1.num_bits_padded() - shift; k < m1.num_bits_padded(); k++) {
+            ASSERT_EQ(m1[k], 0);
+        }
+    }
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
+    simd_bits<W> m0(512), m1(512);
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        m0.u64[w] = 0xAAAAAAAAAAAAAAAAULL;
+    }
+    m0 <<= 1;
+    m1 = m0;
+    m1 <<= 0;
+    for (size_t k = 0; k < 512; k++) {
+        ASSERT_EQ(m0[k], m1[k]);
+    }
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w == 0) {
+            ASSERT_EQ(m0.u64[w], 0x5555555555555554ULL);
+        } else {
+            ASSERT_EQ(m0.u64[w], 0x5555555555555555ULL);
+        }
+    }
+    m0 <<= 63;
+    for (size_t w = 0; w < m0.num_u64_padded(); w++) {
+        if (w == 0) {
+            ASSERT_EQ(m0.u64[w], 0ULL);
+        } else {
+            ASSERT_EQ(m0.u64[w], 0xAAAAAAAAAAAAAAAAULL);
+        }
+    }
+    m0 <<= 488;
+    ASSERT_TRUE(!m0.not_zero());
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
+    auto rng = SHARED_TEST_RNG();
+    for (int i = 0; i < 5; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits), m2(num_bits);
+        m1.randomize(num_bits, rng);
+        m2 = m1;
+        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
+        size_t shift = dist_shift(rng);
+        m1 <<= shift;
+        for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
+            ASSERT_EQ(m1[k + shift], m2[k]);
+        }
+        for (size_t k = 0; k < shift; k++) {
+            ASSERT_EQ(m1[k], 0);
+        }
     }
 })
 
