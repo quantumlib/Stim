@@ -470,9 +470,9 @@ test("circuit.inferAndConvertCoordinates", () => {
         H 0 3 2 1
     `)).isEqualTo(Circuit.fromStimCircuit(`
         QUBIT_COORDS(0, 0) 0
-        QUBIT_COORDS(3, 0) 1
+        QUBIT_COORDS(1, 0) 1
         QUBIT_COORDS(2, 0) 2
-        QUBIT_COORDS(1, 0) 3
+        QUBIT_COORDS(3, 0) 3
         H 0 3 2 1
     `));
 
@@ -503,4 +503,31 @@ test("circuit.inferAndConvertCoordinates", () => {
         QUBIT_COORDS(7, 1) 3
         H 0 3 2 1
     `));
+});
+
+test("circuit.parse_mpp", () => {
+    assertThat(Circuit.fromStimCircuit(`
+        MPP Z0*Z1*Z2 Z3*Z4*Z6
+    `).toString()).isEqualTo(`
+QUBIT_COORDS(0, 0) 0
+QUBIT_COORDS(1, 0) 1
+QUBIT_COORDS(2, 0) 2
+QUBIT_COORDS(3, 0) 3
+QUBIT_COORDS(4, 0) 4
+QUBIT_COORDS(6, 0) 5
+MPP Z0*Z1*Z2 Z3*Z4*Z5
+    `.trim())
+
+    assertThat(Circuit.fromStimCircuit(`
+        MPP Z0*Z1*Z2 Z3*Z4*Z5*X6
+    `).toString()).isEqualTo(`
+QUBIT_COORDS(0, 0) 0
+QUBIT_COORDS(1, 0) 1
+QUBIT_COORDS(2, 0) 2
+QUBIT_COORDS(3, 0) 3
+QUBIT_COORDS(4, 0) 4
+QUBIT_COORDS(5, 0) 5
+QUBIT_COORDS(6, 0) 6
+MPP Z0*Z1*Z2 Z3*Z4*Z5*X6
+    `.trim())
 });

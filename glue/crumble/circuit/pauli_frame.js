@@ -231,7 +231,7 @@ class PauliFrame {
 
     /**
      * @param {!string} bases
-     * @param {!Uint32Array} targets
+     * @param {!Uint32Array|!Array.<!int>} targets
      */
     do_mpp(bases, targets) {
         let anticommutes = 0;
