@@ -141,7 +141,6 @@ static std::vector<GateTarget> qubit_targets(const std::vector<uint32_t> &target
     return result;
 }
 
-
 TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau, {
     auto &rng = SHARED_TEST_RNG();
     for (const auto &gate : GATE_DATA.items) {
@@ -510,7 +509,6 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
     expected.num_measurements_in_past = 12;
     ASSERT_EQ(actual, expected);
 })
-
 
 TEST(SparseUnsignedRevFrameTracker, undo_circuit_feedback) {
     SparseUnsignedRevFrameTracker actual(20, 100, 10);

@@ -337,8 +337,7 @@ TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau_ignoring_gates, {
     ASSERT_EQ(circuit_to_tableau<W>(annotations, false, false, false), Tableau<W>(1));
 
     ASSERT_EQ(
-        circuit_to_tableau<W>(
-            annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
+        circuit_to_tableau<W>(annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
             .num_qubits,
         2);
 })
@@ -418,8 +417,7 @@ TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, circuit_to_output_state_vector, {
-    ASSERT_EQ(
-        circuit_to_output_state_vector<W>(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
+    ASSERT_EQ(circuit_to_output_state_vector<W>(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
     ASSERT_EQ(
         circuit_to_output_state_vector<W>(Circuit("H 0 1"), false),
         (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}}));
@@ -475,8 +473,7 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit, {
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_vs_gate_data, {
     for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>())
-                << gate.name;
+            EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>()) << gate.name;
         }
     }
 })
@@ -508,31 +505,15 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_unitary_vs_gate_data, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_vs_tableau_basic, {
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), false),
-        GATE_DATA.at("ZCX").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), true),
-        GATE_DATA.at("XCZ").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), false),
-        GATE_DATA.at("XCZ").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), true),
-        GATE_DATA.at("ZCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), false), GATE_DATA.at("ZCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), true), GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), false), GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), true), GATE_DATA.at("ZCX").tableau<W>());
 
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), false),
-        GATE_DATA.at("YCX").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), true),
-        GATE_DATA.at("XCY").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), false),
-        GATE_DATA.at("XCY").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), true),
-        GATE_DATA.at("YCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), false), GATE_DATA.at("YCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), true), GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), false), GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), true), GATE_DATA.at("YCX").tableau<W>());
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary, {

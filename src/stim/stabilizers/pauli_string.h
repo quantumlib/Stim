@@ -80,6 +80,8 @@ struct PauliString {
 
     /// Identity constructor.
     explicit PauliString(size_t num_qubits);
+    /// Parse constructor.
+    explicit PauliString(const std::string &text);
     /// Factory method for creating a PauliString whose Pauli entries are returned by a function.
     static PauliString<W> from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     /// Factory method for creating a PauliString by parsing a string (e.g. "-XIIYZ").

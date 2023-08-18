@@ -39,3 +39,13 @@ def test_init_and_equality():
 def test_repr(value):
     assert eval(repr(value), {'stim': stim}) == value
     assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+
+
+def test_name():
+    assert [e.name for e in stim.Circuit('''
+        H 0
+        REPEAT 5 {
+            CX 1 2
+        }
+        S 1
+    ''')] == ['H', 'REPEAT', 'S']

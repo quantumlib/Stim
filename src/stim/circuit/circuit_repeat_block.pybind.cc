@@ -105,6 +105,53 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "name",
+        [](const CircuitRepeatBlock &self) -> pybind11::object {
+            return pybind11::cast("REPEAT");
+        },
+        clean_doc_string(R"DOC(
+            Returns the name "REPEAT".
+
+            This is a duck-typing convenience method. It exists so that code that doesn't
+            know whether it has a `stim.CircuitInstruction` or a `stim.CircuitRepeatBlock`
+            can check the object's name without having to do an `instanceof` check first.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     H 0
+                ...     REPEAT 5 {
+                ...         CX 1 2
+                ...     }
+                ...     S 1
+                ... ''')
+                >>> [instruction.name for instruction in circuit]
+                ['H', 'REPEAT', 'S']
+        )DOC")
+            .data());
+
+    c.def_readonly(
+        "repeat_count",
+        &CircuitRepeatBlock::repeat_count,
+        clean_doc_string(R"DOC(
+            The repetition count of the repeat block.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     H 0
+                ...     REPEAT 5 {
+                ...         CX 0 1
+                ...         CZ 1 2
+                ...     }
+                ... ''')
+                >>> repeat_block = circuit[1]
+                >>> repeat_block.repeat_count
+                5
+        )DOC")
+            .data());
+
     c.def(
         "body_copy",
         &CircuitRepeatBlock::body_copy,

@@ -21,8 +21,8 @@
 #include <iostream>
 #include <string>
 
-#include "stim/mem/sparse_xor_vec.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/mem/sparse_xor_vec.h"
 
 namespace stim {
 

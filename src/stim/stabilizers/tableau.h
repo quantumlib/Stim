@@ -176,7 +176,7 @@ struct Tableau {
     void prepend_X(size_t q);
     void prepend_Y(size_t q);
     void prepend_Z(size_t q);
-    void prepend_H_XZ(const size_t q);
+    void prepend_H_XZ(size_t q);
     void prepend_H_YZ(size_t q);
     void prepend_H_XY(size_t q);
     void prepend_C_XYZ(size_t q);

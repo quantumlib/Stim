@@ -23,7 +23,8 @@ using namespace stim;
 
 SparseShot::SparseShot() : hits(), obs_mask(0) {
 }
-SparseShot::SparseShot(std::vector<uint64_t> hits, simd_bits<64> obs_mask) : hits(std::move(hits)), obs_mask(std::move(obs_mask)) {
+SparseShot::SparseShot(std::vector<uint64_t> hits, simd_bits<64> obs_mask)
+    : hits(std::move(hits)), obs_mask(std::move(obs_mask)) {
 }
 
 void SparseShot::clear() {

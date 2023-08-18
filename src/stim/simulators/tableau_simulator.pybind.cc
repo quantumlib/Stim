@@ -1467,6 +1467,48 @@ void stim_pybind::pybind_tableau_simulator_methods(
             .data());
 
     c.def(
+        "postselect_observable",
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const PyPauliString &observable, bool desired_value) {
+            if (observable.imag) {
+                throw std::invalid_argument(
+                    "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
+            }
+            self.postselect_observable(observable.value, desired_value);
+        },
+        pybind11::arg("observable"),
+        pybind11::kw_only(),
+        pybind11::arg("desired_value") = false,
+        clean_doc_string(R"DOC(
+            Projects into a desired observable, or raises an exception if it was impossible.
+
+            Postselecting an observable forces it to collapse to a specific eigenstate,
+            as if it was measured and that state was the result of the measurement.
+
+            Args:
+                observable: The observable to postselect, specified as a pauli string.
+                    The pauli string's sign must be -1 or +1 (not -i or +i).
+                desired_value:
+                    False (default): Postselect into the +1 eigenstate of the observable.
+                    True: Postselect into the -1 eigenstate of the observable.
+
+            Raises:
+                ValueError:
+                    The given observable had an imaginary sign.
+                    OR
+                    The postselection was impossible. The observable was in the opposite
+                    eigenstate, so measuring it would never ever return the desired result.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.postselect_observable(stim.PauliString("+XX"))
+                >>> s.postselect_observable(stim.PauliString("+ZZ"))
+                >>> s.peek_observable_expectation(stim.PauliString("+YY"))
+                -1
+        )DOC")
+            .data());
+
+    c.def(
         "measure",
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
@@ -1540,6 +1582,21 @@ void stim_pybind::pybind_tableau_simulator_methods(
                     orthogonal to the desired state, so it was literally
                     impossible for a measurement of the qubit to return the
                     desired result.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.peek_x(0)
+                0
+                >>> s.postselect_x(0, desired_value=False)
+                >>> s.peek_x(0)
+                1
+                >>> s.h(0)
+                >>> s.peek_x(0)
+                0
+                >>> s.postselect_x(0, desired_value=True)
+                >>> s.peek_x(0)
+                -1
         )DOC")
             .data());
 
@@ -1571,6 +1628,21 @@ void stim_pybind::pybind_tableau_simulator_methods(
                     orthogonal to the desired state, so it was literally
                     impossible for a measurement of the qubit to return the
                     desired result.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.peek_y(0)
+                0
+                >>> s.postselect_y(0, desired_value=False)
+                >>> s.peek_y(0)
+                1
+                >>> s.reset_x(0)
+                >>> s.peek_y(0)
+                0
+                >>> s.postselect_y(0, desired_value=True)
+                >>> s.peek_y(0)
+                -1
         )DOC")
             .data());
 
@@ -1602,6 +1674,22 @@ void stim_pybind::pybind_tableau_simulator_methods(
                     orthogonal to the desired state, so it was literally
                     impossible for a measurement of the qubit to return the
                     desired result.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> s.peek_z(0)
+                0
+                >>> s.postselect_z(0, desired_value=False)
+                >>> s.peek_z(0)
+                1
+                >>> s.h(0)
+                >>> s.peek_z(0)
+                0
+                >>> s.postselect_z(0, desired_value=True)
+                >>> s.peek_z(0)
+                -1
         )DOC")
             .data());
 
