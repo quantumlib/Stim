@@ -76,10 +76,12 @@ TEST_EACH_WORD_SIZE_W(simd_word, integer_conversions, {
     ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)23}), 23);
     ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)-23}), -23);
     if (W > 64) {
-        ASSERT_THROW({
-            uint64_t u = (uint64_t)(simd_word<W>{(int64_t)-23});
-            std::cerr << u;
-        }, std::invalid_argument);
+        ASSERT_THROW(
+            {
+                uint64_t u = (uint64_t)(simd_word<W>{(int64_t)-23});
+                std::cerr << u;
+            },
+            std::invalid_argument);
     }
 
     simd_word<W> w0{(uint64_t)0};

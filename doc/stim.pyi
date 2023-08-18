@@ -2039,6 +2039,28 @@ class CircuitRepeatBlock:
             ''')
         """
     @property
+    def name(
+        self,
+    ) -> object:
+        """Returns the name "REPEAT".
+
+        This is a duck-typing convenience method. It exists so that code that doesn't
+        know whether it has a `stim.CircuitInstruction` or a `stim.CircuitRepeatBlock`
+        can check the object's name without having to do an `instanceof` check first.
+
+        Examples:
+            >>> import stim
+            >>> circuit = stim.Circuit('''
+            ...     H 0
+            ...     REPEAT 5 {
+            ...         CX 1 2
+            ...     }
+            ...     S 1
+            ... ''')
+            >>> [instruction.name for instruction in circuit]
+            ['H', 'REPEAT', 'S']
+        """
+    @property
     def repeat_count(
         self,
     ) -> int:
@@ -3153,6 +3175,29 @@ class DemRepeatBlock:
         self,
     ) -> int:
         """The number of times the repeat block's body is supposed to execute.
+        """
+    @property
+    def type(
+        self,
+    ) -> object:
+        """Returns the type name "repeat".
+
+        This is a duck-typing convenience method. It exists so that code that doesn't
+        know whether it has a `stim.DemInstruction` or a `stim.DemRepeatBlock`
+        can check the type field without having to do an `instanceof` check first.
+
+        Examples:
+            >>> import stim
+            >>> dem = stim.DetectorErrorModel('''
+            ...     error(0.1) D0 L0
+            ...     repeat 5 {
+            ...         error(0.1) D0 D1
+            ...         shift_detectors 1
+            ...     }
+            ...     logical_observable L0
+            ... ''')
+            >>> [instruction.type for instruction in dem]
+            ['error', 'repeat', 'logical_observable']
         """
 class DemTarget:
     """An instruction target from a detector error model (.dem) file.
@@ -8446,6 +8491,39 @@ class TableauSimulator:
             >>> s.peek_z(0)
             -1
         """
+    def postselect_observable(
+        self,
+        observable: stim.PauliString,
+        *,
+        desired_value: bool = False,
+    ) -> None:
+        """Projects into a desired observable, or raises an exception if it was impossible.
+
+        Postselecting an observable forces it to collapse to a specific eigenstate,
+        as if it was measured and that state was the result of the measurement.
+
+        Args:
+            observable: The observable to postselect, specified as a pauli string.
+                The pauli string's sign must be -1 or +1 (not -i or +i).
+            desired_value:
+                False (default): Postselect into the +1 eigenstate of the observable.
+                True: Postselect into the -1 eigenstate of the observable.
+
+        Raises:
+            ValueError:
+                The given observable had an imaginary sign.
+                OR
+                The postselection was impossible. The observable was in the opposite
+                eigenstate, so measuring it would never ever return the desired result.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.postselect_observable(stim.PauliString("+XX"))
+            >>> s.postselect_observable(stim.PauliString("+ZZ"))
+            >>> s.peek_observable_expectation(stim.PauliString("+YY"))
+            -1
+        """
     def postselect_x(
         self,
         targets: Union[int, Iterable[int]],
@@ -8469,6 +8547,21 @@ class TableauSimulator:
                 orthogonal to the desired state, so it was literally
                 impossible for a measurement of the qubit to return the
                 desired result.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.peek_x(0)
+            0
+            >>> s.postselect_x(0, desired_value=False)
+            >>> s.peek_x(0)
+            1
+            >>> s.h(0)
+            >>> s.peek_x(0)
+            0
+            >>> s.postselect_x(0, desired_value=True)
+            >>> s.peek_x(0)
+            -1
         """
     def postselect_y(
         self,
@@ -8493,6 +8586,21 @@ class TableauSimulator:
                 orthogonal to the desired state, so it was literally
                 impossible for a measurement of the qubit to return the
                 desired result.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.peek_y(0)
+            0
+            >>> s.postselect_y(0, desired_value=False)
+            >>> s.peek_y(0)
+            1
+            >>> s.reset_x(0)
+            >>> s.peek_y(0)
+            0
+            >>> s.postselect_y(0, desired_value=True)
+            >>> s.peek_y(0)
+            -1
         """
     def postselect_z(
         self,
@@ -8517,6 +8625,22 @@ class TableauSimulator:
                 orthogonal to the desired state, so it was literally
                 impossible for a measurement of the qubit to return the
                 desired result.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.h(0)
+            >>> s.peek_z(0)
+            0
+            >>> s.postselect_z(0, desired_value=False)
+            >>> s.peek_z(0)
+            1
+            >>> s.h(0)
+            >>> s.peek_z(0)
+            0
+            >>> s.postselect_z(0, desired_value=True)
+            >>> s.peek_z(0)
+            -1
         """
     def reset(
         self,

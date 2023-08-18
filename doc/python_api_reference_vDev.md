@@ -75,6 +75,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitRepeatBlock.__ne__`](#stim.CircuitRepeatBlock.__ne__)
     - [`stim.CircuitRepeatBlock.__repr__`](#stim.CircuitRepeatBlock.__repr__)
     - [`stim.CircuitRepeatBlock.body_copy`](#stim.CircuitRepeatBlock.body_copy)
+    - [`stim.CircuitRepeatBlock.name`](#stim.CircuitRepeatBlock.name)
     - [`stim.CircuitRepeatBlock.repeat_count`](#stim.CircuitRepeatBlock.repeat_count)
 - [`stim.CircuitTargetsInsideInstruction`](#stim.CircuitTargetsInsideInstruction)
     - [`stim.CircuitTargetsInsideInstruction.__init__`](#stim.CircuitTargetsInsideInstruction.__init__)
@@ -117,6 +118,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemRepeatBlock.__repr__`](#stim.DemRepeatBlock.__repr__)
     - [`stim.DemRepeatBlock.body_copy`](#stim.DemRepeatBlock.body_copy)
     - [`stim.DemRepeatBlock.repeat_count`](#stim.DemRepeatBlock.repeat_count)
+    - [`stim.DemRepeatBlock.type`](#stim.DemRepeatBlock.type)
 - [`stim.DemTarget`](#stim.DemTarget)
     - [`stim.DemTarget.__eq__`](#stim.DemTarget.__eq__)
     - [`stim.DemTarget.__ne__`](#stim.DemTarget.__ne__)
@@ -315,6 +317,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.peek_x`](#stim.TableauSimulator.peek_x)
     - [`stim.TableauSimulator.peek_y`](#stim.TableauSimulator.peek_y)
     - [`stim.TableauSimulator.peek_z`](#stim.TableauSimulator.peek_z)
+    - [`stim.TableauSimulator.postselect_observable`](#stim.TableauSimulator.postselect_observable)
     - [`stim.TableauSimulator.postselect_x`](#stim.TableauSimulator.postselect_x)
     - [`stim.TableauSimulator.postselect_y`](#stim.TableauSimulator.postselect_y)
     - [`stim.TableauSimulator.postselect_z`](#stim.TableauSimulator.postselect_z)
@@ -2859,6 +2862,35 @@ def body_copy(
     """
 ```
 
+<a name="stim.CircuitRepeatBlock.name"></a>
+```python
+# stim.CircuitRepeatBlock.name
+
+# (in class stim.CircuitRepeatBlock)
+@property
+def name(
+    self,
+) -> object:
+    """Returns the name "REPEAT".
+
+    This is a duck-typing convenience method. It exists so that code that doesn't
+    know whether it has a `stim.CircuitInstruction` or a `stim.CircuitRepeatBlock`
+    can check the object's name without having to do an `instanceof` check first.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...     H 0
+        ...     REPEAT 5 {
+        ...         CX 1 2
+        ...     }
+        ...     S 1
+        ... ''')
+        >>> [instruction.name for instruction in circuit]
+        ['H', 'REPEAT', 'S']
+    """
+```
+
 <a name="stim.CircuitRepeatBlock.repeat_count"></a>
 ```python
 # stim.CircuitRepeatBlock.repeat_count
@@ -4210,6 +4242,36 @@ def repeat_count(
     self,
 ) -> int:
     """The number of times the repeat block's body is supposed to execute.
+    """
+```
+
+<a name="stim.DemRepeatBlock.type"></a>
+```python
+# stim.DemRepeatBlock.type
+
+# (in class stim.DemRepeatBlock)
+@property
+def type(
+    self,
+) -> object:
+    """Returns the type name "repeat".
+
+    This is a duck-typing convenience method. It exists so that code that doesn't
+    know whether it has a `stim.DemInstruction` or a `stim.DemRepeatBlock`
+    can check the type field without having to do an `instanceof` check first.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.1) D0 L0
+        ...     repeat 5 {
+        ...         error(0.1) D0 D1
+        ...         shift_detectors 1
+        ...     }
+        ...     logical_observable L0
+        ... ''')
+        >>> [instruction.type for instruction in dem]
+        ['error', 'repeat', 'logical_observable']
     """
 ```
 
@@ -10844,6 +10906,46 @@ def peek_z(
     """
 ```
 
+<a name="stim.TableauSimulator.postselect_observable"></a>
+```python
+# stim.TableauSimulator.postselect_observable
+
+# (in class stim.TableauSimulator)
+def postselect_observable(
+    self,
+    observable: stim.PauliString,
+    *,
+    desired_value: bool = False,
+) -> None:
+    """Projects into a desired observable, or raises an exception if it was impossible.
+
+    Postselecting an observable forces it to collapse to a specific eigenstate,
+    as if it was measured and that state was the result of the measurement.
+
+    Args:
+        observable: The observable to postselect, specified as a pauli string.
+            The pauli string's sign must be -1 or +1 (not -i or +i).
+        desired_value:
+            False (default): Postselect into the +1 eigenstate of the observable.
+            True: Postselect into the -1 eigenstate of the observable.
+
+    Raises:
+        ValueError:
+            The given observable had an imaginary sign.
+            OR
+            The postselection was impossible. The observable was in the opposite
+            eigenstate, so measuring it would never ever return the desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.postselect_observable(stim.PauliString("+XX"))
+        >>> s.postselect_observable(stim.PauliString("+ZZ"))
+        >>> s.peek_observable_expectation(stim.PauliString("+YY"))
+        -1
+    """
+```
+
 <a name="stim.TableauSimulator.postselect_x"></a>
 ```python
 # stim.TableauSimulator.postselect_x
@@ -10872,6 +10974,21 @@ def postselect_x(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.peek_x(0)
+        0
+        >>> s.postselect_x(0, desired_value=False)
+        >>> s.peek_x(0)
+        1
+        >>> s.h(0)
+        >>> s.peek_x(0)
+        0
+        >>> s.postselect_x(0, desired_value=True)
+        >>> s.peek_x(0)
+        -1
     """
 ```
 
@@ -10903,6 +11020,21 @@ def postselect_y(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.peek_y(0)
+        0
+        >>> s.postselect_y(0, desired_value=False)
+        >>> s.peek_y(0)
+        1
+        >>> s.reset_x(0)
+        >>> s.peek_y(0)
+        0
+        >>> s.postselect_y(0, desired_value=True)
+        >>> s.peek_y(0)
+        -1
     """
 ```
 
@@ -10934,6 +11066,22 @@ def postselect_z(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.h(0)
+        >>> s.peek_z(0)
+        0
+        >>> s.postselect_z(0, desired_value=False)
+        >>> s.peek_z(0)
+        1
+        >>> s.h(0)
+        >>> s.peek_z(0)
+        0
+        >>> s.postselect_z(0, desired_value=True)
+        >>> s.peek_z(0)
+        -1
     """
 ```
 

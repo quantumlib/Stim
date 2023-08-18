@@ -30,18 +30,21 @@ static simd_bits<64> obs_mask(uint64_t v) {
 TEST(search_hyper_search_state, append_transition_as_error_instruction_to) {
     DetectorErrorModel out;
 
-    SearchState{{{1, 2}}, obs_mask(9)}.append_transition_as_error_instruction_to(SearchState{{{1, 2}}, obs_mask(16)}, out);
+    SearchState{{{1, 2}}, obs_mask(9)}.append_transition_as_error_instruction_to(
+        SearchState{{{1, 2}}, obs_mask(16)}, out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
     )MODEL"));
 
-    SearchState{{{}}, obs_mask(9)}.append_transition_as_error_instruction_to(SearchState{{{1, 2, 4}}, obs_mask(16)}, out);
+    SearchState{{{}}, obs_mask(9)}.append_transition_as_error_instruction_to(
+        SearchState{{{1, 2, 4}}, obs_mask(16)}, out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D2 D4 L0 L3 L4
     )MODEL"));
 
-    SearchState{{{1, 2}}, obs_mask(9)}.append_transition_as_error_instruction_to(SearchState{{{2, 3}}, obs_mask(9)}, out);
+    SearchState{{{1, 2}}, obs_mask(9)}.append_transition_as_error_instruction_to(
+        SearchState{{{2, 3}}, obs_mask(9)}, out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D2 D4 L0 L3 L4

@@ -41,5 +41,7 @@ TEST(sparse_shot, equality) {
 }
 
 TEST(sparse_shot, str) {
-    ASSERT_EQ((SparseShot{{1, 2, 3}, obs_mask(4)}.str()), "SparseShot{{1, 2, 3}, __1_____________________________________________________________}");
+    ASSERT_EQ(
+        (SparseShot{{1, 2, 3}, obs_mask(4)}.str()),
+        "SparseShot{{1, 2, 3}, __1_____________________________________________________________}");
 }

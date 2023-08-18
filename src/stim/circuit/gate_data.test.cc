@@ -71,8 +71,7 @@ TEST(gate_data, hash_matches_storage_location) {
 }
 
 template <size_t W>
-std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>>
-circuit_output_eq_val(const Circuit &circuit) {
+std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_output_eq_val(const Circuit &circuit) {
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }

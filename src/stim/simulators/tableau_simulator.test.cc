@@ -2335,3 +2335,39 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
     ASSERT_NE(sim.inv_state, Tableau<W>(14));
 })
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_observable, {
+    TableauSimulator<W> sim(SHARED_TEST_RNG(), 0);
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    sim.postselect_observable(PauliString<W>("XX"), false);
+
+    auto initial_state = sim.inv_state;
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("YY"), false); }, std::invalid_argument);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("ZZ"), true); }, std::invalid_argument);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("ZZ"), true); }, std::invalid_argument);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("XX"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("-YY"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("YY"), true);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("XZ"), true);
+    ASSERT_NE(sim.inv_state, initial_state);
+})

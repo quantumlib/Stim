@@ -80,6 +80,32 @@ void stim_pybind::pybind_detector_error_model_repeat_block_methods(
             Returns a copy of the block's body, as a stim.DetectorErrorModel.
         )DOC")
             .data());
+    c.def_property_readonly(
+        "type",
+        [](const ExposedDemRepeatBlock &self) -> pybind11::object {
+            return pybind11::cast("repeat");
+        },
+        clean_doc_string(R"DOC(
+            Returns the type name "repeat".
+
+            This is a duck-typing convenience method. It exists so that code that doesn't
+            know whether it has a `stim.DemInstruction` or a `stim.DemRepeatBlock`
+            can check the type field without having to do an `instanceof` check first.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.1) D0 L0
+                ...     repeat 5 {
+                ...         error(0.1) D0 D1
+                ...         shift_detectors 1
+                ...     }
+                ...     logical_observable L0
+                ... ''')
+                >>> [instruction.type for instruction in dem]
+                ['error', 'repeat', 'logical_observable']
+        )DOC")
+            .data());
     c.def(pybind11::self == pybind11::self, "Determines if two repeat blocks are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two repeat blocks are different.");
 

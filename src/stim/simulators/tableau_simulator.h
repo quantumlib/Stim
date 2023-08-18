@@ -177,11 +177,11 @@ struct TableauSimulator {
     /// Returns the expectation value of measuring the qubit in the Z basis.
     int8_t peek_z(uint32_t target) const;
 
-    /// Forces a desired X basis measurement result, or raises an exception if it was impossible.
+    /// Projects the system into a desired qubit X observable, or raises an exception if it was impossible.
     void postselect_x(SpanRef<const GateTarget> targets, bool desired_result);
-    /// Forces a desired Y basis measurement result, or raises an exception if it was impossible.
+    /// Projects the system into a desired qubit Y observable, or raises an exception if it was impossible.
     void postselect_y(SpanRef<const GateTarget> targets, bool desired_result);
-    /// Forces a desired Z basis measurement result, or raises an exception if it was impossible.
+    /// Projects the system into a desired qubit Z observable, or raises an exception if it was impossible.
     void postselect_z(SpanRef<const GateTarget> targets, bool desired_result);
 
     /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
@@ -258,7 +258,11 @@ struct TableauSimulator {
     ///     0: Observable will be random when measured.
     int8_t peek_observable_expectation(const PauliString<W> &observable) const;
 
+    /// Forces a desired measurement result, or raises an exception if it was impossible.
+    void postselect_observable(PauliStringRef<W> observable, bool desired_result);
+
    private:
+    uint32_t try_isolate_observable_to_qubit_z(PauliStringRef<W> observable, bool undo);
     void do_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
     void do_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
     void do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
