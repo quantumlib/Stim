@@ -172,7 +172,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
 })
 
 TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit, {
-    auto rng =INDEPENDENT_TEST_RNG();
+    auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &g : GATE_DATA.items) {
         auto flows = g.flows<W>();
         if (flows.empty()) {

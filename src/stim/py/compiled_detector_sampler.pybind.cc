@@ -25,7 +25,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19937_64&& rng)
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19937_64 &&rng)
     : circuit_stats(init_circuit.compute_stats()),
       circuit(std::move(init_circuit)),
       frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, std::move(rng)) {

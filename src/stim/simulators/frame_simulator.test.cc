@@ -46,7 +46,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, get_set_frame, {
 
     circuit_stats.num_qubits = 501;
     circuit_stats.max_lookback = 999;
-    FrameSimulator<W> big_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, INDEPENDENT_TEST_RNG());
+    FrameSimulator<W> big_sim(
+        circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1001, INDEPENDENT_TEST_RNG());
     big_sim.set_frame(258, PauliString<W>::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
@@ -825,7 +826,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, classical_controls, {
 
 TEST_EACH_WORD_SIZE_W(FrameSimulator, record_gets_trimmed, {
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
-    FrameSimulator<W> sim(c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, INDEPENDENT_TEST_RNG());
+    FrameSimulator<W> sim(
+        c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, INDEPENDENT_TEST_RNG());
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.do_MZ(c.operations[0]);
@@ -866,8 +868,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_single_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -888,8 +889,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -914,8 +914,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -934,8 +933,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_many_shots, {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<W>(0), 2049, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 2049, tmp, SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     ASSERT_EQ(result.size(), 2049 * 4);
@@ -958,8 +956,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(
-        circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -1488,8 +1485,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mpad, {
     auto circuit = Circuit(R"CIRCUIT(
         MPAD 0 1
     )CIRCUIT");
-    auto sample = sample_batch_measurements(
-        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
+    auto sample =
+        sample_batch_measurements(circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[0][k], false);
         ASSERT_EQ(sample[1][k], true);
@@ -1506,8 +1503,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_basis, {
         RZ 0 1
         MZZ 0 1
     )CIRCUIT");
-    auto sample = sample_batch_measurements(
-        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
+    auto sample =
+        sample_batch_measurements(circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[0][k], false);
         ASSERT_EQ(sample[1][k], false);
@@ -1522,8 +1519,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_inversion, {
         MYY 0 1 0 !1 !0 1 !0 !1
         MZZ 0 1 0 !1 !0 1 !0 !1
     )CIRCUIT");
-    auto sample = sample_batch_measurements(
-        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
+    auto sample =
+        sample_batch_measurements(circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(sample[1][k], !sample[0][k]);
         ASSERT_EQ(sample[2][k], !sample[0][k]);
@@ -1541,8 +1538,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, mxxyyzz_inversion, {
 TEST_EACH_WORD_SIZE_W(FrameSimulator, runs_on_general_circuit, {
     auto rng = INDEPENDENT_TEST_RNG();
     auto circuit = generate_test_circuit_with_all_operations();
-    auto sample = sample_batch_measurements(
-        circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
+    auto sample =
+        sample_batch_measurements(circuit, TableauSimulator<W>::reference_sample_circuit(circuit), 100, rng, false);
     ASSERT_GT(sample.num_simd_words_minor, 0);
     ASSERT_GT(sample.num_simd_words_major, 0);
 })

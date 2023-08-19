@@ -207,8 +207,7 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, random, {
     t = t.transposed();
     ASSERT_NE(t[89], simd_bits<W>(100));
     ASSERT_EQ(t[90], simd_bits<W>(100));
-    ASSERT_NE(
-        simd_bit_table<W>::random(10, 10, rng), simd_bit_table<W>::random(10, 10, rng));
+    ASSERT_NE(simd_bit_table<W>::random(10, 10, rng), simd_bit_table<W>::random(10, 10, rng));
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, slice_maj, {

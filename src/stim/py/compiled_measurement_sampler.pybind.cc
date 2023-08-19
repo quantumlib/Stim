@@ -24,10 +24,7 @@ using namespace stim;
 using namespace stim_pybind;
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample,
-    Circuit circuit,
-    bool skip_reference_sample,
-    std::mt19937_64 &&rng)
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample, Circuit circuit, bool skip_reference_sample, std::mt19937_64 &&rng)
     : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), rng(std::move(rng)) {
 }
 
