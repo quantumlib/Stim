@@ -75,8 +75,8 @@ std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_outp
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
-    TableauSimulator<W> sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
-    TableauSimulator<W> sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
+    TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), -1);
+    TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), +1);
     sim1.expand_do_circuit(circuit);
     sim2.expand_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};
@@ -163,7 +163,8 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
 
         Circuit c;
         c.safe_append(g.id, targets, {});
-        auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
+        auto rng = INDEPENDENT_TEST_RNG();
+        auto r = check_if_circuit_has_stabilizer_flows(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
         }
@@ -171,6 +172,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
 })
 
 TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decomposed_circuit, {
+    auto rng =INDEPENDENT_TEST_RNG();
     for (const auto &g : GATE_DATA.items) {
         auto flows = g.flows<W>();
         if (flows.empty()) {
@@ -194,7 +196,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decompose
         }
 
         Circuit c(g.extra_data_func().h_s_cx_m_r_decomposition);
-        auto r = check_if_circuit_has_stabilizer_flows(256, SHARED_TEST_RNG(), c, flows);
+        auto r = check_if_circuit_has_stabilizer_flows(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];
         }

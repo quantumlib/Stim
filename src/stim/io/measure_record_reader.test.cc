@@ -453,7 +453,8 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_records_into_RoundTrip, {
     size_t n_shots = 100;
     size_t n_results = 512 - 8;
 
-    auto shot_maj_data = simd_bit_table<W>::random(n_shots, n_results, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto shot_maj_data = simd_bit_table<W>::random(n_shots, n_results, rng);
     auto shot_min_data = shot_maj_data.transposed();
     for (const auto &kv : format_name_to_enum_map()) {
         SampleFormat format = kv.second.id;
@@ -556,13 +557,14 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_b8_detection_event_data_full_run
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record, {
+    auto rng = INDEPENDENT_TEST_RNG();
     size_t n = 512 - 8;
     size_t no = 5;
     size_t nd = n - no;
 
     // Compute expected data.
     simd_bits<W> test_data(n);
-    biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), SHARED_TEST_RNG());
+    biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), rng);
     SparseShot sparse_test_data;
     sparse_test_data.obs_mask = simd_bits<64>(no);
     for (size_t k = 0; k < nd; k++) {
@@ -660,9 +662,10 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_all_zero
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_dense, {
+    auto rng = INDEPENDENT_TEST_RNG();
     FILE *f = tmpfile();
-    auto saved1 = simd_bits<W>::random(64 * 71, SHARED_TEST_RNG());
-    auto saved2 = simd_bits<W>::random(64 * 71, SHARED_TEST_RNG());
+    auto saved1 = simd_bits<W>::random(64 * 71, rng);
+    auto saved2 = simd_bits<W>::random(64 * 71, rng);
     for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
@@ -689,12 +692,13 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_de
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse, {
+    auto rng = INDEPENDENT_TEST_RNG();
     FILE *tmp = tmpfile();
     simd_bit_table<W> ground_truth(71, 64 * 5);
     {
         MeasureRecordBatchWriter writer(tmp, 64 * 5, stim::SAMPLE_FORMAT_PTB64);
         for (size_t k = 0; k < 71; k++) {
-            ground_truth[k].randomize(64 * 5, SHARED_TEST_RNG());
+            ground_truth[k].randomize(64 * 5, rng);
             writer.batch_write_bit<W>(ground_truth[k]);
         }
         writer.write_end();
@@ -719,6 +723,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, start_and_read_entire_record_ptb64_sp
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &format_data : format_name_to_enum_map()) {
         SampleFormat format = format_data.second.id;
         size_t num_shots = 500;
@@ -729,7 +734,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, read_file_data_into_shot_table_vs_wri
 
         simd_bit_table<W> expected(num_shots, bits_per_shot);
         for (size_t shot = 0; shot < num_shots; shot++) {
-            expected[shot].randomize(bits_per_shot, SHARED_TEST_RNG());
+            expected[shot].randomize(bits_per_shot, rng);
         }
         simd_bit_table<W> expected_transposed = expected.transposed();
 

@@ -200,18 +200,20 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, transposed, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, random, {
-    auto t = simd_bit_table<W>::random(100, 90, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = simd_bit_table<W>::random(100, 90, rng);
     ASSERT_NE(t[99], simd_bits<W>(90));
     ASSERT_EQ(t[100], simd_bits<W>(90));
     t = t.transposed();
     ASSERT_NE(t[89], simd_bits<W>(100));
     ASSERT_EQ(t[90], simd_bits<W>(100));
     ASSERT_NE(
-        simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()), simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()));
+        simd_bit_table<W>::random(10, 10, rng), simd_bit_table<W>::random(10, 10, rng));
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, slice_maj, {
-    auto m = simd_bit_table<W>::random(100, 64, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto m = simd_bit_table<W>::random(100, 64, rng);
     auto s = m.slice_maj(5, 15);
     ASSERT_EQ(s[0], m[5]);
     ASSERT_EQ(s[9], m[14]);
@@ -291,7 +293,8 @@ TEST(simd_bit_table, lg) {
 }
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, destructive_resize, {
-    simd_bit_table<W> table = table.random(5, 7, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bit_table<W> table = table.random(5, 7, rng);
     const uint8_t *prev_pointer = table.data.u8;
     table.destructive_resize(5, 7);
     ASSERT_EQ(table.data.u8, prev_pointer);

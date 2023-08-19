@@ -103,7 +103,7 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
     }
     while (offset >= 64) {
         incoming_word = 0ULL;
-        for (int w = 0; w < num_u64_padded(); w++) {
+        for (size_t w = 0; w < num_u64_padded(); w++) {
             cur_word = u64[w];
             u64[w] = incoming_word;
             incoming_word = cur_word;
@@ -114,7 +114,7 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator<<=(int offset) {
         return *this;
     }
     incoming_word = 0ULL;
-    for (int w = 0; w < num_u64_padded(); w++) {
+    for (size_t w = 0; w < num_u64_padded(); w++) {
         cur_word = u64[w];
         u64[w] <<= offset;
         u64[w] |= incoming_word;

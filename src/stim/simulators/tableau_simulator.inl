@@ -24,7 +24,7 @@
 namespace stim {
 
 template <size_t W>
-TableauSimulator<W>::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
+TableauSimulator<W>::TableauSimulator(std::mt19937_64 &&rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau<W>::identity(num_qubits)),
       rng(std::move(rng)),
       sign_bias(sign_bias),
@@ -33,7 +33,7 @@ TableauSimulator<W>::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, in
 }
 
 template <size_t W>
-TableauSimulator<W>::TableauSimulator(const TableauSimulator<W> &other, std::mt19937_64 rng)
+TableauSimulator<W>::TableauSimulator(const TableauSimulator<W> &other, std::mt19937_64 &&rng)
     : inv_state(other.inv_state),
       rng(std::move(rng)),
       sign_bias(other.sign_bias),

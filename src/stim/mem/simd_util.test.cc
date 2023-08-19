@@ -63,7 +63,7 @@ template <size_t A, size_t W>
 std::string determine_if_function_performs_bit_permutation_helper(
     const std::function<void(simd_bits<W> &)> &func, const std::array<uint8_t, A> &bit_permutation) {
     size_t area = 1 << A;
-    auto data = simd_bits<W>::random(area, SHARED_TEST_RNG());
+    auto data = simd_bits<W>::random(area, INDEPENDENT_TEST_RNG());
     auto expected = simd_bits<W>(area);
 
     for (size_t k_in = 0; k_in < area; k_in++) {
@@ -103,7 +103,8 @@ template <size_t A, size_t W>
 void EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION(
     const std::function<void(simd_bits<W> &)> &func, const std::array<uint8_t, A> &bit_permutation) {
     size_t area = 1 << A;
-    auto data = simd_bits<W>::random(area, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto data = simd_bits<W>::random(area, rng);
     auto expected = simd_bits<W>(area);
 
     for (size_t k_in = 0; k_in < area; k_in++) {
@@ -144,7 +145,8 @@ void EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION(
 
 TEST(simd_util, inplace_transpose_64x64) {
     constexpr size_t W = 64;
-    simd_bits<W> data = simd_bits<W>::random(64 * 64, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bits<W> data = simd_bits<W>::random(64 * 64, rng);
     simd_bits<W> copy = data;
     inplace_transpose_64x64(copy.u64, 1);
     for (size_t i = 0; i < 64; i++) {
@@ -432,7 +434,7 @@ TEST(simd_util, popcnt64) {
             bits.push_back(i < expected);
         }
         for (size_t reps = 0; reps < 100; reps++) {
-            std::shuffle(bits.begin(), bits.end(), SHARED_TEST_RNG());
+            std::shuffle(bits.begin(), bits.end(), INDEPENDENT_TEST_RNG());
             uint64_t v = 0;
             for (size_t i = 0; i < 64; i++) {
                 v |= bits[i] << i;

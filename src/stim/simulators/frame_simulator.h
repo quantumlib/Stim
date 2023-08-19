@@ -54,7 +54,7 @@ struct FrameSimulator {
     simd_bits<W> tmp_storage;          // Workspace used when sampling compound error processes.
     simd_bits<W> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<W> sweep_table;                // Shot-to-shot configuration data.
-    std::mt19937_64 &rng;                         // Random number generator used for generating entropy.
+    std::mt19937_64 rng;                         // Random number generator used for generating entropy.
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -71,7 +71,7 @@ struct FrameSimulator {
     ///         of buffers.
     ///     batch_size: How many shots to simulate simultaneously.
     ///     rng: The random number generator to pull noise from.
-    FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng);
+    FrameSimulator(CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &&rng);
     FrameSimulator() = delete;
 
     PauliString<W> get_frame(size_t sample_index) const;
