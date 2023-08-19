@@ -50,7 +50,7 @@ void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
 
 template <size_t W>
 TableauSimulator<W> create_tableau_simulator(const pybind11::object &seed) {
-    return TableauSimulator<W>(*make_py_seeded_rng(seed));
+    return TableauSimulator<W>(make_py_seeded_rng(seed));
 }
 
 template <size_t W>
@@ -1798,7 +1798,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
             }
 
             if (!copy_rng || !seed.is_none()) {
-                TableauSimulator<MAX_BITWORD_WIDTH> copy_with_new_rng(self, *make_py_seeded_rng(seed));
+                TableauSimulator<MAX_BITWORD_WIDTH> copy_with_new_rng(self, make_py_seeded_rng(seed));
                 return copy_with_new_rng;
             }
 

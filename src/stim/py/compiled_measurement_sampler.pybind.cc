@@ -17,7 +17,6 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
 
@@ -28,12 +27,12 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
     simd_bits<MAX_BITWORD_WIDTH> ref_sample,
     Circuit circuit,
     bool skip_reference_sample,
-    std::shared_ptr<std::mt19937_64> prng)
-    : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
+    std::mt19937_64 &&rng)
+    : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), rng(std::move(rng)) {
 }
 
 pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, *prng, true);
+    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, true);
     size_t bits_per_sample = circuit.count_measurements();
     return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
 }
@@ -45,7 +44,7 @@ void CompiledMeasurementSampler::sample_write(
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
     }
-    sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, *prng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
     fclose(out);
 }
 

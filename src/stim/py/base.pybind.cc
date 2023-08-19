@@ -20,14 +20,14 @@
 
 using namespace stim;
 
-std::shared_ptr<std::mt19937_64> stim_pybind::make_py_seeded_rng(const pybind11::object &seed) {
+std::mt19937_64 stim_pybind::make_py_seeded_rng(const pybind11::object &seed) {
     if (seed.is_none()) {
-        return std::make_shared<std::mt19937_64>(externally_seeded_rng());
+        return externally_seeded_rng();
     }
 
     try {
         uint64_t s = pybind11::cast<uint64_t>(seed) ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY;
-        return std::make_shared<std::mt19937_64>(s);
+        return std::mt19937_64(s);
     } catch (const pybind11::cast_error &) {
         throw std::invalid_argument("Expected seed to be None or a 64 bit unsigned integer.");
     }

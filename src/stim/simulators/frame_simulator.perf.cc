@@ -25,8 +25,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     stats.num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     double probability = 0.001;
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, rng);
+    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, std::mt19937_64(0));
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
@@ -45,8 +44,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     stats.num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     double probability = 0.001;
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, rng);
+    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, std::mt19937_64(0));
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
@@ -65,8 +63,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     CircuitStats stats;
     stats.num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, rng);
+    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, std::mt19937_64(0));
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
@@ -85,8 +82,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     CircuitStats stats;
     stats.num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, rng);
+    FrameSimulator<MAX_BITWORD_WIDTH> sim(stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_samples, std::mt19937_64(0));
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
@@ -108,9 +104,8 @@ BENCHMARK(FrameSimulator_surface_code_rotated_memory_z_d11_r100_batch1024) {
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
 
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator<MAX_BITWORD_WIDTH> sim(
-        circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, 1024, rng);
+        circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, 1024, std::mt19937_64(0));
 
     benchmark_go([&]() {
         sim.reset_all_and_run(circuit);

@@ -28,7 +28,7 @@ struct CompiledMeasurementSampler {
     const stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample;
     const stim::Circuit circuit;
     const bool skip_reference_sample;
-    std::shared_ptr<std::mt19937_64> prng;
+    std::mt19937_64 rng;
     CompiledMeasurementSampler() = delete;
     CompiledMeasurementSampler(const CompiledMeasurementSampler &) = delete;
     CompiledMeasurementSampler(CompiledMeasurementSampler &&) = default;
@@ -36,7 +36,7 @@ struct CompiledMeasurementSampler {
         stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample,
         stim::Circuit circuit,
         bool skip_reference_sample,
-        std::shared_ptr<std::mt19937_64> prng);
+        std::mt19937_64 &&rng);
     pybind11::object sample_to_numpy(size_t num_shots, bool bit_packed);
     void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
     std::string repr() const;

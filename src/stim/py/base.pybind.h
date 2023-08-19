@@ -28,7 +28,7 @@
 
 namespace stim_pybind {
 
-std::shared_ptr<std::mt19937_64> make_py_seeded_rng(const pybind11::object &seed);
+std::mt19937_64 make_py_seeded_rng(const pybind11::object &seed);
 stim::SampleFormat format_to_enum(const std::string &format);
 bool normalize_index_or_slice(
     const pybind11::object &index_or_slice,

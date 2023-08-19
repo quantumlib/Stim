@@ -179,7 +179,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "random",
         [](size_t num_qubits) {
-            return Tableau<MAX_BITWORD_WIDTH>::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
+            auto rng = make_py_seeded_rng(pybind11::none());
+            return Tableau<MAX_BITWORD_WIDTH>::random(num_qubits, rng);
         },
         pybind11::arg("num_qubits"),
         clean_doc_string(R"DOC(
@@ -2121,8 +2122,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             } else {
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
-            std::mt19937_64 unused_rng{0};
-            TableauSimulator<MAX_BITWORD_WIDTH> sim(unused_rng, self.num_qubits);
+            TableauSimulator<MAX_BITWORD_WIDTH> sim(std::mt19937_64{0}, self.num_qubits);
             sim.inv_state = self.inverse(false);
             auto complex_vec = sim.to_state_vector(little_endian);
 
