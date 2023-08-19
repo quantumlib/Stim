@@ -94,7 +94,11 @@ function simplifiedMPP(args, combinedTargets) {
     for (let t of combinedTargets) {
         if (t[0] === 'X' || t[0] === 'Y' || t[0] === 'Z') {
             bases += t[0];
-            qubits.push(parseInt(t.substring(1)));
+            let v = parseInt(t.substring(1));
+            if (v !== v) {
+                throw Error(`Non-Pauli target given to MPP: ${combinedTargets}`);
+            }
+            qubits.push(v);
         } else {
             throw Error(`Non-Pauli target given to MPP: ${combinedTargets}`);
         }
@@ -148,17 +152,6 @@ class Circuit {
         let layers = [new Layer()];
         let i2q = new Map();
         let used_positions = new Set();
-        let next_auto_position_x = 0;
-        let ensure_has_coords = t => {
-            while (!i2q.has(t)) {
-                let k = `${next_auto_position_x},0`;
-                if (!used_positions.has(k)) {
-                    used_positions.add(k);
-                    i2q.set(t, [next_auto_position_x, 0]);
-                }
-                next_auto_position_x++;
-            }
-        };
 
         let findEndOfBlock = (lines, startIndex, endIndex) => {
             let nestLevel = 0;
@@ -305,7 +298,6 @@ class Circuit {
                 if (typeof parseInt(targ) !== 'number') {
                     throw new Error(line);
                 }
-                ensure_has_coords(t);
             }
             if (ignored) {
                 console.warn("IGNORED", name);
@@ -346,6 +338,29 @@ class Circuit {
         processLineChunk(lines, 0, lines.length, 1);
         if (layers.length > 0 && layers[layers.length - 1].isEmpty()) {
             layers.pop();
+        }
+
+        let next_auto_position_x = 0;
+        let ensure_has_coords = (t) => {
+            let b = true;
+            while (!i2q.has(t)) {
+                let x = b ? t : next_auto_position_x;
+                let k = `${x},0`;
+                if (!used_positions.has(k)) {
+                    used_positions.add(k);
+                    i2q.set(t, [x, 0]);
+                }
+                next_auto_position_x += !b;
+                b = false;
+            }
+        };
+
+        for (let layer of layers) {
+            for (let op of layer.iter_gates_and_markers()) {
+                for (let t of op.id_targets) {
+                    ensure_has_coords(t);
+                }
+            }
         }
 
         let numQubits = Math.max(...i2q.keys(), 0) + 1;
@@ -503,6 +518,9 @@ class Circuit {
         for (let layer of this.layers) {
             let opsByName = groupBy(layer.iter_gates_and_markers(), op => {
                 let key = op.gate.name;
+                if (key.startsWith('M') && !GATE_MAP.has(key)) {
+                    key = 'MPP';
+                }
                 if (op.args.length > 0) {
                     key += '(' + [...op.args].join(',') + ')';
                 }
@@ -525,18 +543,18 @@ class Circuit {
                 let gateName = nameWithArgs.split('(')[0];
 
                 let gate = GATE_MAP.get(gateName);
-                if (gate === undefined && gateName.startsWith('M')) {
+                if (gate === undefined && gateName === 'MPP') {
                     let line = ['MPP '];
                     for (let op of group) {
                         for (let k = 0; k < op.id_targets.length; k++) {
-                            line.push(gateName[k + 1] + old2new.get(op.id_targets[k]));
+                            line.push(op.gate.name[k + 1] + old2new.get(op.id_targets[k]));
                             line.push('*');
                         }
                         line.pop();
+                        line.push(' ');
                     }
-                    out.push(line.join(''));
+                    out.push(line.join('').trim());
                 } else {
-
                     if (gate !== undefined && gate.can_fuse) {
                         let flatTargetGroups = [];
                         for (let op of group) {

@@ -10,7 +10,7 @@ function make_mpp_gate(bases) {
     return new Gate(
         'M' + bases,
         bases.length,
-        false,
+        true,
         false,
         undefined,
         (frame, targets) => frame.do_mpp(bases, targets),

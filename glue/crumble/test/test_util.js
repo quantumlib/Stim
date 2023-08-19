@@ -383,29 +383,34 @@ class TestProgress {
      * @param {!int} num_tests
      * @param {!int} num_tests_failed
      * @param {!int} num_tests_left
-     * @param {!boolean} skipped
+     * @param {!int} num_skipped
      */
-    constructor(name, passed, error, num_tests, num_tests_failed, num_tests_left, skipped) {
+    constructor(name, passed, error, num_tests, num_tests_failed, num_tests_left, num_skipped) {
         this.name = name;
         this.passed = passed;
         this.error = error;
         this.num_tests = num_tests;
         this.num_tests_failed = num_tests_failed;
         this.num_tests_left = num_tests_left;
-        this.skipped = skipped;
+        this.num_skipped = num_skipped;
     }
 }
 
 /**
  * @param {!function(progress: !TestProgress)} callback
+ * @param {!function(name: !string): !boolean} name_filter
  */
-async function run_tests(callback) {
+async function run_tests(callback, name_filter) {
     let num_tests = _tests.length;
     let num_tests_left = _tests.length;
     let num_tests_failed = 0;
     let all_passed = true;
-    let any_skipped = false;
+    let num_skipped = 0;
     for (let test of _tests) {
+        if (!name_filter(test.name)) {
+            num_skipped += 1;
+            continue;
+        }
         console.log("run test", test.name);
         _usedAssertIndices = 0;
         let name = test.name;
@@ -425,7 +430,7 @@ async function run_tests(callback) {
             if (ex instanceof Error && ex.message === "skipRestOfTestIfHeadless:document === undefined") {
                 console.warn(`skipped part of test '${test.name}' because tests are running headless`);
                 skipped = true;
-                any_skipped = true;
+                num_skipped += 1;
                 passed = true;
             } else {
                 error = ex;
@@ -435,14 +440,18 @@ async function run_tests(callback) {
             }
         }
         num_tests_left--;
-        callback(new TestProgress(name, passed, error, num_tests, num_tests_failed, num_tests_left, skipped));
+        callback(new TestProgress(name, passed, error, num_tests, num_tests_failed, num_tests_left, num_skipped));
     }
-    if (all_passed) {
-        console.log("all tests passed");
+
+    let msg = `done running tests: ${num_tests_failed} failed, ${num_skipped} skipped`;
+    if (num_tests_failed > 0) {
+        console.error(msg);
+    } else if (num_skipped > 0) {
+        console.warn(msg);
     } else {
-        console.error("all tests run, some tests failed");
+        console.log(msg);
     }
-    return new TestProgress('', all_passed, undefined, num_tests, num_tests_failed, 0, any_skipped);
+    return new TestProgress('', all_passed, undefined, num_tests, num_tests_failed, 0, num_skipped);
 }
 
 export {test, run_tests, assertThat, skipRestOfTestIfHeadless}
