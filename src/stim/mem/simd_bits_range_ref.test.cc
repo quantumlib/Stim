@@ -85,7 +85,8 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, randomize, {
     alignas(64) std::array<uint64_t, 16> data{};
     simd_bits_range_ref<W> ref((bitword<W> *)data.data(), sizeof(data) / sizeof(bitword<W>));
 
-    ref.randomize(64 + 57, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    ref.randomize(64 + 57, rng);
     uint64_t mask = (1ULL << 57) - 1;
     // Randomized.
     ASSERT_NE(ref.u64[0], 0);
@@ -100,7 +101,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, randomize, {
     for (size_t k = 0; k < ref.num_u64_padded(); k++) {
         ref.u64[k] = UINT64_MAX;
     }
-    ref.randomize(64 + 57, SHARED_TEST_RNG());
+    ref.randomize(64 + 57, rng);
     // Randomized.
     ASSERT_NE(ref.u64[0], 0);
     ASSERT_NE(ref.u64[0], SIZE_MAX);
@@ -117,8 +118,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, xor_assignment, {
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>) / 3);
     simd_bits_range_ref<W> m1((bitword<W> *)&data[8], sizeof(data) / sizeof(bitword<W>) / 3);
     simd_bits_range_ref<W> m2((bitword<W> *)&data[16], sizeof(data) / sizeof(bitword<W>) / 3);
-    m0.randomize(512, SHARED_TEST_RNG());
-    m1.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
+    m1.randomize(512, rng);
     ASSERT_NE(m0, m1);
     ASSERT_NE(m0, m2);
     m2 ^= m0;
@@ -133,8 +135,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, assignment, {
     alignas(64) std::array<uint64_t, 16> data{};
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>) / 2);
     simd_bits_range_ref<W> m1((bitword<W> *)&data[8], sizeof(data) / sizeof(bitword<W>) / 2);
-    m0.randomize(512, SHARED_TEST_RNG());
-    m1.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
+    m1.randomize(512, rng);
     auto old_m1 = m1.u64[0];
     ASSERT_NE(m0, m1);
     m0 = m1;
@@ -265,8 +268,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, swap_with, {
     simd_bits_range_ref<W> m1((bitword<W> *)&data[8], sizeof(data) / sizeof(bitword<W>) / 4);
     simd_bits_range_ref<W> m2((bitword<W> *)&data[16], sizeof(data) / sizeof(bitword<W>) / 4);
     simd_bits_range_ref<W> m3((bitword<W> *)&data[24], sizeof(data) / sizeof(bitword<W>) / 4);
-    m0.randomize(512, SHARED_TEST_RNG());
-    m1.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
+    m1.randomize(512, rng);
     m2 = m0;
     m3 = m1;
     ASSERT_EQ(m0, m2);
@@ -279,7 +283,8 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, swap_with, {
 TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, clear, {
     alignas(64) std::array<uint64_t, 8> data{};
     simd_bits_range_ref<W> m0((bitword<W> *)&data[0], sizeof(data) / sizeof(bitword<W>));
-    m0.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
     ASSERT_TRUE(m0.not_zero());
     m0.clear();
     ASSERT_TRUE(!m0.not_zero());
@@ -325,8 +330,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, for_each_set_bit, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, truncated_overwrite_from, {
-    simd_bits<W> dat = simd_bits<W>::random(1024, SHARED_TEST_RNG());
-    simd_bits<W> mut = simd_bits<W>::random(1024, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bits<W> dat = simd_bits<W>::random(1024, rng);
+    simd_bits<W> mut = simd_bits<W>::random(1024, rng);
     simd_bits<W> old = mut;
 
     simd_bits_range_ref<W>(mut).truncated_overwrite_from(dat, 455);

@@ -58,9 +58,7 @@ void measurements_to_detection_events_helper(
     // The frame simulator is used to account for flips in the measurement results that originate from the sweep data.
     // Eg. a `CNOT sweep[5] 0` can bit flip qubit 0, which can invert later measurement results, which will invert the
     // expected parity of detectors involving that measurement. This can vary from shot to shot.
-    std::mt19937_64 rng1(0);
-    std::mt19937_64 rng2(0);  // Used to sanity check that rng1 isn't called.
-    FrameSimulator<W> frame_sim(circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, rng1);
+    FrameSimulator<W> frame_sim(circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, std::mt19937_64(0));
     frame_sim.sweep_table = sweep_bits__minor_shot_index;
     frame_sim.guarantee_anticommutation_via_frame_randomization = false;
 
@@ -121,7 +119,8 @@ void measurements_to_detection_events_helper(
     }
 
     // Safety check verifying no randomness was used by the frame simulator.
-    if (rng1() != rng2()) {
+    std::mt19937_64 fresh_rng(0);
+    if (frame_sim.rng() != fresh_rng() || frame_sim.rng() != fresh_rng() || frame_sim.rng() != fresh_rng()) {
         throw std::invalid_argument("Something is wrong. Converting measurements consumed entropy, but it shouldn't.");
     }
 }

@@ -57,7 +57,7 @@ TEST_EACH_WORD_SIZE_W(DemSampler, resample_basic_probabilities, {
             error(0.75) D3
             error(1) D4 ^ D5
          )DEM"),
-        SHARED_TEST_RNG(),
+        INDEPENDENT_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
         sampler.resample(false);
@@ -82,7 +82,7 @@ TEST_EACH_WORD_SIZE_W(DemSampler, resample_combinations, {
             error(0.2) D1 D2
             error(0.3) D2 D0
          )DEM"),
-        SHARED_TEST_RNG(),
+        INDEPENDENT_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
         sampler.resample(false);

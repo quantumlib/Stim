@@ -5,8 +5,6 @@
 
 #include "stim/probability_util.h"
 
-std::mt19937_64 &JS_BIND_SHARED_RNG();
-
 template <typename T>
 emscripten::val vec_to_js_array(const std::vector<T> &items) {
     emscripten::val result = emscripten::val::array();

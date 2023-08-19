@@ -349,6 +349,7 @@ bool are_tableau_mutations_equivalent(
     size_t n,
     const std::function<void(Tableau<W> &t, const std::vector<size_t> &)> &mutation1,
     const std::function<void(Tableau<W> &t, const std::vector<size_t> &)> &mutation2) {
+    auto rng = INDEPENDENT_TEST_RNG();
     auto test_tableau_dual = Tableau<W>::identity(2 * n);
     std::vector<size_t> targets1;
     std::vector<size_t> targets2;
@@ -363,8 +364,8 @@ bool are_tableau_mutations_equivalent(
 
     std::vector<Tableau<W>> tableaus{
         test_tableau_dual,
-        Tableau<W>::random(n + 10, SHARED_TEST_RNG()),
-        Tableau<W>::random(n + 30, SHARED_TEST_RNG()),
+        Tableau<W>::random(n + 10, rng),
+        Tableau<W>::random(n + 30, rng),
     };
     std::vector<std::vector<size_t>> cases{targets1, targets2, targets3};
     for (const auto &t : tableaus) {
@@ -451,20 +452,21 @@ TEST_EACH_WORD_SIZE_W(tableau, from_pauli_string, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, random, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau<W>::random(1, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(1, rng);
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau<W>::random(2, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(2, rng);
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau<W>::random(3, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(3, rng);
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau<W>::random(30, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(30, rng);
         ASSERT_TRUE(t.satisfies_invariants());
     }
 })
@@ -627,7 +629,8 @@ TEST_EACH_WORD_SIZE_W(tableau, specialized_operation, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, expand, {
-    auto t = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(4, rng);
     auto t2 = t;
     for (size_t n = 8; n < 500; n += 255) {
         t2.expand(n, 1.0);
@@ -663,7 +666,8 @@ TEST_EACH_WORD_SIZE_W(tableau, expand, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, expand_pad, {
-    auto t = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(4, rng);
     auto t2 = t;
     size_t n = 8;
     while (n < 10000) {
@@ -708,7 +712,8 @@ TEST_EACH_WORD_SIZE_W(tableau, expand_pad, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, expand_pad_equals, {
-    auto t = Tableau<W>::random(15, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(15, rng);
     auto t2 = t;
     t.expand(500, 1.0);
     t2.expand(500, 2.0);
@@ -716,13 +721,14 @@ TEST_EACH_WORD_SIZE_W(tableau, expand_pad_equals, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, transposed_access, {
+    auto rng = INDEPENDENT_TEST_RNG();
     size_t n = 1000;
     Tableau<W> t(n);
     auto m = t.xs.xt.data.num_bits_padded();
-    t.xs.xt.data.randomize(m, SHARED_TEST_RNG());
-    t.xs.zt.data.randomize(m, SHARED_TEST_RNG());
-    t.zs.xt.data.randomize(m, SHARED_TEST_RNG());
-    t.zs.zt.data.randomize(m, SHARED_TEST_RNG());
+    t.xs.xt.data.randomize(m, rng);
+    t.xs.zt.data.randomize(m, rng);
+    t.zs.xt.data.randomize(m, rng);
+    t.zs.zt.data.randomize(m, rng);
     for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
         for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
             bool bxx = t.xs.xt[inp_qubit][out_qubit];
@@ -747,6 +753,7 @@ TEST_EACH_WORD_SIZE_W(tableau, transposed_access, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, inverse, {
+    auto rng = INDEPENDENT_TEST_RNG();
     Tableau<W> t1(1);
     ASSERT_EQ(t1, t1.inverse());
     t1.prepend_X(0);
@@ -756,10 +763,10 @@ TEST_EACH_WORD_SIZE_W(tableau, inverse, {
     ASSERT_EQ(t2, GATE_DATA.at("X").tableau<W>());
 
     for (size_t k = 5; k < 20; k += 7) {
-        t1 = Tableau<W>::random(k, SHARED_TEST_RNG());
+        t1 = Tableau<W>::random(k, rng);
         t2 = t1.inverse();
         ASSERT_TRUE(t2.satisfies_invariants());
-        auto p = PauliString<W>::random(k, SHARED_TEST_RNG());
+        auto p = PauliString<W>::random(k, rng);
         auto p2 = t1(t2(p));
         auto x1 = p.xs.str();
         auto x2 = p2.xs.str();
@@ -771,7 +778,8 @@ TEST_EACH_WORD_SIZE_W(tableau, inverse, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, prepend_pauli_product, {
-    auto t = Tableau<W>::random(6, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(6, rng);
     auto ref = t;
     t.prepend_pauli_product(PauliString<W>::from_str("_XYZ__"));
     ref.prepend_X(1);
@@ -858,7 +866,8 @@ TEST_EACH_WORD_SIZE_W(tableau, raised_to, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, transposed_xz_input, {
-    auto t = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(4, rng);
     PauliString<W> x0(0);
     PauliString<W> x1(0);
     {
@@ -875,8 +884,9 @@ TEST_EACH_WORD_SIZE_W(tableau, transposed_xz_input, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, direct_sum, {
-    auto t1 = Tableau<W>::random(260, SHARED_TEST_RNG());
-    auto t2 = Tableau<W>::random(270, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t1 = Tableau<W>::random(260, rng);
+    auto t2 = Tableau<W>::random(270, rng);
     auto t3 = t1;
     t3 += t2;
     ASSERT_EQ(t3, t1 + t2);
@@ -899,7 +909,8 @@ TEST_EACH_WORD_SIZE_W(tableau, direct_sum, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, pauli_access_methods, {
-    auto t = Tableau<W>::random(3, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(3, rng);
     auto t_inv = t.inverse();
     for (size_t i = 0; i < 3; i++) {
         auto x = t.xs[i];
@@ -966,7 +977,8 @@ TEST_EACH_WORD_SIZE_W(tableau, pauli_access_methods, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, inverse_pauli_string_acces_methods, {
-    auto t = Tableau<W>::random(5, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(5, rng);
     auto t_inv = t.inverse();
     auto y0 = t_inv.eval_y_obs(0);
     auto y1 = t_inv.eval_y_obs(1);

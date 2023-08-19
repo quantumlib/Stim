@@ -123,7 +123,8 @@ TEST_EACH_WORD_SIZE_W(simd_bits, str, {
 TEST_EACH_WORD_SIZE_W(simd_bits, randomize, {
     simd_bits<W> d(1024);
 
-    d.randomize(64 + 57, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    d.randomize(64 + 57, rng);
     uint64_t mask = (1ULL << 57) - 1;
     // Randomized.
     ASSERT_NE(d.u64[0], 0);
@@ -138,7 +139,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, randomize, {
     for (size_t k = 0; k < d.num_u64_padded(); k++) {
         d.u64[k] = UINT64_MAX;
     }
-    d.randomize(64 + 57, SHARED_TEST_RNG());
+    d.randomize(64 + 57, rng);
     // Randomized.
     ASSERT_NE(d.u64[0], 0);
     ASSERT_NE(d.u64[0], SIZE_MAX);
@@ -151,8 +152,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, randomize, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, xor_assignment, {
-    simd_bits<W> m0 = simd_bits<W>::random(512, SHARED_TEST_RNG());
-    simd_bits<W> m1 = simd_bits<W>::random(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bits<W> m0 = simd_bits<W>::random(512, rng);
+    simd_bits<W> m1 = simd_bits<W>::random(512, rng);
     simd_bits<W> m2(512);
     m2 ^= m0;
     ASSERT_EQ(m0, m2);
@@ -284,7 +286,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
-    auto rng = SHARED_TEST_RNG();
+    auto rng = INDEPENDENT_TEST_RNG();
     for (int i = 0; i < 5; i++) {
         std::uniform_int_distribution dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
@@ -334,7 +336,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
-    auto rng = SHARED_TEST_RNG();
+    auto rng = INDEPENDENT_TEST_RNG();
     for (int i = 0; i < 5; i++) {
         std::uniform_int_distribution dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
@@ -356,8 +358,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
 TEST_EACH_WORD_SIZE_W(simd_bits, assignment, {
     simd_bits<W> m0(512);
     simd_bits<W> m1(512);
-    m0.randomize(512, SHARED_TEST_RNG());
-    m1.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
+    m1.randomize(512, rng);
     auto old_m1 = m1.u64[0];
     ASSERT_NE(m0, m1);
     m0 = m1;
@@ -389,8 +392,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, swap_with, {
     simd_bits<W> m1(512);
     simd_bits<W> m2(512);
     simd_bits<W> m3(512);
-    m0.randomize(512, SHARED_TEST_RNG());
-    m1.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
+    m1.randomize(512, rng);
     m2 = m0;
     m3 = m1;
     ASSERT_EQ(m0, m2);
@@ -402,7 +406,8 @@ TEST_EACH_WORD_SIZE_W(simd_bits, swap_with, {
 
 TEST_EACH_WORD_SIZE_W(simd_bits, clear, {
     simd_bits<W> m0(512);
-    m0.randomize(512, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    m0.randomize(512, rng);
     ASSERT_TRUE(m0.not_zero());
     m0.clear();
     ASSERT_TRUE(!m0.not_zero());
@@ -471,8 +476,9 @@ TEST_EACH_WORD_SIZE_W(simd_bits, mask_assignment_or, {
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, truncated_overwrite_from, {
-    simd_bits<W> dat = simd_bits<W>::random(1024, SHARED_TEST_RNG());
-    simd_bits<W> mut = simd_bits<W>::random(1024, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bits<W> dat = simd_bits<W>::random(1024, rng);
+    simd_bits<W> mut = simd_bits<W>::random(1024, rng);
     simd_bits<W> old = mut;
 
     mut.truncated_overwrite_from(dat, 455);

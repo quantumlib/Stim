@@ -39,7 +39,7 @@ inline void for_each_target_pair(FrameSimulator<W> &sim, const CircuitInstructio
 
 template <size_t W>
 FrameSimulator<W>::FrameSimulator(
-    CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng)
+    CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &&rng)
     : num_qubits(0),
       keeping_detection_data(false),
       batch_size(0),
@@ -52,7 +52,7 @@ FrameSimulator<W>::FrameSimulator(
       tmp_storage(0),
       last_correlated_error_occurred(0),
       sweep_table(0, 0),
-      rng(rng) {
+      rng(std::move(rng)) {
     configure_for(circuit_stats, mode, batch_size);
 }
 

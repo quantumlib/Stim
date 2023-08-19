@@ -72,12 +72,13 @@ void expect_string_is_identical_to_saved_file(const std::string &actual, const s
     }
 }
 
-std::mt19937_64 &SHARED_TEST_RNG() {
+std::mt19937_64 INDEPENDENT_TEST_RNG() {
     if (!shared_test_rng_initialized) {
         shared_test_rng = externally_seeded_rng();
         shared_test_rng_initialized = true;
     }
-    return shared_test_rng;
+    std::seed_seq seq{shared_test_rng(), shared_test_rng(), shared_test_rng(), shared_test_rng()};
+    return std::mt19937_64(seq);
 }
 
 std::string rewind_read_close(FILE *f) {
