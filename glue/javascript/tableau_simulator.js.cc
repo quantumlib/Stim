@@ -58,7 +58,7 @@ static JsCircuitInstruction args_to_target_pairs(TableauSimulator<MAX_BITWORD_WI
     return result;
 }
 
-ExposedTableauSimulator::ExposedTableauSimulator() : sim(JS_BIND_SHARED_RNG(), 0) {
+ExposedTableauSimulator::ExposedTableauSimulator() : sim(externally_seeded_rng(), 0) {
 }
 
 bool ExposedTableauSimulator::measure(size_t target) {
