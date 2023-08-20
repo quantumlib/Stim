@@ -28,10 +28,10 @@ namespace stim {
 
 enum FrameSimulatorMode {
     STORE_MEASUREMENTS_TO_MEMORY,  // all measurements stored, detections not stored
-    STREAM_MEASUREMENTS_TO_DISK,  // measurements stored up to lookback, detections not stored
-    STORE_DETECTIONS_TO_MEMORY,  // measurements stored up to lookback, all detections stored
-    STREAM_DETECTIONS_TO_DISK,  // measurements stored up to lookback, detections stored until write
-    STORE_EVERYTHING_TO_MEMORY,  // all measurements stored and all detections stored
+    STREAM_MEASUREMENTS_TO_DISK,   // measurements stored up to lookback, detections not stored
+    STORE_DETECTIONS_TO_MEMORY,    // measurements stored up to lookback, all detections stored
+    STREAM_DETECTIONS_TO_DISK,     // measurements stored up to lookback, detections stored until write
+    STORE_EVERYTHING_TO_MEMORY,    // all measurements stored and all detections stored
 };
 
 /// A Pauli Frame simulator that computes many samples simultaneously.

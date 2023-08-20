@@ -10,7 +10,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-std::optional<size_t> py_index_to_optional_size_t(const pybind11::object &index, size_t length, const char *val_name, const char *len_name) {
+std::optional<size_t> py_index_to_optional_size_t(
+    const pybind11::object &index, size_t length, const char *val_name, const char *len_name) {
     if (index.is_none()) {
         return {};
     }
@@ -54,11 +55,8 @@ pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_frame_si
 
 template <size_t W>
 pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11::object &py_instance_index) {
-    std::optional<size_t> instance_index = py_index_to_optional_size_t(
-        py_instance_index,
-        self.batch_size,
-        "instance_index",
-        "batch_size");
+    std::optional<size_t> instance_index =
+        py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
     if (instance_index.has_value()) {
         return pybind11::cast(PyPauliString(self.get_frame(*instance_index)));
@@ -72,16 +70,17 @@ pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11:
 }
 
 template <size_t W>
-FrameSimulator<W> create_frame_simulator(size_t batch_size, bool disable_heisenberg_uncertainty, uint32_t num_qubits, const pybind11::object &seed) {
+FrameSimulator<W> create_frame_simulator(
+    size_t batch_size, bool disable_heisenberg_uncertainty, uint32_t num_qubits, const pybind11::object &seed) {
     FrameSimulator<W> result(
         CircuitStats{
-            0, // num_detectors
-            0, // num_observables
-            0, // num_measurements
+            0,  // num_detectors
+            0,  // num_observables
+            0,  // num_measurements
             num_qubits,
-            0, // num_ticks
-            (uint32_t)(1 << 24), // max_lookback
-            0, // num_sweep_bits
+            0,                    // num_ticks
+            (uint32_t)(1 << 24),  // max_lookback
+            0,                    // num_sweep_bits
         },
         FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY,
         batch_size,
@@ -124,28 +123,16 @@ pybind11::object get_measurement_flips(
     const pybind11::object &py_record_index,
     const pybind11::object &py_instance_index,
     bool bit_packed) {
-
     size_t num_measurements = self.m_record.stored;
 
-    std::optional<size_t> instance_index = py_index_to_optional_size_t(
-        py_instance_index,
-        self.batch_size,
-        "instance_index",
-        "batch_size");
+    std::optional<size_t> instance_index =
+        py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
-    std::optional<size_t> record_index = py_index_to_optional_size_t(
-        py_record_index,
-        num_measurements,
-        "record_index",
-        "num_measurements");
+    std::optional<size_t> record_index =
+        py_index_to_optional_size_t(py_record_index, num_measurements, "record_index", "num_measurements");
 
     return sliced_table_to_numpy(
-        self.m_record.storage,
-        num_measurements,
-        self.batch_size,
-        record_index,
-        instance_index,
-        bit_packed);
+        self.m_record.storage, num_measurements, self.batch_size, record_index, instance_index, bit_packed);
 }
 
 template <size_t W>
@@ -154,28 +141,16 @@ pybind11::object get_detector_flips(
     const pybind11::object &py_detector_index,
     const pybind11::object &py_instance_index,
     bool bit_packed) {
-
     size_t num_detectors = self.det_record.stored;
 
-    std::optional<size_t> instance_index = py_index_to_optional_size_t(
-        py_instance_index,
-        self.batch_size,
-        "instance_index",
-        "batch_size");
+    std::optional<size_t> instance_index =
+        py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
-    std::optional<size_t> detector_index = py_index_to_optional_size_t(
-        py_detector_index,
-        num_detectors,
-        "detector_index",
-        "num_detectors");
+    std::optional<size_t> detector_index =
+        py_index_to_optional_size_t(py_detector_index, num_detectors, "detector_index", "num_detectors");
 
     return sliced_table_to_numpy(
-        self.det_record.storage,
-        num_detectors,
-        self.batch_size,
-        detector_index,
-        instance_index,
-        bit_packed);
+        self.det_record.storage, num_detectors, self.batch_size, detector_index, instance_index, bit_packed);
 }
 
 template <size_t W>
@@ -184,26 +159,14 @@ pybind11::object get_obs_flips(
     const pybind11::object &py_observable_index,
     const pybind11::object &py_instance_index,
     bool bit_packed) {
+    std::optional<size_t> instance_index =
+        py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
-    std::optional<size_t> instance_index = py_index_to_optional_size_t(
-        py_instance_index,
-        self.batch_size,
-        "instance_index",
-        "batch_size");
-
-    std::optional<size_t> observable_index = py_index_to_optional_size_t(
-        py_observable_index,
-        self.num_observables,
-        "observable_index",
-        "num_observables");
+    std::optional<size_t> observable_index =
+        py_index_to_optional_size_t(py_observable_index, self.num_observables, "observable_index", "num_observables");
 
     return sliced_table_to_numpy(
-        self.obs_record,
-        self.num_observables,
-        self.batch_size,
-        observable_index,
-        instance_index,
-        bit_packed);
+        self.obs_record, self.num_observables, self.batch_size, observable_index, instance_index, bit_packed);
 }
 
 void stim_pybind::pybind_frame_simulator_methods(
@@ -302,8 +265,8 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def_property_readonly(
-         "batch_size",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
+        "batch_size",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.batch_size;
         },
         clean_doc_string(R"DOC(
@@ -321,8 +284,8 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def_property_readonly(
-         "num_qubits",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
+        "num_qubits",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.num_qubits;
         },
         clean_doc_string(R"DOC(
@@ -343,8 +306,8 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def_property_readonly(
-         "num_observables",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
+        "num_observables",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.num_observables;
         },
         clean_doc_string(R"DOC(
@@ -365,8 +328,8 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def_property_readonly(
-         "num_measurements",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
+        "num_measurements",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.m_record.stored;
         },
         clean_doc_string(R"DOC(
@@ -384,8 +347,8 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def_property_readonly(
-         "num_detectors",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
+        "num_detectors",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) -> size_t {
             return self.det_record.stored;
         },
         clean_doc_string(R"DOC(
@@ -406,8 +369,11 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def(
-         "set_pauli_flip",
-         [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, int64_t qubit_index, int64_t instance_index) {
+        "set_pauli_flip",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self,
+           const pybind11::object &pauli,
+           int64_t qubit_index,
+           int64_t instance_index) {
             uint8_t p = 255;
             try {
                 p = pybind11::cast<uint8_t>(pauli);
@@ -763,7 +729,8 @@ void stim_pybind::pybind_frame_simulator_methods(
                 const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(obj);
                 self.safe_do_circuit(block.body, block.repeat_count);
             } else {
-                throw std::invalid_argument("Don't know how to do a '" + pybind11::cast<std::string>(pybind11::repr(obj)) + "'.");
+                throw std::invalid_argument(
+                    "Don't know how to do a '" + pybind11::cast<std::string>(pybind11::repr(obj)) + "'.");
             }
         },
         pybind11::arg("obj"),
