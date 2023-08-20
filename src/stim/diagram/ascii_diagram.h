@@ -17,6 +17,7 @@
 #ifndef _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_ASCII_DIAGRAM_H
 #define _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_ASCII_DIAGRAM_H
 
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <map>
