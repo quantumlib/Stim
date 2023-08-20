@@ -44,7 +44,7 @@ enum FrameSimulatorMode {
 template <size_t W>
 struct FrameSimulator {
     size_t num_qubits;                 // Number of qubits being tracked.
-    size_t num_observables;            // Number of observables being tracked.
+    uint64_t num_observables;          // Number of observables being tracked.
     bool keeping_detection_data;       // Whether or not to store dets and obs data.
     size_t batch_size;                 // Number of instances being tracked.
     simd_bit_table<W> x_table;         // x_table[q][k] is whether or not there's an X error on qubit q in instance k.

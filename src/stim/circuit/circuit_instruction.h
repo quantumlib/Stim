@@ -30,7 +30,7 @@ struct CircuitStats {
     uint64_t num_observables = 0;
     uint64_t num_measurements = 0;
     uint32_t num_qubits = 0;
-    uint32_t num_ticks = 0;
+    uint64_t num_ticks = 0;
     uint32_t max_lookback = 0;
     uint32_t num_sweep_bits = 0;
 

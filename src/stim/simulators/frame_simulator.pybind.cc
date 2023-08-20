@@ -250,36 +250,6 @@ pybind11::object get_xz_flips(
     return result;
 }
 
-//template <size_t W>
-//PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
-//    TableauSimulator<W> &self, GateType gate_type, const pybind11::args &args, SpanRef<const double> gate_args = {}) {
-//    std::vector<GateTarget> targets;
-//    uint32_t max_q = 0;
-//    try {
-//        for (const auto &e : args) {
-//            if (pybind11::isinstance<GateTarget>(e)) {
-//                targets.push_back(pybind11::cast<GateTarget>(e));
-//            } else {
-//                uint32_t q = e.cast<uint32_t>();
-//                max_q = std::max(max_q, q & TARGET_VALUE_MASK);
-//                targets.push_back(GateTarget{q});
-//            }
-//        }
-//    } catch (const pybind11::cast_error &) {
-//        throw std::out_of_range("Target qubits must be non-negative integers.");
-//    }
-//
-//    std::vector<double> gate_args_vec;
-//    for (const auto &e : gate_args) {
-//        gate_args_vec.push_back(e);
-//    }
-//
-//    // Note: quadratic behavior.
-//    self.ensure_large_enough_for_qubits(max_q + 1);
-//
-//    return PyCircuitInstruction(gate_type, targets, gate_args_vec);
-//}
-//
 void stim_pybind::pybind_frame_simulator_methods(
     pybind11::module &m, pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>> &c) {
     c.def(
