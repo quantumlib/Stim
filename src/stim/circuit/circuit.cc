@@ -304,8 +304,8 @@ template <typename SOURCE>
 inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
         uint64_t q = read_uint63_t(c, read_char);
-        circuit.target_buf.append_tail({(uint32_t)(q & 0xFFFFFFFFULL)});
-        circuit.target_buf.append_tail({(uint32_t)(q >> 32)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q & 0xFFFFFFFFULL)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q >> 32)});
     }
 }
 
@@ -382,9 +382,9 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
 
             // Rewrite target data to reference the parsed block.
             circuit.target_buf.ensure_available(3);
-            circuit.target_buf.append_tail({block_id});
-            circuit.target_buf.append_tail({rep_count_low});
-            circuit.target_buf.append_tail({rep_count_high});
+            circuit.target_buf.append_tail(GateTarget{block_id});
+            circuit.target_buf.append_tail(GateTarget{rep_count_low});
+            circuit.target_buf.append_tail(GateTarget{rep_count_high});
             new_op.targets = circuit.target_buf.commit_tail();
         }
 

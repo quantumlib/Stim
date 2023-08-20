@@ -17,6 +17,8 @@
 #ifndef _STIM_CIRCUIT_INSTRUCTION_H
 #define _STIM_CIRCUIT_INSTRUCTION_H
 
+#include <cstdint>
+
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/span_ref.h"
 

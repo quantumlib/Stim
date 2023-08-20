@@ -15,6 +15,7 @@
  */
 
 #include <cstddef>
+#include <cstdint>
 
 #ifndef _STIM_MEM_SIMD_WORD_H
 #define _STIM_MEM_SIMD_WORD_H

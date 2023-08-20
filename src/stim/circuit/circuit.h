@@ -18,8 +18,8 @@
 #define _STIM_CIRCUIT_CIRCUIT_H
 
 #include <cmath>
+#include <cstdint>
 #include <cstring>
-#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>

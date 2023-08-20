@@ -27,7 +27,7 @@
 using namespace stim;
 using namespace stim::impl_search_hyper;
 
-DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState final_state) {
+DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState &&final_state) {
     DetectorErrorModel out;
     SearchState cur_state = std::move(final_state);
     while (true) {
@@ -98,7 +98,7 @@ DetectorErrorModel stim::find_undetectable_logical_error(
             }
             if (next.dets.empty()) {
                 assert(next.obs_mask.not_zero());  // Otherwise, it would have already been in back_map.
-                return backtrack_path(back_map, next);
+                return backtrack_path(back_map, std::move(next));
             }
             queue.push(std::move(next));
         }
