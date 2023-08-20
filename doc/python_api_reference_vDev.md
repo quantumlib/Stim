@@ -167,6 +167,20 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
     - [`stim.ExplainedError.dem_error_terms`](#stim.ExplainedError.dem_error_terms)
+- [`stim.FlipSimulator`](#stim.FlipSimulator)
+    - [`stim.FlipSimulator.__init__`](#stim.FlipSimulator.__init__)
+    - [`stim.FlipSimulator.batch_size`](#stim.FlipSimulator.batch_size)
+    - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
+    - [`stim.FlipSimulator.do_circuit`](#stim.FlipSimulator.do_circuit)
+    - [`stim.FlipSimulator.do_instruction`](#stim.FlipSimulator.do_instruction)
+    - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
+    - [`stim.FlipSimulator.get_measurement_flips`](#stim.FlipSimulator.get_measurement_flips)
+    - [`stim.FlipSimulator.get_observable_flips`](#stim.FlipSimulator.get_observable_flips)
+    - [`stim.FlipSimulator.num_detectors`](#stim.FlipSimulator.num_detectors)
+    - [`stim.FlipSimulator.num_measurements`](#stim.FlipSimulator.num_measurements)
+    - [`stim.FlipSimulator.num_observables`](#stim.FlipSimulator.num_observables)
+    - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
+    - [`stim.FlipSimulator.peek_current_pauli_errors`](#stim.FlipSimulator.peek_current_pauli_errors)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
@@ -5726,6 +5740,499 @@ def dem_error_terms(
     self,
 ) -> List[stim.DemTargetWithCoords]:
     """The detectors and observables flipped by this error mechanism.
+    """
+```
+
+<a name="stim.FlipSimulator"></a>
+```python
+# stim.FlipSimulator
+
+# (at top-level in the stim module)
+class FlipSimulator:
+    """A simulator that tracks whether things are flipped, instead of what they are.
+
+    Tracking flips is significantly cheaper than tracking actual values, requiring
+    O(1) work per gate (compared to O(n) for unitary operations and O(n^2) for
+    collapsing operations in the tableau simulator, where n is the qubit count).
+
+    Supports interactive usage, where gates and measurements are applied on demand.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.FlipSimulator()
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.__init__"></a>
+```python
+# stim.FlipSimulator.__init__
+
+# (in class stim.FlipSimulator)
+def __init__(
+    self,
+    *,
+    batch_size: int,
+    disable_stabilizer_randomization: bool = False,
+    num_qubits: int = 0,
+    seed: Optional[int] = None,
+) -> None:
+    """Initializes a stim.FlipSimulator.
+
+    Args:
+        batch_size: For speed, the flip simulator simulates many instances in
+            parallel. This argument determines the number of parallel instances.
+
+            It's recommended to use a multiple of 256, because internally the state
+            of the instances is striped across SSE (128 bit) or AVX (256 bit)
+            words with one bit in the word belonging to each instance. The result is
+            that, even if you only ask for 1 instance, probably the same amount of
+            work is being done as if you'd asked for 256 instances. The extra
+            results just aren't being used, creating waste.
+
+        disable_stabilizer_randomization: Determines whether or not the flip
+            simulator uses stabilizer randomization. Defaults to False (stabilizer
+            randomization used). Set to True to disable stabilizer randomization.
+
+            Stabilizer randomization means that, when a qubit is initialized or
+            measured in the Z basis, a Z error is added to the qubit with 50%
+            probability. More generally, anytime a stabilizer is introduced into
+            the system by any means, an error equal to that stabilizer is applied
+            with 50% probability. This ensures that observables anticommuting with
+            stabilizers of the system must be maximally uncertain. In other words,
+            this feature enforces Heisenberg's uncertainty principle.
+
+            This is a safety feature that you should not turn off unless you have a
+            reason to do so. Stabilizer randomization is turned on by default
+            because it catches mistakes. For example, suppose you are trying to
+            create a stabilizer code but you accidentally have the code measure two
+            anticommuting stabilizers. With stabilizer randomization turned off, it
+            will look like this code works. With stabilizer randomization turned on,
+            the two measurements will correctly randomize each other revealing that
+            the code doesn't work.
+
+            In some use cases, stabilizer randomization is a hindrance instead of
+            helpful. For example, if you are using the flip simulator to understand
+            how an error propagates through the system, the stabilizer randomization
+            will be introducing error terms that you don't want.
+
+        num_qubits: Sets the initial number of qubits tracked by the simulation.
+            The simulator will still automatically resize as needed when qubits
+            beyond this limit are touched.
+
+            This parameter exists as a way to hint at the desired size of the
+            simulator's state for performance, and to ensure methods that
+            peek at the size have the expected size from the start instead of
+            only after the relevant qubits have been touched.
+
+        seed: PARTIALLY determines simulation results by deterministically seeding
+            the random number generator.
+
+            Must be None or an integer in range(2**64).
+
+            Defaults to None. When None, the prng is seeded from system entropy.
+
+            When set to an integer, making the exact same series calls on the exact
+            same machine with the exact same version of Stim will produce the exact
+            same simulation results.
+
+            CAUTION: simulation results *WILL NOT* be consistent between versions of
+            Stim. This restriction is present to make it possible to have future
+            optimizations to the random sampling, and is enforced by introducing
+            intentional differences in the seeding strategy from version to version.
+
+            CAUTION: simulation results *MAY NOT* be consistent across machines that
+            differ in the width of supported SIMD instructions. For example, using
+            the same seed on a machine that supports AVX instructions and one that
+            only supports SSE instructions may produce different simulation results.
+
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
+
+    Returns:
+        An initialized stim.FlipSimulator.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.FlipSimulator(seed=0)
+        >>> s2 = stim.FlipSimulator(seed=0)
+        >>> s.x_error(0, p=0.1)
+        >>> s2.x_error(0, p=0.1)
+        >>> s.measure(0) == s2.measure(0)
+        True
+    """
+```
+
+<a name="stim.FlipSimulator.batch_size"></a>
+```python
+# stim.FlipSimulator.batch_size
+
+# (in class stim.FlipSimulator)
+@property
+def batch_size(
+    self,
+) -> int:
+    """Returns the number of instances being simulated by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FrameSimulator(batch_size=256)
+        >>> sim.batch_size
+        256
+        >>> sim = stim.FrameSimulator(batch_size=42)
+        >>> sim.batch_size
+        42
+    """
+```
+
+<a name="stim.FlipSimulator.do"></a>
+```python
+# stim.FlipSimulator.do
+
+# (in class stim.FlipSimulator)
+def do(
+    self,
+    obj: Union[stim.Circuit, stim.CircuitInstruction, stim.CircuitRepeatBlock],
+) -> None:
+    """Applies a circuit or circuit instruction to the simulator's state.
+
+    The results of any measurements performed can be retrieved using the
+    `get_measurement_flips` method.
+
+    Args:
+        obj: The circuit or instruction to apply to the simulator's state.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.do_circuit"></a>
+```python
+# stim.FlipSimulator.do_circuit
+
+# (in class stim.FlipSimulator)
+def do_circuit(
+    self,
+    circuit: stim.Circuit,
+) -> None:
+    """Applies a all the instructions in a circuit to the simulator's state.
+
+    The results of any measurements performed can be retrieved using the
+    `get_measurement_flips` method.
+
+    Args:
+        circuit: The circuit to apply to the simulator's state.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.do_instruction"></a>
+```python
+# stim.FlipSimulator.do_instruction
+
+# (in class stim.FlipSimulator)
+def do_instruction(
+    self,
+    instruction: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock],
+) -> None:
+    """Applies a circuit instruction to the simulator's state.
+
+    The results of any measurements performed can be retrieved using the
+    `get_measurement_flips` method.
+
+    Args:
+        circuit: The circuit to apply to the simulator's state.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.get_detector_flips"></a>
+```python
+# stim.FlipSimulator.get_detector_flips
+
+# (in class stim.FlipSimulator)
+def get_detector_flips(
+    self,
+    *,
+    detector_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves detector flip data from the simulator's detection event record.
+
+    Args:
+        record_index: Identifies a detector to read results from.
+            Setting this to None (default) returns results from all detectors.
+            Otherwise this should be an integer in range(0, self.num_detectors).
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_detectors, self.batch_size), where the first index is
+        the detector_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying detector_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a detector_index (or a 0d array, a boolean, if detector_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.get_measurement_flips"></a>
+```python
+# stim.FlipSimulator.get_measurement_flips
+
+# (in class stim.FlipSimulator)
+def get_measurement_flips(
+    self,
+    *,
+    record_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves measurement flip data from the simulator's measurement record.
+
+    Args:
+        record_index: Identifies a measurement to read results from.
+            Setting this to None (default) returns results from all measurements.
+            Setting this to a non-negative integer indexes measurements by the order
+                they occurred. For example, record index 0 is the first measurement.
+            Setting this to a negative integer indexes measurements by recency.
+                For example, recording index -1 is the most recent measurement.
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be set to an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_measurements, self.batch_size), where the first index is
+        the measurement_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying record_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a measurement_index (or a 0d array, a boolean, if record_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.get_observable_flips"></a>
+```python
+# stim.FlipSimulator.get_observable_flips
+
+# (in class stim.FlipSimulator)
+def get_observable_flips(
+    self,
+    *,
+    observable_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves observable flip data from the simulator's detection event record.
+
+    Args:
+        record_index: Identifies a observable to read results from.
+            Setting this to None (default) returns results from all observables.
+            Otherwise this should be an integer in range(0, self.num_observables).
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_observables, self.batch_size), where the first index is
+        the observable_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying observable_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a observable_index (or a 0d array, a boolean, if observable_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> assert False
+    """
+```
+
+<a name="stim.FlipSimulator.num_detectors"></a>
+```python
+# stim.FlipSimulator.num_detectors
+
+# (in class stim.FlipSimulator)
+@property
+def num_detectors(
+    self,
+) -> int:
+    """Returns the number of detectors that have been simulated and stored.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FrameSimulator(batch_size=256)
+        >>> sim.num_detectors
+        0
+        >>> sim.do_circuit(stim.Circuit('''
+        ...     M 0 0
+        ...     DETECTOR rec[-1] rec[-2]
+        ... '''))
+        >>> sim.num_detectors
+        1
+    """
+```
+
+<a name="stim.FlipSimulator.num_measurements"></a>
+```python
+# stim.FlipSimulator.num_measurements
+
+# (in class stim.FlipSimulator)
+@property
+def num_measurements(
+    self,
+) -> int:
+    """Returns the number of measurements that have been simulated and stored.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FrameSimulator(batch_size=256)
+        >>> sim.num_measurements
+        0
+        >>> sim.measure(5)
+        >>> sim.num_measurements
+        1
+    """
+```
+
+<a name="stim.FlipSimulator.num_observables"></a>
+```python
+# stim.FlipSimulator.num_observables
+
+# (in class stim.FlipSimulator)
+@property
+def num_observables(
+    self,
+) -> int:
+    """Returns the number of observables currently tracked by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FrameSimulator(batch_size=256)
+        >>> sim.num_observables
+        0
+        >>> sim.do_circuit(stim.Circuit('''
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(4) rec[-1]
+        ... '''))
+        >>> sim.num_observables
+        5
+    """
+```
+
+<a name="stim.FlipSimulator.num_qubits"></a>
+```python
+# stim.FlipSimulator.num_qubits
+
+# (in class stim.FlipSimulator)
+@property
+def num_qubits(
+    self,
+) -> int:
+    """Returns the number of qubits currently tracked by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FrameSimulator(batch_size=256)
+        >>> sim.num_qubits
+        0
+        >>> sim.h(5)
+        >>> sim.num_qubits
+        6
+    """
+```
+
+<a name="stim.FlipSimulator.peek_current_pauli_errors"></a>
+```python
+# stim.FlipSimulator.peek_current_pauli_errors
+
+# (in class stim.FlipSimulator)
+def peek_current_errors(
+    self,
+) -> np.ndarray:
+    """Creates a numpy array describing the current pauli errors.
+
+    Returns:
+        A numpy array with shape=(self.num_qubits, self.batch_size), dtype=np.uint8.
+
+        Each entry in the array is the Pauli error on one qubit in one instance,
+        using the convention 0=I, 1=X, 2=Y, 3=Z. For example, if result[5][3] == 2
+        then there's a Y error on the qubit with index 5 in the shot with index 3.
+
+    Examples:
+        >>> import stim
+        >>> assert False
     """
 ```
 

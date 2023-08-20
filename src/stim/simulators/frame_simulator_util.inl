@@ -23,7 +23,8 @@ template <size_t W>
 std::pair<simd_bit_table<W>, simd_bit_table<W>> sample_batch_detection_events(
     const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng) {
     FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, std::move(rng));
-    sim.reset_all_and_run(circuit);
+    sim.reset_all();
+    sim.do_circuit(circuit);
     rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 
     return std::pair<simd_bit_table<W>, simd_bit_table<W>>{
@@ -126,7 +127,8 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
         throw std::out_of_range("Can't combine --prepend_observables, --append_observables, or --obs_out");
     }
 
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
 
     const auto &obs_data = frame_sim.obs_record;
     const auto &det_data = frame_sim.det_record.storage;
@@ -190,7 +192,8 @@ void rerun_frame_sim_in_memory_and_write_measurements_to_disk(
     size_t num_shots,
     FILE *out,
     SampleFormat format) {
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
     const auto &measure_data = frame_sim.m_record.storage;
 
     write_table_data(
@@ -289,7 +292,8 @@ simd_bit_table<W> sample_batch_measurements(
     std::mt19937_64 &rng,
     bool transposed) {
     FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, std::move(rng));
-    sim.reset_all_and_run(circuit);
+    sim.reset_all();
+    sim.do_circuit(circuit);
     simd_bit_table<W> result = std::move(sim.m_record.storage);
     rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 

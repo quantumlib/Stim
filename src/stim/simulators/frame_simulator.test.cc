@@ -1476,7 +1476,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, reconfigure_for, {
     FrameSimulator<W> frame_sim(
         circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, INDEPENDENT_TEST_RNG());
     frame_sim.configure_for(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 256);
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
     ASSERT_EQ(frame_sim.det_record.storage[0].popcnt(), 256);
 })
 
@@ -1560,7 +1561,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_erase_detect_statistics, {
     FrameSimulator<W> sim(
         circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
     for (n = 0; n < 1024 * 256; n += 1024) {
-        sim.reset_all_and_run(circuit);
+        sim.reset_all();
+        sim.do_circuit(circuit);
         auto sample = sim.det_record.storage.transposed();
         for (size_t k = 0; k < 1024; k++) {
             bins[sample[k].u8[0]]++;

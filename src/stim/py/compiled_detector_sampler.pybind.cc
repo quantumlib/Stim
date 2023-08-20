@@ -39,7 +39,8 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
     }
 
     frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
 
     const auto &det_data = frame_sim.det_record.storage;
     const auto &obs_data = frame_sim.obs_record;
