@@ -4808,6 +4808,35 @@ class FlipSimulator:
             >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
             ['+', 'Z', '_']
         """
+    def set_pauli_flip(
+        self,
+        pauli: Union[str, int],
+        *,
+        qubit_index: int,
+        instance_index: int,
+    ) -> None:
+        """Sets the pauli flip on a given qubit in a given simulation instance.
+
+        Args:
+            pauli: The pauli, specified as an integer or string.
+                Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+            qubit_index: The qubit to put the error on. Must be non-negative. The state
+                will automatically expand as needed to store the error.
+            instance_index: The simulation index to put the error inside. Use negative
+                indices to index from the end of the list.
+
+        Examples:
+            >>> import stim
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=2,
+            ...     num_qubits=3,
+            ...     disable_stabilizer_randomization=True,
+            ... )
+            >>> sim.set_pauli_flip('X', qubit_index=2, instance_index=1)
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+___"), stim.PauliString("+__X")]
+        """
 class FlippedMeasurement:
     """Describes a measurement that was flipped.
 

@@ -61,7 +61,7 @@ pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11:
         "batch_size");
 
     if (instance_index.has_value()) {
-        return pybind11::cast(PyPauliString(self.get_frame(instance_index.value())));
+        return pybind11::cast(PyPauliString(self.get_frame(*instance_index)));
     }
 
     std::vector<PyPauliString> result;
@@ -100,9 +100,9 @@ pybind11::object sliced_table_to_numpy(
     std::optional<size_t> minor_index,
     bool bit_packed) {
     if (major_index.has_value()) {
-        simd_bits_range_ref<W> row = table[major_index.value()];
+        simd_bits_range_ref<W> row = table[*major_index];
         if (minor_index.has_value()) {
-            bool b = row[minor_index.value()];
+            bool b = row[*minor_index];
             auto np = pybind11::module::import("numpy");
             return np.attr("array")(b, bit_packed ? np.attr("uint8") : np.attr("bool_"));
         } else {
@@ -110,7 +110,7 @@ pybind11::object sliced_table_to_numpy(
         }
     } else {
         if (minor_index.has_value()) {
-            auto data = table.read_across_majors_at_minor_index(0, num_major_exact, minor_index.value());
+            auto data = table.read_across_majors_at_minor_index(0, num_major_exact, *minor_index);
             return simd_bits_to_numpy(data, num_major_exact, bit_packed);
         } else {
             return simd_bit_table_to_numpy(table, num_major_exact, num_minor_exact, bit_packed);
@@ -204,50 +204,6 @@ pybind11::object get_obs_flips(
         observable_index,
         instance_index,
         bit_packed);
-}
-
-template <size_t W>
-pybind11::object get_xz_flips(
-    FrameSimulator<W> &self,
-    bool x,
-    bool z,
-    const pybind11::object &py_observable_index,
-    const pybind11::object &py_instance_index,
-    bool bit_packed) {
-
-    std::optional<size_t> instance_index = py_index_to_optional_size_t(
-        py_instance_index,
-        self.batch_size,
-        "instance_index",
-        "batch_size");
-
-    std::optional<size_t> qubit_index = py_index_to_optional_size_t(
-        py_observable_index,
-        self.num_observables,
-        "qubit_index",
-        "num_qubits");
-
-    simd_bit_table<W> *table;
-    if (x & z) {
-        self.x_table.data ^= self.z_table.data;
-        table = &self.x_table;
-    } else if (x) {
-        table = &self.x_table;
-    } else {
-        assert(z);
-        table = &self.z_table;
-    }
-    auto result = sliced_table_to_numpy(
-        *table,
-        self.num_qubits,
-        self.batch_size,
-        qubit_index,
-        instance_index,
-        bit_packed);
-    if (x & z) {
-        self.x_table.data ^= self.z_table.data;
-    }
-    return result;
 }
 
 void stim_pybind::pybind_frame_simulator_methods(
@@ -446,6 +402,78 @@ void stim_pybind::pybind_frame_simulator_methods(
                 ... '''))
                 >>> sim.num_detectors
                 1
+        )DOC")
+            .data());
+
+    c.def(
+         "set_pauli_flip",
+         [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, int64_t qubit_index, int64_t instance_index) {
+            uint8_t p = 255;
+            try {
+                p = pybind11::cast<uint8_t>(pauli);
+            } catch (const pybind11::cast_error &) {
+                try {
+                    std::string s = pybind11::cast<std::string>(pauli);
+                    if (s == "X") {
+                        p = 1;
+                    } else if (s == "Y") {
+                        p = 2;
+                    } else if (s == "Z") {
+                        p = 3;
+                    } else if (s == "I" || s == "_") {
+                        p = 0;
+                    }
+                } catch (const pybind11::cast_error &) {
+                }
+            }
+            if (p > 3) {
+                throw std::invalid_argument("Expected pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
+            }
+            if (instance_index < 0) {
+                instance_index += self.batch_size;
+            }
+            if (qubit_index < 0) {
+                throw std::out_of_range("qubit_index");
+            }
+            if (instance_index < 0 || (uint64_t)instance_index >= self.batch_size) {
+                throw std::out_of_range("instance_index");
+            }
+            if ((uint64_t)qubit_index >= self.num_qubits) {
+                CircuitStats stats;
+                stats.num_qubits = qubit_index + 1;
+                self.ensure_safe_to_do_circuit_with_stats(stats);
+            }
+            p ^= p >> 1;
+            self.x_table[qubit_index][instance_index] = (p & 1) != 0;
+            self.z_table[qubit_index][instance_index] = (p & 2) != 0;
+        },
+        pybind11::arg("pauli"),
+        pybind11::kw_only(),
+        pybind11::arg("qubit_index"),
+        pybind11::arg("instance_index"),
+        clean_doc_string(R"DOC(
+            @signature def set_pauli_flip(self, pauli: Union[str, int], *, qubit_index: int, instance_index: int) -> None:
+            Sets the pauli flip on a given qubit in a given simulation instance.
+
+            Args:
+                pauli: The pauli, specified as an integer or string.
+                    Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                    Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+                qubit_index: The qubit to put the error on. Must be non-negative. The state
+                    will automatically expand as needed to store the error.
+                instance_index: The simulation index to put the error inside. Use negative
+                    indices to index from the end of the list.
+
+            Examples:
+                >>> import stim
+                >>> sim = stim.FlipSimulator(
+                ...     batch_size=2,
+                ...     num_qubits=3,
+                ...     disable_stabilizer_randomization=True,
+                ... )
+                >>> sim.set_pauli_flip('X', qubit_index=2, instance_index=1)
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+___"), stim.PauliString("+__X")]
         )DOC")
             .data());
 

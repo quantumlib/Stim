@@ -1,5 +1,6 @@
 import collections
 
+import pytest
 import stim
 import numpy as np
 
@@ -170,3 +171,70 @@ def test_surface_code():
     sim.do(circuit_before_mr)
     for b in sim.peek_pauli_flips():
         print(list(b))
+
+
+def test_set_pauli_flip():
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        disable_stabilizer_randomization=True,
+        num_qubits=3,
+    )
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('___'),
+        stim.PauliString('___'),
+    ]
+
+    sim.set_pauli_flip('X', qubit_index=2, instance_index=0)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('__X'),
+        stim.PauliString('___'),
+    ]
+
+    sim.set_pauli_flip(3, qubit_index=1, instance_index=1)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('__X'),
+        stim.PauliString('_Z_'),
+    ]
+
+    sim.set_pauli_flip(2, qubit_index=0, instance_index=1)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('__X'),
+        stim.PauliString('YZ_'),
+    ]
+
+    sim.set_pauli_flip(1, qubit_index=0, instance_index=-1)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('__X'),
+        stim.PauliString('XZ_'),
+    ]
+
+    sim.set_pauli_flip(0, qubit_index=2, instance_index=-2)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('___'),
+        stim.PauliString('XZ_'),
+    ]
+
+    with pytest.raises(ValueError, match='Expected pauli'):
+        sim.set_pauli_flip(-1, qubit_index=0, instance_index=0)
+    with pytest.raises(ValueError, match='Expected pauli'):
+        sim.set_pauli_flip(4, qubit_index=0, instance_index=0)
+    with pytest.raises(ValueError, match='Expected pauli'):
+        sim.set_pauli_flip('R', qubit_index=0, instance_index=0)
+    with pytest.raises(ValueError, match='Expected pauli'):
+        sim.set_pauli_flip('XY', qubit_index=0, instance_index=0)
+    with pytest.raises(ValueError, match='Expected pauli'):
+        sim.set_pauli_flip(object(), qubit_index=0, instance_index=0)
+
+    with pytest.raises(IndexError, match='instance_index'):
+        sim.set_pauli_flip('X', qubit_index=0, instance_index=-3)
+    with pytest.raises(IndexError, match='instance_index'):
+        sim.set_pauli_flip('X', qubit_index=0, instance_index=3)
+
+    with pytest.raises(IndexError, match='qubit_index'):
+        sim.set_pauli_flip('X', qubit_index=-1, instance_index=0)
+
+    sim.set_pauli_flip('X', qubit_index=4, instance_index=0)
+    assert sim.peek_pauli_flips() == [
+        stim.PauliString('____X'),
+        stim.PauliString('XZ___'),
+    ]
