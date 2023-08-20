@@ -82,7 +82,7 @@ struct FrameSimulator {
     void ensure_safe_to_do_circuit_with_stats(const CircuitStats &stats);
 
     void safe_do_instruction(const CircuitInstruction &instruction);
-    void safe_do_circuit(const Circuit &circuit, uint64_t repetititions = 1);
+    void safe_do_circuit(const Circuit &circuit, uint64_t repetitions = 1);
 
     void do_circuit(const Circuit &circuit);
     void reset_all();

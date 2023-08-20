@@ -1,27 +1,36 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/simulators/frame_simulator.pybind.h"
 
+#include "stim/circuit/circuit_instruction.pybind.h"
+#include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/circuit/circuit_instruction.pybind.h"
-#include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/stabilizers/pauli_string.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
+
+std::optional<size_t> py_index_to_optional_size_t(const pybind11::object &index, size_t length, const char *val_name, const char *len_name) {
+    if (index.is_none()) {
+        return {};
+    }
+    int64_t i = pybind11::cast<int64_t>(index);
+    if (i < -(int64_t)length || (uint64_t)i >= length) {
+        std::stringstream msg;
+        msg << "not (";
+        msg << "-" << len_name << " <= ";
+        msg << val_name << "=" << index;
+        msg << " < ";
+        msg << len_name << "=" << length;
+        msg << ")";
+        throw std::out_of_range(msg.str());
+    }
+    if (i < 0) {
+        i += length;
+    }
+    assert(i >= 0);
+    return (size_t)i;
+}
 
 pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_frame_simulator(pybind11::module &m) {
     return pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>>(
@@ -38,33 +47,28 @@ pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_frame_si
 
             Examples:
                 >>> import stim
-                >>> s = stim.FlipSimulator()
-                >>> assert False
+                >>> sim = stim.FlipSimulator(batch_size=256)
         )DOC")
             .data());
 }
 
 template <size_t W>
-pybind11::object peek_current_pauli_errors(const FrameSimulator<W> &self) {
-    uint8_t *buffer = new uint8_t[self.num_qubits * self.batch_size];
-    size_t t = 0;
-    for (size_t k_maj = 0; k_maj < self.batch_size; k_maj++) {
-        for (size_t k_min = 0; k_min < self.num_qubits; k_min++) {
-            uint8_t x = self.x_table[k_maj][k_min];
-            uint8_t z = self.z_table[k_maj][k_min];
-            buffer[t++] = (x ^ z) + z * 2;
-        }
+pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11::object &py_instance_index) {
+    std::optional<size_t> instance_index = py_index_to_optional_size_t(
+        py_instance_index,
+        self.batch_size,
+        "instance_index",
+        "batch_size");
+
+    if (instance_index.has_value()) {
+        return pybind11::cast(PyPauliString(self.get_frame(instance_index.value())));
     }
 
-    pybind11::capsule free_when_done(buffer, [](void *f) {
-        delete[] reinterpret_cast<uint8_t *>(f);
-    });
-
-    return pybind11::array_t<uint8_t>(
-        {(pybind11::ssize_t)self.num_qubits, (pybind11::ssize_t)self.batch_size},
-        {(pybind11::ssize_t)self.batch_size, (pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+    std::vector<PyPauliString> result;
+    for (size_t k = 0; k < self.batch_size; k++) {
+        result.push_back(PyPauliString(self.get_frame(k)));
+    }
+    return pybind11::cast(std::move(result));
 }
 
 template <size_t W>
@@ -100,7 +104,7 @@ pybind11::object sliced_table_to_numpy(
         if (minor_index.has_value()) {
             bool b = row[minor_index.value()];
             auto np = pybind11::module::import("numpy");
-            return np.attr("array")(b, bit_packed ? np.attr("bool_") : np.attr("uint8"));
+            return np.attr("array")(b, bit_packed ? np.attr("uint8") : np.attr("bool_"));
         } else {
             return simd_bits_to_numpy(row, num_minor_exact, bit_packed);
         }
@@ -112,29 +116,6 @@ pybind11::object sliced_table_to_numpy(
             return simd_bit_table_to_numpy(table, num_major_exact, num_minor_exact, bit_packed);
         }
     }
-}
-
-std::optional<size_t> py_index_to_optional_size_t(pybind11::object index, size_t length, const char *val_name, const char *len_name) {
-    std::optional<size_t> instance_index;
-    if (index.is_none()) {
-        return {};
-    }
-    int64_t i = pybind11::cast<int64_t>(index);
-    if (i < -(int64_t)length || (uint64_t)i >= length) {
-        std::stringstream msg;
-        msg << "not (";
-        msg << "-" << len_name << " <= ";
-        msg << val_name << "=" << index;
-        msg << " < ";
-        msg << len_name << "=" << length;
-        msg << ")";
-        throw std::out_of_range(msg.str());
-    }
-    if (i < 0) {
-        i += length;
-    }
-    assert(i >= 0);
-    return (size_t)i;
 }
 
 template <size_t W>
@@ -186,7 +167,7 @@ pybind11::object get_detector_flips(
         py_detector_index,
         num_detectors,
         "detector_index",
-        "num_measurements");
+        "num_detectors");
 
     return sliced_table_to_numpy(
         self.det_record.storage,
@@ -390,12 +371,7 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> s = stim.FlipSimulator(seed=0)
-                >>> s2 = stim.FlipSimulator(seed=0)
-                >>> s.x_error(0, p=0.1)
-                >>> s2.x_error(0, p=0.1)
-                >>> s.measure(0) == s2.measure(0)
-                True
+                >>> sim = stim.FlipSimulator(batch_size=256)
         )DOC")
             .data());
 
@@ -409,10 +385,10 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> sim = stim.FrameSimulator(batch_size=256)
+                >>> sim = stim.FlipSimulator(batch_size=256)
                 >>> sim.batch_size
                 256
-                >>> sim = stim.FrameSimulator(batch_size=42)
+                >>> sim = stim.FlipSimulator(batch_size=42)
                 >>> sim.batch_size
                 42
         )DOC")
@@ -428,10 +404,13 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> sim = stim.FrameSimulator(batch_size=256)
+                >>> sim = stim.FlipSimulator(batch_size=256)
                 >>> sim.num_qubits
                 0
-                >>> sim.h(5)
+                >>> sim = stim.FlipSimulator(batch_size=256, num_qubits=4)
+                >>> sim.num_qubits
+                4
+                >>> sim.do(stim.Circuit('H 5'))
                 >>> sim.num_qubits
                 6
         )DOC")
@@ -447,10 +426,10 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> sim = stim.FrameSimulator(batch_size=256)
+                >>> sim = stim.FlipSimulator(batch_size=256)
                 >>> sim.num_observables
                 0
-                >>> sim.do_circuit(stim.Circuit('''
+                >>> sim.do(stim.Circuit('''
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(4) rec[-1]
                 ... '''))
@@ -469,12 +448,12 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> sim = stim.FrameSimulator(batch_size=256)
+                >>> sim = stim.FlipSimulator(batch_size=256)
                 >>> sim.num_measurements
                 0
-                >>> sim.measure(5)
+                >>> sim.do(stim.Circuit('M 3 5'))
                 >>> sim.num_measurements
-                1
+                2
         )DOC")
             .data());
 
@@ -488,10 +467,10 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> sim = stim.FrameSimulator(batch_size=256)
+                >>> sim = stim.FlipSimulator(batch_size=256)
                 >>> sim.num_detectors
                 0
-                >>> sim.do_circuit(stim.Circuit('''
+                >>> sim.do(stim.Circuit('''
                 ...     M 0 0
                 ...     DETECTOR rec[-1] rec[-2]
                 ... '''))
@@ -501,22 +480,59 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def(
-        "peek_current_pauli_errors",
-        &peek_current_pauli_errors<MAX_BITWORD_WIDTH>,
+        "peek_pauli_flips",
+        &peek_pauli_flips<MAX_BITWORD_WIDTH>,
+        pybind11::kw_only(),
+        pybind11::arg("instance_index") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def peek_current_errors(self) -> np.ndarray:
-            Creates a numpy array describing the current pauli errors.
+            @overload def peek_pauli_flips(self) -> List[stim.PauliString]:
+            @overload def peek_pauli_flips(self, *, instance_index: int) -> stim.PauliString:
+            @signature def peek_pauli_flips(self, *, instance_index: Optional[int] = None) -> Union[stim.PauliString, List[stim.PauliString]]:
+            Returns the current pauli errors packed into stim.PauliString instances.
+
+            Args:
+                instance_index: Defaults to None. When set to None, the pauli errors from
+                    all instances are returned as a list of `stim.PauliString`. When set to
+                    an integer, a single `stim.PauliString` is returned containing the
+                    errors for the indexed instance.
 
             Returns:
-                A numpy array with shape=(self.num_qubits, self.batch_size), dtype=np.uint8.
-
-                Each entry in the array is the Pauli error on one qubit in one instance,
-                using the convention 0=I, 1=X, 2=Y, 3=Z. For example, if result[5][3] == 2
-                then there's a Y error on the qubit with index 5 in the shot with index 3.
+                if instance_index is None:
+                    A list of stim.PauliString, with the k'th entry being the errors from
+                    the k'th simulation instance.
+                else:
+                    A stim.PauliString with the errors from the k'th simulation instance.
 
             Examples:
                 >>> import stim
-                >>> assert False
+                >>> sim = stim.FlipSimulator(
+                ...     batch_size=2,
+                ...     disable_stabilizer_randomization=True,
+                ...     num_qubits=10,
+                ... )
+
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+__________"), stim.PauliString("+__________")]
+
+                >>> sim.peek_pauli_flips(instance_index=0)
+                stim.PauliString("+__________")
+
+                >>> sim.do(stim.Circuit('''
+                ...     X_ERROR(1) 0 3 5
+                ...     Z_ERROR(1) 3 6
+                ... '''))
+
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+X__Y_XZ___"), stim.PauliString("+X__Y_XZ___")]
+
+                >>> sim = stim.FlipSimulator(
+                ...     batch_size=1,
+                ...     num_qubits=100,
+                ... )
+                >>> flips: stim.PauliString = sim.peek_pauli_flips(instance_index=0)
+                >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
+                ['+', 'Z', '_']
+
         )DOC")
             .data());
 
@@ -569,7 +585,27 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> assert False
+                >>> sim = stim.FlipSimulator(batch_size=9)
+                >>> sim.do(stim.Circuit('M 0 1 2'))
+
+                >>> sim.get_measurement_flips()
+                array([[False, False, False, False, False, False, False, False, False],
+                       [False, False, False, False, False, False, False, False, False],
+                       [False, False, False, False, False, False, False, False, False]])
+
+                >>> sim.get_measurement_flips(bit_packed=True)
+                array([[0, 0],
+                       [0, 0],
+                       [0, 0]], dtype=uint8)
+
+                >>> sim.get_measurement_flips(instance_index=1)
+                array([False, False, False])
+
+                >>> sim.get_measurement_flips(record_index=2)
+                array([False, False, False, False, False, False, False, False, False])
+
+                >>> sim.get_measurement_flips(instance_index=1, record_index=2)
+                array(False)
         )DOC")
             .data());
 
@@ -619,7 +655,30 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> assert False
+                >>> sim = stim.FlipSimulator(batch_size=9)
+                >>> sim.do(stim.Circuit('''
+                ...     M 0 0 0
+                ...     DETECTOR rec[-2] rec[-3]
+                ...     DETECTOR rec[-1] rec[-2]
+                ... '''))
+
+                >>> sim.get_detector_flips()
+                array([[False, False, False, False, False, False, False, False, False],
+                       [False, False, False, False, False, False, False, False, False]])
+
+                >>> sim.get_detector_flips(bit_packed=True)
+                array([[0, 0],
+                       [0, 0]], dtype=uint8)
+
+                >>> sim.get_detector_flips(instance_index=2)
+                array([False, False])
+
+                >>> sim.get_detector_flips(detector_index=1)
+                array([False, False, False, False, False, False, False, False, False])
+
+                >>> sim.get_detector_flips(instance_index=2, detector_index=1)
+                array(False)
+
         )DOC")
             .data());
 
@@ -669,68 +728,39 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> assert False
-        )DOC")
-            .data());
+                >>> sim = stim.FlipSimulator(batch_size=9)
+                >>> sim.do(stim.Circuit('''
+                ...     M 0 0 0
+                ...     OBSERVABLE_INCLUDE(0) rec[-2]
+                ...     OBSERVABLE_INCLUDE(1) rec[-1]
+                ... '''))
 
-    c.def(
-        "do_circuit",
-        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const Circuit &circuit) {
-            self.safe_do_circuit(circuit);
-        },
-        pybind11::arg("circuit"),
-        clean_doc_string(R"DOC(
-            Applies a all the instructions in a circuit to the simulator's state.
+                >>> sim.get_observable_flips()
+                array([[False, False, False, False, False, False, False, False, False],
+                       [False, False, False, False, False, False, False, False, False]])
 
-            The results of any measurements performed can be retrieved using the
-            `get_measurement_flips` method.
+                >>> sim.get_observable_flips(bit_packed=True)
+                array([[0, 0],
+                       [0, 0]], dtype=uint8)
 
-            Args:
-                circuit: The circuit to apply to the simulator's state.
+                >>> sim.get_observable_flips(instance_index=2)
+                array([False, False])
 
-            Examples:
-                >>> import stim
-                >>> assert False
-        )DOC")
-            .data());
+                >>> sim.get_observable_flips(observable_index=1)
+                array([False, False, False, False, False, False, False, False, False])
 
-    c.def(
-        "do_instruction",
-        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &instruction) {
-            if (pybind11::isinstance<PyCircuitInstruction>(instruction)) {
-                self.safe_do_instruction(pybind11::cast<const PyCircuitInstruction &>(instruction).as_operation_ref());
-            } else if (pybind11::isinstance<CircuitRepeatBlock>(instruction)) {
-                const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(instruction);
-                self.safe_do_circuit(block.body, block.repeat_count);
-            } else {
-                throw std::invalid_argument("Not a stim.CircuitInstruction or stim.CircuitRepeatBlock '" + pybind11::cast<std::string>(pybind11::repr(instruction)) + "'.");
-            }
-        },
-        pybind11::arg("instruction"),
-        clean_doc_string(R"DOC(
-            @signature def do_instruction(self, instruction: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]) -> None:
-            Applies a circuit instruction to the simulator's state.
-
-            The results of any measurements performed can be retrieved using the
-            `get_measurement_flips` method.
-
-            Args:
-                circuit: The circuit to apply to the simulator's state.
-
-            Examples:
-                >>> import stim
-                >>> assert False
+                >>> sim.get_observable_flips(instance_index=2, observable_index=1)
+                array(False)
         )DOC")
             .data());
 
     c.def(
         "do",
         [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &obj) {
-            if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
+            if (pybind11::isinstance<Circuit>(obj)) {
                 self.safe_do_circuit(pybind11::cast<const Circuit &>(obj));
-            } else if (pybind11::isinstance<Circuit>(obj)) {
-                const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(obj);
-                self.safe_do_circuit(block.body, block.repeat_count);
+            } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
+                self.safe_do_instruction(pybind11::cast<const PyCircuitInstruction &>(obj));
             } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
                 const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(obj);
                 self.safe_do_circuit(block.body, block.repeat_count);
@@ -751,7 +781,28 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
-                >>> assert False
+                >>> sim = stim.FlipSimulator(
+                ...     batch_size=1,
+                ...     disable_stabilizer_randomization=True,
+                ... )
+                >>> circuit = stim.Circuit('''
+                ...     X_ERROR(1) 0 1 3
+                ...     REPEAT 5 {
+                ...         H 0
+                ...         C_XYZ 1
+                ...     }
+                ... ''')
+                >>> sim.do(circuit)
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+ZZ_X")]
+
+                >>> sim.do(circuit[0])
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+YY__")]
+
+                >>> sim.do(circuit[1])
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+YX__")]
         )DOC")
             .data());
 }

@@ -4328,8 +4328,7 @@ class FlipSimulator:
 
     Examples:
         >>> import stim
-        >>> s = stim.FlipSimulator()
-        >>> assert False
+        >>> sim = stim.FlipSimulator(batch_size=256)
     """
     def __init__(
         self,
@@ -4419,12 +4418,7 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> s = stim.FlipSimulator(seed=0)
-            >>> s2 = stim.FlipSimulator(seed=0)
-            >>> s.x_error(0, p=0.1)
-            >>> s2.x_error(0, p=0.1)
-            >>> s.measure(0) == s2.measure(0)
-            True
+            >>> sim = stim.FlipSimulator(batch_size=256)
         """
     @property
     def batch_size(
@@ -4434,10 +4428,10 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> sim = stim.FrameSimulator(batch_size=256)
+            >>> sim = stim.FlipSimulator(batch_size=256)
             >>> sim.batch_size
             256
-            >>> sim = stim.FrameSimulator(batch_size=42)
+            >>> sim = stim.FlipSimulator(batch_size=42)
             >>> sim.batch_size
             42
         """
@@ -4455,39 +4449,28 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> assert False
-        """
-    def do_circuit(
-        self,
-        circuit: stim.Circuit,
-    ) -> None:
-        """Applies a all the instructions in a circuit to the simulator's state.
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=1,
+            ...     disable_stabilizer_randomization=True,
+            ... )
+            >>> circuit = stim.Circuit('''
+            ...     X_ERROR(1) 0 1 3
+            ...     REPEAT 5 {
+            ...         H 0
+            ...         C_XYZ 1
+            ...     }
+            ... ''')
+            >>> sim.do(circuit)
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+ZZ_X")]
 
-        The results of any measurements performed can be retrieved using the
-        `get_measurement_flips` method.
+            >>> sim.do(circuit[0])
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+YY__")]
 
-        Args:
-            circuit: The circuit to apply to the simulator's state.
-
-        Examples:
-            >>> import stim
-            >>> assert False
-        """
-    def do_instruction(
-        self,
-        instruction: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock],
-    ) -> None:
-        """Applies a circuit instruction to the simulator's state.
-
-        The results of any measurements performed can be retrieved using the
-        `get_measurement_flips` method.
-
-        Args:
-            circuit: The circuit to apply to the simulator's state.
-
-        Examples:
-            >>> import stim
-            >>> assert False
+            >>> sim.do(circuit[1])
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+YX__")]
         """
     def get_detector_flips(
         self,
@@ -4533,7 +4516,29 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> assert False
+            >>> sim = stim.FlipSimulator(batch_size=9)
+            >>> sim.do(stim.Circuit('''
+            ...     M 0 0 0
+            ...     DETECTOR rec[-2] rec[-3]
+            ...     DETECTOR rec[-1] rec[-2]
+            ... '''))
+
+            >>> sim.get_detector_flips()
+            array([[False, False, False, False, False, False, False, False, False],
+                   [False, False, False, False, False, False, False, False, False]])
+
+            >>> sim.get_detector_flips(bit_packed=True)
+            array([[0, 0],
+                   [0, 0]], dtype=uint8)
+
+            >>> sim.get_detector_flips(instance_index=2)
+            array([False, False])
+
+            >>> sim.get_detector_flips(detector_index=1)
+            array([False, False, False, False, False, False, False, False, False])
+
+            >>> sim.get_detector_flips(instance_index=2, detector_index=1)
+            array(False)
         """
     def get_measurement_flips(
         self,
@@ -4582,7 +4587,27 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> assert False
+            >>> sim = stim.FlipSimulator(batch_size=9)
+            >>> sim.do(stim.Circuit('M 0 1 2'))
+
+            >>> sim.get_measurement_flips()
+            array([[False, False, False, False, False, False, False, False, False],
+                   [False, False, False, False, False, False, False, False, False],
+                   [False, False, False, False, False, False, False, False, False]])
+
+            >>> sim.get_measurement_flips(bit_packed=True)
+            array([[0, 0],
+                   [0, 0],
+                   [0, 0]], dtype=uint8)
+
+            >>> sim.get_measurement_flips(instance_index=1)
+            array([False, False, False])
+
+            >>> sim.get_measurement_flips(record_index=2)
+            array([False, False, False, False, False, False, False, False, False])
+
+            >>> sim.get_measurement_flips(instance_index=1, record_index=2)
+            array(False)
         """
     def get_observable_flips(
         self,
@@ -4628,7 +4653,29 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> assert False
+            >>> sim = stim.FlipSimulator(batch_size=9)
+            >>> sim.do(stim.Circuit('''
+            ...     M 0 0 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-2]
+            ...     OBSERVABLE_INCLUDE(1) rec[-1]
+            ... '''))
+
+            >>> sim.get_observable_flips()
+            array([[False, False, False, False, False, False, False, False, False],
+                   [False, False, False, False, False, False, False, False, False]])
+
+            >>> sim.get_observable_flips(bit_packed=True)
+            array([[0, 0],
+                   [0, 0]], dtype=uint8)
+
+            >>> sim.get_observable_flips(instance_index=2)
+            array([False, False])
+
+            >>> sim.get_observable_flips(observable_index=1)
+            array([False, False, False, False, False, False, False, False, False])
+
+            >>> sim.get_observable_flips(instance_index=2, observable_index=1)
+            array(False)
         """
     @property
     def num_detectors(
@@ -4638,10 +4685,10 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> sim = stim.FrameSimulator(batch_size=256)
+            >>> sim = stim.FlipSimulator(batch_size=256)
             >>> sim.num_detectors
             0
-            >>> sim.do_circuit(stim.Circuit('''
+            >>> sim.do(stim.Circuit('''
             ...     M 0 0
             ...     DETECTOR rec[-1] rec[-2]
             ... '''))
@@ -4656,12 +4703,12 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> sim = stim.FrameSimulator(batch_size=256)
+            >>> sim = stim.FlipSimulator(batch_size=256)
             >>> sim.num_measurements
             0
-            >>> sim.measure(5)
+            >>> sim.do(stim.Circuit('M 3 5'))
             >>> sim.num_measurements
-            1
+            2
         """
     @property
     def num_observables(
@@ -4671,10 +4718,10 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> sim = stim.FrameSimulator(batch_size=256)
+            >>> sim = stim.FlipSimulator(batch_size=256)
             >>> sim.num_observables
             0
-            >>> sim.do_circuit(stim.Circuit('''
+            >>> sim.do(stim.Circuit('''
             ...     M 0
             ...     OBSERVABLE_INCLUDE(4) rec[-1]
             ... '''))
@@ -4689,28 +4736,77 @@ class FlipSimulator:
 
         Examples:
             >>> import stim
-            >>> sim = stim.FrameSimulator(batch_size=256)
+            >>> sim = stim.FlipSimulator(batch_size=256)
             >>> sim.num_qubits
             0
-            >>> sim.h(5)
+            >>> sim = stim.FlipSimulator(batch_size=256, num_qubits=4)
+            >>> sim.num_qubits
+            4
+            >>> sim.do(stim.Circuit('H 5'))
             >>> sim.num_qubits
             6
         """
-    def peek_current_errors(
+    @overload
+    def peek_pauli_flips(
         self,
-    ) -> np.ndarray:
-        """Creates a numpy array describing the current pauli errors.
+    ) -> List[stim.PauliString]:
+        pass
+    @overload
+    def peek_pauli_flips(
+        self,
+        *,
+        instance_index: int,
+    ) -> stim.PauliString:
+        pass
+    def peek_pauli_flips(
+        self,
+        *,
+        instance_index: Optional[int] = None,
+    ) -> Union[stim.PauliString, List[stim.PauliString]]:
+        """Returns the current pauli errors packed into stim.PauliString instances.
+
+        Args:
+            instance_index: Defaults to None. When set to None, the pauli errors from
+                all instances are returned as a list of `stim.PauliString`. When set to
+                an integer, a single `stim.PauliString` is returned containing the
+                errors for the indexed instance.
 
         Returns:
-            A numpy array with shape=(self.num_qubits, self.batch_size), dtype=np.uint8.
-
-            Each entry in the array is the Pauli error on one qubit in one instance,
-            using the convention 0=I, 1=X, 2=Y, 3=Z. For example, if result[5][3] == 2
-            then there's a Y error on the qubit with index 5 in the shot with index 3.
+            if instance_index is None:
+                A list of stim.PauliString, with the k'th entry being the errors from
+                the k'th simulation instance.
+            else:
+                A stim.PauliString with the errors from the k'th simulation instance.
 
         Examples:
             >>> import stim
-            >>> assert False
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=2,
+            ...     disable_stabilizer_randomization=True,
+            ...     num_qubits=10,
+            ... )
+
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+__________"), stim.PauliString("+__________")]
+
+            >>> sim.peek_pauli_flips(instance_index=0)
+            stim.PauliString("+__________")
+
+            >>> sim.do(stim.Circuit('''
+            ...     X_ERROR(1) 0 3 5
+            ...     Z_ERROR(1) 3 6
+            ... '''))
+
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X__Y_XZ___"), stim.PauliString("+X__Y_XZ___")]
+
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=1,
+            ...     num_qubits=100,
+            ... )
+            >>> flips: stim.PauliString = sim.peek_pauli_flips(instance_index=0)
+            >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
+            ['+', 'Z', '_']
         """
 class FlippedMeasurement:
     """Describes a measurement that was flipped.
