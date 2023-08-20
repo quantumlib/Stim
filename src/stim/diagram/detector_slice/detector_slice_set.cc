@@ -508,15 +508,22 @@ Coord<2> stim_draw_internal::pick_polygon_center(SpanRef<const Coord<2>> coords)
     return center;
 }
 
-bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
-    auto d1 = a - b;
-    auto d2 = b - c;
-    if (d1.norm2() < 1e-4 || d2.norm2() < 1e-4) {
-        return true;
+bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c, float atol) {
+    for (size_t k = 0; k < 3; k++) {
+        auto d1 = a - b;
+        auto d2 = b - c;
+        if (d1.norm() < atol || d2.norm() < atol) {
+            return true;
+        }
+        d1 /= d1.norm();
+        d2 /= d2.norm();
+        if (fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < atol) {
+            return true;
+        }
+        std::swap(a, b);
+        std::swap(b, c);
     }
-    d1 /= d1.norm();
-    d2 /= d2.norm();
-    return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
+    return false;
 }
 
 double stim_draw_internal::inv_space_fill_transform(Coord<2> a) {
@@ -667,7 +674,7 @@ void _start_many_body_svg_path(
         const auto &a = pts_workspace[k];
         const auto &b = pts_workspace[(k + 1) % n];
         const auto &c = pts_workspace[(k + 2) % n];
-        if (is_colinear(p, a, b) || is_colinear(a, b, c)) {
+        if (is_colinear(p, a, b, 3e-2f) || is_colinear(a, b, c, 3e-2f)) {
             out << " C";
             auto d = b - a;
             d = {d.xyz[1], -d.xyz[0]};
