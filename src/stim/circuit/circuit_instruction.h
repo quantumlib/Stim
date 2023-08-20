@@ -24,6 +24,29 @@ namespace stim {
 
 struct Circuit;
 
+/// Stores a variety of circuit quantities relevant for sizing memory.
+struct CircuitStats {
+    uint64_t num_detectors = 0;
+    uint64_t num_observables = 0;
+    uint64_t num_measurements = 0;
+    uint32_t num_qubits = 0;
+    uint64_t num_ticks = 0;
+    uint32_t max_lookback = 0;
+    uint32_t num_sweep_bits = 0;
+
+    inline CircuitStats repeated(uint64_t repetitions) const {
+        return CircuitStats{
+            num_detectors * repetitions,
+            num_observables,
+            num_measurements * repetitions,
+            num_qubits,
+            (uint32_t)(num_ticks * repetitions),
+            max_lookback,
+            num_sweep_bits,
+        };
+    }
+};
+
 /// The data that describes how a gate is being applied to qubits (or other targets).
 ///
 /// A gate applied to targets.
@@ -48,6 +71,11 @@ struct CircuitInstruction {
 
     CircuitInstruction() = delete;
     CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets);
+
+    /// Computes number of qubits, number of measurements, etc.
+    CircuitStats compute_stats(const Circuit *host) const;
+    /// Computes number of qubits, number of measurements, etc and adds them into a target.
+    void add_stats_to(CircuitStats &out, const Circuit *host) const;
 
     /// Determines if two operations can be combined into one operation (with combined targeting data).
     ///

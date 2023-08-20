@@ -69,6 +69,16 @@ struct simd_bit_table {
     /// Resizes the table. Doesn't clear to zero. Does nothing if already the target size.
     void destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor);
 
+    /// Copies the table into another table.
+    ///
+    /// It's safe for the other table to have a different size.
+    /// When the other table has a different size, only the data at locations common to both
+    /// tables are copied over.
+    void copy_into_different_size_table(simd_bit_table<W> &other) const;
+
+    /// Resizes the table, keeping any data common to the old and new size and otherwise zeroing data.
+    void resize(size_t new_min_bits_major, size_t new_min_bits_minor);
+
     /// Equality.
     bool operator==(const simd_bit_table &other) const;
     /// Inequality.

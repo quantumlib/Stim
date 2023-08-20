@@ -27,10 +27,11 @@
 namespace stim {
 
 enum FrameSimulatorMode {
-    STORE_MEASUREMENTS_TO_MEMORY,
-    STREAM_MEASUREMENTS_TO_DISK,
-    STORE_DETECTIONS_TO_MEMORY,
-    STREAM_DETECTIONS_TO_DISK,
+    STORE_MEASUREMENTS_TO_MEMORY,  // all measurements stored, detections not stored
+    STREAM_MEASUREMENTS_TO_DISK,  // measurements stored up to lookback, detections not stored
+    STORE_DETECTIONS_TO_MEMORY,  // measurements stored up to lookback, all detections stored
+    STREAM_DETECTIONS_TO_DISK,  // measurements stored up to lookback, detections stored until write
+    STORE_EVERYTHING_TO_MEMORY,  // all measurements stored and all detections stored
 };
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
@@ -42,8 +43,9 @@ enum FrameSimulatorMode {
 /// The template parameter, W, represents the SIMD width
 template <size_t W>
 struct FrameSimulator {
-    size_t num_qubits;  // Number of qubits being tracked.
-    bool keeping_detection_data;
+    size_t num_qubits;                 // Number of qubits being tracked.
+    uint64_t num_observables;          // Number of observables being tracked.
+    bool keeping_detection_data;       // Whether or not to store dets and obs data.
     size_t batch_size;                 // Number of instances being tracked.
     simd_bit_table<W> x_table;         // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
     simd_bit_table<W> z_table;         // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
@@ -77,8 +79,12 @@ struct FrameSimulator {
     PauliString<W> get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef<W> &new_frame);
     void configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size);
+    void ensure_safe_to_do_circuit_with_stats(const CircuitStats &stats);
 
-    void reset_all_and_run(const Circuit &circuit);
+    void safe_do_instruction(const CircuitInstruction &instruction);
+    void safe_do_circuit(const Circuit &circuit, uint64_t repetitions = 1);
+
+    void do_circuit(const Circuit &circuit);
     void reset_all();
 
     void do_gate(const CircuitInstruction &inst);

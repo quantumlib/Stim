@@ -112,7 +112,8 @@ BENCHMARK(FrameSimulator_surface_code_rotated_memory_z_d11_r100_batch1024) {
         circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, 1024, std::mt19937_64(0));
 
     benchmark_go([&]() {
-        sim.reset_all_and_run(circuit);
+        sim.reset_all();
+        sim.do_circuit(circuit);
     })
         .goal_millis(5.1)
         .show_rate("Shots", 1024)

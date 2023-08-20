@@ -293,7 +293,7 @@ TEST(simd_bit_table, lg) {
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, destructive_resize, {
     auto rng = INDEPENDENT_TEST_RNG();
-    simd_bit_table<W> table = table.random(5, 7, rng);
+    simd_bit_table<W> table = simd_bit_table<W>::random(5, 7, rng);
     const uint8_t *prev_pointer = table.data.u8;
     table.destructive_resize(5, 7);
     ASSERT_EQ(table.data.u8, prev_pointer);
@@ -301,4 +301,108 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, destructive_resize, {
     ASSERT_NE(table.data.u8, prev_pointer);
     ASSERT_GE(table.num_major_bits_padded(), 1025);
     ASSERT_GE(table.num_minor_bits_padded(), 7);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bit_table, read_across_majors_at_minor_index, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bit_table<W> table = simd_bit_table<W>::random(5, 7, rng);
+    simd_bits<W> slice = table.read_across_majors_at_minor_index(2, 5, 1);
+    ASSERT_GE(slice.num_bits_padded(), 4);
+    ASSERT_EQ(slice[0], table[2][1]);
+    ASSERT_EQ(slice[1], table[3][1]);
+    ASSERT_EQ(slice[2], table[4][1]);
+    ASSERT_EQ(slice[3], false);
+})
+
+template <size_t W>
+bool is_table_overlap_identical(const simd_bit_table<W> &a, const simd_bit_table<W> &b) {
+    size_t w_min = std::min(a.num_simd_words_minor, b.num_simd_words_minor);
+    size_t n_maj = std::min(a.num_major_bits_padded(), b.num_major_bits_padded());
+    for (size_t k_maj = 0; k_maj < n_maj; k_maj++) {
+        if (a[k_maj].word_range_ref(0, w_min) != b[k_maj].word_range_ref(0, w_min)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template <size_t W>
+bool is_table_zero_outside(const simd_bit_table<W> &a, size_t num_major_bits, size_t num_minor_bits) {
+    size_t num_major_words = min_bits_to_num_simd_words<W>(num_major_bits);
+    size_t num_minor_words = min_bits_to_num_simd_words<W>(num_minor_bits);
+    if (a.num_simd_words_minor > num_minor_words) {
+        for (size_t k = 0; k < a.num_simd_words_major; k++) {
+            if (a[k].word_range_ref(num_minor_words, a.num_simd_words_minor - num_minor_words).not_zero()) {
+                return false;
+            }
+        }
+    }
+    for (size_t k = a.num_simd_words_major; k < num_major_words; k++) {
+        if (a[k].not_zero()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+TEST_EACH_WORD_SIZE_W(simd_bit_table, copy_into_different_size_table, {
+    auto rng = INDEPENDENT_TEST_RNG();
+
+    auto check_size = [&](size_t w1, size_t h1, size_t w2, size_t h2) {
+        simd_bit_table<W> src = simd_bit_table<W>::random(w1, h1, rng);
+        simd_bit_table<W> dst = simd_bit_table<W>::random(w1, h1, rng);
+        src.copy_into_different_size_table(dst);
+        return is_table_overlap_identical(src, dst);
+    };
+
+    EXPECT_TRUE(check_size(0, 0, 0, 0));
+
+    EXPECT_TRUE(check_size(64, 0, 0, 0));
+    EXPECT_TRUE(check_size(0, 64, 0, 0));
+    EXPECT_TRUE(check_size(0, 0, 64, 0));
+    EXPECT_TRUE(check_size(0, 0, 0, 64));
+
+    EXPECT_TRUE(check_size(64, 64, 64, 64));
+    EXPECT_TRUE(check_size(512, 64, 64, 64));
+    EXPECT_TRUE(check_size(64, 512, 64, 64));
+    EXPECT_TRUE(check_size(64, 64, 512, 64));
+    EXPECT_TRUE(check_size(64, 64, 64, 512));
+
+    EXPECT_TRUE(check_size(512, 512, 64, 64));
+    EXPECT_TRUE(check_size(512, 64, 512, 64));
+    EXPECT_TRUE(check_size(512, 64, 64, 512));
+    EXPECT_TRUE(check_size(64, 512, 512, 64));
+    EXPECT_TRUE(check_size(64, 512, 64, 512));
+    EXPECT_TRUE(check_size(64, 64, 512, 512));
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bit_table, resize, {
+    auto rng = INDEPENDENT_TEST_RNG();
+
+    auto check_size = [&](size_t w1, size_t h1, size_t w2, size_t h2) {
+        simd_bit_table<W> src = simd_bit_table<W>::random(w1, h1, rng);
+        simd_bit_table<W> dst = src;
+        dst.resize(w2, h2);
+        return is_table_overlap_identical(src, dst) && is_table_zero_outside(dst, std::min(w1, w2), std::min(h1, h2));
+    };
+
+    EXPECT_TRUE(check_size(0, 0, 0, 0));
+
+    EXPECT_TRUE(check_size(64, 0, 0, 0));
+    EXPECT_TRUE(check_size(0, 64, 0, 0));
+    EXPECT_TRUE(check_size(0, 0, 64, 0));
+    EXPECT_TRUE(check_size(0, 0, 0, 64));
+
+    EXPECT_TRUE(check_size(64, 64, 64, 64));
+    EXPECT_TRUE(check_size(512, 64, 64, 64));
+    EXPECT_TRUE(check_size(64, 512, 64, 64));
+    EXPECT_TRUE(check_size(64, 64, 512, 64));
+    EXPECT_TRUE(check_size(64, 64, 64, 512));
+
+    EXPECT_TRUE(check_size(512, 512, 64, 64));
+    EXPECT_TRUE(check_size(512, 64, 512, 64));
+    EXPECT_TRUE(check_size(512, 64, 64, 512));
+    EXPECT_TRUE(check_size(64, 512, 512, 64));
+    EXPECT_TRUE(check_size(64, 512, 64, 512));
+    EXPECT_TRUE(check_size(64, 64, 512, 512));
 })

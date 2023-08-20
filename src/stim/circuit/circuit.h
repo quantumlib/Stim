@@ -38,17 +38,6 @@ namespace stim {
 uint64_t add_saturate(uint64_t a, uint64_t b);
 uint64_t mul_saturate(uint64_t a, uint64_t b);
 
-/// Stores a variety of circuit quantities relevant for sizing memory.
-struct CircuitStats {
-    uint64_t num_detectors = 0;
-    uint64_t num_observables = 0;
-    uint64_t num_measurements = 0;
-    uint32_t num_qubits = 0;
-    uint32_t num_ticks = 0;
-    uint32_t max_lookback = 0;
-    uint32_t num_sweep_bits = 0;
-};
-
 /// A description of a quantum computation.
 struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
