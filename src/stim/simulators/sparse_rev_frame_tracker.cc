@@ -26,18 +26,6 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::OBSERVABLE_INCLUDE:
             undo_OBSERVABLE_INCLUDE(inst);
             break;
-        case GateType::TICK:
-            undo_I(inst);
-            break;
-        case GateType::QUBIT_COORDS:
-            undo_I(inst);
-            break;
-        case GateType::SHIFT_COORDS:
-            undo_I(inst);
-            break;
-        case GateType::REPEAT:
-            undo_I(inst);
-            break;
         case GateType::MX:
             undo_MX(inst);
             break;
@@ -95,104 +83,14 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             undo_ZCZ(inst);
             break;
-        case GateType::H:
-            undo_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            undo_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            undo_H_YZ(inst);
-            break;
-        case GateType::DEPOLARIZE1:
-            undo_I(inst);
-            break;
-        case GateType::DEPOLARIZE2:
-            undo_I(inst);
-            break;
-        case GateType::X_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::Y_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::Z_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::PAULI_CHANNEL_1:
-            undo_I(inst);
-            break;
-        case GateType::PAULI_CHANNEL_2:
-            undo_I(inst);
-            break;
-        case GateType::E:
-            undo_I(inst);
-            break;
-        case GateType::ELSE_CORRELATED_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::I:
-            undo_I(inst);
-            break;
-        case GateType::X:
-            undo_I(inst);
-            break;
-        case GateType::Y:
-            undo_I(inst);
-            break;
-        case GateType::Z:
-            undo_I(inst);
-            break;
         case GateType::C_XYZ:
             undo_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
             undo_C_ZYX(inst);
             break;
-        case GateType::SQRT_X:
-            undo_H_YZ(inst);
-            break;
-        case GateType::SQRT_X_DAG:
-            undo_H_YZ(inst);
-            break;
-        case GateType::SQRT_Y:
-            undo_H_XZ(inst);
-            break;
-        case GateType::SQRT_Y_DAG:
-            undo_H_XZ(inst);
-            break;
-        case GateType::S:
-            undo_H_XY(inst);
-            break;
-        case GateType::S_DAG:
-            undo_H_XY(inst);
-            break;
-        case GateType::SQRT_XX:
-            undo_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_XX_DAG:
-            undo_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_YY:
-            undo_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_YY_DAG:
-            undo_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_ZZ:
-            undo_SQRT_ZZ(inst);
-            break;
-        case GateType::SQRT_ZZ_DAG:
-            undo_SQRT_ZZ(inst);
-            break;
         case GateType::SWAP:
             undo_SWAP(inst);
-            break;
-        case GateType::ISWAP:
-            undo_ISWAP(inst);
-            break;
-        case GateType::ISWAP_DAG:
-            undo_ISWAP(inst);
             break;
         case GateType::CXSWAP:
             undo_CXSWAP(inst);
@@ -209,12 +107,71 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::MZZ:
             undo_MZZ(inst);
             break;
+
+        case GateType::SQRT_XX:
+        case GateType::SQRT_XX_DAG:
+            undo_SQRT_XX(inst);
+            break;
+
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+            undo_SQRT_YY(inst);
+            break;
+
+        case GateType::SQRT_ZZ:
+        case GateType::SQRT_ZZ_DAG:
+            undo_SQRT_ZZ(inst);
+            break;
+
+        case GateType::SQRT_X:
+        case GateType::SQRT_X_DAG:
+        case GateType::H_YZ:
+            undo_H_YZ(inst);
+            break;
+
+        case GateType::SQRT_Y:
+        case GateType::SQRT_Y_DAG:
+        case GateType::H:
+            undo_H_XZ(inst);
+            break;
+
+        case GateType::S:
+        case GateType::S_DAG:
+        case GateType::H_XY:
+            undo_H_XY(inst);
+            break;
+
+        case GateType::ISWAP:
+        case GateType::ISWAP_DAG:
+            undo_ISWAP(inst);
+            break;
+
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::REPEAT:
+        case GateType::DEPOLARIZE1:
+        case GateType::DEPOLARIZE2:
+        case GateType::X_ERROR:
+        case GateType::Y_ERROR:
+        case GateType::Z_ERROR:
+        case GateType::PAULI_CHANNEL_1:
+        case GateType::PAULI_CHANNEL_2:
+        case GateType::E:
+        case GateType::ELSE_CORRELATED_ERROR:
+        case GateType::X:
+        case GateType::Y:
+        case GateType::Z:
+        case GateType::I:
+            undo_I(inst);
+            break;
+
         case GateType::MPAD:
-            undo_MPAD(inst);
-            break;
         case GateType::HERALDED_ERASE:
+        case GateType::HERALDED_PAULI_CHANNEL_1:
             undo_MPAD(inst);
             break;
+
         default:
             throw std::invalid_argument(
                 "Not implemented by SparseUnsignedRevFrameTracker::undo_gate: " +

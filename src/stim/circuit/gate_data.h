@@ -73,7 +73,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *v, size_t n) {
         auto c3 = v[3] | 0x20;
         auto c5 = v[5] | 0x20;
         result ^= c3 * 61;
-        result += c5 * 27;
+        result += c5 * 77;
     }
     return result & 0x1FF;
 }
@@ -82,7 +82,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 66;
+constexpr const size_t NUM_DEFINED_GATES = 67;
 
 enum GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -132,6 +132,7 @@ enum GateType : uint8_t {
     ELSE_CORRELATED_ERROR,
     // Heralded noise channels
     HERALDED_ERASE,
+    HERALDED_PAULI_CHANNEL_1,
     // Pauli gates
     I,
     X,

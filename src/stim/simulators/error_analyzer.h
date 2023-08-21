@@ -177,6 +177,7 @@ struct ErrorAnalyzer {
     void undo_MZZ(const CircuitInstruction &inst);
     void undo_MPAD(const CircuitInstruction &inst);
     void undo_HERALDED_ERASE(const CircuitInstruction &inst);
+    void undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst);
     void undo_MRX(const CircuitInstruction &inst);
     void undo_MRY(const CircuitInstruction &inst);
     void undo_MRZ(const CircuitInstruction &inst);
@@ -296,7 +297,9 @@ struct ErrorAnalyzer {
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
     void add_error_combinations(
-        std::array<double, 1 << s> independent_probabilities, std::array<SpanRef<const DemTarget>, s> basis_errors);
+        std::array<double, 1 << s> probabilities,
+        std::array<SpanRef<const DemTarget>, s> basis_errors,
+        bool probabilities_are_disjoint = false);
 
     /// Handles local decomposition of errors.
     /// When an error has multiple channels, eg. a DEPOLARIZE2 error, this method attempts to express the more complex
@@ -324,7 +327,7 @@ struct ErrorAnalyzer {
     void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
     void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
     void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
-    void check_can_approximate_disjoint(const char *op_name);
+    void check_can_approximate_disjoint(const char *op_name, SpanRef<const double> probabilities) const;
     void add_composite_error(double probability, SpanRef<const GateTarget> targets);
     void correlated_error_block(const std::vector<CircuitInstruction> &dats);
 };

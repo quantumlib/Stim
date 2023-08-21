@@ -485,6 +485,9 @@ class CircuitTranslationTracker:
             "HERALDED_ERASE": not_impl(
                 "Converting HERALDED_ERASE to cirq is not supported."
             ),
+            "HERALDED_PAULI_CHANNEL_1": not_impl(
+                "Converting HERALDED_PAULI_CHANNEL_1 to cirq is not supported."
+            ),
         }
 
 

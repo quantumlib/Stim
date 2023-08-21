@@ -81,3 +81,4 @@ src/stim/simulators/matched_error.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
+src/stim/stabilizers/conversions.cc
