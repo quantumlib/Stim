@@ -603,7 +603,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](size_t num_qubits, bool allow_imaginary) {
             auto rng = make_py_seeded_rng(pybind11::none());
             return PyPauliString(
-                PauliString<MAX_BITWORD_WIDTH>::random(num_qubits, *rng), allow_imaginary ? ((*rng)() & 1) : false);
+                PauliString<MAX_BITWORD_WIDTH>::random(num_qubits, rng), allow_imaginary ? (rng() & 1) : false);
         },
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),

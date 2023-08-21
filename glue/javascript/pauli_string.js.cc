@@ -21,7 +21,8 @@ ExposedPauliString::ExposedPauliString(const emscripten::val &arg) : pauli_strin
 }
 
 ExposedPauliString ExposedPauliString::random(size_t n) {
-    return ExposedPauliString(PauliString<stim::MAX_BITWORD_WIDTH>::random(n, JS_BIND_SHARED_RNG()));
+    auto rng = externally_seeded_rng();
+    return ExposedPauliString(PauliString<stim::MAX_BITWORD_WIDTH>::random(n, rng));
 }
 
 ExposedPauliString ExposedPauliString::times(const ExposedPauliString &other) const {

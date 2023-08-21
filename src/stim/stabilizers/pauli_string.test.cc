@@ -215,8 +215,9 @@ TEST_EACH_WORD_SIZE_W(pauli_string, move_copy_assignment, {
 })
 
 TEST_EACH_WORD_SIZE_W(pauli_string, foreign_memory, {
+    auto rng = INDEPENDENT_TEST_RNG();
     size_t bits = 2048;
-    auto buffer = simd_bits<W>::random(bits, SHARED_TEST_RNG());
+    auto buffer = simd_bits<W>::random(bits, rng);
     bool signs = false;
     size_t num_qubits = W * 2 - 12;
 

@@ -304,8 +304,8 @@ template <typename SOURCE>
 inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
         uint64_t q = read_uint63_t(c, read_char);
-        circuit.target_buf.append_tail({(uint32_t)(q & 0xFFFFFFFFULL)});
-        circuit.target_buf.append_tail({(uint32_t)(q >> 32)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q & 0xFFFFFFFFULL)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q >> 32)});
     }
 }
 
@@ -382,9 +382,9 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
 
             // Rewrite target data to reference the parsed block.
             circuit.target_buf.ensure_available(3);
-            circuit.target_buf.append_tail({block_id});
-            circuit.target_buf.append_tail({rep_count_low});
-            circuit.target_buf.append_tail({rep_count_high});
+            circuit.target_buf.append_tail(GateTarget{block_id});
+            circuit.target_buf.append_tail(GateTarget{rep_count_low});
+            circuit.target_buf.append_tail(GateTarget{rep_count_high});
             new_op.targets = circuit.target_buf.commit_tail();
         }
 
@@ -706,59 +706,9 @@ size_t Circuit::count_sweep_bits() const {
 
 CircuitStats Circuit::compute_stats() const {
     CircuitStats total;
-
     for (const auto &op : operations) {
-        if (op.gate_type == REPEAT) {
-            // Recurse into blocks.
-            auto sub = op.repeat_block_body(*this).compute_stats();
-            auto reps = op.repeat_block_rep_count();
-            total.num_observables = std::max(total.num_observables, sub.num_observables);
-            total.num_qubits = std::max(total.num_qubits, sub.num_qubits);
-            total.max_lookback = std::max(total.max_lookback, sub.max_lookback);
-            total.num_sweep_bits = std::max(total.num_sweep_bits, sub.num_sweep_bits);
-            total.num_detectors = add_saturate(total.num_detectors, mul_saturate(sub.num_detectors, reps));
-            total.num_measurements = add_saturate(total.num_measurements, mul_saturate(sub.num_measurements, reps));
-            total.num_ticks = add_saturate(total.num_ticks, mul_saturate(sub.num_ticks, reps));
-            continue;
-        }
-
-        for (auto t : op.targets) {
-            auto v = t.data & TARGET_VALUE_MASK;
-            // Qubit counting.
-            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-                total.num_qubits = std::max(total.num_qubits, v + 1);
-            }
-            // Lookback counting.
-            if (t.data & TARGET_RECORD_BIT) {
-                total.max_lookback = std::max(total.max_lookback, v);
-            }
-            // Sweep bit counting.
-            if (t.data & TARGET_SWEEP_BIT) {
-                total.num_sweep_bits = std::max(total.num_sweep_bits, v + 1);
-            }
-        }
-
-        // Measurement counting.
-        total.num_measurements += op.count_measurement_results();
-
-        switch (op.gate_type) {
-            case GateType::DETECTOR:
-                // Detector counting.
-                total.num_detectors += total.num_detectors < UINT64_MAX;
-                break;
-            case GateType::OBSERVABLE_INCLUDE:
-                // Observable counting.
-                total.num_observables = std::max(total.num_observables, (uint64_t)op.args[0] + 1);
-                break;
-            case GateType::TICK:
-                // Tick counting.
-                total.num_ticks++;
-                break;
-            default:
-                break;
-        }
+        op.add_stats_to(total, this);
     }
-
     return total;
 }
 

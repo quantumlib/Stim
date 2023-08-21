@@ -51,7 +51,8 @@ int stim::command_sample(int argc, const char **argv) {
 
     if (num_shots == 1 && !skip_reference_sample) {
         TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(in, out, out_format.id, false, rng);
-    } else if (num_shots > 0) {
+    } else {
+        assert(num_shots > 0);
         auto circuit = Circuit::from_file(in);
         simd_bits<MAX_BITWORD_WIDTH> ref(0);
         if (!skip_reference_sample) {

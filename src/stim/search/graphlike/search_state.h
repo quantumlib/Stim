@@ -25,9 +25,9 @@ namespace stim {
 namespace impl_search_graphlike {
 
 struct SearchState {
-    uint64_t det_active;  // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
-    uint64_t det_held;    // The detection event being left in the same place (or NO_NODE_INDEX).
-    simd_bits<64> obs_mask;    // The accumulated frame changes from moving the detection events around.
+    uint64_t det_active;     // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
+    uint64_t det_held;       // The detection event being left in the same place (or NO_NODE_INDEX).
+    simd_bits<64> obs_mask;  // The accumulated frame changes from moving the detection events around.
 
     SearchState() = delete;
     SearchState(size_t num_observables);

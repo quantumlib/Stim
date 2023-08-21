@@ -57,17 +57,21 @@ Graph Graph::from_dem(const DetectorErrorModel &model, size_t dont_explore_edges
     return result;
 }
 bool Graph::operator==(const Graph &other) const {
-    return nodes == other.nodes && num_observables == other.num_observables && distance_1_error_mask == other.distance_1_error_mask;
+    return nodes == other.nodes && num_observables == other.num_observables &&
+           distance_1_error_mask == other.distance_1_error_mask;
 }
 bool Graph::operator!=(const Graph &other) const {
     return !(*this == other);
 }
 
-Graph::Graph(size_t node_count, size_t num_observables) : nodes(node_count), num_observables(num_observables), distance_1_error_mask(simd_bits<64>(num_observables)) {
+Graph::Graph(size_t node_count, size_t num_observables)
+    : nodes(node_count), num_observables(num_observables), distance_1_error_mask(simd_bits<64>(num_observables)) {
 }
 
 Graph::Graph(std::vector<Node> nodes, size_t num_observables, simd_bits<64> distance_1_error_mask)
-    : nodes(std::move(nodes)), num_observables(num_observables), distance_1_error_mask(std::move(distance_1_error_mask)) {
+    : nodes(std::move(nodes)),
+      num_observables(num_observables),
+      distance_1_error_mask(std::move(distance_1_error_mask)) {
 }
 
 std::ostream &stim::impl_search_hyper::operator<<(std::ostream &out, const Graph &v) {

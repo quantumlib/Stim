@@ -706,3 +706,35 @@ def test_bad_inverse_padding_issue_is_fixed():
     sim.do(circuit)
     stabs = sim.canonical_stabilizers()
     assert stabs[-1] == stim.PauliString(466 * '_' + 'X')
+
+
+def test_postselect_observable():
+    sim = stim.TableauSimulator()
+    assert sim.peek_bloch(0) == stim.PauliString("+Z")
+
+    sim.postselect_observable(stim.PauliString("+X"))
+    assert sim.peek_bloch(0) == stim.PauliString("+X")
+
+    sim.postselect_observable(stim.PauliString("+Z"))
+    assert sim.peek_bloch(0) == stim.PauliString("+Z")
+
+    sim.postselect_observable(stim.PauliString("-X"))
+    assert sim.peek_bloch(0) == stim.PauliString("-X")
+
+    sim.postselect_observable(stim.PauliString("+Z"))
+    assert sim.peek_bloch(0) == stim.PauliString("+Z")
+
+    sim.postselect_observable(stim.PauliString("-X"), desired_value=True)
+    assert sim.peek_bloch(0) == stim.PauliString("+X")
+
+    with pytest.raises(ValueError, match="impossible"):
+        sim.postselect_observable(stim.PauliString("-X"))
+    assert sim.peek_bloch(0) == stim.PauliString("+X")
+
+    with pytest.raises(ValueError, match="imaginary sign"):
+        sim.postselect_observable(stim.PauliString("iZ"))
+    assert sim.peek_bloch(0) == stim.PauliString("+X")
+
+    sim.postselect_observable(stim.PauliString("+XX"))
+    sim.postselect_observable(stim.PauliString("+ZZ"))
+    assert sim.peek_observable_expectation(stim.PauliString("+YY")) == -1

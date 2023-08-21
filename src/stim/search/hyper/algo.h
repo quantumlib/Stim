@@ -17,6 +17,8 @@
 #ifndef _STIM_SEARCH_HYPER_ALGO_H
 #define _STIM_SEARCH_HYPER_ALGO_H
 
+#include <cstdint>
+
 #include "stim/dem/detector_error_model.h"
 
 namespace stim {

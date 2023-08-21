@@ -6,9 +6,8 @@ namespace stim {
 template <size_t W>
 uint64_t count_determined_measurements(const Circuit &circuit) {
     uint64_t result = 0;
-    std::mt19937_64 irrelevant_rng{0};
     auto n = circuit.count_qubits();
-    TableauSimulator<W> sim(irrelevant_rng, n);
+    TableauSimulator<W> sim(std::mt19937_64{0}, n);
     PauliString<W> obs_buffer(n);
 
     circuit.for_each_operation([&](const CircuitInstruction &inst) {

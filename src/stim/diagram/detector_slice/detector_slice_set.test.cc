@@ -277,14 +277,18 @@ TEST(detector_slice_set, pick_polygon_center) {
 }
 
 TEST(detector_slice_set_svg_diagram, is_colinear) {
-    ASSERT_TRUE(is_colinear({0, 0}, {0, 0}, {1, 2}));
-    ASSERT_TRUE(is_colinear({3, 6}, {1, 2}, {2, 4}));
-    ASSERT_FALSE(is_colinear({3, 7}, {1, 2}, {2, 4}));
-    ASSERT_FALSE(is_colinear({4, 6}, {1, 2}, {2, 4}));
-    ASSERT_FALSE(is_colinear({3, 6}, {1, 3}, {2, 4}));
-    ASSERT_FALSE(is_colinear({3, 6}, {2, 2}, {2, 4}));
-    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {1, 4}));
-    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {2, -4}));
+    ASSERT_TRUE(is_colinear({0, 0}, {0, 0}, {1, 2}, 1e-4f));
+    ASSERT_TRUE(is_colinear({3, 6}, {1, 2}, {2, 4}, 1e-4f));
+
+    ASSERT_FALSE(is_colinear({3, 7}, {1, 2}, {2, 4}, 1e-4f));
+    ASSERT_FALSE(is_colinear({4, 6}, {1, 2}, {2, 4}, 1e-4f));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 3}, {2, 4}, 1e-4f));
+    ASSERT_FALSE(is_colinear({3, 6}, {2, 2}, {2, 4}, 1e-4f));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {1, 4}, 1e-4f));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {2, -4}, 1e-4f));
+
+    ASSERT_FALSE(is_colinear({0, 1e-3f}, {0, 0}, {1, 2}, 1e-4f));
+    ASSERT_TRUE(is_colinear({0, 1e-3f}, {0, 0}, {1, 2}, 1e-2f));
 }
 
 TEST(detector_slice_set_svg_diagram, colinear_polygon) {

@@ -69,6 +69,16 @@ struct simd_bit_table {
     /// Resizes the table. Doesn't clear to zero. Does nothing if already the target size.
     void destructive_resize(size_t new_min_bits_major, size_t new_min_bits_minor);
 
+    /// Copies the table into another table.
+    ///
+    /// It's safe for the other table to have a different size.
+    /// When the other table has a different size, only the data at locations common to both
+    /// tables are copied over.
+    void copy_into_different_size_table(simd_bit_table<W> &other) const;
+
+    /// Resizes the table, keeping any data common to the old and new size and otherwise zeroing data.
+    void resize(size_t new_min_bits_major, size_t new_min_bits_minor);
+
     /// Equality.
     bool operator==(const simd_bit_table &other) const;
     /// Inequality.
@@ -107,6 +117,9 @@ struct simd_bit_table {
     simd_bit_table transposed() const;
     /// Returns a subset of the table.
     simd_bit_table slice_maj(size_t maj_start_bit, size_t maj_stop_bit) const;
+
+    /// Returns a copy of a column of the table.
+    simd_bits<W> read_across_majors_at_minor_index(size_t major_start, size_t major_stop, size_t minor_index) const;
 
     /// Concatenates the contents of the two tables, along the major axis.
     simd_bit_table<W> concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const;

@@ -179,7 +179,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def_static(
         "random",
         [](size_t num_qubits) {
-            return Tableau<MAX_BITWORD_WIDTH>::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
+            auto rng = make_py_seeded_rng(pybind11::none());
+            return Tableau<MAX_BITWORD_WIDTH>::random(num_qubits, rng);
         },
         pybind11::arg("num_qubits"),
         clean_doc_string(R"DOC(
@@ -382,9 +383,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
                     x_signs.shape = math.ceil(len(tableau) / 8)
                     z_signs.shape = math.ceil(len(tableau) / 8)
-                    *.dtype = = np.uint8
-                    *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-                    *_signs.shape = math.ceil(len(tableau) / 8)
                     (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
                     (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
                     (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
@@ -2055,7 +2053,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
+            @signature def from_state_vector(state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
             Creates a tableau representing the stabilizer state of the given state vector.
 
             Args:
@@ -2124,8 +2122,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             } else {
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
-            std::mt19937_64 unused_rng{0};
-            TableauSimulator<MAX_BITWORD_WIDTH> sim(unused_rng, self.num_qubits);
+            TableauSimulator<MAX_BITWORD_WIDTH> sim(std::mt19937_64{0}, self.num_qubits);
             sim.inv_state = self.inverse(false);
             auto complex_vec = sim.to_state_vector(little_endian);
 

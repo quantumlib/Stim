@@ -13,10 +13,10 @@
 class Gate {
     /**
      * @param {!string} name
-     * @param {!int} num_qubits
+     * @param {!int|undefined} num_qubits
      * @param {!boolean} can_fuse
      * @param {!boolean} is_marker
-     * @param {!Map<!string, !string>} tableau_map
+     * @param {!Map<!string, !string>|undefined} tableau_map
      * @param {!function(!PauliFrame, !Array<!int>)} frameDo,
      * @param {!gateDrawCallback} drawer
      * @param {undefined|!number=undefined} defaultArgument

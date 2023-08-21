@@ -23,9 +23,10 @@
 using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_stabilizer_flows, {
+    auto rng = INDEPENDENT_TEST_RNG();
     auto results = check_if_circuit_has_stabilizer_flows<W>(
         256,
-        SHARED_TEST_RNG(),
+        rng,
         Circuit(R"CIRCUIT(
             R 4
             CX 0 4 1 4 2 4 3 4

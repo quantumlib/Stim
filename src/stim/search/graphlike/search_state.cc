@@ -29,7 +29,8 @@ std::string SearchState::str() const {
     return result.str();
 }
 
-SearchState::SearchState(size_t num_observables) : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(num_observables) {
+SearchState::SearchState(size_t num_observables)
+    : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(num_observables) {
 }
 SearchState::SearchState(uint64_t det_active, uint64_t det_held, simd_bits<64> obs_mask)
     : det_active(det_active), det_held(det_held), obs_mask(std::move(obs_mask)) {

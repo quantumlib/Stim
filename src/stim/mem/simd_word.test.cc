@@ -41,7 +41,7 @@ TEST_EACH_WORD_SIZE_W(simd_word_pick, popcount, {
             bits.push_back(i < expected);
         }
         for (size_t reps = 0; reps < 100; reps++) {
-            std::shuffle(bits.begin(), bits.end(), SHARED_TEST_RNG());
+            std::shuffle(bits.begin(), bits.end(), INDEPENDENT_TEST_RNG());
             for (size_t i = 0; i < n; i++) {
                 v.p[i >> 6] = 0;
             }
@@ -76,10 +76,12 @@ TEST_EACH_WORD_SIZE_W(simd_word, integer_conversions, {
     ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)23}), 23);
     ASSERT_EQ((int64_t)(simd_word<W>{(int64_t)-23}), -23);
     if (W > 64) {
-        ASSERT_THROW({
-            uint64_t u = (uint64_t)(simd_word<W>{(int64_t)-23});
-            std::cerr << u;
-        }, std::invalid_argument);
+        ASSERT_THROW(
+            {
+                uint64_t u = (uint64_t)(simd_word<W>{(int64_t)-23});
+                std::cerr << u;
+            },
+            std::invalid_argument);
     }
 
     simd_word<W> w0{(uint64_t)0};

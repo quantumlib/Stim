@@ -147,8 +147,7 @@ template <size_t W>
 Tableau<W> circuit_to_tableau(
     const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
     Tableau<W> result(circuit.count_qubits());
-    std::mt19937_64 unused_rng(0);
-    TableauSimulator<W> sim(unused_rng, circuit.count_qubits());
+    TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 
     circuit.for_each_operation([&](const CircuitInstruction &op) {
         const auto &flags = GATE_DATA.items[op.gate_type].flags;
@@ -188,8 +187,7 @@ Tableau<W> circuit_to_tableau(
 template <size_t W>
 std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &circuit, bool little_endian) {
     Tableau<W> result(circuit.count_qubits());
-    std::mt19937_64 unused_rng(0);
-    TableauSimulator<W> sim(unused_rng, circuit.count_qubits());
+    TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 
     circuit.for_each_operation([&](const CircuitInstruction &op) {
         const auto &flags = GATE_DATA.items[op.gate_type].flags;

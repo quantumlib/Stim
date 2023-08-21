@@ -14,7 +14,8 @@ ExposedTableau::ExposedTableau(int n) : tableau(n) {
 }
 
 ExposedTableau ExposedTableau::random(int n) {
-    return ExposedTableau(Tableau<MAX_BITWORD_WIDTH>::random(n, JS_BIND_SHARED_RNG()));
+    auto rng = externally_seeded_rng();
+    return ExposedTableau(Tableau<MAX_BITWORD_WIDTH>::random(n, rng));
 }
 
 ExposedTableau ExposedTableau::from_named_gate(const std::string &name) {

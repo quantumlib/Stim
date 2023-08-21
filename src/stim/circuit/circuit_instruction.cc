@@ -36,6 +36,67 @@ Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
     return host.blocks[b];
 }
 
+CircuitStats CircuitInstruction::compute_stats(const Circuit *host) const {
+    CircuitStats out;
+    add_stats_to(out, host);
+    return out;
+}
+
+void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) const {
+    if (gate_type == REPEAT) {
+        if (host == nullptr) {
+            throw std::invalid_argument("gate_type == REPEAT && host == nullptr");
+        }
+        // Recurse into blocks.
+        auto sub = repeat_block_body(*host).compute_stats();
+        auto reps = repeat_block_rep_count();
+        out.num_observables = std::max(out.num_observables, sub.num_observables);
+        out.num_qubits = std::max(out.num_qubits, sub.num_qubits);
+        out.max_lookback = std::max(out.max_lookback, sub.max_lookback);
+        out.num_sweep_bits = std::max(out.num_sweep_bits, sub.num_sweep_bits);
+        out.num_detectors = add_saturate(out.num_detectors, mul_saturate(sub.num_detectors, reps));
+        out.num_measurements = add_saturate(out.num_measurements, mul_saturate(sub.num_measurements, reps));
+        out.num_ticks = add_saturate(out.num_ticks, mul_saturate(sub.num_ticks, reps));
+        return;
+    }
+
+    for (auto t : targets) {
+        auto v = t.data & TARGET_VALUE_MASK;
+        // Qubit counting.
+        if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+            out.num_qubits = std::max(out.num_qubits, v + 1);
+        }
+        // Lookback counting.
+        if (t.data & TARGET_RECORD_BIT) {
+            out.max_lookback = std::max(out.max_lookback, v);
+        }
+        // Sweep bit counting.
+        if (t.data & TARGET_SWEEP_BIT) {
+            out.num_sweep_bits = std::max(out.num_sweep_bits, v + 1);
+        }
+    }
+
+    // Measurement counting.
+    out.num_measurements += count_measurement_results();
+
+    switch (gate_type) {
+        case GateType::DETECTOR:
+            // Detector counting.
+            out.num_detectors += out.num_detectors < UINT64_MAX;
+            break;
+        case GateType::OBSERVABLE_INCLUDE:
+            // Observable counting.
+            out.num_observables = std::max(out.num_observables, (uint64_t)args[0] + 1);
+            break;
+        case GateType::TICK:
+            // Tick counting.
+            out.num_ticks++;
+            break;
+        default:
+            break;
+    }
+}
+
 const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
     assert(targets.size() == 3);
     auto b = targets[0].data;
