@@ -500,7 +500,7 @@ SubCommandHelp stim::command_convert_help() {
             contained within an input file.
 
             Note that in most cases, a file will have either measurements only,
-            detections only, or detections and observables. 
+            detections only, or detections and observables.
 
             The type values (M, D, L) correspond to the value prefix letters
             in dets files. See:
