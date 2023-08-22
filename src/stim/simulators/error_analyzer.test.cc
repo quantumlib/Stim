@@ -1865,9 +1865,11 @@ TEST(ErrorAnalyzer, exact_solved_pauli_channel_1_is_let_through) {
         DETECTOR rec[-1]
     )CIRCUIT");
     auto actual_dem = ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, 0, false, true);
-    ASSERT_TRUE(actual_dem.approx_equals(DetectorErrorModel(R"MODEL(
+    ASSERT_TRUE(actual_dem.approx_equals(
+        DetectorErrorModel(R"MODEL(
         error(0.3) D0
-    )MODEL"), 1e-6));
+    )MODEL"),
+        1e-6));
 }
 
 TEST(ErrorAnalyzer, pauli_channel_threshold) {
@@ -3491,23 +3493,13 @@ TEST(ErrorAnalyzer, heralded_erase_conditional_division) {
 
 TEST(ErrorAnalyzer, heralded_erase) {
     ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit("HERALDED_ERASE(0.25) 0"),
-        false,
-        false,
-        false,
-        0.3,
-        false,
-        false);
-    ASSERT_THROW({
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit("HERALDED_ERASE(0.25) 0"),
-            false,
-            false,
-            false,
-            0.2,
-            false,
-            false);
-    }, std::invalid_argument);
+        Circuit("HERALDED_ERASE(0.25) 0"), false, false, false, 0.3, false, false);
+    ASSERT_THROW(
+        {
+            ErrorAnalyzer::circuit_to_detector_error_model(
+                Circuit("HERALDED_ERASE(0.25) 0"), false, false, false, 0.2, false, false);
+        },
+        std::invalid_argument);
 
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
@@ -3627,27 +3619,16 @@ TEST(ErrorAnalyzer, runs_on_general_circuit) {
 
 TEST(ErrorAnalyzer, heralded_pauli_channel_1) {
     ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit("HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.25, 0.03) 0"),
-        false,
-        false,
-        false,
-        0.3,
-        false,
-        false);
-    ASSERT_THROW({
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit("HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.25, 0.03) 0"),
-            false,
-            false,
-            false,
-            0.2,
-            false,
-            false);
-    }, std::invalid_argument);
+        Circuit("HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.25, 0.03) 0"), false, false, false, 0.3, false, false);
+    ASSERT_THROW(
+        {
+            ErrorAnalyzer::circuit_to_detector_error_model(
+                Circuit("HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.25, 0.03) 0"), false, false, false, 0.2, false, false);
+        },
+        std::invalid_argument);
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit(R"CIRCUIT(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    Circuit(R"CIRCUIT(
                 MZZ 0 1
                 MXX 0 1
                 HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0
@@ -3657,22 +3638,23 @@ TEST(ErrorAnalyzer, heralded_pauli_channel_1) {
                 DETECTOR rec[-2] rec[-5]
                 DETECTOR rec[-3]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            1.0,
-            false,
-            false
-        ).approx_equals(DetectorErrorModel(R"DEM(
+                    false,
+                    false,
+                    false,
+                    1.0,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"DEM(
             error(0.04) D0 D1 D2
             error(0.02) D0 D2
             error(0.03) D1 D2
             error(0.01) D2
-        )DEM"), 1e-6));
+        )DEM"),
+                        1e-6));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit(R"CIRCUIT(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    Circuit(R"CIRCUIT(
                 MZZ 0 1
                 MXX 0 1
                 HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0
@@ -3682,15 +3664,17 @@ TEST(ErrorAnalyzer, heralded_pauli_channel_1) {
                 DETECTOR rec[-2] rec[-5]
                 DETECTOR rec[-3]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            1.0,
-            false,
-            false
-        ).approx_equals(DetectorErrorModel(R"DEM(
+                    false,
+                    false,
+                    false,
+                    1.0,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"DEM(
             error(0.07) D1 D2
             error(0.03) D2
             detector D0
-        )DEM"), 1e-6));
+        )DEM"),
+                        1e-6));
 }

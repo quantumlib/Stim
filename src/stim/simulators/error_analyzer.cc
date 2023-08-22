@@ -328,7 +328,7 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
 void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
     check_can_approximate_disjoint("HERALDED_ERASE", dat.args);
     double p = dat.args[0] * 0.25;
-    double i = std::max(0.0, 1.0 - 4*p);
+    double i = std::max(0.0, 1.0 - 4 * p);
 
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
@@ -854,7 +854,7 @@ void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name, SpanRef<
             msg << p;
             msg << ") larger than the `approximate_disjoint_errors` threshold (";
             msg << approximate_disjoint_errors_threshold;
-            msg << + ").";
+            msg << +").";
             throw std::invalid_argument(msg.str());
         }
     }

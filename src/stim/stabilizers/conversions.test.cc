@@ -754,14 +754,14 @@ TEST(conversions, disjoint_to_independent_xyz_errors_approx) {
     ASSERT_NEAR(out_y, 0.1, 1e-6);
     ASSERT_LT(out_z, 0.03);
 
-    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.3*0.6, 0.4*0.7, 0.3*0.4, &out_x, &out_y, &out_z));
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.3 * 0.6, 0.4 * 0.7, 0.3 * 0.4, &out_x, &out_y, &out_z));
     ASSERT_NEAR(out_x, 0.3, 1e-6);
     ASSERT_NEAR(out_y, 0.4, 1e-6);
     ASSERT_NEAR(out_z, 0.0, 1e-6);
     independent_to_disjoint_xyz_errors(out_x, out_y, out_z, &out_x, &out_y, &out_z);
-    ASSERT_NEAR(out_x, 0.3*0.6, 1e-6);
-    ASSERT_NEAR(out_y, 0.4*0.7, 1e-6);
-    ASSERT_NEAR(out_z, 0.3*0.4, 1e-6);
+    ASSERT_NEAR(out_x, 0.3 * 0.6, 1e-6);
+    ASSERT_NEAR(out_y, 0.4 * 0.7, 1e-6);
+    ASSERT_NEAR(out_z, 0.3 * 0.4, 1e-6);
 }
 
 TEST(conversions, fuzz_depolarize1_consistency) {

@@ -1,5 +1,6 @@
-#include "stim/benchmark_util.perf.h"
 #include "stim/stabilizers/conversions.h"
+
+#include "stim/benchmark_util.perf.h"
 
 using namespace stim;
 

@@ -11,7 +11,7 @@ TEST(coord, arithmetic) {
     ASSERT_EQ((Coord<2>{2, 3} - Coord<2>{5, 7}), (Coord<2>{-3, -4}));
     ASSERT_EQ((Coord<2>{2, 3} * 5), (Coord<2>{10, 15}));
     ASSERT_EQ((Coord<2>{2, 3} / 8), (Coord<2>{0.25, 0.375}));
-    ASSERT_EQ((Coord<2>{2, 3}.dot(Coord<2>{5, 7})), 2*5 + 3*7);
+    ASSERT_EQ((Coord<2>{2, 3}.dot(Coord<2>{5, 7})), 2 * 5 + 3 * 7);
     ASSERT_EQ((Coord<2>{2, 3}.norm2()), 13);
     ASSERT_EQ((Coord<2>{3, 4}.norm()), 5);
     ASSERT_TRUE((Coord<2>{3, 4} == Coord<2>{3, 4}));

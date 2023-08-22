@@ -2,7 +2,8 @@
 
 using namespace stim;
 
-void stim::independent_to_disjoint_xyz_errors(double x, double y, double z, double *out_x, double *out_y, double *out_z) {
+void stim::independent_to_disjoint_xyz_errors(
+    double x, double y, double z, double *out_x, double *out_y, double *out_z) {
     if (x < 0 || y < 0 || z < 0 || x > 1 || y > 1 || z > 1) {
         throw std::invalid_argument("x < 0 || y < 0 || z < 0 || x > 1 || y > 1 || z > 1");
     }
@@ -21,13 +22,7 @@ void stim::independent_to_disjoint_xyz_errors(double x, double y, double z, doub
 }
 
 bool stim::try_disjoint_to_independent_xyz_errors_approx(
-    double x,
-    double y,
-    double z,
-    double *out_x,
-    double *out_y,
-    double *out_z,
-    size_t max_steps) {
+    double x, double y, double z, double *out_x, double *out_y, double *out_z, size_t max_steps) {
     if (x < 0 || y < 0 || z < 0 || x + y + z > 1) {
         throw std::invalid_argument("x < 0 || y < 0 || z < 0 || x + y + z > 1");
     }
@@ -127,15 +122,15 @@ double stim::depolarize2_probability_to_independent_per_channel_probability(doub
 }
 
 double stim::independent_per_channel_probability_to_depolarize1_probability(double p) {
-    double q = 1.0 - 2.0*p;
+    double q = 1.0 - 2.0 * p;
     q *= q;
-    return 3.0/4.0 * (1.0 - q);
+    return 3.0 / 4.0 * (1.0 - q);
 }
 
 double stim::independent_per_channel_probability_to_depolarize2_probability(double p) {
-    double q = 1.0 - 2.0*p;
+    double q = 1.0 - 2.0 * p;
     q *= q;
     q *= q;
     q *= q;
-    return 15.0/16.0 * (1.0 - q);
+    return 15.0 / 16.0 * (1.0 - q);
 }
