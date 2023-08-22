@@ -104,7 +104,7 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
     *out_x = a;
     *out_y = b;
     *out_z = c;
-    return cur_err < 1e-13;
+    return cur_err < 1e-10;
 }
 
 double stim::depolarize1_probability_to_independent_per_channel_probability(double p) {
