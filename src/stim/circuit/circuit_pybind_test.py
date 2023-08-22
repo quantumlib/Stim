@@ -1547,3 +1547,29 @@ def test_shortest_graphlike_error_many_obs():
         OBSERVABLE_INCLUDE(1200) rec[-1]
     """)
     assert len(c.shortest_graphlike_error()) == 5
+
+
+def test_detslice_filter_coords_flexibility():
+    c = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    d1 = c.diagram("detslice", filter_coords=[stim.DemTarget.relative_detector_id(1)])
+    d2 = c.diagram("detslice-svg", filter_coords=stim.DemTarget.relative_detector_id(1))
+    d3 = c.diagram("detslice", filter_coords=["D1"])
+    d4 = c.diagram("detslice", filter_coords="D1")
+    d5 = c.diagram("detector-slice-svg", filter_coords=[3, 0])
+    d6 = c.diagram("detslice-svg", filter_coords=[[3, 0]])
+    assert str(d1) == str(d2)
+    assert str(d1) == str(d3)
+    assert str(d1) == str(d4)
+    assert str(d1) == str(d5)
+    assert str(d1) == str(d6)
+    assert str(d1) != str(c.diagram("detslice", filter_coords="L0"))
+
+    d1 = c.diagram("detslice", filter_coords=[stim.DemTarget.relative_detector_id(1), stim.DemTarget.relative_detector_id(3), stim.DemTarget.relative_detector_id(5), "D7"])
+    d2 = c.diagram("detslice", filter_coords=["D1", "D3", "D5", "D7"])
+    d3 = c.diagram("detslice-svg", filter_coords=[3,])
+    d4 = c.diagram("detslice-svg", filter_coords=[[3,]])
+    d5 = c.diagram("detslice-svg", filter_coords=[[3, 0], [3, 1], [3, 2], [3, 3]])
+    assert str(d1) == str(d2)
+    assert str(d1) == str(d3)
+    assert str(d1) == str(d4)
+    assert str(d1) == str(d5)
