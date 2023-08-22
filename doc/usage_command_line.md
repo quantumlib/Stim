@@ -3,6 +3,7 @@
 ## Index
 
 - [stim analyze_errors](#analyze_errors)
+- [stim convert](#convert)
 - [stim detect](#detect)
 - [stim diagram](#diagram)
 - [stim explain_errors](#explain_errors)
@@ -339,6 +340,273 @@ EXAMPLES
         detector(3, 0) D3
         detector(1, 1) D4
         detector(3, 1) D5
+```
+
+<a name="convert"></a>
+### stim convert
+
+```
+NAME
+    stim convert
+
+SYNOPSIS
+    stim convert \
+        --bits_per_shot int \
+        [--circuit filepath] \
+        [--in filepath] \
+        [--in_format 01|b8|r8|ptb64|hits|dets] \
+        --num_detectors int \
+        --num_measurements int \
+        --num_observables int \
+        [--obs_out filepath] \
+        [--obs_out_format 01|b8|r8|ptb64|hits|dets] \
+        [--out filepath] \
+        [--out_format 01|b8|r8|ptb64|hits|dets] \
+        --types M|D|L
+
+DESCRIPTION
+    Convert data between result formats.
+
+    See the various formats here:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+    To read and write data, the size of the records must be known.
+    If writing to a dets file, then the number of measurements, detectors
+    and observables per record must also be known.
+
+    Both of these pieces of information can either be given directly, or
+    inferred from various data sources, such as circuit or dem files.
+
+
+OPTIONS
+    --bits_per_shot
+        Specifies the number of bits per shot in the input/output files.
+
+        This argument is required if the circuit, dem or num_* flags
+        are not given, and not supported when writing to a dets file.
+
+        In this case we just treat the bits aas arbitrary data. It is up
+        to the user to interpert it correctly.
+
+
+    --circuit
+        Specifies where the circuit that generated the data is.
+
+        This argument is optional, but can be used to infer the number of
+        measurements, detectors and observables to use per record.
+
+        The circuit file should be a stim circuit. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+
+
+    --in
+        Chooses the file to read data from.
+
+        By default, the circuit is read from stdin. When `--in $FILEPATH` is
+        specified, the circuit is instead read from the file at $FILEPATH.
+
+        The input's format is specified by `--in_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --in_format
+        Specifies the data format to use when reading data.
+
+        The available formats are:
+
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --num_detectors
+        Specifies the number of detectors in the input/output files.
+
+        This argument is required if writing to a dets file and the circuit
+        or dem is not given.
+
+
+    --num_measurements
+        Specifies the number of measurements in the input/output files.
+
+        This argument is required if writing to a dets file and the circuit
+        is not given.
+
+
+    --num_observables
+        Specifies the number of observables in the input/output files.
+
+        This argument is required if writing to a dets file and the circuit
+        or dem is not given.
+
+
+    --obs_out
+        Specifies the file to write observable flip data to.
+
+        When producing detection event data, the goal is typically to
+        predict whether or not the logical observables were flipped by using
+        the detection events. This argument specifies where to write that
+        observable flip data.
+
+        If this argument isn't specified, the observable flip data isn't
+        written to a file.
+
+        The output is in a format specified by `--obs_out_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --obs_out_format
+        Specifies the data format to use when writing observable flip data.
+
+        Irrelevant unless `--obs_out` is specified.
+
+        The available formats are:
+
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --out
+        Chooses where to write the data to.
+
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+
+        The output's format is specified by `--out_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --out_format
+        Specifies the data format to use when writing output data.
+
+        The available formats are:
+
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+
+
+    --types
+        Specifies the types of events in the files.
+
+        This argument is required if a circuit is given as the circuit can
+        give the number of each type of event, but not which events are
+        contained within an input file.
+
+        Note that in most cases, a file will have either measurements only,
+        detections only, or detections and observables.
+
+        The type values (M, D, L) correspond to the value prefix letters
+        in dets files. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md#dets
+
+
+EXAMPLES
+    Example #1
+        >>> cat example.01
+        10000
+        11001
+        00000
+        01001
+
+        >>> stim convert \
+            --in example.01 \
+            --in_format 01 \
+            --out_format dets
+            --num_measurements 5
+        shot M0
+        shot M0 M1 M4
+        shot
+        shot M1 M4
+
+
+    Example #2
+        >>> cat example.dem
+        detector D0
+        detector D1
+        logical_observable L2
+
+        >>> cat example.dets
+        shot D0
+        shot D0 D1 L2
+        shot
+        shot D1 L2
+
+        >>> stim convert \
+            --in example.dets \
+            --in_format dets \
+            --out_format 01
+            --dem example.dem
+        10000
+        11001
+        00000
+        01001
+
+
+    Example #3
+        >>> cat example_circuit.stim
+        X 0
+        M 0 1
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(2) rec[-1]
+
+        >>> cat example_measure_data.01
+        00
+        01
+        10
+        11
+
+        >>> stim convert \
+            --in example_measure_data.01 \
+            --in_format 01 \
+            --out_format dets
+            --circuit example_circuit.stim \
+            --types M
+        shot
+        shot M1
+        shot M0
+        shot M0 M1
+
+
+    Example #4
+        >>> cat example.01
+        0010
+        0111
+        1000
+        1110
+
+        >>> stim convert \
+            --in example.01 \
+            --in_format 01 \
+            --out_format hits
+            --bits_per_shot 4
+        2
+        1,2,3
+        0
+        0,1,2
 ```
 
 <a name="detect"></a>
