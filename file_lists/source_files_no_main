@@ -19,6 +19,7 @@ src/stim/circuit/gate_data_swaps.cc
 src/stim/circuit/gate_decomposition.cc
 src/stim/circuit/gate_target.cc
 src/stim/cmd/command_analyze_errors.cc
+src/stim/cmd/command_convert.cc
 src/stim/cmd/command_detect.cc
 src/stim/cmd/command_diagram.cc
 src/stim/cmd/command_explain_errors.cc

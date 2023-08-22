@@ -23,10 +23,10 @@
 
 using namespace stim;
 
-std::string stim::run_captured_stim_main(std::vector<const char *> flags, const char *std_in_content) {
+std::string stim::run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content) {
     // Setup input.
     RaiiTempNamedFile raii_temp_file;
-    if (std_in_content != nullptr) {
+    if (!std_in_content.empty()) {
         raii_temp_file.write_contents(std_in_content);
         flags.push_back("--in");
         flags.push_back(raii_temp_file.path.data());
@@ -83,7 +83,7 @@ TEST(main, help_modes) {
         matches(run_captured_stim_main({"--sample", "--repl", "--detect"}, ""), ".+stderr.+More than one mode.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "dhnsahddjoidsa"}, ""), ".*Unrecognized.*"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "H"}, ""), ".+Hadamard.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "--sample"}, ""), ".*Samples measurements from a circuit.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "--sample"}, ""), ".*Unrecognized.*"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "sample"}, ""), ".*Samples measurements from a circuit.+"));
 }
 

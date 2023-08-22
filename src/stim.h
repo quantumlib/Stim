@@ -12,6 +12,7 @@
 #include "stim/circuit/gate_target.h"
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
+#include "stim/cmd/command_convert.h"
 #include "stim/cmd/command_detect.h"
 #include "stim/cmd/command_diagram.h"
 #include "stim/cmd/command_explain_errors.h"
