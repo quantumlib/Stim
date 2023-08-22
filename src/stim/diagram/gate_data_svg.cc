@@ -72,7 +72,8 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"MYY", {1, "M", "YY", "", "black", "white", 18, 18, -6}});
     result.insert({"MZZ", {1, "M", "ZZ", "", "black", "white", 18, 18, -6}});
     result.insert({"MPAD", {1, "M", "PAD", "", "gray", "white", 18, 12, -6}});
-    result.insert({"HERALDED_ERASE", {1, "HErase", "", "", "#800000", "white", 8, 8}});
+    result.insert({"HERALDED_ERASE", {1, "HErase", "", "", "#800000", "white", 8, 10}});
+    result.insert({"HERALDED_PAULI_CHANNEL_1", {4, "HERALDED_PAULI_CHANNEL_1", "", "", "#800000", "white", 14, 10}});
 
     return result;
 }

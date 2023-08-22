@@ -1577,3 +1577,36 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_erase_detect_statistics, {
     EXPECT_NEAR(bins[6] / (double)n, 0.025, 0.02);
     EXPECT_NEAR(bins[7] / (double)n, 0.025, 0.02);
 })
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_pauli_channel_1_statistics, {
+    auto circuit = Circuit(R"CIRCUIT(
+        MXX 0 1
+        MZZ 0 1
+        HERALDED_PAULI_CHANNEL_1(0.05, 0.10, 0.15, 0.25) 0
+        MXX 0 1
+        MZZ 0 1
+        DETECTOR rec[-1] rec[-4]
+        DETECTOR rec[-2] rec[-5]
+        DETECTOR rec[-3]
+    )CIRCUIT");
+    size_t n;
+    std::array<size_t, 8> bins{};
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    for (n = 0; n < 1024 * 256; n += 1024) {
+        sim.reset_all();
+        sim.do_circuit(circuit);
+        auto sample = sim.det_record.storage.transposed();
+        for (size_t k = 0; k < 1024; k++) {
+            bins[sample[k].u8[0]]++;
+        }
+    }
+    EXPECT_NEAR(bins[0] / (double)n, 0.45, 0.05);
+    EXPECT_EQ(bins[1], 0);
+    EXPECT_EQ(bins[2], 0);
+    EXPECT_EQ(bins[3], 0);
+    EXPECT_NEAR(bins[4] / (double)n, 0.05, 0.04);
+    EXPECT_NEAR(bins[5] / (double)n, 0.10, 0.04);
+    EXPECT_NEAR(bins[6] / (double)n, 0.25, 0.04);
+    EXPECT_NEAR(bins[7] / (double)n, 0.15, 0.04);
+})

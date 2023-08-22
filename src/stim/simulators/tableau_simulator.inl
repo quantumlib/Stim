@@ -985,6 +985,29 @@ void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    size_t offset = measurement_record.storage.size();
+    measurement_record.storage.insert(measurement_record.storage.end(), nt, false);
+
+    double hi = inst.args[0];
+    double hx = inst.args[1];
+    double hy = inst.args[2];
+    double hz = inst.args[3];
+    double ht = std::min(1.0, hi + hx + hy + hz);
+    std::array<double, 3> conditionals{hx, hy, hz};
+    if (ht != 0) {
+        conditionals[0] /= ht;
+        conditionals[1] /= ht;
+        conditionals[2] /= ht;
+    }
+    RareErrorIterator::for_samples(ht, nt, rng, [&](size_t target) {
+        measurement_record.storage[offset + target] = true;
+        do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target]});
+    });
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_X_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.zs.signs[q.data] ^= true;
@@ -1698,6 +1721,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::HERALDED_ERASE:
             do_HERALDED_ERASE(inst);
+            break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            do_HERALDED_PAULI_CHANNEL_1(inst);
             break;
         default:
             throw std::invalid_argument(

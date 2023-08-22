@@ -1647,6 +1647,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         Y_ERROR(0.02) 1
         Z_ERROR(0.03) 2
         HERALDED_ERASE(0.04) 3
+        HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 6
         TICK
 
         # Collapsing Gates

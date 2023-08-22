@@ -19,6 +19,7 @@
 #include <sstream>
 
 #include "stim/circuit/gate_decomposition.h"
+#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
@@ -63,6 +64,9 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             break;
         case GateType::HERALDED_ERASE:
             undo_HERALDED_ERASE(inst);
+            break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            undo_HERALDED_PAULI_CHANNEL_1(inst);
             break;
         case GateType::RX:
             undo_RX(inst);
@@ -322,15 +326,43 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
 }
 
 void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
+    check_can_approximate_disjoint("HERALDED_ERASE", dat.args);
+    double p = dat.args[0] * 0.25;
+    double i = std::max(0.0, 1.0 - 4 * p);
+
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
-        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
         if (accumulate_errors) {
-            double p = dat.args[0] * 0.25;
             add_error_combinations<3>(
-                {0, 0, 0, 0, p, p, p, p}, {tracker.xs[q].range(), tracker.zs[q].range(), d.range()});
+                {i, 0, 0, 0, p, p, p, p},
+                {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
+                true);
+        }
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
+    }
+}
+
+void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
+    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args);
+    double hi = dat.args[0];
+    double hx = dat.args[1];
+    double hy = dat.args[2];
+    double hz = dat.args[3];
+    double i = std::max(0.0, 1.0 - hi - hx - hy - hz);
+
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        tracker.num_measurements_in_past--;
+
+        SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
+        if (accumulate_errors) {
+            add_error_combinations<3>(
+                {i, 0, 0, 0, hi, hx, hy, hz},
+                {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
+                true);
         }
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
@@ -733,7 +765,7 @@ void ErrorAnalyzer::correlated_error_block(const std::vector<CircuitInstruction>
         add_composite_error(dats[0].args[0], dats[0].targets);
         return;
     }
-    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR");
+    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {});
 
     double remaining_p = 1;
     for (size_t k = dats.size(); k--;) {
@@ -761,10 +793,10 @@ void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] > 3.0 / 4.0) {
+    if (dat.args[0] > 0.75) {
         throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).");
     }
-    double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
+    double p = depolarize1_probability_to_independent_per_channel_probability(dat.args[0]);
     for (auto q : dat.targets) {
         add_error_combinations<2>(
             {0, p, p, p},
@@ -782,7 +814,7 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
     if (dat.args[0] > 15.0 / 16.0) {
         throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability > 15/16).");
     }
-    double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
+    double p = depolarize2_probability_to_independent_per_channel_probability(dat.args[0]);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
@@ -803,61 +835,67 @@ void ErrorAnalyzer::undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &dat) {
     }
 }
 
-void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name) {
+void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name, SpanRef<const double> probabilities) const {
     if (approximate_disjoint_errors_threshold == 0) {
         std::stringstream msg;
         msg << "Encountered the operation " << op_name
             << " during error analysis, but this operation requires the `approximate_disjoint_errors` option to be "
                "enabled.";
-        msg << "\nIf you're' calling from python, using stim.Circuit.detector_error_model, you need to add the "
+        msg << "\nIf you're calling from python, using stim.Circuit.detector_error_model, you need to add the "
                "argument approximate_disjoint_errors=True.\n";
-        msg << "\nIf you're' calling from the command line, you need to specify --approximate_disjoint_errors.";
+        msg << "\nIf you're calling from the command line, you need to specify --approximate_disjoint_errors.";
         throw std::invalid_argument(msg.str());
     }
-}
-void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("PAULI_CHANNEL_1");
-    SpanRef<const double> args = dat.args;
-    std::array<double, 4> probabilities;
-    for (size_t k = 0; k < 3; k++) {
-        if (args[k] > approximate_disjoint_errors_threshold) {
-            throw std::invalid_argument(
-                "PAULI_CHANNEL_1 has a component probability '" + std::to_string(args[k]) +
-                "' larger than the "
-                "`approximate_disjoint_errors` threshold of "
-                "'" +
-                std::to_string(approximate_disjoint_errors_threshold) + "'.");
+    for (double p : probabilities) {
+        if (p > approximate_disjoint_errors_threshold) {
+            std::stringstream msg;
+            msg << op_name;
+            msg << " has a probability argument (";
+            msg << p;
+            msg << ") larger than the `approximate_disjoint_errors` threshold (";
+            msg << approximate_disjoint_errors_threshold;
+            msg << +").";
+            throw std::invalid_argument(msg.str());
         }
-        probabilities[pauli_xyz_to_xz(k + 1)] = args[k];
     }
+}
+
+void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
+    double dx = dat.args[0];
+    double dy = dat.args[1];
+    double dz = dat.args[2];
+    double ix;
+    double iy;
+    double iz;
+    bool is_independent = try_disjoint_to_independent_xyz_errors_approx(dx, dy, dz, &ix, &iy, &iz);
+    if (!is_independent) {
+        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args);
+        ix = dx;
+        iy = dy;
+        iz = dz;
+    }
+
     if (!accumulate_errors) {
         return;
     }
     for (auto q : dat.targets) {
         add_error_combinations<2>(
-            probabilities,
+            {0, ix, iz, iy},
             {
                 tracker.zs[q.data].range(),
                 tracker.xs[q.data].range(),
-            });
+            },
+            !is_independent);
     }
 }
 
 void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("PAULI_CHANNEL_2");
-    SpanRef<const double> args = dat.args;
+    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args);
+
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
-        if (args[k] > approximate_disjoint_errors_threshold) {
-            throw std::invalid_argument(
-                "PAULI_CHANNEL_2 has a component probability '" + std::to_string(args[k]) +
-                "' larger than the "
-                "`approximate_disjoint_errors` threshold of "
-                "'" +
-                std::to_string(approximate_disjoint_errors_threshold) + "'.");
-        }
         size_t k2 = pauli_xyz_to_xz((k + 1) & 3) | (pauli_xyz_to_xz(((k + 1) >> 2) & 3) << 2);
-        probabilities[k2] = args[k];
+        probabilities[k2] = dat.args[k];
     }
     if (!accumulate_errors) {
         return;
@@ -872,7 +910,8 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
                 tracker.xs[b.data].range(),
                 tracker.zs[a.data].range(),
                 tracker.xs[a.data].range(),
-            });
+            },
+            true);
     }
 }
 
@@ -1480,7 +1519,9 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
 
 template <size_t s>
 void ErrorAnalyzer::add_error_combinations(
-    std::array<double, 1 << s> independent_probabilities, std::array<SpanRef<const DemTarget>, s> basis_errors) {
+    std::array<double, 1 << s> probabilities,
+    std::array<SpanRef<const DemTarget>, s> basis_errors,
+    bool probabilities_are_disjoint) {
     std::array<uint64_t, 1 << s> detector_masks{};
     FixedCapVector<DemTarget, 16> involved_detectors{};
     std::array<SpanRef<const DemTarget>, 1 << s> stored_ids;
@@ -1531,10 +1572,25 @@ void ErrorAnalyzer::add_error_combinations(
     if (decompose_errors) {
         decompose_helper_add_error_combinations<s>(detector_masks, stored_ids);
     }
+    if (probabilities_are_disjoint) {
+        // Merge indistinguishable cases.
+        for (size_t k = 1; k < 1 << s; k++) {
+            if (stored_ids[k].empty()) {
+                // Since symptom k is empty, merge pairs A, B such that A^B = k.
+                for (size_t k_dst = 0; k_dst < 1 << s; k_dst++) {
+                    size_t k_src = k_dst ^ k;
+                    if (k_src > k_dst) {
+                        probabilities[k_dst] += probabilities[k_src];
+                        probabilities[k_src] = 0;
+                    }
+                }
+            }
+        }
+    }
 
     // Include errors in the record.
     for (size_t k = 1; k < 1 << s; k++) {
-        add_error(independent_probabilities[k], stored_ids[k]);
+        add_error(probabilities[k], stored_ids[k]);
     }
 }
 

@@ -141,6 +141,7 @@ struct FrameSimulator {
     void do_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_ELSE_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_HERALDED_ERASE(const CircuitInstruction &inst);
+    void do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst);
 
    private:
     void do_MXX_disjoint_controls_segment(const CircuitInstruction &inst);

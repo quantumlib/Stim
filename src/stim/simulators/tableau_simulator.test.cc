@@ -2358,6 +2358,52 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
     ASSERT_NE(sim.inv_state, Tableau<W>(14));
 })
 
+TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_pauli_channel_1, {
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 1);
+    Tableau<W> expected(14);
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 0, 0) 0 1 2 3 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(1, 0, 0, 0) 0 1 2 3 4 5 6 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 1, 0, 0) 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{true}));
+    expected.prepend_X(13);
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 1, 0) 5 10
+    )CIRCUIT"));
+    expected.prepend_Y(5);
+    expected.prepend_Y(10);
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1}));
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 0, 1) 1 10 11
+    )CIRCUIT"));
+    expected.prepend_Z(1);
+    expected.prepend_Z(10);
+    expected.prepend_Z(11);
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1}));
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+})
+
 TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_observable, {
     TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 0);
     sim.postselect_observable(PauliString<W>("ZZ"), false);

@@ -751,6 +751,40 @@ void FrameSimulator<W>::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &targe
 }
 
 template <size_t W>
+void FrameSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    m_record.reserve_space_for_results(nt);
+    for (size_t k = 0; k < nt; k++) {
+        m_record.storage[m_record.stored + k].clear();
+    }
+
+    double hi = inst.args[0];
+    double hx = inst.args[1];
+    double hy = inst.args[2];
+    double hz = inst.args[3];
+    double t = hi + hx + hy + hz;
+    std::uniform_real_distribution<double> dist(0, 1);
+    RareErrorIterator::for_samples(t, nt * batch_size, rng, [&](size_t s) {
+        auto shot = s % batch_size;
+        auto target = s / batch_size;
+        m_record.storage[m_record.stored + target][shot] = 1;
+
+        double p = dist(rng) * t;
+        if (p < hx) {
+            x_table[target][shot] ^= 1;
+        } else if (p < hx + hz) {
+            z_table[target][shot] ^= 1;
+        } else if (p < hx + hz + hy) {
+            x_table[target][shot] ^= 1;
+            z_table[target][shot] ^= 1;
+        }
+    });
+
+    m_record.stored += nt;
+    m_record.unwritten += nt;
+}
+
+template <size_t W>
 void FrameSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
     auto nt = inst.targets.size();
     m_record.reserve_space_for_results(nt);
@@ -868,15 +902,6 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::OBSERVABLE_INCLUDE:
             do_OBSERVABLE_INCLUDE(inst);
             break;
-        case GateType::TICK:
-            do_I(inst);
-            break;
-        case GateType::QUBIT_COORDS:
-            do_I(inst);
-            break;
-        case GateType::SHIFT_COORDS:
-            do_I(inst);
-            break;
         case GateType::MX:
             do_MX(inst);
             break;
@@ -946,15 +971,6 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             do_ZCZ(inst);
             break;
-        case GateType::H:
-            do_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            do_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            do_H_YZ(inst);
-            break;
         case GateType::DEPOLARIZE1:
             do_DEPOLARIZE1(inst);
             break;
@@ -982,68 +998,14 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::ELSE_CORRELATED_ERROR:
             do_ELSE_CORRELATED_ERROR(inst);
             break;
-        case GateType::I:
-            do_I(inst);
-            break;
-        case GateType::X:
-            do_I(inst);
-            break;
-        case GateType::Y:
-            do_I(inst);
-            break;
-        case GateType::Z:
-            do_I(inst);
-            break;
         case GateType::C_XYZ:
             do_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
             do_C_ZYX(inst);
             break;
-        case GateType::SQRT_X:
-            do_H_YZ(inst);
-            break;
-        case GateType::SQRT_X_DAG:
-            do_H_YZ(inst);
-            break;
-        case GateType::SQRT_Y:
-            do_H_XZ(inst);
-            break;
-        case GateType::SQRT_Y_DAG:
-            do_H_XZ(inst);
-            break;
-        case GateType::S:
-            do_H_XY(inst);
-            break;
-        case GateType::S_DAG:
-            do_H_XY(inst);
-            break;
-        case GateType::SQRT_XX:
-            do_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_XX_DAG:
-            do_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_YY:
-            do_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_YY_DAG:
-            do_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_ZZ:
-            do_SQRT_ZZ(inst);
-            break;
-        case GateType::SQRT_ZZ_DAG:
-            do_SQRT_ZZ(inst);
-            break;
         case GateType::SWAP:
             do_SWAP(inst);
-            break;
-        case GateType::ISWAP:
-            do_ISWAP(inst);
-            break;
-        case GateType::ISWAP_DAG:
-            do_ISWAP(inst);
             break;
         case GateType::CXSWAP:
             do_CXSWAP(inst);
@@ -1054,6 +1016,58 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::HERALDED_ERASE:
             do_HERALDED_ERASE(inst);
             break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            do_HERALDED_PAULI_CHANNEL_1(inst);
+            break;
+
+        case GateType::SQRT_XX:
+        case GateType::SQRT_XX_DAG:
+            do_SQRT_XX(inst);
+            break;
+
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+            do_SQRT_YY(inst);
+            break;
+
+        case GateType::SQRT_ZZ:
+        case GateType::SQRT_ZZ_DAG:
+            do_SQRT_ZZ(inst);
+            break;
+
+        case GateType::ISWAP:
+        case GateType::ISWAP_DAG:
+            do_ISWAP(inst);
+            break;
+
+        case GateType::SQRT_X:
+        case GateType::SQRT_X_DAG:
+        case GateType::H_YZ:
+            do_H_YZ(inst);
+            break;
+
+        case GateType::SQRT_Y:
+        case GateType::SQRT_Y_DAG:
+        case GateType::H:
+            do_H_XZ(inst);
+            break;
+
+        case GateType::S:
+        case GateType::S_DAG:
+        case GateType::H_XY:
+            do_H_XY(inst);
+            break;
+
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::X:
+        case GateType::Y:
+        case GateType::Z:
+        case GateType::I:
+            do_I(inst);
+            break;
+
         default:
             throw std::invalid_argument("Not implemented: " + inst.str());
     }
