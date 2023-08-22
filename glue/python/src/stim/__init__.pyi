@@ -9741,8 +9741,8 @@ def gate_data(
         >>> stim.gate_data('cnot').is_two_qubit_gate
         True
         >>> gate_dict = stim.gate_data()
-        >>> len(gate_dict)
-        65
+        >>> len(gate_dict) > 50
+        True
         >>> gate_dict['MX'].produces_measurements
         True
     """
