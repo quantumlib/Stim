@@ -65,7 +65,6 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
     double a = x;
     double b = y;
     double c = z;
-    double cur_err = 100;
     for (size_t step = 0; step < max_steps; step++) {
         // Compute current error.
         double ab = a * b;
@@ -84,11 +83,13 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
         double dy = y2 - y;
         double dz = z2 - z;
         double err = fabs(dx) + fabs(dy) + fabs(dz);
-        if (err > cur_err) {
-            // Started oscillating around the local minimum.
-            break;
+        if (err < 1e-14) {
+            // Good enough.
+            *out_x = a;
+            *out_y = b;
+            *out_z = c;
+            return true;
         }
-        cur_err = err;
 
         // Make a Newton-Raphson step towards the solution.
         double da = bc_i - bc;
@@ -104,7 +105,7 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
     *out_x = a;
     *out_y = b;
     *out_z = c;
-    return cur_err < 1e-10;
+    return false;
 }
 
 double stim::depolarize1_probability_to_independent_per_channel_probability(double p) {

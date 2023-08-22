@@ -14,7 +14,7 @@ BENCHMARK(disjoint_to_independent_xyz_errors_approx_exact) {
         w += a;
         w += b;
         w += c;
-    }).goal_nanos(10);
+    }).goal_nanos(11);
     if (w == 0) {
         std::cout << "data dependence";
     }
@@ -30,7 +30,7 @@ BENCHMARK(disjoint_to_independent_xyz_errors_approx_p10) {
         w += a;
         w += b;
         w += c;
-    }).goal_nanos(270);
+    }).goal_nanos(550);
     if (w == 0) {
         std::cout << "data dependence";
     }
