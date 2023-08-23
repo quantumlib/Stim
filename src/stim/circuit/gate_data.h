@@ -239,6 +239,12 @@ struct Gate {
     GateType id;
     GateType best_candidate_inverse_id;
 
+    inline bool operator==(const Gate &other) const {
+        return id == other.id;
+    }
+    inline bool operator!=(const Gate &other) const {
+        return id != other.id;
+    }
     Gate();
     Gate(
         const char *name,

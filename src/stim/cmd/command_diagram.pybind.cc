@@ -247,7 +247,8 @@ DiagramHelper stim_pybind::circuit_diagram(
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "detslice-svg" || type == "detslice" || type == "detector-slice-svg" || type == "detector-slice") {
+    } else if (
+        type == "detslice-svg" || type == "detslice" || type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
