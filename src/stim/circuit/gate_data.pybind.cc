@@ -68,8 +68,7 @@ pybind11::object gate_unitary_matrix(const Gate &self) {
 
         return pybind11::array_t<std::complex<float>>(
             {(pybind11::ssize_t)n, (pybind11::ssize_t)n},
-            {(pybind11::ssize_t)(n * sizeof(std::complex<float>)),
-             (pybind11::ssize_t)sizeof(std::complex<float>)},
+            {(pybind11::ssize_t)(n * sizeof(std::complex<float>)), (pybind11::ssize_t)sizeof(std::complex<float>)},
             buffer,
             free_when_done);
     }
@@ -205,7 +204,9 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         "__str__",
         [](const Gate &self) -> std::string {
             std::stringstream ss;
-            auto b = [](bool x) { return x ? "True" : "False"; };
+            auto b = [](bool x) {
+                return x ? "True" : "False";
+            };
             auto v = [](const pybind11::object &obj) {
                 std::string result;
                 for (char c : pybind11::cast<std::string>(pybind11::repr(obj))) {
@@ -226,11 +227,13 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             ss << "    .is_unitary = " << b(self.flags & GATE_IS_UNITARY) << "\n";
             ss << "    .num_parens_arguments_range = " << v(gate_num_parens_argument_range(self)) << "\n";
             ss << "    .produces_measurements = " << b(self.flags & GATE_PRODUCES_RESULTS) << "\n";
-            ss << "    .takes_measurement_record_targets = " << b(self.flags & (GATE_CAN_TARGET_BITS | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) << "\n";
+            ss << "    .takes_measurement_record_targets = "
+               << b(self.flags & (GATE_CAN_TARGET_BITS | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) << "\n";
             ss << "    .takes_pauli_targets = " << b(self.flags & GATE_TARGETS_PAULI_STRING) << "\n";
             if (self.flags & GATE_IS_UNITARY) {
                 ss << "    .tableau = " << v(gate_tableau(self)) << "\n";
-                ss << "    .unitary_matrix = np.array(" << v(pybind11::cast(self.unitary())) << ", dtype=np.complex64)\n";
+                ss << "    .unitary_matrix = np.array(" << v(pybind11::cast(self.unitary()))
+                   << ", dtype=np.complex64)\n";
             }
             ss << "}";
             return ss.str();

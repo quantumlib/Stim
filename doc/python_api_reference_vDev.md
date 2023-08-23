@@ -185,6 +185,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
 - [`stim.GateData`](#stim.GateData)
+    - [`stim.GateData.__eq__`](#stim.GateData.__eq__)
+    - [`stim.GateData.__init__`](#stim.GateData.__init__)
+    - [`stim.GateData.__ne__`](#stim.GateData.__ne__)
+    - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
+    - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
     - [`stim.GateData.is_reset`](#stim.GateData.is_reset)
@@ -6434,6 +6439,74 @@ class GateData:
                 stim.PauliString("+X"),
             ],
         )
+    """
+```
+
+<a name="stim.GateData.__eq__"></a>
+```python
+# stim.GateData.__eq__
+
+# (in class stim.GateData)
+def __eq__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are identical.
+    """
+```
+
+<a name="stim.GateData.__init__"></a>
+```python
+# stim.GateData.__init__
+
+# (in class stim.GateData)
+def __init__(
+    self,
+    name: str,
+) -> None:
+    """Finds gate data for the named gate.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateData('H').is_unitary
+        True
+    """
+```
+
+<a name="stim.GateData.__ne__"></a>
+```python
+# stim.GateData.__ne__
+
+# (in class stim.GateData)
+def __ne__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are not identical.
+    """
+```
+
+<a name="stim.GateData.__repr__"></a>
+```python
+# stim.GateData.__repr__
+
+# (in class stim.GateData)
+def __repr__(
+    self,
+) -> str:
+    """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
+    """
+```
+
+<a name="stim.GateData.__str__"></a>
+```python
+# stim.GateData.__str__
+
+# (in class stim.GateData)
+def __str__(
+    self,
+) -> str:
+    """Returns text describing the gate data.
     """
 ```
 

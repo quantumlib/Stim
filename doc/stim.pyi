@@ -4886,6 +4886,39 @@ class GateData:
             ],
         )
     """
+    def __eq__(
+        self,
+        arg0: stim.GateData,
+    ) -> bool:
+        """Determines if two GateData instances are identical.
+        """
+    def __init__(
+        self,
+        name: str,
+    ) -> None:
+        """Finds gate data for the named gate.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateData('H').is_unitary
+            True
+        """
+    def __ne__(
+        self,
+        arg0: stim.GateData,
+    ) -> bool:
+        """Determines if two GateData instances are not identical.
+        """
+    def __repr__(
+        self,
+    ) -> str:
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
+        """
+    def __str__(
+        self,
+    ) -> str:
+        """Returns text describing the gate data.
+        """
     @property
     def __unstable_flows(
         self,
