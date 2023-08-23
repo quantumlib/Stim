@@ -24,6 +24,58 @@
 using namespace stim;
 using namespace stim_pybind;
 
+pybind11::object gate_num_parens_argument_range(const Gate &self) {
+    auto r = pybind11::module::import("builtins").attr("range");
+    if (self.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
+        return r(2);
+    }
+    if (self.arg_count == ARG_COUNT_SYGIL_ANY) {
+        return r(256);
+    }
+    return r(self.arg_count, self.arg_count + 1);
+}
+std::vector<std::string> gate_aliases(const Gate &self) {
+    std::vector<std::string> aliases;
+    for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
+        if (h.id == self.id) {
+            aliases.push_back(h.expected_name);
+        }
+    }
+    std::sort(aliases.begin(), aliases.end());
+    return aliases;
+}
+
+pybind11::object gate_tableau(const Gate &self) {
+    if (self.flags & GATE_IS_UNITARY) {
+        return pybind11::cast(self.tableau<MAX_BITWORD_WIDTH>());
+    }
+    return pybind11::none();
+}
+pybind11::object gate_unitary_matrix(const Gate &self) {
+    if (self.flags & GATE_IS_UNITARY) {
+        auto r = self.unitary();
+        auto n = r.size();
+        std::complex<float> *buffer = new std::complex<float>[n * n];
+        for (size_t a = 0; a < n; a++) {
+            for (size_t b = 0; b < n; b++) {
+                buffer[b + a * n] = r[a][b];
+            }
+        }
+
+        pybind11::capsule free_when_done(buffer, [](void *f) {
+            delete[] reinterpret_cast<std::complex<float> *>(f);
+        });
+
+        return pybind11::array_t<std::complex<float>>(
+            {(pybind11::ssize_t)n, (pybind11::ssize_t)n},
+            {(pybind11::ssize_t)(n * sizeof(std::complex<float>)),
+             (pybind11::ssize_t)sizeof(std::complex<float>)},
+            buffer,
+            free_when_done);
+    }
+    return pybind11::none();
+}
+
 pybind11::class_<Gate> stim_pybind::pybind_gate_data(pybind11::module &m) {
     return pybind11::class_<Gate>(
         m,
@@ -51,6 +103,21 @@ pybind11::class_<Gate> stim_pybind::pybind_gate_data(pybind11::module &m) {
 }
 
 void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_<Gate> &c) {
+    c.def(
+        pybind11::init([](const char *name) -> Gate {
+            return GATE_DATA.at(name);
+        }),
+        pybind11::arg("name"),
+        clean_doc_string(R"DOC(
+            Finds gate data for the named gate.
+
+            Examples:
+                >>> import stim
+                >>> stim.GateData('H').is_unitary
+                True
+        )DOC")
+            .data());
+
     m.def(
         "gate_data",
         [](const pybind11::object &name) -> pybind11::object {
@@ -106,16 +173,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
     c.def_property_readonly(
         "aliases",
-        [](const Gate &self) -> std::vector<std::string> {
-            std::vector<std::string> aliases;
-            for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
-                if (h.id == self.id) {
-                    aliases.push_back(h.expected_name);
-                }
-            }
-            std::sort(aliases.begin(), aliases.end());
-            return aliases;
-        },
+        &gate_aliases,
         clean_doc_string(R"DOC(
             Returns all aliases that can be used to name the gate.
 
@@ -131,14 +189,57 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         )DOC")
             .data());
 
+    c.def(
+        "__repr__",
+        [](const Gate &self) -> std::string {
+            std::stringstream ss;
+            ss << "stim.gate_data('" << self.name << "')";
+            return ss.str();
+        },
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.");
+
+    c.def(pybind11::self == pybind11::self, "Determines if two GateData instances are identical.");
+    c.def(pybind11::self != pybind11::self, "Determines if two GateData instances are not identical.");
+
+    c.def(
+        "__str__",
+        [](const Gate &self) -> std::string {
+            std::stringstream ss;
+            auto b = [](bool x) { return x ? "True" : "False"; };
+            auto v = [](const pybind11::object &obj) {
+                std::string result;
+                for (char c : pybind11::cast<std::string>(pybind11::repr(obj))) {
+                    result.push_back(c);
+                    if (c == '\n') {
+                        result.append("    ");
+                    }
+                }
+                return result;
+            };
+            ss << "stim.GateData {\n";
+            ss << "    .name = '" << self.name << "'\n";
+            ss << "    .aliases = " << v(pybind11::cast(gate_aliases(self))) << "\n";
+            ss << "    .is_noisy_gate = " << b(self.flags & GATE_IS_NOISY) << "\n";
+            ss << "    .is_reset = " << b(self.flags & GATE_IS_RESET) << "\n";
+            ss << "    .is_single_qubit_gate = " << b(self.flags & GATE_IS_SINGLE_QUBIT_GATE) << "\n";
+            ss << "    .is_two_qubit_gate = " << b(self.flags & GATE_TARGETS_PAIRS) << "\n";
+            ss << "    .is_unitary = " << b(self.flags & GATE_IS_UNITARY) << "\n";
+            ss << "    .num_parens_arguments_range = " << v(gate_num_parens_argument_range(self)) << "\n";
+            ss << "    .produces_measurements = " << b(self.flags & GATE_PRODUCES_RESULTS) << "\n";
+            ss << "    .takes_measurement_record_targets = " << b(self.flags & (GATE_CAN_TARGET_BITS | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) << "\n";
+            ss << "    .takes_pauli_targets = " << b(self.flags & GATE_TARGETS_PAULI_STRING) << "\n";
+            if (self.flags & GATE_IS_UNITARY) {
+                ss << "    .tableau = " << v(gate_tableau(self)) << "\n";
+                ss << "    .unitary_matrix = np.array(" << v(pybind11::cast(self.unitary())) << ", dtype=np.complex64)\n";
+            }
+            ss << "}";
+            return ss.str();
+        },
+        "Returns text describing the gate data.");
+
     c.def_property_readonly(
         "tableau",
-        [](const Gate &self) -> pybind11::object {
-            if (self.flags & GATE_IS_UNITARY) {
-                return pybind11::cast(self.tableau<MAX_BITWORD_WIDTH>());
-            }
-            return pybind11::none();
-        },
+        &gate_tableau,
         clean_doc_string(R"DOC(
             @signature def tableau(self) -> Optional[stim.Tableau]:
             Returns the gate's tableau, or None if the gate has no tableau.
@@ -172,30 +273,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
     c.def_property_readonly(
         "unitary_matrix",
-        [](const Gate &self) -> pybind11::object {
-            if (self.flags & GATE_IS_UNITARY) {
-                auto r = self.unitary();
-                auto n = r.size();
-                std::complex<float> *buffer = new std::complex<float>[n * n];
-                for (size_t a = 0; a < n; a++) {
-                    for (size_t b = 0; b < n; b++) {
-                        buffer[b + a * n] = r[a][b];
-                    }
-                }
-
-                pybind11::capsule free_when_done(buffer, [](void *f) {
-                    delete[] reinterpret_cast<std::complex<float> *>(f);
-                });
-
-                return pybind11::array_t<std::complex<float>>(
-                    {(pybind11::ssize_t)n, (pybind11::ssize_t)n},
-                    {(pybind11::ssize_t)(n * sizeof(std::complex<float>)),
-                     (pybind11::ssize_t)sizeof(std::complex<float>)},
-                    buffer,
-                    free_when_done);
-            }
-            return pybind11::none();
-        },
+        &gate_unitary_matrix,
         clean_doc_string(R"DOC(
             @signature def unitary_matrix(self) -> Optional[np.ndarray]:
             Returns the gate's unitary matrix, or None if the gate isn't unitary.
@@ -253,16 +331,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
     c.def_property_readonly(
         "num_parens_arguments_range",
-        [](const Gate &self) -> pybind11::object {
-            auto r = pybind11::module::import("builtins").attr("range");
-            if (self.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
-                return r(2);
-            }
-            if (self.arg_count == ARG_COUNT_SYGIL_ANY) {
-                return r(256);
-            }
-            return r(self.arg_count, self.arg_count + 1);
-        },
+        &gate_num_parens_argument_range,
         clean_doc_string(R"DOC(
             @signature def num_parens_arguments_range(self) -> range:
             Returns the min/max parens arguments taken by the gate, as a python range.
