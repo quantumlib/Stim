@@ -10,6 +10,9 @@ class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
     distribution.
 
     The 15 probabilities are in IX, IY, ... ZY, ZZ order. II is skipped; it's the leftover.
+
+    This class is no longer used by stimcirq, but is kept around for backwards
+    compatibility of json-serialized circuits.
     """
 
     def __init__(self, probabilities: Sequence[float]):
