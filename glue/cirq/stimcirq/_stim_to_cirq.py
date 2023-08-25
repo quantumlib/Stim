@@ -103,7 +103,7 @@ class CircuitTranslationTracker:
         if len(args) != 15:
             raise ValueError(f"len(args={args!r}) != 15")
 
-        gate = cirq.asymmetric_depolarize(error_probabilities={
+        ps = {
             'IX': args[0],
             'IY': args[1],
             'IZ': args[2],
@@ -119,7 +119,11 @@ class CircuitTranslationTracker:
             'ZX': args[12],
             'ZY': args[13],
             'ZZ': args[14],
-        })
+        }
+        ps = {k: v for k, v in ps.items() if v}
+        if not ps:
+            ps['II'] = 1
+        gate = cirq.asymmetric_depolarize(error_probabilities=ps)
         self.process_gate_instruction(gate, instruction)
 
     def process_repeat_block(self, block: stim.CircuitRepeatBlock):
