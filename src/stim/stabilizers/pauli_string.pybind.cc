@@ -867,6 +867,27 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "weight",
+        [](const PyPauliString &self) {
+            return self.value.ref().weight();
+        },
+        clean_doc_string(R"DOC(
+            Returns the number of non-identity pauli terms in the pauli string.
+
+            Examples:
+                >>> import stim
+                >>> stim.PauliString("+___").weight
+                0
+                >>> stim.PauliString("+__X").weight
+                1
+                >>> stim.PauliString("+XYZ").weight
+                3
+                >>> stim.PauliString("-XXX___XXYZ").weight
+                7
+        )DOC")
+            .data());
+
     c.def(
         "extended_product",
         [](const PyPauliString &self, const PyPauliString &other) {

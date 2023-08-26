@@ -6574,6 +6574,23 @@ class PauliString:
                    [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                    [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
         """
+    @property
+    def weight(
+        self,
+    ) -> int:
+        """Returns the number of non-identity pauli terms in the pauli string.
+
+        Examples:
+            >>> import stim
+            >>> stim.PauliString("+___").weight
+            0
+            >>> stim.PauliString("+__X").weight
+            1
+            >>> stim.PauliString("+XYZ").weight
+            3
+            >>> stim.PauliString("-XXX___XXYZ").weight
+            7
+        """
 class Tableau:
     """A stabilizer tableau.
 
