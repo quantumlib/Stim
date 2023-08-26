@@ -8,9 +8,9 @@ from ._stim_sampler import StimSampler
 from ._stim_to_cirq import (
     MeasureAndOrResetGate,
     stim_circuit_to_cirq_circuit,
-    TwoQubitAsymmetricDepolarizingChannel,
 )
 from ._sweep_pauli import SweepPauli
+from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
 
 JSON_RESOLVERS_DICT = {
     "CumulativeObservableAnnotation": CumulativeObservableAnnotation,
