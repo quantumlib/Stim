@@ -252,6 +252,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
     - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
+    - [`stim.PauliString.weight`](#stim.PauliString.weight)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -8549,6 +8550,30 @@ def to_unitary_matrix(
                [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
+    """
+```
+
+<a name="stim.PauliString.weight"></a>
+```python
+# stim.PauliString.weight
+
+# (in class stim.PauliString)
+@property
+def weight(
+    self,
+) -> int:
+    """Returns the number of non-identity pauli terms in the pauli string.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("+___").weight
+        0
+        >>> stim.PauliString("+__X").weight
+        1
+        >>> stim.PauliString("+XYZ").weight
+        3
+        >>> stim.PauliString("-XXX___XXYZ").weight
+        7
     """
 ```
 
