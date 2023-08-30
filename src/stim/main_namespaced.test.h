@@ -20,6 +20,7 @@
 
 namespace stim {
 
+std::string run_captured_stim_main(std::vector<const char *> flags);
 std::string run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content);
 std::string trim(std::string text);
 bool matches(std::string actual, std::string pattern);

@@ -946,11 +946,11 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 }
                 break;
             case DEM_REPEAT_BLOCK: {
-                uint64_t repetitions = e.target_data[0].data;
+                uint64_t repetitions = e.repeat_block_rep_count();
                 if (repetitions) {
                     uint64_t old_base_detector_id = base_detector_id;
                     out.append_repeat_block(
-                        e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id, seen));
+                        e.repeat_block_rep_count(), unreversed(e.repeat_block_body(rev), base_detector_id, seen));
                     uint64_t loop_shift = base_detector_id - old_base_detector_id;
                     base_detector_id += loop_shift * (repetitions - 1);
                 }

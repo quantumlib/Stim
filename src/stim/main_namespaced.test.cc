@@ -25,12 +25,14 @@ using namespace stim;
 
 std::string stim::run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content) {
     // Setup input.
-    RaiiTempNamedFile raii_temp_file;
-    if (!std_in_content.empty()) {
-        raii_temp_file.write_contents(std_in_content);
-        flags.push_back("--in");
-        flags.push_back(raii_temp_file.path.data());
-    }
+    RaiiTempNamedFile raii_temp_file(std_in_content);
+    flags.push_back("--in");
+    flags.push_back(raii_temp_file.path.data());
+
+    return run_captured_stim_main(flags);
+}
+
+std::string stim::run_captured_stim_main(std::vector<const char *> flags) {
     flags.insert(flags.begin(), "[PROGRAM_LOCATION_IGNORE]");
 
     // Setup output.
@@ -75,21 +77,20 @@ bool stim::matches(std::string actual, std::string pattern) {
 }
 
 TEST(main, help_modes) {
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help"}, ""), ".*Available stim commands.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"help"}, ""), ".*Available stim commands.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({}, ""), ".+stderr.+No mode.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl"}, ""), ".+stderr.+More than one mode.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--help"}), ".*Available stim commands.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"help"}), ".*Available stim commands.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({}), ".+stderr.+No mode.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl"}), ".+stderr.+More than one mode.+"));
     ASSERT_TRUE(
-        matches(run_captured_stim_main({"--sample", "--repl", "--detect"}, ""), ".+stderr.+More than one mode.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "dhnsahddjoidsa"}, ""), ".*Unrecognized.*"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "H"}, ""), ".+Hadamard.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "--sample"}, ""), ".*Unrecognized.*"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "sample"}, ""), ".*Samples measurements from a circuit.+"));
+        matches(run_captured_stim_main({"--sample", "--repl", "--detect"}), ".+stderr.+More than one mode.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "dhnsahddjoidsa"}), ".*Unrecognized.*"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "H"}), ".+Hadamard.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--help", "sample"}), ".*Samples measurements from a circuit.+"));
 }
 
 TEST(main, bad_flag) {
     ASSERT_EQ(
-        trim(run_captured_stim_main({"--gen", "--unknown"}, "")),
+        trim(run_captured_stim_main({"--gen", "--unknown"})),
         trim("[stderr=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
              "Recognized command line arguments for `stim gen`:\n"
              "    --after_clifford_depolarization\n"
