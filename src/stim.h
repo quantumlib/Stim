@@ -22,6 +22,7 @@
 #include "stim/cmd/command_repl.h"
 #include "stim/cmd/command_sample.h"
 #include "stim/cmd/command_sample_dem.h"
+#include "stim/dem/dem_instruction.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/ascii_diagram.h"
 #include "stim/diagram/base64.h"
