@@ -41,3 +41,16 @@ BENCHMARK(SparseXorTable_SmallRowXor_1000) {
         .show_rate("RowXors", n * 2)
         .show_rate("WordXors", n * 3);
 }
+
+BENCHMARK(SparseXorVec_XorItem) {
+    SparseXorVec<uint32_t> buf;
+    std::vector<uint32_t> data{2, 5, 9, 5, 3, 6, 10};
+
+    benchmark_go([&]() {
+        for (auto d : data) {
+            buf.xor_item(d);
+        }
+    })
+        .goal_nanos(30)
+        .show_rate("Item", data.size());
+}
