@@ -18,8 +18,6 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
-
 using namespace stim;
 
 static simd_bits<64> obs_mask(uint64_t v) {
@@ -44,4 +42,21 @@ TEST(sparse_shot, str) {
     ASSERT_EQ(
         (SparseShot{{1, 2, 3}, obs_mask(4)}.str()),
         "SparseShot{{1, 2, 3}, __1_____________________________________________________________}");
+}
+
+TEST(spares_shot, obs_mask_as_u64) {
+    SparseShot s{};
+    ASSERT_EQ(s.obs_mask_as_u64(), 0);
+
+    s.obs_mask = simd_bits<64>(5);
+    ASSERT_EQ(s.obs_mask_as_u64(), 0);
+    s.obs_mask[1] = true;
+    ASSERT_EQ(s.obs_mask_as_u64(), 2);
+
+    s.obs_mask = simd_bits<64>(125);
+    ASSERT_EQ(s.obs_mask_as_u64(), 0);
+    s.obs_mask[1] = true;
+    ASSERT_EQ(s.obs_mask_as_u64(), 2);
+    s.obs_mask[64] = true;
+    ASSERT_EQ(s.obs_mask_as_u64(), 2);
 }

@@ -40,6 +40,13 @@ bool SparseShot::operator!=(const SparseShot &other) const {
     return !(*this == other);
 }
 
+uint64_t SparseShot::obs_mask_as_u64() const {
+    if (obs_mask.num_u64_padded() == 0) {
+        return 0;
+    }
+    return obs_mask.u64[0];
+}
+
 std::string SparseShot::str() const {
     std::stringstream ss;
     ss << *this;
