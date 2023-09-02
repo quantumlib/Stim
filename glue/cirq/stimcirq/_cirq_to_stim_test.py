@@ -1,3 +1,4 @@
+import itertools
 from typing import Dict, List, Sequence, Tuple, Union
 
 import cirq
@@ -146,13 +147,10 @@ ROUND_TRIP_NOISY_GATES = [
     cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0.1, p_z=0),
     cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0, p_z=0.1),
     *[
-        stimcirq.TwoQubitAsymmetricDepolarizingChannel(
-            cirq.one_hot(index=k, shape=15, value=0.1, dtype=np.float64)
-        )
-        for k in range(15)
+        cirq.asymmetric_depolarize(error_probabilities={a + b: 0.1})
+        for a, b in list(itertools.product('IXYZ', repeat=2))[1:]
     ],
-    stimcirq.TwoQubitAsymmetricDepolarizingChannel([k / 300 for k in range(1, 16)]),
-    stimcirq.TwoQubitAsymmetricDepolarizingChannel([0] * 15),
+    cirq.asymmetric_depolarize(error_probabilities={'IX': 0.125, 'ZY': 0.375}),
 ]
 
 

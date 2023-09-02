@@ -20,227 +20,9 @@
 #include <iomanip>
 #include <limits>
 
-#include "stim/simulators/error_analyzer.h"
 #include "stim/str_util.h"
 
 using namespace stim;
-
-constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
-constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
-
-DemTarget DemTarget::observable_id(uint64_t id) {
-    if (id > 0xFFFFFFFF) {
-        throw std::invalid_argument("id > 0xFFFFFFFF");
-    }
-    return {OBSERVABLE_BIT | id};
-}
-DemTarget DemTarget::relative_detector_id(uint64_t id) {
-    if (id >= (uint64_t{1} << 62)) {
-        throw std::invalid_argument("Relative detector id too large.");
-    }
-    return {id};
-}
-bool DemTarget::is_observable_id() const {
-    return data != SEPARATOR_SYGIL && (data & OBSERVABLE_BIT);
-}
-bool DemTarget::is_separator() const {
-    return data == SEPARATOR_SYGIL;
-}
-bool DemTarget::is_relative_detector_id() const {
-    return data != SEPARATOR_SYGIL && !(data & OBSERVABLE_BIT);
-}
-uint64_t DemTarget::raw_id() const {
-    return data & ~OBSERVABLE_BIT;
-}
-
-uint64_t DemTarget::val() const {
-    if (data == SEPARATOR_SYGIL) {
-        throw std::invalid_argument("Separator doesn't have an integer value.");
-    }
-    return raw_id();
-}
-
-bool DemTarget::operator==(const DemTarget &other) const {
-    return data == other.data;
-}
-bool DemTarget::operator!=(const DemTarget &other) const {
-    return !(*this == other);
-}
-bool DemTarget::operator<(const DemTarget &other) const {
-    return data < other.data;
-}
-std::ostream &stim::operator<<(std::ostream &out, const DemTarget &v) {
-    if (v.is_separator()) {
-        out << "^";
-        return out;
-    } else if (v.is_relative_detector_id()) {
-        out << "D" << v.raw_id();
-    } else {
-        out << "L" << v.raw_id();
-    }
-    return out;
-}
-
-std::string DemTarget::str() const {
-    std::stringstream s;
-    s << *this;
-    return s.str();
-}
-
-void DemTarget::shift_if_detector_id(int64_t offset) {
-    if (is_relative_detector_id()) {
-        data = (uint64_t)((int64_t)data + offset);
-    }
-}
-
-bool DemInstruction::operator<(const DemInstruction &other) const {
-    if (type != other.type) {
-        return type < other.type;
-    }
-    if (target_data != other.target_data) {
-        return target_data < other.target_data;
-    }
-    return arg_data < other.arg_data;
-}
-
-bool DemInstruction::operator==(const DemInstruction &other) const {
-    return approx_equals(other, 0);
-}
-bool DemInstruction::operator!=(const DemInstruction &other) const {
-    return !(*this == other);
-}
-bool DemInstruction::approx_equals(const DemInstruction &other, double atol) const {
-    if (target_data != other.target_data) {
-        return false;
-    }
-    if (type != other.type) {
-        return false;
-    }
-    if (arg_data.size() != other.arg_data.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < arg_data.size(); k++) {
-        if (fabs(arg_data[k] - other.arg_data[k]) > atol) {
-            return false;
-        }
-    }
-    return true;
-}
-std::string DemInstruction::str() const {
-    std::stringstream s;
-    s << *this;
-    return s.str();
-}
-
-std::ostream &stim::operator<<(std::ostream &out, const DemInstructionType &type) {
-    switch (type) {
-        case DEM_ERROR:
-            out << "error";
-            break;
-        case DEM_DETECTOR:
-            out << "detector";
-            break;
-        case DEM_LOGICAL_OBSERVABLE:
-            out << "logical_observable";
-            break;
-        case DEM_SHIFT_DETECTORS:
-            out << "shift_detectors";
-            break;
-        case DEM_REPEAT_BLOCK:
-            out << "repeat";
-            break;
-        default:
-            out << "???unknown_instruction_type???";
-            break;
-    }
-    return out;
-}
-
-std::ostream &stim::operator<<(std::ostream &out, const DemInstruction &op) {
-    out << op.type;
-    if (!op.arg_data.empty()) {
-        out << "(" << comma_sep(op.arg_data) << ")";
-    }
-    if (op.type == DEM_SHIFT_DETECTORS || op.type == DEM_REPEAT_BLOCK) {
-        for (const auto &e : op.target_data) {
-            out << " " << e.data;
-        }
-    } else {
-        for (const auto &e : op.target_data) {
-            out << " " << e;
-        }
-    }
-    return out;
-}
-
-void DemInstruction::validate() const {
-    switch (type) {
-        case DEM_ERROR:
-            if (arg_data.size() != 1) {
-                throw std::invalid_argument(
-                    "'error' instruction takes 1 argument (a probability), but got " + std::to_string(arg_data.size()) +
-                    " arguments.");
-            }
-            if (arg_data[0] < 0 || arg_data[0] > 1) {
-                throw std::invalid_argument(
-                    "'error' instruction argument must be a probability (0 to 1) but got " +
-                    std::to_string(arg_data[0]));
-            }
-            if (!target_data.empty()) {
-                if (target_data.front() == DemTarget::separator() || target_data.back() == DemTarget::separator()) {
-                    throw std::invalid_argument(
-                        "First/last targets of 'error' instruction shouldn't be separators (^).");
-                }
-            }
-            for (size_t k = 1; k < target_data.size(); k++) {
-                if (target_data[k - 1] == DemTarget::separator() && target_data[k] == DemTarget::separator()) {
-                    throw std::invalid_argument("'error' instruction has adjacent separators (^ ^).");
-                }
-            }
-            break;
-        case DEM_SHIFT_DETECTORS:
-            if (target_data.size() != 1) {
-                throw std::invalid_argument(
-                    "'shift_detectors' instruction takes 1 target, but got " + std::to_string(target_data.size()) +
-                    " targets.");
-            }
-            break;
-        case DEM_DETECTOR:
-            if (target_data.size() != 1) {
-                throw std::invalid_argument(
-                    "'detector' instruction takes 1 target but got " + std::to_string(target_data.size()) +
-                    " arguments.");
-            }
-            if (!target_data[0].is_relative_detector_id()) {
-                throw std::invalid_argument(
-                    "'detector' instruction takes a relative detector target (D#) but got " + target_data[0].str() +
-                    " arguments.");
-            }
-            break;
-        case DEM_LOGICAL_OBSERVABLE:
-            if (arg_data.size() != 0) {
-                throw std::invalid_argument(
-                    "'logical_observable' instruction takes 0 arguments but got " + std::to_string(arg_data.size()) +
-                    " arguments.");
-            }
-            if (target_data.size() != 1) {
-                throw std::invalid_argument(
-                    "'logical_observable' instruction takes 1 target but got " + std::to_string(target_data.size()) +
-                    " arguments.");
-            }
-            if (!target_data[0].is_observable_id()) {
-                throw std::invalid_argument(
-                    "'logical_observable' instruction takes a logical observable target (L#) but got " +
-                    target_data[0].str() + " arguments.");
-            }
-            break;
-        case DEM_REPEAT_BLOCK:
-            // Handled elsewhere.
-            break;
-        default:
-            throw std::invalid_argument("Unknown instruction type.");
-    }
-}
 
 void DetectorErrorModel::append_error_instruction(double probability, SpanRef<const DemTarget> targets) {
     append_dem_instruction(DemInstruction{&probability, targets, DEM_ERROR});
@@ -326,8 +108,8 @@ void stim::print_detector_error_model(std::ostream &out, const DetectorErrorMode
             out << " ";
         }
         if (e.type == DEM_REPEAT_BLOCK) {
-            out << "repeat " << e.target_data[0].data << " {\n";
-            print_detector_error_model(out, v.blocks[(size_t)e.target_data[1].data], indent + 4);
+            out << "repeat " << e.repeat_block_rep_count() << " {\n";
+            print_detector_error_model(out, e.repeat_block_body(v), indent + 4);
             out << "\n";
             for (size_t k = 0; k < indent; k++) {
                 out << " ";
@@ -531,8 +313,8 @@ void model_read_operations(DetectorErrorModel &model, SOURCE read_char, DEM_READ
         dem_read_instruction(model, c, read_char);
 
         if (ops.back().type == DEM_REPEAT_BLOCK) {
-            // Temporarily remove instruction until block is parse.
-            auto repeat_count = ops.back().target_data[0].data;
+            // Temporarily remove instruction until block is parsed.
+            auto repeat_count = ops.back().repeat_block_rep_count();
             ops.pop_back();
 
             // Recursively read the block contents.
@@ -589,8 +371,8 @@ DetectorErrorModel DetectorErrorModel::rounded(uint8_t digits) const {
     DetectorErrorModel result;
     for (const auto &e : instructions) {
         if (e.type == DEM_REPEAT_BLOCK) {
-            auto reps = e.target_data[0].data;
-            auto &block = blocks[e.target_data[1].data];
+            auto reps = e.repeat_block_rep_count();
+            auto &block = e.repeat_block_body(*this);
             result.append_repeat_block(reps, block.rounded(digits));
         } else if (e.type == DEM_ERROR) {
             std::vector<double> rounded_args;
@@ -611,7 +393,7 @@ uint64_t DetectorErrorModel::total_detector_shift() const {
         if (e.type == DEM_SHIFT_DETECTORS) {
             result += e.target_data[0].data;
         } else if (e.type == DEM_REPEAT_BLOCK) {
-            result += e.target_data[0].data * blocks[e.target_data[1].data].total_detector_shift();
+            result += e.repeat_block_rep_count() * e.repeat_block_body(*this).total_detector_shift();
         }
     }
     return result;
@@ -634,8 +416,8 @@ void flattened_helper(
                 cur_detector_shift += op.target_data[0].data;
             }
         } else if (op.type == DEM_REPEAT_BLOCK) {
-            const auto &loop_body = body.blocks[op.target_data[1].data];
-            auto reps = op.target_data[0].data;
+            const auto &loop_body = op.repeat_block_body(body);
+            auto reps = op.repeat_block_rep_count();
             for (uint64_t k = 0; k < reps; k++) {
                 flattened_helper(loop_body, cur_coordinate_shift, cur_detector_shift, out);
             }
@@ -690,9 +472,9 @@ uint64_t DetectorErrorModel::count_detectors() const {
                 offset += e.target_data[0].data;
                 break;
             case DEM_REPEAT_BLOCK: {
-                auto &block = blocks[e.target_data[1].data];
+                auto &block = e.repeat_block_body(*this);
                 auto n = block.count_detectors();
-                auto reps = e.target_data[0].data;
+                auto reps = e.repeat_block_rep_count();
                 auto block_shift = block.total_detector_shift();  // Note: quadratic overhead in nesting level.
                 offset += block_shift * reps;
                 if (reps > 0 && n > 0) {
@@ -723,9 +505,9 @@ uint64_t DetectorErrorModel::count_errors() const {
             case DEM_SHIFT_DETECTORS:
                 break;
             case DEM_REPEAT_BLOCK: {
-                auto &block = blocks[e.target_data[1].data];
+                auto &block = e.repeat_block_body(*this);
                 auto n = block.count_errors();
-                auto reps = e.target_data[0].data;
+                auto reps = e.repeat_block_rep_count();
                 total += n * reps;
                 break;
             }
@@ -749,7 +531,7 @@ uint64_t DetectorErrorModel::count_observables() const {
             case DEM_DETECTOR:
                 break;
             case DEM_REPEAT_BLOCK: {
-                auto &block = blocks[e.target_data[1].data];
+                auto &block = e.repeat_block_body(*this);
                 max_num = std::max(max_num, block.count_observables());
             } break;
             case DEM_LOGICAL_OBSERVABLE:
@@ -774,7 +556,7 @@ DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step,
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = instructions[start + step * k];
         if (op.type == DEM_REPEAT_BLOCK) {
-            result.append_repeat_block(op.target_data[0].data, blocks[op.target_data[1].data]);
+            result.append_repeat_block(op.repeat_block_rep_count(), op.repeat_block_body(*this));
         } else {
             auto args = result.arg_buf.take_copy(op.arg_data);
             auto targets = result.target_buf.take_copy(op.target_data);
@@ -817,8 +599,8 @@ DetectorErrorModel &DetectorErrorModel::operator+=(const DetectorErrorModel &oth
 
     for (auto &e : other.instructions) {
         if (e.type == DEM_REPEAT_BLOCK) {
-            uint64_t repeat_count = e.target_data[0].data;
-            const DetectorErrorModel &block = other.blocks[e.target_data[1].data];
+            uint64_t repeat_count = e.repeat_block_rep_count();
+            const DetectorErrorModel &block = e.repeat_block_body(other);
             append_repeat_block(repeat_count, block);
         } else {
             append_dem_instruction(e);
@@ -835,8 +617,8 @@ std::pair<uint64_t, std::vector<double>> DetectorErrorModel::final_detector_and_
             vec_pad_add_mul(coord_shift, op.arg_data);
             detector_offset += op.target_data[0].data;
         } else if (op.type == DEM_REPEAT_BLOCK) {
-            const auto &block = blocks[op.target_data[1].data];
-            uint64_t reps = op.target_data[0].data;
+            const auto &block = op.repeat_block_body(*this);
+            uint64_t reps = op.repeat_block_rep_count();
             auto rec = block.final_detector_and_coord_shift();
             vec_pad_add_mul(coord_shift, rec.second, reps);
             detector_offset += reps * rec.first;
@@ -912,8 +694,8 @@ bool get_detector_coordinates_helper(
             }
 
         } else if (op.type == DEM_REPEAT_BLOCK) {
-            const auto &block = dem.blocks[op.target_data[1].data];
-            uint64_t reps = op.target_data[0].data;
+            const auto &block = op.repeat_block_body(dem);
+            uint64_t reps = op.repeat_block_rep_count();
 
             // TODO: Finish in time proportional to len(instructions) + len(desired) instead of len(execution).
             for (uint64_t k = 0; k < reps; k++) {

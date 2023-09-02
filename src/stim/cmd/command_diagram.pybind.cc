@@ -14,7 +14,9 @@
 
 #include "stim/cmd/command_diagram.pybind.h"
 
+#include "stim/arg_parse.h"
 #include "stim/cmd/command_help.h"
+#include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/base64.h"
 #include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
@@ -143,6 +145,58 @@ DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std:
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }
 }
+
+CoordFilter item_to_filter_single(const pybind11::handle &obj) {
+    if (pybind11::isinstance<ExposedDemTarget>(obj)) {
+        CoordFilter filter;
+        filter.exact_target = pybind11::cast<ExposedDemTarget>(obj).internal();
+        filter.use_target = true;
+        return filter;
+    }
+
+    try {
+        std::string text = pybind11::cast<std::string>(obj);
+        if (text.size() > 1 && text[0] == 'D') {
+            CoordFilter filter;
+            filter.exact_target = DemTarget::relative_detector_id(parse_exact_uint64_t_from_string(text.substr(1)));
+            filter.use_target = true;
+            return filter;
+        }
+        if (text.size() > 1 && text[0] == 'L') {
+            CoordFilter filter;
+            filter.exact_target = DemTarget::observable_id(parse_exact_uint64_t_from_string(text.substr(1)));
+            filter.use_target = true;
+            return filter;
+        }
+    } catch (const pybind11::cast_error &) {
+    } catch (const std::invalid_argument &) {
+    }
+
+    CoordFilter filter;
+    for (const auto &c : obj) {
+        filter.coordinates.push_back(pybind11::cast<double>(c));
+    }
+    return filter;
+}
+
+std::vector<CoordFilter> item_to_filter_multi(const pybind11::object &obj) {
+    if (obj.is_none()) {
+        return {CoordFilter{}};
+    }
+
+    try {
+        return {item_to_filter_single(obj)};
+    } catch (const pybind11::cast_error &) {
+    } catch (const std::invalid_argument &) {
+    }
+
+    std::vector<CoordFilter> filters;
+    for (const auto &filter_case : obj) {
+        filters.push_back(item_to_filter_single(filter_case));
+    }
+    return filters;
+}
+
 DiagramHelper stim_pybind::circuit_diagram(
     const Circuit &circuit,
     const std::string &type,
@@ -150,24 +204,9 @@ DiagramHelper stim_pybind::circuit_diagram(
     const pybind11::object &filter_coords_obj) {
     std::vector<CoordFilter> filter_coords;
     try {
-        if (filter_coords_obj.is_none()) {
-            filter_coords.push_back({});
-        } else {
-            for (const auto &filter_case : filter_coords_obj) {
-                CoordFilter filter;
-                if (pybind11::isinstance<DemTarget>(filter_case)) {
-                    filter.exact_target = pybind11::cast<DemTarget>(filter_case);
-                    filter.use_target = true;
-                } else {
-                    for (const auto &c : filter_case) {
-                        filter.coordinates.push_back(pybind11::cast<double>(c));
-                    }
-                }
-                filter_coords.push_back(std::move(filter));
-            }
-        }
+        filter_coords = item_to_filter_multi(filter_coords_obj);
     } catch (const std::exception &_) {
-        throw std::invalid_argument("filter_coords wasn't a list of list of floats.");
+        throw std::invalid_argument("filter_coords wasn't an Iterable[stim.DemTarget | Iterable[float]].");
     }
 
     uint64_t tick_min;
@@ -198,21 +237,22 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
-    } else if (type == "timeline-svg") {
+    } else if (type == "timeline-svg" || type == "timeline") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "time-slice-svg" || type == "timeslice-svg") {
+    } else if (type == "time-slice-svg" || type == "timeslice-svg" || type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "detslice-svg" || type == "detector-slice-svg") {
+    } else if (
+        type == "detslice-svg" || type == "detslice" || type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "detslice-with-ops-svg" || type == "time+detector-slice-svg") {
+    } else if (type == "detslice-with-ops" || type == "detslice-with-ops-svg" || type == "time+detector-slice-svg") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);

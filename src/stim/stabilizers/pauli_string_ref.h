@@ -127,6 +127,8 @@ struct PauliStringRef {
     PauliString<W> before(const Circuit &circuit) const;
     PauliString<W> before(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
     PauliString<W> before(const CircuitInstruction &operation) const;
+
+    size_t weight() const;
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

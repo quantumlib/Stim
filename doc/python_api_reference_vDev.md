@@ -185,6 +185,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
 - [`stim.GateData`](#stim.GateData)
+    - [`stim.GateData.__eq__`](#stim.GateData.__eq__)
+    - [`stim.GateData.__init__`](#stim.GateData.__init__)
+    - [`stim.GateData.__ne__`](#stim.GateData.__ne__)
+    - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
+    - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
     - [`stim.GateData.is_reset`](#stim.GateData.is_reset)
@@ -247,6 +252,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
     - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
+    - [`stim.PauliString.weight`](#stim.PauliString.weight)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -6437,6 +6443,74 @@ class GateData:
     """
 ```
 
+<a name="stim.GateData.__eq__"></a>
+```python
+# stim.GateData.__eq__
+
+# (in class stim.GateData)
+def __eq__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are identical.
+    """
+```
+
+<a name="stim.GateData.__init__"></a>
+```python
+# stim.GateData.__init__
+
+# (in class stim.GateData)
+def __init__(
+    self,
+    name: str,
+) -> None:
+    """Finds gate data for the named gate.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateData('H').is_unitary
+        True
+    """
+```
+
+<a name="stim.GateData.__ne__"></a>
+```python
+# stim.GateData.__ne__
+
+# (in class stim.GateData)
+def __ne__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are not identical.
+    """
+```
+
+<a name="stim.GateData.__repr__"></a>
+```python
+# stim.GateData.__repr__
+
+# (in class stim.GateData)
+def __repr__(
+    self,
+) -> str:
+    """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
+    """
+```
+
+<a name="stim.GateData.__str__"></a>
+```python
+# stim.GateData.__str__
+
+# (in class stim.GateData)
+def __str__(
+    self,
+) -> str:
+    """Returns text describing the gate data.
+    """
+```
+
 <a name="stim.GateData.aliases"></a>
 ```python
 # stim.GateData.aliases
@@ -8476,6 +8550,30 @@ def to_unitary_matrix(
                [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
+    """
+```
+
+<a name="stim.PauliString.weight"></a>
+```python
+# stim.PauliString.weight
+
+# (in class stim.PauliString)
+@property
+def weight(
+    self,
+) -> int:
+    """Returns the number of non-identity pauli terms in the pauli string.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("+___").weight
+        0
+        >>> stim.PauliString("+__X").weight
+        1
+        >>> stim.PauliString("+XYZ").weight
+        3
+        >>> stim.PauliString("-XXX___XXYZ").weight
+        7
     """
 ```
 
@@ -12510,8 +12608,8 @@ def gate_data(
         >>> stim.gate_data('cnot').is_two_qubit_gate
         True
         >>> gate_dict = stim.gate_data()
-        >>> len(gate_dict)
-        65
+        >>> len(gate_dict) > 50
+        True
         >>> gate_dict['MX'].produces_measurements
         True
     """

@@ -42,6 +42,7 @@ These notes generally assume you are on a Linux system.
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
 - [adding new c++ files](#newfile)
+- [adding new CLI commands](#newcmd)
 
 # <a name="compatibility"></a>Compatibility guarantees across versions
 
@@ -695,3 +696,9 @@ find src | grep "\.\(cc\|h\)$" | grep -Pv "crumble_data.cc|gate_data_3d_texture_
 
 For the cmake build system, we maintain C++ file lists in the folder `file_lists`.
 When you add a new C++ file, they can be updated using `dev/regen_file_lists.sh`
+
+# <a name="newcmd"></a>Adding new CLI commands
+
+A [reference](usage_command_line.md) is maintained to document the CLI usage. This is generated using
+`dev/regen_docs.sh` which assumes the script is run from a virtualenv with
+a [dev wheel of stim](#python-packaging-stim) installed.

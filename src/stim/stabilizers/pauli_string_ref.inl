@@ -331,6 +331,15 @@ void PauliStringRef<W>::scatter_into(PauliStringRef<W> out, SpanRef<const size_t
 }
 
 template <size_t W>
+size_t PauliStringRef<W>::weight() const {
+    size_t total = 0;
+    xs.for_each_word(zs, [&](const simd_word<W> &w1, const simd_word<W> &w2) {
+       total += (w1 | w2).popcount();
+    });
+    return total;
+}
+
+template <size_t W>
 std::ostream &operator<<(std::ostream &out, const PauliStringRef<W> &ps) {
     out << "+-"[ps.sign];
     for (size_t k = 0; k < ps.num_qubits; k++) {

@@ -4886,6 +4886,39 @@ class GateData:
             ],
         )
     """
+    def __eq__(
+        self,
+        arg0: stim.GateData,
+    ) -> bool:
+        """Determines if two GateData instances are identical.
+        """
+    def __init__(
+        self,
+        name: str,
+    ) -> None:
+        """Finds gate data for the named gate.
+
+        Examples:
+            >>> import stim
+            >>> stim.GateData('H').is_unitary
+            True
+        """
+    def __ne__(
+        self,
+        arg0: stim.GateData,
+    ) -> bool:
+        """Determines if two GateData instances are not identical.
+        """
+    def __repr__(
+        self,
+    ) -> str:
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
+        """
+    def __str__(
+        self,
+    ) -> str:
+        """Returns text describing the gate data.
+        """
     @property
     def __unstable_flows(
         self,
@@ -6540,6 +6573,23 @@ class PauliString:
                    [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
                    [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                    [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
+        """
+    @property
+    def weight(
+        self,
+    ) -> int:
+        """Returns the number of non-identity pauli terms in the pauli string.
+
+        Examples:
+            >>> import stim
+            >>> stim.PauliString("+___").weight
+            0
+            >>> stim.PauliString("+__X").weight
+            1
+            >>> stim.PauliString("+XYZ").weight
+            3
+            >>> stim.PauliString("-XXX___XXYZ").weight
+            7
         """
 class Tableau:
     """A stabilizer tableau.
@@ -9741,8 +9791,8 @@ def gate_data(
         >>> stim.gate_data('cnot').is_two_qubit_gate
         True
         >>> gate_dict = stim.gate_data()
-        >>> len(gate_dict)
-        65
+        >>> len(gate_dict) > 50
+        True
         >>> gate_dict['MX'].produces_measurements
         True
     """

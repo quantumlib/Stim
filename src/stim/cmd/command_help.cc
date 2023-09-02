@@ -21,6 +21,7 @@
 #include <set>
 #include <stim/circuit/circuit.h>
 
+#include "command_convert.h"
 #include "command_detect.h"
 #include "command_diagram.h"
 #include "command_explain_errors.h"
@@ -90,6 +91,7 @@ std::vector<SubCommandHelp> make_sub_command_help() {
     help_help.description = "Prints helpful information about using stim.";
     auto result = std::vector<SubCommandHelp>{
         command_analyze_errors_help(),
+        command_convert_help(),
         command_detect_help(),
         command_diagram_help(),
         command_explain_errors_help(),

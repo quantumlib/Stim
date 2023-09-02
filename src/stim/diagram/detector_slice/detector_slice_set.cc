@@ -98,6 +98,14 @@ std::ostream &stim_draw_internal::operator<<(std::ostream &out, const DetectorSl
     slice.write_text_diagram_to(out);
     return out;
 }
+std::ostream &stim_draw_internal::operator<<(std::ostream &out, const CoordFilter &filter) {
+    if (filter.use_target) {
+        out << filter.exact_target;
+    } else {
+        out << comma_sep(filter.coordinates);
+    }
+    return out;
+}
 
 void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
     DiagramTimelineAsciiDrawer drawer(num_qubits, false);

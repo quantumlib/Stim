@@ -28,8 +28,8 @@ TEST(sparse_xor_table, inplace_xor) {
     SparseXorVec<uint32_t> v2;
     v1.xor_item(1);
     v1.xor_item(3);
-    v2.xor_item(2);
     v2.xor_item(3);
+    v2.xor_item(2);
     ASSERT_EQ(v1.sorted_items, (std::vector<uint32_t>{1, 3}));
     ASSERT_EQ(v2.sorted_items, (std::vector<uint32_t>{2, 3}));
     v1 ^= v2;

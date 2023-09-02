@@ -764,7 +764,7 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
-            if (op.gate_type == GateType::HERALDED_ERASE) {
+            if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
                 // Replace heralded errors with fixed MPAD.
                 result.target_buf.ensure_available(op.targets.size());
                 auto &tail = result.target_buf.tail;
@@ -796,7 +796,7 @@ Circuit Circuit::without_noise() const {
     for (const auto &op : operations) {
         auto flags = GATE_DATA.items[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
-            if (op.gate_type == GateType::HERALDED_ERASE) {
+            if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
                 // Replace heralded errors with fixed MPAD.
                 result.target_buf.ensure_available(op.targets.size());
                 auto &tail = result.target_buf.tail;

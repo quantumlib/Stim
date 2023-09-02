@@ -302,7 +302,32 @@ def _stim_append_dense_pauli_string_gate(
 def _stim_append_asymmetric_depolarizing_channel(
     c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int]
 ):
-    c.append_operation("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z])
+    if cirq.num_qubits(g) == 1:
+        c.append_operation("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z])
+    elif cirq.num_qubits(g) == 2:
+        c.append_operation(
+            "PAULI_CHANNEL_2",
+            t,
+            [
+                g.error_probabilities.get('IX', 0),
+                g.error_probabilities.get('IY', 0),
+                g.error_probabilities.get('IZ', 0),
+                g.error_probabilities.get('XI', 0),
+                g.error_probabilities.get('XX', 0),
+                g.error_probabilities.get('XY', 0),
+                g.error_probabilities.get('XZ', 0),
+                g.error_probabilities.get('YI', 0),
+                g.error_probabilities.get('YX', 0),
+                g.error_probabilities.get('YY', 0),
+                g.error_probabilities.get('YZ', 0),
+                g.error_probabilities.get('ZI', 0),
+                g.error_probabilities.get('ZX', 0),
+                g.error_probabilities.get('ZY', 0),
+                g.error_probabilities.get('ZZ', 0),
+            ]
+        )
+    else:
+        raise NotImplementedError(f'cirq-to-stim gate {g!r}')
 
 
 def _stim_append_depolarizing_channel(c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int]):

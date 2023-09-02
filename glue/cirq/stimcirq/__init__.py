@@ -1,4 +1,4 @@
-__version__ = '1.12.dev0'
+__version__ = '1.13.dev0'
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
 from ._det_annotation import DetAnnotation
@@ -8,9 +8,9 @@ from ._stim_sampler import StimSampler
 from ._stim_to_cirq import (
     MeasureAndOrResetGate,
     stim_circuit_to_cirq_circuit,
-    TwoQubitAsymmetricDepolarizingChannel,
 )
 from ._sweep_pauli import SweepPauli
+from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
 
 JSON_RESOLVERS_DICT = {
     "CumulativeObservableAnnotation": CumulativeObservableAnnotation,

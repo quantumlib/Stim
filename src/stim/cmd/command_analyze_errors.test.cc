@@ -130,7 +130,7 @@ M 0
 DETECTOR rec[-1]
             )input")),
         trim(R"output(
-error(0.3125) D0
+error(0.375) D0
             )output"));
 
     ASSERT_EQ(
@@ -145,9 +145,9 @@ DETECTOR rec[-1]
 [stderr=)OUTPUT"
             "\x1B"
             R"OUTPUT([31mEncountered the operation PAULI_CHANNEL_1 during error analysis, but this operation requires the `approximate_disjoint_errors` option to be enabled.
-If you're' calling from python, using stim.Circuit.detector_error_model, you need to add the argument approximate_disjoint_errors=True.
+If you're calling from python, using stim.Circuit.detector_error_model, you need to add the argument approximate_disjoint_errors=True.
 
-If you're' calling from the command line, you need to specify --approximate_disjoint_errors.
+If you're calling from the command line, you need to specify --approximate_disjoint_errors.
 
 Circuit stack trace:
     at instruction #2 [which is PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0]
@@ -159,7 +159,7 @@ Circuit stack trace:
     ASSERT_EQ(
         trim(run_captured_stim_main({"--analyze_errors", "--approximate_disjoint_errors", "0.3"}, R"input(
 R 0
-PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
+PAULI_CHANNEL_1(0.0, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
@@ -167,10 +167,10 @@ DETECTOR rec[-1]
             R"OUTPUT(
 [stderr=)OUTPUT"
             "\x1B"
-            R"OUTPUT([31mPAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.
+            R"OUTPUT([31mPAULI_CHANNEL_1 has a probability argument (0.375) larger than the `approximate_disjoint_errors` threshold (0.3).
 
 Circuit stack trace:
-    at instruction #2 [which is PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0]
+    at instruction #2 [which is PAULI_CHANNEL_1(0, 0.25, 0.375) 0]
 )OUTPUT"
             "\x1B"
             R"OUTPUT([0m]
