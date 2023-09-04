@@ -25,11 +25,10 @@
 using namespace stim;
 using namespace stim_pybind;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::shared_ptr<std::mt19937_64> init_prng)
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19937_64 &&rng)
     : circuit_stats(init_circuit.compute_stats()),
       circuit(std::move(init_circuit)),
-      prng(init_prng),
-      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, *prng) {
+      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, std::move(rng)) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -40,7 +39,8 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
     }
 
     frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
 
     const auto &det_data = frame_sim.det_record.storage;
     const auto &obs_data = frame_sim.obs_record;
@@ -84,7 +84,7 @@ void CompiledDetectorSampler::sample_write(
         append_observables,
         out.f,
         f,
-        *prng,
+        frame_sim.rng,
         obs_out.f,
         parsed_obs_out_format);
 }

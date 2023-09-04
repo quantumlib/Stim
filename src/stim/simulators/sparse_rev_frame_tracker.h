@@ -42,7 +42,15 @@ struct SparseUnsignedRevFrameTracker {
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
 
-    PauliString<MAX_BITWORD_WIDTH> current_error_sensitivity_for(DemTarget target) const;
+    template <size_t W>
+    PauliString<W> current_error_sensitivity_for(DemTarget target) const {
+        PauliString<W> result(xs.size());
+        for (size_t q = 0; q < xs.size(); q++) {
+            result.xs[q] = std::find(xs[q].begin(), xs[q].end(), target) != xs[q].end();
+            result.zs[q] = std::find(zs[q].begin(), zs[q].end(), target) != zs[q].end();
+        }
+        return result;
+    }
 
     void undo_gate(const CircuitInstruction &data);
     void undo_gate(const CircuitInstruction &op, const Circuit &parent);
@@ -99,7 +107,51 @@ struct SparseUnsignedRevFrameTracker {
     void undo_ISWAP(const CircuitInstruction &inst);
     void undo_CXSWAP(const CircuitInstruction &inst);
     void undo_SWAPCX(const CircuitInstruction &inst);
-    void undo_tableau(const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets);
+
+    template <size_t W>
+    void undo_tableau(const Tableau<W> &tableau, SpanRef<const uint32_t> targets) {
+        size_t n = tableau.num_qubits;
+        if (n != targets.size()) {
+            throw new std::invalid_argument("tableau.num_qubits != targets.size()");
+        }
+        std::set<uint32_t> target_set;
+        for (size_t k = 0; k < n; k++) {
+            if (!target_set.insert(targets[k]).second) {
+                throw new std::invalid_argument("duplicate target");
+            }
+        }
+
+        std::vector<SparseXorVec<DemTarget>> old_xs;
+        std::vector<SparseXorVec<DemTarget>> old_zs;
+        old_xs.reserve(n);
+        old_zs.reserve(n);
+        for (size_t k = 0; k < n; k++) {
+            old_xs.push_back(std::move(xs[targets[k]]));
+            old_zs.push_back(std::move(zs[targets[k]]));
+            xs[targets[k]].clear();
+            zs[targets[k]].clear();
+        }
+
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
+                uint64_t px = tableau.inverse_x_output_pauli_xyz(j, i);
+                if (px == 1 || px == 2) {
+                    xs[targets[i]] ^= old_xs[j];
+                }
+                if (px == 2 || px == 3) {
+                    zs[targets[i]] ^= old_xs[j];
+                }
+
+                uint64_t pz = tableau.inverse_z_output_pauli_xyz(j, i);
+                if (pz == 1 || pz == 2) {
+                    xs[targets[i]] ^= old_zs[j];
+                }
+                if (pz == 2 || pz == 3) {
+                    zs[targets[i]] ^= old_zs[j];
+                }
+            }
+        }
+    }
 
     bool is_shifted_copy(const SparseUnsignedRevFrameTracker &other) const;
     void shift(int64_t measurement_offset, int64_t detector_offset);

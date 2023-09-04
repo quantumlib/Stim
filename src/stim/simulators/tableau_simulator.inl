@@ -24,7 +24,7 @@
 namespace stim {
 
 template <size_t W>
-TableauSimulator<W>::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
+TableauSimulator<W>::TableauSimulator(std::mt19937_64 &&rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau<W>::identity(num_qubits)),
       rng(std::move(rng)),
       sign_bias(sign_bias),
@@ -33,7 +33,7 @@ TableauSimulator<W>::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, in
 }
 
 template <size_t W>
-TableauSimulator<W>::TableauSimulator(const TableauSimulator<W> &other, std::mt19937_64 rng)
+TableauSimulator<W>::TableauSimulator(const TableauSimulator<W> &other, std::mt19937_64 &&rng)
     : inv_state(other.inv_state),
       rng(std::move(rng)),
       sign_bias(other.sign_bias),
@@ -118,6 +118,85 @@ void TableauSimulator<W>::postselect_helper(
             }
             msg << "[failed here])\n";
         }
+        throw std::invalid_argument(msg.str());
+    }
+}
+
+template <size_t W>
+uint32_t TableauSimulator<W>::try_isolate_observable_to_qubit_z(PauliStringRef<W> observable, bool undo) {
+    uint32_t pivot = UINT32_MAX;
+    for (uint32_t k = 0; k < observable.num_qubits; k++) {
+        uint8_t p = observable.xs[k] + observable.zs[k] * 2;
+        if (p) {
+            if (pivot == UINT32_MAX) {
+                pivot = k;
+                if (!undo) {
+                    if (p == 1) {
+                        inv_state.prepend_H_XZ(pivot);
+                    } else if (p == 3) {
+                        inv_state.prepend_H_YZ(pivot);
+                    }
+                    if (observable.sign) {
+                        inv_state.prepend_X(pivot);
+                    }
+                }
+            } else {
+                if (p == 1) {
+                    inv_state.prepend_XCX(pivot, k);
+                } else if (p == 2) {
+                    inv_state.prepend_XCZ(pivot, k);
+                } else if (p == 3) {
+                    inv_state.prepend_XCY(pivot, k);
+                }
+            }
+        }
+    }
+    if (undo && pivot != UINT32_MAX) {
+        uint8_t p = observable.xs[pivot] + observable.zs[pivot] * 2;
+        if (observable.sign) {
+            inv_state.prepend_X(pivot);
+        }
+        if (p == 1) {
+            inv_state.prepend_H_XZ(pivot);
+        } else if (p == 3) {
+            inv_state.prepend_H_YZ(pivot);
+        }
+    }
+    return pivot;
+}
+
+template <size_t W>
+void TableauSimulator<W>::postselect_observable(
+    PauliStringRef<W> observable,
+    bool desired_result) {
+    ensure_large_enough_for_qubits(observable.num_qubits);
+
+    uint32_t pivot = try_isolate_observable_to_qubit_z(observable, false);
+    int8_t expected;
+    if (pivot != UINT32_MAX) {
+        expected = peek_z(pivot);
+    } else {
+        expected = observable.sign ? -1 : +1;
+    }
+    if (desired_result) {
+        expected *= -1;
+    }
+
+    if (expected != -1 && pivot != UINT32_MAX) {
+        GateTarget t{pivot};
+        postselect_z(&t, desired_result);
+    }
+    try_isolate_observable_to_qubit_z(observable, true);
+
+    if (expected == -1) {
+        std::stringstream msg;
+        msg << "It's impossible to postselect into the ";
+        msg << (desired_result ? "-1" : "+1");
+        msg << " eigenstate of ";
+        msg << observable;
+        msg << " because the system is deterministically in the ";
+        msg << (desired_result ? "+1" : "-1");
+        msg << " eigenstate.";
         throw std::invalid_argument(msg.str());
     }
 }
@@ -906,6 +985,29 @@ void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    size_t offset = measurement_record.storage.size();
+    measurement_record.storage.insert(measurement_record.storage.end(), nt, false);
+
+    double hi = inst.args[0];
+    double hx = inst.args[1];
+    double hy = inst.args[2];
+    double hz = inst.args[3];
+    double ht = std::min(1.0, hi + hx + hy + hz);
+    std::array<double, 3> conditionals{hx, hy, hz};
+    if (ht != 0) {
+        conditionals[0] /= ht;
+        conditionals[1] /= ht;
+        conditionals[2] /= ht;
+    }
+    RareErrorIterator::for_samples(ht, nt, rng, [&](size_t target) {
+        measurement_record.storage[offset + target] = true;
+        do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target]});
+    });
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_X_ERROR(const CircuitInstruction &target_data) {
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.zs.signs[q.data] ^= true;
@@ -1619,6 +1721,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::HERALDED_ERASE:
             do_HERALDED_ERASE(inst);
+            break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            do_HERALDED_PAULI_CHANNEL_1(inst);
             break;
         default:
             throw std::invalid_argument(

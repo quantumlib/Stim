@@ -55,11 +55,57 @@ class WorkIn:
 
 
 def auto_dem(circuit: 'stim.Circuit') -> 'stim.DetectorErrorModel':
+    """Converts a circuit into a detector error model, with some fallbacks.
+
+    First attempts to do it with folding and decomposition, then tries
+    giving up on the folding, then tries giving up on the decomposition.
+    """
+    try:
+        return circuit.detector_error_model(
+            allow_gauge_detectors=False,
+            approximate_disjoint_errors=True,
+            block_decomposition_from_introducing_remnant_edges=False,
+            decompose_errors=True,
+            flatten_loops=False,
+            ignore_decomposition_failures=False,
+        )
+    except ValueError:
+        pass
+
+    # This might be https://github.com/quantumlib/Stim/issues/393
+    # Try turning off loop flattening.
+    try:
+        return circuit.detector_error_model(
+            allow_gauge_detectors=False,
+            approximate_disjoint_errors=True,
+            block_decomposition_from_introducing_remnant_edges=False,
+            decompose_errors=True,
+            flatten_loops=False,
+            ignore_decomposition_failures=False,
+        )
+    except ValueError:
+        pass
+
+    # Maybe decomposition is impossible, but the decoder might not need it.
+    # Try turning off error decomposition.
+    try:
+        return circuit.detector_error_model(
+            allow_gauge_detectors=False,
+            approximate_disjoint_errors=True,
+            block_decomposition_from_introducing_remnant_edges=False,
+            decompose_errors=False,
+            flatten_loops=True,
+            ignore_decomposition_failures=False,
+        )
+    except ValueError:
+        pass
+
+    # Okay turn them both off...
     return circuit.detector_error_model(
         allow_gauge_detectors=False,
         approximate_disjoint_errors=True,
         block_decomposition_from_introducing_remnant_edges=False,
-        decompose_errors=True,
+        decompose_errors=False,
         flatten_loops=True,
         ignore_decomposition_failures=False,
     )

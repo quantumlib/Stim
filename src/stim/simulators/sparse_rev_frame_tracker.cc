@@ -26,18 +26,6 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::OBSERVABLE_INCLUDE:
             undo_OBSERVABLE_INCLUDE(inst);
             break;
-        case GateType::TICK:
-            undo_I(inst);
-            break;
-        case GateType::QUBIT_COORDS:
-            undo_I(inst);
-            break;
-        case GateType::SHIFT_COORDS:
-            undo_I(inst);
-            break;
-        case GateType::REPEAT:
-            undo_I(inst);
-            break;
         case GateType::MX:
             undo_MX(inst);
             break;
@@ -95,104 +83,14 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             undo_ZCZ(inst);
             break;
-        case GateType::H:
-            undo_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            undo_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            undo_H_YZ(inst);
-            break;
-        case GateType::DEPOLARIZE1:
-            undo_I(inst);
-            break;
-        case GateType::DEPOLARIZE2:
-            undo_I(inst);
-            break;
-        case GateType::X_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::Y_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::Z_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::PAULI_CHANNEL_1:
-            undo_I(inst);
-            break;
-        case GateType::PAULI_CHANNEL_2:
-            undo_I(inst);
-            break;
-        case GateType::E:
-            undo_I(inst);
-            break;
-        case GateType::ELSE_CORRELATED_ERROR:
-            undo_I(inst);
-            break;
-        case GateType::I:
-            undo_I(inst);
-            break;
-        case GateType::X:
-            undo_I(inst);
-            break;
-        case GateType::Y:
-            undo_I(inst);
-            break;
-        case GateType::Z:
-            undo_I(inst);
-            break;
         case GateType::C_XYZ:
             undo_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
             undo_C_ZYX(inst);
             break;
-        case GateType::SQRT_X:
-            undo_H_YZ(inst);
-            break;
-        case GateType::SQRT_X_DAG:
-            undo_H_YZ(inst);
-            break;
-        case GateType::SQRT_Y:
-            undo_H_XZ(inst);
-            break;
-        case GateType::SQRT_Y_DAG:
-            undo_H_XZ(inst);
-            break;
-        case GateType::S:
-            undo_H_XY(inst);
-            break;
-        case GateType::S_DAG:
-            undo_H_XY(inst);
-            break;
-        case GateType::SQRT_XX:
-            undo_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_XX_DAG:
-            undo_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_YY:
-            undo_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_YY_DAG:
-            undo_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_ZZ:
-            undo_SQRT_ZZ(inst);
-            break;
-        case GateType::SQRT_ZZ_DAG:
-            undo_SQRT_ZZ(inst);
-            break;
         case GateType::SWAP:
             undo_SWAP(inst);
-            break;
-        case GateType::ISWAP:
-            undo_ISWAP(inst);
-            break;
-        case GateType::ISWAP_DAG:
-            undo_ISWAP(inst);
             break;
         case GateType::CXSWAP:
             undo_CXSWAP(inst);
@@ -209,12 +107,71 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::MZZ:
             undo_MZZ(inst);
             break;
+
+        case GateType::SQRT_XX:
+        case GateType::SQRT_XX_DAG:
+            undo_SQRT_XX(inst);
+            break;
+
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+            undo_SQRT_YY(inst);
+            break;
+
+        case GateType::SQRT_ZZ:
+        case GateType::SQRT_ZZ_DAG:
+            undo_SQRT_ZZ(inst);
+            break;
+
+        case GateType::SQRT_X:
+        case GateType::SQRT_X_DAG:
+        case GateType::H_YZ:
+            undo_H_YZ(inst);
+            break;
+
+        case GateType::SQRT_Y:
+        case GateType::SQRT_Y_DAG:
+        case GateType::H:
+            undo_H_XZ(inst);
+            break;
+
+        case GateType::S:
+        case GateType::S_DAG:
+        case GateType::H_XY:
+            undo_H_XY(inst);
+            break;
+
+        case GateType::ISWAP:
+        case GateType::ISWAP_DAG:
+            undo_ISWAP(inst);
+            break;
+
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::REPEAT:
+        case GateType::DEPOLARIZE1:
+        case GateType::DEPOLARIZE2:
+        case GateType::X_ERROR:
+        case GateType::Y_ERROR:
+        case GateType::Z_ERROR:
+        case GateType::PAULI_CHANNEL_1:
+        case GateType::PAULI_CHANNEL_2:
+        case GateType::E:
+        case GateType::ELSE_CORRELATED_ERROR:
+        case GateType::X:
+        case GateType::Y:
+        case GateType::Z:
+        case GateType::I:
+            undo_I(inst);
+            break;
+
         case GateType::MPAD:
-            undo_MPAD(inst);
-            break;
         case GateType::HERALDED_ERASE:
+        case GateType::HERALDED_PAULI_CHANNEL_1:
             undo_MPAD(inst);
             break;
+
         default:
             throw std::invalid_argument(
                 "Not implemented by SparseUnsignedRevFrameTracker::undo_gate: " +
@@ -229,15 +186,6 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       rec_bits(),
       num_measurements_in_past(num_measurements_in_past),
       num_detectors_in_past(num_detectors_in_past) {
-}
-
-PauliString<MAX_BITWORD_WIDTH> SparseUnsignedRevFrameTracker::current_error_sensitivity_for(DemTarget target) const {
-    PauliString<MAX_BITWORD_WIDTH> result(xs.size());
-    for (size_t q = 0; q < xs.size(); q++) {
-        result.xs[q] = std::find(xs[q].begin(), xs[q].end(), target) != xs[q].end();
-        result.zs[q] = std::find(zs[q].begin(), zs[q].end(), target) != zs[q].end();
-    }
-    return result;
 }
 
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
@@ -787,51 +735,6 @@ void SparseUnsignedRevFrameTracker::undo_ISWAP(const CircuitInstruction &dat) {
         zs[b] ^= xs[b];
         std::swap(xs[a], xs[b]);
         std::swap(zs[a], zs[b]);
-    }
-}
-
-void SparseUnsignedRevFrameTracker::undo_tableau(
-    const Tableau<MAX_BITWORD_WIDTH> &tableau, SpanRef<const uint32_t> targets) {
-    size_t n = tableau.num_qubits;
-    if (n != targets.size()) {
-        throw new std::invalid_argument("tableau.num_qubits != targets.size()");
-    }
-    std::set<uint32_t> target_set;
-    for (size_t k = 0; k < n; k++) {
-        if (!target_set.insert(targets[k]).second) {
-            throw new std::invalid_argument("duplicate target");
-        }
-    }
-
-    std::vector<SparseXorVec<DemTarget>> old_xs;
-    std::vector<SparseXorVec<DemTarget>> old_zs;
-    old_xs.reserve(n);
-    old_zs.reserve(n);
-    for (size_t k = 0; k < n; k++) {
-        old_xs.push_back(std::move(xs[targets[k]]));
-        old_zs.push_back(std::move(zs[targets[k]]));
-        xs[targets[k]].clear();
-        zs[targets[k]].clear();
-    }
-
-    for (size_t i = 0; i < n; i++) {
-        for (size_t j = 0; j < n; j++) {
-            uint64_t px = tableau.inverse_x_output_pauli_xyz(j, i);
-            if (px == 1 || px == 2) {
-                xs[targets[i]] ^= old_xs[j];
-            }
-            if (px == 2 || px == 3) {
-                zs[targets[i]] ^= old_xs[j];
-            }
-
-            uint64_t pz = tableau.inverse_z_output_pauli_xyz(j, i);
-            if (pz == 1 || pz == 2) {
-                xs[targets[i]] ^= old_zs[j];
-            }
-            if (pz == 2 || pz == 3) {
-                zs[targets[i]] ^= old_zs[j];
-            }
-        }
     }
 }
 

@@ -17,7 +17,7 @@ from setuptools import setup
 with open('README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
-__version__ = '1.12.dev0'
+__version__ = '1.13.dev0'
 
 setup(
     name='stimzx',
@@ -32,6 +32,6 @@ setup(
     long_description_content_type='text/markdown',
     python_requires='>=3.6.0',
     data_files=['README.md'],
-    install_requires=['stim', 'networkx~=2.0'],
+    install_requires=['stim', 'networkx~=3.0'],
     tests_require=['pytest', 'python3-distutils'],
 )

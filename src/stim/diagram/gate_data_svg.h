@@ -17,6 +17,7 @@
 #ifndef _STIM_DIAGRAM_GATE_DATA_SVG_H
 #define _STIM_DIAGRAM_GATE_DATA_SVG_H
 
+#include <cstdint>
 #include <map>
 #include <string>
 

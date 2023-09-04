@@ -5,6 +5,7 @@ import tempfile
 import stim
 
 from sinter._worker import WorkIn, WorkOut, worker_loop
+from sinter._worker import auto_dem
 
 
 def test_worker_loop_infers_dem():
@@ -85,3 +86,49 @@ def test_worker_loop_does_not_recompute_dem():
         assert result.work_key == 'test1'
         assert result.msg_error is None
         assert result.strong_id == 'fake'
+
+
+def test_auto_dem():
+    assert auto_dem(stim.Circuit("""
+        REPEAT 100 {
+            CORRELATED_ERROR(0.125) X0 X1
+            CORRELATED_ERROR(0.125) X0 X1 X2 X3
+            MR 0 1 2 3
+            DETECTOR rec[-4]
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        }
+    """)) == stim.DetectorErrorModel("""
+        REPEAT 99 {
+            error(0.125) D0 D1
+            error(0.125) D0 D1 ^ D2 D3
+            shift_detectors 4
+        }
+        error(0.125) D0 D1
+        error(0.125) D0 D1 ^ D2 D3
+    """)
+
+    assert auto_dem(stim.Circuit("""
+        CORRELATED_ERROR(0.125) X0 X1
+        CORRELATED_ERROR(0.125) X0 X1 X2 X3
+        M 0 1 2 3
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    """)) == stim.DetectorErrorModel("""
+        error(0.125) D0 D1
+        error(0.125) D0 D1 ^ D2 D3
+    """)
+
+    assert auto_dem(stim.Circuit("""
+        CORRELATED_ERROR(0.125) X0 X1 X2 X3
+        M 0 1 2 3
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    """)) == stim.DetectorErrorModel("""
+        error(0.125) D0 D1 D2 D3
+    """)

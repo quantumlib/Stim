@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <sstream>
 
 #include "stim/search/graphlike/algo.h"
 #include "stim/search/hyper/edge.h"
@@ -26,7 +27,7 @@
 using namespace stim;
 using namespace stim::impl_search_hyper;
 
-DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState final_state) {
+DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState &&final_state) {
     DetectorErrorModel out;
     SearchState cur_state = std::move(final_state);
     while (true) {
@@ -97,11 +98,24 @@ DetectorErrorModel stim::find_undetectable_logical_error(
             }
             if (next.dets.empty()) {
                 assert(next.obs_mask.not_zero());  // Otherwise, it would have already been in back_map.
-                return backtrack_path(back_map, next);
+                return backtrack_path(back_map, std::move(next));
             }
             queue.push(std::move(next));
         }
     }
 
-    throw std::invalid_argument("Failed to find any logical errors.");
+    std::stringstream err_msg;
+    err_msg << "Failed to find any logical errors.";
+    if (graph.num_observables == 0) {
+        err_msg << "\n    WARNING: NO OBSERVABLES. The circuit or detector error model didn't define any observables, "
+                   "making it vacuously impossible to find a logical error.";
+    }
+    if (graph.nodes.size() == 0) {
+        err_msg << "\n    WARNING: NO DETECTORS. The circuit or detector error model didn't define any detectors.";
+    }
+    if (model.count_errors() == 0) {
+        err_msg << "\n    WARNING: NO ERRORS. The circuit or detector error model didn't include any errors, making it "
+                   "vacuously impossible to find a logical error.";
+    }
+    throw std::invalid_argument(err_msg.str());
 }

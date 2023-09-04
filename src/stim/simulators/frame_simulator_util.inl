@@ -22,8 +22,10 @@ namespace stim {
 template <size_t W>
 std::pair<simd_bit_table<W>, simd_bit_table<W>> sample_batch_detection_events(
     const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng) {
-    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, rng);
-    sim.reset_all_and_run(circuit);
+    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, std::move(rng));
+    sim.reset_all();
+    sim.do_circuit(circuit);
+    rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 
     return std::pair<simd_bit_table<W>, simd_bit_table<W>>{
         std::move(sim.det_record.storage),
@@ -125,7 +127,8 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
         throw std::out_of_range("Can't combine --prepend_observables, --append_observables, or --obs_out");
     }
 
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
 
     const auto &obs_data = frame_sim.obs_record;
     const auto &det_data = frame_sim.det_record.storage;
@@ -189,7 +192,8 @@ void rerun_frame_sim_in_memory_and_write_measurements_to_disk(
     size_t num_shots,
     FILE *out,
     SampleFormat format) {
-    frame_sim.reset_all_and_run(circuit);
+    frame_sim.reset_all();
+    frame_sim.do_circuit(circuit);
     const auto &measure_data = frame_sim.m_record.storage;
 
     write_table_data(
@@ -237,7 +241,7 @@ void sample_batch_detection_events_writing_results_to_disk(
         stats,
         streaming ? FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK : FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY,
         batch_size,
-        rng);
+        std::move(rng));  // Will copy rng state back out later.
 
     // Run the frame simulator until as many shots as requested have been written.
     simd_bit_table<W> out_concat_buf(0, 0);
@@ -275,6 +279,9 @@ void sample_batch_detection_events_writing_results_to_disk(
         }
         shots_left -= shots_performed;
     }
+
+    // Update input rng as if it was used directly, by moving the updated state out of the simulator.
+    rng = std::move(frame_sim.rng);
 }
 
 template <size_t W>
@@ -284,9 +291,11 @@ simd_bit_table<W> sample_batch_measurements(
     size_t num_samples,
     std::mt19937_64 &rng,
     bool transposed) {
-    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, rng);
-    sim.reset_all_and_run(circuit);
+    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, std::move(rng));
+    sim.reset_all();
+    sim.do_circuit(circuit);
     simd_bit_table<W> result = std::move(sim.m_record.storage);
+    rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 
     if (reference_sample.not_zero()) {
         result = transposed_vs_ref(num_samples, result, reference_sample);
@@ -337,7 +346,7 @@ void sample_batch_measurements_writing_results_to_disk(
         circuit.compute_stats(),
         streaming ? FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK : FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY,
         batch_size,
-        rng);
+        std::move(rng));  // Temporarily move rng into simulator.
 
     // Run the frame simulator until as many shots as requested have been written.
     size_t shots_left = num_shots;
@@ -352,6 +361,9 @@ void sample_batch_measurements_writing_results_to_disk(
         }
         shots_left -= shots_performed;
     }
+
+    // Update input rng as if it was used directly, by moving the updated state out of the simulator.
+    rng = std::move(frame_sim.rng);
 }
 
 }  // namespace stim

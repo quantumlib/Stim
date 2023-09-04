@@ -23,17 +23,19 @@
 using namespace stim;
 
 TEST(probability_util, sample_hit_indices_corner_cases) {
-    ASSERT_EQ(sample_hit_indices(0, 100000, SHARED_TEST_RNG()), (std::vector<size_t>{}));
-    ASSERT_EQ(sample_hit_indices(1, 10, SHARED_TEST_RNG()), (std::vector<size_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+    auto rng = INDEPENDENT_TEST_RNG();
+    ASSERT_EQ(sample_hit_indices(0, 100000, rng), (std::vector<size_t>{}));
+    ASSERT_EQ(sample_hit_indices(1, 10, rng), (std::vector<size_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
 }
 
 TEST(probability_util, sample_hit_indices) {
+    auto rng = INDEPENDENT_TEST_RNG();
     size_t num_buckets = 10000;
     size_t num_samples = 100000;
     double p = 0.001;
     std::vector<size_t> buckets(num_buckets, 0);
     for (size_t k = 0; k < num_samples; k++) {
-        for (auto bucket : sample_hit_indices(p, num_buckets, SHARED_TEST_RNG())) {
+        for (auto bucket : sample_hit_indices(p, num_buckets, rng)) {
             buckets[bucket] += 1;
         }
     }
@@ -48,11 +50,12 @@ TEST(probability_util, sample_hit_indices) {
 }
 
 TEST_EACH_WORD_SIZE_W(probability_util, biased_random, {
+    auto rng = INDEPENDENT_TEST_RNG();
     std::vector<float> probs{0, 0.01, 0.03, 0.1, 0.4, 0.49, 0.5, 0.6, 0.9, 0.99, 0.999, 1};
     simd_bits<W> data(1000000);
     size_t n = data.num_bits_padded();
     for (auto p : probs) {
-        biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), SHARED_TEST_RNG());
+        biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
         size_t t = 0;
         for (size_t k = 0; k < data.num_u64_padded(); k++) {
             t += popcnt64(data.u64[k]);

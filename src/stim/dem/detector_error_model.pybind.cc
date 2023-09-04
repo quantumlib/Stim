@@ -351,7 +351,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             auto &op = self.instructions[index];
             if (op.type == DEM_REPEAT_BLOCK) {
                 return pybind11::cast(
-                    ExposedDemRepeatBlock{op.target_data[0].data, self.blocks[op.target_data[1].data]});
+                    ExposedDemRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
             }
             ExposedDemInstruction result;
             result.targets.insert(result.targets.begin(), op.target_data.begin(), op.target_data.end());
@@ -996,8 +996,8 @@ void stim_pybind::pybind_detector_error_model_methods(
 
     c.def(
         "compile_sampler",
-        [](const DetectorErrorModel &self, const pybind11::object &seed) -> DemSampler {
-            return DemSampler(self, *make_py_seeded_rng(seed), 1024);
+        [](const DetectorErrorModel &self, const pybind11::object &seed) -> DemSampler<MAX_BITWORD_WIDTH> {
+            return DemSampler<MAX_BITWORD_WIDTH>(self, make_py_seeded_rng(seed), 1024);
         },
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),

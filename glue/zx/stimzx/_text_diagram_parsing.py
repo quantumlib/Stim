@@ -40,7 +40,8 @@ def text_diagram_to_networkx_graph(text_diagram: str, *, value_func: Callable[[s
         >>> _ = expected.add_edge(1, 2)
         >>> _ = expected.add_edge(2, 4)
         >>> _ = expected.add_edge(2, 4)
-        >>> nx.testing.assert_graphs_equal(actual, expected)
+        >>> nx.utils.graphs_equal(actual, expected)
+        True
 
     Returns:
         A networkx multi graph containing the graph from the text diagram. Nodes in the graph are integers (the ordering

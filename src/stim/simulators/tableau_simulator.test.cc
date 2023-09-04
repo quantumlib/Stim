@@ -42,7 +42,7 @@ struct OpDat {
 };
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, identity, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 1);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 1);
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
     s.do_MZ({GateType::Z, {}, qubit_targets({0})});
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
@@ -51,7 +51,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, identity, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, bit_flip, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 1);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 1);
     s.do_H_XZ(OpDat(0));
     s.do_SQRT_Z(OpDat(0));
     s.do_SQRT_Z(OpDat(0));
@@ -63,7 +63,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, bit_flip, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, identity2, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 2);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 2);
     s.do_MZ(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
     s.do_MZ(OpDat(1));
@@ -71,7 +71,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, identity2, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, bit_flip_2, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 2);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 2);
     s.do_H_XZ(OpDat(0));
     s.do_SQRT_Z(OpDat(0));
     s.do_SQRT_Z(OpDat(0));
@@ -83,7 +83,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, bit_flip_2, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, epr, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 2);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 2);
     s.do_H_XZ(OpDat(0));
     s.do_ZCX(OpDat({0, 1}));
     ASSERT_EQ(s.is_deterministic_z(0), false);
@@ -96,7 +96,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, epr, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, big_determinism, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 1000);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 1000);
     s.do_H_XZ(OpDat(0));
     s.do_H_YZ(OpDat(1));
     ASSERT_FALSE(s.is_deterministic_z(0));
@@ -114,7 +114,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, big_determinism, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, phase_kickback_consume_s_state, {
     for (size_t k = 0; k < 8; k++) {
-        auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 2);
+        auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 2);
         s.do_H_XZ(OpDat(1));
         s.do_SQRT_Z(OpDat(1));
         s.do_H_XZ(OpDat(0));
@@ -135,7 +135,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, phase_kickback_consume_s_state, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, phase_kickback_preserve_s_state, {
-    auto s = TableauSimulator<W>(SHARED_TEST_RNG(), 2);
+    auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 2);
 
     // Prepare S state.
     s.do_H_XZ(OpDat(1));
@@ -164,7 +164,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, phase_kickback_preserve_s_state, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, kickback_vs_stabilizer, {
-    auto sim = TableauSimulator<W>(SHARED_TEST_RNG(), 3);
+    auto sim = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 3);
     sim.do_H_XZ(OpDat(2));
     sim.do_ZCX(OpDat({2, 0}));
     sim.do_ZCX(OpDat({2, 1}));
@@ -184,7 +184,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, kickback_vs_stabilizer, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, s_state_distillation_low_depth, {
     for (size_t reps = 0; reps < 10; reps++) {
-        auto sim = TableauSimulator<W>(SHARED_TEST_RNG(), 9);
+        auto sim = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 9);
 
         std::vector<std::vector<uint8_t>> stabilizers = {
             {0, 1, 2, 3},
@@ -255,7 +255,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, s_state_distillation_low_depth, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, s_state_distillation_low_space, {
     for (size_t rep = 0; rep < 10; rep++) {
-        auto sim = TableauSimulator<W>(SHARED_TEST_RNG(), 5);
+        auto sim = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 5);
 
         std::vector<std::vector<uint8_t>> phasors = {
             {
@@ -307,8 +307,9 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, s_state_distillation_low_space, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, unitary_gates_consistent_with_tableau_data, {
-    auto t = Tableau<W>::random(10, SHARED_TEST_RNG());
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 10);
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto t = Tableau<W>::random(10, rng);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 10);
     for (const auto &gate : GATE_DATA.items) {
         if (!(gate.flags & GATE_IS_UNITARY)) {
             continue;
@@ -328,8 +329,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, unitary_gates_consistent_with_tableau_da
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, certain_errors_consistent_with_gates, {
-    TableauSimulator<W> sim1(SHARED_TEST_RNG(), 2);
-    TableauSimulator<W> sim2(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), 2);
+    TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), 2);
     GateTarget targets[]{GateTarget{0}};
     double p0 = 0.0;
     double p1 = 1.0;
@@ -356,18 +357,20 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, certain_errors_consistent_with_gates, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate, {
+    auto rng = INDEPENDENT_TEST_RNG();
     auto results = TableauSimulator<W>::sample_circuit(
         Circuit("H 0\n"
                 "CNOT 0 1\n"
                 "M 0\n"
                 "M 1\n"
                 "M 2\n"),
-        SHARED_TEST_RNG());
+        rng);
     ASSERT_EQ(results[0], results[1]);
     ASSERT_EQ(results[2], false);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate_reset, {
+    auto rng = INDEPENDENT_TEST_RNG();
     auto results = TableauSimulator<W>::sample_circuit(
         Circuit("X 0\n"
                 "M 0\n"
@@ -375,14 +378,15 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate_reset, {
                 "M 0\n"
                 "R 0\n"
                 "M 0\n"),
-        SHARED_TEST_RNG());
+        rng);
     ASSERT_EQ(results[0], true);
     ASSERT_EQ(results[1], false);
     ASSERT_EQ(results[2], false);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
-    TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 2);
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 2);
     VectorSimulator sim_vec(2);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -402,7 +406,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
     sim_vec.apply("ZCX", 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.inv_state = Tableau<W>::random(10, SHARED_TEST_RNG());
+    sim_tab.inv_state = Tableau<W>::random(10, rng);
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -412,13 +416,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector, {
-    auto v = TableauSimulator<W>(SHARED_TEST_RNG(), 0).to_state_vector(true);
+    auto v = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 0).to_state_vector(true);
     ASSERT_EQ(v.size(), 1);
     auto r = v[0].real();
     auto i = v[0].imag();
     ASSERT_LT(r * r + i * i - 1, 1e-4);
 
-    TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 3);
+    TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 3);
     auto sim_vec = sim_tab.to_vector_sim();
     VectorSimulator sim_vec2(3);
     sim_vec2.state = sim_tab.to_state_vector(true);
@@ -431,7 +435,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_endian, {
     sim_vec0.apply("H", 0);
     sim_vec2.apply("H", 2);
 
-    TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 3);
+    TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 3);
     sim_tab.do_H_XZ(OpDat(2));
 
     VectorSimulator cmp(3);
@@ -442,7 +446,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_endian, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_canonical, {
-    TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 3);
+    TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 3);
     sim_tab.do_H_XZ(OpDat(2));
     std::vector<float> expected;
 
@@ -464,7 +468,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_canonical, {
 template <size_t W>
 bool vec_sim_corroborates_measurement_process(
     const Tableau<W> &state, const std::vector<uint32_t> &measurement_targets) {
-    TableauSimulator<W> sim_tab(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 2);
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
     sim_tab.do_MZ(OpDat(measurement_targets));
@@ -483,20 +487,21 @@ bool vec_sim_corroborates_measurement_process(
 }
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measurement_vs_vector_sim, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t k = 0; k < 10; k++) {
-        auto state = Tableau<W>::random(2, SHARED_TEST_RNG());
+        auto state = Tableau<W>::random(2, rng);
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1}));
     }
     for (size_t k = 0; k < 10; k++) {
-        auto state = Tableau<W>::random(4, SHARED_TEST_RNG());
+        auto state = Tableau<W>::random(4, rng);
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {2, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1, 2, 3}));
     }
     {
-        auto state = Tableau<W>::random(12, SHARED_TEST_RNG());
+        auto state = Tableau<W>::random(12, rng);
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 1, 2, 3}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {0, 10, 11}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(state, {11, 5, 7}));
@@ -505,6 +510,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measurement_vs_vector_sim, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
+    auto rng = INDEPENDENT_TEST_RNG();
     simd_bits<W> expected(5);
 
     expected.clear();
@@ -516,7 +522,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -530,7 +536,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -544,7 +550,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -558,7 +564,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -572,7 +578,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -586,7 +592,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -603,12 +609,11 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
         CORRELATED_ERROR(1) X3 X4
         M 0 1 2 3 4
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     int hits[3]{};
     size_t n = 10000;
-    std::mt19937_64 rng(0);
     for (size_t k = 0; k < n; k++) {
         auto sample = TableauSimulator<W>::sample_circuit(
             Circuit(R"circuit(
@@ -628,6 +633,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, correlated_error, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
+    auto rng = INDEPENDENT_TEST_RNG();
+
     // Quantum controlling classical operation is not allowed.
     ASSERT_THROW(
         {
@@ -636,7 +643,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
             M 0
             CNOT 1 rec[-1]
         )circuit"),
-                SHARED_TEST_RNG());
+                rng);
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -646,7 +653,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
             M 0
             CY 1 rec[-1]
         )circuit"),
-                SHARED_TEST_RNG());
+                rng);
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -656,7 +663,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
             M 0
             YCZ rec[-1] 1
         )circuit"),
-                SHARED_TEST_RNG());
+                rng);
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -666,7 +673,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
             M 0
             XCZ rec[-1] 1
         )circuit"),
-                SHARED_TEST_RNG());
+                rng);
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -676,12 +683,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, quantum_cannot_control_classical, {
             M 0
             SWAP 1 rec[-1]
         )circuit"),
-                SHARED_TEST_RNG());
+                rng);
         },
         std::invalid_argument);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_can_control_quantum, {
+    auto rng = INDEPENDENT_TEST_RNG();
     simd_bits<W> expected(5);
     expected.clear();
     expected[0] = true;
@@ -693,7 +701,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_can_control_quantum, {
         CX rec[-1] 1
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
     ASSERT_EQ(
         TableauSimulator<W>::sample_circuit(
@@ -702,7 +710,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_can_control_quantum, {
         CY rec[-1] 1
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
     ASSERT_EQ(
         TableauSimulator<W>::sample_circuit(
@@ -711,7 +719,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_can_control_quantum, {
         XCZ 1 rec[-1]
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
     ASSERT_EQ(
         TableauSimulator<W>::sample_circuit(
@@ -720,11 +728,12 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_can_control_quantum, {
         YCZ 1 rec[-1]
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_control_cases, {
+    auto rng = INDEPENDENT_TEST_RNG();
     simd_bits<W> expected(5);
     expected.clear();
     expected[0] = true;
@@ -738,7 +747,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_control_cases, {
         H 1
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -751,7 +760,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_control_cases, {
         CY rec[-1] 1
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -764,7 +773,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_control_cases, {
         CX rec[-1] 1
         M 1
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 
     expected.clear();
@@ -784,19 +793,20 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, classical_control_cases, {
         CX rec[-1] 2
         M 1 2 3
     )circuit"),
-            SHARED_TEST_RNG()),
+            rng),
         expected);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mr_repeated_target, {
+    auto rng = INDEPENDENT_TEST_RNG();
     simd_bits<W> expected(2);
     expected[0] = true;
-    auto r = TableauSimulator<W>::sample_circuit(Circuit("X 0\nMR 0 0"), SHARED_TEST_RNG());
+    auto r = TableauSimulator<W>::sample_circuit(Circuit("X 0\nMR 0 0"), rng);
     ASSERT_EQ(r, expected);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, peek_bloch, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 3);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 3);
     ASSERT_EQ(sim.peek_bloch(0), PauliString<W>::from_str("+Z"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString<W>::from_str("+Z"));
     ASSERT_EQ(sim.peek_bloch(2), PauliString<W>::from_str("+Z"));
@@ -854,9 +864,10 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, peek_bloch, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, paulis, {
-    TableauSimulator<W> sim1(SHARED_TEST_RNG(), 500);
-    TableauSimulator<W> sim2(SHARED_TEST_RNG(), 500);
-    sim1.inv_state = Tableau<W>::random(500, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), 500);
+    TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), 500);
+    sim1.inv_state = Tableau<W>::random(500, rng);
     sim2.inv_state = sim1.inv_state;
 
     sim1.paulis(PauliString<W>(500));
@@ -874,9 +885,10 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, paulis, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits, {
-    TableauSimulator<W> sim1(SHARED_TEST_RNG(), 10);
-    TableauSimulator<W> sim2(SHARED_TEST_RNG(), 10);
-    sim1.inv_state = Tableau<W>::random(10, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), 10);
+    TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), 10);
+    sim1.inv_state = Tableau<W>::random(10, rng);
     sim2.inv_state = sim1.inv_state;
 
     sim1.set_num_qubits(20);
@@ -897,8 +909,9 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits_reduce_random, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 10);
-    sim.inv_state = Tableau<W>::random(10, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 10);
+    sim.inv_state = Tableau<W>::random(10, rng);
     sim.set_num_qubits(5);
     ASSERT_EQ(sim.inv_state.num_qubits, 5);
     ASSERT_TRUE(sim.inv_state.satisfies_invariants());
@@ -906,7 +919,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits_reduce_random, {
 
 template <size_t W>
 void scramble_stabilizers(TableauSimulator<W> &s) {
-    auto &rng = SHARED_TEST_RNG();
+    auto rng = INDEPENDENT_TEST_RNG();
     TableauTransposedRaii<W> tmp(s.inv_state);
     for (size_t i = 0; i < s.inv_state.num_qubits; i++) {
         for (size_t j = i + 1; j < s.inv_state.num_qubits; j++) {
@@ -927,7 +940,7 @@ void scramble_stabilizers(TableauSimulator<W> &s) {
 }
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, canonical_stabilizers, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 2);
     sim.do_H_XZ(OpDat(0));
     sim.do_ZCX(OpDat({0, 1}));
     ASSERT_EQ(
@@ -969,8 +982,9 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, canonical_stabilizers, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, canonical_stabilizers_random, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
-    sim.inv_state = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
+    sim.inv_state = Tableau<W>::random(4, rng);
     auto s1 = sim.canonical_stabilizers();
     scramble_stabilizers<W>(sim);
     auto s2 = sim.canonical_stabilizers();
@@ -978,9 +992,9 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, canonical_stabilizers_random, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers, {
-    auto &rng = SHARED_TEST_RNG();
-    TableauSimulator<W> sim(rng, 4);
-    sim.inv_state = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
+    sim.inv_state = Tableau<W>::random(4, rng);
     auto s1 = sim.canonical_stabilizers();
     sim.inv_state.expand(8, 1.0);
     scramble_stabilizers<W>(sim);
@@ -990,7 +1004,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, set_num_qubits_reduce_preserves_scramble
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_z, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
     sim.do_H_XZ(OpDat({0, 2}));
     sim.do_ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_z(GateTarget::qubit(1));
@@ -1009,7 +1023,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_z, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_x, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
     sim.do_H_XZ(OpDat({0, 2}));
     sim.do_ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_x(GateTarget::qubit(1));
@@ -1028,7 +1042,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_x, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_y, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
     sim.do_H_XZ(OpDat({0, 2}));
     sim.do_ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_y(GateTarget::qubit(1));
@@ -1047,8 +1061,9 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_y, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_isolates, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
-    sim.inv_state = Tableau<W>::random(4, SHARED_TEST_RNG());
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
+    sim.inv_state = Tableau<W>::random(4, rng);
     for (size_t k = 0; k < 4; k++) {
         auto result = sim.measure_kickback_z(GateTarget::qubit(k));
         for (size_t j = 0; j < result.second.num_qubits && j < k; j++) {
@@ -1059,9 +1074,10 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_kickback_isolates, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, collapse_isolate_completely, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t k = 0; k < 10; k++) {
-        TableauSimulator<W> sim(SHARED_TEST_RNG(), 6);
-        sim.inv_state = Tableau<W>::random(6, SHARED_TEST_RNG());
+        TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 6);
+        sim.inv_state = Tableau<W>::random(6, rng);
         {
             TableauTransposedRaii<W> tmp(sim.inv_state);
             sim.collapse_isolate_qubit_z(2, tmp);
@@ -1076,7 +1092,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, collapse_isolate_completely, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_pure, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 1);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 1);
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Z"));
     t.do_RY(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Y"));
@@ -1089,35 +1105,36 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_pure, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_random, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 5);
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 5);
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_RX(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+X"));
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_RY(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Y"));
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_RZ(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Z"));
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_MRX(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+X"));
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_MRY(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Y"));
 
-    t.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    t.inv_state = Tableau<W>::random(5, rng);
     t.do_MRZ(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString<W>::from_str("+Z"));
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_x_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_RX(OpDat(0));
@@ -1129,7 +1146,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_x_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_y_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_RY(OpDat(0));
@@ -1141,7 +1158,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_y_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_z_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_RZ(OpDat(0));
@@ -1153,7 +1170,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_z_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_x_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MX(OpDat(0));
@@ -1167,7 +1184,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_x_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_y_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MY(OpDat(0));
@@ -1181,7 +1198,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_y_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_z_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MZ(OpDat(0));
@@ -1195,7 +1212,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_z_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_x_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MRX(OpDat(0));
@@ -1208,7 +1225,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_x_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_y_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MRY(OpDat(0));
@@ -1221,7 +1238,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_y_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_z_entangled, {
-    TableauSimulator<W> t(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG(), 2);
     t.do_H_XZ(OpDat(0));
     t.do_ZCX(OpDat({0, 1}));
     t.do_MRZ(OpDat(0));
@@ -1234,13 +1251,14 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_reset_z_entangled, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, reset_vs_measurements, {
+    auto rng = INDEPENDENT_TEST_RNG();
     auto check = [&](const char *circuit, std::vector<bool> results) {
         simd_bits<W> ref(results.size());
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
         for (size_t reps = 0; reps < 5; reps++) {
-            simd_bits<W> t = TableauSimulator<W>::sample_circuit(Circuit(circuit), SHARED_TEST_RNG());
+            simd_bits<W> t = TableauSimulator<W>::sample_circuit(Circuit(circuit), rng);
             if (t != ref) {
                 return false;
             }
@@ -1406,7 +1424,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, sample_stream_mutates_rng_state, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_x, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RX 0
         REPEAT 10000 {
@@ -1435,7 +1453,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_x, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_y, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RY 0
         REPEAT 10000 {
@@ -1464,7 +1482,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_y, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_z, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RZ 0
         REPEAT 10000 {
@@ -1493,7 +1511,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measurement_z, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_x, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RX 0
         REPEAT 10000 {
@@ -1522,7 +1540,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_x, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_y, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RY 0 1
         REPEAT 5000 {
@@ -1551,7 +1569,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_y, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_z, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         RZ 0 1
         REPEAT 5000 {
@@ -1580,13 +1598,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_z, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_bad, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     ASSERT_THROW({ t.expand_do_circuit("MPP X0*X0"); }, std::invalid_argument);
     ASSERT_THROW({ t.expand_do_circuit("MPP X0*Z0"); }, std::invalid_argument);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_1, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         REPEAT 100 {
             RX 0
@@ -1601,7 +1619,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_1, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_4body, {
     for (size_t k = 0; k < 10; k++) {
-        TableauSimulator<W> t(SHARED_TEST_RNG());
+        TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
         t.expand_do_circuit(R"CIRCUIT(
             MPP X0*X1*X2*X3
             MX 0 1 2 3 4 5
@@ -1626,7 +1644,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_4body, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_epr, {
     for (size_t k = 0; k < 10; k++) {
-        TableauSimulator<W> t(SHARED_TEST_RNG());
+        TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
         t.expand_do_circuit(R"CIRCUIT(
             MPP X0*X1 Z0*Z1 Y0*Y1
             CNOT 0 1
@@ -1646,7 +1664,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_epr, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_inversions, {
     for (size_t k = 0; k < 10; k++) {
-        TableauSimulator<W> t(SHARED_TEST_RNG());
+        TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
         t.expand_do_circuit(R"CIRCUIT(
             MPP !X0*!X1 !X0*X1 X0*!X1 X0*X1 X0 X1 !X0 !X1
         )CIRCUIT");
@@ -1668,7 +1686,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_inversions, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_noisy, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         H 0
         CNOT 0 1
@@ -1684,7 +1702,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_noisy, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, ignores_sweep_controls, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         X 0
         CNOT sweep[0] 0
@@ -1694,7 +1712,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, ignores_sweep_controls, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, peek_observable_expectation, {
-    TableauSimulator<W> t(SHARED_TEST_RNG());
+    TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(
         H 0
         CNOT 0 1
@@ -1718,7 +1736,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, peek_observable_expectation, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_x, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 2);
 
     // Postselect from +X.
     sim.do_RX(OpDat(0));
@@ -1798,7 +1816,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_x, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_y, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 2);
 
     // Postselect from +X.
     sim.do_RX(OpDat(0));
@@ -1878,7 +1896,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_y, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_z, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 2);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 2);
 
     // Postselect from +X.
     sim.do_RX(OpDat(0));
@@ -1958,7 +1976,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_z, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, peek_x, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 3);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 3);
     ASSERT_EQ(sim.peek_x(0), 0);
     ASSERT_EQ(sim.peek_y(0), 0);
     ASSERT_EQ(sim.peek_z(0), +1);
@@ -2081,7 +2099,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, apply_tableau, {
     auto h = GATE_DATA.at("H").tableau<W>();
     auto cxyz = GATE_DATA.at("C_XYZ").tableau<W>();
 
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
     sim.apply_tableau(h, {1});
     ASSERT_EQ(sim.peek_bloch(1), PauliString<W>::from_str("+X"));
     sim.apply_tableau(s, {1});
@@ -2102,7 +2120,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, apply_tableau, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_string, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 4);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 4);
     sim.do_H_XZ(OpDat(0));
     sim.do_ZCX(OpDat({0, 1}));
     sim.do_X(OpDat(0));
@@ -2151,13 +2169,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_string, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, amortized_resizing, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 5120);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 5120);
     sim.ensure_large_enough_for_qubits(5121);
     ASSERT_GT(sim.inv_state.xs.xt.num_minor_bits_padded(), 5600);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mpad, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 5);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 5);
     ASSERT_EQ(sim.inv_state, Tableau<W>(5));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{}));
 
@@ -2177,8 +2195,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, mpad, {
 template <size_t W>
 void expect_same_final_state(const Tableau<W> &start, const Circuit &c1, const Circuit &c2, bool unsigned_stabilizers) {
     size_t n = start.num_qubits;
-    TableauSimulator<W> sim1(SHARED_TEST_RNG(), n);
-    TableauSimulator<W> sim2(SHARED_TEST_RNG(), n);
+    TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), n);
+    TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), n);
     sim1.inv_state = start;
     sim2.inv_state = start;
     sim1.expand_do_circuit(c1);
@@ -2197,22 +2215,24 @@ void expect_same_final_state(const Tableau<W> &start, const Circuit &c1, const C
 }
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx_myy_mzz_vs_mpp_unsigned, {
+    auto rng = INDEPENDENT_TEST_RNG();
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MXX 1 3 1 2 3 4"), Circuit("MPP X1*X3 X1*X2 X3*X4"), true);
+        Tableau<W>::random(5, rng), Circuit("MXX 1 3 1 2 3 4"), Circuit("MPP X1*X3 X1*X2 X3*X4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MYY 1 3 1 2 3 4"), Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"), true);
+        Tableau<W>::random(5, rng), Circuit("MYY 1 3 1 2 3 4"), Circuit("MPP Y1*Y3 Y1*Y2 Y3*Y4"), true);
     expect_same_final_state(
-        Tableau<W>::random(5, SHARED_TEST_RNG()), Circuit("MZZ 1 3 1 2 3 4"), Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"), true);
+        Tableau<W>::random(5, rng), Circuit("MZZ 1 3 1 2 3 4"), Circuit("MPP Z1*Z3 Z1*Z2 Z3*Z4"), true);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 5);
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 5);
     sim.expand_do_circuit(Circuit("RX 0 1"));
     sim.expand_do_circuit(Circuit("MXX 0 1"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{false}));
     sim.measurement_record.storage.clear();
 
-    sim.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<W>::random(5, rng);
     sim.expand_do_circuit(Circuit("MXX 1 3"));
     bool x13 = sim.measurement_record.storage.back();
     sim.measurement_record.storage.clear();
@@ -2242,13 +2262,14 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, mxx, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, myy, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 5);
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 5);
     sim.expand_do_circuit(Circuit("RY 0 1"));
     sim.expand_do_circuit(Circuit("MYY 0 1"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{false}));
     sim.measurement_record.storage.clear();
 
-    sim.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<W>::random(5, rng);
     sim.expand_do_circuit(Circuit("MYY 1 3"));
     bool x13 = sim.measurement_record.storage.back();
     sim.measurement_record.storage.clear();
@@ -2278,13 +2299,14 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, myy, {
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, mzz, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 5);
+    auto rng = INDEPENDENT_TEST_RNG();
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 5);
     sim.expand_do_circuit(Circuit("RZ 0 1"));
     sim.expand_do_circuit(Circuit("MZZ 0 1"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{false}));
     sim.measurement_record.storage.clear();
 
-    sim.inv_state = Tableau<W>::random(5, SHARED_TEST_RNG());
+    sim.inv_state = Tableau<W>::random(5, rng);
     sim.expand_do_circuit(Circuit("MZZ 1 3"));
     bool x13 = sim.measurement_record.storage.back();
     sim.measurement_record.storage.clear();
@@ -2315,13 +2337,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, mzz, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, runs_on_general_circuit, {
     auto circuit = generate_test_circuit_with_all_operations();
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 1);
     sim.expand_do_circuit(circuit);
     ASSERT_GT(sim.inv_state.xs.num_qubits, 1);
 })
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
-    TableauSimulator<W> sim(SHARED_TEST_RNG(), 1);
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 1);
     sim.expand_do_circuit(Circuit(R"CIRCUIT(
         HERALDED_ERASE(0) 0 1 2 3 10 11 12 13
     )CIRCUIT"));
@@ -2334,4 +2356,86 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_erase, {
     )CIRCUIT"));
     ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
     ASSERT_NE(sim.inv_state, Tableau<W>(14));
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, heralded_pauli_channel_1, {
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 1);
+    Tableau<W> expected(14);
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 0, 0) 0 1 2 3 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(1, 0, 0, 0) 0 1 2 3 4 5 6 10 11 12 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
+    ASSERT_EQ(sim.inv_state, Tableau<W>(14));
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 1, 0, 0) 13
+    )CIRCUIT"));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{true}));
+    expected.prepend_X(13);
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 1, 0) 5 10
+    )CIRCUIT"));
+    expected.prepend_Y(5);
+    expected.prepend_Y(10);
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1}));
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+
+    sim.expand_do_circuit(Circuit(R"CIRCUIT(
+        HERALDED_PAULI_CHANNEL_1(0, 0, 0, 1) 1 10 11
+    )CIRCUIT"));
+    expected.prepend_Z(1);
+    expected.prepend_Z(10);
+    expected.prepend_Z(11);
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{1, 1, 1}));
+    ASSERT_EQ(sim.inv_state, expected);
+    sim.measurement_record.storage.clear();
+})
+
+TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_observable, {
+    TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 0);
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    sim.postselect_observable(PauliString<W>("XX"), false);
+
+    auto initial_state = sim.inv_state;
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("YY"), false); }, std::invalid_argument);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("ZZ"), true); }, std::invalid_argument);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    ASSERT_THROW({ sim.postselect_observable(PauliString<W>("ZZ"), true); }, std::invalid_argument);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("ZZ"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("XX"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("-YY"), false);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("YY"), true);
+    ASSERT_EQ(sim.inv_state, initial_state);
+
+    sim.postselect_observable(PauliString<W>("XZ"), true);
+    ASSERT_NE(sim.inv_state, initial_state);
 })

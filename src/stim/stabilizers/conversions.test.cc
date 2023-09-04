@@ -215,11 +215,12 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_basic, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &little_endian : std::vector<bool>{false, true}) {
         for (size_t n = 0; n < 10; n++) {
             // Pick a random stabilizer state.
-            TableauSimulator<W> sim(SHARED_TEST_RNG(), n);
-            sim.inv_state = Tableau<W>::random(n, SHARED_TEST_RNG());
+            TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), n);
+            sim.inv_state = Tableau<W>::random(n, rng);
             auto desired_vec = sim.to_state_vector(little_endian);
 
             // Round trip through a circuit.
@@ -337,8 +338,7 @@ TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau_ignoring_gates, {
     ASSERT_EQ(circuit_to_tableau<W>(annotations, false, false, false), Tableau<W>(1));
 
     ASSERT_EQ(
-        circuit_to_tableau<W>(
-            annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
+        circuit_to_tableau<W>(annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
             .num_qubits,
         2);
 })
@@ -418,8 +418,7 @@ TEST_EACH_WORD_SIZE_W(conversions, circuit_to_tableau, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, circuit_to_output_state_vector, {
-    ASSERT_EQ(
-        circuit_to_output_state_vector<W>(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
+    ASSERT_EQ(circuit_to_output_state_vector<W>(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
     ASSERT_EQ(
         circuit_to_output_state_vector<W>(Circuit("H 0 1"), false),
         (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}}));
@@ -432,8 +431,9 @@ TEST_EACH_WORD_SIZE_W(conversions, circuit_to_output_state_vector, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t n = 0; n < 10; n++) {
-        auto desired = Tableau<W>::random(n, SHARED_TEST_RNG());
+        auto desired = Tableau<W>::random(n, rng);
         Circuit circuit = tableau_to_circuit<W>(desired, "elimination");
         auto actual = circuit_to_tableau<W>(circuit, false, false, false);
         ASSERT_EQ(actual, desired);
@@ -475,8 +475,7 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_circuit, {
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_vs_gate_data, {
     for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>())
-                << gate.name;
+            EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>()) << gate.name;
         }
     }
 })
@@ -508,37 +507,22 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_unitary_vs_gate_data, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_vs_tableau_basic, {
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), false),
-        GATE_DATA.at("ZCX").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), true),
-        GATE_DATA.at("XCZ").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), false),
-        GATE_DATA.at("XCZ").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), true),
-        GATE_DATA.at("ZCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), false), GATE_DATA.at("ZCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCZ").unitary(), true), GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), false), GATE_DATA.at("XCZ").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("ZCX").unitary(), true), GATE_DATA.at("ZCX").tableau<W>());
 
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), false),
-        GATE_DATA.at("YCX").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), true),
-        GATE_DATA.at("XCY").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), false),
-        GATE_DATA.at("XCY").tableau<W>());
-    ASSERT_EQ(
-        unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), true),
-        GATE_DATA.at("YCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), false), GATE_DATA.at("YCX").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("XCY").unitary(), true), GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), false), GATE_DATA.at("XCY").tableau<W>());
+    ASSERT_EQ(unitary_to_tableau<W>(GATE_DATA.at("YCX").unitary(), true), GATE_DATA.at("YCX").tableau<W>());
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (bool little_endian : std::vector<bool>{false, true}) {
         for (size_t n = 0; n < 6; n++) {
-            auto desired = Tableau<W>::random(n, SHARED_TEST_RNG());
+            auto desired = Tableau<W>::random(n, rng);
             auto unitary = tableau_to_unitary<W>(desired, little_endian);
             auto actual = unitary_to_tableau<W>(unitary, little_endian);
             ASSERT_EQ(actual, desired) << "little_endian=" << little_endian << ", n=" << n;
@@ -583,8 +567,9 @@ TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fail, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_fuzz, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t n = 0; n < 10; n++) {
-        auto t = Tableau<W>::random(n, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(n, rng);
         std::vector<PauliString<W>> expected_stabilizers;
         for (size_t k = 0; k < n; k++) {
             expected_stabilizers.push_back(t.zs[k]);
@@ -599,9 +584,10 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_fuzz, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_partial_fuzz, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t n = 0; n < 10; n++) {
         for (size_t skipped = 1; skipped < n && skipped < 4; skipped++) {
-            auto t = Tableau<W>::random(n, SHARED_TEST_RNG());
+            auto t = Tableau<W>::random(n, rng);
             std::vector<PauliString<W>> expected_stabilizers;
             for (size_t k = 0; k < n - skipped; k++) {
                 expected_stabilizers.push_back(t.zs[k]);
@@ -622,8 +608,9 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_partial_fuzz, {
 })
 
 TEST_EACH_WORD_SIZE_W(conversions, stabilizers_to_tableau_overconstrained, {
+    auto rng = INDEPENDENT_TEST_RNG();
     for (size_t n = 4; n < 10; n++) {
-        auto t = Tableau<W>::random(n, SHARED_TEST_RNG());
+        auto t = Tableau<W>::random(n, rng);
         std::vector<PauliString<W>> expected_stabilizers;
         expected_stabilizers.push_back(PauliString<W>(n));
         expected_stabilizers.push_back(PauliString<W>(n));
@@ -678,3 +665,156 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizer_to_tableau_detect_anticommutation,
     input_stabilizers.push_back(PauliString<W>::from_str("YX"));
     ASSERT_THROW({ stabilizers_to_tableau<W>(input_stabilizers, false, false, false); }, std::invalid_argument);
 })
+
+TEST(conversions, independent_to_disjoint_xyz_errors) {
+    double out_x;
+    double out_y;
+    double out_z;
+
+    independent_to_disjoint_xyz_errors(0.5, 0.5, 0.5, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 1 / 4.0, 1e-6);
+    ASSERT_NEAR(out_y, 1 / 4.0, 1e-6);
+    ASSERT_NEAR(out_z, 1 / 4.0, 1e-6);
+
+    independent_to_disjoint_xyz_errors(0.1, 0, 0, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0.1, 1e-6);
+    ASSERT_NEAR(out_y, 0, 1e-6);
+    ASSERT_NEAR(out_z, 0, 1e-6);
+
+    independent_to_disjoint_xyz_errors(0, 0.2, 0, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0, 1e-6);
+    ASSERT_NEAR(out_y, 0.2, 1e-6);
+    ASSERT_NEAR(out_z, 0, 1e-6);
+
+    independent_to_disjoint_xyz_errors(0, 0, 0.05, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0, 1e-6);
+    ASSERT_NEAR(out_y, 0, 1e-6);
+    ASSERT_NEAR(out_z, 0.05, 1e-6);
+
+    independent_to_disjoint_xyz_errors(0.1, 0.1, 0, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0.1 - 0.01, 1e-6);
+    ASSERT_NEAR(out_y, 0.1 - 0.01, 1e-6);
+    ASSERT_NEAR(out_z, 0.01, 1e-6);
+}
+
+TEST(conversions, disjoint_to_independent_xyz_errors_approx) {
+    double out_x;
+    double out_y;
+    double out_z;
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.4, 0.0, 0.0, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.4, 1e-6);
+    ASSERT_NEAR(out_y, 0.0, 1e-6);
+    ASSERT_NEAR(out_z, 0.0, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.5, 0.0, 0.0, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.5, 1e-6);
+    ASSERT_NEAR(out_y, 0.0, 1e-6);
+    ASSERT_NEAR(out_z, 0.0, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.6, 0.0, 0.0, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.6, 1e-6);
+    ASSERT_NEAR(out_y, 0.0, 1e-6);
+    ASSERT_NEAR(out_z, 0.0, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.25, 0.25, 0.25, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.5, 1e-6);
+    ASSERT_NEAR(out_y, 0.5, 1e-6);
+    ASSERT_NEAR(out_z, 0.5, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.1, 0, 0, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.1, 1e-6);
+    ASSERT_NEAR(out_y, 0, 1e-6);
+    ASSERT_NEAR(out_z, 0, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0, 0.2, 0, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0, 1e-6);
+    ASSERT_NEAR(out_y, 0.2, 1e-6);
+    ASSERT_NEAR(out_z, 0, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0, 0, 0.05, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0, 1e-6);
+    ASSERT_NEAR(out_y, 0, 1e-6);
+    ASSERT_NEAR(out_z, 0.05, 1e-6);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.1 - 0.01, 0.1 - 0.01, 0.01, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.1, 1e-6);
+    ASSERT_NEAR(out_y, 0.1, 1e-6);
+    ASSERT_NEAR(out_z, 0, 1e-6);
+
+    ASSERT_FALSE(try_disjoint_to_independent_xyz_errors_approx(0.2, 0.2, 0, &out_x, &out_y, &out_z));
+    independent_to_disjoint_xyz_errors(out_x, out_y, out_z, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0.2, 1e-6);
+    ASSERT_NEAR(out_y, 0.2, 1e-6);
+    ASSERT_LT(out_z, 0.08);
+
+    ASSERT_FALSE(try_disjoint_to_independent_xyz_errors_approx(0.2, 0.1, 0, &out_x, &out_y, &out_z));
+    independent_to_disjoint_xyz_errors(out_x, out_y, out_z, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0.2, 1e-6);
+    ASSERT_NEAR(out_y, 0.1, 1e-6);
+    ASSERT_LT(out_z, 0.03);
+
+    ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(0.3 * 0.6, 0.4 * 0.7, 0.3 * 0.4, &out_x, &out_y, &out_z));
+    ASSERT_NEAR(out_x, 0.3, 1e-6);
+    ASSERT_NEAR(out_y, 0.4, 1e-6);
+    ASSERT_NEAR(out_z, 0.0, 1e-6);
+    independent_to_disjoint_xyz_errors(out_x, out_y, out_z, &out_x, &out_y, &out_z);
+    ASSERT_NEAR(out_x, 0.3 * 0.6, 1e-6);
+    ASSERT_NEAR(out_y, 0.4 * 0.7, 1e-6);
+    ASSERT_NEAR(out_z, 0.3 * 0.4, 1e-6);
+}
+
+TEST(conversions, fuzz_depolarize1_consistency) {
+    auto rng = INDEPENDENT_TEST_RNG();
+    std::uniform_real_distribution<double> dis(0, 1);
+    for (size_t k = 0; k < 10; k++) {
+        double p = dis(rng) * 0.75;
+        double p2 = depolarize1_probability_to_independent_per_channel_probability(p);
+        double x2, y2, z2;
+        ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(p / 3, p / 3, p / 3, &x2, &y2, &z2));
+        ASSERT_NEAR(x2, p2, 1e-6) << "p=" << p;
+        ASSERT_NEAR(y2, p2, 1e-6) << "p=" << p;
+        ASSERT_NEAR(z2, p2, 1e-6) << "p=" << p;
+
+        double p3 = independent_per_channel_probability_to_depolarize1_probability(p2);
+        double x3, y3, z3;
+        independent_to_disjoint_xyz_errors(x2, y2, z2, &x3, &y3, &z3);
+        ASSERT_NEAR(x3, p / 3, 1e-6) << "p=" << p;
+        ASSERT_NEAR(y3, p / 3, 1e-6) << "p=" << p;
+        ASSERT_NEAR(z3, p / 3, 1e-6) << "p=" << p;
+        ASSERT_NEAR(p3, p, 1e-6) << "p=" << p;
+    }
+}
+
+TEST(conversions, fuzz_depolarize2_consistency) {
+    auto rng = INDEPENDENT_TEST_RNG();
+    std::uniform_real_distribution<double> dis(0, 1);
+    for (size_t k = 0; k < 10; k++) {
+        double p = dis(rng) * 0.75;
+        double p2 = depolarize2_probability_to_independent_per_channel_probability(p);
+        double p3 = independent_per_channel_probability_to_depolarize2_probability(p2);
+        ASSERT_NEAR(p3, p, 1e-6) << "p=" << p;
+    }
+}
+
+TEST(conversions, independent_vs_disjoint_xyz_errors_round_trip_fuzz) {
+    auto rng = INDEPENDENT_TEST_RNG();
+    std::uniform_real_distribution<double> dis(0, 1);
+    for (size_t k = 0; k < 25; k++) {
+        double x;
+        double y;
+        double z;
+        do {
+            x = dis(rng);
+            y = dis(rng);
+            z = dis(rng);
+        } while (x + y + z >= 0.999);
+        double x2, y2, z2;
+        independent_to_disjoint_xyz_errors(x, y, z, &x2, &y2, &z2);
+        double x3, y3, z3;
+        ASSERT_TRUE(try_disjoint_to_independent_xyz_errors_approx(x2, y2, z2, &x3, &y3, &z3));
+        ASSERT_NEAR(x, x3, 1e-6) << "x=" << x << ",y=" << y << ",z=" << z;
+        ASSERT_NEAR(y, y3, 1e-6) << "x=" << x << ",y=" << y << ",z=" << z;
+        ASSERT_NEAR(z, z3, 1e-6) << "x=" << x << ",y=" << y << ",z=" << z;
+    }
+}

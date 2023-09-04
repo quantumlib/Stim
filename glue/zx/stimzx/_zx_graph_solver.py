@@ -82,7 +82,8 @@ def text_diagram_to_zx_graph(text_diagram: str) -> nx.MultiGraph:
         >>> _ = expected.add_edge(1, 4)
         >>> _ = expected.add_edge(3, 4)
         >>> _ = expected.add_edge(4, 5)
-        >>> networkx.testing.assert_graphs_equal(actual, expected)
+        >>> networkx.utils.graphs_equal(actual, expected)
+        True
 
     Returns:
         A networkx MultiGraph containing the nodes and edges from the diagram. Nodes are numbered 0, 1, 2, etc in

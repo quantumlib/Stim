@@ -35,3 +35,13 @@ def test_equality():
 def test_repr():
     v = stim.DemRepeatBlock(5, stim.DetectorErrorModel('error(0.125) D1 L2'))
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_type():
+    assert [e.type for e in stim.DetectorErrorModel('''
+        detector D0
+        REPEAT 5 {
+            error(0.1) D0
+        }
+        logical_observable L0
+    ''')] == ['detector', 'repeat', 'logical_observable']

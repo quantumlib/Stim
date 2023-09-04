@@ -19,6 +19,7 @@ src/stim/circuit/gate_data_swaps.cc
 src/stim/circuit/gate_decomposition.cc
 src/stim/circuit/gate_target.cc
 src/stim/cmd/command_analyze_errors.cc
+src/stim/cmd/command_convert.cc
 src/stim/cmd/command_detect.cc
 src/stim/cmd/command_diagram.cc
 src/stim/cmd/command_explain_errors.cc
@@ -28,6 +29,7 @@ src/stim/cmd/command_m2d.cc
 src/stim/cmd/command_repl.cc
 src/stim/cmd/command_sample.cc
 src/stim/cmd/command_sample_dem.cc
+src/stim/dem/dem_instruction.cc
 src/stim/dem/detector_error_model.cc
 src/stim/diagram/ascii_diagram.cc
 src/stim/diagram/base64.cc
@@ -74,7 +76,6 @@ src/stim/search/hyper/edge.cc
 src/stim/search/hyper/graph.cc
 src/stim/search/hyper/node.cc
 src/stim/search/hyper/search_state.cc
-src/stim/simulators/dem_sampler.cc
 src/stim/simulators/error_analyzer.cc
 src/stim/simulators/error_matcher.cc
 src/stim/simulators/force_streaming.cc
@@ -82,3 +83,4 @@ src/stim/simulators/matched_error.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
+src/stim/stabilizers/conversions.cc

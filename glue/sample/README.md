@@ -16,8 +16,8 @@ quantum error correction circuits.
 
 Sinter takes Stim circuits annotated with noise, detectors, and logical
 observables.
-It uses stim to sample the circuits and pymatching to predict whether the
-logical observables were flipped or not, given the detector data.
+It uses stim to sample the circuits and a decoder such as pymatching to predict
+whether the logical observables were flipped or not, given the detector data.
 It records how often this succeeds, and how often it fails (the error rate).
 
 Sinter uses python multiprocessing to do parallel sampling across multiple CPU
@@ -26,11 +26,12 @@ specified by the user (such as a target number of errors), saves the results to
 as simple CSV format, and has some basic  plotting functionality for viewing the
 results.
 
-Sinter doesn't support cloud compute, but it does scale well on
-a single machine.
+Sinter doesn't support cloud compute, but it does scale well on  a single
+machine.
 I've tested it on 2 core machines, 4 core machines, and 96 core machines.
-Although there are potential pitfalls (e.g. setting batch sizes too large causes thrashing),
-sinter generally achieves good resource utilization of the processes you assign to it.
+Although there are potential pitfalls (e.g. setting batch sizes too large causes
+thrashing), sinter generally achieves good resource utilization of the processes
+you assign to it.
 
 <a name="how_to_install"></a>
 # How to install
@@ -49,8 +50,8 @@ to use sinter's python API.
 <a name="how_to_use_python"></a>
 # How to use: Python API
 
-This example assumes you are in a python environment with sinter
-installed.
+This example assumes you are in a python environment with `sinter` and
+`pymatching` installed.
 
 ```python
 import stim
@@ -138,19 +139,8 @@ and the corresponding image saved to `plot.png`:
 ## python API utility methods
 
 Sinter's python module exposes a variety of methods that are handy for plotting
-or analyzing QEC data. These include:
-
-- `sinter.fit_binomial`: Fit a binomial hypothesis to data, including a likelihood range (the Bayesian equivalent of computing the standard deviation).
-- `sinter.fit_line_slope`: Predict slope by fitting sampled coordinates to a line.
-- `sinter.fit_line_y_at_x`: Predict Y values from X values by fitting sampled coordinates to a line
-- `sinter.comma_separated_key_values(path)`: A reasonable value to give for `--metadata_func` mapping `"folder/b=test,a=2.stim"` to `{'b': 'test', 'a': 2}`.
-- `sinter.predict_observables_bit_packed`: Runs a decoder on given detection event data, producing predicted observable flip data.
-- `sinter.predict_discards_bit_packed`: Converts detection event data into "what shots should be postselected" data according to given rules.
-- `sinter.predict_on_disk`: Converts detection event data into discard data and observable prediction data, using data from disk and writing results to disk.
-- `sinter.stats_from_csv_files`: Read saved CSV data.
-- `sinter.shot_error_rate_to_piece_error_rate`: Compute per-round error rates.
-- `sinter.better_sorted_str_terms`: A text sorting key that puts `"A100"` before `"A99"`, by noticing numbers instead of sorting purely lexicographically.
-- `sinter.group_by`: Combines items from a list into keyed groups.
+or analyzing QEC data.
+See the [sinter API reference](https://github.com/quantumlib/Stim/blob/main/doc/sinter_api.md).
 
 <a name="how_to_use_linux"></a>
 # How to use: Linux Command Line
@@ -196,9 +186,13 @@ But this is just an example, so we'll use normal surface code circuits.
 You can use sinter to collect statistics on each circuit by using the `sinter collect` command.
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
+The `processes` argument decides how many workers to use. Set it to `auto` to set
+it to the number of CPUs on your machine.
+
 The `metadata_func` argument can be used to specify custom python expression that turns the `path`
 into a dictionary or other JSON object associated with the circuit.
-For convenience, sinter includes the method `sinter.comma_separated_key_values(path)` which parses
+If you set `metadata_func` to `auto` then will use the method
+`sinter.comma_separated_key_values(path)` which parses
 stim circuit paths like `folder/a=2,b=test.stim` into a dictionary like `{'a': 2, 'b': 'test'}`.
 
 By default, sinter writes the collected statistics to stdout as CSV data.
@@ -210,9 +204,9 @@ instead of overwriting it.
 
 ```bash
 sinter collect \
-    --processes 4 \
+    --processes auto \
     --circuits circuits/*.stim \
-    --metadata_func "sinter.comma_separated_key_values(path)" \
+    --metadata_func auto \
     --decoders pymatching \
     --max_shots 1_000_000 \
     --max_errors 1000 \
@@ -249,17 +243,23 @@ sinter combine stats.csv
 # plot
 
 You can use `sinter plot` to view the results you've collected.
-This command takes a CSV file, and also some command indicating how to group each case
-into single curves and also what the desired X coordinate of a case is.
-This is done in a flexible but very hacky way, by specifying a python expression using the case's filename: 
+This command takes a CSV file, an argument `--group_func` indicating how to
+group the statistics into curves, an argument `--x_func` indicating how to
+pick the X coordinate of each point, and various other arguments. Each `*_func`
+argument takes a string that will be evaluated as a python expression, with
+various useful values in scope such as a `metadata` value containing the
+json metadata for the various points being evaluated. There is also a special
+`m` value where `m.key` is shorthand for `metadata.get('key', None)`.
+
+Here is an example of a `sinter plot` command:
 
 ```bash
 sinter plot \
     --in stats.csv \
-    --group_func "'Rotated Surface Code d=' + str(metadata['d'])" \
-    --x_func "metadata['p']" \
-    --fig_size 1024 1024 \
+    --group_func "f'''Rotated Surface Code d={m.d}'''" \
+    --x_func m.p \
     --xaxis "[log]Physical Error Rate" \
+    --fig_size 1024 1024 \
     --out surface_code_figure.png \
     --show
 ```
@@ -270,7 +270,6 @@ Which will save a png image of, and also open a window showing, a plot like this
 
 <a name="csv_format"></a>
 # The csv format for sample statistics
-
 
 Sinter saves samples as a table using a Comma Separated Value format.
 For example:
@@ -307,8 +306,8 @@ shots that were from separate circuits or separate versions of a circuit.
 dictionary with helpful keys like "noise_level" or "circuit_name". The json
 value is serialized into JSON and then escaped so that it can be put into the
 CSV data (e.g. quotes get doubled up).
-- `custom_counts` (json[Dict[str, int]]): A field that can store a dictionary
-from string keys to integer counts represented in
+- `custom_counts` (json[Dict[str, int]]): An optional field that can store a
+dictionary from string keys to integer counts represented in
 [Java Script Object Notation](https://json.org).
 The counts can be a huge variety of things, ranging from per-observable error
 counts to detection event counts. In general, any value that should be added

@@ -41,6 +41,10 @@ struct SparseShot {
     SparseShot();
     SparseShot(std::vector<uint64_t> hits, simd_bits<64> obs_mask);
 
+    /// Returns a uint64_t containing the first 64 observable bit flips.
+    /// Defaults to 0 if there are no observables.
+    uint64_t obs_mask_as_u64() const;
+
     void clear();
     bool operator==(const SparseShot &other) const;
     bool operator!=(const SparseShot &other) const;

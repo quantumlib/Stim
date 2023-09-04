@@ -17,6 +17,7 @@
 #ifndef _STIM_DIAGRAM_BASE64_H
 #define _STIM_DIAGRAM_BASE64_H
 
+#include <cstdint>
 #include <iostream>
 
 namespace stim_draw_internal {

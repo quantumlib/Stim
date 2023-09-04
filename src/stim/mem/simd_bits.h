@@ -66,6 +66,12 @@ struct simd_bits {
     // Mask assignment.
     simd_bits &operator&=(const simd_bits_range_ref<W> other);
     simd_bits &operator|=(const simd_bits_range_ref<W> other);
+    // Addition assigment
+    simd_bits &operator+=(const simd_bits_range_ref<W> other);
+    // right shift assignment
+    simd_bits &operator>>=(int offset);
+    // left shift assignment
+    simd_bits &operator<<=(int offset);
     // Swap assignment.
     simd_bits &swap_with(simd_bits_range_ref<W> other);
 

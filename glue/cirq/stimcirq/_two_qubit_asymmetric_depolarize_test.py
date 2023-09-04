@@ -1,4 +1,5 @@
 import cirq
+import stim
 import stimcirq
 
 
@@ -51,3 +52,17 @@ def test_json_backwards_compat_exact():
     packed = '{\n  "cirq_type": "TwoQubitAsymmetricDepolarizingChannel",\n  "probabilities": [\n    0.0125,\n    0.1,\n    0,\n    0.23,\n    0,\n    0,\n    0.0375,\n    0,\n    0.01,\n    0,\n    0,\n    0,\n    0,\n    0.25,\n    0\n  ]\n}'
     assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
     assert cirq.to_json(raw) == packed
+
+
+def test_native_cirq_gate_converts():
+    c = cirq.Circuit(cirq.asymmetric_depolarize(
+        error_probabilities={
+            'IX': 0.125,
+            'ZY': 0.25
+        }).on(cirq.LineQubit(0), cirq.LineQubit(1)))
+    s = stim.Circuit("""
+        PAULI_CHANNEL_2(0.125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0) 0 1
+        TICK
+    """)
+    assert stimcirq.cirq_circuit_to_stim_circuit(c) == s
+    assert stimcirq.stim_circuit_to_cirq_circuit(s) == c

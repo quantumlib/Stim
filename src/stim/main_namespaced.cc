@@ -18,6 +18,7 @@
 
 #include "stim/arg_parse.h"
 #include "stim/cmd/command_analyze_errors.h"
+#include "stim/cmd/command_convert.h"
 #include "stim/cmd/command_detect.h"
 #include "stim/cmd/command_diagram.h"
 #include "stim/cmd/command_explain_errors.h"
@@ -54,16 +55,17 @@ int stim::main(int argc, const char **argv) {
         bool mode_detect = is_mode("--detect");
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
-        bool mode_convert = is_mode("--m2d");
+        bool mode_m2d = is_mode("--m2d");
         bool mode_explain_errors = is_mode("--explain_errors");
         bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
         if (old_mode_detector_hypergraph) {
             std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
             mode_analyze_errors = true;
         }
+        bool mode_convert = is_mode("--convert");
         int modes_picked =
-            (mode_repl + mode_sample + mode_sample_dem + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
-             mode_explain_errors + mode_diagram);
+            (mode_repl + mode_sample + mode_sample_dem + mode_detect + mode_analyze_errors + mode_gen + mode_m2d +
+             mode_explain_errors + mode_diagram + mode_convert);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {
@@ -91,7 +93,7 @@ int stim::main(int argc, const char **argv) {
         if (mode_analyze_errors) {
             return command_analyze_errors(argc, argv);
         }
-        if (mode_convert) {
+        if (mode_m2d) {
             return command_m2d(argc, argv);
         }
         if (mode_explain_errors) {
@@ -102,6 +104,9 @@ int stim::main(int argc, const char **argv) {
         }
         if (mode_diagram) {
             return command_diagram(argc, argv);
+        }
+        if (mode_convert) {
+            return command_convert(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");

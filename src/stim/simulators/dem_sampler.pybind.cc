@@ -38,12 +38,16 @@ RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *
 }
 
 pybind11::object dem_sampler_py_sample(
-    DemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
+    DemSampler<MAX_BITWORD_WIDTH> &self,
+    size_t shots,
+    bool bit_packed,
+    bool return_errors,
+    pybind11::object &recorded_errors_to_replay) {
     self.set_min_stripes(shots);
 
     bool replay = !recorded_errors_to_replay.is_none();
     if (replay && min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(shots) != self.num_stripes) {
-        DemSampler perfect_size(self.model, std::move(self.rng), shots);
+        DemSampler<MAX_BITWORD_WIDTH> perfect_size(self.model, std::move(self.rng), shots);
         auto result = dem_sampler_py_sample(perfect_size, shots, bit_packed, return_errors, recorded_errors_to_replay);
         self.rng = std::move(perfect_size.rng);
         return result;
@@ -74,8 +78,8 @@ pybind11::object dem_sampler_py_sample(
     return pybind11::make_tuple(det_out, obs_out, err_out);
 }
 
-pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m) {
-    return pybind11::class_<DemSampler>(
+pybind11::class_<DemSampler<MAX_BITWORD_WIDTH>> stim_pybind::pybind_dem_sampler(pybind11::module &m) {
+    return pybind11::class_<DemSampler<MAX_BITWORD_WIDTH>>(
         m,
         "CompiledDemSampler",
         clean_doc_string(R"DOC(
@@ -110,7 +114,7 @@ pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m
             .data());
 }
 
-void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<stim::DemSampler> &c) {
+void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<DemSampler<MAX_BITWORD_WIDTH>> &c) {
     c.def(
         "sample",
         &dem_sampler_py_sample,
@@ -267,7 +271,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
 
     c.def(
         "sample_write",
-        [](DemSampler &self,
+        [](DemSampler<MAX_BITWORD_WIDTH> &self,
            size_t shots,
            pybind11::object &det_out_file,
            const std::string &det_out_format,

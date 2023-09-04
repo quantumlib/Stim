@@ -258,9 +258,9 @@ A single qubit Pauli error channel with explicitly specified probabilities for e
 Parens Arguments:
 
     Three floats specifying disjoint Pauli case probabilities.
-    px: Probability of applying an X operation.
-    py: Probability of applying a Y operation.
-    pz: Probability of applying a Z operation.
+    px: Disjoint probability of applying an X error.
+    py: Disjoint probability of applying a Y error.
+    pz: Disjoint probability of applying a Z error.
 
 Targets:
 

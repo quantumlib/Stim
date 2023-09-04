@@ -16,6 +16,7 @@ src/stim/py/march.pybind.cc
 src/stim/py/numpy.pybind.cc
 src/stim/py/stim.pybind.cc
 src/stim/simulators/dem_sampler.pybind.cc
+src/stim/simulators/frame_simulator.pybind.cc
 src/stim/simulators/matched_error.pybind.cc
 src/stim/simulators/measurements_to_detection_events.pybind.cc
 src/stim/simulators/tableau_simulator.pybind.cc

@@ -39,8 +39,9 @@ inline void for_each_target_pair(FrameSimulator<W> &sim, const CircuitInstructio
 
 template <size_t W>
 FrameSimulator<W>::FrameSimulator(
-    CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &rng)
+    CircuitStats circuit_stats, FrameSimulatorMode mode, size_t batch_size, std::mt19937_64 &&rng)
     : num_qubits(0),
+      num_observables(0),
       keeping_detection_data(false),
       batch_size(0),
       x_table(0, 0),
@@ -52,24 +53,79 @@ FrameSimulator<W>::FrameSimulator(
       tmp_storage(0),
       last_correlated_error_occurred(0),
       sweep_table(0, 0),
-      rng(rng) {
+      rng(std::move(rng)) {
     configure_for(circuit_stats, mode, batch_size);
 }
 
 template <size_t W>
 void FrameSimulator<W>::configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size) {
+    bool storing_all_measurements = new_mode == STORE_MEASUREMENTS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY;
+    bool storing_all_detections = new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY;
+    bool storing_any_detections = new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY || new_mode == STREAM_DETECTIONS_TO_DISK;
+
     batch_size = new_batch_size;
     num_qubits = new_circuit_stats.num_qubits;
-    keeping_detection_data = new_mode == STREAM_DETECTIONS_TO_DISK || new_mode == STORE_DETECTIONS_TO_MEMORY;
+    keeping_detection_data = storing_any_detections;
     x_table.destructive_resize(new_circuit_stats.num_qubits, batch_size);
     z_table.destructive_resize(new_circuit_stats.num_qubits, batch_size);
-    m_record.destructive_resize(batch_size, new_mode == STORE_MEASUREMENTS_TO_MEMORY ? new_circuit_stats.num_measurements : new_circuit_stats.max_lookback);
-    det_record.destructive_resize(batch_size, new_mode == STORE_DETECTIONS_TO_MEMORY ? new_circuit_stats.num_detectors : new_mode == STREAM_DETECTIONS_TO_DISK ? 1 : 0),
-    obs_record.destructive_resize(new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STREAM_DETECTIONS_TO_DISK ? new_circuit_stats.num_observables : 0, batch_size);
     rng_buffer.destructive_resize(batch_size);
     tmp_storage.destructive_resize(batch_size);
     last_correlated_error_occurred.destructive_resize(batch_size);
     sweep_table.destructive_resize(0, batch_size);
+
+    uint64_t num_stored_measurements = new_circuit_stats.max_lookback;
+    if (storing_all_measurements) {
+        num_stored_measurements = std::max(new_circuit_stats.num_measurements, num_stored_measurements);
+    }
+    m_record.destructive_resize(batch_size, num_stored_measurements);
+
+    num_observables = storing_any_detections ? new_circuit_stats.num_observables : 0;
+    det_record.destructive_resize(batch_size, storing_all_detections ? new_circuit_stats.num_detectors : storing_any_detections ? 1 : 0),
+    obs_record.destructive_resize(num_observables, batch_size);
+}
+
+template <size_t W>
+void FrameSimulator<W>::ensure_safe_to_do_circuit_with_stats(const CircuitStats &stats) {
+    if (x_table.num_major_bits_padded() < stats.num_qubits) {
+        x_table.resize(stats.num_qubits * 2, batch_size);
+        z_table.resize(stats.num_qubits * 2, batch_size);
+    }
+    while (num_qubits < stats.num_qubits) {
+        if (guarantee_anticommutation_via_frame_randomization) {
+            z_table[num_qubits].randomize(batch_size, rng);
+        }
+        num_qubits += 1;
+    }
+
+    size_t num_used_measurements = m_record.stored + stats.num_measurements;
+    if (m_record.storage.num_major_bits_padded() < num_used_measurements) {
+        m_record.storage.resize(num_used_measurements * 2, batch_size);
+    }
+
+    if (keeping_detection_data) {
+        size_t num_detectors = det_record.stored + stats.num_detectors;
+        if (det_record.storage.num_major_bits_padded() < num_detectors) {
+            det_record.storage.resize(num_detectors * 2, batch_size);
+        }
+        if (obs_record.num_major_bits_padded() < stats.num_observables) {
+            obs_record.resize(stats.num_observables * 2, batch_size);
+        }
+        num_observables = std::max(stats.num_observables, num_observables);
+    }
+}
+
+template <size_t W>
+void FrameSimulator<W>::safe_do_circuit(const Circuit &circuit, uint64_t repetitions) {
+    ensure_safe_to_do_circuit_with_stats(circuit.compute_stats().repeated(repetitions));
+    for (size_t rep = 0; rep < repetitions; rep++) {
+        do_circuit(circuit);
+    }
+}
+
+template <size_t W>
+void FrameSimulator<W>::safe_do_instruction(const CircuitInstruction &instruction) {
+    ensure_safe_to_do_circuit_with_stats(instruction.compute_stats(nullptr));
+    do_gate(instruction);
 }
 
 template <size_t W>
@@ -99,8 +155,7 @@ void FrameSimulator<W>::reset_all() {
 }
 
 template <size_t W>
-void FrameSimulator<W>::reset_all_and_run(const Circuit &circuit) {
-    reset_all();
+void FrameSimulator<W>::do_circuit(const Circuit &circuit) {
     circuit.for_each_operation([&](const CircuitInstruction &op) {
         do_gate(op);
     });
@@ -696,6 +751,40 @@ void FrameSimulator<W>::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &targe
 }
 
 template <size_t W>
+void FrameSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    auto nt = inst.targets.size();
+    m_record.reserve_space_for_results(nt);
+    for (size_t k = 0; k < nt; k++) {
+        m_record.storage[m_record.stored + k].clear();
+    }
+
+    double hi = inst.args[0];
+    double hx = inst.args[1];
+    double hy = inst.args[2];
+    double hz = inst.args[3];
+    double t = hi + hx + hy + hz;
+    std::uniform_real_distribution<double> dist(0, 1);
+    RareErrorIterator::for_samples(t, nt * batch_size, rng, [&](size_t s) {
+        auto shot = s % batch_size;
+        auto target = s / batch_size;
+        m_record.storage[m_record.stored + target][shot] = 1;
+
+        double p = dist(rng) * t;
+        if (p < hx) {
+            x_table[target][shot] ^= 1;
+        } else if (p < hx + hz) {
+            z_table[target][shot] ^= 1;
+        } else if (p < hx + hz + hy) {
+            x_table[target][shot] ^= 1;
+            z_table[target][shot] ^= 1;
+        }
+    });
+
+    m_record.stored += nt;
+    m_record.unwritten += nt;
+}
+
+template <size_t W>
 void FrameSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
     auto nt = inst.targets.size();
     m_record.reserve_space_for_results(nt);
@@ -813,15 +902,6 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::OBSERVABLE_INCLUDE:
             do_OBSERVABLE_INCLUDE(inst);
             break;
-        case GateType::TICK:
-            do_I(inst);
-            break;
-        case GateType::QUBIT_COORDS:
-            do_I(inst);
-            break;
-        case GateType::SHIFT_COORDS:
-            do_I(inst);
-            break;
         case GateType::MX:
             do_MX(inst);
             break;
@@ -891,15 +971,6 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             do_ZCZ(inst);
             break;
-        case GateType::H:
-            do_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            do_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            do_H_YZ(inst);
-            break;
         case GateType::DEPOLARIZE1:
             do_DEPOLARIZE1(inst);
             break;
@@ -927,68 +998,14 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::ELSE_CORRELATED_ERROR:
             do_ELSE_CORRELATED_ERROR(inst);
             break;
-        case GateType::I:
-            do_I(inst);
-            break;
-        case GateType::X:
-            do_I(inst);
-            break;
-        case GateType::Y:
-            do_I(inst);
-            break;
-        case GateType::Z:
-            do_I(inst);
-            break;
         case GateType::C_XYZ:
             do_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
             do_C_ZYX(inst);
             break;
-        case GateType::SQRT_X:
-            do_H_YZ(inst);
-            break;
-        case GateType::SQRT_X_DAG:
-            do_H_YZ(inst);
-            break;
-        case GateType::SQRT_Y:
-            do_H_XZ(inst);
-            break;
-        case GateType::SQRT_Y_DAG:
-            do_H_XZ(inst);
-            break;
-        case GateType::S:
-            do_H_XY(inst);
-            break;
-        case GateType::S_DAG:
-            do_H_XY(inst);
-            break;
-        case GateType::SQRT_XX:
-            do_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_XX_DAG:
-            do_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_YY:
-            do_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_YY_DAG:
-            do_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_ZZ:
-            do_SQRT_ZZ(inst);
-            break;
-        case GateType::SQRT_ZZ_DAG:
-            do_SQRT_ZZ(inst);
-            break;
         case GateType::SWAP:
             do_SWAP(inst);
-            break;
-        case GateType::ISWAP:
-            do_ISWAP(inst);
-            break;
-        case GateType::ISWAP_DAG:
-            do_ISWAP(inst);
             break;
         case GateType::CXSWAP:
             do_CXSWAP(inst);
@@ -999,6 +1016,58 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::HERALDED_ERASE:
             do_HERALDED_ERASE(inst);
             break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            do_HERALDED_PAULI_CHANNEL_1(inst);
+            break;
+
+        case GateType::SQRT_XX:
+        case GateType::SQRT_XX_DAG:
+            do_SQRT_XX(inst);
+            break;
+
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+            do_SQRT_YY(inst);
+            break;
+
+        case GateType::SQRT_ZZ:
+        case GateType::SQRT_ZZ_DAG:
+            do_SQRT_ZZ(inst);
+            break;
+
+        case GateType::ISWAP:
+        case GateType::ISWAP_DAG:
+            do_ISWAP(inst);
+            break;
+
+        case GateType::SQRT_X:
+        case GateType::SQRT_X_DAG:
+        case GateType::H_YZ:
+            do_H_YZ(inst);
+            break;
+
+        case GateType::SQRT_Y:
+        case GateType::SQRT_Y_DAG:
+        case GateType::H:
+            do_H_XZ(inst);
+            break;
+
+        case GateType::S:
+        case GateType::S_DAG:
+        case GateType::H_XY:
+            do_H_XY(inst);
+            break;
+
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::X:
+        case GateType::Y:
+        case GateType::Z:
+        case GateType::I:
+            do_I(inst);
+            break;
+
         default:
             throw std::invalid_argument("Not implemented: " + inst.str());
     }

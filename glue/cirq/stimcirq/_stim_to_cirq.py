@@ -21,7 +21,6 @@ from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._sweep_pauli import SweepPauli
-from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
 
 
 def _stim_targets_to_dense_pauli_string(
@@ -103,7 +102,29 @@ class CircuitTranslationTracker:
         args = instruction.gate_args_copy()
         if len(args) != 15:
             raise ValueError(f"len(args={args!r}) != 15")
-        self.process_gate_instruction(TwoQubitAsymmetricDepolarizingChannel(args), instruction)
+
+        ps = {
+            'IX': args[0],
+            'IY': args[1],
+            'IZ': args[2],
+            'XI': args[3],
+            'XX': args[4],
+            'XY': args[5],
+            'XZ': args[6],
+            'YI': args[7],
+            'YX': args[8],
+            'YY': args[9],
+            'YZ': args[10],
+            'ZI': args[11],
+            'ZX': args[12],
+            'ZY': args[13],
+            'ZZ': args[14],
+        }
+        ps = {k: v for k, v in ps.items() if v}
+        if not ps:
+            ps['II'] = 1
+        gate = cirq.asymmetric_depolarize(error_probabilities=ps)
+        self.process_gate_instruction(gate, instruction)
 
     def process_repeat_block(self, block: stim.CircuitRepeatBlock):
         if self.flatten or block.repeat_count == 1:
@@ -484,6 +505,9 @@ class CircuitTranslationTracker:
             "OBSERVABLE_INCLUDE": CircuitTranslationTracker.process_observable_include,
             "HERALDED_ERASE": not_impl(
                 "Converting HERALDED_ERASE to cirq is not supported."
+            ),
+            "HERALDED_PAULI_CHANNEL_1": not_impl(
+                "Converting HERALDED_PAULI_CHANNEL_1 to cirq is not supported."
             ),
         }
 

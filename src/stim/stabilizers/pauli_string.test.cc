@@ -215,8 +215,9 @@ TEST_EACH_WORD_SIZE_W(pauli_string, move_copy_assignment, {
 })
 
 TEST_EACH_WORD_SIZE_W(pauli_string, foreign_memory, {
+    auto rng = INDEPENDENT_TEST_RNG();
     size_t bits = 2048;
-    auto buffer = simd_bits<W>::random(bits, SHARED_TEST_RNG());
+    auto buffer = simd_bits<W>::random(bits, rng);
     bool signs = false;
     size_t num_qubits = W * 2 - 12;
 
@@ -634,4 +635,27 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_tableau, {
             PauliString<W>::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 5});
         },
         std::invalid_argument);
+})
+
+TEST_EACH_WORD_SIZE_W(pauli_string, weight, {
+    ASSERT_EQ(PauliString<W>::from_str("+").ref().weight(), 0);
+    ASSERT_EQ(PauliString<W>::from_str("+I").ref().weight(), 0);
+    ASSERT_EQ(PauliString<W>::from_str("+X").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+Y").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+Z").ref().weight(), 1);
+
+    ASSERT_EQ(PauliString<W>::from_str("+IX").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+XZ").ref().weight(), 2);
+    ASSERT_EQ(PauliString<W>::from_str("+YY").ref().weight(), 2);
+    ASSERT_EQ(PauliString<W>::from_str("+XI").ref().weight(), 1);
+
+    PauliString<W> p(1000);
+    ASSERT_EQ(p.ref().weight(), 0);
+    for (size_t k = 0; k < 1000; k++) {
+        p.xs[k] = k % 3 == 1;
+        p.zs[k] = k % 5 == 1;
+    }
+    ASSERT_EQ(p.ref().weight(), 333+199-66);
+    p.sign = true;
+    ASSERT_EQ(p.ref().weight(), 333+199-66);
 })

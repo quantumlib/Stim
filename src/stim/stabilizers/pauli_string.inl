@@ -37,6 +37,11 @@ PauliString<W>::PauliString(size_t num_qubits) : num_qubits(num_qubits), sign(fa
 }
 
 template <size_t W>
+PauliString<W>::PauliString(const std::string &text) : num_qubits(0), sign(false), xs(0), zs(0) {
+    *this = std::move(PauliString<W>::from_str(text.c_str()));
+}
+
+template <size_t W>
 PauliString<W>::PauliString(const PauliStringRef<W> &other)
     : num_qubits(other.num_qubits), sign((bool)other.sign), xs(other.xs), zs(other.zs) {
 }

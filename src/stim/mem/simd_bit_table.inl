@@ -108,6 +108,36 @@ void simd_bit_table<W>::destructive_resize(size_t new_min_bits_major, size_t new
 }
 
 template <size_t W>
+void simd_bit_table<W>::copy_into_different_size_table(simd_bit_table<W> &other) const {
+    size_t ni = num_simd_words_minor;
+    size_t na = num_simd_words_major;
+    size_t mi = other.num_simd_words_minor;
+    size_t ma = other.num_simd_words_major;
+    size_t num_min_bytes = std::min(ni, mi) * (W / 8);
+    size_t num_maj = std::min(na, ma) * W;
+
+    if (ni == mi) {
+        memcpy(other.data.ptr_simd, data.ptr_simd, num_min_bytes * num_maj);
+    } else {
+        for (size_t maj = 0; maj < num_maj; maj++) {
+            memcpy(other[maj].ptr_simd, (*this)[maj].ptr_simd, num_min_bytes);
+        }
+    }
+}
+
+template <size_t W>
+void simd_bit_table<W>::resize(size_t new_min_bits_major, size_t new_min_bits_minor) {
+    auto new_num_simd_words_minor = min_bits_to_num_simd_words<W>(new_min_bits_minor);
+    auto new_num_simd_words_major = min_bits_to_num_simd_words<W>(new_min_bits_major);
+    if (new_num_simd_words_major == num_simd_words_major && new_num_simd_words_minor == num_simd_words_minor) {
+        return;
+    }
+    auto new_table = simd_bit_table<W>(new_min_bits_major, new_min_bits_minor);
+    copy_into_different_size_table(new_table);
+    *this = std::move(new_table);
+}
+
+template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 
@@ -135,6 +165,18 @@ template <size_t W>
 simd_bit_table<W> simd_bit_table<W>::transposed() const {
     simd_bit_table<W> result(num_minor_bits_padded(), num_major_bits_padded());
     transpose_into(result);
+    return result;
+}
+
+template <size_t W>
+simd_bits<W> simd_bit_table<W>::read_across_majors_at_minor_index(size_t major_start, size_t major_stop, size_t minor_index) const {
+    assert(major_stop >= major_start);
+    assert(major_stop <= num_major_bits_padded());
+    assert(minor_index < num_minor_bits_padded());
+    simd_bits<W> result(major_stop - major_start);
+    for (size_t maj = major_start; maj < major_stop; maj++) {
+        result[maj - major_start] = (*this)[maj][minor_index];
+    }
     return result;
 }
 

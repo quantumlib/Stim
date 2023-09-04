@@ -16,13 +16,14 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/mem/simd_word.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
 
-TEST(DemSampler, basic_sizing) {
+TEST_EACH_WORD_SIZE_W(DemSampler, basic_sizing, {
     std::mt19937_64 irrelevant_rng(0);
-    DemSampler sampler(DetectorErrorModel(R"DEM()DEM"), irrelevant_rng, 700);
+    DemSampler<W> sampler(DetectorErrorModel(R"DEM()DEM"), irrelevant_rng, 700);
     ASSERT_EQ(sampler.det_buffer.num_major_bits_padded(), 0);
     ASSERT_EQ(sampler.obs_buffer.num_major_bits_padded(), 0);
     ASSERT_GE(sampler.det_buffer.num_minor_bits_padded(), 700);
@@ -31,7 +32,7 @@ TEST(DemSampler, basic_sizing) {
     ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
     ASSERT_FALSE(sampler.det_buffer.data.not_zero());
 
-    sampler = DemSampler(
+    sampler = DemSampler<W>(
         DetectorErrorModel(R"DEM(
             logical_observable L2000
             detector D1000
@@ -45,10 +46,10 @@ TEST(DemSampler, basic_sizing) {
     sampler.resample(false);
     ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
     ASSERT_FALSE(sampler.det_buffer.data.not_zero());
-}
+})
 
-TEST(DemSampler, resample_basic_probabilities) {
-    DemSampler sampler(
+TEST_EACH_WORD_SIZE_W(DemSampler, resample_basic_probabilities, {
+    DemSampler<W> sampler(
         DetectorErrorModel(R"DEM(
             error(0) D0
             error(0.25) D1 L0
@@ -56,7 +57,7 @@ TEST(DemSampler, resample_basic_probabilities) {
             error(0.75) D3
             error(1) D4 ^ D5
          )DEM"),
-        SHARED_TEST_RNG(),
+        INDEPENDENT_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
         sampler.resample(false);
@@ -72,16 +73,16 @@ TEST(DemSampler, resample_basic_probabilities) {
         ASSERT_EQ(sampler.det_buffer[1], sampler.obs_buffer[0]);
         ASSERT_EQ(sampler.det_buffer[4], sampler.det_buffer[5]);
     }
-}
+})
 
-TEST(DemSampler, resample_combinations) {
-    DemSampler sampler(
+TEST_EACH_WORD_SIZE_W(DemSampler, resample_combinations, {
+    DemSampler<W> sampler(
         DetectorErrorModel(R"DEM(
             error(0.1) D0 D1
             error(0.2) D1 D2
             error(0.3) D2 D0
          )DEM"),
-        SHARED_TEST_RNG(),
+        INDEPENDENT_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
         sampler.resample(false);
@@ -92,9 +93,9 @@ TEST(DemSampler, resample_combinations) {
         ASSERT_GT(sampler.det_buffer[2].popcnt(), 380 - 100);
         ASSERT_LT(sampler.det_buffer[2].popcnt(), 380 + 100);
 
-        simd_bits<MAX_BITWORD_WIDTH> total = sampler.det_buffer[0];
+        simd_bits<W> total = sampler.det_buffer[0];
         total ^= sampler.det_buffer[1];
         total ^= sampler.det_buffer[2];
         ASSERT_FALSE(total.not_zero());
     }
-}
+})

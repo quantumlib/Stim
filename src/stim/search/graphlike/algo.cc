@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <sstream>
 
 #include "stim/search/graphlike/edge.h"
 #include "stim/search/graphlike/graph.h"
@@ -92,5 +93,28 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
         }
     }
 
-    throw std::invalid_argument("Failed to find any graphlike logical errors.");
+    std::stringstream err_msg;
+    err_msg << "Failed to find any graphlike logical errors.";
+    if (graph.num_observables == 0) {
+        err_msg << "\n    WARNING: NO OBSERVABLES. The circuit or detector error model didn't define any observables, "
+                   "making it vacuously impossible to find a logical error.";
+    }
+    if (graph.nodes.size() == 0) {
+        err_msg << "\n    WARNING: NO DETECTORS. The circuit or detector error model didn't define any detectors.";
+    }
+    if (model.count_errors() == 0) {
+        err_msg << "\n    WARNING: NO ERRORS. The circuit or detector error model didn't include any errors, making it "
+                   "vacuously impossible to find a logical error.";
+    } else {
+        bool edges = 0;
+        for (const auto &n : graph.nodes) {
+            edges |= n.edges.size() > 0;
+        }
+        if (!edges) {
+            err_msg << "\n    WARNING: NO GRAPHLIKE ERRORS. Although the circuit or detector error model does define "
+                       "some errors, none of them are graphlike (i.e. have at most two detection events), making it "
+                       "vacuously impossible to find a graphlike logical error.";
+        }
+    }
+    throw std::invalid_argument(err_msg.str());
 }

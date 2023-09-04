@@ -20,8 +20,7 @@ using namespace stim;
 
 BENCHMARK(TableauSimulator_CX_10Kqubits) {
     size_t num_qubits = 10 * 1000;
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    TableauSimulator<MAX_BITWORD_WIDTH> sim(rng, num_qubits);
+    TableauSimulator<MAX_BITWORD_WIDTH> sim(std::mt19937_64(0), num_qubits);
 
     std::vector<GateTarget> targets;
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {

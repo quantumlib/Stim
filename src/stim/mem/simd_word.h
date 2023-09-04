@@ -15,13 +15,14 @@
  */
 
 #include <cstddef>
+#include <cstdint>
 
 #ifndef _STIM_MEM_SIMD_WORD_H
 #define _STIM_MEM_SIMD_WORD_H
 
-#include "stim/mem/bitword_64.h"
 #include "stim/mem/bitword_128_sse.h"
 #include "stim/mem/bitword_256_avx.h"
+#include "stim/mem/bitword_64.h"
 
 namespace stim {
 #if __AVX2__

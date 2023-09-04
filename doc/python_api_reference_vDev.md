@@ -75,6 +75,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitRepeatBlock.__ne__`](#stim.CircuitRepeatBlock.__ne__)
     - [`stim.CircuitRepeatBlock.__repr__`](#stim.CircuitRepeatBlock.__repr__)
     - [`stim.CircuitRepeatBlock.body_copy`](#stim.CircuitRepeatBlock.body_copy)
+    - [`stim.CircuitRepeatBlock.name`](#stim.CircuitRepeatBlock.name)
     - [`stim.CircuitRepeatBlock.repeat_count`](#stim.CircuitRepeatBlock.repeat_count)
 - [`stim.CircuitTargetsInsideInstruction`](#stim.CircuitTargetsInsideInstruction)
     - [`stim.CircuitTargetsInsideInstruction.__init__`](#stim.CircuitTargetsInsideInstruction.__init__)
@@ -117,6 +118,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemRepeatBlock.__repr__`](#stim.DemRepeatBlock.__repr__)
     - [`stim.DemRepeatBlock.body_copy`](#stim.DemRepeatBlock.body_copy)
     - [`stim.DemRepeatBlock.repeat_count`](#stim.DemRepeatBlock.repeat_count)
+    - [`stim.DemRepeatBlock.type`](#stim.DemRepeatBlock.type)
 - [`stim.DemTarget`](#stim.DemTarget)
     - [`stim.DemTarget.__eq__`](#stim.DemTarget.__eq__)
     - [`stim.DemTarget.__ne__`](#stim.DemTarget.__ne__)
@@ -165,11 +167,29 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
     - [`stim.ExplainedError.dem_error_terms`](#stim.ExplainedError.dem_error_terms)
+- [`stim.FlipSimulator`](#stim.FlipSimulator)
+    - [`stim.FlipSimulator.__init__`](#stim.FlipSimulator.__init__)
+    - [`stim.FlipSimulator.batch_size`](#stim.FlipSimulator.batch_size)
+    - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
+    - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
+    - [`stim.FlipSimulator.get_measurement_flips`](#stim.FlipSimulator.get_measurement_flips)
+    - [`stim.FlipSimulator.get_observable_flips`](#stim.FlipSimulator.get_observable_flips)
+    - [`stim.FlipSimulator.num_detectors`](#stim.FlipSimulator.num_detectors)
+    - [`stim.FlipSimulator.num_measurements`](#stim.FlipSimulator.num_measurements)
+    - [`stim.FlipSimulator.num_observables`](#stim.FlipSimulator.num_observables)
+    - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
+    - [`stim.FlipSimulator.peek_pauli_flips`](#stim.FlipSimulator.peek_pauli_flips)
+    - [`stim.FlipSimulator.set_pauli_flip`](#stim.FlipSimulator.set_pauli_flip)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
 - [`stim.GateData`](#stim.GateData)
+    - [`stim.GateData.__eq__`](#stim.GateData.__eq__)
+    - [`stim.GateData.__init__`](#stim.GateData.__init__)
+    - [`stim.GateData.__ne__`](#stim.GateData.__ne__)
+    - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
+    - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
     - [`stim.GateData.is_reset`](#stim.GateData.is_reset)
@@ -233,6 +253,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
     - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
+    - [`stim.PauliString.weight`](#stim.PauliString.weight)
 - [`stim.PauliStringIterator`](#stim.PauliStringIterator)
     - [`stim.PauliStringIterator.__iter__`](#stim.PauliStringIterator.__iter__)
     - [`stim.PauliStringIterator.__next__`](#stim.PauliStringIterator.__next__)
@@ -319,6 +340,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.peek_x`](#stim.TableauSimulator.peek_x)
     - [`stim.TableauSimulator.peek_y`](#stim.TableauSimulator.peek_y)
     - [`stim.TableauSimulator.peek_z`](#stim.TableauSimulator.peek_z)
+    - [`stim.TableauSimulator.postselect_observable`](#stim.TableauSimulator.postselect_observable)
     - [`stim.TableauSimulator.postselect_x`](#stim.TableauSimulator.postselect_x)
     - [`stim.TableauSimulator.postselect_y`](#stim.TableauSimulator.postselect_y)
     - [`stim.TableauSimulator.postselect_z`](#stim.TableauSimulator.postselect_z)
@@ -2863,6 +2885,35 @@ def body_copy(
     """
 ```
 
+<a name="stim.CircuitRepeatBlock.name"></a>
+```python
+# stim.CircuitRepeatBlock.name
+
+# (in class stim.CircuitRepeatBlock)
+@property
+def name(
+    self,
+) -> object:
+    """Returns the name "REPEAT".
+
+    This is a duck-typing convenience method. It exists so that code that doesn't
+    know whether it has a `stim.CircuitInstruction` or a `stim.CircuitRepeatBlock`
+    can check the object's name without having to do an `instanceof` check first.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...     H 0
+        ...     REPEAT 5 {
+        ...         CX 1 2
+        ...     }
+        ...     S 1
+        ... ''')
+        >>> [instruction.name for instruction in circuit]
+        ['H', 'REPEAT', 'S']
+    """
+```
+
 <a name="stim.CircuitRepeatBlock.repeat_count"></a>
 ```python
 # stim.CircuitRepeatBlock.repeat_count
@@ -4214,6 +4265,36 @@ def repeat_count(
     self,
 ) -> int:
     """The number of times the repeat block's body is supposed to execute.
+    """
+```
+
+<a name="stim.DemRepeatBlock.type"></a>
+```python
+# stim.DemRepeatBlock.type
+
+# (in class stim.DemRepeatBlock)
+@property
+def type(
+    self,
+) -> object:
+    """Returns the type name "repeat".
+
+    This is a duck-typing convenience method. It exists so that code that doesn't
+    know whether it has a `stim.DemInstruction` or a `stim.DemRepeatBlock`
+    can check the type field without having to do an `instanceof` check first.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.1) D0 L0
+        ...     repeat 5 {
+        ...         error(0.1) D0 D1
+        ...         shift_detectors 1
+        ...     }
+        ...     logical_observable L0
+        ... ''')
+        >>> [instruction.type for instruction in dem]
+        ['error', 'repeat', 'logical_observable']
     """
 ```
 
@@ -5671,6 +5752,617 @@ def dem_error_terms(
     """
 ```
 
+<a name="stim.FlipSimulator"></a>
+```python
+# stim.FlipSimulator
+
+# (at top-level in the stim module)
+class FlipSimulator:
+    """A simulator that tracks whether things are flipped, instead of what they are.
+
+    Tracking flips is significantly cheaper than tracking actual values, requiring
+    O(1) work per gate (compared to O(n) for unitary operations and O(n^2) for
+    collapsing operations in the tableau simulator, where n is the qubit count).
+
+    Supports interactive usage, where gates and measurements are applied on demand.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+    """
+```
+
+<a name="stim.FlipSimulator.__init__"></a>
+```python
+# stim.FlipSimulator.__init__
+
+# (in class stim.FlipSimulator)
+def __init__(
+    self,
+    *,
+    batch_size: int,
+    disable_stabilizer_randomization: bool = False,
+    num_qubits: int = 0,
+    seed: Optional[int] = None,
+) -> None:
+    """Initializes a stim.FlipSimulator.
+
+    Args:
+        batch_size: For speed, the flip simulator simulates many instances in
+            parallel. This argument determines the number of parallel instances.
+
+            It's recommended to use a multiple of 256, because internally the state
+            of the instances is striped across SSE (128 bit) or AVX (256 bit)
+            words with one bit in the word belonging to each instance. The result is
+            that, even if you only ask for 1 instance, probably the same amount of
+            work is being done as if you'd asked for 256 instances. The extra
+            results just aren't being used, creating waste.
+
+        disable_stabilizer_randomization: Determines whether or not the flip
+            simulator uses stabilizer randomization. Defaults to False (stabilizer
+            randomization used). Set to True to disable stabilizer randomization.
+
+            Stabilizer randomization means that, when a qubit is initialized or
+            measured in the Z basis, a Z error is added to the qubit with 50%
+            probability. More generally, anytime a stabilizer is introduced into
+            the system by any means, an error equal to that stabilizer is applied
+            with 50% probability. This ensures that observables anticommuting with
+            stabilizers of the system must be maximally uncertain. In other words,
+            this feature enforces Heisenberg's uncertainty principle.
+
+            This is a safety feature that you should not turn off unless you have a
+            reason to do so. Stabilizer randomization is turned on by default
+            because it catches mistakes. For example, suppose you are trying to
+            create a stabilizer code but you accidentally have the code measure two
+            anticommuting stabilizers. With stabilizer randomization turned off, it
+            will look like this code works. With stabilizer randomization turned on,
+            the two measurements will correctly randomize each other revealing that
+            the code doesn't work.
+
+            In some use cases, stabilizer randomization is a hindrance instead of
+            helpful. For example, if you are using the flip simulator to understand
+            how an error propagates through the system, the stabilizer randomization
+            will be introducing error terms that you don't want.
+
+        num_qubits: Sets the initial number of qubits tracked by the simulation.
+            The simulator will still automatically resize as needed when qubits
+            beyond this limit are touched.
+
+            This parameter exists as a way to hint at the desired size of the
+            simulator's state for performance, and to ensure methods that
+            peek at the size have the expected size from the start instead of
+            only after the relevant qubits have been touched.
+
+        seed: PARTIALLY determines simulation results by deterministically seeding
+            the random number generator.
+
+            Must be None or an integer in range(2**64).
+
+            Defaults to None. When None, the prng is seeded from system entropy.
+
+            When set to an integer, making the exact same series calls on the exact
+            same machine with the exact same version of Stim will produce the exact
+            same simulation results.
+
+            CAUTION: simulation results *WILL NOT* be consistent between versions of
+            Stim. This restriction is present to make it possible to have future
+            optimizations to the random sampling, and is enforced by introducing
+            intentional differences in the seeding strategy from version to version.
+
+            CAUTION: simulation results *MAY NOT* be consistent across machines that
+            differ in the width of supported SIMD instructions. For example, using
+            the same seed on a machine that supports AVX instructions and one that
+            only supports SSE instructions may produce different simulation results.
+
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
+
+    Returns:
+        An initialized stim.FlipSimulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+    """
+```
+
+<a name="stim.FlipSimulator.batch_size"></a>
+```python
+# stim.FlipSimulator.batch_size
+
+# (in class stim.FlipSimulator)
+@property
+def batch_size(
+    self,
+) -> int:
+    """Returns the number of instances being simulated by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.batch_size
+        256
+        >>> sim = stim.FlipSimulator(batch_size=42)
+        >>> sim.batch_size
+        42
+    """
+```
+
+<a name="stim.FlipSimulator.do"></a>
+```python
+# stim.FlipSimulator.do
+
+# (in class stim.FlipSimulator)
+def do(
+    self,
+    obj: Union[stim.Circuit, stim.CircuitInstruction, stim.CircuitRepeatBlock],
+) -> None:
+    """Applies a circuit or circuit instruction to the simulator's state.
+
+    The results of any measurements performed can be retrieved using the
+    `get_measurement_flips` method.
+
+    Args:
+        obj: The circuit or instruction to apply to the simulator's state.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(
+        ...     batch_size=1,
+        ...     disable_stabilizer_randomization=True,
+        ... )
+        >>> circuit = stim.Circuit('''
+        ...     X_ERROR(1) 0 1 3
+        ...     REPEAT 5 {
+        ...         H 0
+        ...         C_XYZ 1
+        ...     }
+        ... ''')
+        >>> sim.do(circuit)
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+ZZ_X")]
+
+        >>> sim.do(circuit[0])
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+YY__")]
+
+        >>> sim.do(circuit[1])
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+YX__")]
+    """
+```
+
+<a name="stim.FlipSimulator.get_detector_flips"></a>
+```python
+# stim.FlipSimulator.get_detector_flips
+
+# (in class stim.FlipSimulator)
+def get_detector_flips(
+    self,
+    *,
+    detector_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves detector flip data from the simulator's detection event record.
+
+    Args:
+        record_index: Identifies a detector to read results from.
+            Setting this to None (default) returns results from all detectors.
+            Otherwise this should be an integer in range(0, self.num_detectors).
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_detectors, self.batch_size), where the first index is
+        the detector_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying detector_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a detector_index (or a 0d array, a boolean, if detector_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=9)
+        >>> sim.do(stim.Circuit('''
+        ...     M 0 0 0
+        ...     DETECTOR rec[-2] rec[-3]
+        ...     DETECTOR rec[-1] rec[-2]
+        ... '''))
+
+        >>> sim.get_detector_flips()
+        array([[False, False, False, False, False, False, False, False, False],
+               [False, False, False, False, False, False, False, False, False]])
+
+        >>> sim.get_detector_flips(bit_packed=True)
+        array([[0, 0],
+               [0, 0]], dtype=uint8)
+
+        >>> sim.get_detector_flips(instance_index=2)
+        array([False, False])
+
+        >>> sim.get_detector_flips(detector_index=1)
+        array([False, False, False, False, False, False, False, False, False])
+
+        >>> sim.get_detector_flips(instance_index=2, detector_index=1)
+        array(False)
+    """
+```
+
+<a name="stim.FlipSimulator.get_measurement_flips"></a>
+```python
+# stim.FlipSimulator.get_measurement_flips
+
+# (in class stim.FlipSimulator)
+def get_measurement_flips(
+    self,
+    *,
+    record_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves measurement flip data from the simulator's measurement record.
+
+    Args:
+        record_index: Identifies a measurement to read results from.
+            Setting this to None (default) returns results from all measurements.
+            Setting this to a non-negative integer indexes measurements by the order
+                they occurred. For example, record index 0 is the first measurement.
+            Setting this to a negative integer indexes measurements by recency.
+                For example, recording index -1 is the most recent measurement.
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be set to an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_measurements, self.batch_size), where the first index is
+        the measurement_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying record_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a measurement_index (or a 0d array, a boolean, if record_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=9)
+        >>> sim.do(stim.Circuit('M 0 1 2'))
+
+        >>> sim.get_measurement_flips()
+        array([[False, False, False, False, False, False, False, False, False],
+               [False, False, False, False, False, False, False, False, False],
+               [False, False, False, False, False, False, False, False, False]])
+
+        >>> sim.get_measurement_flips(bit_packed=True)
+        array([[0, 0],
+               [0, 0],
+               [0, 0]], dtype=uint8)
+
+        >>> sim.get_measurement_flips(instance_index=1)
+        array([False, False, False])
+
+        >>> sim.get_measurement_flips(record_index=2)
+        array([False, False, False, False, False, False, False, False, False])
+
+        >>> sim.get_measurement_flips(instance_index=1, record_index=2)
+        array(False)
+    """
+```
+
+<a name="stim.FlipSimulator.get_observable_flips"></a>
+```python
+# stim.FlipSimulator.get_observable_flips
+
+# (in class stim.FlipSimulator)
+def get_observable_flips(
+    self,
+    *,
+    observable_index: Optional[int] = None,
+    instance_index: Optional[int] = None,
+    bit_packed: bool = False,
+) -> np.ndarray:
+    """Retrieves observable flip data from the simulator's detection event record.
+
+    Args:
+        record_index: Identifies a observable to read results from.
+            Setting this to None (default) returns results from all observables.
+            Otherwise this should be an integer in range(0, self.num_observables).
+        instance_index: Identifies a simulation instance to read results from.
+            Setting this to None (the default) returns results from all instances.
+            Otherwise this should be an integer in range(0, self.batch_size).
+        bit_packed: Defaults to False. Determines whether the result is bit packed.
+            If this is set to true, the returned numpy array will be bit packed as
+            if by applying
+
+                out = np.packbits(out, axis=len(out.shape) - 1, bitorder='little')
+
+            Behind the scenes the data is always bit packed, so setting this
+            argument avoids ever unpacking in the first place. This substantially
+            improves performance when there is a lot of data.
+
+    Returns:
+        A numpy array containing the requested data. By default this is a 2d array
+        of shape (self.num_observables, self.batch_size), where the first index is
+        the observable_index and the second index is the instance_index and the
+        dtype is np.bool_.
+
+        Specifying observable_index slices away the first index, leaving a 1d array
+        with only an instance_index.
+
+        Specifying instance_index slices away the last index, leaving a 1d array
+        with only a observable_index (or a 0d array, a boolean, if observable_index
+        was also specified).
+
+        Specifying bit_packed=True bit packs the last remaining index, changing
+        the dtype to np.uint8.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=9)
+        >>> sim.do(stim.Circuit('''
+        ...     M 0 0 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-2]
+        ...     OBSERVABLE_INCLUDE(1) rec[-1]
+        ... '''))
+
+        >>> sim.get_observable_flips()
+        array([[False, False, False, False, False, False, False, False, False],
+               [False, False, False, False, False, False, False, False, False]])
+
+        >>> sim.get_observable_flips(bit_packed=True)
+        array([[0, 0],
+               [0, 0]], dtype=uint8)
+
+        >>> sim.get_observable_flips(instance_index=2)
+        array([False, False])
+
+        >>> sim.get_observable_flips(observable_index=1)
+        array([False, False, False, False, False, False, False, False, False])
+
+        >>> sim.get_observable_flips(instance_index=2, observable_index=1)
+        array(False)
+    """
+```
+
+<a name="stim.FlipSimulator.num_detectors"></a>
+```python
+# stim.FlipSimulator.num_detectors
+
+# (in class stim.FlipSimulator)
+@property
+def num_detectors(
+    self,
+) -> int:
+    """Returns the number of detectors that have been simulated and stored.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.num_detectors
+        0
+        >>> sim.do(stim.Circuit('''
+        ...     M 0 0
+        ...     DETECTOR rec[-1] rec[-2]
+        ... '''))
+        >>> sim.num_detectors
+        1
+    """
+```
+
+<a name="stim.FlipSimulator.num_measurements"></a>
+```python
+# stim.FlipSimulator.num_measurements
+
+# (in class stim.FlipSimulator)
+@property
+def num_measurements(
+    self,
+) -> int:
+    """Returns the number of measurements that have been simulated and stored.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.num_measurements
+        0
+        >>> sim.do(stim.Circuit('M 3 5'))
+        >>> sim.num_measurements
+        2
+    """
+```
+
+<a name="stim.FlipSimulator.num_observables"></a>
+```python
+# stim.FlipSimulator.num_observables
+
+# (in class stim.FlipSimulator)
+@property
+def num_observables(
+    self,
+) -> int:
+    """Returns the number of observables currently tracked by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.num_observables
+        0
+        >>> sim.do(stim.Circuit('''
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(4) rec[-1]
+        ... '''))
+        >>> sim.num_observables
+        5
+    """
+```
+
+<a name="stim.FlipSimulator.num_qubits"></a>
+```python
+# stim.FlipSimulator.num_qubits
+
+# (in class stim.FlipSimulator)
+@property
+def num_qubits(
+    self,
+) -> int:
+    """Returns the number of qubits currently tracked by the simulator.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.num_qubits
+        0
+        >>> sim = stim.FlipSimulator(batch_size=256, num_qubits=4)
+        >>> sim.num_qubits
+        4
+        >>> sim.do(stim.Circuit('H 5'))
+        >>> sim.num_qubits
+        6
+    """
+```
+
+<a name="stim.FlipSimulator.peek_pauli_flips"></a>
+```python
+# stim.FlipSimulator.peek_pauli_flips
+
+# (in class stim.FlipSimulator)
+@overload
+def peek_pauli_flips(
+    self,
+) -> List[stim.PauliString]:
+    pass
+@overload
+def peek_pauli_flips(
+    self,
+    *,
+    instance_index: int,
+) -> stim.PauliString:
+    pass
+def peek_pauli_flips(
+    self,
+    *,
+    instance_index: Optional[int] = None,
+) -> Union[stim.PauliString, List[stim.PauliString]]:
+    """Returns the current pauli errors packed into stim.PauliString instances.
+
+    Args:
+        instance_index: Defaults to None. When set to None, the pauli errors from
+            all instances are returned as a list of `stim.PauliString`. When set to
+            an integer, a single `stim.PauliString` is returned containing the
+            errors for the indexed instance.
+
+    Returns:
+        if instance_index is None:
+            A list of stim.PauliString, with the k'th entry being the errors from
+            the k'th simulation instance.
+        else:
+            A stim.PauliString with the errors from the k'th simulation instance.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(
+        ...     batch_size=2,
+        ...     disable_stabilizer_randomization=True,
+        ...     num_qubits=10,
+        ... )
+
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+__________"), stim.PauliString("+__________")]
+
+        >>> sim.peek_pauli_flips(instance_index=0)
+        stim.PauliString("+__________")
+
+        >>> sim.do(stim.Circuit('''
+        ...     X_ERROR(1) 0 3 5
+        ...     Z_ERROR(1) 3 6
+        ... '''))
+
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+X__Y_XZ___"), stim.PauliString("+X__Y_XZ___")]
+
+        >>> sim = stim.FlipSimulator(
+        ...     batch_size=1,
+        ...     num_qubits=100,
+        ... )
+        >>> flips: stim.PauliString = sim.peek_pauli_flips(instance_index=0)
+        >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
+        ['+', 'Z', '_']
+    """
+```
+
+<a name="stim.FlipSimulator.set_pauli_flip"></a>
+```python
+# stim.FlipSimulator.set_pauli_flip
+
+# (in class stim.FlipSimulator)
+def set_pauli_flip(
+    self,
+    pauli: Union[str, int],
+    *,
+    qubit_index: int,
+    instance_index: int,
+) -> None:
+    """Sets the pauli flip on a given qubit in a given simulation instance.
+
+    Args:
+        pauli: The pauli, specified as an integer or string.
+            Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+            Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+        qubit_index: The qubit to put the error on. Must be non-negative. The state
+            will automatically expand as needed to store the error.
+        instance_index: The simulation index to put the error inside. Use negative
+            indices to index from the end of the list.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(
+        ...     batch_size=2,
+        ...     num_qubits=3,
+        ...     disable_stabilizer_randomization=True,
+        ... )
+        >>> sim.set_pauli_flip('X', qubit_index=2, instance_index=1)
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+___"), stim.PauliString("+__X")]
+    """
+```
+
 <a name="stim.FlippedMeasurement"></a>
 ```python
 # stim.FlippedMeasurement
@@ -5752,6 +6444,74 @@ class GateData:
                 stim.PauliString("+X"),
             ],
         )
+    """
+```
+
+<a name="stim.GateData.__eq__"></a>
+```python
+# stim.GateData.__eq__
+
+# (in class stim.GateData)
+def __eq__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are identical.
+    """
+```
+
+<a name="stim.GateData.__init__"></a>
+```python
+# stim.GateData.__init__
+
+# (in class stim.GateData)
+def __init__(
+    self,
+    name: str,
+) -> None:
+    """Finds gate data for the named gate.
+
+    Examples:
+        >>> import stim
+        >>> stim.GateData('H').is_unitary
+        True
+    """
+```
+
+<a name="stim.GateData.__ne__"></a>
+```python
+# stim.GateData.__ne__
+
+# (in class stim.GateData)
+def __ne__(
+    self,
+    arg0: stim.GateData,
+) -> bool:
+    """Determines if two GateData instances are not identical.
+    """
+```
+
+<a name="stim.GateData.__repr__"></a>
+```python
+# stim.GateData.__repr__
+
+# (in class stim.GateData)
+def __repr__(
+    self,
+) -> str:
+    """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
+    """
+```
+
+<a name="stim.GateData.__str__"></a>
+```python
+# stim.GateData.__str__
+
+# (in class stim.GateData)
+def __str__(
+    self,
+) -> str:
+    """Returns text describing the gate data.
     """
 ```
 
@@ -6013,7 +6773,7 @@ def name(
 def num_parens_arguments_range(
     self,
 ) -> range:
-    """Returns whether or not the gate is a measurement or reset.
+    """Returns the min/max parens arguments taken by the gate, as a python range.
 
     Examples:
         >>> import stim
@@ -7881,6 +8641,27 @@ def __next__(
     self,
 ) -> stim.PauliString:
     """Returns the next iterated pauli string.
+<a name="stim.PauliString.weight"></a>
+```python
+# stim.PauliString.weight
+
+# (in class stim.PauliString)
+@property
+def weight(
+    self,
+) -> int:
+    """Returns the number of non-identity pauli terms in the pauli string.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("+___").weight
+        0
+        >>> stim.PauliString("+__X").weight
+        1
+        >>> stim.PauliString("+XYZ").weight
+        3
+        >>> stim.PauliString("-XXX___XXYZ").weight
+        7
     """
 ```
 
@@ -8562,8 +9343,8 @@ def from_stabilizers(
 # stim.Tableau.from_state_vector
 
 # (in class stim.Tableau)
+@staticmethod
 def from_state_vector(
-    self,
     state_vector: Iterable[float],
     *,
     endian: str,
@@ -9266,9 +10047,6 @@ def to_numpy(
             z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
             x_signs.shape = math.ceil(len(tableau) / 8)
             z_signs.shape = math.ceil(len(tableau) / 8)
-            *.dtype = = np.uint8
-            *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-            *_signs.shape = math.ceil(len(tableau) / 8)
             (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
             (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
             (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
@@ -10938,6 +11716,46 @@ def peek_z(
     """
 ```
 
+<a name="stim.TableauSimulator.postselect_observable"></a>
+```python
+# stim.TableauSimulator.postselect_observable
+
+# (in class stim.TableauSimulator)
+def postselect_observable(
+    self,
+    observable: stim.PauliString,
+    *,
+    desired_value: bool = False,
+) -> None:
+    """Projects into a desired observable, or raises an exception if it was impossible.
+
+    Postselecting an observable forces it to collapse to a specific eigenstate,
+    as if it was measured and that state was the result of the measurement.
+
+    Args:
+        observable: The observable to postselect, specified as a pauli string.
+            The pauli string's sign must be -1 or +1 (not -i or +i).
+        desired_value:
+            False (default): Postselect into the +1 eigenstate of the observable.
+            True: Postselect into the -1 eigenstate of the observable.
+
+    Raises:
+        ValueError:
+            The given observable had an imaginary sign.
+            OR
+            The postselection was impossible. The observable was in the opposite
+            eigenstate, so measuring it would never ever return the desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.postselect_observable(stim.PauliString("+XX"))
+        >>> s.postselect_observable(stim.PauliString("+ZZ"))
+        >>> s.peek_observable_expectation(stim.PauliString("+YY"))
+        -1
+    """
+```
+
 <a name="stim.TableauSimulator.postselect_x"></a>
 ```python
 # stim.TableauSimulator.postselect_x
@@ -10966,6 +11784,21 @@ def postselect_x(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.peek_x(0)
+        0
+        >>> s.postselect_x(0, desired_value=False)
+        >>> s.peek_x(0)
+        1
+        >>> s.h(0)
+        >>> s.peek_x(0)
+        0
+        >>> s.postselect_x(0, desired_value=True)
+        >>> s.peek_x(0)
+        -1
     """
 ```
 
@@ -10997,6 +11830,21 @@ def postselect_y(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.peek_y(0)
+        0
+        >>> s.postselect_y(0, desired_value=False)
+        >>> s.peek_y(0)
+        1
+        >>> s.reset_x(0)
+        >>> s.peek_y(0)
+        0
+        >>> s.postselect_y(0, desired_value=True)
+        >>> s.peek_y(0)
+        -1
     """
 ```
 
@@ -11028,6 +11876,22 @@ def postselect_z(
             orthogonal to the desired state, so it was literally
             impossible for a measurement of the qubit to return the
             desired result.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.h(0)
+        >>> s.peek_z(0)
+        0
+        >>> s.postselect_z(0, desired_value=False)
+        >>> s.peek_z(0)
+        1
+        >>> s.h(0)
+        >>> s.peek_z(0)
+        0
+        >>> s.postselect_z(0, desired_value=True)
+        >>> s.peek_z(0)
+        -1
     """
 ```
 
@@ -11832,8 +12696,8 @@ def gate_data(
         >>> stim.gate_data('cnot').is_two_qubit_gate
         True
         >>> gate_dict = stim.gate_data()
-        >>> len(gate_dict)
-        65
+        >>> len(gate_dict) > 50
+        True
         >>> gate_dict['MX'].produces_measurements
         True
     """
