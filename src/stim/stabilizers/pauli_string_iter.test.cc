@@ -92,52 +92,6 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, iter_pauli_string, {
     }
     ASSERT_EQ(iter3.result, PauliString<W>::from_str("+YYYY"));
     ASSERT_EQ(iter3.iter_next(), false);
-    // This leads to overflow.
-    // num_qubits = 128;
-    // min_weight = 66;
-    // max_weight = 66;
-    // PauliStringIterator<W> iter4(num_qubits, min_weight, max_weight);
-    // iter4.iter_next();
-    // for (size_t i = 0; i < 4; i++) {
-    //     iter4.iter_next();
-    // }
-    // auto p1 = PauliString<W>::from_func(false, 128, [](size_t i) {
-    //     if (i == 0) {
-    //         return *"X";
-    //     } else if (i == 1) {
-    //         return *"Z";
-    //     } else if (i < 66) {
-    //         return *"X";
-    //     } else {
-    //         return *"_";
-    //     }
-    // });
-    // ASSERT_EQ(iter4.result, p1);
-})
-
-TEST_EACH_WORD_SIZE_W(pauli_string_iter, find_set_bits, {
-    size_t num_qubits = 18;
-    size_t min_weight = 2;
-    size_t max_weight = 2;
-    PauliStringIterator<W> iter(num_qubits, min_weight, max_weight);
-    iter.cur_perm.u64[0] = (1UL << 2) - 1;
-    std::vector<int> set_bits(2);
-    iter.find_set_bits(iter.cur_perm, set_bits);
-    ASSERT_EQ(set_bits[0], 0);
-    ASSERT_EQ(set_bits[1], 1);
-    PauliStringIterator<W> iter2(513, 2, 7);
-    iter2.cur_perm.u64[0] = (1UL << 2) - 1;  // 11
-    iter2.cur_perm.u64[1] = (1UL << 4) - 1;  // 1111
-    iter2.cur_perm.u64[3] = (1UL << 1) - 1;  // 1
-    set_bits.resize(7);
-    iter.find_set_bits(iter2.cur_perm, set_bits);
-    ASSERT_EQ(set_bits[0], 0);
-    ASSERT_EQ(set_bits[1], 1);
-    ASSERT_EQ(set_bits[2], 0 + 64);
-    ASSERT_EQ(set_bits[3], 1 + 64);
-    ASSERT_EQ(set_bits[4], 2 + 64);
-    ASSERT_EQ(set_bits[5], 3 + 64);
-    ASSERT_EQ(set_bits[6], 0 + 3 * 64);
 })
 
 TEST_EACH_WORD_SIZE_W(pauli_string_iter, count_trailing_zeros, {
@@ -202,7 +156,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, next_permutation, {
     // 64 choose 4 , 635376
     for (size_t perm = 0; perm < 635375; perm++) {
         uint64_t np_ref = next_perm_ref(cur_perm_ref);
-        iter.next_qubit_permutation(cur_perm);
+        iter.next_bitstring_of_same_hamming_weight(cur_perm);
         ASSERT_EQ(cur_perm.u64[0], np_ref) << perm;
         cur_perm_ref = np_ref;
         for (size_t w = 1; w < cur_perm.num_u64_padded(); w++) {
@@ -214,14 +168,14 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, next_permutation, {
     // ..1100 00..00 -> ...1000 00..01 -> ...1000 00..10 -> ....
     // permuting in the zeroth word, there is only 1 bit so only 64 possibilities
     for (int i = 0; i < 64; i++) {
-        iter.next_qubit_permutation(cur_perm);
+        iter.next_bitstring_of_same_hamming_weight(cur_perm);
         ASSERT_EQ(cur_perm.u64[0], 1ULL << i);
         ASSERT_EQ(cur_perm.u64[1], 16);
     }
     // Crossed word boundary so now permuting in the first word
     // i.e. 1001 00..00 -> 1010 00..00 -> 1100 00..00
     for (int i = 0; i < 3; i++) {
-        iter.next_qubit_permutation(cur_perm);
+        iter.next_bitstring_of_same_hamming_weight(cur_perm);
         ASSERT_EQ(cur_perm.u64[0], 0);
         ASSERT_EQ(cur_perm.u64[1], 16 | (1 << i));
     }
@@ -231,16 +185,16 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, next_permutation, {
     cur_perm.u64[0] = 7 << 2;
     cur_perm.u64[1] = (1ULL << 63) | 1;
     cur_perm.u64[2] = 3 << 3;
-    iter.next_qubit_permutation(cur_perm);
+    iter.next_bitstring_of_same_hamming_weight(cur_perm);
     // 35 == 00..10011
     ASSERT_EQ(cur_perm.u64[0], 35);
-    iter.next_qubit_permutation(cur_perm);
+    iter.next_bitstring_of_same_hamming_weight(cur_perm);
     // 37 == 00..10101
     ASSERT_EQ(cur_perm.u64[0], 37);
     // Fast forward to word boundary
     // 00011000 100..01 11100..000 -> 00011000 100..10 00..111
     cur_perm.u64[0] = (uint64_t)7 << (63 - 2);
-    iter.next_qubit_permutation(cur_perm);
+    iter.next_bitstring_of_same_hamming_weight(cur_perm);
     ASSERT_EQ(cur_perm.u64[0], 7);
     ASSERT_EQ(cur_perm.u64[1], ((1ULL << 63) | 2));
     for (size_t w = 0; w < cur_perm.num_u64_padded(); w++) {
@@ -251,7 +205,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, next_permutation, {
     cur_perm.u64[1] = 0;
     cur_perm.u64[2] = 0;
     for (size_t i = 0; i < 191; i++) {
-        iter.next_qubit_permutation(cur_perm);
+        iter.next_bitstring_of_same_hamming_weight(cur_perm);
     }
     ASSERT_EQ(cur_perm.u64[0], 0);
     ASSERT_EQ(cur_perm.u64[1], 0);
@@ -282,8 +236,28 @@ TEST_EACH_WORD_SIZE_W(pauli_string_iter, iter_pauli_string_multi_word, {
     max_weight = 2;
     PauliStringIterator<W> iter3(num_qubits, min_weight, max_weight);
     count = 0;
+    for (size_t i = 0; i < 1 + num_qubits * 3; i++) {
+        iter3.iter_next();
+        count++;
+    }
+    auto expected = PauliString<W>::from_func(false, 129, [](size_t i) {
+        if (i == 128) {
+            return 'Y';
+        } else {
+            return '_';
+        }
+    });
+    ASSERT_EQ(iter3.result, expected);
     while (iter3.iter_next()) {
         count++;
     }
     ASSERT_EQ(count, 1 + 387 + 74304);
+    expected = PauliString<W>::from_func(false, 129, [](size_t i) {
+        if (i == 127 || i == 128) {
+            return 'Y';
+        } else {
+            return '_';
+        }
+    });
+    ASSERT_EQ(iter3.result, expected);
 })

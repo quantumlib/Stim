@@ -36,7 +36,6 @@ struct PauliStringIterator {
     size_t cur_k;  // current index
     size_t cur_w;  // current weight
     size_t cur_p;  // current permutation index
-    std::vector<int> set_bits;
     // Needs to be a list of integers
     simd_bits<W> cur_perm;  // current permutation for given weight
     simd_bits<W> terminal;  // Terminal value of current weight permutation
@@ -46,10 +45,8 @@ struct PauliStringIterator {
     PauliStringIterator &operator=(const PauliStringIterator &);
     PauliStringIterator &operator=(PauliStringIterator &&) = delete;
 
-    // Finds set bits in a string and stores their location in a vector.
-    void find_set_bits(simd_bits<W> &cur_perm, std::vector<int> &set_bits);
     // Get next permutation of qubit indices.
-    void next_qubit_permutation(simd_bits<W> &cur_perm);
+    void next_bitstring_of_same_hamming_weight(simd_bits<W> &cur_perm);
     size_t count_trailing_zeros(simd_bits<W> &cur_perm);
     void ones_mask_with_val(simd_bits<W> &mask, uint64_t val, size_t loc);
     // Yield the next Pauli String
@@ -57,7 +54,7 @@ struct PauliStringIterator {
     // Iterate over Pauli strings of a given weight
     bool iter_next_weight();
     // For a given weight and qubit permutation iterate over 3^w Pauli Strings.
-    bool iter_all_cur_perm(std::vector<int> &set_bits);
+    bool pair_sat_increment();
 
     // Restarts iteration.
     void restart();

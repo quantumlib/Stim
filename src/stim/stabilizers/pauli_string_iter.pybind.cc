@@ -73,13 +73,13 @@ void stim_pybind::pybind_pauli_string_iter_methods(
             .data());
 
     c.def(
-        "__internal_next_qubit_permutation",
+        "__internal_next_bitstring_of_same_hamming_weight",
         [](PauliStringIterator<stim::MAX_BITWORD_WIDTH> &self) {
-            self.next_qubit_permutation(self.cur_perm);
+            self.next_bitstring_of_same_hamming_weight(self.cur_perm);
             return simd_bits_to_numpy(self.cur_perm, self.result.num_qubits, false);
         },
         clean_doc_string(R"DOC(
-            [DEPRECATED] Get the next permutation of qubit labels.
+            [DEPRECATED] Get the next lexigraphically ordered bitstring.
 
             It's alot easier to test more complicated edge cases in python
             which largely arise due to the algorithm for generating the next
@@ -93,7 +93,7 @@ void stim_pybind::pybind_pauli_string_iter_methods(
             Examples:
                 >>> import stim
                 >>> pauli_iter = stim.PauliString.iter_all(5, min_weight=3, max_weight=5)
-                >>> pauli_iter.next_qubit_permutation()
+                >>> pauli_iter.next_bitstring_of_same_hamming_weight()
                 array([ True,  True, False,  True, False])
         )DOC")
             .data());

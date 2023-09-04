@@ -50,20 +50,6 @@ PauliStringIterator<W> &PauliStringIterator<W>::operator=(const PauliStringItera
 }
 
 template <size_t W>
-void PauliStringIterator<W>::find_set_bits(simd_bits<W> &cur_perm, std::vector<int> &bit_locs) {
-    // Determine location of set bits in cur_perm.
-    size_t count = 0;
-    for (size_t w = 0; w < cur_perm.num_u64_padded(); w++) {
-        for (int bit = 0; bit < 64; bit++) {
-            if (cur_perm.u64[w] & (1ULL << bit)) {
-                bit_locs[count] = bit + w * 64;
-                count++;
-            }
-        }
-    }
-}
-
-template <size_t W>
 size_t PauliStringIterator<W>::count_trailing_zeros(simd_bits<W> &cur_perm) {
     // Linear time algorithm from https://graphics.stanford.edu/~seander/bithacks.html
     // TODO: Replace with compiler intrinsic or a better algorithm.
@@ -94,7 +80,7 @@ void PauliStringIterator<W>::ones_mask_with_val(simd_bits<W> &mask, uint64_t val
 }
 
 template <size_t W>
-void PauliStringIterator<W>::next_qubit_permutation(simd_bits<W> &cur_perm) {
+void PauliStringIterator<W>::next_bitstring_of_same_hamming_weight(simd_bits<W> &cur_perm) {
     // The next lexicographically ordered bitstring is given by the algorithm (for a single word):
     // 1. c1 = cur_perm | (cur_perm - 1) // set least significant zero bits to 1.
     // 2. c2 = (c1 + 1)
@@ -164,45 +150,43 @@ void PauliStringIterator<W>::next_qubit_permutation(simd_bits<W> &cur_perm) {
 }
 
 template <size_t W>
-bool PauliStringIterator<W>::iter_all_cur_perm(std::vector<int> &set_bits) {
+bool PauliStringIterator<W>::pair_sat_increment() {
     // This will overflow for large cur_w.
     size_t num_terms = static_cast<size_t>(pow(3, cur_w));
-    result.xs.clear();
-    result.zs.clear();
     // Set to all Xs initially
-    for (size_t i = 0; i < cur_w; i++) {
-        result.xs.u64[set_bits[i] / 64] ^= uint64_t{1} << (set_bits[i] & 63);
+    if (cur_k == 0) {
+        cur_k++;
+        result.xs = cur_perm;
+        result.zs.clear();
+        return true;
     }
-    // TODO: in principle we could store the 3^w patterns for reasonable values
-    // of w and avoid repeating this loop for each new qubit permutation. We
-    // would save a mod and division so probably not worth it.
     while (cur_k < num_terms) {
-        int n = cur_k;
-        int indx = 0;
-        while (n > 0) {
-            // Use ternary representation of cur_k to provide XZY (0, 1, 2) Pauli pattern
-            // Recall the ternary ordering for cur_w = 2, num_qubits = 2 would yield
-            // 00 = XX
-            // 01 = XZ
-            // 02 = XY
-            // 10 = YX
-            // 11 = YZ
-            // 12 = YY  ...
-            // This inner while loop will yield r and indx, where r is the
-            // trit (0, 1, 2) and indx is the corresponding qubit index.
-            int r = n % 3;
-            n /= 3;
-            if (r == 2) {
-                // Already have an X set so just set the Z.
-                result.zs.u64[set_bits[indx] / 64] ^= uint64_t{1} << (set_bits[indx] & 63);
-            } else if (r == 1) {
-                // Already have an X set so flip it and set Z.
-                result.xs.u64[set_bits[indx] / 64] ^= uint64_t{1} << (set_bits[indx] & 63);
-                result.zs.u64[set_bits[indx] / 64] ^= uint64_t{1} << (set_bits[indx] & 63);
-            } else {
-            }
-            indx++;
-        }
+        // inc = x & z
+        simd_bits<W> inc(result.xs & result.zs);
+        // up = ~inc
+        simd_bits<W> up(inc);
+        up.invert_bits();
+        // inc |= ~m
+        simd_bits<W> comp_m(cur_perm);
+        comp_m.invert_bits();
+        inc |= comp_m;
+        simd_bits<W> one(cur_perm.num_bits_padded());
+        one.u64[0] = uint64_t{1};
+        // inc += 1
+        inc += one;
+        // inc &= m
+        inc &= cur_perm;
+        // up &= inc
+        up &= inc;
+        // z &= inc | ~x
+        simd_bits<W> comp_x(result.xs);
+        comp_x.invert_bits();
+        result.zs &= inc | comp_x;
+        // z ^= x & up
+        result.zs ^= result.xs & up;
+        // x ^= up
+        result.xs ^= up;
+        cur_k++;
         return true;
     }
     return false;
@@ -230,12 +214,9 @@ bool PauliStringIterator<W>::iter_next_weight() {
             ones_mask_with_val(mask, val, min_word);
             terminal ^= mask;
         }
-        set_bits.resize(cur_w);
     }
     while (cur_p < SIZE_MAX) {
-        // Find which bits are set in our current permutation.
-        find_set_bits(cur_perm, set_bits);
-        if (!iter_all_cur_perm(set_bits)) {
+        if (!pair_sat_increment()) {
             // Find the next permutation of cur_w qubits among num_qubit possible
             // locations.  The qubit patterns are represented as bits with the
             // location of the set bits signifying where the Paulis should be
@@ -245,12 +226,14 @@ bool PauliStringIterator<W>::iter_next_weight() {
                 terminal.clear();
                 return false;
             }
-            next_qubit_permutation(cur_perm);
+            next_bitstring_of_same_hamming_weight(cur_perm);
+            // result.xs.clear();
+            // result.zs.clear();
+            // result.xs = cur_perm;
             cur_k = 0;
             cur_p++;
         } else {
             // Still yielding PauliString product from cur_perm.
-            cur_k++;
             return true;
         }
     }
@@ -265,6 +248,8 @@ bool PauliStringIterator<W>::iter_next() {
     if (cur_w == 0) {
         cur_w++;
         cur_perm.u64[0] = (uint64_t{1} << cur_w) - 1;
+        // result.xs = cur_perm;
+        // result.zs.clear();
         return true;
     }
     // First iterate over all possible permutations of weight w bit strings.
@@ -302,10 +287,10 @@ void PauliStringIterator<W>::restart() {
     cur_k = 0;
     cur_w = min_weight;
     cur_perm.clear();
-    set_bits.resize(0);
     uint64_t val = cur_w ? (uint64_t{1} << (cur_w % 64)) - 1 : uint64_t{0};
     ones_mask_with_val(cur_perm, val, cur_w / 64);
     terminal.clear();
     result.xs.clear();
     result.zs.clear();
+    result.xs = cur_perm;
 }

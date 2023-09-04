@@ -901,9 +901,11 @@ def find_set_bits(bits, num_qubits):
 )
 def test_iter_all(num_qubits, min_weight, max_weight):
     terms = ["X", "Z", "Y"]
-    pauli_it = list(stim.PauliString.iter_all(
-        num_qubits, min_weight=min_weight, max_weight=max_weight
-    ))
+    pauli_it = list(
+        stim.PauliString.iter_all(
+            num_qubits, min_weight=min_weight, max_weight=max_weight
+        )
+    )
     pauli_py = []
     cur_perm = 0
     for weight in range(min_weight, max_weight + 1):
@@ -919,17 +921,20 @@ def test_iter_all(num_qubits, min_weight, max_weight):
             set_bits = find_set_bits(cur_perm, num_qubits)
             for i in range(3**weight):
                 tern_rep = np.base_repr(i, 3)
-                pauli = [f"{terms[int(it)]}{qb}" for it, qb in zip(f"{tern_rep:0>{weight}}"[::-1], set_bits)]
+                pauli = [
+                    f"{terms[int(it)]}{qb}"
+                    for it, qb in zip(f"{tern_rep:0>{weight}}"[::-1], set_bits)
+                ]
                 pauli_py.append(pauli)
-            if cur_perm == (((1 << weight) - 1) << (num_qubits-weight)):
+            if cur_perm == (((1 << weight) - 1) << (num_qubits - weight)):
                 break
             cur_perm = next_permutation(cur_perm)
         cur_perm = (1 << (weight + 1)) - 1
 
     assert len(pauli_it) == len(pauli_py)
     for i, (stim_p, py_p) in enumerate(zip(pauli_it, pauli_py)):
-        stim_string = ["_"] * num_qubits
+        py_string = ["_"] * num_qubits
         for pauli in py_p[::-1]:
             pauli_type, indx = pauli[0], int(pauli[1:])
-            stim_string[indx] = pauli_type
-        assert stim_p == stim.PauliString("".join(s for s in stim_string))
+            py_string[indx] = pauli_type
+        assert stim_p == stim.PauliString("".join(s for s in py_string))
