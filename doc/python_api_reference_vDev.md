@@ -8596,6 +8596,30 @@ def to_unitary_matrix(
     """
 ```
 
+<a name="stim.PauliString.weight"></a>
+```python
+# stim.PauliString.weight
+
+# (in class stim.PauliString)
+@property
+def weight(
+    self,
+) -> int:
+    """Returns the number of non-identity pauli terms in the pauli string.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("+___").weight
+        0
+        >>> stim.PauliString("+__X").weight
+        1
+        >>> stim.PauliString("+XYZ").weight
+        3
+        >>> stim.PauliString("-XXX___XXYZ").weight
+        7
+    """
+```
+
 <a name="stim.PauliStringIterator"></a>
 ```python
 # stim.PauliStringIterator
@@ -8641,27 +8665,6 @@ def __next__(
     self,
 ) -> stim.PauliString:
     """Returns the next iterated pauli string.
-<a name="stim.PauliString.weight"></a>
-```python
-# stim.PauliString.weight
-
-# (in class stim.PauliString)
-@property
-def weight(
-    self,
-) -> int:
-    """Returns the number of non-identity pauli terms in the pauli string.
-
-    Examples:
-        >>> import stim
-        >>> stim.PauliString("+___").weight
-        0
-        >>> stim.PauliString("+__X").weight
-        1
-        >>> stim.PauliString("+XYZ").weight
-        3
-        >>> stim.PauliString("-XXX___XXYZ").weight
-        7
     """
 ```
 
