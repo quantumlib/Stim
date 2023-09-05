@@ -93,7 +93,7 @@ void stim_pybind::pybind_pauli_string_iter_methods(
             Examples:
                 >>> import stim
                 >>> pauli_iter = stim.PauliString.iter_all(5, min_weight=3, max_weight=5)
-                >>> pauli_iter.next_bitstring_of_same_hamming_weight()
+                >>> pauli_iter.__internal_next_bitstring_of_same_hamming_weight()
                 array([ True,  True, False,  True, False])
         )DOC")
             .data());
@@ -115,9 +115,9 @@ void stim_pybind::pybind_pauli_string_iter_methods(
                 >>> import stim
                 >>> import numpy as np
                 >>> pauli_iter = stim.PauliString.iter_all(4, min_weight=2, max_weight=2)
-                >>> seed = np.array([False, True, True, False])
-                >>> pauli_iter.seed_iterator(seed)
-                >>> pauli_iter.next_qubit_permutation()
+                >>> perm = np.array([False, True, True, False])
+                >>> pauli_iter.__internal_set_current_permutation(perm)
+                >>> pauli_iter.__internal_next_bitstring_of_same_hamming_weight()
                 array([ True, False, False,  True])
         )DOC")
             .data());

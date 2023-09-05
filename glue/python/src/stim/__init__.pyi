@@ -6622,6 +6622,7 @@ class PauliString:
             3
             >>> stim.PauliString("-XXX___XXYZ").weight
             7
+        """
 class PauliStringIterator:
     """Iterates over all possible pauli_strings of weight specfied by
     min_weight and max_weight.
@@ -6639,7 +6640,7 @@ class PauliStringIterator:
         >>> n
         3645
     """
-    def __internal_next_qubit_permutation(
+    def __internal_next_bitstring_of_same_hamming_weight(
         self,
     ) -> object:
         """[DEPRECATED] Get the next permutation of qubit labels.
@@ -6656,7 +6657,7 @@ class PauliStringIterator:
         Examples:
             >>> import stim
             >>> pauli_iter = stim.PauliString.iter_all(5, min_weight=3, max_weight=5)
-            >>> pauli_iter.next_qubit_permutation()
+            >>> pauli_iter.__internal_next_bitstring_of_same_hamming_weight()
             array([ True,  True, False,  True, False])
         """
     def __internal_set_current_permutation(
@@ -6673,9 +6674,9 @@ class PauliStringIterator:
             >>> import stim
             >>> import numpy as np
             >>> pauli_iter = stim.PauliString.iter_all(4, min_weight=2, max_weight=2)
-            >>> seed = np.array([False, True, True, False])
-            >>> pauli_iter.seed_iterator(seed)
-            >>> pauli_iter.next_qubit_permutation()
+            >>> perm = np.array([False, True, True, False])
+            >>> pauli_iter.__internal_set_current_permutation(perm)
+            >>> pauli_iter.__internal_next_bitstring_of_same_hamming_weight()
             array([ True, False, False,  True])
         """
     def __iter__(

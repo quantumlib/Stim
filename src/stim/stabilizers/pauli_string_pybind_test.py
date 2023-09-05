@@ -841,20 +841,20 @@ def test_before_after():
 
 
 
-def test_iter_all_next_qubit_permutation():
+def test_iter_all_next_bitstring_of_same_hamming_weight():
     pauli_it = stim.PauliString.iter_all(
         4,
         min_weight=2,
         max_weight=2,
     )
-    perm = pauli_it.__internal_next_qubit_permutation()
+    perm = pauli_it.__internal_next_bitstring_of_same_hamming_weight()
     # 0101
     assert np.allclose(perm, [True, False, True, False])
     # 0110
-    perm = pauli_it.__internal_next_qubit_permutation()
+    perm = pauli_it.__internal_next_bitstring_of_same_hamming_weight()
     assert np.allclose(perm, [False, True, True, False])
     # 1001
-    perm = pauli_it.__internal_next_qubit_permutation()
+    perm = pauli_it.__internal_next_bitstring_of_same_hamming_weight()
     assert np.allclose(perm, [True, False, False, True])
 
 def next_permutation(v):
@@ -881,7 +881,7 @@ def test_iter_all_random_permutation(num_qubits, min_weight):
     cur_perm[set_bits] = True
     assert sum(cur_perm) == min_weight
     pauli_it.__internal_set_current_permutation(cur_perm)
-    stim_perm = pauli_it.__internal_next_qubit_permutation()
+    stim_perm = pauli_it.__internal_next_bitstring_of_same_hamming_weight()
 
     ref_perm = to_py_int(cur_perm)
     expected_py = next_permutation(ref_perm)
