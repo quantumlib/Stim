@@ -6643,7 +6643,7 @@ class PauliStringIterator:
     def __internal_next_bitstring_of_same_hamming_weight(
         self,
     ) -> object:
-        """[DEPRECATED] Get the next permutation of qubit labels.
+        """[DEPRECATED] Get the next lexigraphically ordered bitstring.
 
         It's alot easier to test more complicated edge cases in python
         which largely arise due to the algorithm for generating the next
