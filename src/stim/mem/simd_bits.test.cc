@@ -228,6 +228,22 @@ TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
     m0 += m1;
     ASSERT_EQ(m0[0], 0);
     ASSERT_EQ(m0[64], 1);
+    // Test carrying across multiple (>=2) words.
+    size_t num_bits = 193;
+    simd_bits<W> add(num_bits);
+    simd_bits<W> one(num_bits);
+    for (size_t word = 0; word < add.num_u64_padded() - 1; word++) {
+        for (size_t k = 0; k < 64; k++) {
+            add[word * 64 + k] = 1;
+        }
+    }
+    one[0] = 1;
+    add += one;
+    // These should all overflow and carries should propagate to the last word.
+    for (size_t k = 0; k < num_bits - 1; k++) {
+        ASSERT_EQ(add[k], 0);
+    }
+    ASSERT_EQ(add[num_bits - 1], 1);
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
