@@ -246,6 +246,71 @@ TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
     ASSERT_EQ(add[num_bits - 1], 1);
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    // a + b == b + a
+    for (int i = 0; i < 10000; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits), m2(num_bits);
+        m1.randomize(num_bits, rng);
+        m2.randomize(num_bits, rng);
+        simd_bits<W> ref1(m1), ref2(m2);
+        m1 += ref2;
+        m2 += ref1;
+        ASSERT_EQ(m1, m2);
+    }
+    // a + ~a = allset
+    for (int i = 0; i < 10000; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits);
+        simd_bits<W> allset(num_bits);
+        allset.invert_bits();
+        m1.randomize(num_bits, rng);
+        simd_bits<W> m2(m1);
+        m2.invert_bits();
+        m1 += m2;
+        ASSERT_EQ(m1, allset);
+    }
+    // m1 += x; m1 = ~x; m1 += x; m1 is unchanged.
+    for (int i = 0; i < 10000; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> m1(num_bits);
+        m1.randomize(num_bits, rng);
+        simd_bits<W> ref(m1);
+        simd_bits<W> m2(num_bits);
+        m1 += m2;
+        m1.invert_bits();
+        m1 += m2;
+        m1.invert_bits();
+        ASSERT_EQ(m1, ref);
+    }
+    // a + (b + c) == (a + b) + c
+    for (int i = 0; i < 10000; i++) {
+        std::uniform_int_distribution dist_bits(1, 1200);
+        int num_bits = dist_bits(rng);
+        simd_bits<W> arhs(num_bits);
+        simd_bits<W> alhs(num_bits);
+        simd_bits<W> blhs(num_bits);
+        simd_bits<W> clhs(num_bits);
+        simd_bits<W> brhs(num_bits);
+        simd_bits<W> crhs(num_bits);
+        alhs.randomize(num_bits, rng);
+        arhs = alhs;
+        blhs.randomize(num_bits, rng);
+        brhs = blhs;
+        clhs.randomize(num_bits, rng);
+        crhs = clhs;
+        blhs += clhs;
+        alhs += blhs;
+        arhs += brhs;
+        arhs += crhs;
+        ASSERT_EQ(alhs, arhs);
+    }
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
     simd_bits<W> m0(512), m1(512);
     m0[511] = 1;
