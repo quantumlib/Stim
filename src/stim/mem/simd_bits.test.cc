@@ -294,21 +294,21 @@ template <size_t W>
 void set_random_words_to_all_set(
     simd_bits<W> &bits, size_t num_bits, std::mt19937_64 &rng, std::uniform_real_distribution<double> &dist_real) {
     bits.randomize(num_bits, rng);
-    size_t max_bit = 64;
-    for (size_t iword = 0; iword < bits.num_u64_padded(); iword++) {
+    size_t max_bit = W;
+    for (size_t iword = 0; iword < bits.num_simd_words; iword++) {
         double r = dist_real(rng);
-        if (iword == bits.num_u64_padded() - 1) {
-            max_bit = num_bits - 64 * iword;
+        if (iword == bits.num_simd_words - 1) {
+            max_bit = num_bits - W * iword;
         }
         if (r < 1.0 / 3.0) {
             double rall = dist_real(rng);
             if (rall > 0.5) {
                 for (size_t k = 0; k < max_bit; k++) {
-                    bits[iword * 64 + k] = 1;
+                    bits[iword * W + k] = 1;
                 }
             } else {
                 for (size_t k = 0; k < max_bit; k++) {
-                    bits[iword * 64 + k] = 0;
+                    bits[iword * W + k] = 0;
                 }
             }
         }
@@ -358,7 +358,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
         m1.invert_bits();
         ASSERT_EQ(m1, ref);
     }
-    // // a + (b + c) == (a + b) + c
+    // a + (b + c) == (a + b) + c
     for (int i = 0; i < 10; i++) {
         std::uniform_int_distribution dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
