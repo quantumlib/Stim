@@ -61,7 +61,7 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator+=(const simd_bits_range_
     for (size_t w = 0; w < num_u64; w++) {
         uint64_t val_before = u64[w];
         u64[w] += other.u64[w] + carry;
-        carry = u64[w] < val_before;
+        carry = u64[w] < val_before || (carry & (val_before == u64[w]));
     }
     return *this;
 }
