@@ -285,7 +285,6 @@ TEST_EACH_WORD_SIZE_W(simd_bits, add_assignment, {
     set_bits_from_u64_vector(a, x);
     set_bits_from_u64_vector(b, y);
     set_bits_from_u64_vector(ref, z);
-    // a += b;
     a += b;
     ASSERT_EQ(a, ref);
 })
@@ -330,20 +329,22 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
         m2 += ref1;
         ASSERT_EQ(m1, m2);
     }
-    // a + ~a = allset
+    // (a + 1) + ~a = allset
     for (int i = 0; i < 10; i++) {
         std::uniform_int_distribution dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits);
-        simd_bits<W> allset(num_bits);
-        allset.invert_bits();
+        simd_bits<W> zero(num_bits);
+        simd_bits<W> one(num_bits);
+        one[0] = 1;
         set_random_words_to_all_set(m1, num_bits, rng, dist_real);
         simd_bits<W> m2(m1);
         m2.invert_bits();
+        m1 += one;
         m1 += m2;
-        ASSERT_EQ(m1, allset);
+        ASSERT_EQ(m1, zero);
     }
-    // m1 += x; m1 = ~x; m1 += x; m1 is unchanged.
+    // m1 += x; m1 = ~m1; m1 += x; m1 is unchanged.
     for (int i = 0; i < 10; i++) {
         std::uniform_int_distribution dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
