@@ -57,11 +57,12 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator=(const simd_bits_range_r
 template <size_t W>
 simd_bits_range_ref<W> simd_bits_range_ref<W>::operator+=(const simd_bits_range_ref<W> other) {
     size_t num_u64 = num_u64_padded();
-    for (size_t w = 0; w < num_u64 - 1; w++) {
-        u64[w] += other.u64[w];
-        u64[w + 1] += (u64[w] < other.u64[w]);
+    uint64_t carry{0};
+    for (size_t w = 0; w < num_u64; w++) {
+        uint64_t val_before = u64[w];
+        u64[w] += other.u64[w] + carry;
+        carry = u64[w] < val_before || (carry & (val_before == u64[w]));
     }
-    u64[num_u64 - 1] += other.u64[num_u64 - 1];
     return *this;
 }
 
