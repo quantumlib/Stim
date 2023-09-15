@@ -45,7 +45,7 @@ struct PauliStringRef {
     size_t num_qubits;
     /// Whether or not the Pauli string is negated. True means -1, False means +1. Imaginary phase is not permitted.
     bit_ref sign;
-    /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
+    /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use of vectorized instructions.
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
     simd_bits_range_ref<W> xs, zs;
 
