@@ -42,7 +42,7 @@ struct DemSampler {
     size_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.
-    DemSampler(DetectorErrorModel model, std::mt19937_64 rng, size_t min_stripes);
+    DemSampler(DetectorErrorModel model, std::mt19937_64 &&rng, size_t min_stripes);
 
     /// Clears the buffers and refills them with sampled shot data.
     void resample(bool replay_errors);
