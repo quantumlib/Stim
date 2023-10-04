@@ -29,15 +29,15 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
+          {os: ubuntu-latest, dist: cp36-manylinux_x86_64, linuxarch: x86_64},
+          {os: ubuntu-latest, dist: cp37-manylinux_x86_64, linuxarch: x86_64},
+          {os: ubuntu-latest, dist: cp38-manylinux_x86_64, linuxarch: x86_64},
+          {os: ubuntu-latest, dist: cp39-manylinux_x86_64, linuxarch: x86_64},
+          {os: ubuntu-latest, dist: cp310-manylinux_x86_64, linuxarch: x86_64},
+          {os: ubuntu-latest, dist: cp311-manylinux_x86_64, linuxarch: x86_64},
 
-          {os: ubuntu-latest, dist: cp36-manylinux_i686},
-          {os: ubuntu-latest, dist: cp37-manylinux_i686},
+          {os: ubuntu-latest, dist: cp36-manylinux_i686, linuxarch: i686},
+          {os: ubuntu-latest, dist: cp37-manylinux_i686, linuxarch: i686},
           # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
           # {os: ubuntu-latest, dist: cp38-manylinux_i686},
           # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
@@ -85,6 +85,13 @@ jobs:
           # {os: ubuntu-latest, dist: cp38-musllinux_i686},
           # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
+
+          {os: ubuntu-latest, dist: cp36-manylinux_aarch64, linuxarch: aarch64},
+          {os: ubuntu-latest, dist: cp37-manylinux_aarch64, linuxarch: aarch64},
+          {os: ubuntu-latest, dist: cp38-manylinux_aarch64, linuxarch: aarch64},
+          {os: ubuntu-latest, dist: cp39-manylinux_aarch64, linuxarch: aarch64},
+          {os: ubuntu-latest, dist: cp310-manylinux_aarch64, linuxarch: aarch64},
+          {os: ubuntu-latest, dist: cp311-manylinux_aarch64, linuxarch: aarch64},
 
           {os: macos-latest, dist: cp36-macosx_x86_64, macosarch: x86_64},
           {os: macos-latest, dist: cp37-macosx_x86_64, macosarch: x86_64},
@@ -142,17 +149,27 @@ jobs:
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
+      CIBW_ARCHS_LINUX: "${{ matrix.os_dist.linuxarch }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
       - run: python dev/overwrite_dev_versions_with_date.py
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
       - run: python -m pip install pybind11==2.9.2 cibuildwheel==2.11.1
+      - name: Patch setup.py (comment out build of SSE2 vectorized code)
+        if: matrix.os_dist.linuxarch == 'aarch64'
+        run: |
+          sed -i -e 's/stim_sse2,/#stim_sse2,/g' setup.py
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
       - run: python setup.py sdist
