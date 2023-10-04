@@ -1,0 +1,552 @@
+{
+    "accessors": [
+        {
+            "bufferView": 0,
+            "componentType": 5126,
+            "count": 4,
+            "max": [
+                1,
+                0,
+                0
+            ],
+            "min": [
+                0,
+                0,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 4,
+            "max": [
+                2,
+                0,
+                0
+            ],
+            "min": [
+                0,
+                0,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 4,
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "componentType": 5123,
+            "count": 6,
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 4,
+            "componentType": 5126,
+            "count": 7,
+            "max": [
+                2,
+                0,
+                0
+            ],
+            "min": [
+                0,
+                0,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 5,
+            "componentType": 5126,
+            "count": 7,
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 6,
+            "componentType": 5123,
+            "count": 9,
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 7,
+            "componentType": 5123,
+            "count": 9,
+            "type": "SCALAR"
+        }
+    ],
+    "asset": {
+        "generator": "Daniel Tan Manual",
+        "version": "2.0"
+    },
+    "buffers": [
+        {
+            "byteLength": 360,
+            "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIC/AACAPwAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAIC/AAAAQAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAQAAAAMAAwAAAAIAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAIC/AAAAQAAAAAAAAIC/AACgPwAAAAAAAAAAAABAPwAAAAAAAAC/AACgPwAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAACAAUABAAAAAUABQACAAYABAAFAAEAAQAFAAMAAwAFAAYA"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 48,
+            "byteOffset": 0,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 48,
+            "byteOffset": 48,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 48,
+            "byteOffset": 96,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 12,
+            "byteOffset": 144,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 84,
+            "byteOffset": 156,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 84,
+            "byteOffset": 240,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 18,
+            "byteOffset": 324,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 18,
+            "byteOffset": 342,
+            "target": 34963
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "name": "blue",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0,
+                    0,
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "doubleSided": true,
+            "name": "red",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    1,
+                    0,
+                    0,
+                    1
+                ]
+            }
+        },
+        {
+            "doubleSided": true,
+            "name": "green",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0,
+                    1,
+                    0,
+                    1
+                ]
+            }
+        },
+        {
+            "doubleSided": true,
+            "name": "gray",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.5,
+                    0.5,
+                    0.5,
+                    1
+                ]
+            }
+        },
+        {
+            "alphaMode": "BLEND",
+            "doubleSided": true,
+            "name": "transparent-cyan",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0,
+                    1,
+                    1,
+                    0.3
+                ]
+            }
+        },
+        {
+            "alphaMode": "BLEND",
+            "doubleSided": true,
+            "name": "transparent-yellow",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    1,
+                    1,
+                    0,
+                    0.3
+                ]
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "square-blue",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 0
+                }
+            ]
+        },
+        {
+            "name": "square-red",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 1
+                }
+            ]
+        },
+        {
+            "name": "square-gray",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 3
+                }
+            ]
+        },
+        {
+            "name": "square-green",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 2
+                }
+            ]
+        },
+        {
+            "name": "rectangle-blue",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 3,
+                    "material": 0
+                }
+            ]
+        },
+        {
+            "name": "rectangle-red",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 3,
+                    "material": 1
+                }
+            ]
+        },
+        {
+            "name": "rectangle-gray",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 3,
+                    "material": 3
+                }
+            ]
+        },
+        {
+            "name": "rectangle-red/blue",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 5,
+                        "POSITION": 4
+                    },
+                    "indices": 6,
+                    "material": 1
+                },
+                {
+                    "attributes": {
+                        "NORMAL": 5,
+                        "POSITION": 4
+                    },
+                    "indices": 7,
+                    "material": 0
+                }
+            ]
+        },
+        {
+            "name": "rectangle-blue/red",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 5,
+                        "POSITION": 4
+                    },
+                    "indices": 6,
+                    "material": 0
+                },
+                {
+                    "attributes": {
+                        "NORMAL": 5,
+                        "POSITION": 4
+                    },
+                    "indices": 7,
+                    "material": 1
+                }
+            ]
+        },
+        {
+            "name": "square-transparent-cyan",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 4
+                }
+            ]
+        },
+        {
+            "name": "rectangle-transparent-cyan",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 3,
+                    "material": 4
+                }
+            ]
+        },
+        {
+            "name": "square-transparent-yellow",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 0
+                    },
+                    "indices": 3,
+                    "material": 5
+                }
+            ]
+        },
+        {
+            "name": "rectangle-transparent-yellow",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 3,
+                    "material": 5
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "children": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13
+            ],
+            "name": "try"
+        },
+        {
+            "mesh": 0,
+            "name": "type0",
+            "rotation": [
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "mesh": 1,
+            "name": "type1",
+            "translation": [
+                2,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 2,
+            "name": "type2",
+            "translation": [
+                4,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 3,
+            "name": "type3",
+            "translation": [
+                6,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 4,
+            "name": "type4",
+            "translation": [
+                8,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 5,
+            "name": "type5",
+            "translation": [
+                11,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 6,
+            "name": "type6",
+            "translation": [
+                14,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 7,
+            "name": "type7",
+            "translation": [
+                17,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 8,
+            "name": "type8",
+            "translation": [
+                20,
+                0,
+                0
+            ]
+        },
+        {
+            "mesh": 9,
+            "name": "type9",
+            "translation": [
+                14,
+                2,
+                0
+            ]
+        },
+        {
+            "mesh": 10,
+            "name": "type10",
+            "translation": [
+                16,
+                2,
+                0
+            ]
+        },
+        {
+            "mesh": 11,
+            "name": "type11",
+            "translation": [
+                11,
+                2,
+                0
+            ]
+        },
+        {
+            "mesh": 12,
+            "name": "type112",
+            "translation": [
+                8,
+                2,
+                0
+            ]
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ]
+}
