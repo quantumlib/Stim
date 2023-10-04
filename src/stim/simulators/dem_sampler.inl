@@ -25,7 +25,7 @@
 namespace stim {
 
 template <size_t W>
-DemSampler<W>::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_t min_stripes)
+DemSampler<W>::DemSampler(DetectorErrorModel init_model, std::mt19937_64 &&rng, size_t min_stripes)
     : model(std::move(init_model)),
       num_detectors(model.count_detectors()),
       num_observables(model.count_observables()),
