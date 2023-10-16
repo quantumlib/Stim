@@ -70,7 +70,6 @@ if(NOT(MSVC))
 else()
     target_compile_options(stim_benchmark PRIVATE ${MACHINE_FLAG})
 endif()
-install(TARGETS stim_benchmark RUNTIME DESTINATION bin)
 
 find_package(GTest QUIET)
 if(${GTest_FOUND})
