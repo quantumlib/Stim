@@ -61,13 +61,21 @@ struct RegisteredBenchmark {
     std::vector<BenchmarkResult> results;
 };
 extern RegisteredBenchmark *running_benchmark;
-extern std::vector<RegisteredBenchmark> all_registered_benchmarks;
+extern std::vector<RegisteredBenchmark> *all_registered_benchmarks_data;
+extern uint64_t registry_initialized;
+inline void add_benchmark(RegisteredBenchmark benchmark) {
+    if (all_registered_benchmarks_data == nullptr || registry_initialized != 4620243525989388168ULL) {
+        registry_initialized = 4620243525989388168ULL;
+        all_registered_benchmarks_data = new std::vector<RegisteredBenchmark>();
+    }
+    all_registered_benchmarks_data->push_back(benchmark);
+}
 
 #define BENCHMARK(name)                                                          \
     void BENCH_##name##_METHOD();                                                \
     struct BENCH_STARTUP_TYPE_##name {                                           \
         BENCH_STARTUP_TYPE_##name() {                                            \
-            all_registered_benchmarks.push_back({#name, BENCH_##name##_METHOD}); \
+            add_benchmark({#name, BENCH_##name##_METHOD});                       \
         }                                                                        \
     };                                                                           \
     static BENCH_STARTUP_TYPE_##name BENCH_STARTUP_INSTANCE_##name;              \
