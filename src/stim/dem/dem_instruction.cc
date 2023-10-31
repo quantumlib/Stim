@@ -117,19 +117,19 @@ std::string DemInstruction::str() const {
 
 std::ostream &stim::operator<<(std::ostream &out, const DemInstructionType &type) {
     switch (type) {
-        case DEM_ERROR:
+        case DemInstructionType::DEM_ERROR:
             out << "error";
             break;
-        case DEM_DETECTOR:
+        case DemInstructionType::DEM_DETECTOR:
             out << "detector";
             break;
-        case DEM_LOGICAL_OBSERVABLE:
+        case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
             out << "logical_observable";
             break;
-        case DEM_SHIFT_DETECTORS:
+        case DemInstructionType::DEM_SHIFT_DETECTORS:
             out << "shift_detectors";
             break;
-        case DEM_REPEAT_BLOCK:
+        case DemInstructionType::DEM_REPEAT_BLOCK:
             out << "repeat";
             break;
         default:
@@ -144,7 +144,7 @@ std::ostream &stim::operator<<(std::ostream &out, const DemInstruction &op) {
     if (!op.arg_data.empty()) {
         out << "(" << comma_sep(op.arg_data) << ")";
     }
-    if (op.type == DEM_SHIFT_DETECTORS || op.type == DEM_REPEAT_BLOCK) {
+    if (op.type == DemInstructionType::DEM_SHIFT_DETECTORS || op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
         for (const auto &e : op.target_data) {
             out << " " << e.data;
         }
@@ -158,7 +158,7 @@ std::ostream &stim::operator<<(std::ostream &out, const DemInstruction &op) {
 
 void DemInstruction::validate() const {
     switch (type) {
-        case DEM_ERROR:
+        case DemInstructionType::DEM_ERROR:
             if (arg_data.size() != 1) {
                 throw std::invalid_argument(
                     "'error' instruction takes 1 argument (a probability), but got " + std::to_string(arg_data.size()) +
@@ -181,14 +181,14 @@ void DemInstruction::validate() const {
                 }
             }
             break;
-        case DEM_SHIFT_DETECTORS:
+        case DemInstructionType::DEM_SHIFT_DETECTORS:
             if (target_data.size() != 1) {
                 throw std::invalid_argument(
                     "'shift_detectors' instruction takes 1 target, but got " + std::to_string(target_data.size()) +
                     " targets.");
             }
             break;
-        case DEM_DETECTOR:
+        case DemInstructionType::DEM_DETECTOR:
             if (target_data.size() != 1) {
                 throw std::invalid_argument(
                     "'detector' instruction takes 1 target but got " + std::to_string(target_data.size()) +
@@ -200,7 +200,7 @@ void DemInstruction::validate() const {
                     " arguments.");
             }
             break;
-        case DEM_LOGICAL_OBSERVABLE:
+        case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
             if (arg_data.size() != 0) {
                 throw std::invalid_argument(
                     "'logical_observable' instruction takes 0 arguments but got " + std::to_string(arg_data.size()) +
@@ -217,7 +217,7 @@ void DemInstruction::validate() const {
                     target_data[0].str() + " arguments.");
             }
             break;
-        case DEM_REPEAT_BLOCK:
+        case DemInstructionType::DEM_REPEAT_BLOCK:
             // Handled elsewhere.
             break;
         default:

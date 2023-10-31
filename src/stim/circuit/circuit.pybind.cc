@@ -728,7 +728,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 for (auto t : op.args) {
                     args.append(t);
                 }
-                const auto &gate_data = GATE_DATA.items[op.gate_type];
+                const auto &gate_data = GATE_DATA[op.gate_type];
                 if (op.args.empty()) {
                     // Backwards compatibility.
                     result.append(pybind11::make_tuple(gate_data.name, targets, 0));

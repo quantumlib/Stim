@@ -11,7 +11,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
     PauliString<W> obs_buffer(n);
 
     circuit.for_each_operation([&](const CircuitInstruction &inst) {
-        if (!(GATE_DATA.items[inst.gate_type].flags & GATE_PRODUCES_RESULTS)) {
+        if (!(GATE_DATA[inst.gate_type].flags & GATE_PRODUCES_RESULTS)) {
             sim.do_gate(inst);
             return;
         }

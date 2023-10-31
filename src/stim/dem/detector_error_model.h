@@ -95,7 +95,7 @@ struct DetectorErrorModel {
         std::vector<DemTarget> translate_buf;
         for (const auto &op : instructions) {
             switch (op.type) {
-                case DEM_ERROR:
+                case DemInstructionType::DEM_ERROR:
                     translate_buf.clear();
                     translate_buf.insert(translate_buf.end(), op.target_data.begin(), op.target_data.end());
                     for (auto &t : translate_buf) {
@@ -103,7 +103,7 @@ struct DetectorErrorModel {
                     }
                     callback(DemInstruction{op.arg_data, translate_buf, op.type});
                     break;
-                case DEM_REPEAT_BLOCK: {
+                case DemInstructionType::DEM_REPEAT_BLOCK: {
                     const auto &block = op.repeat_block_body(*this);
                     auto reps = op.repeat_block_rep_count();
                     for (uint64_t k = 0; k < reps; k++) {
@@ -111,11 +111,11 @@ struct DetectorErrorModel {
                     }
                     break;
                 }
-                case DEM_SHIFT_DETECTORS:
+                case DemInstructionType::DEM_SHIFT_DETECTORS:
                     detector_shift += op.target_data[0].data;
                     break;
-                case DEM_DETECTOR:
-                case DEM_LOGICAL_OBSERVABLE:
+                case DemInstructionType::DEM_DETECTOR:
+                case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
                     break;
                 default:
                     throw std::invalid_argument("Unrecognized DEM instruction type: " + op.str());

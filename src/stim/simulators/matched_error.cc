@@ -56,7 +56,7 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         }
         out << indent << "        ";
         out << "at instruction #" << (frame.instruction_offset + 1);
-        const auto &gate_data = GATE_DATA.items[e.instruction_targets.gate_type];
+        const auto &gate_data = GATE_DATA[e.instruction_targets.gate_type];
         if (k < e.stack_frames.size() - 1) {
             out << " (a REPEAT " << frame.instruction_repetitions_arg << " block)";
         } else {
@@ -149,7 +149,7 @@ std::ostream &stim::operator<<(std::ostream &out, const ExplainedError &e) {
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const CircuitTargetsInsideInstruction &e) {
-    const auto &gate_data = GATE_DATA.items[e.gate_type];
+    const auto &gate_data = GATE_DATA[e.gate_type];
     if (gate_data.flags == GateFlags::NO_GATE_FLAG) {
         out << "null";
     } else {
@@ -361,10 +361,10 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
     if (args != other.args) {
         return vec_less_than(args, other.args);
     }
-    if ((gate_type == 0) || (other.gate_type == 0)) {
+    if (gate_type == GateType::NOT_A_GATE || other.gate_type == GateType::NOT_A_GATE) {
         return gate_type < other.gate_type;
     }
-    return strcmp(GATE_DATA.items[gate_type].name, GATE_DATA.items[other.gate_type].name) < 0;
+    return strcmp(GATE_DATA[gate_type].name, GATE_DATA[other.gate_type].name) < 0;
 }
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {

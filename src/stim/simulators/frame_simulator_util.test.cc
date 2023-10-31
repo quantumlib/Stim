@@ -59,22 +59,22 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, sample_batch_detection_events_writing_
 
     FILE *tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 2, false, false, tmp, SampleFormat::SAMPLE_FORMAT_DETS, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1\nshot D1\n");
 
     tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 2, true, false, tmp, SampleFormat::SAMPLE_FORMAT_DETS, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot L4 D1\nshot L4 D1\n");
 
     tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 2, false, true, tmp, SampleFormat::SAMPLE_FORMAT_DETS, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1 L4\nshot D1 L4\n");
 
     tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 2, false, true, tmp, SampleFormat::SAMPLE_FORMAT_HITS, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "1,6\n1,6\n");
 })
 
@@ -90,7 +90,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, stream_many_shots, {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 2048, false, false, tmp, SampleFormat::SAMPLE_FORMAT_01, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
@@ -117,7 +117,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, block_results_single_shot, {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 1, false, true, tmp, SampleFormat::SAMPLE_FORMAT_01, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -144,7 +144,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, block_results_triple_shot, {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 3, false, true, tmp, SampleFormat::SAMPLE_FORMAT_01, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -177,7 +177,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, stream_results, {
     RaiiTempNamedFile tmp;
     FILE *f = fopen(tmp.path.c_str(), "w");
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 1, false, true, f, SAMPLE_FORMAT_01, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 1, false, true, f, SampleFormat::SAMPLE_FORMAT_01, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
     fclose(f);
 
     auto result = tmp.read_contents();
@@ -206,7 +206,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, stream_results_triple_shot, {
     )circuit");
     FILE *tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, rng, nullptr, SAMPLE_FORMAT_01);
+        circuit, 3, false, true, tmp, SampleFormat::SAMPLE_FORMAT_01, rng, nullptr, SampleFormat::SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -447,7 +447,7 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, obs_data, {
     FILE *det_tmp = tmpfile();
     FILE *obs_tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 1001, false, false, det_tmp, SAMPLE_FORMAT_B8, rng, obs_tmp, SAMPLE_FORMAT_B8);
+        circuit, 1001, false, false, det_tmp, SampleFormat::SAMPLE_FORMAT_B8, rng, obs_tmp, SampleFormat::SAMPLE_FORMAT_B8);
 
     auto det_saved = rewind_read_close(det_tmp);
     auto obs_saved = rewind_read_close(obs_tmp);

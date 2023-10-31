@@ -39,11 +39,12 @@ TEST(gate_data, lookup) {
 }
 
 TEST(gate_data, zero_flag_means_not_a_gate) {
-    ASSERT_EQ(GATE_DATA.items[0].id, 0);
-    ASSERT_EQ(GATE_DATA.items[0].flags, GateFlags::NO_GATE_FLAG);
+    ASSERT_EQ((GateType)0, GateType::NOT_A_GATE);
+    ASSERT_EQ(GATE_DATA[(GateType)0].id, (GateType)0);
+    ASSERT_EQ(GATE_DATA[(GateType)0].flags, GateFlags::NO_GATE_FLAG);
     for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
-        const auto &g = GATE_DATA.items[k];
-        if (g.id != 0) {
+        const auto &g = GATE_DATA[(GateType)k];
+        if (g.id != GateType::NOT_A_GATE) {
             EXPECT_NE(g.flags, GateFlags::NO_GATE_FLAG) << g.name;
         }
     }
@@ -51,20 +52,21 @@ TEST(gate_data, zero_flag_means_not_a_gate) {
 
 TEST(gate_data, one_step_to_canonical_gate) {
     for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
-        const auto &g = GATE_DATA.items[k];
-        if (g.id != 0) {
-            EXPECT_TRUE(g.id == k || GATE_DATA.items[g.id].id == g.id) << g.name;
+        const auto &g = GATE_DATA[(GateType)k];
+        if (g.id != GateType::NOT_A_GATE) {
+            EXPECT_TRUE(g.id == (GateType)k || GATE_DATA[g.id].id == g.id) << g.name;
         }
     }
 }
 
 TEST(gate_data, hash_matches_storage_location) {
-    ASSERT_EQ(GATE_DATA.items[0].id, 0);
-    ASSERT_EQ(GATE_DATA.items[0].flags, GateFlags::NO_GATE_FLAG);
+    ASSERT_EQ((GateType)0, GateType::NOT_A_GATE);
+    ASSERT_EQ(GATE_DATA[(GateType)0].id, (GateType)0);
+    ASSERT_EQ(GATE_DATA[(GateType)0].flags, GateFlags::NO_GATE_FLAG);
     for (size_t k = 0; k < GATE_DATA.items.size(); k++) {
-        const auto &g = GATE_DATA.items[k];
-        EXPECT_EQ(g.id, k) << g.name;
-        if (g.id != 0) {
+        const auto &g = GATE_DATA[(GateType)k];
+        EXPECT_EQ(g.id, (GateType)k) << g.name;
+        if (g.id != GateType::NOT_A_GATE) {
             EXPECT_EQ(GATE_DATA.hashed_name_to_gate_type_table[gate_name_to_hash(g.name)].id, g.id) << g.name;
         }
     }
@@ -132,7 +134,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
         if (g.flags & GATE_IS_UNITARY) {
             auto g_t_inv = g.tableau<W>().inverse(false);
-            auto g_inv_t = GATE_DATA.items[static_cast<uint8_t>(g.best_candidate_inverse_id)].tableau<W>();
+            auto g_inv_t = GATE_DATA[g.best_candidate_inverse_id].tableau<W>();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
         }
     }

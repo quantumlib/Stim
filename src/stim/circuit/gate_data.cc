@@ -16,8 +16,6 @@
 
 #include <complex>
 
-#include "stim/circuit/stabilizer_flow.h"
-
 using namespace stim;
 
 GateDataMap::GateDataMap() {
@@ -76,7 +74,7 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 const Gate &Gate::inverse() const {
     std::string inv_name = name;
     if ((flags & GATE_IS_UNITARY) || id == GateType::TICK) {
-        return GATE_DATA.items[static_cast<uint8_t>(best_candidate_inverse_id)];
+        return GATE_DATA[best_candidate_inverse_id];
     }
     throw std::out_of_range(inv_name + " has no inverse.");
 }
@@ -101,16 +99,16 @@ Gate::Gate(
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
-    assert(gate.id < NUM_DEFINED_GATES);
+    assert((size_t)gate.id < NUM_DEFINED_GATES);
     const char *c = gate.name;
     auto h = gate_name_to_hash(c);
     auto &hash_loc = hashed_name_to_gate_type_table[h];
     if (hash_loc.expected_name_len != 0) {
-        std::cerr << "GATE COLLISION " << gate.name << " vs " << items[hash_loc.id].name << "\n";
+        std::cerr << "GATE COLLISION " << gate.name << " vs " << items[(size_t)hash_loc.id].name << "\n";
         failed = true;
         return;
     }
-    items[gate.id] = gate;
+    items[(size_t)gate.id] = gate;
     hash_loc.id = gate.id;
     hash_loc.expected_name = gate.name;
     hash_loc.expected_name_len = gate.name_len;
@@ -120,7 +118,7 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
     auto h_alt = gate_name_to_hash(alt_name);
     auto &hash_loc = hashed_name_to_gate_type_table[h_alt];
     if (hash_loc.expected_name_len != 0) {
-        std::cerr << "GATE COLLISION " << alt_name << " vs " << items[hash_loc.id].name << "\n";
+        std::cerr << "GATE COLLISION " << alt_name << " vs " << items[(size_t)hash_loc.id].name << "\n";
         failed = true;
         return;
     }

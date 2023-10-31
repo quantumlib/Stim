@@ -14,7 +14,6 @@
 
 #include "stim/simulators/error_matcher.h"
 
-#include <algorithm>
 #include <queue>
 #include <sstream>
 
@@ -46,7 +45,7 @@ ErrorMatcher::ErrorMatcher(
     if (!allow_adding_new_dem_errors_to_output_map) {
         SparseXorVec<DemTarget> buf;
         init_filter->iter_flatten_error_instructions([&](const DemInstruction &instruction) {
-            assert(instruction.type == DEM_ERROR);
+            assert(instruction.type == DemInstructionType::DEM_ERROR);
             buf.clear();
             // Note: quadratic overhead, but typical size is 4 and 100 would be crazy big.
             for (const auto &target : instruction.target_data) {
@@ -211,7 +210,7 @@ void ErrorMatcher::err_m(const CircuitInstruction &op, uint32_t obs_mask) {
 
 void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
     cur_loc.instruction_targets.gate_type = op.gate_type;
-    auto flags = GATE_DATA.items[op.gate_type].flags;
+    auto flags = GATE_DATA[op.gate_type].flags;
     cur_loc.tick_offset = error_analyzer.num_ticks_in_past;
     cur_op = &op;
 
@@ -268,7 +267,7 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
     } else if (op.gate_type == GateType::M || op.gate_type == GateType::MR) {
         err_m(op, TARGET_PAULI_Z_BIT);
     } else {
-        throw std::invalid_argument("Not implemented: " + std::string(GATE_DATA.items[op.gate_type].name));
+        throw std::invalid_argument("Not implemented: " + std::string(GATE_DATA[op.gate_type].name));
     }
 }
 

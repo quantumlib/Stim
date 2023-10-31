@@ -25,7 +25,7 @@ using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordBatchWriter, basic_usage, {
     FILE *tmp = tmpfile();
-    MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);
+    MeasureRecordBatchWriter w(tmp, 5, SampleFormat::SAMPLE_FORMAT_01);
     simd_bits<W> v(5);
     v[1] = true;
     w.batch_write_bit<W>(v);

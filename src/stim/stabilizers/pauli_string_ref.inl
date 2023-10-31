@@ -180,7 +180,7 @@ void PauliStringRef<W>::after_inplace(const Circuit &circuit) {
 
 template <size_t W>
 void PauliStringRef<W>::after_inplace(const CircuitInstruction &operation, bool inverse) {
-    const auto &gate_data = GATE_DATA.items[operation.gate_type];
+    const auto &gate_data = GATE_DATA[operation.gate_type];
     if (gate_data.flags & GATE_IS_UNITARY) {
         // TODO: use hand-optimized methods instead of the generic tableau method.
         std::vector<size_t> indices;

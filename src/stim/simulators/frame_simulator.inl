@@ -59,9 +59,9 @@ FrameSimulator<W>::FrameSimulator(
 
 template <size_t W>
 void FrameSimulator<W>::configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size) {
-    bool storing_all_measurements = new_mode == STORE_MEASUREMENTS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY;
-    bool storing_all_detections = new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY;
-    bool storing_any_detections = new_mode == STORE_DETECTIONS_TO_MEMORY || new_mode == STORE_EVERYTHING_TO_MEMORY || new_mode == STREAM_DETECTIONS_TO_DISK;
+    bool storing_all_measurements = new_mode == FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
+    bool storing_all_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
+    bool storing_any_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY || new_mode == FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK;
 
     batch_size = new_batch_size;
     num_qubits = new_circuit_stats.num_qubits;

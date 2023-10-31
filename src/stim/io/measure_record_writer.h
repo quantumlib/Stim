@@ -120,7 +120,7 @@ void write_table_data(
     char dets_prefix_1,
     char dets_prefix_2,
     size_t dets_prefix_transition) {
-    if (format == SAMPLE_FORMAT_PTB64) {
+    if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
         if (num_shots % 64 != 0) {
             throw std::invalid_argument("shots must be a multiple of 64 to use ptb64 format.");
         }

@@ -47,17 +47,17 @@ template <size_t W>
 std::unique_ptr<MeasureRecordReader<W>> MeasureRecordReader<W>::make(
     FILE *in, SampleFormat input_format, size_t num_measurements, size_t num_detectors, size_t num_observables) {
     switch (input_format) {
-        case SAMPLE_FORMAT_01:
+        case SampleFormat::SAMPLE_FORMAT_01:
             return std::make_unique<MeasureRecordReaderFormat01<W>>(in, num_measurements, num_detectors, num_observables);
-        case SAMPLE_FORMAT_B8:
+        case SampleFormat::SAMPLE_FORMAT_B8:
             return std::make_unique<MeasureRecordReaderFormatB8<W>>(in, num_measurements, num_detectors, num_observables);
-        case SAMPLE_FORMAT_DETS:
+        case SampleFormat::SAMPLE_FORMAT_DETS:
             return std::make_unique<MeasureRecordReaderFormatDets<W>>(in, num_measurements, num_detectors, num_observables);
-        case SAMPLE_FORMAT_HITS:
+        case SampleFormat::SAMPLE_FORMAT_HITS:
             return std::make_unique<MeasureRecordReaderFormatHits<W>>(in, num_measurements, num_detectors, num_observables);
-        case SAMPLE_FORMAT_PTB64:
+        case SampleFormat::SAMPLE_FORMAT_PTB64:
             return std::make_unique<MeasureRecordReaderFormatPTB64<W>>(in, num_measurements, num_detectors, num_observables);
-        case SAMPLE_FORMAT_R8:
+        case SampleFormat::SAMPLE_FORMAT_R8:
             return std::make_unique<MeasureRecordReaderFormatR8<W>>(in, num_measurements, num_detectors, num_observables);
         default:
             throw std::invalid_argument("Sample format not recognized by MeasurementRecordReader");

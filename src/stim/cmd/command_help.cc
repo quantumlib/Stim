@@ -556,7 +556,7 @@ std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
         if (e.expected_name_len > 0) {
-            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA.items[e.id], 0, false);
+            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
         }
     }
 

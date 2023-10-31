@@ -31,7 +31,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-enum DiagramTypes {
+enum class DiagramTypes {
     NOT_A_DIAGRAM,
     INTERACTIVE_HTML,
     TIMELINE_TEXT,
@@ -102,37 +102,37 @@ std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
 
 DiagramTypes _read_diagram_type(int argc, const char **argv) {
     std::map<std::string, DiagramTypes> diagram_types{
-        {"timeline-text", TIMELINE_TEXT},
-        {"timeline-svg", TIMELINE_SVG},
-        {"timeline-3d", TIMELINE_3D},
-        {"timeline-3d-html", TIMELINE_3D_HTML},
-        {"timeslice-svg", TIME_SLICE_SVG},
-        {"detslice-with-ops-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
-        {"matchgraph-svg", MATCH_GRAPH_SVG},
-        {"matchgraph-3d", MATCH_GRAPH_3D},
-        {"matchgraph-3d-html", MATCH_GRAPH_3D_HTML},
-        {"interactive-html", INTERACTIVE_HTML},
-        {"detslice-text", DETECTOR_SLICE_TEXT},
-        {"detslice-svg", DETECTOR_SLICE_SVG},
+        {"timeline-text", DiagramTypes::TIMELINE_TEXT},
+        {"timeline-svg", DiagramTypes::TIMELINE_SVG},
+        {"timeline-3d", DiagramTypes::TIMELINE_3D},
+        {"timeline-3d-html", DiagramTypes::TIMELINE_3D_HTML},
+        {"timeslice-svg", DiagramTypes::TIME_SLICE_SVG},
+        {"detslice-with-ops-svg", DiagramTypes::TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"matchgraph-svg", DiagramTypes::MATCH_GRAPH_SVG},
+        {"matchgraph-3d", DiagramTypes::MATCH_GRAPH_3D},
+        {"matchgraph-3d-html", DiagramTypes::MATCH_GRAPH_3D_HTML},
+        {"interactive-html", DiagramTypes::INTERACTIVE_HTML},
+        {"detslice-text", DiagramTypes::DETECTOR_SLICE_TEXT},
+        {"detslice-svg", DiagramTypes::DETECTOR_SLICE_SVG},
     };
     std::map<std::string, DiagramTypes> quietly_allowed_diagram_types{
-        {"time-slice-svg", TIME_SLICE_SVG},
-        {"time+detector-slice-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
-        {"interactive", INTERACTIVE_HTML},
-        {"detector-slice-text", DETECTOR_SLICE_TEXT},
-        {"detector-slice-svg", DETECTOR_SLICE_SVG},
-        {"match-graph-svg", MATCH_GRAPH_SVG},
-        {"match-graph-3d", MATCH_GRAPH_3D},
-        {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
+        {"time-slice-svg", DiagramTypes::TIME_SLICE_SVG},
+        {"time+detector-slice-svg", DiagramTypes::TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"interactive", DiagramTypes::INTERACTIVE_HTML},
+        {"detector-slice-text", DiagramTypes::DETECTOR_SLICE_TEXT},
+        {"detector-slice-svg", DiagramTypes::DETECTOR_SLICE_SVG},
+        {"match-graph-svg", DiagramTypes::MATCH_GRAPH_SVG},
+        {"match-graph-3d", DiagramTypes::MATCH_GRAPH_3D},
+        {"match-graph-3d-html", DiagramTypes::MATCH_GRAPH_3D_HTML},
     };
-    DiagramTypes type = NOT_A_DIAGRAM;
+    DiagramTypes type = DiagramTypes::NOT_A_DIAGRAM;
     try {
         type = find_enum_argument("--type", nullptr, quietly_allowed_diagram_types, argc, argv);
     } catch (const std::invalid_argument &_) {
     }
-    if (type == NOT_A_DIAGRAM) {
+    if (type == DiagramTypes::NOT_A_DIAGRAM) {
         type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
-        assert(type != NOT_A_DIAGRAM);
+        assert(type != DiagramTypes::NOT_A_DIAGRAM);
     }
     return type;
 }
@@ -188,54 +188,54 @@ int stim::command_diagram(int argc, const char **argv) {
     uint64_t tick_num = UINT64_MAX;
     bool has_tick_arg = _read_tick(argc, argv, &tick, &tick_start, &tick_num);
 
-    if (type == TIMELINE_TEXT) {
+    if (type == DiagramTypes::TIMELINE_TEXT) {
         auto circuit = _read_circuit(in, argc, argv);
         out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
-    } else if (type == TIMELINE_SVG) {
+    } else if (type == DiagramTypes::TIMELINE_SVG) {
         auto circuit = _read_circuit(in, argc, argv);
         auto coord_filter = _read_coord_filter(argc, argv);
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
-    } else if (type == TIME_SLICE_SVG) {
+            circuit, out, tick_start, tick_num, DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE, coord_filter);
+    } else if (type == DiagramTypes::TIME_SLICE_SVG) {
         auto circuit = _read_circuit(in, argc, argv);
         auto coord_filter = _read_coord_filter(argc, argv);
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
-    } else if (type == TIME_SLICE_PLUS_DETECTOR_SLICE_SVG) {
+            circuit, out, tick_start, tick_num, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, coord_filter);
+    } else if (type == DiagramTypes::TIME_SLICE_PLUS_DETECTOR_SLICE_SVG) {
         auto circuit = _read_circuit(in, argc, argv);
         auto coord_filter = _read_coord_filter(argc, argv);
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
-    } else if (type == TIMELINE_3D) {
+            circuit, out, tick_start, tick_num, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+    } else if (type == DiagramTypes::TIMELINE_3D) {
         auto circuit = _read_circuit(in, argc, argv);
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-    } else if (type == TIMELINE_3D_HTML) {
+    } else if (type == DiagramTypes::TIMELINE_3D_HTML) {
         auto circuit = _read_circuit(in, argc, argv);
         std::stringstream tmp_out;
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
         write_html_viewer_for_gltf_data(tmp_out.str(), out);
-    } else if (type == INTERACTIVE_HTML) {
+    } else if (type == DiagramTypes::INTERACTIVE_HTML) {
         auto circuit = _read_circuit(in, argc, argv);
         write_crumble_html_with_preloaded_circuit(circuit, out);
-    } else if (type == MATCH_GRAPH_3D) {
+    } else if (type == DiagramTypes::MATCH_GRAPH_3D) {
         auto dem = _read_dem(in, argc, argv);
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
-    } else if (type == MATCH_GRAPH_3D_HTML) {
+    } else if (type == DiagramTypes::MATCH_GRAPH_3D_HTML) {
         auto dem = _read_dem(in, argc, argv);
         std::stringstream tmp_out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
         write_html_viewer_for_gltf_data(tmp_out.str(), out);
-    } else if (type == MATCH_GRAPH_SVG) {
+    } else if (type == DiagramTypes::MATCH_GRAPH_SVG) {
         auto dem = _read_dem(in, argc, argv);
         dem_match_graph_to_svg_diagram_write_to(dem, out);
-    } else if (type == DETECTOR_SLICE_TEXT) {
+    } else if (type == DiagramTypes::DETECTOR_SLICE_TEXT) {
         if (!has_tick_arg) {
             throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
         }
         auto coord_filter = _read_coord_filter(argc, argv);
         auto circuit = _read_circuit(in, argc, argv);
         out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
-    } else if (type == DETECTOR_SLICE_SVG) {
+    } else if (type == DiagramTypes::DETECTOR_SLICE_SVG) {
         auto coord_filter = _read_coord_filter(argc, argv);
         auto circuit = _read_circuit(in, argc, argv);
         DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);

@@ -47,7 +47,7 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordBatch, basic_usage, {
     ASSERT_EQ(r.unwritten, 102);
     ASSERT_EQ(r.stored, 102);
     FILE *tmp = tmpfile();
-    MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);
+    MeasureRecordBatchWriter w(tmp, 5, SampleFormat::SAMPLE_FORMAT_01);
     r.intermediate_write_unwritten_results_to(w, simd_bits<W>(0));
     ASSERT_EQ(r.unwritten, 102);
 

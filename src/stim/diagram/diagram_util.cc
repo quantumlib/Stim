@@ -28,7 +28,7 @@ std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(Ga
     } else if (gate_type == GateType::SWAPCX) {
         return {"XSWAP", "ZSWAP"};
     } else {
-        auto name = GATE_DATA.items[gate_type].name;
+        auto name = GATE_DATA[gate_type].name;
         return {name, name};
     }
 }

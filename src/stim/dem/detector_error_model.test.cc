@@ -54,7 +54,7 @@ TEST(detector_error_model, append_shift_detectors_instruction) {
     SpanRef<const double> arg_data_ref = arg_data;
     model.append_shift_detectors_instruction(arg_data_ref, 5);
     ASSERT_EQ(model.instructions.size(), 1);
-    ASSERT_EQ(model.instructions[0].type, DEM_SHIFT_DETECTORS);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_SHIFT_DETECTORS);
     ASSERT_EQ(model.instructions[0].target_data.size(), 1);
     ASSERT_EQ(model.instructions[0].target_data[0].data, 5);
     ASSERT_EQ(model.instructions[0].arg_data, arg_data_ref);
@@ -70,7 +70,7 @@ TEST(detector_error_model, append_detector_instruction) {
     SpanRef<const double> arg_data_ref = arg_data;
     model.append_detector_instruction(arg_data_ref, DemTarget::relative_detector_id(5));
     ASSERT_EQ(model.instructions.size(), 1);
-    ASSERT_EQ(model.instructions[0].type, DEM_DETECTOR);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_DETECTOR);
     ASSERT_EQ(model.instructions[0].target_data.size(), 1);
     ASSERT_EQ(model.instructions[0].target_data[0], DemTarget::relative_detector_id(5));
     ASSERT_EQ(model.instructions[0].arg_data, arg_data_ref);
@@ -88,7 +88,7 @@ TEST(detector_error_model, append_logical_observable_instruction) {
 
     model.append_logical_observable_instruction(DemTarget::observable_id(5));
     ASSERT_EQ(model.instructions.size(), 1);
-    ASSERT_EQ(model.instructions[0].type, DEM_LOGICAL_OBSERVABLE);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_LOGICAL_OBSERVABLE);
     ASSERT_EQ(model.instructions[0].target_data.size(), 1);
     ASSERT_EQ(model.instructions[0].target_data[0], DemTarget::observable_id(5));
     ASSERT_EQ(model.instructions[0].arg_data.size(), 0);
@@ -108,7 +108,7 @@ TEST(detector_error_model, append_error_instruction) {
     model.append_error_instruction(0.25, symptoms);
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.blocks.size(), 0);
-    ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_ERROR);
     ASSERT_EQ(model.instructions[0].target_data, (SpanRef<DemTarget>)symptoms);
     ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
     ASSERT_EQ(model.instructions[0].arg_data[0], 0.25);
@@ -122,7 +122,7 @@ TEST(detector_error_model, append_error_instruction) {
     model.append_error_instruction(0.125, symptoms);
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.blocks.size(), 0);
-    ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_ERROR);
     ASSERT_EQ(model.instructions[0].target_data, (SpanRef<DemTarget>)symptoms);
     ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
     ASSERT_EQ(model.instructions[0].arg_data[0], 0.125);
@@ -158,13 +158,13 @@ TEST(detector_error_model, append_block) {
     model.append_repeat_block(20, block2);
     ASSERT_EQ(model.instructions.size(), 3);
     ASSERT_EQ(model.blocks.size(), 3);
-    ASSERT_EQ(model.instructions[0].type, DEM_REPEAT_BLOCK);
+    ASSERT_EQ(model.instructions[0].type, DemInstructionType::DEM_REPEAT_BLOCK);
     ASSERT_EQ(model.instructions[0].target_data[0].data, 5);
     ASSERT_EQ(model.instructions[0].target_data[1].data, 0);
-    ASSERT_EQ(model.instructions[1].type, DEM_REPEAT_BLOCK);
+    ASSERT_EQ(model.instructions[1].type, DemInstructionType::DEM_REPEAT_BLOCK);
     ASSERT_EQ(model.instructions[1].target_data[0].data, 6);
     ASSERT_EQ(model.instructions[1].target_data[1].data, 1);
-    ASSERT_EQ(model.instructions[2].type, DEM_REPEAT_BLOCK);
+    ASSERT_EQ(model.instructions[2].type, DemInstructionType::DEM_REPEAT_BLOCK);
     ASSERT_EQ(model.instructions[2].target_data[0].data, 20);
     ASSERT_EQ(model.instructions[2].target_data[1].data, 2);
     ASSERT_EQ(model.blocks[0], block2);
@@ -317,30 +317,30 @@ TEST(dem_instruction, general) {
     std::vector<double> p125{0.125};
     std::vector<double> p25{0.25};
     std::vector<double> p126{0.126};
-    DemInstruction i1{p125, d1, DEM_ERROR};
-    DemInstruction i1a{p125, d1, DEM_ERROR};
-    DemInstruction i2{p125, d2, DEM_ERROR};
+    DemInstruction i1{p125, d1, DemInstructionType::DEM_ERROR};
+    DemInstruction i1a{p125, d1, DemInstructionType::DEM_ERROR};
+    DemInstruction i2{p125, d2, DemInstructionType::DEM_ERROR};
     ASSERT_TRUE(i1 == i1a);
     ASSERT_TRUE(!(i1 != i1a));
     ASSERT_TRUE(!(i2 == i1a));
     ASSERT_TRUE(i2 != i1a);
 
-    ASSERT_EQ(i1, (DemInstruction{p125, d1, DEM_ERROR}));
-    ASSERT_NE(i1, (DemInstruction{p125, d2, DEM_ERROR}));
-    ASSERT_NE(i1, (DemInstruction{p25, d1, DEM_ERROR}));
-    ASSERT_NE(((DemInstruction{{}, {}, DEM_DETECTOR})), (DemInstruction{{}, {}, DEM_LOGICAL_OBSERVABLE}));
+    ASSERT_EQ(i1, (DemInstruction{p125, d1, DemInstructionType::DEM_ERROR}));
+    ASSERT_NE(i1, (DemInstruction{p125, d2, DemInstructionType::DEM_ERROR}));
+    ASSERT_NE(i1, (DemInstruction{p25, d1, DemInstructionType::DEM_ERROR}));
+    ASSERT_NE(((DemInstruction{{}, {}, DemInstructionType::DEM_DETECTOR})), (DemInstruction{{}, {}, DemInstructionType::DEM_LOGICAL_OBSERVABLE}));
 
-    ASSERT_TRUE(i1.approx_equals(DemInstruction{p125, d1, DEM_ERROR}, 0));
-    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p126, d1, DEM_ERROR}, 0));
-    ASSERT_TRUE(i1.approx_equals(DemInstruction{p126, d1, DEM_ERROR}, 0.01));
-    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p125, d2, DEM_ERROR}, 9999));
+    ASSERT_TRUE(i1.approx_equals(DemInstruction{p125, d1, DemInstructionType::DEM_ERROR}, 0));
+    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p126, d1, DemInstructionType::DEM_ERROR}, 0));
+    ASSERT_TRUE(i1.approx_equals(DemInstruction{p126, d1, DemInstructionType::DEM_ERROR}, 0.01));
+    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p125, d2, DemInstructionType::DEM_ERROR}, 9999));
 
     ASSERT_EQ(i1.str(), "error(0.125) L4 D3");
     ASSERT_EQ(i2.str(), "error(0.125) L4");
 
     d1.push_back(DemTarget::separator());
     d1.push_back(DemTarget::observable_id(11));
-    ASSERT_EQ((DemInstruction{p25, d1, DEM_ERROR}).str(), "error(0.25) L4 D3 ^ L11");
+    ASSERT_EQ((DemInstruction{p25, d1, DemInstructionType::DEM_ERROR}).str(), "error(0.25) L4 D3 ^ L11");
 }
 
 TEST(detector_error_model, total_detector_shift) {
@@ -625,7 +625,7 @@ TEST(detector_error_model, iter_flatten_error_instructions) {
 
     DetectorErrorModel dem;
     d.iter_flatten_error_instructions([&](const DemInstruction &e) {
-        EXPECT_EQ(e.type, DEM_ERROR);
+        EXPECT_EQ(e.type, DemInstructionType::DEM_ERROR);
         dem.append_error_instruction(e.arg_data[0], e.target_data);
     });
     ASSERT_EQ(dem, DetectorErrorModel(R"MODEL(

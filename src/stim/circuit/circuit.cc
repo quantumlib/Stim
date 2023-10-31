@@ -23,7 +23,7 @@
 
 using namespace stim;
 
-enum READ_CONDITION {
+enum class READ_CONDITION {
     READ_AS_LITTLE_AS_POSSIBLE,
     READ_UNTIL_END_OF_BLOCK,
     READ_UNTIL_END_OF_FILE,
@@ -351,13 +351,13 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         int c = read_char();
         read_past_dead_space_between_commands(c, read_char);
         if (c == EOF) {
-            if (read_condition == READ_UNTIL_END_OF_BLOCK) {
+            if (read_condition == READ_CONDITION::READ_UNTIL_END_OF_BLOCK) {
                 throw std::invalid_argument("Unterminated block. Got a '{' without an eventual '}'.");
             }
             return;
         }
         if (c == '}') {
-            if (read_condition != READ_UNTIL_END_OF_BLOCK) {
+            if (read_condition != READ_CONDITION::READ_UNTIL_END_OF_BLOCK) {
                 throw std::invalid_argument("Uninitiated block. Got a '}' without a '{'.");
             }
             return;
@@ -378,7 +378,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
 
             // Read block.
             circuit.blocks.emplace_back();
-            circuit_read_operations(circuit.blocks.back(), read_char, READ_UNTIL_END_OF_BLOCK);
+            circuit_read_operations(circuit.blocks.back(), read_char, READ_CONDITION::READ_UNTIL_END_OF_BLOCK);
 
             // Rewrite target data to reference the parsed block.
             circuit.target_buf.ensure_available(3);
@@ -390,7 +390,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
 
         // Fuse operations.
         circuit.try_fuse_last_two_ops();
-    } while (read_condition != READ_AS_LITTLE_AS_POSSIBLE);
+    } while (read_condition != READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE);
 }
 
 void Circuit::append_from_text(const char *text) {
@@ -400,7 +400,7 @@ void Circuit::append_from_text(const char *text) {
         [&]() {
             return text[k] != 0 ? text[k++] : EOF;
         },
-        READ_UNTIL_END_OF_FILE);
+        READ_CONDITION::READ_UNTIL_END_OF_FILE);
 }
 
 void Circuit::safe_append(const CircuitInstruction &operation) {
@@ -433,7 +433,7 @@ void Circuit::safe_append_u(
 }
 
 void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args) {
-    auto flags = GATE_DATA.items[gate_type].flags;
+    auto flags = GATE_DATA[gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");
     }
@@ -460,11 +460,11 @@ void Circuit::append_from_file(FILE *file, bool stop_asap) {
         [&]() {
             return getc(file);
         },
-        stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
+        stop_asap ? READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE : READ_CONDITION::READ_UNTIL_END_OF_FILE);
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &instruction) {
-    out << GATE_DATA.items[instruction.gate_type].name;
+    out << GATE_DATA[instruction.gate_type].name;
     if (!instruction.args.empty()) {
         out << '(';
         bool first = true;
@@ -762,7 +762,7 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     // HACK: result has pointers into `circuit`!
     Circuit result;
     for (const auto &op : operations) {
-        auto flags = GATE_DATA.items[op.gate_type].flags;
+        auto flags = GATE_DATA[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
             if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
                 // Replace heralded errors with fixed MPAD.
@@ -794,7 +794,7 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
 Circuit Circuit::without_noise() const {
     Circuit result;
     for (const auto &op : operations) {
-        auto flags = GATE_DATA.items[op.gate_type].flags;
+        auto flags = GATE_DATA[op.gate_type].flags;
         if (flags & GATE_PRODUCES_RESULTS) {
             if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
                 // Replace heralded errors with fixed MPAD.
@@ -886,7 +886,7 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
         }
 
         SpanRef<const double> args = op.args;
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         auto flags = gate_data.flags;
         if (flags & GATE_IS_UNITARY) {
             // Unitary gates always have an inverse.

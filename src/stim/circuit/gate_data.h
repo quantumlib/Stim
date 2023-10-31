@@ -84,7 +84,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
 
 constexpr const size_t NUM_DEFINED_GATES = 67;
 
-enum GateType : uint8_t {
+enum class GateType : uint8_t {
     NOT_A_GATE = 0,
     // Annotations
     DETECTOR,
@@ -258,7 +258,7 @@ struct Gate {
 
     template <size_t W>
     Tableau<W> tableau() const {
-        if (!(flags & GATE_IS_UNITARY)) {
+        if (!(flags & GateFlags::GATE_IS_UNITARY)) {
             throw std::invalid_argument(std::string(name) + " isn't unitary so it doesn't have a tableau.");
         }
         const auto &tableau_data = extra_data_func().flow_data;
@@ -274,9 +274,9 @@ struct Gate {
 
     template <size_t W>
     std::vector<StabilizerFlow<W>> flows() const {
-        if (flags & GATE_IS_UNITARY) {
+        if (flags & GateFlags::GATE_IS_UNITARY) {
             auto t = tableau<W>();
-            if (flags & GATE_TARGETS_PAIRS) {
+            if (flags & GateFlags::GATE_TARGETS_PAIRS) {
                 return {
                     StabilizerFlow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
                     StabilizerFlow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
@@ -340,6 +340,10 @@ struct GateDataMap {
     std::array<Gate, NUM_DEFINED_GATES> items;
     GateDataMap();
 
+    inline const Gate &operator[](GateType g) const {
+        return items[(uint64_t)g];
+    }
+
     inline const Gate &at(const char *text, size_t text_len) const {
         auto h = gate_name_to_hash(text, text_len);
         const auto &entry = hashed_name_to_gate_type_table[h];
@@ -347,7 +351,7 @@ struct GateDataMap {
             throw std::out_of_range("Gate not found: '" + std::string(text, text_len) + "'");
         }
         // Canonicalize.
-        return items[entry.id];
+        return (*this)[entry.id];
     }
 
     inline const Gate &at(const char *text) const {

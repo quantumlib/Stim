@@ -1418,7 +1418,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, sample_stream_mutates_rng_state, {
     rewind(in);
 
     std::mt19937_64 rng(2345);
-    TableauSimulator<W>::sample_stream(in, out, SAMPLE_FORMAT_B8, false, rng);
+    TableauSimulator<W>::sample_stream(in, out, SampleFormat::SAMPLE_FORMAT_B8, false, rng);
 
     ASSERT_NE(rng, std::mt19937_64(2345));
 })

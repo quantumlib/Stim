@@ -26,7 +26,7 @@
 
 namespace stim {
 
-enum FrameSimulatorMode {
+enum class FrameSimulatorMode {
     STORE_MEASUREMENTS_TO_MEMORY,  // all measurements stored, detections not stored
     STREAM_MEASUREMENTS_TO_DISK,   // measurements stored up to lookback, detections not stored
     STORE_DETECTIONS_TO_MEMORY,    // measurements stored up to lookback, all detections stored

@@ -129,7 +129,7 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
     }
 
     dem.iter_flatten_error_instructions([&](const DemInstruction &op) {
-        if (op.type != stim::DEM_ERROR) {
+        if (op.type != DemInstructionType::DEM_ERROR) {
             return;
         }
         auto *p = op.target_data.ptr_start;

@@ -340,7 +340,7 @@ TEST(detector_slice_set_svg_diagram, observable) {
     obs_filter.exact_target = DemTarget::observable_id(0);
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(
-        circuit, ss, 0, circuit.count_ticks() + 1, SVG_MODE_TIME_DETECTOR_SLICE, {&obs_filter});
+        circuit, ss, 0, circuit.count_ticks() + 1, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&obs_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "observable_slices.svg");
 }
 
