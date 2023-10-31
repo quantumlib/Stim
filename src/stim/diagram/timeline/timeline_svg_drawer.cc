@@ -71,7 +71,14 @@ void DiagramTimelineSvgDrawer::do_feedback(
         c.xyz[0],
         c.xyz[1],
         SvgGateData{
-            (uint16_t)(mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black", 0, 10},
+            (uint16_t)(mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE ? 2 : 1),
+            gate,
+            "",
+            exponent.str(),
+            "lightgray",
+            "black",
+            0,
+            10},
         {});
 }
 

@@ -868,7 +868,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_single_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -889,7 +890,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -914,7 +916,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -933,7 +936,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_many_shots, {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 2049, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 2049, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     ASSERT_EQ(result.size(), 2049 * 4);
@@ -956,7 +960,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {

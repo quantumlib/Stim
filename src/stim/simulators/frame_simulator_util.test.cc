@@ -447,7 +447,15 @@ TEST_EACH_WORD_SIZE_W(DetectionSimulator, obs_data, {
     FILE *det_tmp = tmpfile();
     FILE *obs_tmp = tmpfile();
     sample_batch_detection_events_writing_results_to_disk<W>(
-        circuit, 1001, false, false, det_tmp, SampleFormat::SAMPLE_FORMAT_B8, rng, obs_tmp, SampleFormat::SAMPLE_FORMAT_B8);
+        circuit,
+        1001,
+        false,
+        false,
+        det_tmp,
+        SampleFormat::SAMPLE_FORMAT_B8,
+        rng,
+        obs_tmp,
+        SampleFormat::SAMPLE_FORMAT_B8);
 
     auto det_saved = rewind_read_close(det_tmp);
     auto obs_saved = rewind_read_close(obs_tmp);

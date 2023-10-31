@@ -205,7 +205,12 @@ int stim::command_diagram(int argc, const char **argv) {
         auto circuit = _read_circuit(in, argc, argv);
         auto coord_filter = _read_coord_filter(argc, argv);
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_start, tick_num, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
+            circuit,
+            out,
+            tick_start,
+            tick_num,
+            DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
+            coord_filter);
     } else if (type == DiagramTypes::TIMELINE_3D) {
         auto circuit = _read_circuit(in, argc, argv);
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);

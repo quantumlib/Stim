@@ -333,7 +333,8 @@ void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
         [&]() {
             return getc(file);
         },
-        stop_asap ? DEM_READ_CONDITION::DEM_READ_AS_LITTLE_AS_POSSIBLE : DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
+        stop_asap ? DEM_READ_CONDITION::DEM_READ_AS_LITTLE_AS_POSSIBLE
+                  : DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
 
 void DetectorErrorModel::append_from_text(const char *text) {
@@ -438,7 +439,8 @@ void flattened_helper(
                 shifted_detectors.push_back(t);
             }
 
-            out.append_dem_instruction(DemInstruction{shifted_coords, shifted_detectors, DemInstructionType::DEM_DETECTOR});
+            out.append_dem_instruction(
+                DemInstruction{shifted_coords, shifted_detectors, DemInstructionType::DEM_DETECTOR});
         } else if (op.type == DemInstructionType::DEM_ERROR) {
             std::vector<DemTarget> shifted_detectors;
             for (DemTarget t : op.target_data) {

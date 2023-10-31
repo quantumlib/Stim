@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "stim/circuit/circuit.h"
-#include "stim/mem/monotonic_buffer.h"
 #include "stim/dem/dem_instruction.h"
+#include "stim/mem/monotonic_buffer.h"
 
 namespace stim {
 

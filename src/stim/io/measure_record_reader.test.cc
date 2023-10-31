@@ -101,7 +101,8 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatHits, {
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8, {
     char tmp_data[]{3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0};
-    assert_contents_load_correctly<W>(SampleFormat::SAMPLE_FORMAT_R8, std::string(std::begin(tmp_data), std::end(tmp_data)));
+    assert_contents_load_correctly<W>(
+        SampleFormat::SAMPLE_FORMAT_R8, std::string(std::begin(tmp_data), std::end(tmp_data)));
 })
 
 TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8_LongGap, {
@@ -141,7 +142,9 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, Format01_WriteRead, {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SampleFormat::SAMPLE_FORMAT_01);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_01, 8 * num_bytes));
+    ASSERT_EQ(
+        num_bytes * 8,
+        read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_01, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -154,7 +157,9 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatB8_WriteRead, {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SampleFormat::SAMPLE_FORMAT_B8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_B8, 8 * num_bytes));
+    ASSERT_EQ(
+        num_bytes * 8,
+        read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_B8, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -166,7 +171,9 @@ TEST_EACH_WORD_SIZE_W(MeasureRecordReader, FormatR8_WriteRead, {
     uint8_t dst[num_bytes]{};
     FILE *tmp = write_records({src, src + num_bytes}, SampleFormat::SAMPLE_FORMAT_R8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_R8, 8 * num_bytes));
+    ASSERT_EQ(
+        num_bytes * 8,
+        read_records_as_bytes<W>(tmp, {dst, dst + num_bytes}, SampleFormat::SAMPLE_FORMAT_R8, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }

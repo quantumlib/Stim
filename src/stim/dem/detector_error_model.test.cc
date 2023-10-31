@@ -328,7 +328,9 @@ TEST(dem_instruction, general) {
     ASSERT_EQ(i1, (DemInstruction{p125, d1, DemInstructionType::DEM_ERROR}));
     ASSERT_NE(i1, (DemInstruction{p125, d2, DemInstructionType::DEM_ERROR}));
     ASSERT_NE(i1, (DemInstruction{p25, d1, DemInstructionType::DEM_ERROR}));
-    ASSERT_NE(((DemInstruction{{}, {}, DemInstructionType::DEM_DETECTOR})), (DemInstruction{{}, {}, DemInstructionType::DEM_LOGICAL_OBSERVABLE}));
+    ASSERT_NE(
+        ((DemInstruction{{}, {}, DemInstructionType::DEM_DETECTOR})),
+        (DemInstruction{{}, {}, DemInstructionType::DEM_LOGICAL_OBSERVABLE}));
 
     ASSERT_TRUE(i1.approx_equals(DemInstruction{p125, d1, DemInstructionType::DEM_ERROR}, 0));
     ASSERT_TRUE(!i1.approx_equals(DemInstruction{p126, d1, DemInstructionType::DEM_ERROR}, 0));

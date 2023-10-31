@@ -1124,10 +1124,12 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             uint64_t lower_level_shifts = body.total_detector_shift();
             DemTarget remaining_shift = {detectors_per_period - lower_level_shifts};
             if (remaining_shift.data > 0) {
-                if (body.instructions.empty() || body.instructions.front().type != DemInstructionType::DEM_SHIFT_DETECTORS) {
+                if (body.instructions.empty() ||
+                    body.instructions.front().type != DemInstructionType::DEM_SHIFT_DETECTORS) {
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
                     body.instructions.insert(
-                        body.instructions.begin(), DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
+                        body.instructions.begin(),
+                        DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
