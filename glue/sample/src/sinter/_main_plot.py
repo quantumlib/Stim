@@ -151,7 +151,7 @@ def parse_args(args: List[str]) -> Any:
                         )
     parser.add_argument('--plot_args_func',
                         type=str,
-                        default='''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}''',
+                        default='''{'marker': 'ov*sp^<>8P+xXhHDd|'[index % 18]}''',
                         help='A python expression used to customize the look of curves.\n'
                              'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
@@ -536,7 +536,7 @@ def _plot_helper(
 
     x_scale_name: Optional[str] = None
     for ax in [ax_err, ax_dis, ax_cus]:
-        x_scale_name = x_scale_name or _set_axis_scale_label_ticks(
+        v = _set_axis_scale_label_ticks(
             ax=ax,
             y_not_x=False,
             axis_label=xaxis,
@@ -548,6 +548,7 @@ def _plot_helper(
             plotted_stats=plotted_stats,
             v_func=x_func,
         )
+        x_scale_name = x_scale_name or v
 
     y_scale_name: Optional[str] = None
     if ax_err is not None:

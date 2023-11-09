@@ -22,7 +22,8 @@
 using namespace stim;
 
 RegisteredBenchmark *running_benchmark = nullptr;
-std::vector<RegisteredBenchmark> all_registered_benchmarks{};
+std::vector<RegisteredBenchmark> *all_registered_benchmarks_data = nullptr;
+uint64_t registry_initialized = 0;
 
 /// Describe quantity as an SI-prefixed value with two significant figures.
 std::string si2(double val) {
@@ -83,14 +84,14 @@ void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark>
 
     if (!filter.empty() && filter[filter.size() - 1] == '*') {
         std::string start = filter.substr(0, filter.size() - 1);
-        for (const auto &benchmark : all_registered_benchmarks) {
+        for (const auto &benchmark : *all_registered_benchmarks_data) {
             if (benchmark.name.substr(0, start.size()) == start) {
                 out.push_back(benchmark);
                 found = true;
             }
         }
     } else {
-        for (const auto &benchmark : all_registered_benchmarks) {
+        for (const auto &benchmark : *all_registered_benchmarks_data) {
             if (benchmark.name == filter) {
                 out.push_back(benchmark);
                 found = true;
@@ -100,7 +101,7 @@ void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark>
 
     if (!found) {
         std::cerr << "No benchmark matching filter '" << filter << "'. Available benchmarks are:\n";
-        for (auto &benchmark : all_registered_benchmarks) {
+        for (auto &benchmark : *all_registered_benchmarks_data) {
             std::cerr << "    " << benchmark.name << "\n";
         }
         exit(EXIT_FAILURE);
@@ -116,7 +117,7 @@ int main(int argc, const char **argv) {
 
     std::vector<RegisteredBenchmark> chosen_benchmarks;
     if (only == nullptr) {
-        chosen_benchmarks = all_registered_benchmarks;
+        chosen_benchmarks = *all_registered_benchmarks_data;
     } else {
         std::string filter_text = only;
         std::vector<std::string> filters{};
@@ -179,6 +180,11 @@ int main(int argc, const char **argv) {
                 exit(EXIT_FAILURE);
             }
         }
+    }
+
+    if (all_registered_benchmarks_data != nullptr) {
+        delete all_registered_benchmarks_data;
+        all_registered_benchmarks_data = nullptr;
     }
     return 0;
 }
