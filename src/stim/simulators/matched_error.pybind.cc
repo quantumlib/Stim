@@ -46,7 +46,7 @@ std::string DemTargetWithCoords_repr(const DemTargetWithCoords &self) {
 pybind11::ssize_t CircuitTargetsInsideInstruction_hash(const CircuitTargetsInsideInstruction &self) {
     return pybind11::hash(pybind11::make_tuple(
         "CircuitTargetsInsideInstruction",
-        self.gate_type == 0 ? nullptr : GATE_DATA[self.gate_type].name,
+        self.gate_type == GateType::NOT_A_GATE ? nullptr : GATE_DATA[self.gate_type].name,
         self.target_range_start,
         self.target_range_end,
         tuple_tree(self.targets_in_range),
@@ -77,7 +77,7 @@ std::string FlippedMeasurement_repr(const FlippedMeasurement &self) {
 std::string CircuitTargetsInsideInstruction_repr(const CircuitTargetsInsideInstruction &self) {
     std::stringstream out;
     out << "stim.CircuitTargetsInsideInstruction";
-    out << "(gate='" << (self.gate_type == 0 ? "NULL" : GATE_DATA[self.gate_type].name) << "'";
+    out << "(gate='" << (self.gate_type == GateType::NOT_A_GATE ? "NULL" : GATE_DATA[self.gate_type].name) << "'";
     out << ", args=[" << comma_sep(self.args) << "]";
     out << ", target_range_start=" << self.target_range_start;
     out << ", target_range_end=" << self.target_range_end;
@@ -412,7 +412,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_property_readonly(
         "gate",
         [](const CircuitTargetsInsideInstruction &self) -> pybind11::object {
-            if (self.gate_type == 0) {
+            if (self.gate_type == GateType::NOT_A_GATE) {
                 return pybind11::none();
             }
             return pybind11::str(GATE_DATA[self.gate_type].name);

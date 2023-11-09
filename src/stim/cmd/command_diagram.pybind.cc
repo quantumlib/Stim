@@ -77,10 +77,10 @@ std::string escape_html_for_srcdoc(const std::string &src) {
 void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c) {
     c.def("_repr_html_", [](const DiagramHelper &self) -> pybind11::object {
         std::string output = "None";
-        if (self.type == DIAGRAM_TYPE_TEXT) {
+        if (self.type == DiagramType::DIAGRAM_TYPE_TEXT) {
             return pybind11::cast("<pre>" + self.content + "</pre>");
         }
-        if (self.type == DIAGRAM_TYPE_SVG) {
+        if (self.type == DiagramType::DIAGRAM_TYPE_SVG) {
             return pybind11::none();
             // This commented out code would wrap the SVG in a little thing with a resizable tab.
             // That's convenient, but it breaks things like github showing the image.
@@ -90,12 +90,12 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
             // src="data:image/svg+xml;base64,)HTML"; write_data_as_base64_to(self.content.data(), self.content.size(),
             // out); out << R"HTML("/></div>)HTML"; output = out.str();
         }
-        if (self.type == DIAGRAM_TYPE_GLTF) {
+        if (self.type == DiagramType::DIAGRAM_TYPE_GLTF) {
             std::stringstream out;
             write_html_viewer_for_gltf_data(self.content, out);
             output = out.str();
         }
-        if (self.type == DIAGRAM_TYPE_HTML) {
+        if (self.type == DiagramType::DIAGRAM_TYPE_HTML) {
             output = self.content;
         }
         if (output == "None") {
@@ -113,7 +113,7 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
         return pybind11::cast(framed);
     });
     c.def("_repr_svg_", [](const DiagramHelper &self) -> pybind11::object {
-        if (self.type != DIAGRAM_TYPE_SVG) {
+        if (self.type != DiagramType::DIAGRAM_TYPE_SVG) {
             return pybind11::none();
         }
         return pybind11::cast(self.content);
@@ -130,17 +130,17 @@ DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std:
     if (type == "matchgraph-svg" || type == "match-graph-svg") {
         std::stringstream out;
         dem_match_graph_to_svg_diagram_write_to(dem, out);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "matchgraph-3d" || type == "match-graph-3d") {
         std::stringstream out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_GLTF, out.str()};
     } else if (type == "matchgraph-3d-html" || type == "match-graph-3d-html") {
         std::stringstream out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
         std::stringstream out_html;
         write_html_viewer_for_gltf_data(out.str(), out_html);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_GLTF, out_html.str()};
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }
@@ -236,45 +236,50 @@ DiagramHelper stim_pybind::circuit_diagram(
         }
         std::stringstream out;
         out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
-        return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "timeline-svg" || type == "timeline") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE, filter_coords);
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "time-slice-svg" || type == "timeslice-svg" || type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords);
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_SVG, out.str()};
     } else if (
         type == "detslice-svg" || type == "detslice" || type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "detslice-with-ops" || type == "detslice-with-ops-svg" || type == "time+detector-slice-svg") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
-        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+            circuit,
+            out,
+            tick_min,
+            num_ticks,
+            DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
+            filter_coords);
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "timeline-3d") {
         std::stringstream out;
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_GLTF, out.str()};
     } else if (type == "timeline-3d-html") {
         std::stringstream out;
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
         std::stringstream out_html;
         write_html_viewer_for_gltf_data(out.str(), out_html);
-        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_GLTF, out_html.str()};
     } else if (type == "detslice-text" || type == "detector-slice-text") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_text_diagram_to(out);
-        return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "interactive" || type == "interactive-html") {
         std::stringstream out;
         write_crumble_html_with_preloaded_circuit(circuit, out);
-        return DiagramHelper{DIAGRAM_TYPE_HTML, out.str()};
+        return DiagramHelper{DiagramType::DIAGRAM_TYPE_HTML, out.str()};
     } else if (type == "match-graph-svg" || type == "matchgraph-svg") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, "matchgraph-svg");

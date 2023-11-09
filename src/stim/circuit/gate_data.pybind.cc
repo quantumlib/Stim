@@ -126,7 +126,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
             std::map<std::string, Gate> result;
             for (const auto &g : GATE_DATA.items) {
-                if (g.id != NOT_A_GATE) {
+                if (g.id != GateType::NOT_A_GATE) {
                     result.insert({g.name, g});
                 }
             }
