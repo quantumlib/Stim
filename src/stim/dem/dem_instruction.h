@@ -10,7 +10,7 @@
 
 namespace stim {
 
-enum DemInstructionType : uint8_t {
+enum class DemInstructionType : uint8_t {
     DEM_ERROR,
     DEM_SHIFT_DETECTORS,
     DEM_DETECTOR,

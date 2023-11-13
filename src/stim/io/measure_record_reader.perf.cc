@@ -77,54 +77,54 @@ void sparse_reader_benchmark(double goal_micros) {
 }
 
 BENCHMARK(read_01_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(60);
+    dense_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_01>(60);
 }
 BENCHMARK(read_01_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_01>(45);
+    sparse_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_01>(45);
 }
 
 BENCHMARK(read_b8_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(0.65);
+    dense_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_B8>(0.65);
 }
 BENCHMARK(read_b8_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(6);
+    sparse_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_B8>(6);
 }
 
 BENCHMARK(read_hits_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(16);
+    dense_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_HITS>(16);
 }
 BENCHMARK(read_hits_dense_per100) {
-    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(2.1);
+    dense_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_HITS>(2.1);
 }
 BENCHMARK(read_hits_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_HITS>(15);
+    sparse_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_HITS>(15);
 }
 BENCHMARK(read_hits_sparse_per100) {
-    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_HITS>(2.2);
+    sparse_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_HITS>(2.2);
 }
 
 BENCHMARK(read_dets_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(23);
+    dense_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_DETS>(23);
 }
 BENCHMARK(read_dets_dense_per100) {
-    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.0);
+    dense_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_DETS>(3.0);
 }
 BENCHMARK(read_dets_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_DETS>(23);
+    sparse_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_DETS>(23);
 }
 BENCHMARK(read_dets_sparse_per100) {
-    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_DETS>(3.0);
+    sparse_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_DETS>(3.0);
 }
 
 BENCHMARK(read_r8_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(5);
+    dense_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_R8>(5);
 }
 BENCHMARK(read_r8_dense_per100) {
-    dense_reader_benchmark<10000, 100, SAMPLE_FORMAT_R8>(1.3);
+    dense_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_R8>(1.3);
 }
 BENCHMARK(read_r8_sparse_per10) {
-    sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_R8>(3.5);
+    sparse_reader_benchmark<10000, 10, SampleFormat:: SAMPLE_FORMAT_R8>(3.5);
 }
 BENCHMARK(read_r8_sparse_per100) {
-    sparse_reader_benchmark<10000, 100, SAMPLE_FORMAT_R8>(1.0);
+    sparse_reader_benchmark<10000, 100, SampleFormat:: SAMPLE_FORMAT_R8>(1.0);
 }

@@ -655,7 +655,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, weight, {
         p.xs[k] = k % 3 == 1;
         p.zs[k] = k % 5 == 1;
     }
-    ASSERT_EQ(p.ref().weight(), 333+199-66);
+    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
     p.sign = true;
-    ASSERT_EQ(p.ref().weight(), 333+199-66);
+    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
 })

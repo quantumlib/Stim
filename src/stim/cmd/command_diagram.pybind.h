@@ -22,7 +22,7 @@
 
 namespace stim_pybind {
 
-enum DiagramType {
+enum class DiagramType {
     DIAGRAM_TYPE_GLTF,
     DIAGRAM_TYPE_SVG,
     DIAGRAM_TYPE_TEXT,

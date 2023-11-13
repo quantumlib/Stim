@@ -96,9 +96,9 @@ TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_us
         for (size_t k = 0; k < segment.targets.size(); k += 2) {
             evens.push_back(segment.targets[k]);
         }
-        out.safe_append(CircuitInstruction{stim::CX, {}, segment.targets});
-        out.safe_append(CircuitInstruction{stim::MX, segment.args, evens});
-        out.safe_append(CircuitInstruction{stim::CX, {}, segment.targets});
+        out.safe_append(CircuitInstruction{GateType::CX, {}, segment.targets});
+        out.safe_append(CircuitInstruction{GateType::MX, segment.args, evens});
+        out.safe_append(CircuitInstruction{GateType::CX, {}, segment.targets});
         out.append_from_text("TICK");
     };
     decompose_pair_instruction_into_segments_with_single_use_controls(

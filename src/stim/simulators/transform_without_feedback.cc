@@ -123,7 +123,7 @@ struct WithoutFeedbackHelper {
             const auto &op = circuit.operations[k];
             if (op.gate_type == GateType::REPEAT) {
                 undo_repeat_block(circuit, op);
-            } else if (GATE_DATA.items[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
+            } else if (GATE_DATA[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
                 undo_feedback_capable_operation(op);
             } else {
                 reversed_semi_flattened_output.operations.push_back(op);

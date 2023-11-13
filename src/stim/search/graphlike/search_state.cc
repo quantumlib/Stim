@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <map>
-#include <queue>
 
 #include "stim/search/graphlike/node.h"
 
@@ -72,7 +71,8 @@ void SearchState::append_transition_as_error_instruction_to(const SearchState &o
 
     out.arg_buf.append_tail(1);
 
-    out.instructions.push_back(DemInstruction{out.arg_buf.commit_tail(), out.target_buf.commit_tail(), DEM_ERROR});
+    out.instructions.push_back(
+        DemInstruction{out.arg_buf.commit_tail(), out.target_buf.commit_tail(), DemInstructionType::DEM_ERROR});
 }
 
 bool SearchState::operator==(const SearchState &other) const {

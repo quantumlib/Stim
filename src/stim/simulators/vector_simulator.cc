@@ -193,7 +193,7 @@ void VectorSimulator::do_unitary_circuit(const Circuit &circuit) {
     std::vector<size_t> targets1{1};
     std::vector<size_t> targets2{1, 2};
     circuit.for_each_operation([&](const CircuitInstruction &op) {
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         if (!(gate_data.flags & GATE_IS_UNITARY)) {
             std::stringstream ss;
             ss << "Not a unitary gate: " << gate_data.name;

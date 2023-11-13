@@ -47,7 +47,7 @@ std::string ExposedDemInstruction::repr() const {
         } else {
             out << ", ";
         }
-        if (type == DEM_SHIFT_DETECTORS) {
+        if (type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             out << e.data;
         } else if (e.is_relative_detector_id()) {
             out << "stim.target_relative_detector_id(" << e.raw_id() << ")";
@@ -69,7 +69,7 @@ bool ExposedDemInstruction::operator!=(const ExposedDemInstruction &other) const
 }
 std::vector<pybind11::object> ExposedDemInstruction::targets_copy() const {
     std::vector<pybind11::object> result;
-    if (type == DEM_SHIFT_DETECTORS) {
+    if (type == DemInstructionType::DEM_SHIFT_DETECTORS) {
         for (const auto &e : targets) {
             result.push_back(pybind11::cast(e.data));
         }
@@ -118,17 +118,17 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 DemInstructionType conv_type;
                 std::vector<DemTarget> conv_targets;
                 if (lower == "error") {
-                    conv_type = DEM_ERROR;
+                    conv_type = DemInstructionType::DEM_ERROR;
                 } else if (lower == "shift_detectors") {
-                    conv_type = DEM_SHIFT_DETECTORS;
+                    conv_type = DemInstructionType::DEM_SHIFT_DETECTORS;
                 } else if (lower == "detector") {
-                    conv_type = DEM_DETECTOR;
+                    conv_type = DemInstructionType::DEM_DETECTOR;
                 } else if (lower == "logical_observable") {
-                    conv_type = DEM_LOGICAL_OBSERVABLE;
+                    conv_type = DemInstructionType::DEM_LOGICAL_OBSERVABLE;
                 } else {
                     throw std::invalid_argument("Unrecognized instruction name '" + lower + "'.");
                 }
-                if (conv_type == DEM_SHIFT_DETECTORS) {
+                if (conv_type == DemInstructionType::DEM_SHIFT_DETECTORS) {
                     for (const auto &e : targets) {
                         try {
                             conv_targets.push_back(DemTarget{pybind11::cast<uint64_t>(e)});

@@ -43,7 +43,7 @@ CircuitStats CircuitInstruction::compute_stats(const Circuit *host) const {
 }
 
 void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) const {
-    if (gate_type == REPEAT) {
+    if (gate_type == GateType::REPEAT) {
         if (host == nullptr) {
             throw std::invalid_argument("gate_type == REPEAT && host == nullptr");
         }
@@ -110,7 +110,7 @@ CircuitInstruction::CircuitInstruction(
 }
 
 void CircuitInstruction::validate() const {
-    const Gate &gate = GATE_DATA.items[gate_type];
+    const Gate &gate = GATE_DATA[gate_type];
 
     if (gate.flags == GateFlags::NO_GATE_FLAG) {
         throw std::invalid_argument("Unrecognized gate_type. Associated flag is NO_GATE_FLAG.");
@@ -248,7 +248,7 @@ void CircuitInstruction::validate() const {
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {
-    auto flags = GATE_DATA.items[gate_type].flags;
+    auto flags = GATE_DATA[gate_type].flags;
     if (!(flags & GATE_PRODUCES_RESULTS)) {
         return 0;
     }
@@ -266,7 +266,7 @@ uint64_t CircuitInstruction::count_measurement_results() const {
 }
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
-    auto flags = GATE_DATA.items[gate_type].flags;
+    auto flags = GATE_DATA[gate_type].flags;
     return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE);
 }
 

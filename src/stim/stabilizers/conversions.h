@@ -43,7 +43,7 @@ std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau<W
 inline Circuit unitary_circuit_inverse(const Circuit &unitary_circuit) {
     Circuit inverted;
     unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         if (!(gate_data.flags & GATE_IS_UNITARY)) {
             throw std::invalid_argument("Not unitary: " + op.str());
         }

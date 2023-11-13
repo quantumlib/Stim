@@ -22,17 +22,17 @@ using namespace stim;
 
 std::unique_ptr<MeasureRecordWriter> MeasureRecordWriter::make(FILE *out, SampleFormat output_format) {
     switch (output_format) {
-        case SAMPLE_FORMAT_01:
+        case SampleFormat::SAMPLE_FORMAT_01:
             return std::make_unique<MeasureRecordWriterFormat01>(out);
-        case SAMPLE_FORMAT_B8:
+        case SampleFormat::SAMPLE_FORMAT_B8:
             return std::make_unique<MeasureRecordWriterFormatB8>(out);
-        case SAMPLE_FORMAT_DETS:
+        case SampleFormat::SAMPLE_FORMAT_DETS:
             return std::make_unique<MeasureRecordWriterFormatDets>(out);
-        case SAMPLE_FORMAT_HITS:
+        case SampleFormat::SAMPLE_FORMAT_HITS:
             return std::make_unique<MeasureRecordWriterFormatHits>(out);
-        case SAMPLE_FORMAT_PTB64:
+        case SampleFormat::SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
-        case SAMPLE_FORMAT_R8:
+        case SampleFormat::SAMPLE_FORMAT_R8:
             return std::make_unique<MeasureRecordWriterFormatR8>(out);
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");

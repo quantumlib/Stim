@@ -25,25 +25,25 @@
 using namespace stim;
 
 void DetectorErrorModel::append_error_instruction(double probability, SpanRef<const DemTarget> targets) {
-    append_dem_instruction(DemInstruction{&probability, targets, DEM_ERROR});
+    append_dem_instruction(DemInstruction{&probability, targets, DemInstructionType::DEM_ERROR});
 }
 
 void DetectorErrorModel::append_shift_detectors_instruction(
     SpanRef<const double> coord_shift, uint64_t detector_shift) {
     DemTarget shift{detector_shift};
-    append_dem_instruction(DemInstruction{coord_shift, &shift, DEM_SHIFT_DETECTORS});
+    append_dem_instruction(DemInstruction{coord_shift, &shift, DemInstructionType::DEM_SHIFT_DETECTORS});
 }
 
 void DetectorErrorModel::append_detector_instruction(SpanRef<const double> coords, DemTarget target) {
-    append_dem_instruction(DemInstruction{coords, &target, DEM_DETECTOR});
+    append_dem_instruction(DemInstruction{coords, &target, DemInstructionType::DEM_DETECTOR});
 }
 
 void DetectorErrorModel::append_logical_observable_instruction(DemTarget target) {
-    append_dem_instruction(DemInstruction{{}, &target, DEM_LOGICAL_OBSERVABLE});
+    append_dem_instruction(DemInstruction{{}, &target, DemInstructionType::DEM_LOGICAL_OBSERVABLE});
 }
 
 void DetectorErrorModel::append_dem_instruction(const DemInstruction &instruction) {
-    assert(instruction.type != DEM_REPEAT_BLOCK);
+    assert(instruction.type != DemInstructionType::DEM_REPEAT_BLOCK);
     instruction.validate();
     auto stored_targets = target_buf.take_copy(instruction.target_data);
     auto stored_args = arg_buf.take_copy(instruction.arg_data);
@@ -56,7 +56,7 @@ void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, DetectorErro
     data[1].data = blocks.size();
     auto stored_targets = target_buf.take_copy({&data[0], &data[2]});
     blocks.push_back(std::move(body));
-    instructions.push_back({{}, stored_targets, DEM_REPEAT_BLOCK});
+    instructions.push_back({{}, stored_targets, DemInstructionType::DEM_REPEAT_BLOCK});
 }
 
 void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body) {
@@ -65,7 +65,7 @@ void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, const Detect
     data[1].data = blocks.size();
     auto stored_targets = target_buf.take_copy({&data[0], &data[2]});
     blocks.push_back(body);
-    instructions.push_back({{}, stored_targets, DEM_REPEAT_BLOCK});
+    instructions.push_back({{}, stored_targets, DemInstructionType::DEM_REPEAT_BLOCK});
 }
 
 bool DetectorErrorModel::operator==(const DetectorErrorModel &other) const {
@@ -107,7 +107,7 @@ void stim::print_detector_error_model(std::ostream &out, const DetectorErrorMode
         for (size_t k = 0; k < indent; k++) {
             out << " ";
         }
-        if (e.type == DEM_REPEAT_BLOCK) {
+        if (e.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             out << "repeat " << e.repeat_block_rep_count() << " {\n";
             print_detector_error_model(out, e.repeat_block_body(v), indent + 4);
             out << "\n";
@@ -175,7 +175,7 @@ DetectorErrorModel &DetectorErrorModel::operator=(DetectorErrorModel &&other) no
     return *this;
 }
 
-enum DEM_READ_CONDITION {
+enum class DEM_READ_CONDITION {
     DEM_READ_AS_LITTLE_AS_POSSIBLE,
     DEM_READ_UNTIL_END_OF_BLOCK,
     DEM_READ_UNTIL_END_OF_FILE,
@@ -196,19 +196,19 @@ inline DemInstructionType read_instruction_name(int &c, SOURCE read_char) {
     }
     name_buf[n] = 0;
     if (!strcmp(name_buf, "error")) {
-        return DEM_ERROR;
+        return DemInstructionType::DEM_ERROR;
     }
     if (!strcmp(name_buf, "shift_detectors")) {
-        return DEM_SHIFT_DETECTORS;
+        return DemInstructionType::DEM_SHIFT_DETECTORS;
     }
     if (!strcmp(name_buf, "detector")) {
-        return DEM_DETECTOR;
+        return DemInstructionType::DEM_DETECTOR;
     }
     if (!strcmp(name_buf, "logical_observable")) {
-        return DEM_LOGICAL_OBSERVABLE;
+        return DemInstructionType::DEM_LOGICAL_OBSERVABLE;
     }
     if (!strcmp(name_buf, "repeat")) {
-        return DEM_REPEAT_BLOCK;
+        return DemInstructionType::DEM_REPEAT_BLOCK;
     }
     throw std::out_of_range("Unrecognized instruction name: " + std::string(name_buf));
 }
@@ -259,7 +259,7 @@ void dem_read_instruction(DetectorErrorModel &model, char lead_char, SOURCE read
     int c = (int)lead_char;
     auto type = read_instruction_name(c, read_char);
     try {
-        if (type == DEM_REPEAT_BLOCK) {
+        if (type == DemInstructionType::DEM_REPEAT_BLOCK) {
             if (!read_until_next_line_arg(c, read_char)) {
                 throw std::invalid_argument("Missing repeat count of repeat block.");
             }
@@ -272,7 +272,7 @@ void dem_read_instruction(DetectorErrorModel &model, char lead_char, SOURCE read
             }
         } else {
             read_parens_arguments(c, "detector error model instruction", read_char, model.arg_buf);
-            if (type == DEM_SHIFT_DETECTORS) {
+            if (type == DemInstructionType::DEM_SHIFT_DETECTORS) {
                 if (read_until_next_line_arg(c, read_char)) {
                     model.target_buf.append_tail(DemTarget{read_uint60_t(c, read_char)});
                 }
@@ -299,32 +299,32 @@ void model_read_operations(DetectorErrorModel &model, SOURCE read_char, DEM_READ
         int c = read_char();
         read_past_dead_space_between_commands(c, read_char);
         if (c == EOF) {
-            if (read_condition == DEM_READ_UNTIL_END_OF_BLOCK) {
+            if (read_condition == DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_BLOCK) {
                 throw std::out_of_range("Unterminated block. Got a '{' without an eventual '}'.");
             }
             return;
         }
         if (c == '}') {
-            if (read_condition != DEM_READ_UNTIL_END_OF_BLOCK) {
+            if (read_condition != DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_BLOCK) {
                 throw std::out_of_range("Uninitiated block. Got a '}' without a '{'.");
             }
             return;
         }
         dem_read_instruction(model, c, read_char);
 
-        if (ops.back().type == DEM_REPEAT_BLOCK) {
+        if (ops.back().type == DemInstructionType::DEM_REPEAT_BLOCK) {
             // Temporarily remove instruction until block is parsed.
             auto repeat_count = ops.back().repeat_block_rep_count();
             ops.pop_back();
 
             // Recursively read the block contents.
             DetectorErrorModel block;
-            model_read_operations(block, read_char, DEM_READ_UNTIL_END_OF_BLOCK);
+            model_read_operations(block, read_char, DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_BLOCK);
 
             // Restore repeat block instruction, including block reference.
             model.append_repeat_block(repeat_count, std::move(block));
         }
-    } while (read_condition != DEM_READ_AS_LITTLE_AS_POSSIBLE);
+    } while (read_condition != DEM_READ_CONDITION::DEM_READ_AS_LITTLE_AS_POSSIBLE);
 }
 
 void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
@@ -333,7 +333,8 @@ void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
         [&]() {
             return getc(file);
         },
-        stop_asap ? DEM_READ_AS_LITTLE_AS_POSSIBLE : DEM_READ_UNTIL_END_OF_FILE);
+        stop_asap ? DEM_READ_CONDITION::DEM_READ_AS_LITTLE_AS_POSSIBLE
+                  : DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
 
 void DetectorErrorModel::append_from_text(const char *text) {
@@ -343,7 +344,7 @@ void DetectorErrorModel::append_from_text(const char *text) {
         [&]() {
             return text[k] != 0 ? text[k++] : EOF;
         },
-        DEM_READ_UNTIL_END_OF_FILE);
+        DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
 
 DetectorErrorModel DetectorErrorModel::from_file(FILE *file) {
@@ -370,16 +371,16 @@ DetectorErrorModel DetectorErrorModel::rounded(uint8_t digits) const {
 
     DetectorErrorModel result;
     for (const auto &e : instructions) {
-        if (e.type == DEM_REPEAT_BLOCK) {
+        if (e.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             auto reps = e.repeat_block_rep_count();
             auto &block = e.repeat_block_body(*this);
             result.append_repeat_block(reps, block.rounded(digits));
-        } else if (e.type == DEM_ERROR) {
+        } else if (e.type == DemInstructionType::DEM_ERROR) {
             std::vector<double> rounded_args;
             for (auto a : e.arg_data) {
                 rounded_args.push_back(round(a * scale) / scale);
             }
-            result.append_dem_instruction({rounded_args, e.target_data, DEM_ERROR});
+            result.append_dem_instruction({rounded_args, e.target_data, DemInstructionType::DEM_ERROR});
         } else {
             result.append_dem_instruction(e);
         }
@@ -390,9 +391,9 @@ DetectorErrorModel DetectorErrorModel::rounded(uint8_t digits) const {
 uint64_t DetectorErrorModel::total_detector_shift() const {
     uint64_t result = 0;
     for (const auto &e : instructions) {
-        if (e.type == DEM_SHIFT_DETECTORS) {
+        if (e.type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             result += e.target_data[0].data;
-        } else if (e.type == DEM_REPEAT_BLOCK) {
+        } else if (e.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             result += e.repeat_block_rep_count() * e.repeat_block_body(*this).total_detector_shift();
         }
     }
@@ -405,7 +406,7 @@ void flattened_helper(
     uint64_t &cur_detector_shift,
     DetectorErrorModel &out) {
     for (const auto &op : body.instructions) {
-        if (op.type == DEM_SHIFT_DETECTORS) {
+        if (op.type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             while (cur_coordinate_shift.size() < op.arg_data.size()) {
                 cur_coordinate_shift.push_back(0);
             }
@@ -415,15 +416,15 @@ void flattened_helper(
             if (!op.target_data.empty()) {
                 cur_detector_shift += op.target_data[0].data;
             }
-        } else if (op.type == DEM_REPEAT_BLOCK) {
+        } else if (op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             const auto &loop_body = op.repeat_block_body(body);
             auto reps = op.repeat_block_rep_count();
             for (uint64_t k = 0; k < reps; k++) {
                 flattened_helper(loop_body, cur_coordinate_shift, cur_detector_shift, out);
             }
-        } else if (op.type == DEM_LOGICAL_OBSERVABLE) {
-            out.append_dem_instruction(DemInstruction{{}, op.target_data, DEM_LOGICAL_OBSERVABLE});
-        } else if (op.type == DEM_DETECTOR) {
+        } else if (op.type == DemInstructionType::DEM_LOGICAL_OBSERVABLE) {
+            out.append_dem_instruction(DemInstruction{{}, op.target_data, DemInstructionType::DEM_LOGICAL_OBSERVABLE});
+        } else if (op.type == DemInstructionType::DEM_DETECTOR) {
             while (cur_coordinate_shift.size() < op.arg_data.size()) {
                 cur_coordinate_shift.push_back(0);
             }
@@ -438,15 +439,16 @@ void flattened_helper(
                 shifted_detectors.push_back(t);
             }
 
-            out.append_dem_instruction(DemInstruction{shifted_coords, shifted_detectors, DEM_DETECTOR});
-        } else if (op.type == DEM_ERROR) {
+            out.append_dem_instruction(
+                DemInstruction{shifted_coords, shifted_detectors, DemInstructionType::DEM_DETECTOR});
+        } else if (op.type == DemInstructionType::DEM_ERROR) {
             std::vector<DemTarget> shifted_detectors;
             for (DemTarget t : op.target_data) {
                 t.shift_if_detector_id(cur_detector_shift);
                 shifted_detectors.push_back(t);
             }
 
-            out.append_dem_instruction(DemInstruction{op.arg_data, shifted_detectors, DEM_ERROR});
+            out.append_dem_instruction(DemInstruction{op.arg_data, shifted_detectors, DemInstructionType::DEM_ERROR});
         } else {
             throw std::invalid_argument("Unrecognized instruction type: " + op.str());
         }
@@ -466,12 +468,12 @@ uint64_t DetectorErrorModel::count_detectors() const {
     uint64_t max_num = 0;
     for (const auto &e : instructions) {
         switch (e.type) {
-            case DEM_LOGICAL_OBSERVABLE:
+            case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
                 break;
-            case DEM_SHIFT_DETECTORS:
+            case DemInstructionType::DEM_SHIFT_DETECTORS:
                 offset += e.target_data[0].data;
                 break;
-            case DEM_REPEAT_BLOCK: {
+            case DemInstructionType::DEM_REPEAT_BLOCK: {
                 auto &block = e.repeat_block_body(*this);
                 auto n = block.count_detectors();
                 auto reps = e.repeat_block_rep_count();
@@ -481,8 +483,8 @@ uint64_t DetectorErrorModel::count_detectors() const {
                     max_num = std::max(max_num, offset + n - 1 - block_shift);
                 }
             } break;
-            case DEM_DETECTOR:
-            case DEM_ERROR:
+            case DemInstructionType::DEM_DETECTOR:
+            case DemInstructionType::DEM_ERROR:
                 for (const auto &t : e.target_data) {
                     if (t.is_relative_detector_id()) {
                         max_num = std::max(max_num, offset + t.raw_id());
@@ -500,20 +502,20 @@ uint64_t DetectorErrorModel::count_errors() const {
     uint64_t total = 0;
     for (const auto &e : instructions) {
         switch (e.type) {
-            case DEM_LOGICAL_OBSERVABLE:
+            case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
                 break;
-            case DEM_SHIFT_DETECTORS:
+            case DemInstructionType::DEM_SHIFT_DETECTORS:
                 break;
-            case DEM_REPEAT_BLOCK: {
+            case DemInstructionType::DEM_REPEAT_BLOCK: {
                 auto &block = e.repeat_block_body(*this);
                 auto n = block.count_errors();
                 auto reps = e.repeat_block_rep_count();
                 total += n * reps;
                 break;
             }
-            case DEM_DETECTOR:
+            case DemInstructionType::DEM_DETECTOR:
                 break;
-            case DEM_ERROR:
+            case DemInstructionType::DEM_ERROR:
                 total++;
                 break;
             default:
@@ -527,15 +529,15 @@ uint64_t DetectorErrorModel::count_observables() const {
     uint64_t max_num = 0;
     for (const auto &e : instructions) {
         switch (e.type) {
-            case DEM_SHIFT_DETECTORS:
-            case DEM_DETECTOR:
+            case DemInstructionType::DEM_SHIFT_DETECTORS:
+            case DemInstructionType::DEM_DETECTOR:
                 break;
-            case DEM_REPEAT_BLOCK: {
+            case DemInstructionType::DEM_REPEAT_BLOCK: {
                 auto &block = e.repeat_block_body(*this);
                 max_num = std::max(max_num, block.count_observables());
             } break;
-            case DEM_LOGICAL_OBSERVABLE:
-            case DEM_ERROR:
+            case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
+            case DemInstructionType::DEM_ERROR:
                 for (const auto &t : e.target_data) {
                     if (t.is_observable_id()) {
                         max_num = std::max(max_num, t.raw_id() + 1);
@@ -555,7 +557,7 @@ DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step,
     DetectorErrorModel result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = instructions[start + step * k];
-        if (op.type == DEM_REPEAT_BLOCK) {
+        if (op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             result.append_repeat_block(op.repeat_block_rep_count(), op.repeat_block_body(*this));
         } else {
             auto args = result.arg_buf.take_copy(op.arg_data);
@@ -598,7 +600,7 @@ DetectorErrorModel &DetectorErrorModel::operator+=(const DetectorErrorModel &oth
     }
 
     for (auto &e : other.instructions) {
-        if (e.type == DEM_REPEAT_BLOCK) {
+        if (e.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             uint64_t repeat_count = e.repeat_block_rep_count();
             const DetectorErrorModel &block = e.repeat_block_body(other);
             append_repeat_block(repeat_count, block);
@@ -613,10 +615,10 @@ std::pair<uint64_t, std::vector<double>> DetectorErrorModel::final_detector_and_
     uint64_t detector_offset = 0;
     std::vector<double> coord_shift;
     for (const auto &op : instructions) {
-        if (op.type == DEM_SHIFT_DETECTORS) {
+        if (op.type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             vec_pad_add_mul(coord_shift, op.arg_data);
             detector_offset += op.target_data[0].data;
-        } else if (op.type == DEM_REPEAT_BLOCK) {
+        } else if (op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             const auto &block = op.repeat_block_body(*this);
             uint64_t reps = op.repeat_block_rep_count();
             auto rec = block.final_detector_and_coord_shift();
@@ -675,7 +677,7 @@ bool get_detector_coordinates_helper(
     };
 
     for (const auto &op : dem.instructions) {
-        if (op.type == DEM_SHIFT_DETECTORS) {
+        if (op.type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             vec_pad_add_mul(coord_shift, op.arg_data);
             detector_offset += op.target_data[0].data;
             while (*iter_desired_detector_index < detector_offset) {
@@ -686,14 +688,14 @@ bool get_detector_coordinates_helper(
                 }
             }
 
-        } else if (op.type == DEM_DETECTOR) {
+        } else if (op.type == DemInstructionType::DEM_DETECTOR) {
             for (const auto &t : op.target_data) {
                 if (fill_in_data(t.data + detector_offset, op.arg_data)) {
                     return true;
                 }
             }
 
-        } else if (op.type == DEM_REPEAT_BLOCK) {
+        } else if (op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
             const auto &block = op.repeat_block_body(dem);
             uint64_t reps = op.repeat_block_rep_count();
 

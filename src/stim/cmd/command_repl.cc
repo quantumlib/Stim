@@ -24,7 +24,7 @@ using namespace stim;
 int stim::command_repl(int argc, const char **argv) {
     check_for_unknown_arguments({}, {"--repl"}, "repl", argc, argv);
     auto rng = externally_seeded_rng();
-    TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true, rng);
+    TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(stdin, stdout, SampleFormat::SAMPLE_FORMAT_01, true, rng);
     return EXIT_SUCCESS;
 }
 

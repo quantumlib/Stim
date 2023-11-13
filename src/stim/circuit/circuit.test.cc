@@ -1692,7 +1692,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
 
 TEST(circuit, generate_test_circuit_with_all_operations) {
     auto c = generate_test_circuit_with_all_operations();
-    std::set<GateType> seen{NOT_A_GATE};
+    std::set<GateType> seen{GateType::NOT_A_GATE};
     for (const auto &instruction : c.operations) {
         seen.insert(instruction.gate_type);
     }

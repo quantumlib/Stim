@@ -164,7 +164,7 @@ int stim::command_convert(int argc, const char **argv) {
     // convert arbitrary bits.
     if (!details.include_measurements && !details.include_detectors && !details.include_observables) {
         // dets outputs explicit value types, which we don't know if we get here.
-        if (out_format.id == SAMPLE_FORMAT_DETS) {
+        if (out_format.id == SampleFormat::SAMPLE_FORMAT_DETS) {
             std::cerr
                 << "\033[31mNot enough information given to parse input file to write to dets. Please given a circuit "
                    "with --types, a DEM file, or explicit number of each desired type\n";

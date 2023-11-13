@@ -71,14 +71,14 @@ inline void add_benchmark(RegisteredBenchmark benchmark) {
     all_registered_benchmarks_data->push_back(benchmark);
 }
 
-#define BENCHMARK(name)                                                          \
-    void BENCH_##name##_METHOD();                                                \
-    struct BENCH_STARTUP_TYPE_##name {                                           \
-        BENCH_STARTUP_TYPE_##name() {                                            \
-            add_benchmark({#name, BENCH_##name##_METHOD});                       \
-        }                                                                        \
-    };                                                                           \
-    static BENCH_STARTUP_TYPE_##name BENCH_STARTUP_INSTANCE_##name;              \
+#define BENCHMARK(name)                                             \
+    void BENCH_##name##_METHOD();                                   \
+    struct BENCH_STARTUP_TYPE_##name {                              \
+        BENCH_STARTUP_TYPE_##name() {                               \
+            add_benchmark({#name, BENCH_##name##_METHOD});          \
+        }                                                           \
+    };                                                              \
+    static BENCH_STARTUP_TYPE_##name BENCH_STARTUP_INSTANCE_##name; \
     void BENCH_##name##_METHOD()
 
 // HACK: Templating the body function type makes inlining significantly more likely.

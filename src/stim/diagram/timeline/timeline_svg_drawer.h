@@ -28,7 +28,7 @@
 
 namespace stim_draw_internal {
 
-enum DiagramTimelineSvgDrawerMode {
+enum class DiagramTimelineSvgDrawerMode {
     SVG_MODE_TIMELINE = 0,
     SVG_MODE_TIME_SLICE = 1,
     SVG_MODE_TIME_DETECTOR_SLICE = 2,

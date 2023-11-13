@@ -6,7 +6,7 @@
 
 namespace stim {
 
-enum SampleFormat {
+enum class SampleFormat {
     SAMPLE_FORMAT_01,
     SAMPLE_FORMAT_B8,
     SAMPLE_FORMAT_PTB64,

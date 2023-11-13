@@ -175,7 +175,7 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         default:
             throw std::invalid_argument(
                 "Not implemented by SparseUnsignedRevFrameTracker::undo_gate: " +
-                std::string(GATE_DATA.items[inst.gate_type].name));
+                std::string(GATE_DATA[inst.gate_type].name));
     }
 }
 

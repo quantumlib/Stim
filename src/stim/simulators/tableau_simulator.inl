@@ -1727,7 +1727,7 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         default:
             throw std::invalid_argument(
-                "Not implemented by TableauSimulator::do_gate: " + std::string(GATE_DATA.items[inst.gate_type].name));
+                "Not implemented by TableauSimulator::do_gate: " + std::string(GATE_DATA[inst.gate_type].name));
     }
 }
 

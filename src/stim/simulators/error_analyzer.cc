@@ -226,7 +226,7 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             break;
         default:
             throw std::invalid_argument(
-                "Not implemented by ErrorAnalyzer::undo_gate: " + std::string(GATE_DATA.items[inst.gate_type].name));
+                "Not implemented by ErrorAnalyzer::undo_gate: " + std::string(GATE_DATA[inst.gate_type].name));
     }
 }
 
@@ -929,23 +929,23 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
     for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
         const auto &e = *p;
         switch (e.type) {
-            case DEM_SHIFT_DETECTORS:
+            case DemInstructionType::DEM_SHIFT_DETECTORS:
                 base_detector_id += e.target_data[0].data;
                 out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
                 break;
-            case DEM_ERROR:
+            case DemInstructionType::DEM_ERROR:
                 for (auto &t : e.target_data) {
                     seen.insert(t);
                 }
                 conv_append(e);
                 break;
-            case DEM_DETECTOR:
-            case DEM_LOGICAL_OBSERVABLE:
+            case DemInstructionType::DEM_DETECTOR:
+            case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
                 if (!e.arg_data.empty() || seen.find(e.target_data[0]) == seen.end()) {
                     conv_append(e);
                 }
                 break;
-            case DEM_REPEAT_BLOCK: {
+            case DemInstructionType::DEM_REPEAT_BLOCK: {
                 uint64_t repetitions = e.repeat_block_rep_count();
                 if (repetitions) {
                     uint64_t old_base_detector_id = base_detector_id;
@@ -1124,10 +1124,12 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             uint64_t lower_level_shifts = body.total_detector_shift();
             DemTarget remaining_shift = {detectors_per_period - lower_level_shifts};
             if (remaining_shift.data > 0) {
-                if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
+                if (body.instructions.empty() ||
+                    body.instructions.front().type != DemInstructionType::DEM_SHIFT_DETECTORS) {
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
                     body.instructions.insert(
-                        body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
+                        body.instructions.begin(),
+                        DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});

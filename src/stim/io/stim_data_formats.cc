@@ -8,7 +8,7 @@ const std::map<std::string, FileFormatData>& stim::format_name_to_enum_map() {
             "01",
             FileFormatData{
                 "01",
-                SAMPLE_FORMAT_01,
+                SampleFormat::SAMPLE_FORMAT_01,
                 R"HELP(
 The 01 format is a dense human readable format that stores shots as lines of '0' and '1' characters.
 
@@ -74,7 +74,7 @@ def parse_01(data: str) -> List[List[bool]]:
             "b8",
             FileFormatData{
                 "b8",
-                SAMPLE_FORMAT_B8,
+                SampleFormat::SAMPLE_FORMAT_B8,
                 R"HELP(
 The b8 format is a dense binary format that stores shots as bit-packed bytes.
 
@@ -136,7 +136,7 @@ def parse_b8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             "ptb64",
             FileFormatData{
                 "ptb64",
-                SAMPLE_FORMAT_PTB64,
+                SampleFormat::SAMPLE_FORMAT_PTB64,
                 R"HELP(
 The ptb64 format is a dense SIMD-focused binary format that stores shots as partially transposed bit-packed data.
 
@@ -214,7 +214,7 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             "hits",
             FileFormatData{
                 "hits",
-                SAMPLE_FORMAT_HITS,
+                SampleFormat::SAMPLE_FORMAT_HITS,
                 R"HELP(
 The hits format is a dense human readable format that stores shots as a comma-separated list of integers.
 Each integer indicates the position of a bit that was True.
@@ -285,7 +285,7 @@ def parse_hits(data: str, bits_per_shot: int) -> List[List[bool]]:
             "r8",
             FileFormatData{
                 "r8",
-                SAMPLE_FORMAT_R8,
+                SampleFormat::SAMPLE_FORMAT_R8,
                 R"HELP(
 The r8 format is a sparse binary format that stores shots as a series of lengths of runs between 1s.
 
@@ -367,7 +367,7 @@ def parse_r8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             "dets",
             FileFormatData{
                 "dets",
-                SAMPLE_FORMAT_DETS,
+                SampleFormat::SAMPLE_FORMAT_DETS,
                 R"HELP(
 The dets format is a sparse human readable format that stores shots as lines starting with the word 'shot'
 and then containing space-separated prefixed values like 'D5' and 'L2'. Each value's prefix indicates whether

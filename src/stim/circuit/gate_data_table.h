@@ -34,10 +34,10 @@ struct GateVTable {
 #ifndef NDEBUG
         std::array<bool, NUM_DEFINED_GATES> seen{};
         for (const auto &[gate_id, value] : gate_data_pairs) {
-            seen[gate_id] = true;
+            seen[(size_t)gate_id] = true;
         }
         for (const auto &gate : GATE_DATA.items) {
-            if (!seen[gate.id]) {
+            if (!seen[(size_t)gate.id]) {
                 throw std::invalid_argument(
                     "Missing gate data! A value was not defined for '" + std::string(gate.name) + "'.");
             }

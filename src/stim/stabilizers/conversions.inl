@@ -150,7 +150,7 @@ Tableau<W> circuit_to_tableau(
     TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 
     circuit.for_each_operation([&](const CircuitInstruction &op) {
-        const auto &flags = GATE_DATA.items[op.gate_type].flags;
+        const auto &flags = GATE_DATA[op.gate_type].flags;
         if (!ignore_measurement && (flags & GATE_PRODUCES_RESULTS)) {
             throw std::invalid_argument(
                 "The circuit has no well-defined tableau because it contains measurement operations.\n"
@@ -190,7 +190,7 @@ std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &c
     TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 
     circuit.for_each_operation([&](const CircuitInstruction &op) {
-        const auto &flags = GATE_DATA.items[op.gate_type].flags;
+        const auto &flags = GATE_DATA[op.gate_type].flags;
         if (flags & GATE_IS_UNITARY) {
             sim.do_gate(op);
         } else if (flags & (GATE_IS_NOISY | GATE_IS_RESET | GATE_PRODUCES_RESULTS)) {

@@ -36,7 +36,7 @@ TEST(MeasureRecord, basic_usage) {
     ASSERT_EQ(r.storage.size(), 102);
 
     FILE *tmp = tmpfile();
-    r.write_unwritten_results_to(*MeasureRecordWriter::make(tmp, SAMPLE_FORMAT_01));
+    r.write_unwritten_results_to(*MeasureRecordWriter::make(tmp, SampleFormat::SAMPLE_FORMAT_01));
     rewind(tmp);
     for (size_t k = 0; k < 102; k++) {
         ASSERT_EQ(getc(tmp), '0' + (~k & 1));

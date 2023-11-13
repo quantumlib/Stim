@@ -140,7 +140,7 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
     const auto &target = op.targets[0];
 
     auto center = mq2xyz(cur_moment, target.qubit_value());
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    const auto &gate_data = GATE_DATA[op.gate_type];
     diagram_out.elements.push_back({gate_data.name, center});
 }
 
@@ -171,7 +171,7 @@ void DiagramTimeline3DDrawer::do_multi_qubit_gate_with_pauli_targets(const Resol
             continue;
         }
         std::stringstream ss;
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         ss << gate_data.name;
         if (t.is_x_target()) {
             ss << ":X";
@@ -309,7 +309,7 @@ void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperat
         do_else_correlated_error(op);
     } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);
