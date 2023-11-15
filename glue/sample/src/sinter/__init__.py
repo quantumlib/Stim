@@ -15,6 +15,9 @@ from sinter._collection_options import (
 from sinter._csv_out import (
     CSV_HEADER,
 )
+from sinter._decoding_all_built_in_decoders import (
+    BUILT_IN_DECODERS,
+)
 from sinter._existing_data import (
     read_stats_from_csv_files,
     stats_from_csv_files,
