@@ -67,6 +67,14 @@ simd_bits_range_ref<W> simd_bits_range_ref<W>::operator+=(const simd_bits_range_
 }
 
 template <size_t W>
+simd_bits_range_ref<W> simd_bits_range_ref<W>::operator-=(const simd_bits_range_ref<W> other) {
+    invert_bits();
+    *this += other;
+    invert_bits();
+    return *this;
+}
+
+template <size_t W>
 simd_bits_range_ref<W> simd_bits_range_ref<W>::operator>>=(int offset) {
     uint64_t incoming_word;
     uint64_t cur_word;
@@ -211,6 +219,22 @@ size_t simd_bits_range_ref<W>::popcnt() const {
         result += popcnt64(*p);
     }
     return result;
+}
+
+template <size_t W>
+size_t simd_bits_range_ref<W>::countr_zero() const {
+    size_t n = num_u64_padded();
+    for (size_t k = 0; k < n; k++) {
+        uint64_t u = u64[k];
+        if (u) {
+            for (size_t r = 0; r < 64; r++) {
+                if ((u >> r) & 1) {
+                    return r + 64 * k;
+                }
+            }
+        }
+    }
+    return SIZE_MAX;
 }
 
 template <size_t W>

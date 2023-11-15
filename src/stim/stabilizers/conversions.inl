@@ -1,8 +1,7 @@
-#include "stim/stabilizers/conversions.h"
-
 #include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
+#include "stim/stabilizers/conversions.h"
 
 namespace stim {
 
@@ -30,8 +29,7 @@ inline size_t compute_occupation(const std::vector<std::complex<float>> &state_v
 }
 
 template <size_t W>
-Circuit stabilizer_state_vector_to_circuit(
-    const std::vector<std::complex<float>> &state_vector, bool little_endian) {
+Circuit stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>> &state_vector, bool little_endian) {
     if (!is_power_of_2(state_vector.size())) {
         std::stringstream ss;
         ss << "Expected number of amplitudes to be a power of 2.";
@@ -144,8 +142,7 @@ std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau<W
 }
 
 template <size_t W>
-Tableau<W> circuit_to_tableau(
-    const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
+Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
     Tableau<W> result(circuit.count_qubits());
     TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 

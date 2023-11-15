@@ -98,6 +98,7 @@
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/stabilizers/pauli_string_ref.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_iter.h"

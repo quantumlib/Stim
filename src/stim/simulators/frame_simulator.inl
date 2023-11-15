@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/frame_simulator.h"
-
 #include <algorithm>
 #include <cstring>
 
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
 
 namespace stim {
@@ -58,10 +57,15 @@ FrameSimulator<W>::FrameSimulator(
 }
 
 template <size_t W>
-void FrameSimulator<W>::configure_for(CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size) {
-    bool storing_all_measurements = new_mode == FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
-    bool storing_all_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
-    bool storing_any_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY || new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY || new_mode == FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK;
+void FrameSimulator<W>::configure_for(
+    CircuitStats new_circuit_stats, FrameSimulatorMode new_mode, size_t new_batch_size) {
+    bool storing_all_measurements = new_mode == FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY ||
+                                    new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
+    bool storing_all_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY ||
+                                  new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY;
+    bool storing_any_detections = new_mode == FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY ||
+                                  new_mode == FrameSimulatorMode::STORE_EVERYTHING_TO_MEMORY ||
+                                  new_mode == FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK;
 
     batch_size = new_batch_size;
     num_qubits = new_circuit_stats.num_qubits;
@@ -80,8 +84,12 @@ void FrameSimulator<W>::configure_for(CircuitStats new_circuit_stats, FrameSimul
     m_record.destructive_resize(batch_size, num_stored_measurements);
 
     num_observables = storing_any_detections ? new_circuit_stats.num_observables : 0;
-    det_record.destructive_resize(batch_size, storing_all_detections ? new_circuit_stats.num_detectors : storing_any_detections ? 1 : 0),
-    obs_record.destructive_resize(num_observables, batch_size);
+    det_record.destructive_resize(
+        batch_size,
+        storing_all_detections   ? new_circuit_stats.num_detectors
+        : storing_any_detections ? 1
+                                 : 0),
+        obs_record.destructive_resize(num_observables, batch_size);
 }
 
 template <size_t W>
@@ -370,9 +378,10 @@ void FrameSimulator<W>::single_cx(uint32_t c, uint32_t t) {
     t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
-            z_table[c], x_table[t], z_table[t], [](
-                simd_word<W> &x1, simd_word<W> &z1,
-                simd_word<W> &x2, simd_word<W> &z2) {
+            z_table[c],
+            x_table[t],
+            z_table[t],
+            [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
                 z1 ^= z2;
                 x2 ^= x1;
             });
@@ -390,9 +399,10 @@ void FrameSimulator<W>::single_cy(uint32_t c, uint32_t t) {
     t &= ~TARGET_INVERTED_BIT;
     if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
-            z_table[c], x_table[t], z_table[t], [](
-                simd_word<W> &x1, simd_word<W> &z1,
-                simd_word<W> &x2, simd_word<W> &z2) {
+            z_table[c],
+            x_table[t],
+            z_table[t],
+            [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
                 z1 ^= x2 ^ z2;
                 z2 ^= x1;
                 x2 ^= x1;
@@ -435,9 +445,10 @@ void FrameSimulator<W>::do_ZCZ(const CircuitInstruction &target_data) {
         t &= ~TARGET_INVERTED_BIT;
         if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             x_table[c].for_each_word(
-                z_table[c], x_table[t], z_table[t], [](
-                    simd_word<W> &x1, simd_word<W> &z1,
-                    simd_word<W> &x2, simd_word<W> &z2) {
+                z_table[c],
+                x_table[t],
+                z_table[t],
+                [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
                     z1 ^= x2;
                     z2 ^= x1;
                 });
@@ -459,9 +470,10 @@ void FrameSimulator<W>::do_SWAP(const CircuitInstruction &target_data) {
         size_t q1 = targets[k].data;
         size_t q2 = targets[k + 1].data;
         x_table[q1].for_each_word(
-            z_table[q1], x_table[q2], z_table[q2], [](
-                simd_word<W> &x1, simd_word<W> &z1,
-                simd_word<W> &x2, simd_word<W> &z2) {
+            z_table[q1],
+            x_table[q2],
+            z_table[q2],
+            [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
                 std::swap(z1, z2);
                 std::swap(x1, x2);
             });
@@ -470,96 +482,88 @@ void FrameSimulator<W>::do_SWAP(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void FrameSimulator<W>::do_ISWAP(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        auto dx = x1 ^ x2;
-        auto t1 = z1 ^ dx;
-        auto t2 = z2 ^ dx;
-        z1 = t2;
-        z2 = t1;
-        std::swap(x1, x2);
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            auto dx = x1 ^ x2;
+            auto t1 = z1 ^ dx;
+            auto t2 = z2 ^ dx;
+            z1 = t2;
+            z2 = t1;
+            std::swap(x1, x2);
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_CXSWAP(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        z2 ^= z1;
-        z1 ^= z2;
-        x1 ^= x2;
-        x2 ^= x1;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            z2 ^= z1;
+            z1 ^= z2;
+            x1 ^= x2;
+            x2 ^= x1;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SWAPCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        z1 ^= z2;
-        z2 ^= z1;
-        x2 ^= x1;
-        x1 ^= x2;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            z1 ^= z2;
+            z2 ^= z1;
+            x2 ^= x1;
+            x1 ^= x2;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SQRT_XX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        auto dz = z1 ^ z2;
-        x1 ^= dz;
-        x2 ^= dz;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            auto dz = z1 ^ z2;
+            x1 ^= dz;
+            x2 ^= dz;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SQRT_YY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        auto d = x1 ^ z1 ^ x2 ^ z2;
-        x1 ^= d;
-        z1 ^= d;
-        x2 ^= d;
-        z2 ^= d;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            auto d = x1 ^ z1 ^ x2 ^ z2;
+            x1 ^= d;
+            z1 ^= d;
+            x2 ^= d;
+            z2 ^= d;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SQRT_ZZ(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        auto dx = x1 ^ x2;
-        z1 ^= dx;
-        z2 ^= dx;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            auto dx = x1 ^ x2;
+            z1 ^= dx;
+            z2 ^= dx;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_XCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        x1 ^= z2;
-        x2 ^= z1;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            x1 ^= z2;
+            x2 ^= z1;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_XCY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        x1 ^= x2 ^ z2;
-        x2 ^= z1;
-        z2 ^= z1;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            x1 ^= x2 ^ z2;
+            x2 ^= z1;
+            z2 ^= z1;
+        });
 }
 
 template <size_t W>
@@ -573,27 +577,25 @@ void FrameSimulator<W>::do_XCZ(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void FrameSimulator<W>::do_YCX(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        x2 ^= x1 ^ z1;
-        x1 ^= z2;
-        z1 ^= z2;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            x2 ^= x1 ^ z1;
+            x1 ^= z2;
+            z1 ^= z2;
+        });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_YCY(const CircuitInstruction &target_data) {
-    for_each_target_pair(*this, target_data, [](
-        simd_word<W> &x1, simd_word<W> &z1,
-        simd_word<W> &x2, simd_word<W> &z2) {
-        auto y1 = x1 ^ z1;
-        auto y2 = x2 ^ z2;
-        x1 ^= y2;
-        z1 ^= y2;
-        x2 ^= y1;
-        z2 ^= y1;
-    });
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            auto y1 = x1 ^ z1;
+            auto y2 = x2 ^ z2;
+            x1 ^= y2;
+            z1 ^= y2;
+            x2 ^= y1;
+            z2 ^= y1;
+        });
 }
 
 template <size_t W>
@@ -732,8 +734,7 @@ void FrameSimulator<W>::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &targe
     }
     // Omit locations blocked by prev error, while updating prev error mask.
     simd_bits_range_ref<W>{rng_buffer}.for_each_word(
-        last_correlated_error_occurred, [](
-            simd_word<W> &buf, simd_word<W> &prev) {
+        last_correlated_error_occurred, [](simd_word<W> &buf, simd_word<W> &prev) {
             buf = prev.andnot(buf);
             prev |= buf;
         });
@@ -857,9 +858,7 @@ void FrameSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstructio
 template <size_t W>
 void FrameSimulator<W>::do_MXX(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        num_qubits,
-        [&](CircuitInstruction segment){
+        inst, num_qubits, [&](CircuitInstruction segment) {
             do_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -867,9 +866,7 @@ void FrameSimulator<W>::do_MXX(const CircuitInstruction &inst) {
 template <size_t W>
 void FrameSimulator<W>::do_MYY(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        num_qubits,
-        [&](CircuitInstruction segment){
+        inst, num_qubits, [&](CircuitInstruction segment) {
             do_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -877,9 +874,7 @@ void FrameSimulator<W>::do_MYY(const CircuitInstruction &inst) {
 template <size_t W>
 void FrameSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        num_qubits,
-        [&](CircuitInstruction segment){
+        inst, num_qubits, [&](CircuitInstruction segment) {
             do_MZZ_disjoint_controls_segment(segment);
         });
 }

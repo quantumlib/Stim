@@ -153,8 +153,7 @@ void simd_bit_table<W>::do_square_transpose() {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
                 std::swap(
                     data.ptr_simd[get_index_of_bitword(maj_high, maj_low, min_high)],
-                    data.ptr_simd[get_index_of_bitword(min_high, maj_low, maj_high)]
-                );
+                    data.ptr_simd[get_index_of_bitword(min_high, maj_low, maj_high)]);
             }
         }
     }
@@ -169,7 +168,8 @@ simd_bit_table<W> simd_bit_table<W>::transposed() const {
 }
 
 template <size_t W>
-simd_bits<W> simd_bit_table<W>::read_across_majors_at_minor_index(size_t major_start, size_t major_stop, size_t minor_index) const {
+simd_bits<W> simd_bit_table<W>::read_across_majors_at_minor_index(
+    size_t major_start, size_t major_stop, size_t minor_index) const {
     assert(major_stop >= major_start);
     assert(major_stop <= num_major_bits_padded());
     assert(minor_index < num_minor_bits_padded());
@@ -256,8 +256,10 @@ std::string simd_bit_table<W>::str() const {
 }
 
 template <size_t W>
-simd_bit_table<W> simd_bit_table<W>::concat_major(const simd_bit_table<W> &second, size_t n_first, size_t n_second) const {
-    if (num_major_bits_padded() < n_first || second.num_major_bits_padded() < n_second || num_minor_bits_padded() != second.num_minor_bits_padded()) {
+simd_bit_table<W> simd_bit_table<W>::concat_major(
+    const simd_bit_table<W> &second, size_t n_first, size_t n_second) const {
+    if (num_major_bits_padded() < n_first || second.num_major_bits_padded() < n_second ||
+        num_minor_bits_padded() != second.num_minor_bits_padded()) {
         throw std::invalid_argument("Size mismatch");
     }
     simd_bit_table<W> result(n_first + n_second, num_minor_bits_padded());
@@ -269,9 +271,13 @@ simd_bit_table<W> simd_bit_table<W>::concat_major(const simd_bit_table<W> &secon
 }
 
 template <size_t W>
-void simd_bit_table<W>::overwrite_major_range_with(size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const {
+void simd_bit_table<W>::overwrite_major_range_with(
+    size_t dst_major_start, const simd_bit_table<W> &src, size_t src_major_start, size_t num_major_indices) const {
     assert(src.num_minor_bits_padded() == num_minor_bits_padded());
-    memcpy(data.u8 + dst_major_start * num_minor_u8_padded(), src.data.u8 + src_major_start * src.num_minor_u8_padded(), num_major_indices * num_minor_u8_padded());
+    memcpy(
+        data.u8 + dst_major_start * num_minor_u8_padded(),
+        src.data.u8 + src_major_start * src.num_minor_u8_padded(),
+        num_major_indices * num_minor_u8_padded());
 }
 
 template <size_t W>
@@ -345,4 +351,4 @@ std::ostream &operator<<(std::ostream &out, const stim::simd_bit_table<W> &v) {
     return out;
 }
 
-}
+}  // namespace stim

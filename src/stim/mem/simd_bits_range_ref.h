@@ -68,6 +68,7 @@ struct simd_bits_range_ref {
     simd_bits_range_ref operator|=(const simd_bits_range_ref other);
     // Addition assigment
     simd_bits_range_ref operator+=(const simd_bits_range_ref<W> other);
+    simd_bits_range_ref operator-=(const simd_bits_range_ref<W> other);
     // Shift assigment
     simd_bits_range_ref operator>>=(int offset);
     simd_bits_range_ref operator<<=(int offset);
@@ -110,6 +111,8 @@ struct simd_bits_range_ref {
     void randomize(size_t num_bits, std::mt19937_64 &rng);
     /// Returns the number of bits that are 1 in the bit range.
     size_t popcnt() const;
+    /// Returns the power-of-two-ness of the number, or SIZE_MAX if the number has no 1s.
+    size_t countr_zero() const;
     /// Returns whether or not the two ranges have set bits in common.
     bool intersects(const simd_bits_range_ref other) const;
 

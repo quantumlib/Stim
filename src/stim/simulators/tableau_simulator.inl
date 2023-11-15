@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/tableau_simulator.h"
-
 #include <set>
 
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 
 namespace stim {
@@ -166,9 +165,7 @@ uint32_t TableauSimulator<W>::try_isolate_observable_to_qubit_z(PauliStringRef<W
 }
 
 template <size_t W>
-void TableauSimulator<W>::postselect_observable(
-    PauliStringRef<W> observable,
-    bool desired_result) {
+void TableauSimulator<W>::postselect_observable(PauliStringRef<W> observable, bool desired_result) {
     ensure_large_enough_for_qubits(observable.num_qubits);
 
     uint32_t pivot = try_isolate_observable_to_qubit_z(observable, false);
@@ -232,9 +229,7 @@ void TableauSimulator<W>::do_MX(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void TableauSimulator<W>::do_MXX_disjoint_controls_segment(
-    const CircuitInstruction &inst) {
-
+void TableauSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
 
@@ -257,9 +252,7 @@ void TableauSimulator<W>::do_MXX_disjoint_controls_segment(
 }
 
 template <size_t W>
-void TableauSimulator<W>::do_MYY_disjoint_controls_segment(
-    const CircuitInstruction &inst) {
-
+void TableauSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
 
@@ -282,9 +275,7 @@ void TableauSimulator<W>::do_MYY_disjoint_controls_segment(
 }
 
 template <size_t W>
-void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(
-    const CircuitInstruction &inst) {
-
+void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
 
@@ -309,9 +300,7 @@ void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(
 template <size_t W>
 void TableauSimulator<W>::do_MXX(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        inv_state.num_qubits,
-        [&](CircuitInstruction segment){
+        inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -319,9 +308,7 @@ void TableauSimulator<W>::do_MXX(const CircuitInstruction &inst) {
 template <size_t W>
 void TableauSimulator<W>::do_MYY(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        inv_state.num_qubits,
-        [&](CircuitInstruction segment){
+        inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -329,9 +316,7 @@ void TableauSimulator<W>::do_MYY(const CircuitInstruction &inst) {
 template <size_t W>
 void TableauSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
     decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst,
-        inv_state.num_qubits,
-        [&](CircuitInstruction segment){
+        inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MZZ_disjoint_controls_segment(segment);
         });
 }
@@ -1108,8 +1093,7 @@ void TableauSimulator<W>::do_Z(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-simd_bits<W> TableauSimulator<W>::sample_circuit(
-    const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
+simd_bits<W> TableauSimulator<W>::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator<W> sim(std::move(rng), circuit.count_qubits(), sign_bias);
     sim.expand_do_circuit(circuit);
 
@@ -1131,7 +1115,8 @@ void TableauSimulator<W>::ensure_large_enough_for_qubits(size_t num_qubits) {
 }
 
 template <size_t W>
-void TableauSimulator<W>::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
+void TableauSimulator<W>::sample_stream(
+    FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
     TableauSimulator<W> sim(std::move(rng), 1);
     auto writer = MeasureRecordWriter::make(out, format);
     Circuit unprocessed;
@@ -1526,7 +1511,7 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
 
 template <size_t W>
 void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
-    switch(inst.gate_type) {
+    switch (inst.gate_type) {
         case GateType::DETECTOR:
             do_I(inst);
             break;
@@ -1732,4 +1717,3 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
 }
 
 }  // namespace stim
-

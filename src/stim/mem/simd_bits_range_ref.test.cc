@@ -354,6 +354,20 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, popcnt, {
     ASSERT_EQ(ref.popcnt(), 66);
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, countr_zero, {
+    simd_bits<W> data(1024);
+    simd_bits_range_ref<W> ref(data);
+    ASSERT_EQ(ref.countr_zero(), SIZE_MAX);
+    data[1000] = 1;
+    ASSERT_EQ(ref.countr_zero(), 1000);
+    data[101] = 1;
+    ASSERT_EQ(ref.countr_zero(), 101);
+    data[260] = 1;
+    ASSERT_EQ(ref.countr_zero(), 101);
+    data[0] = 1;
+    ASSERT_EQ(ref.countr_zero(), 0);
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, intersects, {
     simd_bits<W> data(1024);
     simd_bits<W> other(512);

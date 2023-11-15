@@ -833,3 +833,46 @@ def test_before_after():
     assert after.before(stim.Circuit("C_XYZ 1 4 6")) == before
     assert after.before(stim.Circuit("C_XYZ 1 4 6")[0]) == before
     assert after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before
+
+
+def test_iter_small():
+    assert list(stim.PauliString.iter_all(0)) == [stim.PauliString(0)]
+    assert list(stim.PauliString.iter_all(1)) == [
+        stim.PauliString("_"),
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=-1)) == [
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=0)) == [
+        stim.PauliString("_"),
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=1)) == [
+        stim.PauliString("_"),
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(1, min_weight=1, max_weight=1)) == [
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(2, min_weight=1, max_weight=1, allowed_paulis="XY")) == [
+        stim.PauliString("X_"),
+        stim.PauliString("Y_"),
+        stim.PauliString("_X"),
+        stim.PauliString("_Y"),
+    ]
+
+    with pytest.raises(ValueError, match="characters other than"):
+        stim.PauliString.iter_all(2, allowed_paulis="A")
+
+
+def test_iter_reusable():
+    v = stim.PauliString.iter_all(2)
+    vs1 = list(v)
+    vs2 = list(v)
+    assert vs1 == vs2
+    assert len(vs1) == 4**2

@@ -252,6 +252,8 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
     elif isinstance(obj, (int, str)):
         text = f"{term_name}: {type(obj).__name__} = {obj!r}"
         doc = ''
+    elif term_name == term_name.upper():
+        return None  # Skip constants because they lack a doc string.
     else:
         text = f"class {term_name}"
         if inspect.isabstract(obj):
@@ -296,7 +298,6 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
 
 
 def generate_documentation(*, obj: object, level: int, full_name: str) -> Iterator[DescribedObject]:
-
     if full_name.endswith("__"):
         return
     if not inspect.ismodule(obj) and not inspect.isclass(obj):

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include "stim/simulators/dem_sampler.h"
-
 #include <algorithm>
 
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/dem_sampler.h"
 
 namespace stim {
 
@@ -97,15 +96,7 @@ void DemSampler<W>::sample_write(
 
         if (err_out != nullptr) {
             write_table_data(
-                err_out,
-                shots_left,
-                (size_t)num_errors,
-                simd_bits<W>(0),
-                err_buffer,
-                err_out_format,
-                'M',
-                'M',
-                false);
+                err_out, shots_left, (size_t)num_errors, simd_bits<W>(0), err_buffer, err_out_format, 'M', 'M', false);
         }
 
         if (obs_out != nullptr) {

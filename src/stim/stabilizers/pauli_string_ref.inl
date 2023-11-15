@@ -24,10 +24,7 @@ namespace stim {
 
 template <size_t W>
 PauliStringRef<W>::PauliStringRef(
-    size_t init_num_qubits,
-    bit_ref init_sign,
-    simd_bits_range_ref<W> init_xs,
-    simd_bits_range_ref<W> init_zs)
+    size_t init_num_qubits, bit_ref init_sign, simd_bits_range_ref<W> init_xs, simd_bits_range_ref<W> init_zs)
     : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {
     assert(init_xs.num_bits_padded() == init_zs.num_bits_padded());
     assert(init_xs.num_simd_words == (init_num_qubits + W - 1) / W);
@@ -107,19 +104,20 @@ uint8_t PauliStringRef<W>::inplace_right_mul_returning_log_i_scalar(const PauliS
     simd_word<W> cnt1{};
     simd_word<W> cnt2{};
 
-    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
-        // Update the left hand side Paulis.
-        auto old_x1 = x1;
-        auto old_z1 = z1;
-        x1 ^= x2;
-        z1 ^= z2;
+    xs.for_each_word(
+        zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            // Update the left hand side Paulis.
+            auto old_x1 = x1;
+            auto old_z1 = z1;
+            x1 ^= x2;
+            z1 ^= z2;
 
-        // At each bit position: accumulate anti-commutation (+i or -i) counts.
-        auto x1z2 = old_x1 & z2;
-        auto anti_commutes = (x2 & old_z1) ^ x1z2;
-        cnt2 ^= (cnt1 ^ x1 ^ z1 ^ x1z2) & anti_commutes;
-        cnt1 ^= anti_commutes;
-    });
+            // At each bit position: accumulate anti-commutation (+i or -i) counts.
+            auto x1z2 = old_x1 & z2;
+            auto anti_commutes = (x2 & old_z1) ^ x1z2;
+            cnt2 ^= (cnt1 ^ x1 ^ z1 ^ x1z2) & anti_commutes;
+            cnt1 ^= anti_commutes;
+        });
 
     // Combine final anti-commutation phase tally (mod 4).
     auto s = (uint8_t)cnt1.popcount();
@@ -134,14 +132,16 @@ bool PauliStringRef<W>::commutes(const PauliStringRef<W> &other) const noexcept 
         return other.commutes(*this);
     }
     simd_word<W> cnt1{};
-    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
-        cnt1 ^= (x1 & z2) ^ (x2 & z1);
-    });
+    xs.for_each_word(
+        zs, other.xs, other.zs, [&cnt1](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            cnt1 ^= (x1 & z2) ^ (x2 & z1);
+        });
     return (cnt1.popcount() & 1) == 0;
 }
 
 template <size_t W>
-void PauliStringRef<W>::after_inplace_broadcast(const Tableau<W> &tableau, SpanRef<const size_t> indices, bool inverse) {
+void PauliStringRef<W>::after_inplace_broadcast(
+    const Tableau<W> &tableau, SpanRef<const size_t> indices, bool inverse) {
     if (tableau.num_qubits == 0 || indices.size() % tableau.num_qubits != 0) {
         throw std::invalid_argument("len(tableau) == 0 or len(indices) % len(tableau) != 0");
     }
@@ -334,7 +334,7 @@ template <size_t W>
 size_t PauliStringRef<W>::weight() const {
     size_t total = 0;
     xs.for_each_word(zs, [&](const simd_word<W> &w1, const simd_word<W> &w2) {
-       total += (w1 | w2).popcount();
+        total += (w1 | w2).popcount();
     });
     return total;
 }

@@ -37,6 +37,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/pauli_string_iter.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
@@ -418,6 +419,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler(m);
     auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter(m);
     auto c_pauli_string = pybind_pauli_string(m);
+    auto c_pauli_string_iter = pybind_pauli_string_iter(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
 
@@ -466,6 +468,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     pybind_tableau_methods(m, c_tableau);
     pybind_pauli_string_methods(m, c_pauli_string);
+    pybind_pauli_string_iter_methods(m, c_pauli_string_iter);
 
     pybind_compiled_detector_sampler_methods(m, c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(m, c_compiled_measurement_sampler);

@@ -653,6 +653,19 @@ TEST_EACH_WORD_SIZE_W(simd_bits, popcnt, {
     ASSERT_EQ(simd_bits<W>(0).popcnt(), 0);
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits, countr_zero, {
+    simd_bits<W> data(1024);
+    ASSERT_EQ(data.countr_zero(), SIZE_MAX);
+    data[1000] = 1;
+    ASSERT_EQ(data.countr_zero(), 1000);
+    data[101] = 1;
+    ASSERT_EQ(data.countr_zero(), 101);
+    data[260] = 1;
+    ASSERT_EQ(data.countr_zero(), 101);
+    data[0] = 1;
+    ASSERT_EQ(data.countr_zero(), 0);
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits, prefix_ref, {
     simd_bits<W> data(1024);
     auto prefix = data.prefix_ref(257);

@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/stabilizers/tableau_transposed_raii.h"
-
 #include <cstring>
 #include <map>
 
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/tableau_transposed_raii.h"
 
 namespace stim {
 
@@ -61,7 +60,10 @@ inline void for_each_trans_obs(TableauTransposedRaii<W> &trans, size_t q1, size_
 template <size_t W>
 void TableauTransposedRaii<W>::append_ZCX(size_t control, size_t target) {
     for_each_trans_obs<W>(
-        *this, control, target, [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
+        *this,
+        control,
+        target,
+        [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
             s ^= (cz ^ tx).andnot(cx & tz);
             cz ^= tz;
             tx ^= cx;
@@ -71,7 +73,10 @@ void TableauTransposedRaii<W>::append_ZCX(size_t control, size_t target) {
 template <size_t W>
 void TableauTransposedRaii<W>::append_ZCY(size_t control, size_t target) {
     for_each_trans_obs<W>(
-        *this, control, target, [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
+        *this,
+        control,
+        target,
+        [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
             cz ^= tx;
             s ^= cx & cz & (tx ^ tz);
             cz ^= tz;
@@ -83,7 +88,10 @@ void TableauTransposedRaii<W>::append_ZCY(size_t control, size_t target) {
 template <size_t W>
 void TableauTransposedRaii<W>::append_ZCZ(size_t control, size_t target) {
     for_each_trans_obs<W>(
-        *this, control, target, [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
+        *this,
+        control,
+        target,
+        [](simd_word<W> &cx, simd_word<W> &cz, simd_word<W> &tx, simd_word<W> &tz, simd_word<W> &s) {
             s ^= cx & tx & (cz ^ tz);
             cz ^= tx;
             tz ^= cx;
@@ -92,10 +100,11 @@ void TableauTransposedRaii<W>::append_ZCZ(size_t control, size_t target) {
 
 template <size_t W>
 void TableauTransposedRaii<W>::append_SWAP(size_t q1, size_t q2) {
-    for_each_trans_obs<W>(*this, q1, q2, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2, simd_word<W> &s) {
-        std::swap(x1, x2);
-        std::swap(z1, z2);
-    });
+    for_each_trans_obs<W>(
+        *this, q1, q2, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2, simd_word<W> &s) {
+            std::swap(x1, x2);
+            std::swap(z1, z2);
+        });
 }
 
 template <size_t W>
