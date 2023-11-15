@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/stabilizers/tableau_iter.h"
-
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/tableau_iter.h"
 
 namespace stim {
 
@@ -186,8 +185,8 @@ TableauIterator<W> &TableauIterator<W>::operator=(const TableauIterator<W> &othe
 }
 
 template <size_t W>
-std::pair<SpanRef<const PauliStringRef<W>>, SpanRef<const PauliStringRef<W>>> TableauIterator<W>::constraints_for_pauli_iterator(
-    size_t k) const {
+std::pair<SpanRef<const PauliStringRef<W>>, SpanRef<const PauliStringRef<W>>>
+TableauIterator<W>::constraints_for_pauli_iterator(size_t k) const {
     const PauliStringRef<W> *tab_obs_start = &tableau_column_refs[0];
     SpanRef<const PauliStringRef<W>> commute_rng = {tab_obs_start, tab_obs_start + k};
     SpanRef<const PauliStringRef<W>> anticommute_rng;

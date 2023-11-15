@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/stabilizers/pauli_string.h"
-
 #include <cassert>
 #include <cstring>
 #include <string>
 
 #include "stim/mem/simd_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 

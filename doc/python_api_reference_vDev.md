@@ -247,12 +247,16 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
     - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
     - [`stim.PauliString.from_unitary_matrix`](#stim.PauliString.from_unitary_matrix)
+    - [`stim.PauliString.iter_all`](#stim.PauliString.iter_all)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
     - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
     - [`stim.PauliString.weight`](#stim.PauliString.weight)
+- [`stim.PauliStringIterator`](#stim.PauliStringIterator)
+    - [`stim.PauliStringIterator.__iter__`](#stim.PauliStringIterator.__iter__)
+    - [`stim.PauliStringIterator.__next__`](#stim.PauliStringIterator.__next__)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -8346,6 +8350,68 @@ def from_unitary_matrix(
     """
 ```
 
+<a name="stim.PauliString.iter_all"></a>
+```python
+# stim.PauliString.iter_all
+
+# (in class stim.PauliString)
+@staticmethod
+def iter_all(
+    num_qubits: int,
+    *,
+    min_weight: int = 0,
+    max_weight: object = None,
+    allowed_paulis: str = 'XYZ',
+) -> stim.PauliStringIterator:
+    """Returns an iterator that iterates over all matching pauli strings.
+
+    Args:
+        num_qubits: The desired number of qubits in the pauli strings.
+        min_weight: Defaults to 0. The minimum number of non-identity terms that
+            must be present in each yielded pauli string.
+        max_weight: Defaults to None (unused). The maximum number of non-identity
+            terms that must be present in each yielded pauli string.
+        allowed_paulis: Defaults to "XYZ". Set this to a string containing the
+            non-identity paulis that are allowed to appear in each yielded pauli
+            string. This argument must be a string made up of only "X", "Y", and
+            "Z" characters. A non-identity Pauli is allowed if it appears in the
+            string, and not allowed if it doesn't. Identity Paulis are always
+            allowed.
+
+    Returns:
+        An Iterable[stim.PauliString] that yields the requested pauli strings.
+
+    Examples:
+        >>> import stim
+        >>> pauli_string_iterator = stim.PauliString.iter_all(
+        ...     num_qubits=3,
+        ...     min_weight=1,
+        ...     max_weight=2,
+        ...     allowed_paulis="XZ",
+        ... )
+        >>> for p in pauli_string_iterator:
+        ...     print(p)
+        +X__
+        +Z__
+        +_X_
+        +_Z_
+        +__X
+        +__Z
+        +XX_
+        +XZ_
+        +ZX_
+        +ZZ_
+        +X_X
+        +X_Z
+        +Z_X
+        +Z_Z
+        +_XX
+        +_XZ
+        +_ZX
+        +_ZZ
+    """
+```
+
 <a name="stim.PauliString.random"></a>
 ```python
 # stim.PauliString.random
@@ -8574,6 +8640,59 @@ def weight(
         3
         >>> stim.PauliString("-XXX___XXYZ").weight
         7
+    """
+```
+
+<a name="stim.PauliStringIterator"></a>
+```python
+# stim.PauliStringIterator
+
+# (at top-level in the stim module)
+class PauliStringIterator:
+    """Iterates over all pauli strings matching specified patterns.
+
+    Examples:
+        >>> import stim
+        >>> pauli_string_iterator = stim.PauliString.iter_all(
+        ...     2,
+        ...     min_weight=1,
+        ...     max_weight=1,
+        ...     allowed_paulis="XZ",
+        ... )
+        >>> for p in pauli_string_iterator:
+        ...     print(p)
+        +X_
+        +Z_
+        +_X
+        +_Z
+    """
+```
+
+<a name="stim.PauliStringIterator.__iter__"></a>
+```python
+# stim.PauliStringIterator.__iter__
+
+# (in class stim.PauliStringIterator)
+def __iter__(
+    self,
+) -> stim.PauliStringIterator:
+    """Returns an independent copy of the pauli string iterator.
+
+    Since for-loops and loop-comprehensions call `iter` on things they
+    iterate, this effectively allows the iterator to be iterated
+    multiple times.
+    """
+```
+
+<a name="stim.PauliStringIterator.__next__"></a>
+```python
+# stim.PauliStringIterator.__next__
+
+# (in class stim.PauliStringIterator)
+def __next__(
+    self,
+) -> stim.PauliString:
+    """Returns the next iterated pauli string.
     """
 ```
 

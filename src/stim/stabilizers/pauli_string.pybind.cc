@@ -14,6 +14,7 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
+#include "pauli_string_iter.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
@@ -1612,4 +1613,97 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const pybind11::str &d) {
             return PyPauliString::from_text(pybind11::cast<std::string>(d).data());
         }));
+
+    c.def_static(
+        "iter_all",
+        [](size_t num_qubits,
+           size_t min_weight,
+           const pybind11::object &max_weight_obj,
+           const std::string &allowed_paulis) {
+            bool allow_x = false;
+            bool allow_y = false;
+            bool allow_z = false;
+            for (char c : allowed_paulis) {
+                switch (c) {
+                    case 'X':
+                        allow_x = true;
+                        break;
+                    case 'Y':
+                        allow_y = true;
+                        break;
+                    case 'Z':
+                        allow_z = true;
+                        break;
+                    default:
+                        throw std::invalid_argument(
+                            "allowed_paulis='" + allowed_paulis + "' had characters other than 'X', 'Y', and 'Z'.");
+                }
+            }
+            size_t max_weight = num_qubits;
+            if (!max_weight_obj.is_none()) {
+                int64_t v = pybind11::cast<int64_t>(max_weight_obj);
+                if (v < 0) {
+                    min_weight = 1;
+                    max_weight = 0;
+                } else {
+                    max_weight = (size_t)v;
+                }
+            }
+            return PauliStringIterator<MAX_BITWORD_WIDTH>(
+                num_qubits, min_weight, max_weight, allow_x, allow_y, allow_z);
+        },
+        pybind11::arg("num_qubits"),
+        pybind11::kw_only(),
+        pybind11::arg("min_weight") = 0,
+        pybind11::arg("max_weight") = pybind11::none(),
+        pybind11::arg("allowed_paulis") = "XYZ",
+        clean_doc_string(R"DOC(
+            Returns an iterator that iterates over all matching pauli strings.
+
+            Args:
+                num_qubits: The desired number of qubits in the pauli strings.
+                min_weight: Defaults to 0. The minimum number of non-identity terms that
+                    must be present in each yielded pauli string.
+                max_weight: Defaults to None (unused). The maximum number of non-identity
+                    terms that must be present in each yielded pauli string.
+                allowed_paulis: Defaults to "XYZ". Set this to a string containing the
+                    non-identity paulis that are allowed to appear in each yielded pauli
+                    string. This argument must be a string made up of only "X", "Y", and
+                    "Z" characters. A non-identity Pauli is allowed if it appears in the
+                    string, and not allowed if it doesn't. Identity Paulis are always
+                    allowed.
+
+            Returns:
+                An Iterable[stim.PauliString] that yields the requested pauli strings.
+
+            Examples:
+                >>> import stim
+                >>> pauli_string_iterator = stim.PauliString.iter_all(
+                ...     num_qubits=3,
+                ...     min_weight=1,
+                ...     max_weight=2,
+                ...     allowed_paulis="XZ",
+                ... )
+                >>> for p in pauli_string_iterator:
+                ...     print(p)
+                +X__
+                +Z__
+                +_X_
+                +_Z_
+                +__X
+                +__Z
+                +XX_
+                +XZ_
+                +ZX_
+                +ZZ_
+                +X_X
+                +X_Z
+                +Z_X
+                +Z_Z
+                +_XX
+                +_XZ
+                +_ZX
+                +_ZZ
+        )DOC")
+            .data());
 }

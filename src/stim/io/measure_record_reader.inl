@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "stim/io/measure_record_reader.h"
-
 #include <algorithm>
+
+#include "stim/io/measure_record_reader.h"
 
 namespace stim {
 
@@ -48,17 +48,23 @@ std::unique_ptr<MeasureRecordReader<W>> MeasureRecordReader<W>::make(
     FILE *in, SampleFormat input_format, size_t num_measurements, size_t num_detectors, size_t num_observables) {
     switch (input_format) {
         case SampleFormat::SAMPLE_FORMAT_01:
-            return std::make_unique<MeasureRecordReaderFormat01<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormat01<W>>(
+                in, num_measurements, num_detectors, num_observables);
         case SampleFormat::SAMPLE_FORMAT_B8:
-            return std::make_unique<MeasureRecordReaderFormatB8<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormatB8<W>>(
+                in, num_measurements, num_detectors, num_observables);
         case SampleFormat::SAMPLE_FORMAT_DETS:
-            return std::make_unique<MeasureRecordReaderFormatDets<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormatDets<W>>(
+                in, num_measurements, num_detectors, num_observables);
         case SampleFormat::SAMPLE_FORMAT_HITS:
-            return std::make_unique<MeasureRecordReaderFormatHits<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormatHits<W>>(
+                in, num_measurements, num_detectors, num_observables);
         case SampleFormat::SAMPLE_FORMAT_PTB64:
-            return std::make_unique<MeasureRecordReaderFormatPTB64<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormatPTB64<W>>(
+                in, num_measurements, num_detectors, num_observables);
         case SampleFormat::SAMPLE_FORMAT_R8:
-            return std::make_unique<MeasureRecordReaderFormatR8<W>>(in, num_measurements, num_detectors, num_observables);
+            return std::make_unique<MeasureRecordReaderFormatR8<W>>(
+                in, num_measurements, num_detectors, num_observables);
         default:
             throw std::invalid_argument("Sample format not recognized by MeasurementRecordReader");
     }
@@ -92,8 +98,7 @@ void MeasureRecordReader<W>::move_obs_in_shots_to_mask_assuming_sorted(SparseSho
 }
 
 template <size_t W>
-size_t MeasureRecordReader<W>::read_into_table_with_major_shot_index(
-    simd_bit_table<W> &out_table, size_t max_shots) {
+size_t MeasureRecordReader<W>::read_into_table_with_major_shot_index(simd_bit_table<W> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     while (read_shots < max_shots && start_and_read_entire_record(out_table[read_shots])) {
         read_shots++;
@@ -110,8 +115,7 @@ MeasureRecordReaderFormat01<W>::MeasureRecordReaderFormat01(
 }
 
 template <size_t W>
-bool MeasureRecordReaderFormat01<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormat01<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     return start_and_read_entire_record_helper(
         [&](size_t k) {
             dirty_out_buffer[k] = false;
@@ -212,8 +216,7 @@ MeasureRecordReaderFormatB8<W>::MeasureRecordReaderFormatB8(
 }
 
 template <size_t W>
-bool MeasureRecordReaderFormatB8<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormatB8<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     size_t n = this->bits_per_record();
     size_t nb = (n + 7) >> 3;
     size_t nr = fread(dirty_out_buffer.u8, 1, nb, in);
@@ -302,8 +305,7 @@ MeasureRecordReaderFormatHits<W>::MeasureRecordReaderFormatHits(
 }
 
 template <size_t W>
-bool MeasureRecordReaderFormatHits<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormatHits<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     size_t m = this->bits_per_record();
     dirty_out_buffer.prefix_ref(m).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
@@ -399,8 +401,7 @@ MeasureRecordReaderFormatR8<W>::MeasureRecordReaderFormatR8(
 }
 
 template <size_t W>
-bool MeasureRecordReaderFormatR8<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormatR8<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(this->bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
         dirty_out_buffer[bit_index] = 1;
@@ -477,8 +478,7 @@ bool MeasureRecordReaderFormatR8<W>::start_and_read_entire_record_helper(HANDLE_
 /// DETS format
 
 template <size_t W>
-bool MeasureRecordReaderFormatDets<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormatDets<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(this->bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
         dirty_out_buffer[bit_index] = true;
@@ -634,8 +634,7 @@ bool MeasureRecordReaderFormatPTB64<W>::load_cache() {
 }
 
 template <size_t W>
-bool MeasureRecordReaderFormatPTB64<W>::start_and_read_entire_record(
-    simd_bits_range_ref<W> dirty_out_buffer) {
+bool MeasureRecordReaderFormatPTB64<W>::start_and_read_entire_record(simd_bits_range_ref<W> dirty_out_buffer) {
     if (num_unread_shots_in_buf == 0) {
         load_cache();
     }

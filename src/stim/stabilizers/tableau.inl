@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/stabilizers/tableau.h"
-
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -24,6 +22,7 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/tableau.h"
 
 namespace stim {
 
@@ -380,10 +379,8 @@ simd_bit_table<W> random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) 
     inv.do_square_transpose();
     inv_m.do_square_transpose();
 
-    auto fused =
-        simd_bit_table<W>::from_quadrants(n, lower, simd_bit_table<W>(n, n), prod, inv);
-    auto fused_m = simd_bit_table<W>::from_quadrants(
-        n, lower_m, simd_bit_table<W>(n, n), prod_m, inv_m);
+    auto fused = simd_bit_table<W>::from_quadrants(n, lower, simd_bit_table<W>(n, n), prod, inv);
+    auto fused_m = simd_bit_table<W>::from_quadrants(n, lower_m, simd_bit_table<W>(n, n), prod_m, inv_m);
 
     simd_bit_table<W> u(2 * n, 2 * n);
 
@@ -753,4 +750,3 @@ PauliString<W> Tableau<W>::y_output(size_t input_index) const {
 }
 
 }  // namespace stim
-

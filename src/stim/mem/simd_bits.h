@@ -68,6 +68,7 @@ struct simd_bits {
     simd_bits &operator|=(const simd_bits_range_ref<W> other);
     // Addition assigment
     simd_bits &operator+=(const simd_bits_range_ref<W> other);
+    simd_bits &operator-=(const simd_bits_range_ref<W> other);
     // right shift assignment
     simd_bits &operator>>=(int offset);
     // left shift assignment
@@ -112,6 +113,8 @@ struct simd_bits {
 
     /// Returns the number of bits that are 1 in the bit range.
     size_t popcnt() const;
+    /// Returns the power-of-two-ness of the number, or SIZE_MAX if the number has no 1s.
+    size_t countr_zero() const;
 
     /// Inverts all bits in the range.
     void invert_bits();

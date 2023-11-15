@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/measurements_to_detection_events.h"
-
 #include <cassert>
 
 #include "stim/circuit/gate_data.h"
@@ -22,6 +20,7 @@
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_util.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 
@@ -58,7 +57,8 @@ void measurements_to_detection_events_helper(
     // The frame simulator is used to account for flips in the measurement results that originate from the sweep data.
     // Eg. a `CNOT sweep[5] 0` can bit flip qubit 0, which can invert later measurement results, which will invert the
     // expected parity of detectors involving that measurement. This can vary from shot to shot.
-    FrameSimulator<W> frame_sim(circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, std::mt19937_64(0));
+    FrameSimulator<W> frame_sim(
+        circuit_stats, FrameSimulatorMode::STREAM_DETECTIONS_TO_DISK, batch_size, std::mt19937_64(0));
     frame_sim.sweep_table = sweep_bits__minor_shot_index;
     frame_sim.guarantee_anticommutation_via_frame_randomization = false;
 
@@ -69,8 +69,7 @@ void measurements_to_detection_events_helper(
 
         switch (op.gate_type) {
             case GateType::DETECTOR: {
-                simd_bits_range_ref<W> out_row =
-                    out_detection_results__minor_shot_index[detector_offset];
+                simd_bits_range_ref<W> out_row = out_detection_results__minor_shot_index[detector_offset];
                 detector_offset++;
 
                 // Include dependence from gates controlled by sweep bits.
@@ -221,8 +220,7 @@ void stream_measurements_to_detection_events_helper(
     }
 
     // Buffers and transposed buffers.
-    simd_bit_table<W> measurements__minor_shot_index(
-        circuit_stats.num_measurements, num_buffered_shots);
+    simd_bit_table<W> measurements__minor_shot_index(circuit_stats.num_measurements, num_buffered_shots);
     simd_bit_table<W> out__minor_shot_index(num_out_bits_including_any_obs, num_buffered_shots);
     simd_bit_table<W> out__major_shot_index(num_buffered_shots, num_out_bits_including_any_obs);
     simd_bit_table<W> sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
