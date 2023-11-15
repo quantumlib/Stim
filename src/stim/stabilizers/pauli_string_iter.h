@@ -46,7 +46,7 @@ struct NestedLooper {
     /// Adds a series of nested loops for iterating combinations of w values from [0, n).
     inline void append_combination_loops(uint64_t n, uint64_t w) {
         if (w > 0) {
-            loops.push_back(NestedLooperLoop{0, n - w + 1, SIZE_MAX});
+            loops.push_back(NestedLooperLoop{0, n - w + 1});
             for (uint64_t j = 1; j < w; j++) {
                 auto v = loops.size() - 1;
                 loops.push_back(NestedLooperLoop{1, n - w + j + 1, v});

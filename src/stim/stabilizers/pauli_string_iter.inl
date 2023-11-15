@@ -45,7 +45,7 @@ bool PauliStringIterator<W>::iter_next() {
             result.zs.clear();
             size_t pauli_weight = allow_x + allow_y + allow_z;
             for (size_t j = 0; j < looper.loops[0].cur; j++) {
-                looper.loops.push_back(NestedLooperLoop{1, 1 + pauli_weight, UINT64_MAX});
+                looper.loops.push_back(NestedLooperLoop{1, 1 + pauli_weight});
             }
         } else if (loop_index > looper.loops[0].cur) {
             // Iterating a pauli. Keep the results up to date as the paulis change.

@@ -40,8 +40,8 @@ std::vector<std::vector<uint64_t>> loop_drain(NestedLooper &looper) {
 
 TEST(pauli_string_iter, NestedLooper_simple) {
     NestedLooper looper;
-    looper.loops.push_back(NestedLooperLoop{0, 3, SIZE_MAX});
-    looper.loops.push_back(NestedLooperLoop{2, 6, SIZE_MAX});
+    looper.loops.push_back(NestedLooperLoop{0, 3});
+    looper.loops.push_back(NestedLooperLoop{2, 6});
 
     ASSERT_EQ(
         loop_drain(looper),
@@ -63,7 +63,7 @@ TEST(pauli_string_iter, NestedLooper_simple) {
 
 TEST(pauli_string_iter, NestedLooper_shifted) {
     NestedLooper looper;
-    looper.loops.push_back(NestedLooperLoop{0, 3, SIZE_MAX});
+    looper.loops.push_back(NestedLooperLoop{0, 3});
     looper.loops.push_back(NestedLooperLoop{2, 6, 0});
     ASSERT_EQ(
         loop_drain(looper),
@@ -111,13 +111,13 @@ TEST(pauli_string_iter, NestedLooper_append_combination_loops) {
 
 TEST(pauli_string_iter, NestedLooper_inplace_edit) {
     NestedLooper looper;
-    looper.loops.push_back(NestedLooperLoop{1, 3, UINT64_MAX});
+    looper.loops.push_back(NestedLooperLoop{1, 3});
 
     std::vector<std::vector<uint64_t>> state;
     looper.start();
     while (looper.iter_next([&](size_t k) {
         if (k == 0 && looper.loops[0].cur == 2) {
-            looper.loops.push_back(NestedLooperLoop{2, 4, UINT64_MAX});
+            looper.loops.push_back(NestedLooperLoop{2, 4});
         }
     })) {
         state.push_back(loop_state(looper));
