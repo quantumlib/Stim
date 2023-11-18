@@ -203,3 +203,125 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decompose
         }
     }
 })
+
+std::array<std::complex<float>, 4> canonicalize_global_phase(std::array<std::complex<float>, 4> v) {
+    for (std::complex<float> pivot : v) {
+        if (std::abs(pivot) > 1e-5) {
+            for (auto &t : v) {
+                t /= pivot;
+            }
+            return v;
+        }
+    }
+    return v;
+}
+
+void expect_unitaries_close_up_global_phase(
+    Gate g,
+    std::array<std::complex<float>, 4> u1,
+    std::array<std::complex<float>, 4> u2) {
+    u1 = canonicalize_global_phase(u1);
+    u2 = canonicalize_global_phase(u2);
+    for (size_t k = 0; k < 4; k++) {
+        if (std::abs(u1[k] - u2[k]) > 1e-5) {
+            std::stringstream out;
+            out << g.name << ":\n";
+            for (size_t k2 = 0; k2 < 4; k2++) {
+                out << "    " << u1[k2] << " vs " << u2[k2] << "\n";
+            }
+            EXPECT_EQ(u1, u2) << out.str() << "\n" << comma_sep(g.to_euler_angles(),",");
+            return;
+        }
+    }
+    EXPECT_TRUE(true);
+}
+
+std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles(Gate g) {
+    auto xyz = g.to_euler_angles();
+    auto c = cosf(xyz[0] / 2);
+    auto s = sinf(xyz[0] / 2);
+    return {
+        c,
+        -s * std::exp(std::complex<float>{0, xyz[2]}),
+        s * std::exp(std::complex<float>{0, xyz[1]}),
+        c * std::exp(std::complex<float>{0, xyz[1] + xyz[2]}),
+    };
+}
+
+std::array<std::complex<float>, 4> reconstruct_unitary_from_data(Gate g) {
+    return {
+        g.unitary_data[0][0],
+        g.unitary_data[0][1],
+        g.unitary_data[1][0],
+        g.unitary_data[1][1],
+    };
+}
+
+std::array<std::complex<float>, 4> reconstruct_unitary_from_axis_angle(Gate g) {
+    auto xyz_a = g.to_axis_angle();
+    auto x = xyz_a[0];
+    auto y = xyz_a[1];
+    auto z = xyz_a[2];
+    auto a = xyz_a[3];
+    auto c = cosf(a / 2);
+    auto s = -sinf(a / 2);
+    return {
+        std::complex<float>{c, s * z},
+        std::complex<float>{s * y, s * x},
+        std::complex<float>{-s * y, s * x},
+        std::complex<float>{c, -s * z},
+    };
+}
+
+std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(Gate g) {
+    auto xyz = g.to_euler_angles();
+    std::array<int, 3> half_turns;
+
+    for (size_t k = 0; k < 3; k++) {
+        half_turns[k] = (int)(roundf(xyz[k] / 3.14159265359f * 2)) & 3;
+    }
+    std::array<const char *, 4> y_rots{"I", "SQRT_Y", "Y", "SQRT_Y_DAG"};
+    std::array<const char *, 4> z_rots{"I", "S", "Z", "S_DAG"};
+
+    // Recover the unitary matrix via the state channel duality.
+    Circuit c;
+    c.safe_append_u("H", {0});
+    c.safe_append_u("CX", {0, 1});
+    c.safe_append_u(z_rots[half_turns[2]], {1});
+    c.safe_append_u(y_rots[half_turns[0]], {1});
+    c.safe_append_u(z_rots[half_turns[1]], {1});
+    VectorSimulator v(2);
+    v.do_unitary_circuit(c);
+
+    return {v.state[0], v.state[1], v.state[2], v.state[3]};
+}
+
+TEST(gate_data, to_euler_angles) {
+    for (const auto &g : GATE_DATA.items) {
+        if ((g.flags & GATE_IS_UNITARY) && (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            auto u1 = reconstruct_unitary_from_data(g);
+            auto u2 = reconstruct_unitary_from_euler_angles(g);
+            expect_unitaries_close_up_global_phase(g, u1, u2);
+        }
+    }
+}
+
+TEST(gate_data, to_axis_angle) {
+    for (const auto &g : GATE_DATA.items) {
+        if ((g.flags & GATE_IS_UNITARY) && (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            auto u1 = reconstruct_unitary_from_data(g);
+            auto u2 = reconstruct_unitary_from_axis_angle(g);
+            expect_unitaries_close_up_global_phase(g, u1, u2);
+        }
+    }
+}
+
+TEST(gate_data, to_euler_angles_axis_reference) {
+    for (const auto &g : GATE_DATA.items) {
+        if ((g.flags & GATE_IS_UNITARY) && (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            auto u1 = reconstruct_unitary_from_data(g);
+            auto u2 = reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(g);
+            expect_unitaries_close_up_global_phase(g, u1, u2);
+        }
+    }
+}

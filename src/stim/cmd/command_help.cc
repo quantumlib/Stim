@@ -258,47 +258,13 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         return;
     }
 
-    out << "Bloch Rotation:\n";
+    out << "Bloch Rotation (axis angle):\n";
     out.change_indent(+4);
-    auto matrix = gate.unitary();
-    auto a = matrix[0][0];
-    auto b = matrix[0][1];
-    auto c = matrix[1][0];
-    auto d = matrix[1][1];
-    auto i = std::complex<float>{0, 1};
-    auto x = b + c;
-    auto y = b * i + c * -i;
-    auto z = a - d;
-    auto s = a + d;
-    s *= -i;
-    std::complex<double> p = 1;
-    if (s.imag() != 0) {
-        p = s;
-    }
-    if (x.imag() != 0) {
-        p = x;
-    }
-    if (y.imag() != 0) {
-        p = y;
-    }
-    if (z.imag() != 0) {
-        p = z;
-    }
-    p /= sqrt(p.imag() * p.imag() + p.real() * p.real());
-    p *= 2;
-    x /= p;
-    y /= p;
-    z /= p;
-    s /= p;
-    assert(x.imag() == 0);
-    assert(y.imag() == 0);
-    assert(z.imag() == 0);
-    assert(s.imag() == 0);
-    auto rx = x.real();
-    auto ry = y.real();
-    auto rz = z.real();
-    auto rs = s.real();
-    auto angle = (int)round(acosf(rs) * 360 / 3.14159265359);
+    auto axis_angle = gate.to_axis_angle();
+    auto rx = axis_angle[0];
+    auto ry = axis_angle[1];
+    auto rz = axis_angle[2];
+    auto angle = (int)round(axis_angle[3] * 180 / 3.14159265359);
     if (angle > 180) {
         angle -= 360;
     }
@@ -313,8 +279,31 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         out << "+-"[rx < 0] << 'Z';
     }
     out << "\n";
-    out << "Angle: " << angle << " degrees\n";
+    out << "Angle: " << angle << "°\n";
+
     out.change_indent(-4);
+    out << "Bloch Rotation (Euler angles):\n";
+    out.change_indent(+4);
+    auto euler_angles = gate.to_euler_angles();
+    auto theta_deg = (int)round(euler_angles[0] * 180 / 3.14159265359) % 360;
+    auto phi_deg = (int)round(euler_angles[1] * 180 / 3.14159265359) % 360;
+    auto lambda_deg = (int)round(euler_angles[2] * 180 / 3.14159265359) % 360;
+    out << "  theta = " << theta_deg << "°\n";
+    out << "    phi = " << phi_deg << "°\n";
+    out << " lambda = " << lambda_deg << "°\n";
+    out << "unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)\n";
+    out << "unitary = RotZ(" << phi_deg << "°) * RotY(" << theta_deg << "°) * RotZ(" << lambda_deg << "°)\n";
+    out << "unitary = ";
+    std::array<const char *, 4> y_rots{"I", "SQRT_Y", "Y", "SQRT_Y_DAG"};
+    std::array<const char *, 4> z_rots{"I", "S", "Z", "S_DAG"};
+    out << z_rots[(phi_deg / 90) & 3];
+    out << " * ";
+    out << y_rots[(theta_deg / 90) & 3];
+    out << " * ";
+    out << z_rots[(lambda_deg / 90) & 3];
+
+    out.change_indent(-4);
+    out << "\n";
 }
 
 void print_unitary_matrix(Acc &out, const Gate &gate) {
