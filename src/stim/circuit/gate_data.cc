@@ -114,7 +114,7 @@ std::array<float, 4> Gate::to_axis_angle() const {
     auto rs = s.real();
 
     // At this point it's more of a quaternion. Normalize the axis.
-    auto r = sqrt(rx*rx + ry*ry + rz*rz);
+    auto r = sqrt(rx * rx + ry * ry + rz * rz);
     if (r == 0) {
         rx = 1;
     } else {

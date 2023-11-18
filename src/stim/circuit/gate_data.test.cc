@@ -217,9 +217,7 @@ std::array<std::complex<float>, 4> canonicalize_global_phase(std::array<std::com
 }
 
 void expect_unitaries_close_up_global_phase(
-    Gate g,
-    std::array<std::complex<float>, 4> u1,
-    std::array<std::complex<float>, 4> u2) {
+    Gate g, std::array<std::complex<float>, 4> u1, std::array<std::complex<float>, 4> u2) {
     u1 = canonicalize_global_phase(u1);
     u2 = canonicalize_global_phase(u2);
     for (size_t k = 0; k < 4; k++) {
@@ -229,7 +227,7 @@ void expect_unitaries_close_up_global_phase(
             for (size_t k2 = 0; k2 < 4; k2++) {
                 out << "    " << u1[k2] << " vs " << u2[k2] << "\n";
             }
-            EXPECT_EQ(u1, u2) << out.str() << "\n" << comma_sep(g.to_euler_angles(),",");
+            EXPECT_EQ(u1, u2) << out.str() << "\n" << comma_sep(g.to_euler_angles(), ",");
             return;
         }
     }
