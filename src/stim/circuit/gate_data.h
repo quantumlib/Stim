@@ -207,7 +207,22 @@ enum GateFlags : uint16_t {
     GATE_IS_SINGLE_QUBIT_GATE = 1 << 15,
 };
 
-struct ExtraGateData {
+struct Gate {
+    /// === core gate data used in main tasks such as sampling ===
+    /// The canonical name of the gate, used when printing it to a circuit file.
+    const char *name;
+    /// Bit-packed data describing details of the gate.
+    GateFlags flags;
+    /// The gate's type, such as stim::GateType::X or stim::GateType::MRZ.
+    GateType id;
+    /// The number of parens arguments the gate expects (e.g. X_ERROR takes 1, PAULI_CHANNEL_1 takes 3).
+    /// Set to stim::ARG_COUNT_SYGIL_ANY to indicate any number is allowed (e.g. DETECTOR coordinate data).
+    uint8_t arg_count;
+
+    /// === extended gate data used in secondary tasks such as exporting to other formats ===
+    /// The id of the gate inverse to this one, or at least the closest thing to an inverse.
+    /// Set to GateType::NOT_A_GATE for gates with no inverse.
+    GateType best_candidate_inverse_id;
     /// A word describing what sort of gate this is.
     const char *category;
     /// Prose summary of what the gate is, how it fits into Stim, and how to use it.
@@ -222,23 +237,6 @@ struct ExtraGateData {
     /// Stim circuit file contents of a decomposition into H+S+CX+M+R operations. (nullptr if not decomposable.)
     const char *h_s_cx_m_r_decomposition;
 
-    ExtraGateData(
-        const char *category,
-        const char *help,
-        FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-        FixedCapVector<const char *, 10> tableau_data,
-        const char *h_s_cx_m_r_decomposition);
-};
-
-struct Gate {
-    const char *name;
-    ExtraGateData (*extra_data_func)(void);
-    GateFlags flags;
-    uint8_t arg_count;
-    uint8_t name_len;
-    GateType id;
-    GateType best_candidate_inverse_id;
-
     inline bool operator==(const Gate &other) const {
         return id == other.id;
     }
@@ -252,7 +250,11 @@ struct Gate {
         GateType best_inverse_gate,
         uint8_t arg_count,
         GateFlags flags,
-        ExtraGateData (*extra_data_func)(void));
+        const char *category,
+        const char *help,
+        FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
+        FixedCapVector<const char *, 10> flow_data,
+        const char *h_s_cx_m_r_decomposition);
 
     const Gate &inverse() const;
 
@@ -261,12 +263,11 @@ struct Gate {
         if (!(flags & GateFlags::GATE_IS_UNITARY)) {
             throw std::invalid_argument(std::string(name) + " isn't unitary so it doesn't have a tableau.");
         }
-        const auto &tableau_data = extra_data_func().flow_data;
-        const auto &d = tableau_data;
-        if (tableau_data.size() == 2) {
+        const auto &d = flow_data;
+        if (flow_data.size() == 2) {
             return Tableau<W>::gate1(d[0], d[1]);
         }
-        if (tableau_data.size() == 4) {
+        if (flow_data.size() == 4) {
             return Tableau<W>::gate2(d[0], d[1], d[2], d[3]);
         }
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
@@ -290,14 +291,32 @@ struct Gate {
             };
         }
         std::vector<StabilizerFlow<W>> out;
-        auto data = extra_data_func();
-        for (const auto &c : data.flow_data) {
+        for (const auto &c : flow_data) {
             out.push_back(StabilizerFlow<W>::from_str(c));
         }
         return out;
     }
 
     std::vector<std::vector<std::complex<float>>> unitary() const;
+
+    /// Converts a single qubit unitary gate into an euler-angles rotation.
+    ///
+    /// Returns:
+    ///     {theta, phi, lambda} using the same convention as qiskit.
+    ///     Each angle is in radians.
+    ///     For stabilizer operations, every angle will be a multiple of pi/2.
+    ///
+    ///     The unitary matrix U of the operation can be recovered (up to global phase)
+    ///     by computing U = RotZ(phi) * RotY(theta) * RotZ(lambda).
+    std::array<float, 3> to_euler_angles() const;
+
+    /// Converts a single qubit unitary gate into an axis-angle rotation.
+    ///
+    /// Returns:
+    ///     An array {x, y, z, a}.
+    ///     <x, y, z> is a unit vector indicating the axis of rotation.
+    ///     <a> is the angle of rotation in radians.
+    std::array<float, 4> to_axis_angle() const;
 };
 
 inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {

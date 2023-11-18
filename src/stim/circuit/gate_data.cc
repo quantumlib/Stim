@@ -20,17 +20,8 @@ using namespace stim;
 
 GateDataMap::GateDataMap() {
     bool failed = false;
-    items[0].name = "NO_GATE";
-    items[0].name_len = strlen(items[0].name);
-    items[0].extra_data_func = []() -> ExtraGateData {
-        return {
-            "none",
-            "none",
-            {},
-            {},
-            nullptr,
-        };
-    };
+    items[0].name = "NOT_A_GATE";
+
     add_gate_data_annotations(failed);
     add_gate_data_blocks(failed);
     add_gate_data_collapsing(failed);
@@ -45,7 +36,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_swaps(failed);
     add_gate_data_pair_measure(failed);
     for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-        if (items[k].name_len == 0) {
+        if (items[k].name == nullptr) {
             std::cerr << "Uninitialized gate id: " << k << ".\n";
             failed = true;
         }
@@ -55,8 +46,87 @@ GateDataMap::GateDataMap() {
     }
 }
 
+std::array<float, 3> Gate::to_euler_angles() const {
+    if (unitary_data.size() != 2) {
+        throw std::out_of_range(std::string(name) + " doesn't have 1q unitary data.");
+    }
+    auto a = unitary_data[0][0];
+    auto b = unitary_data[0][1];
+    auto c = unitary_data[1][0];
+    auto d = unitary_data[1][1];
+    std::array<float, 3> xyz;
+    if (a == std::complex<float>{0}) {
+        xyz[0] = 3.14159265359f;
+        xyz[1] = 0;
+        xyz[2] = arg(-b / c);
+    } else if (b == std::complex<float>{0}) {
+        xyz[0] = 0;
+        xyz[1] = 0;
+        xyz[2] = arg(d / a);
+    } else {
+        xyz[0] = 3.14159265359f / 2;
+        xyz[1] = arg(c / a);
+        xyz[2] = arg(-b / a);
+    }
+    return xyz;
+}
+
+std::array<float, 4> Gate::to_axis_angle() const {
+    if (unitary_data.size() != 2) {
+        throw std::out_of_range(std::string(name) + " doesn't have 1q unitary data.");
+    }
+    auto a = unitary_data[0][0];
+    auto b = unitary_data[0][1];
+    auto c = unitary_data[1][0];
+    auto d = unitary_data[1][1];
+    auto i = std::complex<float>{0, 1};
+    auto x = b + c;
+    auto y = b * i + c * -i;
+    auto z = a - d;
+    auto s = a + d;
+    s *= -i;
+    std::complex<double> p = 1;
+    if (s.imag() != 0) {
+        p = s;
+    }
+    if (x.imag() != 0) {
+        p = x;
+    }
+    if (y.imag() != 0) {
+        p = y;
+    }
+    if (z.imag() != 0) {
+        p = z;
+    }
+    p /= sqrt(p.imag() * p.imag() + p.real() * p.real());
+    p *= 2;
+    x /= p;
+    y /= p;
+    z /= p;
+    s /= p;
+    assert(x.imag() == 0);
+    assert(y.imag() == 0);
+    assert(z.imag() == 0);
+    assert(s.imag() == 0);
+    auto rx = x.real();
+    auto ry = y.real();
+    auto rz = z.real();
+    auto rs = s.real();
+
+    // At this point it's more of a quaternion. Normalize the axis.
+    auto r = sqrt(rx * rx + ry * ry + rz * rz);
+    if (r == 0) {
+        rx = 1;
+    } else {
+        rx /= r;
+        ry /= r;
+        rz /= r;
+    }
+
+    return {rx, ry, rz, acosf(rs) * 2};
+}
+
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
-    const auto &unitary_data = extra_data_func().unitary_data;
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
     }
@@ -88,14 +158,21 @@ Gate::Gate(
     GateType best_inverse_gate,
     uint8_t arg_count,
     GateFlags flags,
-    ExtraGateData (*extra_data_func)(void))
+    const char *category,
+    const char *help,
+    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
+    FixedCapVector<const char *, 10> flow_data,
+    const char *h_s_cx_m_r_decomposition)
     : name(name),
-      extra_data_func(extra_data_func),
       flags(flags),
-      arg_count(arg_count),
-      name_len((uint8_t)strlen(name)),
       id(gate_id),
-      best_candidate_inverse_id(best_inverse_gate) {
+      arg_count(arg_count),
+      best_candidate_inverse_id(best_inverse_gate),
+      category(category),
+      help(help),
+      unitary_data(unitary_data),
+      flow_data(flow_data),
+      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
@@ -111,7 +188,7 @@ void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     items[(size_t)gate.id] = gate;
     hash_loc.id = gate.id;
     hash_loc.expected_name = gate.name;
-    hash_loc.expected_name_len = gate.name_len;
+    hash_loc.expected_name_len = strlen(gate.name);
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
@@ -133,19 +210,6 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
     hash_loc.id = hashed_name_to_gate_type_table[h_canon].id;
     hash_loc.expected_name = alt_name;
     hash_loc.expected_name_len = strlen(alt_name);
-}
-
-ExtraGateData::ExtraGateData(
-    const char *category,
-    const char *help,
-    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-    FixedCapVector<const char *, 10> flow_data,
-    const char *h_s_cx_m_r_decomposition)
-    : category(category),
-      help(help),
-      unitary_data(unitary_data),
-      flow_data(flow_data),
-      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
 }
 
 extern const GateDataMap stim::GATE_DATA = GateDataMap();

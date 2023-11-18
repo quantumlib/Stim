@@ -30,10 +30,8 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
             GateType::H,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 The Hadamard gate.
 Swaps the X and Z axes.
 
@@ -45,14 +43,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{s, s}, {s, -s}},
-                    {"+Z", "+X"},
-                    R"CIRCUIT(
+            {{s, s}, {s, -s}},
+            {"+Z", "+X"},
+            R"CIRCUIT(
 H 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "H_XZ", "H");
 
     add_gate(
@@ -63,10 +60,8 @@ H 0
             GateType::H_XY,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
 
 Parens Arguments:
@@ -77,17 +72,15 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0, s - i * s}, {s + i * s, 0}},
-                    {"+Y", "-Z"},
-                    R"CIRCUIT(
+            {{0, s - i * s}, {s + i * s, 0}},
+            {"+Y", "-Z"},
+            R"CIRCUIT(
 H 0
 S 0
 S 0
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -98,10 +91,8 @@ S 0
             GateType::H_YZ,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
 
 Parens Arguments:
@@ -112,16 +103,14 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{s, -i * s}, {i * s, -s}},
-                    {"-X", "+Y"},
-                    R"CIRCUIT(
+            {{s, -i * s}, {i * s, -s}},
+            {"-X", "+Y"},
+            R"CIRCUIT(
 H 0
 S 0
 H 0
 S 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 }

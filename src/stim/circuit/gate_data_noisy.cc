@@ -25,10 +25,8 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             GateType::DEPOLARIZE1,
             1,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 The single qubit depolarizing channel.
 
 Applies a single-qubit depolarizing error with the given probability.
@@ -66,11 +64,9 @@ Examples:
     # Maximally mix qubits 0 through 2
     DEPOLARIZE1(0.75) 0 1 2
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -81,10 +77,8 @@ Examples:
             GateType::DEPOLARIZE2,
             1,
             (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 The two qubit depolarizing channel.
 
 Applies a two-qubit depolarizing error with the given probability.
@@ -132,11 +126,9 @@ Examples:
     # Maximally mix qubits 0 through 3
     DEPOLARIZE2(0.9375) 0 1 2 3
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -147,10 +139,8 @@ Examples:
             GateType::X_ERROR,
             1,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 Applies a Pauli X with a given probability.
 
 Parens Arguments:
@@ -166,11 +156,9 @@ Pauli Mixture:
     1-p: I
      p : X
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -181,10 +169,8 @@ Pauli Mixture:
             GateType::Y_ERROR,
             1,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 Applies a Pauli Y with a given probability.
 
 Parens Arguments:
@@ -200,11 +186,9 @@ Pauli Mixture:
     1-p: I
      p : Y
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -215,10 +199,8 @@ Pauli Mixture:
             GateType::Z_ERROR,
             1,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 Applies a Pauli Z with a given probability.
 
 Parens Arguments:
@@ -234,11 +216,9 @@ Pauli Mixture:
     1-p: I
      p : Z
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -249,10 +229,8 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_1,
             3,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 A single qubit Pauli error channel with explicitly specified probabilities for each case.
 
 Parens Arguments:
@@ -279,11 +257,9 @@ Pauli Mixture:
     py: Y
     pz: Z
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -294,10 +270,8 @@ Pauli Mixture:
             GateType::PAULI_CHANNEL_2,
             15,
             (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 A two qubit Pauli error channel with explicitly specified probabilities for each case.
 
 Parens Arguments:
@@ -352,11 +326,9 @@ Pauli Mixture:
     pzy: ZY
     pzz: ZZ
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -368,10 +340,8 @@ Pauli Mixture:
             1,
             (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 Probabilistically applies a Pauli product error with a given probability.
 Sets the "correlated error occurred flag" to true if the error occurred.
 Otherwise sets the flag to false.
@@ -395,11 +365,9 @@ Example:
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
     add_gate_alias(failed, "CORRELATED_ERROR", "E");
     add_gate(
@@ -411,10 +379,8 @@ Example:
             1,
             (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
                         GATE_IS_NOT_FUSABLE),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 Probabilistically applies a Pauli product error with a given probability, unless the "correlated error occurred flag" is set.
 If the error occurs, sets the "correlated error occurred flag" to true.
 Otherwise leaves the flag alone.
@@ -443,10 +409,8 @@ Example:
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 }

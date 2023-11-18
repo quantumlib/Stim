@@ -28,10 +28,8 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 X-basis measurement.
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 
@@ -63,16 +61,15 @@ Examples:
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MX(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"X -> rec[-1]", "X -> +X"},
-                    R"CIRCUIT(
+            {},
+            {"X -> rec[-1]", "X -> +X"},
+            R"CIRCUIT(
 H 0
 M 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -82,10 +79,8 @@ H 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Y-basis measurement.
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 
@@ -117,9 +112,9 @@ Examples:
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MY(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"Y -> rec[-1]", "Y -> +Y"},
-                    R"CIRCUIT(
+            {},
+            {"Y -> rec[-1]", "Y -> +Y"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -128,9 +123,8 @@ M 0
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -140,10 +134,8 @@ S 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Z-basis measurement.
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 
@@ -178,14 +170,13 @@ Examples:
     # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
     MZ(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"Z -> rec[-1]", "Z -> +Z"},
-                    R"CIRCUIT(
+            {},
+            {"Z -> rec[-1]", "Z -> +Z"},
+            R"CIRCUIT(
 M 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "MZ", "M");
 
     // ===================== Measure+Reset Gates. ============================
@@ -198,10 +189,8 @@ M 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 X-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
 
@@ -234,17 +223,16 @@ Examples:
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRX(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"X -> rec[-1]", "1 -> +X"},
-                    R"CIRCUIT(
+            {},
+            {"X -> rec[-1]", "1 -> +X"},
+            R"CIRCUIT(
 H 0
 M 0
 R 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -254,10 +242,8 @@ H 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Y-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
 
@@ -290,9 +276,9 @@ Examples:
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRY(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"Y -> rec[-1]", "1 -> +Y"},
-                    R"CIRCUIT(
+            {},
+            {"Y -> rec[-1]", "1 -> +Y"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -302,9 +288,8 @@ R 0
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -314,10 +299,8 @@ S 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Z-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
 
@@ -353,15 +336,14 @@ Examples:
     # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
     MRZ(0.02) 2 3 5
 )MARKDOWN",
-                    {},
-                    {"Z -> rec[-1]", "1 -> +Z"},
-                    R"CIRCUIT(
+            {},
+            {"Z -> rec[-1]", "1 -> +Z"},
+            R"CIRCUIT(
 M 0
 R 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "MRZ", "MR");
 
     // ===================== Reset Gates. ============================
@@ -373,10 +355,8 @@ R 0
             GateType::MRX,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 X-basis reset.
 Forces each target qubit into the `|+>` state by silently measuring it in the X basis and applying a `Z` gate if it ended up in the `|->` state.
 
@@ -396,16 +376,15 @@ Examples:
     # Result multiple qubits into the |+> state.
     RX 2 3 5
 )MARKDOWN",
-                    {},
-                    {"1 -> +X"},
-                    R"CIRCUIT(
+            {},
+            {"1 -> +X"},
+            R"CIRCUIT(
 H 0
 R 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -414,10 +393,8 @@ H 0
             GateType::MRY,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Y-basis reset.
 Forces each target qubit into the `|i>` state by silently measuring it in the Y basis and applying an `X` gate if it ended up in the `|-i>` state.
 
@@ -437,9 +414,9 @@ Examples:
     # Result multiple qubits into the |i> state.
     RY 2 3 5
 )MARKDOWN",
-                    {},
-                    {"1 -> +Y"},
-                    R"CIRCUIT(
+            {},
+            {"1 -> +Y"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -448,9 +425,8 @@ R 0
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -459,10 +435,8 @@ S 0
             GateType::MR,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Z-basis reset.
 Forces each target qubit into the `|0>` state by silently measuring it in the Z basis and applying an `X` gate if it ended up in the `|1>` state.
 
@@ -485,14 +459,13 @@ Examples:
     # Reset multiple qubits into the |0> state.
     RZ 2 3 5
 )MARKDOWN",
-                    {},
-                    {"1 -> +Z"},
-                    R"CIRCUIT(
+            {},
+            {"1 -> +Z"},
+            R"CIRCUIT(
 R 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "RZ", "R");
 
     add_gate(
@@ -504,10 +477,8 @@ R 0
             ARG_COUNT_SYGIL_ZERO_OR_ONE,
             (GateFlags)(GATE_PRODUCES_RESULTS | GATE_IS_NOISY | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
                         GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            []() -> ExtraGateData {
-                return {
-                    "L_Collapsing Gates",
-                    R"MARKDOWN(
+            "L_Collapsing Gates",
+            R"MARKDOWN(
 Measure Pauli products.
 
 Parens Arguments:
@@ -537,20 +508,20 @@ Examples:
     MPP(0.001) Z1*Z2 X1*X2
 
 )MARKDOWN",
-                    {},
-                    {
-                        "XYZ__ -> rec[-2]",
-                        "___XX -> rec[-1]",
-                        "X____ -> X____",
-                        "_Y___ -> _Y___",
-                        "__Z__ -> __Z__",
-                        "___X_ -> ___X_",
-                        "____X -> ____X",
-                        "ZZ___ -> ZZ___",
-                        "_XX__ -> _XX__",
-                        "___ZZ -> ___ZZ",
-                    },
-                    R"CIRCUIT(
+            {},
+            {
+                "XYZ__ -> rec[-2]",
+                "___XX -> rec[-1]",
+                "X____ -> X____",
+                "_Y___ -> _Y___",
+                "__Z__ -> __Z__",
+                "___X_ -> ___X_",
+                "____X -> ____X",
+                "ZZ___ -> ZZ___",
+                "_XX__ -> _XX__",
+                "___ZZ -> ___ZZ",
+            },
+            R"CIRCUIT(
 S 1 1 1
 H 0 1 3 4
 CX 2 0 1 0 4 3
@@ -559,7 +530,5 @@ CX 2 0 1 0 4 3
 H 0 1 3 4
 S 1
 )CIRCUIT",
-                };
-            },
         });
 }

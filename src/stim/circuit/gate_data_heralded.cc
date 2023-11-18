@@ -26,10 +26,8 @@ void GateDataMap::add_gate_data_heralded(bool &failed) {
             1,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
                         GATE_PRODUCES_RESULTS),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 The heralded erasure noise channel.
 
 Whether or not this noise channel fires is recorded into the measurement
@@ -96,11 +94,9 @@ Examples:
     DETECTOR rec[-4]
     DETECTOR rec[-5]
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -112,10 +108,8 @@ Examples:
             4,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
                         GATE_PRODUCES_RESULTS),
-            []() -> ExtraGateData {
-                return {
-                    "F_Noise Channels",
-                    R"MARKDOWN(
+            "F_Noise Channels",
+            R"MARKDOWN(
 A heralded error channel that applies biased noise.
 
 This error records a bit into the measurement record, indicating whether
@@ -182,10 +176,8 @@ Examples:
     DETECTOR rec[-3]    # Did the herald on qubit 1 fire?
     DETECTOR rec[-4]    # Did the herald on qubit 0 fire?
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 }

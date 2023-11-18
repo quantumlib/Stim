@@ -25,10 +25,8 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
             GateType::DETECTOR,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Annotates that a set of measurements can be used to detect errors, because the set's parity should be deterministic.
 
 Note that it is not necessary to say whether the measurement set's parity is even or odd; all that matters is that the
@@ -98,11 +96,9 @@ Example:
         DETECTOR(0, 3) rec[-1]
     }
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -114,10 +110,8 @@ Example:
             1,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS |
                         GATE_HAS_NO_EFFECT_ON_QUBITS),
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Adds measurement records to a specified logical observable.
 
 A potential point of confusion here is that Stim's notion of a logical observable is nothing more than a set of
@@ -173,11 +167,9 @@ Example:
     # ...and the one before that.
     OBSERVABLE_INCLUDE(1) rec[-2]
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -188,10 +180,8 @@ Example:
             GateType::TICK,
             0,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Annotates the end of a layer of gates, or that time is advancing.
 
 This instruction is not necessary, it has no effect on simulations, but it can be used by tools that are transforming or
@@ -223,11 +213,9 @@ Example:
     # Empty time step.
     TICK
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -238,10 +226,8 @@ Example:
             GateType::QUBIT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_HAS_NO_EFFECT_ON_QUBITS),
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Annotates the location of a qubit.
 
 Coordinates are not required and have no effect on simulations, but can be useful to tools consuming the circuit. For
@@ -272,11 +258,9 @@ Example:
     QUBIT_COORDS(1, 0) 2
     QUBIT_COORDS(1, 1) 3
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -287,10 +271,8 @@ Example:
             GateType::SHIFT_COORDS,
             ARG_COUNT_SYGIL_ANY,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS | GATE_HAS_NO_EFFECT_ON_QUBITS),
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Accumulates offsets that affect qubit coordinates and detector coordinates.
 
 Note: when qubit/detector coordinates use fewer dimensions than SHIFT_COORDS, the offsets from the additional dimensions
@@ -325,11 +307,9 @@ Example:
         SHIFT_COORDS(0, 1)  # Advance 2nd coordinate to track loop iterations.
     }
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 
     add_gate(
@@ -340,10 +320,8 @@ Example:
             GateType::MPAD,
             0,
             GATE_PRODUCES_RESULTS,
-            []() -> ExtraGateData {
-                return {
-                    "Z_Annotations",
-                    R"MARKDOWN(
+            "Z_Annotations",
+            R"MARKDOWN(
 Pads the measurement record with the listed measurement results.
 
 This can be useful for ensuring measurements are aligned to word boundaries, or that the
@@ -366,10 +344,8 @@ Examples:
     # Append a series of results to the measurement record.
     MPAD 0 0 1 0 1
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 }

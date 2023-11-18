@@ -113,11 +113,20 @@ Stabilizer Generators:
     X -> X
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
-    Axis: 
-    Angle: 0 degrees
+    Axis: +X
+    Angle: 0°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(0°)
+    unitary = I * I * I
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -154,11 +163,20 @@ Stabilizer Generators:
     X -> X
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(180°)
+    unitary = I * Y * Z
+
 Unitary Matrix:
 
     [    , +1  ]
@@ -197,11 +215,20 @@ Stabilizer Generators:
     X -> -X
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(0°)
+    unitary = I * Y * I
+
 Unitary Matrix:
 
     [    ,   -i]
@@ -243,11 +270,20 @@ Stabilizer Generators:
     X -> -X
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(180°)
+    unitary = I * I * Z
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -286,11 +322,20 @@ Stabilizer Generators:
     X -> Y
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y+Z
-    Angle: 120 degrees
+    Angle: 120°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(90°)
+    unitary = I * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1-i, -1-i]
@@ -329,11 +374,20 @@ Stabilizer Generators:
     X -> Z
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y+Z
-    Angle: -120 degrees
+    Angle: -120°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(180°)
+    unitary = S * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1+i, +1+i]
@@ -373,11 +427,20 @@ Stabilizer Generators:
     X -> Z
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(180°)
+    unitary = I * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1  , +1  ]
@@ -415,11 +478,20 @@ Stabilizer Generators:
     X -> Y
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(90°)
+    unitary = I * Y * S
+
 Unitary Matrix:
 
     [    , +1-i]
@@ -459,11 +531,20 @@ Stabilizer Generators:
     X -> -X
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y+Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(90°)
+    unitary = S * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1  ,   -i]
@@ -506,11 +587,20 @@ Stabilizer Generators:
     X -> Y
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(90°)
+    unitary = I * I * S
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -549,11 +639,20 @@ Stabilizer Generators:
     X -> X
     Z -> -Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = -90°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(-90°) * RotY(90°) * RotZ(90°)
+    unitary = S_DAG * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1+i, +1-i]
@@ -592,11 +691,20 @@ Stabilizer Generators:
     X -> X
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(-90°)
+    unitary = S * SQRT_Y * S_DAG
+
 Unitary Matrix:
 
     [+1-i, +1+i]
@@ -635,11 +743,20 @@ Stabilizer Generators:
     X -> -Z
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(0°)
+    unitary = I * SQRT_Y * I
+
 Unitary Matrix:
 
     [+1+i, -1-i]
@@ -678,11 +795,20 @@ Stabilizer Generators:
     X -> Z
     Z -> -X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 180°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(180°) * RotY(90°) * RotZ(180°)
+    unitary = Z * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1-i, +1-i]
@@ -723,11 +849,20 @@ Stabilizer Generators:
     X -> -Y
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(-90°)
+    unitary = I * I * S_DAG
+
 Unitary Matrix:
 
     [+1  ,     ]
