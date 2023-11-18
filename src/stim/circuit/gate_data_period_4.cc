@@ -29,10 +29,8 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
             GateType::SQRT_X_DAG,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Principal square root of X gate.
 Phases the amplitude of |-> by i.
 
@@ -44,15 +42,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-                    {"+X", "-Y"},
-                    R"CIRCUIT(
+            {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            {"+X", "-Y"},
+            R"CIRCUIT(
 H 0
 S 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -63,10 +59,8 @@ H 0
             GateType::SQRT_X,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Adjoint of the principal square root of X gate.
 Phases the amplitude of |-> by -i.
 
@@ -78,15 +72,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-                    {"+X", "+Y"},
-                    R"CIRCUIT(
+            {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"+X", "+Y"},
+            R"CIRCUIT(
 S 0
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -97,10 +89,8 @@ S 0
             GateType::SQRT_Y_DAG,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Principal square root of Y gate.
 Phases the amplitude of |-i> by i.
 
@@ -112,15 +102,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
-                    {"-Z", "+X"},
-                    R"CIRCUIT(
+            {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+            {"-Z", "+X"},
+            R"CIRCUIT(
 S 0
 S 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -131,10 +119,8 @@ H 0
             GateType::SQRT_Y,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Adjoint of the principal square root of Y gate.
 Phases the amplitude of |-i> by -i.
 
@@ -146,15 +132,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-                    {"+Z", "-X"},
-                    R"CIRCUIT(
+            {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"+Z", "-X"},
+            R"CIRCUIT(
 H 0
 S 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -165,10 +149,8 @@ S 0
             GateType::S_DAG,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Principal square root of Z gate.
 Phases the amplitude of |1> by i.
 
@@ -180,14 +162,13 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{1, 0}, {0, i}},
-                    {"+Y", "+Z"},
-                    R"CIRCUIT(
+            {{1, 0}, {0, i}},
+            {"+Y", "+Z"},
+            R"CIRCUIT(
 S 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "SQRT_Z", "S");
 
     add_gate(
@@ -198,10 +179,8 @@ S 0
             GateType::S,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Adjoint of the principal square root of Z gate.
 Phases the amplitude of |1> by -i.
 
@@ -213,15 +192,14 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{1, 0}, {0, -i}},
-                    {"-Y", "+Z"},
-                    R"CIRCUIT(
+            {{1, 0}, {0, -i}},
+            {"-Y", "+Z"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate_alias(failed, "SQRT_Z_DAG", "S_DAG");
 }

@@ -29,10 +29,8 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
             GateType::SQRT_XX_DAG,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by i.
 
 Parens Arguments:
@@ -43,12 +41,12 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i},
-                     {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-                     {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-                     {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
-                    {"+XI", "-YX", "+IX", "-XY"},
-                    R"CIRCUIT(
+            {{0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i},
+             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+             {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
+            {"+XI", "-YX", "+IX", "-XY"},
+            R"CIRCUIT(
 H 0
 CNOT 0 1
 H 1
@@ -57,8 +55,6 @@ S 1
 H 0
 H 1
 )CIRCUIT",
-                };
-            },
         });
     add_gate(
         failed,
@@ -68,10 +64,8 @@ H 1
             GateType::SQRT_XX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by -i.
 
 Parens Arguments:
@@ -82,12 +76,12 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i},
-                     {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-                     {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-                     {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
-                    {"+XI", "+YX", "+IX", "+XY"},
-                    R"CIRCUIT(
+            {{0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i},
+             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+             {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
+            {"+XI", "+YX", "+IX", "+XY"},
+            R"CIRCUIT(
 H 0
 CNOT 0 1
 H 1
@@ -100,8 +94,6 @@ S 1
 H 0
 H 1
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -112,10 +104,8 @@ H 1
             GateType::SQRT_YY_DAG,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by i.
 
 Parens Arguments:
@@ -126,12 +116,12 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{0.5f + 0.5f * i, 0, 0, -0.5f + 0.5f * i},
-                     {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-                     {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-                     {-0.5f + 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
-                    {"-ZY", "+XY", "-YZ", "+YX"},
-                    R"CIRCUIT(
+            {{0.5f + 0.5f * i, 0, 0, -0.5f + 0.5f * i},
+             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+             {-0.5f + 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
+            {"-ZY", "+XY", "-YZ", "+YX"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -148,9 +138,8 @@ H 1
 S 0
 S 1
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -159,10 +148,8 @@ S 1
             GateType::SQRT_YY,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by -i.
 
 Parens Arguments:
@@ -173,12 +160,12 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{0.5f - 0.5f * i, 0, 0, -0.5f - 0.5f * i},
-                     {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-                     {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-                     {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
-                    {"+ZY", "-XY", "+YZ", "-YX"},
-                    R"CIRCUIT(
+            {{0.5f - 0.5f * i, 0, 0, -0.5f - 0.5f * i},
+             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+             {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
+            {"+ZY", "-XY", "+YZ", "-YX"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -195,8 +182,6 @@ S 1
 S 1
 S 1
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -207,10 +192,8 @@ S 1
             GateType::SQRT_ZZ_DAG,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by i.
 
 Parens Arguments:
@@ -221,18 +204,17 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
-                    {"+YZ", "+ZI", "+ZY", "+IZ"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
+            {"+YZ", "+ZI", "+ZY", "+IZ"},
+            R"CIRCUIT(
 H 1
 CNOT 0 1
 H 1
 S 0
 S 1
 )CIRCUIT",
-                };
-            },
         });
+
     add_gate(
         failed,
         Gate{
@@ -241,10 +223,8 @@ S 1
             GateType::SQRT_ZZ,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by -i.
 
 Parens Arguments:
@@ -255,9 +235,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, -i, 0, 0}, {0, 0, -i, 0}, {0, 0, 0, 1}},
-                    {"-YZ", "+ZI", "-ZY", "+IZ"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, -i, 0, 0}, {0, 0, -i, 0}, {0, 0, 0, 1}},
+            {"-YZ", "+ZI", "-ZY", "+IZ"},
+            R"CIRCUIT(
 H 1
 CNOT 0 1
 H 1
@@ -268,7 +248,5 @@ S 1
 S 1
 S 1
 )CIRCUIT",
-                };
-            },
         });
 }

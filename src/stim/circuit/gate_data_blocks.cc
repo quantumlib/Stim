@@ -25,10 +25,8 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
             GateType::REPEAT,
             0,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
-            []() -> ExtraGateData {
-                return {
-                    "Y_Control Flow",
-                    R"MARKDOWN(
+            "Y_Control Flow",
+            R"MARKDOWN(
 Repeats the instructions in its body N times.
 
 Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
@@ -57,10 +55,8 @@ Example:
         DETECTOR rec[-1] rec[-3]
     }
 )MARKDOWN",
-                    {},
-                    {},
-                    nullptr,
-                };
-            },
+            {},
+            {},
+            nullptr,
         });
 }

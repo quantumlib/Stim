@@ -197,7 +197,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         if (gate.name[0] == 'C' || gate.name[0] == 'Z') {
             out << gate.name << " rec[-1] 111\n";
         }
-        if (gate.name[gate.name_len - 1] == 'Z') {
+        if (gate.name[strlen(gate.name) - 1] == 'Z') {
             out << gate.name << " 111 rec[-1]\n";
         }
     }
@@ -205,7 +205,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
 }
 
 void print_decomposition(Acc &out, const Gate &gate) {
-    const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
+    const char *decomposition = gate.h_s_cx_m_r_decomposition;
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
         if (gate.id == GateType::MPP) {
@@ -391,10 +391,9 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
             out << "`" << entry.expected_name << "`\n";
         }
     }
-    auto data = gate.extra_data_func();
-    out << data.help;
-    if (std::string(data.help).find("xample:\n") == std::string::npos &&
-        std::string(data.help).find("xamples:\n") == std::string::npos) {
+    out << gate.help;
+    if (std::string(gate.help).find("xample:\n") == std::string::npos &&
+        std::string(gate.help).find("xamples:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
     print_stabilizer_generators(out, gate);
@@ -564,7 +563,7 @@ std::map<std::string, std::string> generate_gate_help_markdown() {
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
         if (e.expected_name_len > 0) {
             const auto &rep = GATE_DATA.at(e.expected_name);
-            categories[std::string(rep.extra_data_func().category)].insert(e.expected_name);
+            categories[std::string(rep.category)].insert(e.expected_name);
         }
     }
 

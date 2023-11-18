@@ -29,10 +29,8 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
             GateType::I,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "A_Pauli Gates",
-                    R"MARKDOWN(
+            "A_Pauli Gates",
+            R"MARKDOWN(
 The identity gate.
 Does nothing to the target qubits.
 
@@ -44,13 +42,11 @@ Targets:
 
     Qubits to do nothing to.
 )MARKDOWN",
-                    {{1, 0}, {0, 1}},
-                    {"+X", "+Z"},
-                    R"CIRCUIT(
+            {{1, 0}, {0, 1}},
+            {"+X", "+Z"},
+            R"CIRCUIT(
 # (no operations)
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -61,10 +57,8 @@ Targets:
             GateType::X,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "A_Pauli Gates",
-                    R"MARKDOWN(
+            "A_Pauli Gates",
+            R"MARKDOWN(
 The Pauli X gate.
 The bit flip gate.
 
@@ -76,16 +70,14 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0, 1}, {1, 0}},
-                    {"+X", "-Z"},
-                    R"CIRCUIT(
+            {{0, 1}, {1, 0}},
+            {"+X", "-Z"},
+            R"CIRCUIT(
 H 0
 S 0
 S 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -96,10 +88,8 @@ H 0
             GateType::Y,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "A_Pauli Gates",
-                    R"MARKDOWN(
+            "A_Pauli Gates",
+            R"MARKDOWN(
 The Pauli Y gate.
 
 Parens Arguments:
@@ -110,9 +100,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0, -i}, {i, 0}},
-                    {"-X", "-Z"},
-                    R"CIRCUIT(
+            {{0, -i}, {i, 0}},
+            {"-X", "-Z"},
+            R"CIRCUIT(
 S 0
 S 0
 H 0
@@ -120,8 +110,6 @@ S 0
 S 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -132,10 +120,8 @@ H 0
             GateType::Z,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "A_Pauli Gates",
-                    R"MARKDOWN(
+            "A_Pauli Gates",
+            R"MARKDOWN(
 The Pauli Z gate.
 The phase flip gate.
 
@@ -147,13 +133,11 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{1, 0}, {0, -1}},
-                    {"-X", "+Z"},
-                    R"CIRCUIT(
+            {{1, 0}, {0, -1}},
+            {"-X", "+Z"},
+            R"CIRCUIT(
 S 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 }

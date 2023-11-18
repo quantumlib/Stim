@@ -29,10 +29,8 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
             GateType::C_ZYX,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
 
 Parens Arguments:
@@ -43,16 +41,14 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-                    {"Y", "X"},
-                    R"CIRCUIT(
+            {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            {"Y", "X"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -63,10 +59,8 @@ H 0
             GateType::C_XYZ,
             0,
             (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            []() -> ExtraGateData {
-                return {
-                    "B_Single Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "B_Single Qubit Clifford Gates",
+            R"MARKDOWN(
 Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
 
 Parens Arguments:
@@ -77,13 +71,11 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-                    {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-                    {"Z", "Y"},
-                    R"CIRCUIT(
+            {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"Z", "Y"},
+            R"CIRCUIT(
 H 0
 S 0
 )CIRCUIT",
-                };
-            },
         });
 }

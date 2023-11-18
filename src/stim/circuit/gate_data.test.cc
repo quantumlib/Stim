@@ -86,7 +86,7 @@ std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_outp
 
 template <size_t W>
 bool is_decomposition_correct(const Gate &gate) {
-    const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
+    const char *decomposition = gate.h_s_cx_m_r_decomposition;
     if (decomposition == nullptr) {
         return false;
     }
@@ -120,11 +120,10 @@ bool is_decomposition_correct(const Gate &gate) {
 
 TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
     for (const auto &g : GATE_DATA.items) {
-        auto data = g.extra_data_func();
         if (g.flags & GATE_IS_UNITARY) {
-            EXPECT_TRUE(data.h_s_cx_m_r_decomposition != nullptr) << g.name;
+            EXPECT_TRUE(g.h_s_cx_m_r_decomposition != nullptr) << g.name;
         }
-        if (data.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
+        if (g.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
             EXPECT_TRUE(is_decomposition_correct<W>(g)) << g.name;
         }
     }
@@ -197,7 +196,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decompose
             }
         }
 
-        Circuit c(g.extra_data_func().h_s_cx_m_r_decomposition);
+        Circuit c(g.h_s_cx_m_r_decomposition);
         auto r = check_if_circuit_has_stabilizer_flows(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];

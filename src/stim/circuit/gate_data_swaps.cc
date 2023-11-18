@@ -29,10 +29,8 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
             GateType::SWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Swaps two qubits.
 
 Parens Arguments:
@@ -43,15 +41,13 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
-                    {"+IX", "+IZ", "+XI", "+ZI"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
+            {"+IX", "+IZ", "+XI", "+ZI"},
+            R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
 CNOT 0 1
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -62,10 +58,8 @@ CNOT 0 1
             GateType::ISWAP_DAG,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
 Equivalent to `SWAP` then `CZ` then `S` on both targets.
 
@@ -77,9 +71,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
-                    {"+ZY", "+IZ", "+YZ", "+ZI"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
+            {"+ZY", "+IZ", "+YZ", "+ZI"},
+            R"CIRCUIT(
 H 0
 CNOT 0 1
 CNOT 1 0
@@ -87,8 +81,6 @@ H 1
 S 1
 S 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -99,10 +91,8 @@ S 0
             GateType::ISWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
 Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
 
@@ -114,9 +104,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
-                    {"-ZY", "+IZ", "-YZ", "+ZI"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+            {"-ZY", "+IZ", "-YZ", "+ZI"},
+            R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -128,8 +118,6 @@ CNOT 1 0
 CNOT 0 1
 H 0
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -140,10 +128,8 @@ H 0
             GateType::SWAPCX,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 A combination CX-then-SWAP gate.
 This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
 
@@ -155,14 +141,12 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},
-                    {"+XX", "+IZ", "+XI", "+ZZ"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},
+            {"+XX", "+IZ", "+XI", "+ZZ"},
+            R"CIRCUIT(
 CNOT 1 0
 CNOT 0 1
 )CIRCUIT",
-                };
-            },
         });
 
     add_gate(
@@ -173,10 +157,8 @@ CNOT 0 1
             GateType::CXSWAP,
             0,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            []() -> ExtraGateData {
-                return {
-                    "C_Two Qubit Clifford Gates",
-                    R"MARKDOWN(
+            "C_Two Qubit Clifford Gates",
+            R"MARKDOWN(
 A combination SWAP-then-CX gate.
 This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
 
@@ -188,13 +170,11 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-                    {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}},
-                    {"+IX", "+ZZ", "+XX", "+ZI"},
-                    R"CIRCUIT(
+            {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}},
+            {"+IX", "+ZZ", "+XX", "+ZI"},
+            R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
 )CIRCUIT",
-                };
-            },
         });
 }

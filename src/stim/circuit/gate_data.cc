@@ -20,17 +20,8 @@ using namespace stim;
 
 GateDataMap::GateDataMap() {
     bool failed = false;
-    items[0].name = "NO_GATE";
-    items[0].name_len = strlen(items[0].name);
-    items[0].extra_data_func = []() -> ExtraGateData {
-        return {
-            "none",
-            "none",
-            {},
-            {},
-            nullptr,
-        };
-    };
+    items[0].name = "NOT_A_GATE";
+
     add_gate_data_annotations(failed);
     add_gate_data_blocks(failed);
     add_gate_data_collapsing(failed);
@@ -45,7 +36,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_swaps(failed);
     add_gate_data_pair_measure(failed);
     for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-        if (items[k].name_len == 0) {
+        if (items[k].name == nullptr) {
             std::cerr << "Uninitialized gate id: " << k << ".\n";
             failed = true;
         }
@@ -55,8 +46,23 @@ GateDataMap::GateDataMap() {
     }
 }
 
+std::array<float, 3> Gate::to_euler_angles() const {
+    if (unitary_data.size() != 2) {
+        throw std::out_of_range(std::string(name) + " doesn't have 1q unitary data.");
+    }
+    //    std::vector<std::vector<std::complex<float>>> result;
+    //    for (size_t k = 0; k < unitary_data.size(); k++) {
+    //        const auto &d = unitary_data[k];
+    //        result.emplace_back();
+    //        for (size_t j = 0; j < d.size(); j++) {
+    //            result.back().push_back(d[j]);
+    //        }
+    //    }
+    //    return result;
+    return {0, 0, 0};
+}
+
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
-    const auto &unitary_data = extra_data_func().unitary_data;
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
     }
@@ -88,14 +94,21 @@ Gate::Gate(
     GateType best_inverse_gate,
     uint8_t arg_count,
     GateFlags flags,
-    ExtraGateData (*extra_data_func)(void))
+    const char *category,
+    const char *help,
+    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
+    FixedCapVector<const char *, 10> flow_data,
+    const char *h_s_cx_m_r_decomposition)
     : name(name),
-      extra_data_func(extra_data_func),
       flags(flags),
-      arg_count(arg_count),
-      name_len((uint8_t)strlen(name)),
       id(gate_id),
-      best_candidate_inverse_id(best_inverse_gate) {
+      arg_count(arg_count),
+      best_candidate_inverse_id(best_inverse_gate),
+      category(category),
+      help(help),
+      unitary_data(unitary_data),
+      flow_data(flow_data),
+      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
@@ -111,7 +124,7 @@ void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     items[(size_t)gate.id] = gate;
     hash_loc.id = gate.id;
     hash_loc.expected_name = gate.name;
-    hash_loc.expected_name_len = gate.name_len;
+    hash_loc.expected_name_len = strlen(gate.name);
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
@@ -133,19 +146,6 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
     hash_loc.id = hashed_name_to_gate_type_table[h_canon].id;
     hash_loc.expected_name = alt_name;
     hash_loc.expected_name_len = strlen(alt_name);
-}
-
-ExtraGateData::ExtraGateData(
-    const char *category,
-    const char *help,
-    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-    FixedCapVector<const char *, 10> flow_data,
-    const char *h_s_cx_m_r_decomposition)
-    : category(category),
-      help(help),
-      unitary_data(unitary_data),
-      flow_data(flow_data),
-      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
 }
 
 extern const GateDataMap stim::GATE_DATA = GateDataMap();
