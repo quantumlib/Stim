@@ -1160,7 +1160,7 @@ void ErrorAnalyzer::decompose_helper_add_error_combinations(
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {
-        detector_counts[k] = popcnt64(detector_masks[k]);
+        detector_counts[k] = std::popcount(detector_masks[k]);
     }
 
     // Find single-detector errors (and empty errors).

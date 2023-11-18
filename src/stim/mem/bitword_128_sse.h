@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <immintrin.h>
 #include <sstream>
 #include <stdexcept>
@@ -140,7 +141,7 @@ struct bitword<128> {
     }
 
     inline uint16_t popcount() const {
-        return popcnt64(u64[0]) + popcnt64(u64[1]);
+        return std::popcount(u64[0]) + std::popcount(u64[1]);
     }
 
     inline bitword<128> shifted(int offset) const {

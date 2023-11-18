@@ -166,7 +166,7 @@ bazel run stim
 find src \
     | grep "\\.cc$" \
     | grep -v "\\.\(test\|perf\|pybind\)\\.cc$" \
-    | xargs g++ -I src -pthread -std=c++17 -O3 -march=native
+    | xargs g++ -I src -pthread -std=c++20 -O3 -march=native
 
 # output binary ends up at:
 # ./a.out
@@ -387,7 +387,7 @@ Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 find src \
     | grep "\\.cc" \
     | grep -v "\\.\(test\|perf\|pybind\)\\.cc" \
-    | xargs g++ -I src -pthread -std=c++17 -O3 -march=native -g -fno-omit-frame-pointer
+    | xargs g++ -I src -pthread -std=c++20 -O3 -march=native -g -fno-omit-frame-pointer
 sudo perf record -g ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
 sudo perf report
 ```

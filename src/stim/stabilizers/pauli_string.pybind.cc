@@ -65,7 +65,7 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
         }
     }
     uint8_t start_phase = 0;
-    start_phase += popcnt64(x & z);
+    start_phase += std::popcount(x & z);
     if (imag) {
         start_phase += 1;
     }
@@ -75,7 +75,7 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
     for (size_t col = 0; col < n; col++) {
         size_t row = col ^ x;
         uint8_t phase = start_phase;
-        if (popcnt64(col & z) & 1) {
+        if (std::popcount(col & z) & 1) {
             phase += 2;
         }
         std::complex<float> v{1, 0};
@@ -433,7 +433,7 @@ PyPauliString PyPauliString::from_unitary_matrix(
     }
     for (size_t k = 0; k < n; k++) {
         uint8_t expected_phase = phases[0];
-        if (popcnt64(k & z) & 1) {
+        if (std::popcount(k & z) & 1) {
             expected_phase += 2;
         }
         if ((expected_phase & 3) != phases[k]) {
@@ -442,7 +442,7 @@ PyPauliString PyPauliString::from_unitary_matrix(
         }
     }
 
-    uint8_t leftover_phase = phases[0] + popcnt64(x & z);
+    uint8_t leftover_phase = phases[0] + std::popcount(x & z);
     PyPauliString result(PauliString<MAX_BITWORD_WIDTH>(q), (leftover_phase & 1) != 0);
     result.value.sign = (leftover_phase & 2) != 0;
     auto &rx = result.value.xs.u64[0];
