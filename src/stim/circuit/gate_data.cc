@@ -149,32 +149,6 @@ const Gate &Gate::inverse() const {
     throw std::out_of_range(inv_name + " has no inverse.");
 }
 
-Gate::Gate() : name(nullptr) {
-}
-
-Gate::Gate(
-    const char *name,
-    GateType gate_id,
-    GateType best_inverse_gate,
-    uint8_t arg_count,
-    GateFlags flags,
-    const char *category,
-    const char *help,
-    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-    FixedCapVector<const char *, 10> flow_data,
-    const char *h_s_cx_m_r_decomposition)
-    : name(name),
-      flags(flags),
-      id(gate_id),
-      arg_count(arg_count),
-      best_candidate_inverse_id(best_inverse_gate),
-      category(category),
-      help(help),
-      unitary_data(unitary_data),
-      flow_data(flow_data),
-      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
-}
-
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     assert((size_t)gate.id < NUM_DEFINED_GATES);
     const char *c = gate.name;

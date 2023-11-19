@@ -21,14 +21,14 @@ void GateDataMap::add_gate_data_pair_measure(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "MXX",
-            GateType::MXX,
-            GateType::MXX,
-            ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
-                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "L_Pair Measurement Gates",
-            R"MARKDOWN(
+            .name = "MXX",
+            .id = GateType::MXX,
+            .best_candidate_inverse_id = GateType::MXX,
+            .arg_count = ARG_COUNT_SYGIL_ZERO_OR_ONE,
+            .flags = (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                                 GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "L_Pair Measurement Gates",
+            .help = R"MARKDOWN(
 Two-qubit X basis parity measurement.
 
 This operation measures whether pairs of qubits are in the {|++>,|-->} subspace or in the
@@ -71,14 +71,15 @@ Examples:
     # Each measurement has an independent 2% chance of being recorded wrong.
     MXX(0.02) 2 3 5 7 11 19 17 4
 )MARKDOWN",
-            {},
-            {
-                "X_ -> +X_",
-                "_X -> +_X",
-                "ZZ -> +ZZ",
-                "XX -> rec[-1]",
-            },
-            R"CIRCUIT(
+            .unitary_data = {},
+            .flow_data =
+                {
+                    "X_ -> +X_",
+                    "_X -> +_X",
+                    "ZZ -> +ZZ",
+                    "XX -> rec[-1]",
+                },
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 CX 0 1
 H 0
 M 0
@@ -90,14 +91,14 @@ CX 0 1
     add_gate(
         failed,
         Gate{
-            "MYY",
-            GateType::MYY,
-            GateType::MYY,
-            ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
-                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "L_Pair Measurement Gates",
-            R"MARKDOWN(
+            .name = "MYY",
+            .id = GateType::MYY,
+            .best_candidate_inverse_id = GateType::MYY,
+            .arg_count = ARG_COUNT_SYGIL_ZERO_OR_ONE,
+            .flags = (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                                 GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "L_Pair Measurement Gates",
+            .help = R"MARKDOWN(
 Two-qubit Y basis parity measurement.
 
 This operation measures whether pairs of qubits are in the {|ii>,|jj>} subspace or in the
@@ -140,14 +141,15 @@ Examples:
     # Each measurement has an independent 2% chance of being recorded wrong.
     MYY(0.02) 2 3 5 7 11 19 17 4
 )MARKDOWN",
-            {},
-            {
-                "XX -> +XX",
-                "Y_ -> +Y_",
-                "_Y -> +_Y",
-                "YY -> rec[-1]",
-            },
-            R"CIRCUIT(
+            .unitary_data = {},
+            .flow_data =
+                {
+                    "XX -> +XX",
+                    "Y_ -> +Y_",
+                    "_Y -> +_Y",
+                    "YY -> rec[-1]",
+                },
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0 1
 CX 0 1
 H 0
@@ -162,14 +164,14 @@ S 0 1
     add_gate(
         failed,
         Gate{
-            "MZZ",
-            GateType::MZZ,
-            GateType::MZZ,
-            ARG_COUNT_SYGIL_ZERO_OR_ONE,
-            (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
-                        GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "L_Pair Measurement Gates",
-            R"MARKDOWN(
+            .name = "MZZ",
+            .id = GateType::MZZ,
+            .best_candidate_inverse_id = GateType::MZZ,
+            .arg_count = ARG_COUNT_SYGIL_ZERO_OR_ONE,
+            .flags = (GateFlags)(GATE_TARGETS_PAIRS | GATE_PRODUCES_RESULTS | GATE_IS_NOISY |
+                                 GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "L_Pair Measurement Gates",
+            .help = R"MARKDOWN(
 Two-qubit Z basis parity measurement.
 
 This operation measures whether pairs of qubits are in the {|00>,|11>} subspace or in the
@@ -212,14 +214,15 @@ Examples:
     # Each measurement has an independent 2% chance of being recorded wrong.
     MZZ(0.02) 2 3 5 7 11 19 17 4
 )MARKDOWN",
-            {},
-            {
-                "XX -> XX",
-                "Z_ -> +Z_",
-                "_Z -> +_Z",
-                "ZZ -> rec[-1]",
-            },
-            R"CIRCUIT(
+            .unitary_data = {},
+            .flow_data =
+                {
+                    "XX -> XX",
+                    "Z_ -> +Z_",
+                    "_Z -> +_Z",
+                    "ZZ -> rec[-1]",
+                },
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 CX 0 1
 M 1
 CX 0 1

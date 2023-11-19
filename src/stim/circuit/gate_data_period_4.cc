@@ -24,13 +24,13 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "SQRT_X",
-            GateType::SQRT_X,
-            GateType::SQRT_X_DAG,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_X",
+            .id = GateType::SQRT_X,
+            .best_candidate_inverse_id = GateType::SQRT_X_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Principal square root of X gate.
 Phases the amplitude of |-> by i.
 
@@ -42,9 +42,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            {"+X", "-Y"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"+X", "-Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 H 0
@@ -54,13 +54,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "SQRT_X_DAG",
-            GateType::SQRT_X_DAG,
-            GateType::SQRT_X,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_X_DAG",
+            .id = GateType::SQRT_X_DAG,
+            .best_candidate_inverse_id = GateType::SQRT_X,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Adjoint of the principal square root of X gate.
 Phases the amplitude of |-> by -i.
 
@@ -72,9 +72,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"+X", "+Y"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"+X", "+Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 H 0
 S 0
@@ -84,13 +84,13 @@ S 0
     add_gate(
         failed,
         Gate{
-            "SQRT_Y",
-            GateType::SQRT_Y,
-            GateType::SQRT_Y_DAG,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_Y",
+            .id = GateType::SQRT_Y,
+            .best_candidate_inverse_id = GateType::SQRT_Y_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Principal square root of Y gate.
 Phases the amplitude of |-i> by i.
 
@@ -102,9 +102,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
-            {"-Z", "+X"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"-Z", "+X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 H 0
@@ -114,13 +114,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "SQRT_Y_DAG",
-            GateType::SQRT_Y_DAG,
-            GateType::SQRT_Y,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_Y_DAG",
+            .id = GateType::SQRT_Y_DAG,
+            .best_candidate_inverse_id = GateType::SQRT_Y,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Adjoint of the principal square root of Y gate.
 Phases the amplitude of |-i> by -i.
 
@@ -132,9 +132,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"+Z", "-X"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"+Z", "-X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 S 0
@@ -144,13 +144,13 @@ S 0
     add_gate(
         failed,
         Gate{
-            "S",
-            GateType::S,
-            GateType::S_DAG,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "S",
+            .id = GateType::S,
+            .best_candidate_inverse_id = GateType::S_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Principal square root of Z gate.
 Phases the amplitude of |1> by i.
 
@@ -162,9 +162,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{1, 0}, {0, i}},
-            {"+Y", "+Z"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0}, {0, i}},
+            .flow_data = {"+Y", "+Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 )CIRCUIT",
         });
@@ -174,13 +174,13 @@ S 0
     add_gate(
         failed,
         Gate{
-            "S_DAG",
-            GateType::S_DAG,
-            GateType::S,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "S_DAG",
+            .id = GateType::S_DAG,
+            .best_candidate_inverse_id = GateType::S,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Adjoint of the principal square root of Z gate.
 Phases the amplitude of |1> by -i.
 
@@ -192,9 +192,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{1, 0}, {0, -i}},
-            {"-Y", "+Z"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0}, {0, -i}},
+            .flow_data = {"-Y", "+Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 S 0

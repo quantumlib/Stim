@@ -25,13 +25,13 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "H",
-            GateType::H,
-            GateType::H,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "H",
+            .id = GateType::H,
+            .best_candidate_inverse_id = GateType::H,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 The Hadamard gate.
 Swaps the X and Z axes.
 
@@ -43,9 +43,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{s, s}, {s, -s}},
-            {"+Z", "+X"},
-            R"CIRCUIT(
+            .unitary_data = {{s, s}, {s, -s}},
+            .flow_data = {"+Z", "+X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 )CIRCUIT",
         });
@@ -55,13 +55,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "H_XY",
-            GateType::H_XY,
-            GateType::H_XY,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "H_XY",
+            .id = GateType::H_XY,
+            .best_candidate_inverse_id = GateType::H_XY,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
 
 Parens Arguments:
@@ -72,9 +72,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0, s - i * s}, {s + i * s, 0}},
-            {"+Y", "-Z"},
-            R"CIRCUIT(
+            .unitary_data = {{0, s - i * s}, {s + i * s, 0}},
+            .flow_data = {"+Y", "-Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 S 0
@@ -86,13 +86,13 @@ S 0
     add_gate(
         failed,
         Gate{
-            "H_YZ",
-            GateType::H_YZ,
-            GateType::H_YZ,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "H_YZ",
+            .id = GateType::H_YZ,
+            .best_candidate_inverse_id = GateType::H_YZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
 
 Parens Arguments:
@@ -103,9 +103,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{s, -i * s}, {i * s, -s}},
-            {"-X", "+Y"},
-            R"CIRCUIT(
+            .unitary_data = {{s, -i * s}, {i * s, -s}},
+            .flow_data = {"-X", "+Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 H 0

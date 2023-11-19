@@ -20,13 +20,13 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "DEPOLARIZE1",
-            GateType::DEPOLARIZE1,
-            GateType::DEPOLARIZE1,
-            1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "DEPOLARIZE1",
+            .id = GateType::DEPOLARIZE1,
+            .best_candidate_inverse_id = GateType::DEPOLARIZE1,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 The single qubit depolarizing channel.
 
 Applies a single-qubit depolarizing error with the given probability.
@@ -64,21 +64,21 @@ Examples:
     # Maximally mix qubits 0 through 2
     DEPOLARIZE1(0.75) 0 1 2
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "DEPOLARIZE2",
-            GateType::DEPOLARIZE2,
-            GateType::DEPOLARIZE2,
-            1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "DEPOLARIZE2",
+            .id = GateType::DEPOLARIZE2,
+            .best_candidate_inverse_id = GateType::DEPOLARIZE2,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 The two qubit depolarizing channel.
 
 Applies a two-qubit depolarizing error with the given probability.
@@ -126,21 +126,21 @@ Examples:
     # Maximally mix qubits 0 through 3
     DEPOLARIZE2(0.9375) 0 1 2 3
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "X_ERROR",
-            GateType::X_ERROR,
-            GateType::X_ERROR,
-            1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "X_ERROR",
+            .id = GateType::X_ERROR,
+            .best_candidate_inverse_id = GateType::X_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 Applies a Pauli X with a given probability.
 
 Parens Arguments:
@@ -156,21 +156,21 @@ Pauli Mixture:
     1-p: I
      p : X
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "Y_ERROR",
-            GateType::Y_ERROR,
-            GateType::Y_ERROR,
-            1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "Y_ERROR",
+            .id = GateType::Y_ERROR,
+            .best_candidate_inverse_id = GateType::Y_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 Applies a Pauli Y with a given probability.
 
 Parens Arguments:
@@ -186,21 +186,21 @@ Pauli Mixture:
     1-p: I
      p : Y
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "Z_ERROR",
-            GateType::Z_ERROR,
-            GateType::Z_ERROR,
-            1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "Z_ERROR",
+            .id = GateType::Z_ERROR,
+            .best_candidate_inverse_id = GateType::Z_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 Applies a Pauli Z with a given probability.
 
 Parens Arguments:
@@ -216,21 +216,21 @@ Pauli Mixture:
     1-p: I
      p : Z
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "PAULI_CHANNEL_1",
-            GateType::PAULI_CHANNEL_1,
-            GateType::PAULI_CHANNEL_1,
-            3,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "PAULI_CHANNEL_1",
+            .id = GateType::PAULI_CHANNEL_1,
+            .best_candidate_inverse_id = GateType::PAULI_CHANNEL_1,
+            .arg_count = 3,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 A single qubit Pauli error channel with explicitly specified probabilities for each case.
 
 Parens Arguments:
@@ -257,21 +257,21 @@ Pauli Mixture:
     py: Y
     pz: Z
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "PAULI_CHANNEL_2",
-            GateType::PAULI_CHANNEL_2,
-            GateType::PAULI_CHANNEL_2,
-            15,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "PAULI_CHANNEL_2",
+            .id = GateType::PAULI_CHANNEL_2,
+            .best_candidate_inverse_id = GateType::PAULI_CHANNEL_2,
+            .arg_count = 15,
+            .flags = (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 A two qubit Pauli error channel with explicitly specified probabilities for each case.
 
 Parens Arguments:
@@ -326,22 +326,22 @@ Pauli Mixture:
     pzy: ZY
     pzz: ZZ
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "E",
-            GateType::E,
-            GateType::E,
-            1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
-                        GATE_IS_NOT_FUSABLE),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "E",
+            .id = GateType::E,
+            .best_candidate_inverse_id = GateType::E,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+                                 GATE_IS_NOT_FUSABLE),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 Probabilistically applies a Pauli product error with a given probability.
 Sets the "correlated error occurred flag" to true if the error occurred.
 Otherwise sets the flag to false.
@@ -365,22 +365,22 @@ Example:
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
     add_gate_alias(failed, "CORRELATED_ERROR", "E");
     add_gate(
         failed,
         Gate{
-            "ELSE_CORRELATED_ERROR",
-            GateType::ELSE_CORRELATED_ERROR,
-            GateType::ELSE_CORRELATED_ERROR,
-            1,
-            (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
-                        GATE_IS_NOT_FUSABLE),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "ELSE_CORRELATED_ERROR",
+            .id = GateType::ELSE_CORRELATED_ERROR,
+            .best_candidate_inverse_id = GateType::ELSE_CORRELATED_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING |
+                                 GATE_IS_NOT_FUSABLE),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 Probabilistically applies a Pauli product error with a given probability, unless the "correlated error occurred flag" is set.
 If the error occurs, sets the "correlated error occurred flag" to true.
 Otherwise leaves the flag alone.
@@ -409,8 +409,8 @@ Example:
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 }

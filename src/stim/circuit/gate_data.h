@@ -208,21 +208,19 @@ enum GateFlags : uint16_t {
 };
 
 struct Gate {
-    /// === core gate data used in main tasks such as sampling ===
     /// The canonical name of the gate, used when printing it to a circuit file.
-    const char *name;
-    /// Bit-packed data describing details of the gate.
-    GateFlags flags;
+    const char *name = nullptr;
     /// The gate's type, such as stim::GateType::X or stim::GateType::MRZ.
     GateType id;
-    /// The number of parens arguments the gate expects (e.g. X_ERROR takes 1, PAULI_CHANNEL_1 takes 3).
-    /// Set to stim::ARG_COUNT_SYGIL_ANY to indicate any number is allowed (e.g. DETECTOR coordinate data).
-    uint8_t arg_count;
-
-    /// === extended gate data used in secondary tasks such as exporting to other formats ===
     /// The id of the gate inverse to this one, or at least the closest thing to an inverse.
     /// Set to GateType::NOT_A_GATE for gates with no inverse.
     GateType best_candidate_inverse_id;
+    /// The number of parens arguments the gate expects (e.g. X_ERROR takes 1, PAULI_CHANNEL_1 takes 3).
+    /// Set to stim::ARG_COUNT_SYGIL_ANY to indicate any number is allowed (e.g. DETECTOR coordinate data).
+    uint8_t arg_count;
+    /// Bit-packed data describing details of the gate.
+    GateFlags flags;
+
     /// A word describing what sort of gate this is.
     const char *category;
     /// Prose summary of what the gate is, how it fits into Stim, and how to use it.
@@ -243,18 +241,6 @@ struct Gate {
     inline bool operator!=(const Gate &other) const {
         return id != other.id;
     }
-    Gate();
-    Gate(
-        const char *name,
-        GateType gate_id,
-        GateType best_inverse_gate,
-        uint8_t arg_count,
-        GateFlags flags,
-        const char *category,
-        const char *help,
-        FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
-        FixedCapVector<const char *, 10> flow_data,
-        const char *h_s_cx_m_r_decomposition);
 
     const Gate &inverse() const;
 

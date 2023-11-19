@@ -24,13 +24,13 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "SWAP",
-            GateType::SWAP,
-            GateType::SWAP,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SWAP",
+            .id = GateType::SWAP,
+            .best_candidate_inverse_id = GateType::SWAP,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Swaps two qubits.
 
 Parens Arguments:
@@ -41,9 +41,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
-            {"+IX", "+IZ", "+XI", "+ZI"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
+            .flow_data = {"+IX", "+IZ", "+XI", "+ZI"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
 CNOT 0 1
@@ -53,13 +53,13 @@ CNOT 0 1
     add_gate(
         failed,
         Gate{
-            "ISWAP",
-            GateType::ISWAP,
-            GateType::ISWAP_DAG,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "ISWAP",
+            .id = GateType::ISWAP,
+            .best_candidate_inverse_id = GateType::ISWAP_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
 Equivalent to `SWAP` then `CZ` then `S` on both targets.
 
@@ -71,9 +71,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
-            {"+ZY", "+IZ", "+YZ", "+ZI"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
+            .flow_data = {"+ZY", "+IZ", "+YZ", "+ZI"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 CNOT 0 1
 CNOT 1 0
@@ -86,13 +86,13 @@ S 0
     add_gate(
         failed,
         Gate{
-            "ISWAP_DAG",
-            GateType::ISWAP_DAG,
-            GateType::ISWAP,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "ISWAP_DAG",
+            .id = GateType::ISWAP_DAG,
+            .best_candidate_inverse_id = GateType::ISWAP,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
 Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
 
@@ -104,9 +104,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
-            {"-ZY", "+IZ", "-YZ", "+ZI"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+            .flow_data = {"-ZY", "+IZ", "-YZ", "+ZI"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -123,13 +123,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "CXSWAP",
-            GateType::CXSWAP,
-            GateType::SWAPCX,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "CXSWAP",
+            .id = GateType::CXSWAP,
+            .best_candidate_inverse_id = GateType::SWAPCX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 A combination CX-then-SWAP gate.
 This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
 
@@ -141,9 +141,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},
-            {"+XX", "+IZ", "+XI", "+ZZ"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},
+            .flow_data = {"+XX", "+IZ", "+XI", "+ZZ"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 CNOT 1 0
 CNOT 0 1
 )CIRCUIT",
@@ -152,13 +152,13 @@ CNOT 0 1
     add_gate(
         failed,
         Gate{
-            "SWAPCX",
-            GateType::SWAPCX,
-            GateType::CXSWAP,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SWAPCX",
+            .id = GateType::SWAPCX,
+            .best_candidate_inverse_id = GateType::CXSWAP,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 A combination SWAP-then-CX gate.
 This gate is kak-equivalent to the iswap gate, but preserves X/Z noise bias.
 
@@ -170,9 +170,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}},
-            {"+IX", "+ZZ", "+XX", "+ZI"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}},
+            .flow_data = {"+IX", "+ZZ", "+XX", "+ZI"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 CNOT 0 1
 CNOT 1 0
 )CIRCUIT",
