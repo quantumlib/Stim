@@ -44,7 +44,7 @@ cc_library(
     name = "stim_lib",
     srcs = SOURCE_FILES_NO_MAIN,
     copts = [
-        "-std=c++17",
+        "-std=c++20",
     ],
     includes = ["src/"],
 )
@@ -53,7 +53,7 @@ cc_binary(
     name = "stim",
     srcs = SOURCE_FILES_NO_MAIN + glob(["src/**/main.cc"]),
     copts = [
-        "-std=c++17",
+        "-std=c++20",
         "-march=native",
         "-O3",
     ],
@@ -64,7 +64,7 @@ cc_binary(
     name = "stim_benchmark",
     srcs = SOURCE_FILES_NO_MAIN + PERF_FILES,
     copts = [
-        "-std=c++17",
+        "-std=c++20",
         "-march=native",
         "-O3",
     ],
@@ -75,7 +75,7 @@ cc_test(
     name = "stim_test",
     srcs = SOURCE_FILES_NO_MAIN + TEST_FILES,
     copts = [
-        "-std=c++17",
+        "-std=c++20",
         "-march=native",
     ],
     data = glob(["testdata/**"]),
@@ -91,7 +91,7 @@ cc_binary(
     srcs = SOURCE_FILES_NO_MAIN + PYBIND_FILES,
     copts = [
         "-O3",
-        "-std=c++17",
+        "-std=c++20",
         "-fvisibility=hidden",
         "-march=native",
         "-DSTIM_PYBIND11_MODULE_NAME=stim",

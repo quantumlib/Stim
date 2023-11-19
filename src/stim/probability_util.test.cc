@@ -58,7 +58,7 @@ TEST_EACH_WORD_SIZE_W(probability_util, biased_random, {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
         size_t t = 0;
         for (size_t k = 0; k < data.num_u64_padded(); k++) {
-            t += popcnt64(data.u64[k]);
+            t += std::popcount(data.u64[k]);
         }
         float dev = sqrtf(p * (1 - p) * n);
         float min_expected = n * p - dev * 5;

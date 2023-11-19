@@ -18,6 +18,7 @@
 #define _STIM_MEM_SIMD_WORD_64_STD_H
 
 #include <array>
+#include <bit>
 #include <sstream>
 #include <stdlib.h>
 
@@ -109,7 +110,7 @@ struct bitword<64> {
     }
 
     inline uint16_t popcount() const {
-        return popcnt64(u64[0]);
+        return std::popcount(u64[0]);
     }
 
     inline std::string str() const {

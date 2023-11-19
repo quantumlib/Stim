@@ -19,6 +19,7 @@
 #if __AVX2__
 
 #include <array>
+#include <bit>
 #include <immintrin.h>
 #include <iostream>
 #include <sstream>
@@ -139,8 +140,8 @@ struct bitword<256> {
     }
 
     inline uint16_t popcount() const {
-        return stim::popcnt64(u64[0]) + stim::popcnt64(u64[1]) + stim::popcnt64(u64[2]) +
-               (uint16_t)stim::popcnt64(u64[3]);
+        return std::popcount(u64[0]) + std::popcount(u64[1]) + std::popcount(u64[2]) +
+               (uint16_t)std::popcount(u64[3]);
     }
 
     inline bitword<256> shifted(int offset) const {
