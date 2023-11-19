@@ -24,13 +24,13 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "C_XYZ",
-            GateType::C_XYZ,
-            GateType::C_ZYX,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "C_XYZ",
+            .id = GateType::C_XYZ,
+            .best_candidate_inverse_id = GateType::C_ZYX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
 
 Parens Arguments:
@@ -41,9 +41,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            {"Y", "X"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"Y", "X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -54,13 +54,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "C_ZYX",
-            GateType::C_ZYX,
-            GateType::C_XYZ,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "B_Single Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "C_ZYX",
+            .id = GateType::C_ZYX,
+            .best_candidate_inverse_id = GateType::C_XYZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
 
 Parens Arguments:
@@ -71,9 +71,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"Z", "Y"},
-            R"CIRCUIT(
+            .unitary_data = {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"Z", "Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 )CIRCUIT",

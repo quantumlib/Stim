@@ -20,14 +20,14 @@ void GateDataMap::add_gate_data_heralded(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "HERALDED_ERASE",
-            GateType::HERALDED_ERASE,
-            GateType::HERALDED_ERASE,
-            1,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
-                        GATE_PRODUCES_RESULTS),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "HERALDED_ERASE",
+            .id = GateType::HERALDED_ERASE,
+            .best_candidate_inverse_id = GateType::HERALDED_ERASE,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
+                                 GATE_PRODUCES_RESULTS),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 The heralded erasure noise channel.
 
 Whether or not this noise channel fires is recorded into the measurement
@@ -94,22 +94,22 @@ Examples:
     DETECTOR rec[-4]
     DETECTOR rec[-5]
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 
     add_gate(
         failed,
         Gate{
-            "HERALDED_PAULI_CHANNEL_1",
-            GateType::HERALDED_PAULI_CHANNEL_1,
-            GateType::HERALDED_PAULI_CHANNEL_1,
-            4,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
-                        GATE_PRODUCES_RESULTS),
-            "F_Noise Channels",
-            R"MARKDOWN(
+            .name = "HERALDED_PAULI_CHANNEL_1",
+            .id = GateType::HERALDED_PAULI_CHANNEL_1,
+            .best_candidate_inverse_id = GateType::HERALDED_PAULI_CHANNEL_1,
+            .arg_count = 4,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES |
+                                 GATE_PRODUCES_RESULTS),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
 A heralded error channel that applies biased noise.
 
 This error records a bit into the measurement record, indicating whether
@@ -176,8 +176,8 @@ Examples:
     DETECTOR rec[-3]    # Did the herald on qubit 1 fire?
     DETECTOR rec[-4]    # Did the herald on qubit 0 fire?
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 }

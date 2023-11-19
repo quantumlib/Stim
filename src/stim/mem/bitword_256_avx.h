@@ -140,8 +140,7 @@ struct bitword<256> {
     }
 
     inline uint16_t popcount() const {
-        return std::popcount(u64[0]) + std::popcount(u64[1]) + std::popcount(u64[2]) +
-               (uint16_t)std::popcount(u64[3]);
+        return std::popcount(u64[0]) + std::popcount(u64[1]) + std::popcount(u64[2]) + (uint16_t)std::popcount(u64[3]);
     }
 
     inline bitword<256> shifted(int offset) const {

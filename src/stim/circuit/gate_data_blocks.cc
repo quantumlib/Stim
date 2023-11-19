@@ -20,13 +20,13 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "REPEAT",
-            GateType::REPEAT,
-            GateType::REPEAT,
-            0,
-            (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
-            "Y_Control Flow",
-            R"MARKDOWN(
+            .name = "REPEAT",
+            .id = GateType::REPEAT,
+            .best_candidate_inverse_id = GateType::REPEAT,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
+            .category = "Y_Control Flow",
+            .help = R"MARKDOWN(
 Repeats the instructions in its body N times.
 
 Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
@@ -55,8 +55,8 @@ Example:
         DETECTOR rec[-1] rec[-3]
     }
 )MARKDOWN",
-            {},
-            {},
-            nullptr,
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
         });
 }

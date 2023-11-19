@@ -24,13 +24,13 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "SQRT_XX",
-            GateType::SQRT_XX,
-            GateType::SQRT_XX_DAG,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_XX",
+            .id = GateType::SQRT_XX,
+            .best_candidate_inverse_id = GateType::SQRT_XX_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by i.
 
 Parens Arguments:
@@ -41,12 +41,13 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i},
-             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-             {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
-            {"+XI", "-YX", "+IX", "-XY"},
-            R"CIRCUIT(
+            .unitary_data =
+                {{0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i},
+                 {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+                 {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+                 {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
+            .flow_data = {"+XI", "-YX", "+IX", "-XY"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 CNOT 0 1
 H 1
@@ -59,13 +60,13 @@ H 1
     add_gate(
         failed,
         Gate{
-            "SQRT_XX_DAG",
-            GateType::SQRT_XX_DAG,
-            GateType::SQRT_XX,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_XX_DAG",
+            .id = GateType::SQRT_XX_DAG,
+            .best_candidate_inverse_id = GateType::SQRT_XX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by -i.
 
 Parens Arguments:
@@ -76,12 +77,13 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i},
-             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-             {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
-            {"+XI", "+YX", "+IX", "+XY"},
-            R"CIRCUIT(
+            .unitary_data =
+                {{0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i},
+                 {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+                 {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+                 {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
+            .flow_data = {"+XI", "+YX", "+IX", "+XY"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 CNOT 0 1
 H 1
@@ -99,13 +101,13 @@ H 1
     add_gate(
         failed,
         Gate{
-            "SQRT_YY",
-            GateType::SQRT_YY,
-            GateType::SQRT_YY_DAG,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_YY",
+            .id = GateType::SQRT_YY,
+            .best_candidate_inverse_id = GateType::SQRT_YY_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by i.
 
 Parens Arguments:
@@ -116,12 +118,13 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{0.5f + 0.5f * i, 0, 0, -0.5f + 0.5f * i},
-             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-             {-0.5f + 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
-            {"-ZY", "+XY", "-YZ", "+YX"},
-            R"CIRCUIT(
+            .unitary_data =
+                {{0.5f + 0.5f * i, 0, 0, -0.5f + 0.5f * i},
+                 {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+                 {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+                 {-0.5f + 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
+            .flow_data = {"-ZY", "+XY", "-YZ", "+YX"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -143,13 +146,13 @@ S 1
     add_gate(
         failed,
         Gate{
-            "SQRT_YY_DAG",
-            GateType::SQRT_YY_DAG,
-            GateType::SQRT_YY,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_YY_DAG",
+            .id = GateType::SQRT_YY_DAG,
+            .best_candidate_inverse_id = GateType::SQRT_YY,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by -i.
 
 Parens Arguments:
@@ -160,12 +163,13 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{0.5f - 0.5f * i, 0, 0, -0.5f - 0.5f * i},
-             {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
-             {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
-             {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
-            {"+ZY", "-XY", "+YZ", "-YX"},
-            R"CIRCUIT(
+            .unitary_data =
+                {{0.5f - 0.5f * i, 0, 0, -0.5f - 0.5f * i},
+                 {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
+                 {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
+                 {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
+            .flow_data = {"+ZY", "-XY", "+YZ", "-YX"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 S 0
@@ -187,13 +191,13 @@ S 1
     add_gate(
         failed,
         Gate{
-            "SQRT_ZZ",
-            GateType::SQRT_ZZ,
-            GateType::SQRT_ZZ_DAG,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_ZZ",
+            .id = GateType::SQRT_ZZ,
+            .best_candidate_inverse_id = GateType::SQRT_ZZ_DAG,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by i.
 
 Parens Arguments:
@@ -204,9 +208,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
-            {"+YZ", "+ZI", "+ZY", "+IZ"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
+            .flow_data = {"+YZ", "+ZI", "+ZY", "+IZ"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 1
 CNOT 0 1
 H 1
@@ -218,13 +222,13 @@ S 1
     add_gate(
         failed,
         Gate{
-            "SQRT_ZZ_DAG",
-            GateType::SQRT_ZZ_DAG,
-            GateType::SQRT_ZZ,
-            0,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            "C_Two Qubit Clifford Gates",
-            R"MARKDOWN(
+            .name = "SQRT_ZZ_DAG",
+            .id = GateType::SQRT_ZZ_DAG,
+            .best_candidate_inverse_id = GateType::SQRT_ZZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by -i.
 
 Parens Arguments:
@@ -235,9 +239,9 @@ Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
-            {{1, 0, 0, 0}, {0, -i, 0, 0}, {0, 0, -i, 0}, {0, 0, 0, 1}},
-            {"-YZ", "+ZI", "-ZY", "+IZ"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0, 0, 0}, {0, -i, 0, 0}, {0, 0, -i, 0}, {0, 0, 0, 1}},
+            .flow_data = {"-YZ", "+ZI", "-ZY", "+IZ"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 1
 CNOT 0 1
 H 1

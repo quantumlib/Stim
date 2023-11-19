@@ -24,13 +24,13 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
     add_gate(
         failed,
         Gate{
-            "I",
-            GateType::I,
-            GateType::I,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "A_Pauli Gates",
-            R"MARKDOWN(
+            .name = "I",
+            .id = GateType::I,
+            .best_candidate_inverse_id = GateType::I,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "A_Pauli Gates",
+            .help = R"MARKDOWN(
 The identity gate.
 Does nothing to the target qubits.
 
@@ -42,9 +42,9 @@ Targets:
 
     Qubits to do nothing to.
 )MARKDOWN",
-            {{1, 0}, {0, 1}},
-            {"+X", "+Z"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0}, {0, 1}},
+            .flow_data = {"+X", "+Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 # (no operations)
 )CIRCUIT",
         });
@@ -52,13 +52,13 @@ Targets:
     add_gate(
         failed,
         Gate{
-            "X",
-            GateType::X,
-            GateType::X,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "A_Pauli Gates",
-            R"MARKDOWN(
+            .name = "X",
+            .id = GateType::X,
+            .best_candidate_inverse_id = GateType::X,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "A_Pauli Gates",
+            .help = R"MARKDOWN(
 The Pauli X gate.
 The bit flip gate.
 
@@ -70,9 +70,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0, 1}, {1, 0}},
-            {"+X", "-Z"},
-            R"CIRCUIT(
+            .unitary_data = {{0, 1}, {1, 0}},
+            .flow_data = {"+X", "-Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
 S 0
@@ -83,13 +83,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "Y",
-            GateType::Y,
-            GateType::Y,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "A_Pauli Gates",
-            R"MARKDOWN(
+            .name = "Y",
+            .id = GateType::Y,
+            .best_candidate_inverse_id = GateType::Y,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "A_Pauli Gates",
+            .help = R"MARKDOWN(
 The Pauli Y gate.
 
 Parens Arguments:
@@ -100,9 +100,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{0, -i}, {i, 0}},
-            {"-X", "-Z"},
-            R"CIRCUIT(
+            .unitary_data = {{0, -i}, {i, 0}},
+            .flow_data = {"-X", "-Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 H 0
@@ -115,13 +115,13 @@ H 0
     add_gate(
         failed,
         Gate{
-            "Z",
-            GateType::Z,
-            GateType::Z,
-            0,
-            (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            "A_Pauli Gates",
-            R"MARKDOWN(
+            .name = "Z",
+            .id = GateType::Z,
+            .best_candidate_inverse_id = GateType::Z,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "A_Pauli Gates",
+            .help = R"MARKDOWN(
 The Pauli Z gate.
 The phase flip gate.
 
@@ -133,9 +133,9 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            {{1, 0}, {0, -1}},
-            {"-X", "+Z"},
-            R"CIRCUIT(
+            .unitary_data = {{1, 0}, {0, -1}},
+            .flow_data = {"-X", "+Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
 )CIRCUIT",
