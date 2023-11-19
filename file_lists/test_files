@@ -1,6 +1,7 @@
 src/stim.test.cc
 src/stim/arg_parse.test.cc
 src/stim/circuit/circuit.test.cc
+src/stim/circuit/export_qasm.test.cc
 src/stim/circuit/gate_data.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc

@@ -379,7 +379,6 @@ Examples:
             .unitary_data = {},
             .flow_data = {"1 -> +X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-H 0
 R 0
 H 0
 )CIRCUIT",
@@ -417,10 +416,6 @@ Examples:
             .unitary_data = {},
             .flow_data = {"1 -> +Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-S 0
-S 0
-S 0
-H 0
 R 0
 H 0
 S 0
