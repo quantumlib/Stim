@@ -104,10 +104,19 @@ bool is_decomposition_correct(const Gate &gate) {
 
     Circuit circuit1 = epr;
     circuit1.safe_append_u(gate.name, qs);
-    auto v1 = circuit_output_eq_val<W>(circuit1);
-
     Circuit circuit2 = epr + Circuit(decomposition);
-    auto v2 = circuit_output_eq_val<W>(circuit2);
+
+    // Reset gates make the ancillary qubits irrelevant because the final value is unrelated to the initial value.
+    // So, for reset gates, discard the ancillary qubits.
+    // CAUTION: this could give false positives if "partial reset" gates are added in the future.
+    //          (E.g. a two qubit gate that resets only one of the qubits.)
+    if ((gate.flags & GATE_IS_RESET) && !(gate.flags & GATE_PRODUCES_RESULTS)) {
+        for (auto q : qs) {
+            circuit1.safe_append_u("R", {q + 2});
+            circuit2.safe_append_u("R", {q + 2});
+        }
+    }
+
     for (const auto &op : circuit2.operations) {
         if (op.gate_type != GateType::CX && op.gate_type != GateType::H && op.gate_type != GateType::S &&
             op.gate_type != GateType::M && op.gate_type != GateType::R) {
@@ -115,6 +124,8 @@ bool is_decomposition_correct(const Gate &gate) {
         }
     }
 
+    auto v1 = circuit_output_eq_val<W>(circuit1);
+    auto v2 = circuit_output_eq_val<W>(circuit2);
     return v1 == v2;
 }
 

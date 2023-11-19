@@ -1432,14 +1432,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 OPENQASM 3.0;
                 include "stdgates.inc";
                 qubit q[2];
-                bit m[2];
+                bit rec[2];
                 bit dets[1];
                 reset q[0];
                 reset q[1];
                 h q[0];
                 cx q[0], q[1];
-                measure q[0] -> m[0];
-                measure q[1] -> m[1];
+                measure q[0] -> rec[0];
+                measure q[1] -> rec[1];
                 dets[0] = rec[1] ^ rec[0] ^ 0;
         )DOC")
             .data());

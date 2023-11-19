@@ -102,7 +102,7 @@ static void do_qasm_decompose_mpp(
                 out << "cx q[" << t1.qubit_value() << "],q[" << t2.qubit_value() << "];";
             }
             for (auto t : meas.targets) {
-                out << "measure q[" << t.qubit_value() << "] -> m[" << measurement_offset << "];";
+                out << "measure q[" << t.qubit_value() << "] -> rec[" << measurement_offset << "];";
                 measurement_offset++;
             }
             for (size_t k = 0; k < cnot.targets.size(); k += 2) {
@@ -141,7 +141,7 @@ static void qasm_output_decomposed_inline(
             q1 << "q[" << t1.qubit_value() << "]";
             if (f & GATE_PRODUCES_RESULTS) {
                 m.str("");
-                m << "m[" << measurement_offset << "]";
+                m << "rec[" << measurement_offset << "]";
                 measurement_offset++;
             }
             do_decomposed(
@@ -149,7 +149,7 @@ static void qasm_output_decomposed_inline(
             out << " // decomposed " << GATE_DATA[instruction.gate_type].name << "\n";
         } else {
             if (f & GATE_PRODUCES_RESULTS) {
-                out << "m[" << measurement_offset << "] = ";
+                out << "rec[" << measurement_offset << "] = ";
                 measurement_offset++;
             }
             out << qasm_names[(int)instruction.gate_type] << "(";
@@ -404,7 +404,7 @@ void stim::export_open_qasm(const Circuit &circuit, std::ostream &out, int open_
         out << qubit_decl << " q[" << stats.num_qubits << "];\n";
     }
     if (stats.num_measurements > 0) {
-        out << bit_decl << " m[" << stats.num_measurements << "];\n";
+        out << bit_decl << " rec[" << stats.num_measurements << "];\n";
     }
     if (stats.num_detectors > 0 && !skip_dets_and_obs) {
         out << bit_decl << " dets[" << stats.num_detectors << "];\n";
@@ -444,7 +444,7 @@ void stim::export_open_qasm(const Circuit &circuit, std::ostream &out, int open_
 
             case GateType::M:
                 for (const auto &t : instruction.targets) {
-                    out << "measure q[" << t.qubit_value() << "] -> m[" << measurement_offset << "];\n";
+                    out << "measure q[" << t.qubit_value() << "] -> rec[" << measurement_offset << "];\n";
                     measurement_offset++;
                 }
                 return;
