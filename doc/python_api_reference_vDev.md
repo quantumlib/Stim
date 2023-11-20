@@ -2404,7 +2404,7 @@ def to_qasm(
         >>> import stim
         >>> circuit = stim.Circuit("""
         ...     R 0 1
-        ...     X 0
+        ...     X 1
         ...     H 0
         ...     CX 0 1
         ...     M 0 1
@@ -2414,12 +2414,12 @@ def to_qasm(
         >>> print(qasm.strip().replace('\n\n', '\n'))
         OPENQASM 3.0;
         include "stdgates.inc";
-        qubit q[2];
-        bit rec[2];
-        bit dets[1];
+        qreg q[2];
+        creg rec[2];
+        creg dets[1];
         reset q[0];
         reset q[1];
-        x q[0];
+        x q[1];
         h q[0];
         cx q[0], q[1];
         measure q[0] -> rec[0];

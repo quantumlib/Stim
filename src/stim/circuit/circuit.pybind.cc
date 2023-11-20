@@ -1432,9 +1432,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> print(qasm.strip().replace('\n\n', '\n'))
                 OPENQASM 3.0;
                 include "stdgates.inc";
-                qubit q[2];
-                bit rec[2];
-                bit dets[1];
+                qreg q[2];
+                creg rec[2];
+                creg dets[1];
                 reset q[0];
                 reset q[1];
                 x q[1];
