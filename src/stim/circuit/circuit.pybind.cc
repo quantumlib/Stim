@@ -1386,14 +1386,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             return out.str();
         },
         pybind11::kw_only(),
-        pybind11::arg("open_qasm_version") = 3,
+        pybind11::arg("open_qasm_version"),
         pybind11::arg("skip_dets_and_obs") = false,
         clean_doc_string(R"DOC(
             @signature def to_qasm(self, *, open_qasm_version: int, skip_dets_and_obs: bool = False) -> str:
             Creates an equivalent OpenQASM implementation of the circuit.
 
             Args:
-                open_qasm_version: Defaults to 3. The version of OpenQASM to target.
+                open_qasm_version: The version of OpenQASM to target.
                     This should be set to 2 or to 3.
 
                     Differences between the versions are:
@@ -1422,12 +1422,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> import stim
                 >>> circuit = stim.Circuit("""
                 ...     R 0 1
+                ...     X 0
                 ...     H 0
                 ...     CX 0 1
                 ...     M 0 1
                 ...     DETECTOR rec[-1] rec[-2]
                 ... """);
-                >>> qasm = circuit.to_qasm();
+                >>> qasm = circuit.to_qasm(open_qasm_version=3);
                 >>> print(qasm.strip().replace('\n\n', '\n'))
                 OPENQASM 3.0;
                 include "stdgates.inc";
@@ -1436,11 +1437,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 bit dets[1];
                 reset q[0];
                 reset q[1];
+                x q[0];
                 h q[0];
                 cx q[0], q[1];
                 measure q[0] -> rec[0];
                 measure q[1] -> rec[1];
-                dets[0] = rec[1] ^ rec[0] ^ 0;
+                dets[0] = rec[1] ^ rec[0] ^ 1;
         )DOC")
             .data());
 

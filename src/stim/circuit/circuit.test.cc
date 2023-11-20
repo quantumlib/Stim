@@ -1687,6 +1687,19 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         OBSERVABLE_INCLUDE(0) rec[-1]
         MPAD 0 1 0
         TICK
+
+        # Inverted measurements.
+        MRX !0
+        MY !1
+        MZZ !2 3
+        MYY !4 !5
+        MPP X6*!Y7*Z8
+        TICK
+
+        # Feedback
+        CX rec[-1] 0
+        CY sweep[0] 1
+        CZ 2 rec[-1]
     )CIRCUIT");
 }
 
