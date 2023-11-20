@@ -6,6 +6,7 @@
 #include "stim/arg_parse.h"
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/circuit_instruction.h"
+#include "stim/circuit/export_qasm.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_data_table.h"
 #include "stim/circuit/gate_decomposition.h"

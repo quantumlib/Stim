@@ -2757,7 +2757,6 @@ Stabilizer Generators:
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `RX 0`
-    H 0
     R 0
     H 0
     
@@ -2790,10 +2789,6 @@ Stabilizer Generators:
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `RY 0`
-    S 0
-    S 0
-    S 0
-    H 0
     R 0
     H 0
     S 0

@@ -46,6 +46,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
+    - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
+    - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
@@ -2356,6 +2358,132 @@ def to_file(
         ...         contents = f.read()
         >>> contents
         'H 5\nX 0\n'
+    """
+```
+
+<a name="stim.Circuit.to_qasm"></a>
+```python
+# stim.Circuit.to_qasm
+
+# (in class stim.Circuit)
+def to_qasm(
+    self,
+    *,
+    open_qasm_version: int,
+    skip_dets_and_obs: bool = False,
+) -> str:
+    """Creates an equivalent OpenQASM implementation of the circuit.
+
+    Args:
+        open_qasm_version: The version of OpenQASM to target.
+            This should be set to 2 or to 3.
+
+            Differences between the versions are:
+                - Support for operations on classical bits operations (only version
+                    3). This means DETECTOR and OBSERVABLE_INCLUDE only work with
+                    version 3.
+                - Support for feedback operations (only version 3).
+                - Support for subroutines (only version 3). Without subroutines,
+                    non-standard dissipative gates like MR and RX need to decompose
+                    inline every single time they're used.
+                - Minor name changes (e.g. creg -> bit, qelib1.inc -> stdgates.inc).
+        skip_dets_and_obs: Defaults to False. When set to False, the output will
+            include a `dets` register and an `obs` register (assuming the circuit
+            has detectors and observables). These registers will be computed as part
+            of running the circuit. This requires performing a simulation of the
+            circuit, in order to correctly account for the expected value of
+            measurements.
+
+            When set to True, the `dets` and `obs` registers are not included in the
+            output, and no simulation of the circuit is performed.
+
+    Returns:
+        The OpenQASM code as a string.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...     R 0 1
+        ...     X 1
+        ...     H 0
+        ...     CX 0 1
+        ...     M 0 1
+        ...     DETECTOR rec[-1] rec[-2]
+        ... ''');
+        >>> qasm = circuit.to_qasm(open_qasm_version=3);
+        >>> print(qasm.strip().replace('\n\n', '\n'))
+        OPENQASM 3.0;
+        include "stdgates.inc";
+        qreg q[2];
+        creg rec[2];
+        creg dets[1];
+        reset q[0];
+        reset q[1];
+        x q[1];
+        h q[0];
+        cx q[0], q[1];
+        measure q[0] -> rec[0];
+        measure q[1] -> rec[1];
+        dets[0] = rec[1] ^ rec[0] ^ 1;
+    """
+```
+
+<a name="stim.Circuit.to_tableau"></a>
+```python
+# stim.Circuit.to_tableau
+
+# (in class stim.Circuit)
+def to_tableau(
+    self,
+    *,
+    ignore_noise: bool = False,
+    ignore_measurement: bool = False,
+    ignore_reset: bool = False,
+) -> stim.Tableau:
+    """Converts the circuit into an equivalent stabilizer tableau.
+
+    Args:
+        ignore_noise: Defaults to False. When False, any noise operations in the
+            circuit will cause the conversion to fail with an exception. When True,
+            noise operations are skipped over as if they weren't even present in the
+            circuit.
+        ignore_measurement: Defaults to False. When False, any measurement
+            operations in the circuit will cause the conversion to fail with an
+            exception. When True, measurement operations are skipped over as if they
+            weren't even present in the circuit.
+        ignore_reset: Defaults to False. When False, any reset operations in the
+            circuit will cause the conversion to fail with an exception. When True,
+            reset operations are skipped over as if they weren't even present in the
+            circuit.
+
+    Returns:
+        A tableau equivalent to the circuit (up to global phase).
+
+    Raises:
+        ValueError:
+            The circuit contains noise operations but ignore_noise=False.
+            OR
+            The circuit contains measurement operations but
+            ignore_measurement=False.
+            OR
+            The circuit contains reset operations but ignore_reset=False.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ... ''').to_tableau()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
     """
 ```
 
