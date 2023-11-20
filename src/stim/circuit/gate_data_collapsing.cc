@@ -373,7 +373,7 @@ Examples:
     # Reset qubit 5 into the |+> state.
     RX 5
 
-    # Result multiple qubits into the |+> state.
+    # Reset multiple qubits into the |+> state.
     RX 2 3 5
 )MARKDOWN",
             .unitary_data = {},
@@ -410,7 +410,7 @@ Examples:
     # Reset qubit 5 into the |i> state.
     RY 5
 
-    # Result multiple qubits into the |i> state.
+    # Reset multiple qubits into the |i> state.
     RY 2 3 5
 )MARKDOWN",
             .unitary_data = {},

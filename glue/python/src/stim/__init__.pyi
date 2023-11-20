@@ -7156,8 +7156,13 @@ class Tableau:
     def from_numpy(
         self,
         *,
-        bit_packed: bool = False,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        x2x: np.ndarray,
+        x2z: np.ndarray,
+        z2x: np.ndarray,
+        z2z: np.ndarray,
+        x_signs: Optional[np.ndarray] = None,
+        z_signs: Optional[np.ndarray] = None,
+    ) -> stim.Tableau:
         """Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
 
         The x2x, x2z, z2x, z2z arrays are the four quadrants of the table defined in
@@ -7209,7 +7214,7 @@ class Tableau:
             ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool_),
             ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool_),
             ... )
-            >>> print(repr(tableau))
+            >>> tableau
             stim.Tableau.from_conjugated_generators(
                 xs=[
                     stim.PauliString("+XX"),
@@ -7223,7 +7228,7 @@ class Tableau:
             >>> tableau == stim.Tableau.from_named_gate("CNOT")
             True
 
-            >>> tableau = stim.Tableau.from_numpy(
+            >>> stim.Tableau.from_numpy(
             ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
             ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
             ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
@@ -7231,7 +7236,6 @@ class Tableau:
             ...     x_signs=np.array([7], dtype=np.uint8),
             ...     z_signs=np.array([9], dtype=np.uint8),
             ... )
-            >>> print(repr(tableau))
             stim.Tableau.from_conjugated_generators(
                 xs=[
                     stim.PauliString("-Y_ZY"),
