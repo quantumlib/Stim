@@ -294,6 +294,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.to_circuit`](#stim.Tableau.to_circuit)
     - [`stim.Tableau.to_numpy`](#stim.Tableau.to_numpy)
     - [`stim.Tableau.to_pauli_string`](#stim.Tableau.to_pauli_string)
+    - [`stim.Tableau.to_stabilizers`](#stim.Tableau.to_stabilizers)
     - [`stim.Tableau.to_state_vector`](#stim.Tableau.to_state_vector)
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
@@ -10346,6 +10347,62 @@ def to_pauli_string(
         | __ __ __ XZ
         >>> print(t.to_pauli_string())
         +ZY_X
+    """
+```
+
+<a name="stim.Tableau.to_stabilizers"></a>
+```python
+# stim.Tableau.to_stabilizers
+
+# (in class stim.Tableau)
+def to_stabilizers(
+    self,
+    *,
+    canonicalize: bool = False,
+) -> List[stim.PauliString]:
+    """Returns the stabilizer generators of the tableau, optionally canonicalized.
+
+    The stabilizer generators of the tableau are its Z outputs. Canonicalizing
+    standardizes the generators, so that states that are equal will produce the
+    same generators. For example, [ZI, IZ], [ZI, ZZ], amd [ZZ, ZI] describe equal
+    states and all canonicalize to [ZI, IZ].
+
+    The canonical form is computed as follows:
+
+        1. Get a list of stabilizers using `tableau.z_output(k)` for each k.
+        2. Perform Gaussian elimination. pivoting on standard generators.
+            2a) Pivot on g=X0 first, then Z0, X1, Z1, X2, Z2, etc.
+            2b) Find a stabilizer that uses the generator g. If there are none,
+                go to the next g.
+            2c) Multiply that stabilizer into all other stabilizers that use the
+                generator g.
+            2d) Swap that stabilizer with the stabilizer at position `r` then
+                increment `r`. `r` starts at 0.
+
+    Args:
+        canonicalize: Defaults to False. When False, the tableau's Z outputs
+            are returned unchanged. When True, the Z outputs are rewritten
+            into a standard form. Two stabilizer states have the same standard
+            form if and only if they describe equivalent quantum states.
+
+    Returns:
+        A List[stim.PauliString] of the tableau's stabilizer generators.
+
+    Examples:
+        >>> import stim
+        >>> t = stim.Tableau.from_named_gate("CNOT")
+
+        >>> raw_stabilizers = t.to_stabilizers()
+        >>> for e in raw_stabilizers:
+        ...     print(repr(e))
+        stim.PauliString("+Z_")
+        stim.PauliString("+ZZ")
+
+        >>> canonical_stabilizers = t.to_stabilizers(canonicalize=True)
+        >>> for e in canonical_stabilizers:
+        ...     print(repr(e))
+        stim.PauliString("+Z_")
+        stim.PauliString("+_Z")
     """
 ```
 

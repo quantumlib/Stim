@@ -45,7 +45,6 @@ struct QasmExporter {
           reference_sample(stats.num_measurements),
           measurement_offset(0),
           detector_offset(0) {
-
         // Init used_gates.
         collect_used_gates(circuit);
 
@@ -71,11 +70,7 @@ struct QasmExporter {
     }
 
     void output_decomposed_operation(
-        bool invert_measurement_result,
-        GateType g,
-        const char *q0_name,
-        const char *q1_name,
-        const char *m_name) {
+        bool invert_measurement_result, GateType g, const char *q0_name, const char *q1_name, const char *m_name) {
         auto q2n = [&](GateTarget t) {
             return t.qubit_value() == 0 ? q0_name : q1_name;
         };
@@ -159,10 +154,7 @@ struct QasmExporter {
                     buf_m.str("");
                     buf_q1 << "q[" << t.qubit_value() << "]";
                     buf_m << "rec[" << measurement_offset << "]";
-                    output_measurement(
-                        t.is_inverted_result_target(),
-                        buf_q1.str().c_str(),
-                        buf_m.str().c_str());
+                    output_measurement(t.is_inverted_result_target(), buf_q1.str().c_str(), buf_m.str().c_str());
                     measurement_offset++;
                 }
                 for (size_t k = 0; k < cnot.targets.size(); k += 2) {
@@ -180,10 +172,7 @@ struct QasmExporter {
             });
     }
 
-    void output_decomposable_instruction(
-        const CircuitInstruction &instruction,
-        bool decompose_inline) {
-
+    void output_decomposable_instruction(const CircuitInstruction &instruction, bool decompose_inline) {
         auto f = GATE_DATA[instruction.gate_type].flags;
         auto step = (f & GATE_TARGETS_PAIRS) ? 2 : 1;
         for (size_t k = 0; k < instruction.targets.size(); k += step) {
@@ -234,8 +223,8 @@ struct QasmExporter {
             auto t1 = instruction.targets[k];
             auto t2 = instruction.targets[k + 1];
             if (t1.is_qubit_target() && t2.is_qubit_target()) {
-                out << qasm_names[(int)instruction.gate_type] << " q[" << t1.qubit_value() << "], q[" << t2.qubit_value()
-                    << "];\n";
+                out << qasm_names[(int)instruction.gate_type] << " q[" << t1.qubit_value() << "], q["
+                    << t2.qubit_value() << "];\n";
             } else if (t1.is_qubit_target() || t2.is_qubit_target()) {
                 GateTarget control;
                 GateTarget target;

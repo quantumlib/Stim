@@ -513,11 +513,6 @@ TEST(circuit_diagram_timeline_text, repetition_code_transposed) {
 
 TEST(circuit_diagram_timeline_text, test_circuit_all_ops) {
     auto circuit = generate_test_circuit_with_all_operations();
-    std::cerr << "\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n" << "===============\n";
-    std::cerr << "\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n" << "===============\n";
-    std::cerr << "\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n" << "===============\n";
-    std::cerr << "\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n" << "===============\n";
-    std::cerr << "\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n" << "===============\n";
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str() + "\n", R"DIAGRAM(
       /-------------------\ /--------------\ /---------------------\ /-----------------------------------------------------------------------------------------------------------------------------------------------------\ /------------------------------------\             /REP 3 /---\ \   /--------------------------------------------------------------------------------------------------------------------------\
  q0: -QUBIT_COORDS(1,2,3)-I-C_XYZ-SQRT_X-----ZSWAP-----SQRT_XX-----X------------DEPOLARIZE1(0.02)---------------X_ERROR(0.01)------------------------------------------------------------------------------------------------MPP[X]:rec[2]-MPP[Z]:rec[3]-MRX:rec[4]-MXX:rec[11]-|------H-@---|---MR:rec[15]-X_ERROR(0.1)-MR(0.01):rec[16]-DETECTOR(2,4,6):D0=rec[16]-OBSERVABLE_INCLUDE:L0*=rec[16]-MPAD:rec[17]-MPAD:rec[19]-MRX:rec[20]----X^rec[24]--

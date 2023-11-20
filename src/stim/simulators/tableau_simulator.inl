@@ -1445,35 +1445,7 @@ std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_x(GateTarg
 
 template <size_t W>
 std::vector<PauliString<W>> TableauSimulator<W>::canonical_stabilizers() const {
-    Tableau<W> t = inv_state.inverse();
-    size_t n = t.num_qubits;
-    std::vector<PauliString<W>> stabilizers;
-    for (size_t k = 0; k < n; k++) {
-        stabilizers.push_back(t.zs[k]);
-    }
-
-    size_t min_pivot = 0;
-    for (size_t q = 0; q < n; q++) {
-        for (size_t b = 0; b < 2; b++) {
-            size_t pivot = min_pivot;
-            while (pivot < n && !(b ? stabilizers[pivot].zs : stabilizers[pivot].xs)[q]) {
-                pivot++;
-            }
-            if (pivot == n) {
-                continue;
-            }
-            for (size_t s = 0; s < n; s++) {
-                if (s != pivot && (b ? stabilizers[s].zs : stabilizers[s].xs)[q]) {
-                    stabilizers[s].ref() *= stabilizers[pivot];
-                }
-            }
-            if (min_pivot != pivot) {
-                std::swap(stabilizers[min_pivot], stabilizers[pivot]);
-            }
-            min_pivot += 1;
-        }
-    }
-    return stabilizers;
+    return inv_state.inverse().stabilizers(true);
 }
 
 template <size_t W>
