@@ -1422,7 +1422,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> import stim
                 >>> circuit = stim.Circuit("""
                 ...     R 0 1
-                ...     X 0
+                ...     X 1
                 ...     H 0
                 ...     CX 0 1
                 ...     M 0 1
@@ -1437,7 +1437,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 bit dets[1];
                 reset q[0];
                 reset q[1];
-                x q[0];
+                x q[1];
                 h q[0];
                 cx q[0], q[1];
                 measure q[0] -> rec[0];
