@@ -923,3 +923,24 @@ def test_signs():
         _ = t.y_sign(2)
     with pytest.raises(ValueError, match="target"):
         _ = t.z_sign(2)
+
+
+def test_to_stabilizers():
+    t = stim.Tableau.from_stabilizers([
+        stim.PauliString("XXXX"),
+        stim.PauliString("YYYY"),
+        stim.PauliString("YYZZ"),
+        stim.PauliString("XXZZ"),
+    ])
+    assert t.to_stabilizers() == [
+        stim.PauliString("XXXX"),
+        stim.PauliString("YYYY"),
+        stim.PauliString("YYZZ"),
+        stim.PauliString("XXZZ"),
+    ]
+    assert t.to_stabilizers(canonicalize=True) == [
+        stim.PauliString("-XX__"),
+        stim.PauliString("-ZZ__"),
+        stim.PauliString("-__XX"),
+        stim.PauliString("-__ZZ"),
+    ]
