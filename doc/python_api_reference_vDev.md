@@ -2402,14 +2402,14 @@ def to_qasm(
 
     Examples:
         >>> import stim
-        >>> circuit = stim.Circuit("""
+        >>> circuit = stim.Circuit('''
         ...     R 0 1
         ...     X 1
         ...     H 0
         ...     CX 0 1
         ...     M 0 1
         ...     DETECTOR rec[-1] rec[-2]
-        ... """);
+        ... ''');
         >>> qasm = circuit.to_qasm(open_qasm_version=3);
         >>> print(qasm.strip().replace('\n\n', '\n'))
         OPENQASM 3.0;
