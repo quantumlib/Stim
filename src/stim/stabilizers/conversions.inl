@@ -2,6 +2,7 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/conversions.h"
+#include "stim/simulators/graph_simulator.h"
 
 namespace stim {
 
@@ -211,13 +212,28 @@ std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &c
 
 template <size_t W>
 Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method) {
-    if (method != "elimination") {
+    if (method == "elimination") {
+        return tableau_to_circuit_elimination_method(tableau);
+    } else if (method == "graph_state") {
+        return tableau_to_circuit_graph_method(tableau);
+    } else {
         std::stringstream ss;
         ss << "Unknown method: '" << method << "'. Known methods:\n";
         ss << "    - 'elimination'";
+        ss << "    - 'graph'";
         throw std::invalid_argument(ss.str());
     }
+}
 
+template <size_t W>
+Circuit tableau_to_circuit_graph_method(const Tableau<W> &tableau) {
+    GraphSimulator sim(tableau.num_qubits);
+    sim.do_circuit(tableau_to_circuit_elimination_method(tableau));
+    return sim.to_circuit(true);
+}
+
+template <size_t W>
+Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau) {
     Tableau<W> remaining = tableau.inverse();
     Circuit recorded_circuit;
     auto apply = [&](GateType gate_type, uint32_t target) {

@@ -80,6 +80,7 @@ src/stim/search/hyper/search_state.cc
 src/stim/simulators/error_analyzer.cc
 src/stim/simulators/error_matcher.cc
 src/stim/simulators/force_streaming.cc
+src/stim/simulators/graph_simulator.cc
 src/stim/simulators/matched_error.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/transform_without_feedback.cc

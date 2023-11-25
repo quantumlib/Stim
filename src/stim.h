@@ -91,6 +91,7 @@
 #include "stim/simulators/force_streaming.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/frame_simulator_util.h"
+#include "stim/simulators/graph_simulator.h"
 #include "stim/simulators/matched_error.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
