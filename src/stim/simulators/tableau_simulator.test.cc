@@ -391,19 +391,19 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.do_X(OpDat(0));
-    sim_vec.apply("X", 0);
+    sim_vec.apply(GateType::X, 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.do_H_XZ(OpDat(0));
-    sim_vec.apply("H_XZ", 0);
+    sim_vec.apply(GateType::H, 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.do_SQRT_Z(OpDat(0));
-    sim_vec.apply("SQRT_Z", 0);
+    sim_vec.apply(GateType::S, 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.do_ZCX(OpDat({0, 1}));
-    sim_vec.apply("ZCX", 0, 1);
+    sim_vec.apply(GateType::CX, 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.inv_state = Tableau<W>::random(10, rng);
@@ -411,7 +411,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.do_gate({GateType::XCX, {}, qubit_targets({4, 7})});
-    sim_vec.apply("XCX", 4, 7);
+    sim_vec.apply(GateType::XCX, 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 })
 
@@ -432,8 +432,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector, {
 TEST_EACH_WORD_SIZE_W(TableauSimulator, to_state_vector_endian, {
     VectorSimulator sim_vec0(3);
     VectorSimulator sim_vec2(3);
-    sim_vec0.apply("H", 0);
-    sim_vec2.apply("H", 2);
+    sim_vec0.apply(GateType::H, 0);
+    sim_vec2.apply(GateType::H, 2);
 
     TableauSimulator<W> sim_tab(INDEPENDENT_TEST_RNG(), 3);
     sim_tab.do_H_XZ(OpDat(2));

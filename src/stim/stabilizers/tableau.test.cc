@@ -72,8 +72,8 @@ bool tableau_agrees_with_unitary(
         VectorSimulator sim(n * 2);
         // Create EPR pairs to test all possible inputs via state channel duality.
         for (size_t q = 0; q < n; q++) {
-            sim.apply("H_XZ", q);
-            sim.apply("ZCX", q, q + n);
+            sim.apply(GateType::H, q);
+            sim.apply(GateType::CX, q, q + n);
         }
         // Apply input-side observable.
         sim.apply<W>(input_side_obs, n);

@@ -85,9 +85,9 @@ struct VectorSimulator {
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
 
     /// Helper method for applying named single qubit gates.
-    void apply(const std::string &gate, size_t qubit);
+    void apply(GateType gate, size_t qubit);
     /// Helper method for applying named two qubit gates.
-    void apply(const std::string &gate, size_t qubit1, size_t qubit2);
+    void apply(GateType gate, size_t qubit1, size_t qubit2);
 
     /// Helper method for applying the gates in a Pauli string.
     template <size_t W>
@@ -102,11 +102,11 @@ struct VectorSimulator {
             bool z = gate.zs[k];
             size_t q = qubit_offset + k;
             if (x && z) {
-                apply("Y", q);
+                apply(GateType::Y, q);
             } else if (x) {
-                apply("X", q);
+                apply(GateType::X, q);
             } else if (z) {
-                apply("Z", q);
+                apply(GateType::Z, q);
             }
         }
     }
@@ -132,9 +132,9 @@ struct VectorSimulator {
             for (size_t k = 0; k < observable.num_qubits; k++) {
                 if (observable.xs[k]) {
                     if (observable.zs[k]) {
-                        apply("H_YZ", k);
+                        apply(GateType::H_YZ, k);
                     } else {
-                        apply("H_XZ", k);
+                        apply(GateType::H, k);
                     }
                 }
             }
