@@ -1311,6 +1311,96 @@ class Circuit:
             >>> circuit.get_final_qubit_coordinates()
             {1: [1.0, 2.0, 3.0]}
         """
+    def has_flow(
+        self,
+        *,
+        start: Optional[stim.PauliString] = None,
+        end: Optional[stim.PauliString] = None,
+        measurements: Iterable[Union[int, stim.GateTarget]] = (),
+        unsigned: bool = False,
+    ) -> bool:
+        """Determines if the circuit has a stabilizer flow or not.
+
+        A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
+        P at the start of the circuit to the instantaneous stabilizer Q at the end of
+        the circuit. The flow may be mediated by certain measurements. For example,
+        a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
+        the CNOT flows implemented by the circuit involve these measurements.
+
+        A flow like P -> Q means that the circuit transforms P into Q.
+        A flow like IDENTITY -> P means that the circuit prepares P.
+        A flow like P -> IDENTITY means that the circuit measures P.
+        A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
+
+        Stim's gate documentation includes the stabilizer flows of each gate.
+        See Appendix A of https://arxiv.org/abs/2302.02192 for more information on how
+        flows are defined.
+
+        Args:
+            start: The input into the flow at the start of the circuit. Defaults to None
+                (the identity Pauli string).
+            end: The output from the flow at the end of the circuit. Defaults to None
+                (the identity Pauli string).
+            measurements: Defaults to None (empty). The indices of measurements to
+                include in the flow. This should be a collection of integers and/or
+                stim.GateTarget instances. Indexing uses the python convention where
+                non-negative indices index from the start and negative indices index
+                from the end.
+            unsigned: Defaults to False. When False, the flows must be correct including
+                the sign of the Pauli strings. When True, only the Pauli terms need to
+                be correct; the signs are permitted to be inverted. In effect, this
+                requires the circuit to be correct up to Pauli gates.
+
+        Returns:
+            True if the circuit has the given flow; False otherwise.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     RY 0
+            ... ''').has_flow(
+            ...     end=stim.PauliString("Y"),
+            ... )
+            True
+
+            >>> stim.Circuit('''
+            ...     RY 0
+            ... ''').has_flow(
+            ...     end=stim.PauliString("X"),
+            ... )
+            False
+
+            >>> stim.Circuit('''
+            ...     CX 0 1
+            ... ''').has_flow(
+            ...     start=stim.PauliString("+X_"),
+            ...     end=stim.PauliString("+XX"),
+            ... )
+            True
+
+            >>> stim.Circuit('''
+            ...     # Lattice surgery CNOT
+            ...     R 1
+            ...     MXX 0 1
+            ...     MZZ 1 2
+            ...     MX 1
+            ... ''').has_flow(
+            ...     start=stim.PauliString("+X_X"),
+            ...     end=stim.PauliString("+__X"),
+            ...     measurements=[0, 2],
+            ... )
+            True
+
+            >>> stim.Circuit('''
+            ...     H 0
+            ... ''').has_flow(
+            ...     start=stim.PauliString("Y"),
+            ...     end=stim.PauliString("Y"),
+            ...     unsigned=True,
+            ... )
+            True
+        """
     def inverse(
         self,
     ) -> stim.Circuit:
@@ -7828,7 +7918,7 @@ class Tableau:
         """
     def to_circuit(
         self,
-        method: str = 'elimination',
+        method: 'Literal["elimination", "graph_state"]' = 'elimination',
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 

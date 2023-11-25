@@ -670,7 +670,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::arg("method") = "elimination",
         clean_doc_string(R"DOC(
-            @signature def to_circuit(self, method: str = 'elimination') -> stim.Circuit:
+            @signature def to_circuit(self, method: 'Literal["elimination", "graph_state"]' = 'elimination') -> stim.Circuit:
             Synthesizes a circuit that implements the tableau's Clifford operation.
 
             The circuits returned by this method are not guaranteed to be stable

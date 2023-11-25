@@ -20,6 +20,7 @@
 #include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/circuit/export_qasm.h"
 #include "stim/circuit/gate_target.pybind.h"
+#include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
@@ -40,6 +41,7 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
 #include "stim/stabilizers/conversions.h"
+#include "stim/stabilizers/pauli_string.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -2213,6 +2215,149 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     }
                     H 1 0
                 ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "has_flow",
+        [](const Circuit &self,
+           const pybind11::object &start,
+           const pybind11::object &end,
+           const pybind11::object &measurements,
+           bool unsigned_only) -> bool {
+            auto num_measurements = self.count_measurements();
+            PauliString<MAX_BITWORD_WIDTH> raw_start(0);
+            PauliString<MAX_BITWORD_WIDTH> raw_end(0);
+            std::vector<GateTarget> raw_measurements;
+            if (!start.is_none()) {
+                raw_start = pybind11::cast<PyPauliString>(start).value;
+            }
+            if (!end.is_none()) {
+                raw_end = pybind11::cast<PyPauliString>(end).value;
+            }
+            if (!measurements.is_none()) {
+                for (const pybind11::handle &e : measurements) {
+                    if (pybind11::isinstance<GateTarget>(e)) {
+                        auto d = pybind11::cast<GateTarget>(e);
+                        if (d.is_measurement_record_target()) {
+                            raw_measurements.push_back(d);
+                            continue;
+                        }
+                    } else {
+                        try {
+                            int64_t s = pybind11::cast<int32_t>(e);
+                            if (s >= 0 && s < (int64_t)num_measurements) {
+                                s -= num_measurements;
+                            }
+                            if (s < 0 && -s <= (int64_t)num_measurements) {
+                                raw_measurements.push_back(GateTarget::rec(s));
+                                continue;
+                            }
+                        } catch (const pybind11::cast_error &) {
+                        }
+                    }
+                    throw std::invalid_argument(
+                        "Each measurement must be an integer in `range(-circuit.num_measurements, "
+                        "circuit.num_measurements)`, or a `stim.GateTarget`.");
+                }
+            }
+            StabilizerFlow<MAX_BITWORD_WIDTH> flow{
+                .input = raw_start, .output = raw_end, .measurement_outputs = raw_measurements};
+            if (unsigned_only) {
+                return check_if_circuit_has_unsigned_stabilizer_flows<MAX_BITWORD_WIDTH>(self, &flow)[0];
+            } else {
+                auto rng = externally_seeded_rng();
+                return sample_if_circuit_has_stabilizer_flows<MAX_BITWORD_WIDTH>(256, rng, self, &flow)[0];
+            }
+        },
+        pybind11::kw_only(),
+        pybind11::arg("start") = pybind11::none(),
+        pybind11::arg("end") = pybind11::none(),
+        pybind11::arg("measurements") = pybind11::none(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(R"DOC(
+            @signature def has_flow(self, *, start: Optional[stim.PauliString] = None, end: Optional[stim.PauliString] = None, measurements: Iterable[Union[int, stim.GateTarget]] = (), unsigned: bool = False) -> bool:
+            Determines if the circuit has a stabilizer flow or not.
+
+            A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
+            P at the start of the circuit to the instantaneous stabilizer Q at the end of
+            the circuit. The flow may be mediated by certain measurements. For example,
+            a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
+            the CNOT flows implemented by the circuit involve these measurements.
+
+            A flow like P -> Q means that the circuit transforms P into Q.
+            A flow like IDENTITY -> P means that the circuit prepares P.
+            A flow like P -> IDENTITY means that the circuit measures P.
+            A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
+
+            Stim's gate documentation includes the stabilizer flows of each gate.
+            See Appendix A of https://arxiv.org/abs/2302.02192 for more information on how
+            flows are defined.
+
+            Args:
+                start: The input into the flow at the start of the circuit. Defaults to None
+                    (the identity Pauli string).
+                end: The output from the flow at the end of the circuit. Defaults to None
+                    (the identity Pauli string).
+                measurements: Defaults to None (empty). The indices of measurements to
+                    include in the flow. This should be a collection of integers and/or
+                    stim.GateTarget instances. Indexing uses the python convention where
+                    non-negative indices index from the start and negative indices index
+                    from the end.
+                unsigned: Defaults to False. When False, the flows must be correct including
+                    the sign of the Pauli strings. When True, only the Pauli terms need to
+                    be correct; the signs are permitted to be inverted. In effect, this
+                    requires the circuit to be correct up to Pauli gates.
+
+            Returns:
+                True if the circuit has the given flow; False otherwise.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     RY 0
+                ... ''').has_flow(
+                ...     end=stim.PauliString("Y"),
+                ... )
+                True
+
+                >>> stim.Circuit('''
+                ...     RY 0
+                ... ''').has_flow(
+                ...     end=stim.PauliString("X"),
+                ... )
+                False
+
+                >>> stim.Circuit('''
+                ...     CX 0 1
+                ... ''').has_flow(
+                ...     start=stim.PauliString("+X_"),
+                ...     end=stim.PauliString("+XX"),
+                ... )
+                True
+
+                >>> stim.Circuit('''
+                ...     # Lattice surgery CNOT
+                ...     R 1
+                ...     MXX 0 1
+                ...     MZZ 1 2
+                ...     MX 1
+                ... ''').has_flow(
+                ...     start=stim.PauliString("+X_X"),
+                ...     end=stim.PauliString("+__X"),
+                ...     measurements=[0, 2],
+                ... )
+                True
+
+                >>> stim.Circuit('''
+                ...     H 0
+                ... ''').has_flow(
+                ...     start=stim.PauliString("Y"),
+                ...     end=stim.PauliString("Y"),
+                ...     unsigned=True,
+                ... )
+                True
         )DOC")
             .data());
 

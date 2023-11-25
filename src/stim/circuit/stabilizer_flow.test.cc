@@ -22,9 +22,9 @@
 
 using namespace stim;
 
-TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_stabilizer_flows, {
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, sample_if_circuit_has_stabilizer_flows, {
     auto rng = INDEPENDENT_TEST_RNG();
-    auto results = check_if_circuit_has_stabilizer_flows<W>(
+    auto results = sample_if_circuit_has_stabilizer_flows<W>(
         256,
         rng,
         Circuit(R"CIRCUIT(
@@ -69,4 +69,28 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, str_and_from_str, {
             PauliString<W>::from_str("-"),
             PauliString<W>::from_str("-X"),
             {GateTarget::rec(-1), GateTarget::rec(-3)}}));
+})
+
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_unsigned_stabilizer_flows, {
+    auto results = check_if_circuit_has_unsigned_stabilizer_flows<W>(
+        Circuit(R"CIRCUIT(
+            R 4
+            CX 0 4 1 4 2 4 3 4
+            M 4
+        )CIRCUIT"),
+        std::vector<StabilizerFlow<W>>{
+            StabilizerFlow<W>::from_str("Z___ -> Z____"),
+            StabilizerFlow<W>::from_str("_Z__ -> _Z__"),
+            StabilizerFlow<W>::from_str("__Z_ -> __Z_"),
+            StabilizerFlow<W>::from_str("___Z -> ___Z"),
+            StabilizerFlow<W>::from_str("XX__ -> XX__"),
+            StabilizerFlow<W>::from_str("XXXX -> XXXX"),
+            StabilizerFlow<W>::from_str("XYZ_ -> XYZ_"),
+            StabilizerFlow<W>::from_str("XXX_ -> XXX_"),
+            StabilizerFlow<W>::from_str("ZZZZ -> ____ xor rec[-1]"),
+            StabilizerFlow<W>::from_str("+___Z -> -___Z"),
+            StabilizerFlow<W>::from_str("-___Z -> -___Z"),
+            StabilizerFlow<W>::from_str("-___Z -> +___Z"),
+        });
+    ASSERT_EQ(results, (std::vector<bool>{1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1}));
 })
