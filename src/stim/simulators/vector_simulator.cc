@@ -71,19 +71,21 @@ void VectorSimulator::apply(
     }
 }
 
-void VectorSimulator::apply(const std::string &gate, size_t qubit) {
+void VectorSimulator::apply(GateType gate, size_t qubit) {
     try {
-        apply(GATE_DATA.at(gate).unitary(), {qubit});
+        apply(GATE_DATA[gate].unitary(), {qubit});
     } catch (const std::out_of_range &) {
-        throw std::out_of_range("Single qubit gate isn't supported by VectorSimulator: " + gate);
+        throw std::out_of_range(
+            "Single qubit gate isn't supported by VectorSimulator: " + std::string(GATE_DATA[gate].name));
     }
 }
 
-void VectorSimulator::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
+void VectorSimulator::apply(GateType gate, size_t qubit1, size_t qubit2) {
     try {
-        apply(GATE_DATA.at(gate).unitary(), {qubit1, qubit2});
+        apply(GATE_DATA[gate].unitary(), {qubit1, qubit2});
     } catch (const std::out_of_range &) {
-        throw std::out_of_range("Two qubit gate isn't supported by VectorSimulator: " + gate);
+        throw std::out_of_range(
+            "Two qubit gate isn't supported by VectorSimulator: " + std::string(GATE_DATA[gate].name));
     }
 }
 

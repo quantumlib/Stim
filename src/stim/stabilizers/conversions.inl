@@ -51,25 +51,31 @@ Circuit stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>
     sim.state = state_vector;
 
     Circuit recorded;
-    auto apply = [&](const std::string &name, uint32_t target) {
-        sim.apply(name, target);
-        recorded.safe_append_u(name, {little_endian ? target : (num_qubits - target - 1)});
+    auto apply = [&](GateType gate_type, uint32_t target) {
+        sim.apply(gate_type, target);
+        recorded.safe_append(
+            gate_type,
+            std::vector<GateTarget>{
+                GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
+            },
+            {});
     };
-    auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
-        sim.apply(name, target, target2);
-        recorded.safe_append_u(
-            name,
-            {
-                little_endian ? target : (num_qubits - target - 1),
-                little_endian ? target2 : (num_qubits - target2 - 1),
-            });
+    auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
+        sim.apply(gate_type, target, target2);
+        recorded.safe_append(
+            gate_type,
+            std::vector<GateTarget>{
+                GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
+                GateTarget::qubit(little_endian ? target2 : (num_qubits - target2 - 1)),
+            },
+            {});
     };
 
     // Move biggest amplitude to start of state vector..
     size_t pivot = biggest_index(state_vector);
     for (size_t q = 0; q < num_qubits; q++) {
         if ((pivot >> q) & 1) {
-            apply("X", q);
+            apply(GateType::X, q);
         }
     }
     sim.smooth_stabilizer_state(sim.state[0]);
@@ -96,7 +102,7 @@ Circuit stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>
                 if (base_qubit == SIZE_MAX) {
                     base_qubit = q;
                 } else {
-                    apply2("CNOT", base_qubit, q);
+                    apply2(GateType::CX, base_qubit, q);
                 }
             }
         }
@@ -104,13 +110,13 @@ Circuit stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>
         auto s = sim.state[1 << base_qubit];
         assert(s != (std::complex<float>{0, 0}));
         if (s == std::complex<float>{-1, 0}) {
-            apply("Z", base_qubit);
+            apply(GateType::Z, base_qubit);
         } else if (s == std::complex<float>{0, 1}) {
-            apply("S_DAG", base_qubit);
+            apply(GateType::S_DAG, base_qubit);
         } else if (s == std::complex<float>{0, -1}) {
-            apply("S", base_qubit);
+            apply(GateType::S, base_qubit);
         }
-        apply("H", base_qubit);
+        apply(GateType::H, base_qubit);
 
         sim.smooth_stabilizer_state(sim.state[0]);
         if (compute_occupation(sim.state) * 2 != occupation) {
@@ -214,13 +220,13 @@ Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method)
 
     Tableau<W> remaining = tableau.inverse();
     Circuit recorded_circuit;
-    auto apply = [&](const std::string &name, uint32_t target) {
-        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau<W>(), {target});
-        recorded_circuit.safe_append_u(name, {target});
+    auto apply = [&](GateType gate_type, uint32_t target) {
+        remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target});
+        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target)}, {});
     };
-    auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
-        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau<W>(), {target, target2});
-        recorded_circuit.safe_append_u(name, {target, target2});
+    auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
+        remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target, target2});
+        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
     };
     auto x_out = [&](size_t inp, size_t out) {
         const auto &p = remaining.xs[inp];
@@ -246,53 +252,53 @@ Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method)
 
         // Move the pivot to the diagonal.
         if (pivot_row != col) {
-            apply2("CNOT", pivot_row, col);
-            apply2("CNOT", col, pivot_row);
-            apply2("CNOT", pivot_row, col);
+            apply2(GateType::CX, pivot_row, col);
+            apply2(GateType::CX, col, pivot_row);
+            apply2(GateType::CX, pivot_row, col);
         }
 
         // Transform the pivot to XZ.
         if (z_out(col, col) == 3) {
-            apply("S", col);
+            apply(GateType::S, col);
         }
         if (z_out(col, col) != 2) {
-            apply("H", col);
+            apply(GateType::H, col);
         }
         if (x_out(col, col) != 1) {
-            apply("S", col);
+            apply(GateType::S, col);
         }
 
         // Use the pivot to remove all other terms in the X observable.
         for (size_t row = col + 1; row < n; row++) {
             if (x_out(col, row) == 3) {
-                apply("S", row);
+                apply(GateType::S, row);
             }
         }
         for (size_t row = col + 1; row < n; row++) {
             if (x_out(col, row) == 2) {
-                apply("H", row);
+                apply(GateType::H, row);
             }
         }
         for (size_t row = col + 1; row < n; row++) {
             if (x_out(col, row)) {
-                apply2("CX", col, row);
+                apply2(GateType::CX, col, row);
             }
         }
 
         // Use the pivot to remove all other terms in the Z observable.
         for (size_t row = col + 1; row < n; row++) {
             if (z_out(col, row) == 3) {
-                apply("S", row);
+                apply(GateType::S, row);
             }
         }
         for (size_t row = col + 1; row < n; row++) {
             if (z_out(col, row) == 1) {
-                apply("H", row);
+                apply(GateType::H, row);
             }
         }
         for (size_t row = col + 1; row < n; row++) {
             if (z_out(col, row)) {
-                apply2("CX", row, col);
+                apply2(GateType::CX, row, col);
             }
         }
     }
@@ -301,30 +307,30 @@ Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method)
     simd_bits<W> signs_copy = remaining.zs.signs;
     for (size_t col = 0; col < n; col++) {
         if (signs_copy[col]) {
-            apply("H", col);
+            apply(GateType::H, col);
         }
     }
     for (size_t col = 0; col < n; col++) {
         if (signs_copy[col]) {
-            apply("S", col);
-            apply("S", col);
+            apply(GateType::S, col);
+            apply(GateType::S, col);
         }
     }
     for (size_t col = 0; col < n; col++) {
         if (signs_copy[col]) {
-            apply("H", col);
+            apply(GateType::H, col);
         }
     }
     for (size_t col = 0; col < n; col++) {
         if (remaining.xs.signs[col]) {
-            apply("S", col);
-            apply("S", col);
+            apply(GateType::S, col);
+            apply(GateType::S, col);
         }
     }
 
     if (recorded_circuit.count_qubits() < n) {
-        apply("H", n - 1);
-        apply("H", n - 1);
+        apply(GateType::H, n - 1);
+        apply(GateType::H, n - 1);
     }
     return recorded_circuit;
 }
@@ -379,13 +385,13 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
     sim.do_unitary_circuit(recorded_circuit);
     sim.smooth_stabilizer_state(sim.state[0]);
 
-    auto apply = [&](const std::string &name, uint32_t target) {
-        sim.apply(name, target);
-        recorded_circuit.safe_append_u(name, {target});
+    auto apply = [&](GateType gate_type, uint32_t target) {
+        sim.apply(gate_type, target);
+        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target)}, {});
     };
-    auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
-        sim.apply(name, target, target2);
-        recorded_circuit.safe_append_u(name, {target, target2});
+    auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
+        sim.apply(gate_type, target, target2);
+        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
     };
 
     // Undo the permutation and also single-qubit phases.
@@ -402,21 +408,21 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
                     size_t pivot = first_set_bit(r, q);
                     for (size_t b = 0; b < num_qubits; b++) {
                         if (((r >> b) & 1) != 0 && b != pivot) {
-                            apply2("CX", pivot, b);
+                            apply2(GateType::CX, pivot, b);
                         }
                     }
                     if (pivot != q) {
-                        apply2("SWAP", q, pivot);
+                        apply2(GateType::SWAP, q, pivot);
                     }
                 }
 
                 // Undo phasing on this qubit.
                 if (ratio.real() == -1) {
-                    apply("Z", q);
+                    apply(GateType::Z, q);
                 } else if (ratio.imag() == -1) {
-                    apply("S", q);
+                    apply(GateType::S, q);
                 } else if (ratio.imag() == +1) {
-                    apply("S_DAG", q);
+                    apply(GateType::S_DAG, q);
                 }
                 break;
             }
@@ -429,7 +435,7 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
             size_t v = (1 << q1) | (1 << q2);
             size_t d = v * num_amplitudes + v;
             if (sim.state[d].real() == -1) {
-                apply2("CZ", q1, q2);
+                apply2(GateType::CZ, q1, q2);
             }
         }
     }

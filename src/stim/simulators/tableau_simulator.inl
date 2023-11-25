@@ -1170,7 +1170,7 @@ std::vector<std::complex<float>> TableauSimulator<W>::to_state_vector(bool littl
     auto sim = to_vector_sim();
     if (!little_endian && inv_state.num_qubits > 0) {
         for (size_t q = 0; q < inv_state.num_qubits - q - 1; q++) {
-            sim.apply("SWAP", q, inv_state.num_qubits - q - 1);
+            sim.apply(GateType::SWAP, q, inv_state.num_qubits - q - 1);
         }
     }
     return sim.state;

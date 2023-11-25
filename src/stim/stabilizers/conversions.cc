@@ -110,14 +110,16 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
 
 double stim::depolarize1_probability_to_independent_per_channel_probability(double p) {
     if (p > 0.75) {
-        throw std::invalid_argument("depolarize1_probability_to_independent_per_channel_probability with p>0.75; p=" + std::to_string(p));
+        throw std::invalid_argument(
+            "depolarize1_probability_to_independent_per_channel_probability with p>0.75; p=" + std::to_string(p));
     }
     return 0.5 - 0.5 * sqrt(1 - (4 * p) / 3);
 }
 
 double stim::depolarize2_probability_to_independent_per_channel_probability(double p) {
     if (p > 0.9375) {
-        throw std::invalid_argument("depolarize2_probability_to_independent_per_channel_probability with p>15.0/16.0; p=" + std::to_string(p));
+        throw std::invalid_argument(
+            "depolarize2_probability_to_independent_per_channel_probability with p>15.0/16.0; p=" + std::to_string(p));
     }
     return 0.5 - 0.5 * pow(1 - (16 * p) / 15, 0.125);
 }
