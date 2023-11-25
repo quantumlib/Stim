@@ -10092,7 +10092,6 @@ def then(
 # (in class stim.Tableau)
 def to_circuit(
     self,
-    *,
     method: str = 'elimination',
 ) -> stim.Circuit:
     """Synthesizes a circuit that implements the tableau's Clifford operation.
