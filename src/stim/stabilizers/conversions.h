@@ -105,17 +105,35 @@ std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &c
 ///
 /// Args:
 ///     tableau: The tableau to synthesize into a circuit.
-///     method: The method to use when synthesizing the circuit. Available values are:
-///         "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+///     method: The method to use when synthesizing the circuit. Available values:
+///         "elimination": Cancels off-diagonal terms using Gaussian elimination.
 ///             Gate set: H, S, CX
 ///             Circuit qubit count: n
 ///             Circuit operation count: O(n^2)
 ///             Circuit depth: O(n^2)
+///         "graph_state": Prepares the tableau's state using a graph state circuit.
+///             Gate set: RX, CZ, H, S, X, Y, Z
+///             Circuit qubit count: n
+///             Circuit operation count: O(n^2)
+///
+///             The circuit will be made up of three layers:
+///                 1. An RX layer initializing all qubits.
+///                 2. A CZ layer coupling the qubits.
+///                     an edge in the graph state.)
+///                 3. A single qubit rotation layer.
+///
+///             Note: "graph_state" treats the tableau as a state instead of as a
+///             Clifford operation. It will preserve the set of stabilizers, but
+///             not the exact choice of generators.
 ///
 /// Returns:
 ///     The synthesized circuit.
 template <size_t W>
 Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method);
+template <size_t W>
+Circuit tableau_to_circuit_graph_method(const Tableau<W> &tableau);
+template <size_t W>
+Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau);
 
 /// Converts a unitary matrix into a stabilizer tableau.
 ///

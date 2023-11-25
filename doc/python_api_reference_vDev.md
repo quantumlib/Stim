@@ -10092,7 +10092,6 @@ def then(
 # (in class stim.Tableau)
 def to_circuit(
     self,
-    *,
     method: str = 'elimination',
 ) -> stim.Circuit:
     """Synthesizes a circuit that implements the tableau's Clifford operation.
@@ -10107,6 +10106,20 @@ def to_circuit(
                 Circuit qubit count: n
                 Circuit operation count: O(n^2)
                 Circuit depth: O(n^2)
+            "graph_state": Prepares the tableau's state using a graph state circuit.
+                Gate set: RX, CZ, H, S, X, Y, Z
+                Circuit qubit count: n
+                Circuit operation count: O(n^2)
+
+                The circuit will be made up of three layers:
+                    1. An RX layer initializing all qubits.
+                    2. A CZ layer coupling the qubits.
+                        (Each CZ is an edge in the graph state.)
+                    3. A single qubit rotation layer.
+
+                Note: "graph_state" treats the tableau as a state instead of as a
+                Clifford operation. It will preserve the set of stabilizers, but
+                not the exact choice of generators.
 
     Returns:
         The synthesized circuit.
@@ -10115,35 +10128,52 @@ def to_circuit(
         >>> import stim
         >>> tableau = stim.Tableau.from_conjugated_generators(
         ...     xs=[
-        ...         stim.PauliString("-_YZ"),
-        ...         stim.PauliString("-YY_"),
-        ...         stim.PauliString("-XZX"),
+        ...         stim.PauliString("+YZ__"),
+        ...         stim.PauliString("-Y_XY"),
+        ...         stim.PauliString("+___Y"),
+        ...         stim.PauliString("+YZX_"),
         ...     ],
         ...     zs=[
-        ...         stim.PauliString("+Y_Y"),
-        ...         stim.PauliString("-_XY"),
-        ...         stim.PauliString("-Y__"),
+        ...         stim.PauliString("+XZYY"),
+        ...         stim.PauliString("-XYX_"),
+        ...         stim.PauliString("-ZXXZ"),
+        ...         stim.PauliString("+XXZ_"),
         ...     ],
         ... )
-        >>> tableau.to_circuit(method="elimination")
+
+        >>> tableau.to_circuit()
         stim.Circuit('''
-            CX 2 0 0 2 2 0
             S 0
-            H 0
-            S 0
+            H 0 1 3
+            CX 0 1 0 2 0 3
+            S 1 3
+            H 1 3
+            CX 1 0 3 0 3 1 1 3 3 1
             H 1
-            CX 0 1 0 2
-            H 1 2
-            CX 1 0 2 0 2 1 1 2 2 1
-            H 1
-            S 1 2
-            H 2
-            CX 2 1
-            S 2
-            H 0 1 2
+            S 1
+            CX 1 3
+            H 2 3
+            CX 2 1 3 1 3 2 2 3 3 2
+            H 3
+            CX 2 3
+            S 3
+            H 3 0 1 2
             S 0 0 1 1 2 2
             H 0 1 2
-            S 1 1 2 2
+            S 3 3
+        ''')
+
+        >>> tableau.to_circuit("graph_state")
+        stim.Circuit('''
+            RX 0 1 2 3
+            TICK
+            CZ 0 3 1 2 1 3
+            TICK
+            X 0 1
+            Z 2
+            S 2 3
+            H 3
+            S 3
         ''')
     """
 ```

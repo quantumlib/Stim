@@ -944,3 +944,12 @@ def test_to_stabilizers():
         stim.PauliString("-__XX"),
         stim.PauliString("-__ZZ"),
     ]
+
+
+def test_to_circuit_graph_state_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    c = t.to_circuit("graph_state")
+    c = stim.Circuit(str(c).replace('RX', 'H'))
+    original = t.to_stabilizers(canonicalize=True)
+    reconstructed = c.to_tableau().to_stabilizers(canonicalize=True)
+    assert original == reconstructed
