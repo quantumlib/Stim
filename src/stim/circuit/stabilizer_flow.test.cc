@@ -32,7 +32,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, sample_if_circuit_has_stabilizer_flows, {
             CX 0 4 1 4 2 4 3 4
             M 4
         )CIRCUIT"),
-        {
+        std::vector<StabilizerFlow<W>>{
             StabilizerFlow<W>::from_str("Z___ -> Z____"),
             StabilizerFlow<W>::from_str("_Z__ -> _Z__"),
             StabilizerFlow<W>::from_str("__Z_ -> __Z_"),
