@@ -2276,7 +2276,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("measurements") = pybind11::none(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def has_flow(self, *, start: Optional[stim.PauliString] = None, end: Optional[stim.PauliString] = None, measurements: Iterable[Union[int, stim.GateTarget]] = (), unsigned: bool = False) -> bool:
+            @signature def has_flow(self, *, start: Optional[stim.PauliString] = None, end: Optional[stim.PauliString] = None, measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None, unsigned: bool = False) -> bool:
             Determines if the circuit has a stabilizer flow or not.
 
             A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
@@ -2289,10 +2289,6 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like IDENTITY -> P means that the circuit prepares P.
             A flow like P -> IDENTITY means that the circuit measures P.
             A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
-
-            Stim's gate documentation includes the stabilizer flows of each gate.
-            See Appendix A of https://arxiv.org/abs/2302.02192 for more information on how
-            flows are defined.
 
             Args:
                 start: The input into the flow at the start of the circuit. Defaults to None
@@ -2311,6 +2307,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Returns:
                 True if the circuit has the given flow; False otherwise.
+
+            References:
+                Stim's gate documentation includes the stabilizer flows of each gate.
+
+                Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
+                defined and provides a circuit construction for experimentally verifying
+                their presence.
 
             Examples:
                 >>> import stim
@@ -2358,6 +2361,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     unsigned=True,
                 ... )
                 True
+
+            Caveats:
+                Currently, the unsigned=False version of this method is implemented by
+                performing 256 randomized tests. Each test has a 50% chance of a false
+                positive, and a 0% chance of a false negative. So, when the method returns
+                True, there is technically still a 2^-256 chance the circuit doesn't have
+                the flow. This is lower than the chance of a cosmic ray flipping the result.
         )DOC")
             .data());
 

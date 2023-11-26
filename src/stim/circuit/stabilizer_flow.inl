@@ -170,16 +170,21 @@ std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow) {
 template <size_t W>
 std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
     auto stats = circuit.compute_stats();
-    SparseUnsignedRevFrameTracker rev(stats.num_qubits, stats.num_measurements, flows.size(), false);
+    size_t num_qubits = stats.num_qubits;
+    for (const auto &flow : flows) {
+        num_qubits = std::max(num_qubits, flow.input.num_qubits);
+        num_qubits = std::max(num_qubits, flow.output.num_qubits);
+    }
+    SparseUnsignedRevFrameTracker rev(num_qubits, stats.num_measurements, flows.size(), false);
 
     // Add end of flows into frames.
     for (size_t f = 0; f < flows.size(); f++) {
         const auto &flow = flows[f];
-        for (size_t q = 0; q < flow.input.num_qubits; q++) {
-            if (flow.input.xs[q]) {
+        for (size_t q = 0; q < flow.output.num_qubits; q++) {
+            if (flow.output.xs[q]) {
                 rev.xs[q].xor_item(DemTarget::relative_detector_id(f));
             }
-            if (flow.input.zs[q]) {
+            if (flow.output.zs[q]) {
                 rev.zs[q].xor_item(DemTarget::relative_detector_id(f));
             }
         }
@@ -205,11 +210,11 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(const Circuit &
     // Remove start of flows from frames.
     for (size_t f = 0; f < flows.size(); f++) {
         const auto &flow = flows[f];
-        for (size_t q = 0; q < flow.output.num_qubits; q++) {
-            if (flow.output.xs[q]) {
+        for (size_t q = 0; q < flow.input.num_qubits; q++) {
+            if (flow.input.xs[q]) {
                 rev.xs[q].xor_item(DemTarget::relative_detector_id(f));
             }
-            if (flow.output.zs[q]) {
+            if (flow.input.zs[q]) {
                 rev.zs[q].xor_item(DemTarget::relative_detector_id(f));
             }
         }
@@ -222,7 +227,7 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(const Circuit &
             result[t.val()] = false;
         }
     }
-    for (const auto &zs : rev.xs) {
+    for (const auto &zs : rev.zs) {
         for (const auto &t : zs) {
             result[t.val()] = false;
         }

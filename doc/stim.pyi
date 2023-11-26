@@ -1316,7 +1316,7 @@ class Circuit:
         *,
         start: Optional[stim.PauliString] = None,
         end: Optional[stim.PauliString] = None,
-        measurements: Iterable[Union[int, stim.GateTarget]] = (),
+        measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
         unsigned: bool = False,
     ) -> bool:
         """Determines if the circuit has a stabilizer flow or not.
@@ -1331,10 +1331,6 @@ class Circuit:
         A flow like IDENTITY -> P means that the circuit prepares P.
         A flow like P -> IDENTITY means that the circuit measures P.
         A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
-
-        Stim's gate documentation includes the stabilizer flows of each gate.
-        See Appendix A of https://arxiv.org/abs/2302.02192 for more information on how
-        flows are defined.
 
         Args:
             start: The input into the flow at the start of the circuit. Defaults to None
@@ -1353,6 +1349,13 @@ class Circuit:
 
         Returns:
             True if the circuit has the given flow; False otherwise.
+
+        References:
+            Stim's gate documentation includes the stabilizer flows of each gate.
+
+            Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
+            defined and provides a circuit construction for experimentally verifying
+            their presence.
 
         Examples:
             >>> import stim
@@ -1400,6 +1403,13 @@ class Circuit:
             ...     unsigned=True,
             ... )
             True
+
+        Caveats:
+            Currently, the unsigned=False version of this method is implemented by
+            performing 256 randomized tests. Each test has a 50% chance of a false
+            positive, and a 0% chance of a false negative. So, when the method returns
+            True, there is technically still a 2^-256 chance the circuit doesn't have
+            the flow. This is lower than the chance of a cosmic ray flipping the result.
         """
     def inverse(
         self,

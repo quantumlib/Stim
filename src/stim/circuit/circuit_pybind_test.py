@@ -1573,3 +1573,93 @@ def test_detslice_filter_coords_flexibility():
     assert str(d1) == str(d3)
     assert str(d1) == str(d4)
     assert str(d1) == str(d5)
+
+
+def test_has_flow_ry():
+    c = stim.Circuit("""
+        RY 0
+    """)
+    assert c.has_flow(end=stim.PauliString("Y"))
+    assert not c.has_flow(end=stim.PauliString("-Y"))
+    assert not c.has_flow(end=stim.PauliString("X"))
+    assert c.has_flow(end=stim.PauliString("Y"), unsigned=True)
+    assert not c.has_flow(end=stim.PauliString("X"), unsigned=True)
+    assert c.has_flow(end=stim.PauliString("-Y"), unsigned=True)
+
+
+def test_has_flow_cxs():
+    c = stim.Circuit("""
+        CX 0 1
+        S 0
+    """)
+
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"))
+    assert c.has_flow(start=stim.PauliString("Y_"), end=stim.PauliString("-XX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-XX"))
+
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"), unsigned=True)
+    assert c.has_flow(start=stim.PauliString("Y_"), end=stim.PauliString("-XX"), unsigned=True)
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-XX"), unsigned=True)
+
+
+def test_has_flow_cxm():
+    c = stim.Circuit("""
+        CX 0 1
+        M 1
+    """)
+    assert c.has_flow(end=stim.PauliString("_Z"), measurements=[0])
+    assert c.has_flow(start=stim.PauliString("ZZ"), measurements=[0])
+    assert c.has_flow(start=stim.PauliString("ZZ"), end=stim.PauliString("_Z"))
+    assert c.has_flow(start=stim.PauliString("XX"), end=stim.PauliString("X_"))
+    assert c.has_flow(end=stim.PauliString("_Z"), measurements=[0], unsigned=True)
+    assert c.has_flow(start=stim.PauliString("ZZ"), measurements=[0], unsigned=True)
+    assert c.has_flow(start=stim.PauliString("ZZ"), end=stim.PauliString("_Z"), unsigned=True)
+    assert c.has_flow(start=stim.PauliString("XX"), end=stim.PauliString("X_"), unsigned=True)
+
+
+def test_has_flow_lattice_surgery():
+    c = stim.Circuit("""
+        # Lattice surgery CNOT with feedback.
+        RX 2
+        MZZ 2 0
+        MXX 2 1
+        MZ 2
+        CX rec[-1] 1 rec[-3] 1
+        CZ rec[-2] 0
+
+        S 0
+    """)
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"))
+    assert c.has_flow(start=stim.PauliString("Z_"), end=stim.PauliString("Z_"))
+    assert c.has_flow(start=stim.PauliString("_X"), end=stim.PauliString("_X"))
+    assert c.has_flow(start=stim.PauliString("_Z"), end=stim.PauliString("ZZ"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"), unsigned=True)
+
+
+def test_has_flow_lattice_surgery_without_feedback():
+    c = stim.Circuit("""
+        # Lattice surgery CNOT without feedback.
+        RX 2
+        MZZ 2 0
+        MXX 2 1
+        MZ 2
+
+        S 0
+    """)
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"), measurements=[1])
+    assert c.has_flow(start=stim.PauliString("Z_"), end=stim.PauliString("Z_"))
+    assert c.has_flow(start=stim.PauliString("_X"), end=stim.PauliString("_X"))
+    assert c.has_flow(start=stim.PauliString("_Z"), end=stim.PauliString("ZZ"), measurements=[0, 2])
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"))
+    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
+    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"), unsigned=True, measurements=[1])
