@@ -176,7 +176,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
         Circuit c;
         c.safe_append(g.id, targets, {});
         auto rng = INDEPENDENT_TEST_RNG();
-        auto r = check_if_circuit_has_stabilizer_flows(256, rng, c, flows);
+        auto r = sample_if_circuit_has_stabilizer_flows<W>(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has an unsatisfied flow: " << flows[fk];
         }
@@ -208,7 +208,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decompose
         }
 
         Circuit c(g.h_s_cx_m_r_decomposition);
-        auto r = check_if_circuit_has_stabilizer_flows(256, rng, c, flows);
+        auto r = sample_if_circuit_has_stabilizer_flows<W>(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {
             EXPECT_TRUE(r[fk]) << "gate " << g.name << " has a decomposition with an unsatisfied flow: " << flows[fk];
         }

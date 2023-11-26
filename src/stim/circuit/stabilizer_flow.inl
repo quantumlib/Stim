@@ -3,6 +3,7 @@
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 namespace stim {
 
@@ -24,7 +25,7 @@ void _pauli_string_controlled_not(PauliStringRef<W> control, uint32_t target, Ci
 }
 
 template <size_t W>
-bool _check_if_circuit_has_stabilizer_flow(
+bool _sample_if_circuit_has_stabilizer_flow(
     size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const StabilizerFlow<W> &flow) {
     uint32_t n = (uint32_t)circuit.count_qubits();
     n = std::max(n, (uint32_t)flow.input.num_qubits);
@@ -58,11 +59,11 @@ bool _check_if_circuit_has_stabilizer_flow(
 }
 
 template <size_t W>
-std::vector<bool> check_if_circuit_has_stabilizer_flows(
-    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const std::vector<StabilizerFlow<W>> flows) {
+std::vector<bool> sample_if_circuit_has_stabilizer_flows(
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
     std::vector<bool> result;
     for (const auto &flow : flows) {
-        result.push_back(_check_if_circuit_has_stabilizer_flow(num_samples, rng, circuit, flow));
+        result.push_back(_sample_if_circuit_has_stabilizer_flow(num_samples, rng, circuit, flow));
     }
     return result;
 }
@@ -164,6 +165,78 @@ std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow) {
         t.write_succinct(out);
     }
     return out;
+}
+
+template <size_t W>
+std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
+    auto stats = circuit.compute_stats();
+    size_t num_qubits = stats.num_qubits;
+    for (const auto &flow : flows) {
+        num_qubits = std::max(num_qubits, flow.input.num_qubits);
+        num_qubits = std::max(num_qubits, flow.output.num_qubits);
+    }
+    SparseUnsignedRevFrameTracker rev(num_qubits, stats.num_measurements, flows.size(), false);
+
+    // Add end of flows into frames.
+    for (size_t f = 0; f < flows.size(); f++) {
+        const auto &flow = flows[f];
+        for (size_t q = 0; q < flow.output.num_qubits; q++) {
+            if (flow.output.xs[q]) {
+                rev.xs[q].xor_item(DemTarget::relative_detector_id(f));
+            }
+            if (flow.output.zs[q]) {
+                rev.zs[q].xor_item(DemTarget::relative_detector_id(f));
+            }
+        }
+    }
+
+    // Mark measurements for inclusion.
+    for (size_t f = flows.size(); f--;) {
+        const auto &flow = flows[f];
+        rev.undo_DETECTOR(CircuitInstruction{GateType::DETECTOR, {}, flow.measurement_outputs});
+    }
+
+    // Undo the circuit.
+    circuit.for_each_operation_reverse([&](const CircuitInstruction &inst) {
+        if (inst.gate_type == GateType::DETECTOR) {
+            // Substituted.
+        } else if (inst.gate_type == GateType::OBSERVABLE_INCLUDE) {
+            // Skip.
+        } else {
+            rev.undo_gate(inst);
+        }
+    });
+
+    // Remove start of flows from frames.
+    for (size_t f = 0; f < flows.size(); f++) {
+        const auto &flow = flows[f];
+        for (size_t q = 0; q < flow.input.num_qubits; q++) {
+            if (flow.input.xs[q]) {
+                rev.xs[q].xor_item(DemTarget::relative_detector_id(f));
+            }
+            if (flow.input.zs[q]) {
+                rev.zs[q].xor_item(DemTarget::relative_detector_id(f));
+            }
+        }
+    }
+
+    // Determine which flows survived.
+    std::vector<bool> result(flows.size(), true);
+    for (const auto &xs : rev.xs) {
+        for (const auto &t : xs) {
+            result[t.val()] = false;
+        }
+    }
+    for (const auto &zs : rev.zs) {
+        for (const auto &t : zs) {
+            result[t.val()] = false;
+        }
+    }
+    for (const auto &anti : rev.anticommutations) {
+        result[anti.val()] = false;
+    }
+
+    return result;
 }
 
 }  // namespace stim

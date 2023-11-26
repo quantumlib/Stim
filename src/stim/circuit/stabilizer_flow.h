@@ -18,6 +18,7 @@
 #define _STIM_CIRCUIT_STABILIZER_FLOW_H
 
 #include <iostream>
+#include <span>
 
 #include "stim/circuit/gate_target.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -49,8 +50,12 @@ struct StabilizerFlow {
 ///     A vector containing one boolean for each flow. The k'th boolean is true if the
 ///     k'th flow passed all checks.
 template <size_t W>
-std::vector<bool> check_if_circuit_has_stabilizer_flows(
-    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const std::vector<StabilizerFlow<W>> flows);
+std::vector<bool> sample_if_circuit_has_stabilizer_flows(
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows);
+
+template <size_t W>
+std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
+    const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows);
 
 template <size_t W>
 std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow);

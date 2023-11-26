@@ -180,12 +180,14 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
 }
 
 SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
-    uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past)
+    uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past, bool fail_on_anticommute)
     : xs(num_qubits),
       zs(num_qubits),
       rec_bits(),
       num_measurements_in_past(num_measurements_in_past),
-      num_detectors_in_past(num_detectors_in_past) {
+      num_detectors_in_past(num_detectors_in_past),
+      fail_on_anticommute(fail_on_anticommute),
+      anticommutations() {
 }
 
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
@@ -193,14 +195,27 @@ void SparseUnsignedRevFrameTracker::handle_xor_gauge(
     if (sorted1 == sorted2) {
         return;
     }
-    throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
+    if (fail_on_anticommute) {
+        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
+    }
+    SparseXorVec<DemTarget> dif;
+    dif.xor_sorted_items(sorted1);
+    dif.xor_sorted_items(sorted2);
+    for (const auto &d : dif) {
+        anticommutations.insert(d);
+    }
 }
 
 void SparseUnsignedRevFrameTracker::handle_gauge(SpanRef<const DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
-    throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
+    if (fail_on_anticommute) {
+        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
+    }
+    for (const auto &d : sorted) {
+        anticommutations.insert(d);
+    }
 }
 
 void SparseUnsignedRevFrameTracker::undo_classical_pauli(GateTarget classical_control, GateTarget target) {
