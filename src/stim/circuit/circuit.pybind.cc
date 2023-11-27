@@ -224,7 +224,7 @@ PyPauliString arg_to_pauli_string(const pybind11::object &arg) {
         return PyPauliString(PauliString<MAX_BITWORD_WIDTH>(0));
     } else if (pybind11::isinstance<PyPauliString>(arg)) {
         return pybind11::cast<PyPauliString>(arg);
-    } else if (pybind11::isinstance<std::string>(arg)) {
+    } else if (pybind11::isinstance<pybind11::str>(arg)) {
         return PyPauliString::from_text(pybind11::cast<std::string>(arg).c_str());
     } else {
         throw std::invalid_argument(

@@ -1679,6 +1679,7 @@ def test_has_flow_shorthands():
     assert c.has_flow("_Z -> ZZ", measurements=[0, 2])
     assert c.has_flow("_Z -> ZZ xor rec[0]", measurements=[2])
 
+    assert c.has_flow(start="X_", end="XX", measurements=[1, 3])
     assert not c.has_flow("Z_ -> -Z_")
     assert not c.has_flow("-Z_ -> Z_")
     assert not c.has_flow("Z_ -> X_")
