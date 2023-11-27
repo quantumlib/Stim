@@ -225,20 +225,20 @@ bool stim::find_bool_argument(const char *name, int argc, const char **argv) {
     throw std::invalid_argument(msg.str());
 }
 
-bool parse_int64(const char *data, int64_t *out) {
-    char c = *data;
-    if (c == 0) {
+bool stim::parse_int64(std::string_view data, int64_t *out) {
+    if (data.empty()) {
         return false;
     }
     bool negate = false;
-    if (c == '-') {
+    if (data.starts_with("-")) {
         negate = true;
-        data++;
-        c = *data;
+        data = data.substr(1);
+    } else if (data.starts_with("+")) {
+        data = data.substr(1);
     }
 
     uint64_t accumulator = 0;
-    while (c) {
+    for (char c : data) {
         if (!(c >= '0' && c <= '9')) {
             return false;
         }
@@ -248,8 +248,6 @@ bool parse_int64(const char *data, int64_t *out) {
             return false;  // Overflow.
         }
         accumulator = next;
-        data++;
-        c = *data;
     }
 
     if (negate && accumulator == (uint64_t)INT64_MAX + uint64_t{1}) {
@@ -423,7 +421,7 @@ uint64_t stim::parse_exact_uint64_t_from_string(const std::string &text) {
     if (end == c + text.size()) {
         // strtoull silently accepts spaces and negative signs and overflowing
         // values. The only guaranteed way I've found to ensure it actually
-        // worked is to recreate the string and check that it's the sam.e
+        // worked is to recreate the string and check that it's the same.
         std::stringstream ss;
         ss << v;
         if (ss.str() == text) {

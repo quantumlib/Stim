@@ -37,7 +37,7 @@ PauliString<W>::PauliString(size_t num_qubits) : num_qubits(num_qubits), sign(fa
 
 template <size_t W>
 PauliString<W>::PauliString(const std::string &text) : num_qubits(0), sign(false), xs(0), zs(0) {
-    *this = std::move(PauliString<W>::from_str(text.c_str()));
+    *this = std::move(PauliString<W>::from_str(text));
 }
 
 template <size_t W>
@@ -104,12 +104,13 @@ PauliString<W> PauliString<W>::from_func(bool sign, size_t num_qubits, const std
 }
 
 template <size_t W>
-PauliString<W> PauliString<W>::from_str(const char *text) {
-    auto sign = text[0] == '-';
-    if (text[0] == '+' || text[0] == '-') {
-        text++;
+PauliString<W> PauliString<W>::from_str(std::string_view text) {
+    bool is_negated = text.starts_with('-');
+    bool is_prefixed = text.starts_with('+');
+    if (is_prefixed || is_negated) {
+        text = text.substr(1);
     }
-    return PauliString::from_func(sign, strlen(text), [&](size_t i) {
+    return PauliString::from_func(is_negated, text.size(), [&](size_t i) {
         return text[i];
     });
 }

@@ -1889,9 +1889,10 @@ def get_final_qubit_coordinates(
 # (in class stim.Circuit)
 def has_flow(
     self,
+    shorthand: Optional[str] = None,
     *,
-    start: Optional[stim.PauliString] = None,
-    end: Optional[stim.PauliString] = None,
+    start: Union[None, str, stim.PauliString] = None,
+    end: Union[None, str, stim.PauliString] = None,
     measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
     unsigned: bool = False,
 ) -> bool:
@@ -1904,15 +1905,27 @@ def has_flow(
     the CNOT flows implemented by the circuit involve these measurements.
 
     A flow like P -> Q means that the circuit transforms P into Q.
-    A flow like IDENTITY -> P means that the circuit prepares P.
-    A flow like P -> IDENTITY means that the circuit measures P.
-    A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
+    A flow like 1 -> P means that the circuit prepares P.
+    A flow like P -> 1 means that the circuit measures P.
+    A flow like 1 -> 1 means that the circuit contains a detector.
 
     Args:
+        shorthand: Specifies the flow as a short string like "IX -> -YZ xor rec[1]".
+            The text must contain "->" to separate the input pauli string from the
+            output pauli string. Each pauli string should be a sequence of
+            characters from "_IXYZ" (or else just "1" to indicate the empty Pauli
+            string) optionally prefixed by "+" or "-". Measurements are included
+            by appending " xor rec[k]" for each measurement index k. Indexing uses
+            the python convention where non-negative indices index from the start
+            and negative indices index from the end.
         start: The input into the flow at the start of the circuit. Defaults to None
-            (the identity Pauli string).
+            (the identity Pauli string). When specified, this should be a
+            `stim.PauliString`, or a `str` (which will be parsed using
+            `stim.PauliString.__init__`).
         end: The output from the flow at the end of the circuit. Defaults to None
-            (the identity Pauli string).
+            (the identity Pauli string). When specified, this should be a
+            `stim.PauliString`, or a `str` (which will be parsed using
+            `stim.PauliString.__init__`).
         measurements: Defaults to None (empty). The indices of measurements to
             include in the flow. This should be a collection of integers and/or
             stim.GateTarget instances. Indexing uses the python convention where
@@ -1935,6 +1948,16 @@ def has_flow(
 
     Examples:
         >>> import stim
+
+        >>> m = stim.Circuit('M 0')
+        >>> m.has_flow('Z -> Z')
+        True
+        >>> m.has_flow('X -> X')
+        False
+        >>> m.has_flow('Z -> I')
+        False
+        >>> m.has_flow('Z -> I xor rec[-1]')
+        True
 
         >>> stim.Circuit('''
         ...     RY 0

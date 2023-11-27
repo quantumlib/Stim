@@ -68,51 +68,110 @@ std::vector<bool> sample_if_circuit_has_stabilizer_flows(
     return result;
 }
 
+inline bool parse_rec_allowing_non_negative(std::string_view rec, size_t num_measurements_for_non_neg, GateTarget *out) {
+    if (rec.size() < 6 || rec[0] != 'r' || rec[1] != 'e' || rec[2] != 'c' || rec[3] != '[' || rec.back() != ']') {
+        throw std::invalid_argument("");  // Caught and given a message below.
+    }
+    int64_t i = 0;
+    if (!parse_int64(rec.substr(4, rec.size() - 5), &i)) {
+        return false;
+    }
+
+    if (i >= INT32_MIN && i < 0) {
+        *out = stim::GateTarget::rec((int32_t)i);
+        return true;
+    }
+    if (i >= 0 && (size_t)i < num_measurements_for_non_neg) {
+        *out = stim::GateTarget::rec((int32_t)i - (int32_t)num_measurements_for_non_neg);
+        return true;
+    }
+    return false;
+}
+
 template <size_t W>
-StabilizerFlow<W> StabilizerFlow<W>::from_str(const char *text) {
+PauliString<W> parse_non_empty_pauli_string_allowing_i(std::string_view text, bool *imag_out) {
+    *imag_out = false;
+    if (text == "+1" || text == "1") {
+        return PauliString<W>(0);
+    }
+    if (text == "-1") {
+        PauliString<W> r(0);
+        r.sign = true;
+        return r;
+    }
+    if (text.empty()) {
+        throw std::invalid_argument("Got an ambiguously blank pauli string. Use '1' for the empty Pauli string.");
+    }
+
+    bool negate = false;
+    if (text.starts_with('i')) {
+        *imag_out = true;
+        text = text.substr(1);
+    } else if (text.starts_with("-i")) {
+        negate = true;
+        *imag_out = true;
+        text = text.substr(2);
+    } else if (text.starts_with("+i")) {
+        *imag_out = true;
+        text = text.substr(2);
+    }
+    PauliString<W> result = PauliString<W>::from_str(text);
+    if (negate) {
+        result.sign ^= 1;
+    }
+    return result;
+}
+
+template <size_t W>
+StabilizerFlow<W> StabilizerFlow<W>::from_str(const char *text, uint64_t num_measurements_for_non_neg_recs) {
     try {
         auto parts = split('>', text);
         if (parts.size() != 2 || parts[0].empty() || parts[0].back() != '-') {
-            throw std::invalid_argument("");
+            throw std::invalid_argument("");  // Caught and given a message below.
         }
         parts[0].pop_back();
         while (!parts[0].empty() && parts[0].back() == ' ') {
             parts[0].pop_back();
         }
-        PauliString<W> input = parts[0] == "1"    ? PauliString<W>(0)
-                               : parts[0] == "-1" ? PauliString<W>::from_str("-")
-                                                  : PauliString<W>::from_str(parts[0].c_str());
+        bool imag_inp = false;
+        bool imag_out = false;
+        PauliString<W> inp = parse_non_empty_pauli_string_allowing_i<W>(parts[0], &imag_inp);
 
         parts = split(' ', parts[1]);
         size_t k = 0;
         while (k < parts.size() && parts[k].empty()) {
             k += 1;
         }
-        PauliString<W> output(0);
+        if (k >= parts.size()) {
+            throw std::invalid_argument("");  // Caught and given a message below.
+        }
+        PauliString<W> out(0);
         std::vector<GateTarget> measurements;
-
         if (!parts[k].empty() && parts[k][0] != 'r') {
-            output = PauliString<W>::from_str(parts[k].c_str());
+            out = parse_non_empty_pauli_string_allowing_i<W>(parts[k], &imag_out);
         } else {
-            auto t = stim::GateTarget::from_target_str(parts[k].c_str());
-            if (!t.is_measurement_record_target()) {
-                throw std::invalid_argument("");
+            GateTarget t;
+            if (!parse_rec_allowing_non_negative(parts[k], num_measurements_for_non_neg_recs, &t)) {
+                throw std::invalid_argument("");  // Caught and given a message below.
             }
             measurements.push_back(t);
         }
         k++;
         while (k < parts.size()) {
             if (parts[k] != "xor" || k + 1 == parts.size()) {
-                throw std::invalid_argument("");
+                throw std::invalid_argument("");  // Caught and given a message below.
             }
-            auto t = stim::GateTarget::from_target_str(parts[k + 1].c_str());
-            if (!t.is_measurement_record_target()) {
-                throw std::invalid_argument("");
+            GateTarget rec;
+            if (!parse_rec_allowing_non_negative(parts[k + 1], num_measurements_for_non_neg_recs, &rec)) {
+                throw std::invalid_argument("");  // Caught and given a message below.
             }
-            measurements.push_back(t);
+            measurements.push_back(rec);
             k += 2;
         }
-        return StabilizerFlow{input, output, measurements};
+        if (imag_inp != imag_out) {
+            throw std::invalid_argument("Anti-hermitian flows aren't allowed.");
+        }
+        return StabilizerFlow{inp, out, measurements};
     } catch (const std::invalid_argument &ex) {
         throw std::invalid_argument("Invalid stabilizer flow text: '" + std::string(text) + "'.");
     }

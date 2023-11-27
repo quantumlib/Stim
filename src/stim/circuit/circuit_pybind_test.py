@@ -1663,3 +1663,27 @@ def test_has_flow_lattice_surgery_without_feedback():
     assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"))
     assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
     assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"), unsigned=True, measurements=[1])
+
+
+def test_has_flow_shorthands():
+    c = stim.Circuit("""
+        MZ 99
+        MXX 1 99
+        MZZ 0 99
+        MX 99
+    """)
+
+    assert c.has_flow("X_ -> XX xor rec[1] xor rec[3]")
+    assert c.has_flow("Z_ -> Z_")
+    assert c.has_flow("_X -> _X")
+    assert c.has_flow("_Z -> ZZ", measurements=[0, 2])
+    assert c.has_flow("_Z -> ZZ xor rec[0]", measurements=[2])
+
+    assert not c.has_flow("Z_ -> -Z_")
+    assert not c.has_flow("-Z_ -> Z_")
+    assert not c.has_flow("Z_ -> X_")
+    assert c.has_flow("iX_ -> iXX xor rec[1] xor rec[3]")
+    assert not c.has_flow("-iX_ -> iXX xor rec[1] xor rec[3]")
+    assert c.has_flow("-iX_ -> -iXX xor rec[1] xor rec[3]")
+    with pytest.raises(ValueError):
+        c.has_flow("iX_ -> XX")

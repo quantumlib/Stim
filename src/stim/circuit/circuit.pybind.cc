@@ -219,6 +219,90 @@ uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
     throw std::invalid_argument(ss.str());
 }
 
+PyPauliString arg_to_pauli_string(const pybind11::object &arg) {
+    if (arg.is_none()) {
+        return PyPauliString(PauliString<MAX_BITWORD_WIDTH>(0));
+    } else if (pybind11::isinstance<PyPauliString>(arg)) {
+        return pybind11::cast<PyPauliString>(arg);
+    } else if (pybind11::isinstance<std::string>(arg)) {
+        return PyPauliString::from_text(pybind11::cast<std::string>(arg).c_str());
+    } else {
+        throw std::invalid_argument(
+            "Don't know how to get a stim.PauliString from " + pybind11::cast<std::string>(pybind11::repr(arg)));
+    }
+}
+
+void append_measurements_from_args(
+    uint64_t num_circuit_measurements,
+    const pybind11::object &arg_measurements,
+    std::vector<GateTarget> &out_measurements) {
+    if (arg_measurements.is_none()) {
+        return;
+    }
+    for (const pybind11::handle &e : arg_measurements) {
+        if (pybind11::isinstance<GateTarget>(e)) {
+            auto d = pybind11::cast<GateTarget>(e);
+            if (d.is_measurement_record_target()) {
+                out_measurements.push_back(d);
+                continue;
+            }
+        } else {
+            try {
+                int64_t s = pybind11::cast<int32_t>(e);
+                if (s >= 0 && s < (int64_t)num_circuit_measurements) {
+                    s -= num_circuit_measurements;
+                }
+                if (s < 0 && -s <= (int64_t)num_circuit_measurements) {
+                    out_measurements.push_back(GateTarget::rec(s));
+                    continue;
+                }
+            } catch (const pybind11::cast_error &) {
+            }
+        }
+        throw std::invalid_argument(
+            "Each measurement must be an integer in `range(-circuit.num_measurements, "
+            "circuit.num_measurements)`, or a `stim.GateTarget`.");
+    }
+}
+
+StabilizerFlow<MAX_BITWORD_WIDTH> args_to_flow(
+    uint64_t num_circuit_measurements,
+    const pybind11::object &shorthand,
+    const pybind11::object &start,
+    const pybind11::object &end,
+    const pybind11::object &measurements) {
+    StabilizerFlow<MAX_BITWORD_WIDTH> flow{
+        .input = PauliString<MAX_BITWORD_WIDTH>{0},
+        .output = PauliString<MAX_BITWORD_WIDTH>{0},
+        .measurement_outputs = {},
+    };
+    if (!shorthand.is_none() && !start.is_none()) {
+        throw std::invalid_argument("Can't specify both `shorthand` and `start`.");
+    }
+    if (!shorthand.is_none() && !end.is_none()) {
+        throw std::invalid_argument("Can't specify both `shorthand` and `end`.");
+    }
+
+    if (!shorthand.is_none()) {
+        flow = StabilizerFlow<MAX_BITWORD_WIDTH>::from_str(
+            pybind11::cast<std::string>(shorthand).c_str(), num_circuit_measurements);
+    } else {
+        PyPauliString in = arg_to_pauli_string(start);
+        PyPauliString out = arg_to_pauli_string(end);
+        if (in.imag != out.imag) {
+            throw std::invalid_argument(
+                "The requested flow '" + in.str() + " -> " + out.str() +
+                "' is anti-Hermitian (unbalanced imaginary signs). Stabilizer flows are always Hermitian.");
+        }
+        flow.input = std::move(in.value);
+        flow.output = std::move(out.value);
+    }
+
+    append_measurements_from_args(num_circuit_measurements, measurements, flow.measurement_outputs);
+
+    return flow;
+}
+
 std::set<uint64_t> obj_to_abs_detector_id_set(
     const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors) {
     std::set<uint64_t> filter;
@@ -2221,48 +2305,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "has_flow",
         [](const Circuit &self,
+           const pybind11::object &shorthand,
            const pybind11::object &start,
            const pybind11::object &end,
            const pybind11::object &measurements,
            bool unsigned_only) -> bool {
-            auto num_measurements = self.count_measurements();
-            PauliString<MAX_BITWORD_WIDTH> raw_start(0);
-            PauliString<MAX_BITWORD_WIDTH> raw_end(0);
-            std::vector<GateTarget> raw_measurements;
-            if (!start.is_none()) {
-                raw_start = pybind11::cast<PyPauliString>(start).value;
-            }
-            if (!end.is_none()) {
-                raw_end = pybind11::cast<PyPauliString>(end).value;
-            }
-            if (!measurements.is_none()) {
-                for (const pybind11::handle &e : measurements) {
-                    if (pybind11::isinstance<GateTarget>(e)) {
-                        auto d = pybind11::cast<GateTarget>(e);
-                        if (d.is_measurement_record_target()) {
-                            raw_measurements.push_back(d);
-                            continue;
-                        }
-                    } else {
-                        try {
-                            int64_t s = pybind11::cast<int32_t>(e);
-                            if (s >= 0 && s < (int64_t)num_measurements) {
-                                s -= num_measurements;
-                            }
-                            if (s < 0 && -s <= (int64_t)num_measurements) {
-                                raw_measurements.push_back(GateTarget::rec(s));
-                                continue;
-                            }
-                        } catch (const pybind11::cast_error &) {
-                        }
-                    }
-                    throw std::invalid_argument(
-                        "Each measurement must be an integer in `range(-circuit.num_measurements, "
-                        "circuit.num_measurements)`, or a `stim.GateTarget`.");
-                }
-            }
-            StabilizerFlow<MAX_BITWORD_WIDTH> flow{
-                .input = raw_start, .output = raw_end, .measurement_outputs = raw_measurements};
+            StabilizerFlow<MAX_BITWORD_WIDTH> flow =
+                args_to_flow(self.count_measurements(), shorthand, start, end, measurements);
             if (unsigned_only) {
                 return check_if_circuit_has_unsigned_stabilizer_flows<MAX_BITWORD_WIDTH>(self, &flow)[0];
             } else {
@@ -2270,13 +2319,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 return sample_if_circuit_has_stabilizer_flows<MAX_BITWORD_WIDTH>(256, rng, self, &flow)[0];
             }
         },
+        pybind11::arg("shorthand") = pybind11::none(),
         pybind11::kw_only(),
         pybind11::arg("start") = pybind11::none(),
         pybind11::arg("end") = pybind11::none(),
         pybind11::arg("measurements") = pybind11::none(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def has_flow(self, *, start: Optional[stim.PauliString] = None, end: Optional[stim.PauliString] = None, measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None, unsigned: bool = False) -> bool:
+            @signature def has_flow(self, shorthand: Optional[str] = None, *, start: Union[None, str, stim.PauliString] = None, end: Union[None, str, stim.PauliString] = None, measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None, unsigned: bool = False) -> bool:
             Determines if the circuit has a stabilizer flow or not.
 
             A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
@@ -2286,15 +2336,27 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             the CNOT flows implemented by the circuit involve these measurements.
 
             A flow like P -> Q means that the circuit transforms P into Q.
-            A flow like IDENTITY -> P means that the circuit prepares P.
-            A flow like P -> IDENTITY means that the circuit measures P.
-            A flow like IDENTITY -> IDENTITY means that the circuit contains a detector.
+            A flow like 1 -> P means that the circuit prepares P.
+            A flow like P -> 1 means that the circuit measures P.
+            A flow like 1 -> 1 means that the circuit contains a detector.
 
             Args:
+                shorthand: Specifies the flow as a short string like "IX -> -YZ xor rec[1]".
+                    The text must contain "->" to separate the input pauli string from the
+                    output pauli string. Each pauli string should be a sequence of
+                    characters from "_IXYZ" (or else just "1" to indicate the empty Pauli
+                    string) optionally prefixed by "+" or "-". Measurements are included
+                    by appending " xor rec[k]" for each measurement index k. Indexing uses
+                    the python convention where non-negative indices index from the start
+                    and negative indices index from the end.
                 start: The input into the flow at the start of the circuit. Defaults to None
-                    (the identity Pauli string).
+                    (the identity Pauli string). When specified, this should be a
+                    `stim.PauliString`, or a `str` (which will be parsed using
+                    `stim.PauliString.__init__`).
                 end: The output from the flow at the end of the circuit. Defaults to None
-                    (the identity Pauli string).
+                    (the identity Pauli string). When specified, this should be a
+                    `stim.PauliString`, or a `str` (which will be parsed using
+                    `stim.PauliString.__init__`).
                 measurements: Defaults to None (empty). The indices of measurements to
                     include in the flow. This should be a collection of integers and/or
                     stim.GateTarget instances. Indexing uses the python convention where
@@ -2317,6 +2379,16 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Examples:
                 >>> import stim
+
+                >>> m = stim.Circuit('M 0')
+                >>> m.has_flow('Z -> Z')
+                True
+                >>> m.has_flow('X -> X')
+                False
+                >>> m.has_flow('Z -> I')
+                False
+                >>> m.has_flow('Z -> I xor rec[-1]')
+                True
 
                 >>> stim.Circuit('''
                 ...     RY 0
