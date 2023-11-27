@@ -85,7 +85,7 @@ struct PauliString {
     /// Factory method for creating a PauliString whose Pauli entries are returned by a function.
     static PauliString<W> from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     /// Factory method for creating a PauliString by parsing a string (e.g. "-XIIYZ").
-    static PauliString<W> from_str(const char *text);
+    static PauliString<W> from_str(std::string_view text);
     /// Factory method for creating a PauliString with uniformly random sign and Pauli entries.
     static PauliString<W> random(size_t num_qubits, std::mt19937_64 &rng);
 

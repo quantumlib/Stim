@@ -14,7 +14,7 @@ ExposedPauliString::ExposedPauliString(const emscripten::val &arg) : pauli_strin
     if (arg.isNumber()) {
         pauli_string = PauliString<stim::MAX_BITWORD_WIDTH>(js_val_to_uint32_t(arg));
     } else if (arg.isString()) {
-        pauli_string = PauliString<stim::MAX_BITWORD_WIDTH>::from_str(arg.as<std::string>().data());
+        pauli_string = PauliString<stim::MAX_BITWORD_WIDTH>::from_str(arg.as<std::string>());
     } else {
         throw std::invalid_argument("Expected an int or a string. Got " + t);
     }

@@ -346,3 +346,37 @@ TEST(arg_parse, parse_exact_uint64_t_from_string) {
     ASSERT_EQ(parse_exact_uint64_t_from_string("2"), 2);
     ASSERT_EQ(parse_exact_uint64_t_from_string("18446744073709551615"), UINT64_MAX);
 }
+
+TEST(arg_parse, parse_int64) {
+    int64_t x = 0;
+
+    ASSERT_TRUE(parse_int64("+0", &x));
+    ASSERT_EQ(x, 0);
+    ASSERT_TRUE(parse_int64("-0", &x));
+    ASSERT_EQ(x, 0);
+    ASSERT_TRUE(parse_int64("0", &x));
+    ASSERT_EQ(x, 0);
+    ASSERT_TRUE(parse_int64("1", &x));
+    ASSERT_EQ(x, 1);
+    ASSERT_TRUE(parse_int64("-1", &x));
+    ASSERT_EQ(x, -1);
+    ASSERT_FALSE(parse_int64("i", &x));
+    ASSERT_FALSE(parse_int64("1i", &x));
+    ASSERT_FALSE(parse_int64("i1", &x));
+    ASSERT_FALSE(parse_int64("1e2", &x));
+    ASSERT_FALSE(parse_int64("12i1", &x));
+    ASSERT_FALSE(parse_int64("12 ", &x));
+    ASSERT_FALSE(parse_int64(" 12", &x));
+
+    ASSERT_TRUE(parse_int64("0123", &x));
+    ASSERT_EQ(x, 123);
+    ASSERT_TRUE(parse_int64("-0123", &x));
+    ASSERT_EQ(x, -123);
+
+    ASSERT_FALSE(parse_int64("-9223372036854775809", &x));
+    ASSERT_TRUE(parse_int64("-9223372036854775808", &x));
+    ASSERT_EQ(x, INT64_MIN);
+    ASSERT_FALSE(parse_int64("9223372036854775808", &x));
+    ASSERT_TRUE(parse_int64("9223372036854775807", &x));
+    ASSERT_EQ(x, INT64_MAX);
+}
