@@ -65,11 +65,11 @@ void stim_pybind::pybind_pauli_string_iter_methods(
 
     c.def(
         "__next__",
-        [](PauliStringIterator<MAX_BITWORD_WIDTH> &self) -> PyPauliString {
+        [](PauliStringIterator<MAX_BITWORD_WIDTH> &self) -> FlexPauliString {
             if (!self.iter_next()) {
                 throw pybind11::stop_iteration();
             }
-            return PyPauliString(self.result);
+            return FlexPauliString(self.result);
         },
         clean_doc_string(R"DOC(
             Returns the next iterated pauli string.

@@ -99,6 +99,7 @@
 #include "stim/simulators/transform_without_feedback.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/conversions.h"
+#include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/stabilizers/pauli_string_ref.h"

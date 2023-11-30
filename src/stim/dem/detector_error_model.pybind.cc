@@ -40,7 +40,7 @@ std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &sel
 }
 
 std::vector<double> python_arg_to_instruction_arguments(const pybind11::object &arg) {
-    if (arg.is(pybind11::none())) {
+    if (arg.is_none()) {
         return {};
     }
     try {

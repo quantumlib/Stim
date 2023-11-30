@@ -18,46 +18,12 @@
 #include <complex>
 #include <pybind11/pybind11.h>
 
-#include "stim/stabilizers/pauli_string.h"
+#include "stim/stabilizers/flex_pauli_string.h"
 
 namespace stim_pybind {
 
-struct PyPauliString {
-    stim::PauliString<stim::MAX_BITWORD_WIDTH> value;
-    bool imag;
-
-    PyPauliString(const stim::PauliStringRef<stim::MAX_BITWORD_WIDTH> val, bool imag = false);
-    PyPauliString(stim::PauliString<stim::MAX_BITWORD_WIDTH> &&val, bool imag = false);
-
-    static PyPauliString from_text(const char *c);
-    std::complex<float> get_phase() const;
-
-    PyPauliString operator+(const PyPauliString &rhs) const;
-    PyPauliString &operator+=(const PyPauliString &rhs);
-
-    PyPauliString operator*(const pybind11::object &rhs) const;
-    PyPauliString operator*(size_t power) const;
-    PyPauliString operator*(std::complex<float> scale) const;
-    PyPauliString operator*(const PyPauliString &rhs) const;
-    PyPauliString operator/(const std::complex<float> &divisor) const;
-
-    PyPauliString &operator*=(const pybind11::object &rhs);
-    PyPauliString &operator*=(size_t power);
-    PyPauliString &operator*=(std::complex<float> scale);
-    PyPauliString &operator*=(const PyPauliString &rhs);
-    PyPauliString &operator/=(const std::complex<float> &divisor);
-
-    pybind11::object to_unitary_matrix(const std::string &endian) const;
-    static PyPauliString from_unitary_matrix(
-        const pybind11::object &matrix, const std::string &endian, bool ignore_sign);
-
-    bool operator==(const PyPauliString &other) const;
-    bool operator!=(const PyPauliString &other) const;
-    std::string str() const;
-};
-
-pybind11::class_<PyPauliString> pybind_pauli_string(pybind11::module &m);
-void pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<PyPauliString> &c);
+pybind11::class_<stim::FlexPauliString> pybind_pauli_string(pybind11::module &m);
+void pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<stim::FlexPauliString> &c);
 
 }  // namespace stim_pybind
 

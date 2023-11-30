@@ -631,7 +631,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "to_pauli_string",
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
-            return PyPauliString(self.to_pauli_string());
+            return FlexPauliString(self.to_pauli_string());
         },
         clean_doc_string(R"DOC(
             Return a Pauli string equivalent to the tableau.
@@ -1059,7 +1059,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.xs[target]);
+            return FlexPauliString(self.xs[target]);
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1168,7 +1168,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.y_output(target));
+            return FlexPauliString(self.y_output(target));
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1197,7 +1197,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.zs[target]);
+            return FlexPauliString(self.zs[target]);
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1457,7 +1457,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_x_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_x_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_x_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1496,7 +1496,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_y_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_y_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_y_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1535,7 +1535,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_z_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_z_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_z_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1595,7 +1595,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_conjugated_generators",
-        [](const std::vector<PyPauliString> &xs, const std::vector<PyPauliString> &zs) {
+        [](const std::vector<FlexPauliString> &xs, const std::vector<FlexPauliString> &zs) {
             size_t n = xs.size();
             if (n != zs.size()) {
                 throw std::invalid_argument("len(xs) != len(zs)");
@@ -1824,8 +1824,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__call__",
-        [](const Tableau<MAX_BITWORD_WIDTH> &self, const PyPauliString &pauli_string) {
-            PyPauliString result{self(pauli_string.value)};
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const FlexPauliString &pauli_string) {
+            FlexPauliString result{self(pauli_string.value)};
             if (pauli_string.imag) {
                 result *= std::complex<float>(0, 1);
             }
@@ -1913,26 +1913,26 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(pybind11::pickle(
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             pybind11::dict d;
-            std::vector<PyPauliString> xs;
-            std::vector<PyPauliString> zs;
+            std::vector<FlexPauliString> xs;
+            std::vector<FlexPauliString> zs;
             for (size_t q = 0; q < self.num_qubits; q++) {
-                xs.push_back(PyPauliString(self.xs[q]));
+                xs.push_back(FlexPauliString(self.xs[q]));
             }
             for (size_t q = 0; q < self.num_qubits; q++) {
-                zs.push_back(PyPauliString(self.zs[q]));
+                zs.push_back(FlexPauliString(self.zs[q]));
             }
             d["xs"] = xs;
             d["zs"] = zs;
             return d;
         },
         [](const pybind11::dict &d) {
-            std::vector<PyPauliString> xs;
-            std::vector<PyPauliString> zs;
+            std::vector<FlexPauliString> xs;
+            std::vector<FlexPauliString> zs;
             for (const auto &e : d["xs"]) {
-                xs.push_back(pybind11::cast<PyPauliString>(e));
+                xs.push_back(pybind11::cast<FlexPauliString>(e));
             }
             for (const auto &e : d["zs"]) {
-                zs.push_back(pybind11::cast<PyPauliString>(e));
+                zs.push_back(pybind11::cast<FlexPauliString>(e));
             }
 
             size_t n = xs.size();
@@ -1965,7 +1965,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
             std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
-                const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
+                const FlexPauliString &p = pybind11::cast<FlexPauliString>(stabilizer);
                 if (p.imag) {
                     throw std::invalid_argument("Stabilizers can't have imaginary sign.");
                 }
@@ -2227,7 +2227,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         "to_stabilizers",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, bool canonical) {
             auto stabilizers = self.stabilizers(canonical);
-            std::vector<PyPauliString> result;
+            std::vector<FlexPauliString> result;
             result.reserve(stabilizers.size());
             for (auto &s : stabilizers) {
                 result.emplace_back(std::move(s), false);
