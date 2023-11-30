@@ -8440,19 +8440,19 @@ def after(
 
 # (in class stim.PauliString)
 @overload
-def after(
+def before(
     self,
     operation: Union[stim.Circuit, stim.CircuitInstruction],
 ) -> stim.PauliString:
     pass
 @overload
-def after(
+def before(
     self,
     operation: stim.Tableau,
     targets: Iterable[int],
 ) -> stim.PauliString:
     pass
-def after(
+def before(
     self,
     operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
     targets: Optional[Iterable[int]] = None,
@@ -8616,7 +8616,7 @@ def from_numpy(
 # (in class stim.PauliString)
 @staticmethod
 def from_unitary_matrix(
-    matrix: Iterable[Iterable[float]],
+    matrix: Iterable[Iterable[Union[int, float, complex]]],
     *,
     endian: str = 'little',
     unsigned: bool = False,

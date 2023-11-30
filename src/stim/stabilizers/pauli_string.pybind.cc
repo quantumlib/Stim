@@ -578,7 +578,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("endian") = "little",
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[Union[int, float, complex]]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
             Args:
@@ -1385,9 +1385,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("operation"),
         pybind11::arg("targets") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
-            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
-            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            @overload def before(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def before(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def before(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
             Returns the result of conjugating the Pauli string by an operation.
 
             Args:
