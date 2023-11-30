@@ -6155,90 +6155,48 @@ class PauliString:
         Returns:
             The mutated Pauli string.
         """
-    @staticmethod
     def __init__(
-        *args,
-        **kwargs,
-    ):
-        """Overloaded function.
+        self,
+        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+        /,
+    ) -> None:
+        """Initializes a stim.PauliString from the given argument.
 
-        1. __init__(self: stim.PauliString, num_qubits: int) -> None
+        When given a string, the string is parsed as a pauli string. The string can
+        optionally start with a sign ('+', '-', 'i', '+i', or '-i'). The rest of the
+        string should be characters from '_IXYZ' where '_' and 'I' mean identity, 'X'
+        means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z.
 
-        Creates an identity Pauli string over the given number of qubits.
-
-        Examples:
-            >>> import stim
-            >>> p = stim.PauliString(5)
-            >>> print(p)
-            +_____
-
-        Args:
-            num_qubits: The number of qubits the Pauli string acts on.
-
-
-        2. __init__(self: stim.PauliString, text: str) -> None
-
-        Creates a stim.PauliString from a text string.
-
-        The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
-        The rest of the string should be characters from '_IXYZ' where
-        '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means
-        Pauli Z.
+        Arguments:
+            arg [position-only]: This can be a variety of types, including:
+                None (default): initializes an empty Pauli string.
+                int: initializes an identity Pauli string of the given length.
+                str: initializes by parsing the given text.
+                stim.PauliString: initializes a copy of the given Pauli string.
+                Iterable: initializes by interpreting each item as a Pauli.
+                    Each item can be a single-qubit Pauli string (like "X"),
+                    or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
         Examples:
             >>> import stim
-            >>> print(stim.PauliString("YZ"))
-            +YZ
-            >>> print(stim.PauliString("+IXYZ"))
-            +_XYZ
-            >>> print(stim.PauliString("-___X_"))
-            -___X_
-            >>> print(stim.PauliString("iX"))
-            +iX
 
-        Args:
-            text: A text description of the Pauli string's contents, such as "+XXX" or
-                "-_YX" or "-iZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZY".
+            >>> stim.PauliString("-XYZ")
+            stim.PauliString("-XYZ")
 
-        Returns:
-            The created stim.PauliString.
+            >>> stim.PauliString()
+            stim.PauliString("+")
 
+            >>> stim.PauliString(5)
+            stim.PauliString("+_____")
 
-        3. __init__(self: stim.PauliString, copy: stim.PauliString) -> None
+            >>> stim.PauliString(stim.PauliString("XX"))
+            stim.PauliString("+XX")
 
-        Creates a copy of a stim.PauliString.
+            >>> stim.PauliString([0, 1, 3, 2])
+            stim.PauliString("+_XZY")
 
-        Examples:
-            >>> import stim
-            >>> a = stim.PauliString("YZ")
-            >>> b = stim.PauliString(a)
-            >>> b is a
-            False
-            >>> b == a
-            True
-
-        Args:
-            copy: The pauli string to make a copy of.
-
-
-        4. __init__(self: stim.PauliString, pauli_indices: List[int]) -> None
-
-        Creates a stim.PauliString from a list of integer pauli indices.
-
-        The indexing scheme that is used is:
-            0 -> I
-            1 -> X
-            2 -> Y
-            3 -> Z
-
-        Examples:
-            >>> import stim
-            >>> stim.PauliString([0, 1, 2, 3, 0, 3])
-            stim.PauliString("+_XYZ_Z")
-
-        Args:
-            pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating
-                paulis.
+            >>> stim.PauliString("X" for _ in range(4))
+            stim.PauliString("+XXXX")
         """
     def __itruediv__(
         self,
@@ -6517,19 +6475,19 @@ class PauliString:
             string before the operation.
         """
     @overload
-    def after(
+    def before(
         self,
         operation: Union[stim.Circuit, stim.CircuitInstruction],
     ) -> stim.PauliString:
         pass
     @overload
-    def after(
+    def before(
         self,
         operation: stim.Tableau,
         targets: Iterable[int],
     ) -> stim.PauliString:
         pass
-    def after(
+    def before(
         self,
         operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
         targets: Optional[Iterable[int]] = None,
@@ -6671,7 +6629,7 @@ class PauliString:
         """
     @staticmethod
     def from_unitary_matrix(
-        matrix: Iterable[Iterable[float]],
+        matrix: Iterable[Iterable[Union[int, float, complex]]],
         *,
         endian: str = 'little',
         unsigned: bool = False,

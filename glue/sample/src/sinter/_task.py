@@ -183,7 +183,7 @@ class Task:
             >>> task.strong_id_value()
             {'circuit': 'H 0', 'decoder': 'pymatching', 'decoder_error_model': '', 'postselection_mask': None, 'json_metadata': None}
         """
-        if self.decoder is None:
+        if self.circuit is None:
             raise ValueError("Can't compute strong_id until `circuit` is set.")
         if self.decoder is None:
             raise ValueError("Can't compute strong_id until `decoder` is set.")

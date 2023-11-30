@@ -101,7 +101,7 @@ void circuit_append(
 
         // Maintain backwards compatibility to when there was always exactly one argument.
         pybind11::object used_arg;
-        if (!arg.is(pybind11::none())) {
+        if (!arg.is_none()) {
             used_arg = arg;
         } else if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
             used_arg = pybind11::make_tuple(0.0);
@@ -219,13 +219,13 @@ uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
     throw std::invalid_argument(ss.str());
 }
 
-PyPauliString arg_to_pauli_string(const pybind11::object &arg) {
+FlexPauliString arg_to_pauli_string(const pybind11::object &arg) {
     if (arg.is_none()) {
-        return PyPauliString(PauliString<MAX_BITWORD_WIDTH>(0));
-    } else if (pybind11::isinstance<PyPauliString>(arg)) {
-        return pybind11::cast<PyPauliString>(arg);
+        return FlexPauliString(PauliString<MAX_BITWORD_WIDTH>(0));
+    } else if (pybind11::isinstance<FlexPauliString>(arg)) {
+        return pybind11::cast<FlexPauliString>(arg);
     } else if (pybind11::isinstance<pybind11::str>(arg)) {
-        return PyPauliString::from_text(pybind11::cast<std::string>(arg).c_str());
+        return FlexPauliString::from_text(pybind11::cast<std::string>(arg).c_str());
     } else {
         throw std::invalid_argument(
             "Don't know how to get a stim.PauliString from " + pybind11::cast<std::string>(pybind11::repr(arg)));
@@ -287,8 +287,8 @@ StabilizerFlow<MAX_BITWORD_WIDTH> args_to_flow(
         flow = StabilizerFlow<MAX_BITWORD_WIDTH>::from_str(
             pybind11::cast<std::string>(shorthand).c_str(), num_circuit_measurements);
     } else {
-        PyPauliString in = arg_to_pauli_string(start);
-        PyPauliString out = arg_to_pauli_string(end);
+        FlexPauliString in = arg_to_pauli_string(start);
+        FlexPauliString out = arg_to_pauli_string(end);
         if (in.imag != out.imag) {
             throw std::invalid_argument(
                 "The requested flow '" + in.str() + " -> " + out.str() +

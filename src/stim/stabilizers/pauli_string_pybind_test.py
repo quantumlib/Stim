@@ -448,7 +448,7 @@ def test_init_list():
         _ = stim.PauliString([-1])
     with pytest.raises(ValueError, match="pauli"):
         _ = stim.PauliString([4])
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         _ = stim.PauliString([2**500])
 
 
@@ -876,3 +876,23 @@ def test_iter_reusable():
     vs2 = list(v)
     assert vs1 == vs2
     assert len(vs1) == 4**2
+
+
+def test_backwards_compatibility_init():
+    assert stim.PauliString() == stim.PauliString("+")
+    assert stim.PauliString(5) == stim.PauliString("+_____")
+    assert stim.PauliString([1, 2, 3]) == stim.PauliString("+XYZ")
+    assert stim.PauliString("XYZ") == stim.PauliString("+XYZ")
+    assert stim.PauliString(stim.PauliString("XYZ")) == stim.PauliString("+XYZ")
+    assert stim.PauliString("X" for _ in range(4)) == stim.PauliString("+XXXX")
+
+    # These keywords have been removed from the documentation and the .pyi, but
+    # their functionality needs to be maintained for backwards compatibility.
+    # noinspection PyArgumentList
+    assert stim.PauliString(num_qubits=5) == stim.PauliString("+_____")
+    # noinspection PyArgumentList
+    assert stim.PauliString(pauli_indices=[1, 2, 3]) == stim.PauliString("+XYZ")
+    # noinspection PyArgumentList
+    assert stim.PauliString(text="XYZ") == stim.PauliString("+XYZ")
+    # noinspection PyArgumentList
+    assert stim.PauliString(other=stim.PauliString("XYZ")) == stim.PauliString("+XYZ")

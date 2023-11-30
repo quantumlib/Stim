@@ -59,12 +59,12 @@ pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11:
         py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
     if (instance_index.has_value()) {
-        return pybind11::cast(PyPauliString(self.get_frame(*instance_index)));
+        return pybind11::cast(FlexPauliString(self.get_frame(*instance_index)));
     }
 
-    std::vector<PyPauliString> result;
+    std::vector<FlexPauliString> result;
     for (size_t k = 0; k < self.batch_size; k++) {
-        result.push_back(PyPauliString(self.get_frame(k)));
+        result.push_back(FlexPauliString(self.get_frame(k)));
     }
     return pybind11::cast(std::move(result));
 }
