@@ -1,8 +1,8 @@
 #include "stim/probability_util.h"
+#include "stim/simulators/graph_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/conversions.h"
-#include "stim/simulators/graph_simulator.h"
 
 namespace stim {
 
@@ -242,7 +242,8 @@ Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau) {
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target, target2});
-        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
+        recorded_circuit.safe_append(
+            gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
     };
     auto x_out = [&](size_t inp, size_t out) {
         const auto &p = remaining.xs[inp];
@@ -407,7 +408,8 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         sim.apply(gate_type, target, target2);
-        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
+        recorded_circuit.safe_append(
+            gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
     };
 
     // Undo the permutation and also single-qubit phases.

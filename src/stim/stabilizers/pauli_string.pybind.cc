@@ -14,11 +14,11 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
-#include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/stabilizers/tableau.h"
 
 using namespace stim;
@@ -325,80 +325,89 @@ pybind11::class_<FlexPauliString> stim_pybind::pybind_pauli_string(pybind11::mod
 
 void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<FlexPauliString> &c) {
     c.def(
-        pybind11::init([](const pybind11::object &arg, const pybind11::object &num_qubits, const pybind11::object &text, const pybind11::object &other, const pybind11::object &pauli_indices) -> FlexPauliString {
-            size_t count = 0;
-            count += !arg.is_none();
-            count += !num_qubits.is_none();
-            count += !text.is_none();
-            count += !other.is_none();
-            count += !pauli_indices.is_none();
-            if (count > 1) {
-                throw std::invalid_argument("Multiple arguments specified.");
-            }
-            if (count == 0) {
-                return FlexPauliString(0);
-            }
+        pybind11::init(
+            [](const pybind11::object &arg,
+               const pybind11::object &num_qubits,
+               const pybind11::object &text,
+               const pybind11::object &other,
+               const pybind11::object &pauli_indices) -> FlexPauliString {
+                size_t count = 0;
+                count += !arg.is_none();
+                count += !num_qubits.is_none();
+                count += !text.is_none();
+                count += !other.is_none();
+                count += !pauli_indices.is_none();
+                if (count > 1) {
+                    throw std::invalid_argument("Multiple arguments specified.");
+                }
+                if (count == 0) {
+                    return FlexPauliString(0);
+                }
 
-            const auto &num_qubits_or = pybind11::isinstance<pybind11::int_>(arg) ? arg : num_qubits;
-            if (!num_qubits_or.is_none()) {
-                return FlexPauliString(pybind11::cast<size_t>(num_qubits_or));
-            }
+                const auto &num_qubits_or = pybind11::isinstance<pybind11::int_>(arg) ? arg : num_qubits;
+                if (!num_qubits_or.is_none()) {
+                    return FlexPauliString(pybind11::cast<size_t>(num_qubits_or));
+                }
 
-            const auto &text_or = pybind11::isinstance<pybind11::str>(arg) ? arg : text;
-            if (!text_or.is_none()) {
-                return FlexPauliString::from_text(pybind11::cast<std::string>(text_or));
-            }
+                const auto &text_or = pybind11::isinstance<pybind11::str>(arg) ? arg : text;
+                if (!text_or.is_none()) {
+                    return FlexPauliString::from_text(pybind11::cast<std::string>(text_or));
+                }
 
-            const auto &other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
-            if (!other_or.is_none()) {
-                return pybind11::cast<FlexPauliString>(other_or);
-            }
+                const auto &other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
+                if (!other_or.is_none()) {
+                    return pybind11::cast<FlexPauliString>(other_or);
+                }
 
-            const auto &pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
-            if (!pauli_indices_or.is_none()) {
-                std::vector<uint8_t> ps;
-                for (const pybind11::handle &h : pauli_indices_or) {
-                    int64_t v = -1;
-                    if (pybind11::isinstance<pybind11::int_>(h)) {
-                        try {
-                            v = pybind11::cast<int64_t>(h);
-                        } catch (const pybind11::cast_error &) {
+                const auto &pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
+                if (!pauli_indices_or.is_none()) {
+                    std::vector<uint8_t> ps;
+                    for (const pybind11::handle &h : pauli_indices_or) {
+                        int64_t v = -1;
+                        if (pybind11::isinstance<pybind11::int_>(h)) {
+                            try {
+                                v = pybind11::cast<int64_t>(h);
+                            } catch (const pybind11::cast_error &) {
+                            }
+                        } else if (pybind11::isinstance<pybind11::str>(h)) {
+                            std::string s = pybind11::cast<std::string>(h);
+                            if (s == "I" || s == "_") {
+                                v = 0;
+                            } else if (s == "X" || s == "x") {
+                                v = 1;
+                            } else if (s == "Y" || s == "y") {
+                                v = 2;
+                            } else if (s == "Z" || s == "z") {
+                                v = 3;
+                            }
                         }
-                    } else if (pybind11::isinstance<pybind11::str>(h)) {
-                        std::string s = pybind11::cast<std::string>(h);
-                        if (s == "I" || s == "_") {
-                            v = 0;
-                        } else if (s == "X" || s == "x") {
-                            v = 1;
-                        } else if (s == "Y" || s == "y") {
-                            v = 2;
-                        } else if (s == "Z" || s == "z") {
-                            v = 3;
+                        if (v >= 0 && v < 4) {
+                            ps.push_back((uint8_t)v);
+                        } else {
+                            throw std::invalid_argument(
+                                "Don't know how to convert " + pybind11::cast<std::string>(pybind11::repr(h)) +
+                                " into a pauli.\n"
+                                "Expected something from {0, 1, 2, 3, 'I', 'X', 'Y', 'Z', '_'}.");
                         }
                     }
-                    if (v >= 0 && v < 4) {
-                        ps.push_back((uint8_t)v);
-                    } else {
-                        throw std::invalid_argument(
-                            "Don't know how to convert " + pybind11::cast<std::string>(pybind11::repr(h)) + " into a pauli.\n"
-                            "Expected something from {0, 1, 2, 3, 'I', 'X', 'Y', 'Z', '_'}.");
+                    FlexPauliString result(ps.size());
+                    for (size_t k = 0; k < ps.size(); k++) {
+                        uint8_t p = ps[k];
+                        p ^= p >> 1;
+                        result.value.xs[k] = p & 1;
+                        result.value.zs[k] = p & 2;
                     }
+                    return result;
                 }
-                FlexPauliString result(ps.size());
-                for (size_t k = 0; k < ps.size(); k++) {
-                    uint8_t p = ps[k];
-                    p ^= p >> 1;
-                    result.value.xs[k] = p & 1;
-                    result.value.zs[k] = p & 2;
-                }
-                return result;
-            }
 
-            throw std::invalid_argument("Don't know how to initialize a stim.PauliString from " + pybind11::cast<std::string>(pybind11::repr(arg)));
-        }),
+                throw std::invalid_argument(
+                    "Don't know how to initialize a stim.PauliString from " +
+                    pybind11::cast<std::string>(pybind11::repr(arg)));
+            }),
         pybind11::arg("arg") = pybind11::none(),
         pybind11::pos_only(),
-        // These are no longer needed, and hidden from documentation, but are included to guarantee backwards compatibility.
+        // These are no longer needed, and hidden from documentation, but are included to guarantee backwards
+        // compatibility.
         pybind11::arg("num_qubits") = pybind11::none(),
         pybind11::arg("text") = pybind11::none(),
         pybind11::arg("other") = pybind11::none(),

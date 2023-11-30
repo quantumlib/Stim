@@ -2,8 +2,8 @@
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/simulators/frame_simulator_util.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
+#include "stim/simulators/tableau_simulator.h"
 
 namespace stim {
 
@@ -68,7 +68,8 @@ std::vector<bool> sample_if_circuit_has_stabilizer_flows(
     return result;
 }
 
-inline bool parse_rec_allowing_non_negative(std::string_view rec, size_t num_measurements_for_non_neg, GateTarget *out) {
+inline bool parse_rec_allowing_non_negative(
+    std::string_view rec, size_t num_measurements_for_non_neg, GateTarget *out) {
     if (rec.size() < 6 || rec[0] != 'r' || rec[1] != 'e' || rec[2] != 'c' || rec[3] != '[' || rec.back() != ']') {
         throw std::invalid_argument("");  // Caught and given a message below.
     }
@@ -227,7 +228,8 @@ std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow) {
 }
 
 template <size_t W>
-std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
+std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
+    const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
     auto stats = circuit.compute_stats();
     size_t num_qubits = stats.num_qubits;
     for (const auto &flow : flows) {
