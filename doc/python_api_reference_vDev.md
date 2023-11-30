@@ -8031,7 +8031,7 @@ def __imul__(
 # (in class stim.PauliString)
 def __init__(
     self,
-    arg: Union[None, int, str, stim.PauliString, Iterable[int]] = None,
+    arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
     /,
 ) -> None:
     """Initializes a stim.PauliString from the given argument.
@@ -8047,8 +8047,9 @@ def __init__(
             int: initializes an identity Pauli string of the given length.
             str: initializes by parsing the given text.
             stim.PauliString: initializes a copy of the given Pauli string.
-            Iterable[int]: initializes by interpreting each integer as a Pauli
-                using the convention 0=I, 1=X, 2=Y, 3=Z.
+            Iterable: initializes by interpreting each item as a Pauli.
+                Each item can be a single-qubit Pauli string (like "X"),
+                or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
     Examples:
         >>> import stim
@@ -8067,6 +8068,9 @@ def __init__(
 
         >>> stim.PauliString([0, 1, 3, 2])
         stim.PauliString("+_XZY")
+
+        >>> stim.PauliString("X" for _ in range(4))
+        stim.PauliString("+XXXX")
     """
 ```
 

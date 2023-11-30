@@ -884,6 +884,7 @@ def test_backwards_compatibility_init():
     assert stim.PauliString([1, 2, 3]) == stim.PauliString("+XYZ")
     assert stim.PauliString("XYZ") == stim.PauliString("+XYZ")
     assert stim.PauliString(stim.PauliString("XYZ")) == stim.PauliString("+XYZ")
+    assert stim.PauliString("X" for _ in range(4)) == stim.PauliString("+XXXX")
 
     # These keywords have been removed from the documentation and the .pyi, but
     # their functionality needs to be maintained for backwards compatibility.

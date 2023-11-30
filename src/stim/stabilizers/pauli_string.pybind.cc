@@ -404,7 +404,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("other") = pybind11::none(),
         pybind11::arg("pauli_indices") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def __init__(self, arg: Union[None, int, str, stim.PauliString, Iterable[int]] = None, /) -> None:
+            @signature def __init__(self, arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None, /) -> None:
             Initializes a stim.PauliString from the given argument.
 
             When given a string, the string is parsed as a pauli string. The string can
@@ -418,8 +418,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     int: initializes an identity Pauli string of the given length.
                     str: initializes by parsing the given text.
                     stim.PauliString: initializes a copy of the given Pauli string.
-                    Iterable[int]: initializes by interpreting each integer as a Pauli
-                        using the convention 0=I, 1=X, 2=Y, 3=Z.
+                    Iterable: initializes by interpreting each item as a Pauli.
+                        Each item can be a single-qubit Pauli string (like "X"),
+                        or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
             Examples:
                 >>> import stim
@@ -438,6 +439,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                 >>> stim.PauliString([0, 1, 3, 2])
                 stim.PauliString("+_XZY")
+
+                >>> stim.PauliString("X" for _ in range(4))
+                stim.PauliString("+XXXX")
         )DOC")
             .data());
 
