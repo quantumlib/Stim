@@ -31,7 +31,7 @@ struct StabilizerFlow {
     stim::PauliString<W> output;
     std::vector<stim::GateTarget> measurement_outputs;
 
-    static StabilizerFlow<W> from_str(const char *c);
+    static StabilizerFlow<W> from_str(const char *text, uint64_t num_measurements_for_non_neg_recs = 0);
     bool operator==(const StabilizerFlow<W> &other) const;
     bool operator!=(const StabilizerFlow<W> &other) const;
     std::string str() const;

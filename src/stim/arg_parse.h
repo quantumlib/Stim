@@ -264,6 +264,7 @@ std::vector<std::string> split(char splitter, const std::string &text);
 
 double parse_exact_double_from_string(const std::string &text);
 uint64_t parse_exact_uint64_t_from_string(const std::string &text);
+bool parse_int64(std::string_view data, int64_t *out);
 
 }  // namespace stim
 

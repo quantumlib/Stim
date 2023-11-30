@@ -22,6 +22,101 @@
 
 using namespace stim;
 
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
+    ASSERT_THROW({ StabilizerFlow<W>::from_str(""); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X>X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X-X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X > X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X - X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("->X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X->"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("rec[0] -> X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X -> rec[ -1]"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X -> X rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X -> X xor"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X -> rec[-1] xor X"); }, std::invalid_argument);
+    ASSERT_THROW({ StabilizerFlow<W>::from_str("X -> rec[55]"); }, std::invalid_argument);
+
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("1 -> 1"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str(""),
+            .output = PauliString<W>::from_str(""),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("i -> -i"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str(""),
+            .output = PauliString<W>::from_str("-"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("iX -> -iY"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("X"),
+            .output = PauliString<W>::from_str("-Y"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("X->-Y"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("X"),
+            .output = PauliString<W>::from_str("-Y"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("X -> -Y"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("X"),
+            .output = PauliString<W>::from_str("-Y"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("-X -> Y"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("-X"),
+            .output = PauliString<W>::from_str("Y"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("XYZ -> -Z_Z"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str("-Z_Z"),
+            .measurement_outputs = {},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("XYZ -> Z_Y xor rec[-1]"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str("Z_Y"),
+            .measurement_outputs = {GateTarget::rec(-1)},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("XYZ -> rec[-1]"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str(""),
+            .measurement_outputs = {GateTarget::rec(-1)},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("XYZ -> Z_Y xor rec[-1] xor rec[-3]"),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str("Z_Y"),
+            .measurement_outputs = {GateTarget::rec(-1), GateTarget::rec(-3)},
+        }));
+    ASSERT_EQ(
+        StabilizerFlow<W>::from_str("XYZ -> ZIY xor rec[55] xor rec[-3]", 100),
+        (StabilizerFlow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str("Z_Y"),
+            .measurement_outputs = {GateTarget::rec(-45), GateTarget::rec(-3)},
+        }));
+});
+
 TEST_EACH_WORD_SIZE_W(stabilizer_flow, sample_if_circuit_has_stabilizer_flows, {
     auto rng = INDEPENDENT_TEST_RNG();
     auto results = sample_if_circuit_has_stabilizer_flows<W>(
