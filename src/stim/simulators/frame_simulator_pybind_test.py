@@ -150,29 +150,6 @@ def test_peek_pauli_flips():
     assert 250 < v4[0] < 450
 
 
-def test_surface_code():
-    circuit = stim.Circuit.generated(
-        "surface_code:rotated_memory_x",
-        distance=3,
-        rounds=5,
-        before_round_data_depolarization=1e-2,
-        before_measure_flip_probability=1e-2,
-        after_reset_flip_probability=1e-2,
-        after_clifford_depolarization=1e-2,
-    )
-
-    # Find the index of the final MR layer.
-    mr_layer = len(circuit) - 1
-    while circuit[mr_layer].name != 'MR':
-        mr_layer -= 1
-    circuit_before_mr = circuit[:mr_layer]
-
-    sim = stim.FlipSimulator(batch_size=256, disable_stabilizer_randomization=True)
-    sim.do(circuit_before_mr)
-    for b in sim.peek_pauli_flips():
-        print(list(b))
-
-
 def test_set_pauli_flip():
     sim = stim.FlipSimulator(
         batch_size=2,
@@ -238,3 +215,14 @@ def test_set_pauli_flip():
         stim.PauliString('____X'),
         stim.PauliString('XZ___'),
     ]
+
+
+def test_repro_heralded_pauli_channel_1_bug():
+    circuit = stim.Circuit("""
+        R 0 1
+        HERALDED_PAULI_CHANNEL_1(0.2, 0.2, 0, 0) 1
+        M 0
+    """)
+    result = circuit.compile_sampler().sample(1024)
+    assert np.sum(result[:, 0]) > 0
+    assert np.sum(result[:, 1]) == 0
