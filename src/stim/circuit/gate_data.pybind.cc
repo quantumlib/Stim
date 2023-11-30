@@ -650,6 +650,104 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             .data());
 
     c.def_property_readonly(
+        "inverse",
+        [](const Gate &self) -> pybind11::object {
+            if (self.flags & GATE_IS_UNITARY) {
+                const auto &inv = GATE_DATA[self.best_candidate_inverse_id];
+                return pybind11::cast(inv);
+            }
+            return pybind11::none();
+        },
+        clean_doc_string(R"DOC(
+            @signature def inverse(self) -> Optional[stim.GateData]:
+            The inverse of the gate, or None if it has no inverse.
+
+            The inverse V of a gate U must have the property that V undoes the effects of U
+            and that U undoes the effects of V. In particular, the circuit
+
+                U 0 1
+                V 0 1
+
+            should be equivalent to doing nothing at all.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('H').inverse
+                stim.gate_data('H')
+
+                >>> stim.gate_data('CX').inverse
+                stim.gate_data('CX')
+
+                >>> stim.gate_data('S').inverse
+                stim.gate_data('S_DAG')
+
+                >>> stim.gate_data('CXSWAP').inverse
+                stim.gate_data('SWAPCX')
+
+                >>> stim.gate_data('X_ERROR').inverse is None
+                True
+                >>> stim.gate_data('M').inverse is None
+                True
+                >>> stim.gate_data('R').inverse is None
+                True
+                >>> stim.gate_data('DETECTOR').inverse is None
+                True
+                >>> stim.gate_data('TICK').inverse is None
+                True
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "generalized_inverse",
+        [](const Gate &self) -> Gate {
+            return GATE_DATA[self.best_candidate_inverse_id];
+        },
+        clean_doc_string(R"DOC(
+            The closest-thing-to-an-inverse for the gate, if forced to pick something.
+
+            The generalized inverse of a unitary gate U is its actual inverse U^-1.
+
+            The generalized inverse of a reset or measurement gate U is a gate V such that,
+            for every stabilizer flow that U has, V has the time reverse of that flow (up
+            to Pauli feedback, with potentially more flows). For example, the time-reverse
+            of R is MR because R has the single flow 1 -> Z and MR has the time reversed
+            flow Z -> rec[-1].
+
+            The generalized inverse of noise like X_ERROR is just the same noise.
+
+            The generalized inverse of an annotation like TICK is just the same annotation.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('H').generalized_inverse
+                stim.gate_data('H')
+
+                >>> stim.gate_data('CXSWAP').generalized_inverse
+                stim.gate_data('SWAPCX')
+
+                >>> stim.gate_data('X_ERROR').generalized_inverse
+                stim.gate_data('X_ERROR')
+
+                >>> stim.gate_data('MX').generalized_inverse
+                stim.gate_data('MX')
+
+                >>> stim.gate_data('MRY').generalized_inverse
+                stim.gate_data('MRY')
+
+                >>> stim.gate_data('R').generalized_inverse
+                stim.gate_data('MR')
+
+                >>> stim.gate_data('DETECTOR').generalized_inverse
+                stim.gate_data('DETECTOR')
+
+                >>> stim.gate_data('TICK').generalized_inverse
+                stim.gate_data('TICK')
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
         "takes_measurement_record_targets",
         [](const Gate &self) -> bool {
             return self.flags & (GATE_CAN_TARGET_BITS | GATE_ONLY_TARGETS_MEASUREMENT_RECORD);
