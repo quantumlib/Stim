@@ -1,4 +1,4 @@
-__version__ = '1.12.0'
+__version__ = '1.12.1'
 
 from sinter._anon_task_stats import (
     AnonTaskStats,

@@ -767,16 +767,17 @@ void FrameSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &in
     RareErrorIterator::for_samples(t, nt * batch_size, rng, [&](size_t s) {
         auto shot = s % batch_size;
         auto target = s / batch_size;
+        auto qubit = inst.targets[target].qubit_value();
         m_record.storage[m_record.stored + target][shot] = 1;
 
         double p = dist(rng) * t;
         if (p < hx) {
-            x_table[target][shot] ^= 1;
+            x_table[qubit][shot] ^= 1;
         } else if (p < hx + hz) {
-            z_table[target][shot] ^= 1;
+            z_table[qubit][shot] ^= 1;
         } else if (p < hx + hz + hy) {
-            x_table[target][shot] ^= 1;
-            z_table[target][shot] ^= 1;
+            x_table[qubit][shot] ^= 1;
+            z_table[qubit][shot] ^= 1;
         }
     });
 

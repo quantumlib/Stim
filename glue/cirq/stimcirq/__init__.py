@@ -1,4 +1,4 @@
-__version__ = '1.12.0'
+__version__ = '1.12.1'
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
 from ._det_annotation import DetAnnotation
