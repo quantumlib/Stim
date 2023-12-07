@@ -261,6 +261,45 @@ def test_apply_pauli_errors():
         stim.PauliString("+_ZX"),
         stim.PauliString("+ZYZ")
     ]
+    sim.apply_pauli_errors(
+        pauli=1,  # X
+        mask=np.asarray([
+            [False, False],
+            [False, False],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_Z_"),
+        stim.PauliString("+ZYY")
+    ]
+    sim.apply_pauli_errors(
+        pauli=2,  # Y
+        mask=np.asarray([
+            [False, True],
+            [False, True],
+            [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_Z_"),
+        stim.PauliString("+X__")
+    ]
+    sim.apply_pauli_errors(
+        pauli=3,  # Z
+        mask=np.asarray([
+            [False, False],
+            [True, False],
+            [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+___"),
+        stim.PauliString("+Y__")
+    ]
 
 
 def test_repro_heralded_pauli_channel_1_bug():
