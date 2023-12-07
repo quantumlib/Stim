@@ -216,6 +216,52 @@ def test_set_pauli_flip():
         stim.PauliString('XZ___'),
     ]
 
+def test_apply_pauli_errors():
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        num_qubits=3,
+        disable_stabilizer_randomization=True,
+    )
+    sim.apply_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+X_X"),
+        stim.PauliString("+__X")
+    ]
+    sim.apply_pauli_errors(
+        pauli='Z',
+        mask=np.asarray([
+            [True, True],
+            [True, False],
+            [False, False]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+YZX"),
+        stim.PauliString("+Z_X")
+    ]
+    sim.apply_pauli_errors(
+        pauli='Y',
+        mask=np.asarray([
+            [True, False],
+            [False, True],
+            [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+
 
 def test_repro_heralded_pauli_channel_1_bug():
     circuit = stim.Circuit("""

@@ -4655,6 +4655,36 @@ class FlipSimulator:
             >>> import stim
             >>> sim = stim.FlipSimulator(batch_size=256)
         """
+    def set_pauli_flip(
+        self,
+        *,
+        pauli: Union[str, int],
+        mask: np.ndarray,
+    ) -> None:
+        """Sets the pauli flip on a given qubit in a given simulation instance.
+
+        Args:
+            pauli: The pauli, specified as an integer or string.
+                Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+            mask: a bool array of shape (qubit, simulation instance)
+                The pauli error is only applied to qubits q and simulation indices k
+                    where mask[q, k] == True
+
+        Examples:
+            >>> import stim
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=2,
+            ...     num_qubits=3,
+            ...     disable_stabilizer_randomization=True,
+            ... )
+            >>> sim.apply_pauli_errors(
+            >>>     pauli='X',
+            >>>     mask=np.asarray([[True, False],[False, False],[True, True]]),
+            >>> )
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+        """
     @property
     def batch_size(
         self,
