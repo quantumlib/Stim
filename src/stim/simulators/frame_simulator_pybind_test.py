@@ -334,7 +334,7 @@ def test_broadcast_pauli_errors():
         stim.PauliString("+ZYZ")
     ]
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match='pauli'):
         sim.broadcast_pauli_errors(
             pauli='whoops',
             mask=np.asarray([
@@ -343,7 +343,7 @@ def test_broadcast_pauli_errors():
                 [True, True]]
             ),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match='pauli'):
         sim.broadcast_pauli_errors(
             pauli=4,
             mask=np.asarray([
@@ -352,6 +352,56 @@ def test_broadcast_pauli_errors():
                 [True, True]]
             ),
         )
+    with pytest.raises(ValueError, match='batch_size'):
+        sim.broadcast_pauli_errors(
+            pauli='X',
+            mask=np.asarray([
+                [True, True,True],
+                [False, True, True],
+                [True, True, True]]
+            ),
+        )
+    with pytest.raises(ValueError, match='batch_size'):
+        sim.broadcast_pauli_errors(
+            pauli='X',
+            mask=np.asarray([
+                [True],
+                [False],
+                [True]]
+            ),
+        )
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        num_qubits=3,
+        disable_stabilizer_randomization=True,
+    )
+    sim.broadcast_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            [True, True],
+            [True, True]]
+        ),
+    ) # automatically expands the qubit basis
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+X_XX"),
+        stim.PauliString("+__XX")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            ]
+        ),
+    )  # tolerates fewer qubits in mask than in simulator
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+__XX"),
+        stim.PauliString("+__XX")
+    ]
 
 
 def test_repro_heralded_pauli_channel_1_bug():

@@ -820,6 +820,14 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             size_t major = arr.shape(0);
             size_t minor = arr.shape(1);
+
+            if (minor != self.batch_size) {
+                throw std::invalid_argument(
+                "broadcast_pauli_errors can only accept mask that has minor shape equal to the batch_size");
+            }
+
+            self.ensure_safe_to_do_circuit_with_stats(CircuitStats{.num_qubits=(uint32_t)major});
+
             auto u = arr.unchecked<2>();
             for (size_t i = 0; i < major; i++){
                 for (size_t j = 0; j < minor; j++){
@@ -834,15 +842,25 @@ void stim_pybind::pybind_frame_simulator_methods(
         pybind11::arg("mask"),
         clean_doc_string(R"DOC(
             @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
-            Applies a pauli over all qubits in all simulation indices, filtered by mask.
+            Applies a pauli error to all qubits in all instances, filtered by a mask.
 
             Args:
                 pauli: The pauli, specified as an integer or string.
                     Uses the convention 0=I, 1=X, 2=Y, 3=Z.
                     Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
-                mask: a np.bool_ array with shape (qubit, simulation_instance)
-                    The pauli error is only applied to qubits q and simulation indices k
-                        where mask[q, k] == True
+                mask: A 2d numpy array specifying where to apply errors. The first axis
+                    is qubits, the second axis is simulation instances. The first axis
+                    can have a length less than the current number of qubits (or more,
+                    which adds qubits to the simulation). The length of the second axis
+                    must match the simulator's `batch_size`. The array must satisfy
+
+                        mask.dtype == np.bool_
+                        len(mask.shape) == 2
+                        mask.shape[1] == flip_sim.batch_size
+
+                    The error is only applied to qubit q in instance k when
+
+                        mask[q, k] == True.
 
             Examples:
                 >>> import stim
