@@ -216,13 +216,13 @@ def test_set_pauli_flip():
         stim.PauliString('XZ___'),
     ]
 
-def test_apply_pauli_errors():
+def test_broadcast_pauli_errors():
     sim = stim.FlipSimulator(
         batch_size=2,
         num_qubits=3,
         disable_stabilizer_randomization=True,
     )
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli='X',
         mask=np.asarray([
             [True, False],
@@ -235,7 +235,7 @@ def test_apply_pauli_errors():
         stim.PauliString("+X_X"),
         stim.PauliString("+__X")
     ]
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli='Z',
         mask=np.asarray([
             [True, True],
@@ -248,12 +248,25 @@ def test_apply_pauli_errors():
         stim.PauliString("+YZX"),
         stim.PauliString("+Z_X")
     ]
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli='Y',
         mask=np.asarray([
             [True, False],
             [False, True],
             [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='I',
+        mask=np.asarray([
+            [True, True],
+            [False, True],
+            [True, True]]
         ),
     )
     peek = sim.peek_pauli_flips()
@@ -268,7 +281,7 @@ def test_apply_pauli_errors():
         num_qubits=3,
         disable_stabilizer_randomization=True,
     )
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli=1,
         mask=np.asarray([
             [True, False],
@@ -281,7 +294,7 @@ def test_apply_pauli_errors():
         stim.PauliString("+X_X"),
         stim.PauliString("+__X")
     ]
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli=3,
         mask=np.asarray([
             [True, True],
@@ -294,7 +307,7 @@ def test_apply_pauli_errors():
         stim.PauliString("+YZX"),
         stim.PauliString("+Z_X")
     ]
-    sim.apply_pauli_errors(
+    sim.broadcast_pauli_errors(
         pauli=2,
         mask=np.asarray([
             [True, False],
@@ -307,6 +320,38 @@ def test_apply_pauli_errors():
         stim.PauliString("+_ZX"),
         stim.PauliString("+ZYZ")
     ]
+    sim.broadcast_pauli_errors(
+        pauli=0,
+        mask=np.asarray([
+            [True, True],
+            [False, True],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+
+    with pytest.raises(Exception):
+        sim.broadcast_pauli_errors(
+            pauli='whoops',
+            mask=np.asarray([
+                [True, True],
+                [False, True],
+                [True, True]]
+            ),
+        )
+    with pytest.raises(Exception):
+        sim.broadcast_pauli_errors(
+            pauli=4,
+            mask=np.asarray([
+                [True, True],
+                [False, True],
+                [True, True]]
+            ),
+        )
 
 
 def test_repro_heralded_pauli_channel_1_bug():

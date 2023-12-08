@@ -4655,37 +4655,6 @@ class FlipSimulator:
             >>> import stim
             >>> sim = stim.FlipSimulator(batch_size=256)
         """
-    def apply_pauli_errors(
-        self,
-        *,
-        pauli: Union[str, int],
-        mask: np.ndarray,
-    ) -> None:
-        """Applies a pauli over all qubits in all simulation indices, filtered by mask.
-
-        Args:
-            pauli: The pauli, specified as an integer or string.
-                Uses the convention 0=I, 1=X, 2=Y, 3=Z.
-                Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
-            mask: a bool array with shape (qubit, simulation_instance)
-                The pauli error is only applied to qubits q and simulation indices k
-                    where mask[q, k] == True
-
-        Examples:
-            >>> import stim
-            >>> import numpy as np
-            >>> sim = stim.FlipSimulator(
-            ...     batch_size=2,
-            ...     num_qubits=3,
-            ...     disable_stabilizer_randomization=True,
-            ... )
-            >>> sim.apply_pauli_errors(
-            ...     pauli='X',
-            ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
-            ... )
-            >>> sim.peek_pauli_flips()
-            [stim.PauliString("+X_X"), stim.PauliString("+__X")]
-        """
     @property
     def batch_size(
         self,
@@ -4700,6 +4669,44 @@ class FlipSimulator:
             >>> sim = stim.FlipSimulator(batch_size=42)
             >>> sim.batch_size
             42
+        """
+    def broadcast_pauli_errors(
+        self,
+        *,
+        pauli: Union[str, int],
+        mask: np.ndarray,
+    ) -> None:
+        """Applies a pauli over all qubits in all simulation indices, filtered by mask.
+
+        Args:
+            pauli: The pauli, specified as an integer or string.
+                Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+            mask: a np.bool_ array with shape (qubit, simulation_instance)
+                The pauli error is only applied to qubits q and simulation indices k
+                    where mask[q, k] == True
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=2,
+            ...     num_qubits=3,
+            ...     disable_stabilizer_randomization=True,
+            ... )
+            >>> sim.broadcast_pauli_errors(
+            ...     pauli='X',
+            ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
+            ... )
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+
+            >>> sim.broadcast_pauli_errors(
+            ...     pauli='Z',
+            ...     mask=np.asarray([[False, True],[False, False],[True, True]]),
+            ... )
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
         """
     def do(
         self,

@@ -772,7 +772,7 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def(
-        "apply_pauli_errors",
+        "broadcast_pauli_errors",
         [](FrameSimulator<MAX_BITWORD_WIDTH> &self,
            const pybind11::object &pauli,
            const pybind11::object &mask
@@ -780,6 +780,9 @@ void stim_pybind::pybind_frame_simulator_methods(
             uint8_t p = 255;
             try {
                 p = pybind11::cast<uint8_t>(pauli);
+                if (p >= 4) {
+                    throw pybind11::cast_error();
+                }
             } catch (const pybind11::cast_error &) {
                 try {
                     std::string s = pybind11::cast<std::string>(pauli);
@@ -791,53 +794,53 @@ void stim_pybind::pybind_frame_simulator_methods(
                         p = 3;
                     } else if (s == "I" || s == "_") {
                         p = 0;
+                    } else {
+                        throw pybind11::cast_error();
                     }
                 } catch (const pybind11::cast_error &) {
+                    throw std::invalid_argument(
+                    "broadcast_pauli_errors only accepts pauli arguments in ['I', '_', 'X', 'Y', 'Z', 0,1,2,3]");
                 }
             }
 
             bool flip_z_part = p & 2;
-            bool flip_x_part = 6 >> p & 1;  // 0b0110 >> p & 0b0001
+            bool flip_x_part = (0b0110 >> p) & 1;  // parity of 2 bit number
 
-            if (pybind11::isinstance<pybind11::array_t<bool>>(mask)) {
-                // can use pybind11::isinstance<pybind11::array_t<bool, pybind11::array::c_style>>
-                // to check for dense c_ordered array for copying, if this is too slow for you
-                const pybind11::array_t<bool> &arr = pybind11::cast<pybind11::array_t<bool>>(mask);
-                if (arr.ndim() == 2) {
-                    //pybind11::ssize_t???
-                    size_t major = arr.shape(0);
-                    size_t minor = arr.shape(1);
-                    //size_t major_stride = arr.strides(0);
-                    //size_t minor_stride = arr.strides(1);
-                    auto u = arr.unchecked<2>();
-                    for (size_t i = 0; i < major; i++){
-                        for (size_t j = 0; j < minor; j++){
-                            auto b = u.data(i, j);
-                            self.x_table[i][j] ^= *b & flip_x_part;
-                            self.z_table[i][j] ^= *b & flip_z_part;
-                        }
-                    }
-                } else {
-                    throw std::invalid_argument(
-                    "apply_pauli_errors currently only supports a mask that is a 2D bool numpy array");
+
+            if (!pybind11::isinstance<pybind11::array_t<bool>>(mask)) {
+                throw std::invalid_argument(
+                "broadcast_pauli_errors can only accept mask that is a 2D array of np.bool_");
+            }
+            const pybind11::array_t<bool> &arr = pybind11::cast<pybind11::array_t<bool>>(mask);
+
+            if (arr.ndim() != 2) {
+                throw std::invalid_argument(
+                "broadcast_pauli_errors can only accept mask that is a 2D array of np.bool_");
+            }
+
+            size_t major = arr.shape(0);
+            size_t minor = arr.shape(1);
+            auto u = arr.unchecked<2>();
+            for (size_t i = 0; i < major; i++){
+                for (size_t j = 0; j < minor; j++){
+                    auto b = u.data(i, j);
+                    self.x_table[i][j] ^= *b & flip_x_part;
+                    self.z_table[i][j] ^= *b & flip_z_part;
                 }
-            } else {
-                    throw std::invalid_argument(
-                    "apply_pauli_errors currently only supports a mask that is a 2D bool numpy array");
-                }
+            }
         },
         pybind11::kw_only(),
         pybind11::arg("pauli"),
         pybind11::arg("mask"),
         clean_doc_string(R"DOC(
-            @signature def apply_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
+            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
             Applies a pauli over all qubits in all simulation indices, filtered by mask.
 
             Args:
                 pauli: The pauli, specified as an integer or string.
                     Uses the convention 0=I, 1=X, 2=Y, 3=Z.
                     Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
-                mask: a bool array with shape (qubit, simulation_instance)
+                mask: a np.bool_ array with shape (qubit, simulation_instance)
                     The pauli error is only applied to qubits q and simulation indices k
                         where mask[q, k] == True
 
@@ -849,12 +852,20 @@ void stim_pybind::pybind_frame_simulator_methods(
                 ...     num_qubits=3,
                 ...     disable_stabilizer_randomization=True,
                 ... )
-                >>> sim.apply_pauli_errors(
+                >>> sim.broadcast_pauli_errors(
                 ...     pauli='X',
                 ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
                 ... )
                 >>> sim.peek_pauli_flips()
                 [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+
+                >>> sim.broadcast_pauli_errors(
+                ...     pauli='Z',
+                ...     mask=np.asarray([[False, True],[False, False],[True, True]]),
+                ... )
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
+
         )DOC")
             .data());
 }
