@@ -6180,7 +6180,7 @@ def broadcast_pauli_errors(
                 mask.dtype == np.bool_
                 len(mask.shape) == 2
                 mask.shape[1] == flip_sim.batch_size
-                
+
             The error is only applied to qubit q in instance k when
 
                 mask[q, k] == True.
