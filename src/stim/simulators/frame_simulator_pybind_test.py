@@ -191,15 +191,15 @@ def test_set_pauli_flip():
         stim.PauliString('XZ_'),
     ]
 
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(-1, qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(4, qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip('R', qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip('XY', qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(object(), qubit_index=0, instance_index=0)
 
     with pytest.raises(IndexError, match='instance_index'):
