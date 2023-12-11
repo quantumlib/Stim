@@ -4670,6 +4670,54 @@ class FlipSimulator:
             >>> sim.batch_size
             42
         """
+    def broadcast_pauli_errors(
+        self,
+        *,
+        pauli: Union[str, int],
+        mask: np.ndarray,
+    ) -> None:
+        """Applies a pauli error to all qubits in all instances, filtered by a mask.
+
+        Args:
+            pauli: The pauli, specified as an integer or string.
+                Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+            mask: A 2d numpy array specifying where to apply errors. The first axis
+                is qubits, the second axis is simulation instances. The first axis
+                can have a length less than the current number of qubits (or more,
+                which adds qubits to the simulation). The length of the second axis
+                must match the simulator's `batch_size`. The array must satisfy
+
+                    mask.dtype == np.bool_
+                    len(mask.shape) == 2
+                    mask.shape[1] == flip_sim.batch_size
+
+                The error is only applied to qubit q in instance k when
+
+                    mask[q, k] == True.
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+            >>> sim = stim.FlipSimulator(
+            ...     batch_size=2,
+            ...     num_qubits=3,
+            ...     disable_stabilizer_randomization=True,
+            ... )
+            >>> sim.broadcast_pauli_errors(
+            ...     pauli='X',
+            ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
+            ... )
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+
+            >>> sim.broadcast_pauli_errors(
+            ...     pauli='Z',
+            ...     mask=np.asarray([[False, True],[False, False],[True, True]]),
+            ... )
+            >>> sim.peek_pauli_flips()
+            [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
+        """
     def do(
         self,
         obj: Union[stim.Circuit, stim.CircuitInstruction, stim.CircuitRepeatBlock],
