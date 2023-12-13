@@ -147,22 +147,19 @@ struct SparseXorVec {
     void xor_item(const T &item) {
         // Just do a linear scan to find the insertion point, instead of a binary search.
         // This is faster at small sizes, and complexity is linear anyways due to the shifting of later items.
-        auto it = sorted_items.begin();
-        while (true) {
-            if (it == sorted_items.end()) {
-                sorted_items.push_back(item);
-                break;
+        for (size_t k = 0; k < sorted_items.size(); k++) {
+            const auto &v = sorted_items[k];
+            if (v < item) {
+                continue;
+            } else if (v == item) {
+                sorted_items.erase(sorted_items.begin() + k);
+                return;
+            } else {
+                sorted_items.insert(sorted_items.begin() + k, item);
+                return;
             }
-            if (!(*it < item)) {
-                if (*it == item) {
-                    sorted_items.erase(it);
-                } else {
-                    sorted_items.insert(it, item);
-                }
-                break;
-            }
-            it++;
         }
+        sorted_items.push_back(item);
     }
 
     SparseXorVec &operator^=(const SparseXorVec<T> &other) {
