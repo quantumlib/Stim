@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_CIRCUIT_GATE_DATA_H
-#define _STIM_CIRCUIT_GATE_DATA_H
+#ifndef _STIM_GATES_GATE_DATA_H
+#define _STIM_GATES_GATE_DATA_H
 
-#include <array>
 #include <cassert>
 #include <complex>
 #include <cstdint>
 #include <cstring>
-#include <functional>
-#include <initializer_list>
 #include <iostream>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "stim/mem/fixed_cap_vector.h"

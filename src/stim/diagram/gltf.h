@@ -2,6 +2,7 @@
 #define _STIM_DRAW_3D_GLTF_H
 
 #include <iostream>
+#include <functional>
 
 #include "base64.h"
 #include "stim/diagram/coord.h"

@@ -14,8 +14,6 @@
 
 #include "stim/gates/gate_data.h"
 
-#include <complex>
-
 using namespace stim;
 
 GateDataMap::GateDataMap() {

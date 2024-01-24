@@ -14,6 +14,7 @@
 
 #include "stim/circuit/circuit.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 

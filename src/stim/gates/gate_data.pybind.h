@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _STIM_CIRCUIT_GATE_DATA_PYBIND_H
-#define _STIM_CIRCUIT_GATE_DATA_PYBIND_H
+#ifndef _STIM_GATES_GATE_DATA_PYBIND_H
+#define _STIM_GATES_GATE_DATA_PYBIND_H
 
 #include <pybind11/pybind11.h>
 
