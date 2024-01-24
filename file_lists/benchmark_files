@@ -1,7 +1,7 @@
 src/stim/benchmark_main.perf.cc
 src/stim/benchmark_util.perf.cc
 src/stim/circuit/circuit.perf.cc
-src/stim/circuit/gate_data.perf.cc
+src/stim/gates/gate_data.perf.cc
 src/stim/io/measure_record_reader.perf.cc
 src/stim/main_namespaced.perf.cc
 src/stim/mem/simd_bit_table.perf.cc

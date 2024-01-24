@@ -19,7 +19,7 @@
 
 #include <iostream>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 #include "stim/mem/span_ref.h"
 
 namespace stim {

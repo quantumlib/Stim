@@ -14,26 +14,24 @@
 
 #include <complex>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 
 using namespace stim;
 
 static constexpr std::complex<float> i = std::complex<float>(0, 1);
-static constexpr std::complex<float> s = 0.7071067811865475244f;
 
-void GateDataMap::add_gate_data_hada(bool &failed) {
+void GateDataMap::add_gate_data_period_3(bool &failed) {
     add_gate(
         failed,
         Gate{
-            .name = "H",
-            .id = GateType::H,
-            .best_candidate_inverse_id = GateType::H,
+            .name = "C_XYZ",
+            .id = GateType::C_XYZ,
+            .best_candidate_inverse_id = GateType::C_ZYX,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             .category = "B_Single Qubit Clifford Gates",
             .help = R"MARKDOWN(
-The Hadamard gate.
-Swaps the X and Z axes.
+Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
 
 Parens Arguments:
 
@@ -43,57 +41,27 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{s, s}, {s, -s}},
-            .flow_data = {"+Z", "+X"},
+            .unitary_data = {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"Y", "X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-H 0
-)CIRCUIT",
-        });
-
-    add_gate_alias(failed, "H_XZ", "H");
-
-    add_gate(
-        failed,
-        Gate{
-            .name = "H_XY",
-            .id = GateType::H_XY,
-            .best_candidate_inverse_id = GateType::H_XY,
-            .arg_count = 0,
-            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            .category = "B_Single Qubit Clifford Gates",
-            .help = R"MARKDOWN(
-A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
-
-Parens Arguments:
-
-    This instruction takes no parens arguments.
-
-Targets:
-
-    Qubits to operate on.
-)MARKDOWN",
-            .unitary_data = {{0, s - i * s}, {s + i * s, 0}},
-            .flow_data = {"+Y", "-Z"},
-            .h_s_cx_m_r_decomposition = R"CIRCUIT(
-H 0
+S 0
 S 0
 S 0
 H 0
-S 0
 )CIRCUIT",
         });
 
     add_gate(
         failed,
         Gate{
-            .name = "H_YZ",
-            .id = GateType::H_YZ,
-            .best_candidate_inverse_id = GateType::H_YZ,
+            .name = "C_ZYX",
+            .id = GateType::C_ZYX,
+            .best_candidate_inverse_id = GateType::C_XYZ,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
             .category = "B_Single Qubit Clifford Gates",
             .help = R"MARKDOWN(
-A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
+Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
 
 Parens Arguments:
 
@@ -103,13 +71,10 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{s, -i * s}, {i * s, -s}},
-            .flow_data = {"-X", "+Y"},
+            .unitary_data = {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"Z", "Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
-S 0
-H 0
-S 0
 S 0
 )CIRCUIT",
         });

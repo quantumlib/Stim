@@ -1541,7 +1541,7 @@ void ErrorAnalyzer::add_error_combinations(
                         } catch (const std::out_of_range &ex) {
                             std::stringstream message;
                             message
-                                << "An error case in a composite error exceeded that max supported number of symptoms "
+                                << "An error case in a composite error exceeded the max supported number of symptoms "
                                    "(<=15). ";
                             message << "\nThe " << std::to_string(s)
                                     << " basis error cases (e.g. X, Z) used to form the combined ";

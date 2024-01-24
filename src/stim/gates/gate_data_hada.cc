@@ -14,53 +14,26 @@
 
 #include <complex>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 
 using namespace stim;
 
 static constexpr std::complex<float> i = std::complex<float>(0, 1);
+static constexpr std::complex<float> s = 0.7071067811865475244f;
 
-void GateDataMap::add_gate_data_pauli(bool &failed) {
+void GateDataMap::add_gate_data_hada(bool &failed) {
     add_gate(
         failed,
         Gate{
-            .name = "I",
-            .id = GateType::I,
-            .best_candidate_inverse_id = GateType::I,
+            .name = "H",
+            .id = GateType::H,
+            .best_candidate_inverse_id = GateType::H,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            .category = "A_Pauli Gates",
+            .category = "B_Single Qubit Clifford Gates",
             .help = R"MARKDOWN(
-The identity gate.
-Does nothing to the target qubits.
-
-Parens Arguments:
-
-    This instruction takes no parens arguments.
-
-Targets:
-
-    Qubits to do nothing to.
-)MARKDOWN",
-            .unitary_data = {{1, 0}, {0, 1}},
-            .flow_data = {"+X", "+Z"},
-            .h_s_cx_m_r_decomposition = R"CIRCUIT(
-# (no operations)
-)CIRCUIT",
-        });
-
-    add_gate(
-        failed,
-        Gate{
-            .name = "X",
-            .id = GateType::X,
-            .best_candidate_inverse_id = GateType::X,
-            .arg_count = 0,
-            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            .category = "A_Pauli Gates",
-            .help = R"MARKDOWN(
-The Pauli X gate.
-The bit flip gate.
+The Hadamard gate.
+Swaps the X and Z axes.
 
 Parens Arguments:
 
@@ -70,27 +43,26 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{0, 1}, {1, 0}},
-            .flow_data = {"+X", "-Z"},
+            .unitary_data = {{s, s}, {s, -s}},
+            .flow_data = {"+Z", "+X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-H 0
-S 0
-S 0
 H 0
 )CIRCUIT",
         });
 
+    add_gate_alias(failed, "H_XZ", "H");
+
     add_gate(
         failed,
         Gate{
-            .name = "Y",
-            .id = GateType::Y,
-            .best_candidate_inverse_id = GateType::Y,
+            .name = "H_XY",
+            .id = GateType::H_XY,
+            .best_candidate_inverse_id = GateType::H_XY,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            .category = "A_Pauli Gates",
+            .category = "B_Single Qubit Clifford Gates",
             .help = R"MARKDOWN(
-The Pauli Y gate.
+A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
 
 Parens Arguments:
 
@@ -100,30 +72,28 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{0, -i}, {i, 0}},
-            .flow_data = {"-X", "-Z"},
+            .unitary_data = {{0, s - i * s}, {s + i * s, 0}},
+            .flow_data = {"+Y", "-Z"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-S 0
-S 0
 H 0
 S 0
 S 0
 H 0
+S 0
 )CIRCUIT",
         });
 
     add_gate(
         failed,
         Gate{
-            .name = "Z",
-            .id = GateType::Z,
-            .best_candidate_inverse_id = GateType::Z,
+            .name = "H_YZ",
+            .id = GateType::H_YZ,
+            .best_candidate_inverse_id = GateType::H_YZ,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
-            .category = "A_Pauli Gates",
+            .category = "B_Single Qubit Clifford Gates",
             .help = R"MARKDOWN(
-The Pauli Z gate.
-The phase flip gate.
+A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
 
 Parens Arguments:
 
@@ -133,9 +103,12 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{1, 0}, {0, -1}},
-            .flow_data = {"-X", "+Z"},
+            .unitary_data = {{s, -i * s}, {i * s, -s}},
+            .flow_data = {"-X", "+Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
+H 0
+S 0
+H 0
 S 0
 S 0
 )CIRCUIT",

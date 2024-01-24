@@ -2,7 +2,6 @@ src/stim.test.cc
 src/stim/arg_parse.test.cc
 src/stim/circuit/circuit.test.cc
 src/stim/circuit/export_qasm.test.cc
-src/stim/circuit/gate_data.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc
 src/stim/circuit/stabilizer_flow.test.cc
@@ -26,6 +25,7 @@ src/stim/diagram/json_obj.test.cc
 src/stim/diagram/timeline/timeline_3d_drawer.test.cc
 src/stim/diagram/timeline/timeline_ascii_drawer.test.cc
 src/stim/diagram/timeline/timeline_svg_drawer.test.cc
+src/stim/gates/gate_data.test.cc
 src/stim/gen/circuit_gen_params.test.cc
 src/stim/gen/gen_color_code.test.cc
 src/stim/gen/gen_rep_code.test.cc

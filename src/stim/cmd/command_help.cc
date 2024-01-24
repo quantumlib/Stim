@@ -31,7 +31,7 @@
 #include "command_sample.h"
 #include "command_sample_dem.h"
 #include "stim/arg_parse.h"
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/io/stim_data_formats.h"

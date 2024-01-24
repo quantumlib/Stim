@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/stabilizers/pauli_string.h"
 

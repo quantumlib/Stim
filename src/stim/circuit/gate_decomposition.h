@@ -18,7 +18,7 @@
 #define _STIM_GATE_DECOMPOSITION_H
 
 #include "stim/circuit/circuit_instruction.h"
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/mem/simd_bits.h"
 

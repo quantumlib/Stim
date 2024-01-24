@@ -3,7 +3,7 @@
 #include <emscripten/bind.h>
 
 #include "common.js.h"
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 
 using namespace stim;
 

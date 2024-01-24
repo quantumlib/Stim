@@ -14,7 +14,7 @@
 
 #include <set>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"

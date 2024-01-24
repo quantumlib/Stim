@@ -17,7 +17,7 @@
 
 #include <pybind11/pybind11.h>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gate_data.h"
 
 namespace stim_pybind {
 

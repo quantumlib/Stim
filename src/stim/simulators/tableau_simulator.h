@@ -25,7 +25,6 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
