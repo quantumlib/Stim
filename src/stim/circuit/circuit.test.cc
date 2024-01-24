@@ -1619,6 +1619,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         ISWAP_DAG 4 5
         SWAP 6 7
         SWAPCX 8 9
+        CZSWAP 10 11
         SQRT_XX 0 1
         SQRT_XX_DAG 2 3
         SQRT_YY 4 5

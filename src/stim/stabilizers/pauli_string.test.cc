@@ -522,8 +522,8 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_after_circuit_understands_commutation
         MPP X2*Y3*Z4 X5*X6
         H 1
     )CIRCUIT");
-    auto before = PauliString<W>::from_str("+_X");
-    auto after = PauliString<W>::from_str("+_Z");
+    auto before = PauliString<W>::from_str("+_X_____");
+    auto after = PauliString<W>::from_str("+_Z_____");
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
@@ -532,12 +532,12 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_after_circuit_understands_commutation
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    before = PauliString<W>::from_str("+_XX___");
-    after = PauliString<W>::from_str("+_ZX___");
+    before = PauliString<W>::from_str("+_XX____");
+    after = PauliString<W>::from_str("+_ZX____");
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 
-    before = after = PauliString<W>::from_str("+__ZX");
+    before = after = PauliString<W>::from_str("+__ZX___");
     ASSERT_EQ(before.ref().after(c), after);
     ASSERT_EQ(after.ref().before(c), before);
 

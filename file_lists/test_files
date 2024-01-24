@@ -74,6 +74,7 @@ src/stim/stabilizers/conversions.test.cc
 src/stim/stabilizers/flex_pauli_string.test.cc
 src/stim/stabilizers/pauli_string.test.cc
 src/stim/stabilizers/pauli_string_iter.test.cc
+src/stim/stabilizers/pauli_string_ref.test.cc
 src/stim/stabilizers/tableau.test.cc
 src/stim/stabilizers/tableau_iter.test.cc
 src/stim/str_util.test.cc

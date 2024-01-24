@@ -221,6 +221,9 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::CXSWAP:
             undo_CXSWAP(inst);
             break;
+        case GateType::CZSWAP:
+            undo_CZSWAP(inst);
+            break;
         case GateType::SWAPCX:
             undo_SWAPCX(inst);
             break;
@@ -608,6 +611,9 @@ void ErrorAnalyzer::undo_ISWAP(const CircuitInstruction &dat) {
 }
 void ErrorAnalyzer::undo_CXSWAP(const CircuitInstruction &dat) {
     tracker.undo_CXSWAP(dat);
+}
+void ErrorAnalyzer::undo_CZSWAP(const CircuitInstruction &dat) {
+    tracker.undo_CZSWAP(dat);
 }
 void ErrorAnalyzer::undo_SWAPCX(const CircuitInstruction &dat) {
     tracker.undo_SWAPCX(dat);

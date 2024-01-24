@@ -120,6 +120,7 @@ struct FrameSimulator {
     void do_SWAP(const CircuitInstruction &inst);
     void do_ISWAP(const CircuitInstruction &inst);
     void do_CXSWAP(const CircuitInstruction &inst);
+    void do_CZSWAP(const CircuitInstruction &inst);
     void do_SWAPCX(const CircuitInstruction &inst);
     void do_MPP(const CircuitInstruction &inst);
     void do_MXX(const CircuitInstruction &inst);

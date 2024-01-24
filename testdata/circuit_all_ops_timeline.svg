@@ -98,6 +98,11 @@
 <path d="M602.545,570.545 L613.455,581.455 M613.455,570.545 L602.545,581.455 " stroke="black" stroke-width="4"/>
 <circle cx="608" cy="640" r="12" stroke="none" fill="black"/>
 <path d="M602.545,634.545 L613.455,645.455 M613.455,634.545 L602.545,645.455 " stroke="white" stroke-width="4"/>
+<path d="M608,704 L608,768 " stroke="black"/>
+<circle cx="608" cy="704" r="12" stroke="none" fill="black"/>
+<path d="M602.545,698.545 L613.455,709.455 M613.455,698.545 L602.545,709.455 " stroke="white" stroke-width="4"/>
+<circle cx="608" cy="768" r="12" stroke="none" fill="black"/>
+<path d="M602.545,762.545 L613.455,773.455 M613.455,762.545 L602.545,773.455 " stroke="white" stroke-width="4"/>
 <path d="M672,64 L672,128 " stroke="black"/>
 <rect x="656" y="48" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="672" y="64">√XX</text>
