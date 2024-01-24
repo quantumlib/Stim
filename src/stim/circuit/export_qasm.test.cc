@@ -261,6 +261,7 @@ gate hyz q0 { U(pi/2, pi/2, pi/2) q0; }
 gate sy q0 { U(pi/2, 0, 0) q0; }
 gate sydg q0 { U(pi/2, pi/2, pi/2) q0; }
 gate cxswap q0, q1 { cx q1, q0; cx q0, q1; }
+gate czswap q0, q1 { h q0; cx q0, q1; cx q1, q0; h q1; }
 gate iswap q0, q1 { h q0; cx q0, q1; cx q1, q0; h q1; s q1; s q0; }
 gate iswapdg q0, q1 { s q0; s q0; s q0; s q1; s q1; s q1; h q1; cx q1, q0; cx q0, q1; h q0; }
 gate sxx q0, q1 { h q0; cx q0, q1; h q1; s q0; s q1; h q0; h q1; }
@@ -317,6 +318,7 @@ iswap q[2], q[3];
 iswapdg q[4], q[5];
 swap q[6], q[7];
 swapcx q[8], q[9];
+czswap q[10], q[11];
 sxx q[0], q[1];
 sxxdg q[2], q[3];
 syy q[4], q[5];
@@ -419,6 +421,7 @@ gate hyz q0 { U(pi/2, pi/2, pi/2) q0; }
 gate sy q0 { U(pi/2, 0, 0) q0; }
 gate sydg q0 { U(pi/2, pi/2, pi/2) q0; }
 gate cxswap q0, q1 { cx q1, q0; cx q0, q1; }
+gate czswap q0, q1 { h q0; cx q0, q1; cx q1, q0; h q1; }
 gate iswap q0, q1 { h q0; cx q0, q1; cx q1, q0; h q1; s q1; s q0; }
 gate iswapdg q0, q1 { s q0; s q0; s q0; s q1; s q1; s q1; h q1; cx q1, q0; cx q0, q1; h q0; }
 gate sxx q0, q1 { h q0; cx q0, q1; h q1; s q0; s q1; h q0; h q1; }
@@ -462,6 +465,7 @@ iswap q[2], q[3];
 iswapdg q[4], q[5];
 swap q[6], q[7];
 swapcx q[8], q[9];
+czswap q[10], q[11];
 sxx q[0], q[1];
 sxxdg q[2], q[3];
 syy q[4], q[5];

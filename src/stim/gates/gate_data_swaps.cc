@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gates.h"
 
 using namespace stim;
 
@@ -177,4 +175,36 @@ CNOT 0 1
 CNOT 1 0
 )CIRCUIT",
         });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "CZSWAP",
+            .id = GateType::CZSWAP,
+            .best_candidate_inverse_id = GateType::CZSWAP,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+A combination CZ-and-SWAP gate.
+This gate is kak-equivalent to the iswap gate.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+)MARKDOWN",
+            .unitary_data = {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, -1}},
+            .flow_data = {"+ZX", "+IZ", "+XZ", "+ZI"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+H 0
+CX 0 1
+CX 1 0
+H 1
+)CIRCUIT",
+        });
+    add_gate_alias(failed, "SWAPCZ", "CZSWAP");
 }

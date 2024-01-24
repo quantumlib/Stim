@@ -1,6 +1,7 @@
 #ifndef _STIM_DRAW_3D_GLTF_H
 #define _STIM_DRAW_3D_GLTF_H
 
+#include <functional>
 #include <iostream>
 
 #include "base64.h"

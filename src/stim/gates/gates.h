@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_CIRCUIT_GATE_DATA_H
-#define _STIM_CIRCUIT_GATE_DATA_H
+#ifndef _STIM_GATES_GATE_DATA_H
+#define _STIM_GATES_GATE_DATA_H
 
-#include <array>
 #include <cassert>
 #include <complex>
 #include <cstdint>
 #include <cstring>
-#include <functional>
-#include <initializer_list>
 #include <iostream>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "stim/mem/fixed_cap_vector.h"
@@ -82,7 +76,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 67;
+constexpr const size_t NUM_DEFINED_GATES = 68;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -160,6 +154,7 @@ enum class GateType : uint8_t {
     ISWAP,
     CXSWAP,
     SWAPCX,
+    CZSWAP,
     ISWAP_DAG,
     // Pair measurement gates
     MXX,

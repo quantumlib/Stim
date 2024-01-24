@@ -505,6 +505,17 @@ void FrameSimulator<W>::do_CXSWAP(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void FrameSimulator<W>::do_CZSWAP(const CircuitInstruction &target_data) {
+    for_each_target_pair(
+        *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+            std::swap(z1, z2);
+            std::swap(x1, x2);
+            z1 ^= x2;
+            z2 ^= x1;
+        });
+}
+
+template <size_t W>
 void FrameSimulator<W>::do_SWAPCX(const CircuitInstruction &target_data) {
     for_each_target_pair(
         *this, target_data, [](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
@@ -1006,6 +1017,9 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::CXSWAP:
             do_CXSWAP(inst);
             break;
+        case GateType::CZSWAP:
+            do_CZSWAP(inst);
+            break;
         case GateType::SWAPCX:
             do_SWAPCX(inst);
             break;
@@ -1065,7 +1079,7 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
 
         default:
-            throw std::invalid_argument("Not implemented: " + inst.str());
+            throw std::invalid_argument("Not implemented in FrameSimulator<W>::do_gate: " + inst.str());
     }
 }
 

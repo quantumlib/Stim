@@ -17,9 +17,11 @@
 #ifndef _STIM_GATE_DECOMPOSITION_H
 #define _STIM_GATE_DECOMPOSITION_H
 
+#include <functional>
+
 #include "stim/circuit/circuit_instruction.h"
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/simd_bits.h"
 
 namespace stim {

@@ -259,7 +259,9 @@ struct QasmExporter {
                         target = t1;
                         break;
                     default:
-                        throw std::invalid_argument("Not implemented: " + instruction.str());
+                        throw std::invalid_argument(
+                            "Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " +
+                            instruction.str());
                 }
 
                 out << "if (";
@@ -279,7 +281,9 @@ struct QasmExporter {
                     }
                     out << "sweep[" << control.value() << "]";
                 } else {
-                    throw std::invalid_argument("Not implemented: " + instruction.str());
+                    throw std::invalid_argument(
+                        "Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " +
+                        instruction.str());
                 }
                 out << ") {\n";
                 out << "    " << basis << " q[" << target.qubit_value() << "];\n";
@@ -415,6 +419,7 @@ struct QasmExporter {
         define_custom_single_qubit_gate(GateType::SQRT_Y_DAG, "sydg");
 
         define_custom_decomposed_gate(GateType::CXSWAP, "cxswap");
+        define_custom_decomposed_gate(GateType::CZSWAP, "czswap");
         define_custom_decomposed_gate(GateType::ISWAP, "iswap");
         define_custom_decomposed_gate(GateType::ISWAP_DAG, "iswapdg");
         define_custom_decomposed_gate(GateType::SQRT_XX, "sxx");
@@ -557,7 +562,7 @@ struct QasmExporter {
             }
         }
 
-        throw std::invalid_argument("Not implemented: " + instruction.str());
+        throw std::invalid_argument("Not implemented in QasmExporter::output_instruction: " + instruction.str());
     }
 };
 

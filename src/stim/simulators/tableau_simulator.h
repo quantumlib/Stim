@@ -25,7 +25,6 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
@@ -135,6 +134,7 @@ struct TableauSimulator {
     void do_ISWAP(const CircuitInstruction &inst);
     void do_ISWAP_DAG(const CircuitInstruction &inst);
     void do_CXSWAP(const CircuitInstruction &inst);
+    void do_CZSWAP(const CircuitInstruction &inst);
     void do_SWAPCX(const CircuitInstruction &inst);
     void do_XCX(const CircuitInstruction &inst);
     void do_XCY(const CircuitInstruction &inst);

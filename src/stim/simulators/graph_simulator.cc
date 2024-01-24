@@ -12,8 +12,8 @@ GraphSimulator::GraphSimulator(size_t num_qubits)
 
 void GraphSimulator::do_1q_gate(GateType gate, size_t qubit) {
     GateTarget t = GateTarget::qubit(qubit);
-    x2outs.ref().after_inplace(CircuitInstruction{gate, {}, &t}, false);
-    z2outs.ref().after_inplace(CircuitInstruction{gate, {}, &t}, false);
+    x2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t});
+    z2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t});
     paulis.xs[qubit] ^= z2outs.sign;
     paulis.zs[qubit] ^= x2outs.sign;
     x2outs.sign = 0;

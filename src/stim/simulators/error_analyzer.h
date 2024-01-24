@@ -214,6 +214,7 @@ struct ErrorAnalyzer {
     void undo_PAULI_CHANNEL_2(const CircuitInstruction &inst);
     void undo_ISWAP(const CircuitInstruction &inst);
     void undo_CXSWAP(const CircuitInstruction &inst);
+    void undo_CZSWAP(const CircuitInstruction &inst);
     void undo_SWAPCX(const CircuitInstruction &inst);
 
     void undo_RX_with_context(const CircuitInstruction &inst, const char *context_op);

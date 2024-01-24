@@ -19,7 +19,7 @@
 #include <map>
 #include <random>
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"

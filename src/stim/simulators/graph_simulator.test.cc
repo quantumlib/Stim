@@ -42,8 +42,7 @@ void expect_graph_sim_effect_matches_tableau_sim(const GraphSimulator &state, co
     auto s2 = tableau_sim2.canonical_stabilizers();
     if (s1 != s2) {
         EXPECT_EQ(s1, s2) << "EFFECT:\nstim::Circuit(R\"CIRCUIT(\n"
-                          << effect << "\n)CIRCUIT\")"
-                          << "\n"
+                          << effect << "\n)CIRCUIT\")" << "\n"
                           << "STATE:\n"
                           << state << "\n";
     }

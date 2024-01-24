@@ -17,6 +17,7 @@
 #ifndef _STIM_DIAGRAM_DETECTOR_SLICE_DETECTOR_SLICE_SET_H
 #define _STIM_DIAGRAM_DETECTOR_SLICE_DETECTOR_SLICE_SET_H
 
+#include <functional>
 #include <iostream>
 
 #include "stim/circuit/circuit.h"

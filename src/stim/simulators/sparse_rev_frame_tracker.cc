@@ -95,6 +95,9 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::CXSWAP:
             undo_CXSWAP(inst);
             break;
+        case GateType::CZSWAP:
+            undo_CZSWAP(inst);
+            break;
         case GateType::SWAPCX:
             undo_SWAPCX(inst);
             break;
@@ -726,6 +729,17 @@ void SparseUnsignedRevFrameTracker::undo_CXSWAP(const CircuitInstruction &dat) {
         zs[b] ^= zs[a];
         xs[b] ^= xs[a];
         xs[a] ^= xs[b];
+    }
+}
+
+void SparseUnsignedRevFrameTracker::undo_CZSWAP(const CircuitInstruction &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
+        zs[a] ^= xs[b];
+        zs[b] ^= xs[a];
+        std::swap(xs[a], xs[b]);
+        std::swap(zs[a], zs[b]);
     }
 }
 

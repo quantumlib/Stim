@@ -267,7 +267,8 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
     } else if (op.gate_type == GateType::M || op.gate_type == GateType::MR) {
         err_m(op, TARGET_PAULI_Z_BIT);
     } else {
-        throw std::invalid_argument("Not implemented: " + std::string(GATE_DATA[op.gate_type].name));
+        throw std::invalid_argument(
+            "Not implemented in ErrorMatcher::rev_process_instruction: " + std::string(GATE_DATA[op.gate_type].name));
     }
 }
 

@@ -14,8 +14,8 @@
 
 #include <set>
 
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_decomposition.h"
+#include "stim/gates/gates.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
@@ -749,6 +749,18 @@ void TableauSimulator<W>::do_CXSWAP(const CircuitInstruction &target_data) {
         auto q2 = targets[k + 1].data;
         inv_state.prepend_ZCX(q2, q1);
         inv_state.prepend_ZCX(q1, q2);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_CZSWAP(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
+        inv_state.prepend_ZCZ(q1, q2);
+        inv_state.prepend_SWAP(q2, q1);
     }
 }
 
@@ -1672,6 +1684,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::CXSWAP:
             do_CXSWAP(inst);
+            break;
+        case GateType::CZSWAP:
+            do_CZSWAP(inst);
             break;
         case GateType::SWAPCX:
             do_SWAPCX(inst);

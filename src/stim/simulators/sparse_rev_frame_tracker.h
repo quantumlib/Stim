@@ -18,7 +18,6 @@
 #define _STIM_SIMULATORS_SPARSE_REV_FRAME_TRACKER_H
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -114,6 +113,7 @@ struct SparseUnsignedRevFrameTracker {
     void undo_SWAP(const CircuitInstruction &inst);
     void undo_ISWAP(const CircuitInstruction &inst);
     void undo_CXSWAP(const CircuitInstruction &inst);
+    void undo_CZSWAP(const CircuitInstruction &inst);
     void undo_SWAPCX(const CircuitInstruction &inst);
 
     template <size_t W>

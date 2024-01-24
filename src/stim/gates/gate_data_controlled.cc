@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gates.h"
 
 using namespace stim;
 

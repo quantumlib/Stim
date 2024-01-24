@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
