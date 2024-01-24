@@ -25,7 +25,7 @@ src/stim/diagram/json_obj.test.cc
 src/stim/diagram/timeline/timeline_3d_drawer.test.cc
 src/stim/diagram/timeline/timeline_ascii_drawer.test.cc
 src/stim/diagram/timeline/timeline_svg_drawer.test.cc
-src/stim/gates/gate_data.test.cc
+src/stim/gates/gates.test.cc
 src/stim/gen/circuit_gen_params.test.cc
 src/stim/gen/gen_color_code.test.cc
 src/stim/gen/gen_rep_code.test.cc

@@ -29,7 +29,7 @@
 
 #include "stim/circuit/circuit_instruction.h"
 #include "stim/circuit/gate_target.h"
-#include "stim/gates/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/span_ref.h"
 

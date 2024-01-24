@@ -7,7 +7,7 @@ src/stim/dem/detector_error_model.pybind.cc
 src/stim/dem/detector_error_model_instruction.pybind.cc
 src/stim/dem/detector_error_model_repeat_block.pybind.cc
 src/stim/dem/detector_error_model_target.pybind.cc
-src/stim/gates/gate_data.pybind.cc
+src/stim/gates/gates.pybind.cc
 src/stim/io/read_write.pybind.cc
 src/stim/py/base.pybind.cc
 src/stim/py/compiled_detector_sampler.pybind.cc

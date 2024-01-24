@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/gate_data.pybind.h"
+#include "stim/gates/gates.h"
 
 #include "stim/circuit/stabilizer_flow.h"
-#include "stim/gates/gate_data.h"
+#include "stim/gates/gates.pybind.h"
 #include "stim/py/base.pybind.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
-#include "stim/stabilizers/tableau.pybind.h"
 #include "stim/str_util.h"
 
 using namespace stim;

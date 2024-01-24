@@ -43,7 +43,7 @@
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "stim/gates/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"

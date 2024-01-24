@@ -33,7 +33,7 @@
 #include "stim/arg_parse.h"
 #include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
-#include "stim/gates/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/tableau.h"
 

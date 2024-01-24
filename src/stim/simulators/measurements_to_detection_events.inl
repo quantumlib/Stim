@@ -14,7 +14,7 @@
 
 #include <cassert>
 
-#include "stim/gates/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/stim_data_formats.h"

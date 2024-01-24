@@ -37,7 +37,6 @@ src/stim/diagram/lattice_map.cc
 src/stim/diagram/timeline/timeline_3d_drawer.cc
 src/stim/diagram/timeline/timeline_ascii_drawer.cc
 src/stim/diagram/timeline/timeline_svg_drawer.cc
-src/stim/gates/gate_data.cc
 src/stim/gates/gate_data_annotations.cc
 src/stim/gates/gate_data_blocks.cc
 src/stim/gates/gate_data_collapsing.cc
@@ -51,6 +50,7 @@ src/stim/gates/gate_data_period_3.cc
 src/stim/gates/gate_data_period_4.cc
 src/stim/gates/gate_data_pp.cc
 src/stim/gates/gate_data_swaps.cc
+src/stim/gates/gates.cc
 src/stim/gen/circuit_gen_params.cc
 src/stim/gen/gen_color_code.cc
 src/stim/gen/gen_rep_code.cc
