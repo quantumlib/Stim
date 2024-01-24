@@ -14,10 +14,10 @@
 
 #include "stim/simulators/matched_error.pybind.h"
 
-#include "stim/gates/gate_data.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/circuit/gate_target.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
+#include "stim/gates/gate_data.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/matched_error.h"
 

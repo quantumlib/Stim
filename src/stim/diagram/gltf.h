@@ -1,8 +1,8 @@
 #ifndef _STIM_DRAW_3D_GLTF_H
 #define _STIM_DRAW_3D_GLTF_H
 
-#include <iostream>
 #include <functional>
+#include <iostream>
 
 #include "base64.h"
 #include "stim/diagram/coord.h"

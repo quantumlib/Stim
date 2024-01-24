@@ -14,8 +14,8 @@
 
 #include "stim/circuit/gate_data.pybind.h"
 
-#include "stim/gates/gate_data.h"
 #include "stim/circuit/stabilizer_flow.h"
+#include "stim/gates/gate_data.h"
 #include "stim/py/base.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.pybind.h"

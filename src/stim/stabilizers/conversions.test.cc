@@ -532,10 +532,7 @@ TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_fail, {
     ASSERT_THROW(
-        {
-            unitary_to_tableau<W>({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false);
-        },
-        std::invalid_argument);
+        { unitary_to_tableau<W>({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false); }, std::invalid_argument);
     ASSERT_THROW(
         {
             unitary_to_tableau<W>(

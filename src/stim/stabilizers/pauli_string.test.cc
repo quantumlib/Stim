@@ -612,9 +612,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, after_tableau, {
         std::invalid_argument);
 
     ASSERT_THROW(
-        {
-            PauliString<W>::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 5});
-        },
+        { PauliString<W>::from_str("+XZ_").ref().after(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 5}); },
         std::invalid_argument);
 })
 
@@ -631,9 +629,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_tableau, {
         std::invalid_argument);
 
     ASSERT_THROW(
-        {
-            PauliString<W>::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 5});
-        },
+        { PauliString<W>::from_str("+XZ_").ref().before(GATE_DATA.at("CX").tableau<W>(), std::vector<size_t>{0, 5}); },
         std::invalid_argument);
 })
 

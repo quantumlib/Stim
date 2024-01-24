@@ -1807,9 +1807,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_x, {
     sim.do_ZCX(OpDat({0, 1}));
     sim.do_Z(OpDat(0));
     ASSERT_THROW(
-        {
-            sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-        },
+        { sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true); },
         std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString<W>::from_str("-X"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString<W>::from_str("+X"));
@@ -1887,9 +1885,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_y, {
     sim.do_H_XZ(OpDat(0));
     sim.do_ZCX(OpDat({0, 1}));
     ASSERT_THROW(
-        {
-            sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-        },
+        { sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true); },
         std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString<W>::from_str("-Y"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString<W>::from_str("+Y"));
@@ -1967,9 +1963,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, postselect_z, {
     sim.do_ZCX(OpDat({0, 1}));
     sim.do_X(OpDat(0));
     ASSERT_THROW(
-        {
-            sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-        },
+        { sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true); },
         std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString<W>::from_str("-Z"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString<W>::from_str("+Z"));

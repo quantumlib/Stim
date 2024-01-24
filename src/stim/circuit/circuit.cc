@@ -18,8 +18,8 @@
 #include <string>
 #include <utility>
 
-#include "stim/gates/gate_data.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/gates/gate_data.h"
 #include "stim/str_util.h"
 
 using namespace stim;
