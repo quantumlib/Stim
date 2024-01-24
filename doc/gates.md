@@ -26,6 +26,7 @@
     - [CXSWAP](#CXSWAP)
     - [CY](#CY)
     - [CZ](#CZ)
+    - [CZSWAP](#CZSWAP)
     - [ISWAP](#ISWAP)
     - [ISWAP_DAG](#ISWAP_DAG)
     - [SQRT_XX](#SQRT_XX)
@@ -36,6 +37,7 @@
     - [SQRT_ZZ_DAG](#SQRT_ZZ_DAG)
     - [SWAP](#SWAP)
     - [SWAPCX](#SWAPCX)
+    - [SWAPCZ](#SWAPCZ)
     - [XCX](#XCX)
     - [XCY](#XCY)
     - [XCZ](#XCZ)
@@ -1100,6 +1102,51 @@ Decomposition (into H, S, CX, M, R):
     # The following circuit is equivalent (up to global phase) to `CZ 0 1`
     H 1
     CNOT 0 1
+    H 1
+    
+
+<a name="CZSWAP"></a>
+### The 'CZSWAP' Gate
+
+Alternate name: <a name="SWAPCZ"></a>`SWAPCZ`
+
+A combination CZ-and-SWAP gate.
+This gate is kak-equivalent to the iswap gate.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Example:
+
+    CZSWAP 5 6
+    CZSWAP 42 43
+    CZSWAP 5 6 42 43
+    
+Stabilizer Generators:
+
+    X_ -> ZX
+    Z_ -> _Z
+    _X -> XZ
+    _Z -> Z_
+    
+Unitary Matrix (little endian):
+
+    [+1  ,     ,     ,     ]
+    [    ,     , +1  ,     ]
+    [    , +1  ,     ,     ]
+    [    ,     ,     , -1  ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `CZSWAP 0 1`
+    H 0
+    CX 0 1
+    CX 1 0
     H 1
     
 
