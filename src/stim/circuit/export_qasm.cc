@@ -259,7 +259,9 @@ struct QasmExporter {
                         target = t1;
                         break;
                     default:
-                        throw std::invalid_argument("Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " + instruction.str());
+                        throw std::invalid_argument(
+                            "Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " +
+                            instruction.str());
                 }
 
                 out << "if (";
@@ -279,7 +281,9 @@ struct QasmExporter {
                     }
                     out << "sweep[" << control.value() << "]";
                 } else {
-                    throw std::invalid_argument("Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " + instruction.str());
+                    throw std::invalid_argument(
+                        "Not implemented in output_two_qubit_unitary_instruction_with_possible_feedback: " +
+                        instruction.str());
                 }
                 out << ") {\n";
                 out << "    " << basis << " q[" << target.qubit_value() << "];\n";

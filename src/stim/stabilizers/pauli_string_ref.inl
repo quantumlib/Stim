@@ -140,8 +140,7 @@ bool PauliStringRef<W>::commutes(const PauliStringRef<W> &other) const noexcept 
 }
 
 template <size_t W>
-void PauliStringRef<W>::do_tableau(
-    const Tableau<W> &tableau, SpanRef<const size_t> indices, bool inverse) {
+void PauliStringRef<W>::do_tableau(const Tableau<W> &tableau, SpanRef<const size_t> indices, bool inverse) {
     if (tableau.num_qubits == 0 || indices.size() % tableau.num_qubits != 0) {
         throw std::invalid_argument("len(tableau) == 0 or len(indices) % len(tableau) != 0");
     }
@@ -254,7 +253,8 @@ void PauliStringRef<W>::check_avoids_MPP(const CircuitInstruction &inst) {
 template <size_t W>
 void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
     for (const auto &t : inst.targets) {
-        if (t.has_qubit_value() && t.qubit_value() >= num_qubits && !(GATE_DATA[inst.gate_type].flags & GATE_HAS_NO_EFFECT_ON_QUBITS)) {
+        if (t.has_qubit_value() && t.qubit_value() >= num_qubits &&
+            !(GATE_DATA[inst.gate_type].flags & GATE_HAS_NO_EFFECT_ON_QUBITS)) {
             std::stringstream ss;
             ss << "The instruction '" << inst;
             ss << "' targets qubits outside the pauli string '" << *this;
@@ -422,7 +422,8 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
 template <size_t W>
 void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
     for (const auto &t : inst.targets) {
-        if (t.has_qubit_value() && t.qubit_value() >= num_qubits && !(GATE_DATA[inst.gate_type].flags & GATE_HAS_NO_EFFECT_ON_QUBITS)) {
+        if (t.has_qubit_value() && t.qubit_value() >= num_qubits &&
+            !(GATE_DATA[inst.gate_type].flags & GATE_HAS_NO_EFFECT_ON_QUBITS)) {
             std::stringstream ss;
             ss << "The instruction '" << inst;
             ss << "' targets qubits outside the pauli string '" << *this;

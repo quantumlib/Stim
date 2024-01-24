@@ -140,7 +140,7 @@ struct PauliStringRef {
 
     size_t weight() const;
 
-  private:
+   private:
     void check_avoids_MPP(const CircuitInstruction &inst);
     void check_avoids_reset(const CircuitInstruction &inst);
     void check_avoids_measurement(const CircuitInstruction &inst);
