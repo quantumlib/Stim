@@ -1599,7 +1599,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, noisy_measure_reset_z, {
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, measure_pauli_product_bad, {
     TableauSimulator<W> t(INDEPENDENT_TEST_RNG());
-    ASSERT_THROW({ t.safe_do_circuit("MPP X0*X0"); }, std::invalid_argument);
+    t.safe_do_circuit("MPP X0*X0 !X0*X0");
+    ASSERT_EQ(t.measurement_record.storage, (std::vector<bool>{false, true}));
     ASSERT_THROW({ t.safe_do_circuit("MPP X0*Z0"); }, std::invalid_argument);
 })
 

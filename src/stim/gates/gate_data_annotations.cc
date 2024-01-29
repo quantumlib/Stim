@@ -319,8 +319,8 @@ Example:
             .name = "MPAD",
             .id = GateType::MPAD,
             .best_candidate_inverse_id = GateType::MPAD,
-            .arg_count = 0,
-            .flags = GATE_PRODUCES_RESULTS,
+            .arg_count = ARG_COUNT_SYGIL_ZERO_OR_ONE,
+            .flags = (GateFlags)(GATE_PRODUCES_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             .category = "Z_Annotations",
             .help = R"MARKDOWN(
 Pads the measurement record with the listed measurement results.
@@ -328,6 +328,12 @@ Pads the measurement record with the listed measurement results.
 This can be useful for ensuring measurements are aligned to word boundaries, or that the
 number of measurement bits produced per circuit layer is always the same even if the number
 of measured qubits varies.
+
+Parens Arguments:
+
+    If no parens argument is given, the padding bits are recorded perfectly.
+    If one parens argument is given, the padding bits are recorded noisily.
+    The argument is the probability of recording the wrong result.
 
 Targets:
 

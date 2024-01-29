@@ -64,7 +64,13 @@ creg rec[4];
 measure q[0] -> rec[0];rec[0] = rec[0] ^ 1;
 rec[1] = mx(q[0]) ^ 1;
 rec[2] = mxx(q[0], q[1]) ^ 1;
-h q[0];cx q[1],q[0];measure q[0] -> rec[3];rec[3] = rec[3] ^ 1;cx q[1],q[0];h q[0]; // decomposed MPP
+// --- begin decomposed MPP !X0*Z1
+h q[0];
+cx q[1], q[0];
+measure q[0] -> rec[3];rec[3] = rec[3] ^ 1;
+cx q[1], q[0];
+h q[0];
+// --- end decomposed MPP
 )QASM");
 }
 
@@ -175,6 +181,49 @@ barrier q;
 measure q[0] -> rec[1];
 measure q[1] -> rec[2];
 measure q[2] -> rec[3];
+)QASM");
+}
+
+TEST(export_qasm, export_open_qasm_mpad) {
+    Circuit c(R"CIRCUIT(
+        H 0
+        MPAD 0 1 0
+        M 0
+    )CIRCUIT");
+
+    std::stringstream out;
+    export_open_qasm(c, out, 3, false);
+    ASSERT_EQ(out.str(), R"QASM(OPENQASM 3.0;
+include "stdgates.inc";
+
+qreg q[2];
+creg rec[4];
+
+h q[0];
+rec[0] = 0;
+rec[1] = 1;
+rec[2] = 0;
+measure q[0] -> rec[3];
+)QASM");
+
+    out.str("");
+    ASSERT_THROW({ export_open_qasm(c, out, 2, true); }, std::invalid_argument);
+    c = Circuit(R"CIRCUIT(
+        H 0
+        MPAD 0 0 0
+        M 0
+    )CIRCUIT");
+
+    out.str("");
+    export_open_qasm(c, out, 2, true);
+    ASSERT_EQ(out.str(), R"QASM(OPENQASM 2.0;
+include "qelib1.inc";
+
+qreg q[1];
+creg rec[4];
+
+h q[0];
+measure q[0] -> rec[3];
 )QASM");
 }
 
@@ -336,10 +385,24 @@ cy q[14], q[15];
 cz q[16], q[17];
 barrier q;
 
+rec[0] = 0;
+rec[1] = 0;
 barrier q;
 
-h q[0];sx q[1];cx q[1],q[0];cx q[2],q[0];measure q[0] -> rec[2];cx q[1],q[0];cx q[2],q[0];sxdg q[1];h q[0]; // decomposed MPP
-cx q[1],q[0];measure q[0] -> rec[3];cx q[1],q[0]; // decomposed MPP
+// --- begin decomposed MPP X0*Y1*Z2 Z0*Z1
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+measure q[0] -> rec[2];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+cx q[1], q[0];
+measure q[0] -> rec[3];
+cx q[1], q[0];
+// --- end decomposed MPP
 rec[4] = mrx(q[0]);
 rec[5] = mry(q[1]);
 rec[6] = mr(q[2]);
@@ -379,13 +442,26 @@ rec[15] = mr(q[0]);
 rec[16] = mr(q[0]);
 dets[0] = rec[16] ^ 0;
 obs[0] = obs[0] ^ rec[16] ^ 0;
+rec[17] = 0;
+rec[18] = 1;
+rec[19] = 0;
 barrier q;
 
 rec[20] = mrx(q[0]) ^ 1;
 rec[21] = my(q[1]) ^ 1;
 rec[22] = mzz(q[2], q[3]) ^ 1;
 rec[23] = myy(q[4], q[5]);
-h q[6];sx q[7];cx q[7],q[6];cx q[8],q[6];measure q[6] -> rec[24];rec[24] = rec[24] ^ 1;cx q[7],q[6];cx q[8],q[6];sxdg q[7];h q[6]; // decomposed MPP
+// --- begin decomposed MPP X6*!Y7*Z8
+h q[6];
+hyz q[7];
+cx q[7], q[6];
+cx q[8], q[6];
+measure q[6] -> rec[24];rec[24] = rec[24] ^ 1;
+cx q[7], q[6];
+cx q[8], q[6];
+hyz q[7];
+h q[6];
+// --- end decomposed MPP
 barrier q;
 
 if (ms[24]) {
@@ -405,6 +481,7 @@ if (ms[24]) {
         bool drop = false;
         for (auto t : c.operations[k].targets) {
             drop |= t.is_sweep_bit_target();
+            drop |= c.operations[k].gate_type == GateType::MPAD && t.qubit_value() > 0;
         }
         if (drop) {
             c.operations.erase(c.operations.begin() + k);
@@ -439,7 +516,7 @@ gate ycy q0, q1 { s q0; s q0; s q0; s q1; s q1; s q1; h q0; cx q0, q1; h q0; s q
 gate ycz q0, q1 { s q0; s q0; s q0; cx q1, q0; s q0; }
 
 qreg q[18];
-creg rec[25];
+creg rec[22];
 
 id q[0];
 x q[1];
@@ -485,8 +562,20 @@ barrier q;
 
 barrier q;
 
-h q[0];sx q[1];cx q[1],q[0];cx q[2],q[0];measure q[0] -> rec[2];cx q[1],q[0];cx q[2],q[0];sxdg q[1];h q[0]; // decomposed MPP
-cx q[1],q[0];measure q[0] -> rec[3];cx q[1],q[0]; // decomposed MPP
+// --- begin decomposed MPP X0*Y1*Z2 Z0*Z1
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+measure q[0] -> rec[2];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+cx q[1], q[0];
+measure q[0] -> rec[3];
+cx q[1], q[0];
+// --- end decomposed MPP
 h q[0]; measure q[0] -> rec[4]; reset q[0]; h q[0]; // decomposed MRX
 s q[1]; s q[1]; s q[1]; h q[1]; measure q[1] -> rec[5]; reset q[1]; h q[1]; s q[1]; // decomposed MRY
 measure q[2] -> rec[6]; reset q[2]; // decomposed MR
@@ -526,11 +615,21 @@ measure q[0] -> rec[15]; reset q[0]; // decomposed MR
 measure q[0] -> rec[16]; reset q[0]; // decomposed MR
 barrier q;
 
-h q[0]; x q[0];measure q[0] -> rec[20];x q[0]; reset q[0]; h q[0]; // decomposed MRX
-s q[1]; s q[1]; s q[1]; h q[1]; x q[1];measure q[1] -> rec[21];x q[1]; h q[1]; s q[1]; // decomposed MY
-cx q[2], q[3]; x q[3];measure q[3] -> rec[22];x q[3]; cx q[2], q[3]; // decomposed MZZ
-s q[4]; s q[5]; cx q[4], q[5]; h q[4]; measure q[4] -> rec[23]; s q[5]; s q[5]; h q[4]; cx q[4], q[5]; s q[4]; s q[5]; // decomposed MYY
-h q[6];sx q[7];cx q[7],q[6];cx q[8],q[6];x q[6];measure q[6] -> rec[24];x q[6];cx q[7],q[6];cx q[8],q[6];sxdg q[7];h q[6]; // decomposed MPP
+h q[0]; x q[0];measure q[0] -> rec[17];x q[0]; reset q[0]; h q[0]; // decomposed MRX
+s q[1]; s q[1]; s q[1]; h q[1]; x q[1];measure q[1] -> rec[18];x q[1]; h q[1]; s q[1]; // decomposed MY
+cx q[2], q[3]; x q[3];measure q[3] -> rec[19];x q[3]; cx q[2], q[3]; // decomposed MZZ
+s q[4]; s q[5]; cx q[4], q[5]; h q[4]; measure q[4] -> rec[20]; s q[5]; s q[5]; h q[4]; cx q[4], q[5]; s q[4]; s q[5]; // decomposed MYY
+// --- begin decomposed MPP X6*!Y7*Z8
+h q[6];
+hyz q[7];
+cx q[7], q[6];
+cx q[8], q[6];
+x q[6];measure q[6] -> rec[21];x q[6];
+cx q[7], q[6];
+cx q[8], q[6];
+hyz q[7];
+h q[6];
+// --- end decomposed MPP
 barrier q;
 
 )QASM");

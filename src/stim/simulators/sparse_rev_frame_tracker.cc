@@ -323,30 +323,16 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_da
     decompose_mpp_operation(
         CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
         xs.size(),
-        [&](const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
-            undo_H_XZ(h_xz);
-            undo_H_YZ(h_yz);
-            undo_ZCX(cnot);
-            try {
-                handle_x_gauges(meas);
-            } catch (const std::invalid_argument &ex) {
-                undo_ZCX(cnot);
-                undo_H_YZ(h_yz);
-                undo_H_XZ(h_xz);
-                throw ex;
+        [&](const CircuitInstruction &inst) {
+            if (inst.gate_type == GateType::M) {
+                reversed_measure_targets.clear();
+                for (size_t k = inst.targets.size(); k--;) {
+                    reversed_measure_targets.push_back(inst.targets[k]);
+                }
+                undo_MZ({GateType::M, inst.args, reversed_measure_targets});
+            } else {
+                undo_gate(inst);
             }
-
-            reversed_measure_targets.clear();
-            for (size_t k = meas.targets.size(); k--;) {
-                reversed_measure_targets.push_back(meas.targets[k]);
-            }
-            undo_MZ({GateType::M, meas.args, reversed_measure_targets});
-            undo_ZCX(cnot);
-            undo_H_YZ(h_yz);
-            undo_H_XZ(h_xz);
         });
 }
 

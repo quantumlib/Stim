@@ -16,22 +16,64 @@
 
 #include "stim/circuit/gate_decomposition.h"
 
+#include "stim/stabilizers/pauli_string.h"
+
 using namespace stim;
 
 void stim::decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
-    const std::function<void(
-        const CircuitInstruction &h_xz,
-        const CircuitInstruction &h_yz,
-        const CircuitInstruction &cnot,
-        const CircuitInstruction &meas)> &callback) {
-    simd_bits<64> used(num_qubits);
-    simd_bits<64> inner_used(num_qubits);
+    const std::function<void(const CircuitInstruction &inst)> &callback) {
+    PauliString<64> current(num_qubits);
+    simd_bits<64> merged(num_qubits);
     std::vector<GateTarget> h_xz;
     std::vector<GateTarget> h_yz;
     std::vector<GateTarget> cnot;
     std::vector<GateTarget> meas;
+
+    auto flush = [&](){
+        if (meas.empty()) {
+            return;
+        }
+        if (!h_xz.empty()) {
+            callback(CircuitInstruction{GateType::H, {}, h_xz});
+        }
+        if (!h_yz.empty()) {
+            callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
+        }
+        if (!cnot.empty()) {
+            callback(CircuitInstruction{GateType::CX, {}, cnot});
+        }
+        try {
+            callback(CircuitInstruction{GateType::M, mpp_op.args, meas});
+        } catch (const std::exception &ex) {
+            // If the measurement was somehow illegal, unwind the conjugations to return to the original state.
+            if (!cnot.empty()) {
+                callback(CircuitInstruction{GateType::CX, {}, cnot});
+            }
+            if (!h_yz.empty()) {
+                callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
+            }
+            if (!h_xz.empty()) {
+                callback(CircuitInstruction{GateType::H, {}, h_xz});
+            }
+            throw;
+        }
+        if (!cnot.empty()) {
+            callback(CircuitInstruction{GateType::CX, {}, cnot});
+        }
+        if (!h_yz.empty()) {
+            callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
+        }
+        if (!h_xz.empty()) {
+            callback(CircuitInstruction{GateType::H, {}, h_xz});
+        }
+        h_xz.clear();
+        h_yz.clear();
+        cnot.clear();
+        meas.clear();
+        merged.clear();
+    };
 
     size_t start = 0;
     while (start < mpp_op.targets.size()) {
@@ -41,62 +83,74 @@ void stim::decompose_mpp_operation(
         }
 
         // Determine which qubits are being touched by the next group.
-        inner_used.clear();
+        current.xs.clear();
+        current.zs.clear();
+        current.sign = false;
+        bool imag = 0;
         for (size_t i = start; i < end; i += 2) {
-            auto t = mpp_op.targets[i];
-            if (inner_used[t.qubit_value()]) {
-                throw std::invalid_argument(
-                    "A pauli product specified the same qubit twice.\n"
-                    "The operation: " +
-                    mpp_op.str());
-            }
-            inner_used[t.qubit_value()] = true;
+            current.safe_accumulate_pauli_term(mpp_op.targets[i], &imag);
+        }
+        if (imag) {
+            throw std::invalid_argument(
+                "Asked to measure an anti-Hermitian operator (e.g. X0*Z0 instead of Y0) in " + mpp_op.str());
         }
 
-        // If there's overlap with previous groups, the previous groups have to be flushed first.
-        if (inner_used.intersects(used)) {
-            callback(
-                CircuitInstruction{GateType::H, {}, h_xz},
-                CircuitInstruction{GateType::H_YZ, {}, h_yz},
-                CircuitInstruction{GateType::CX, {}, cnot},
-                CircuitInstruction{GateType::M, mpp_op.args, meas});
-            h_xz.clear();
-            h_yz.clear();
-            cnot.clear();
-            meas.clear();
-            used.clear();
+        // Products equal to +-I become MPAD instructions.
+        if (current.ref().has_no_pauli_terms()) {
+            flush();
+            GateTarget t = GateTarget::qubit((uint32_t)current.sign);
+            callback(CircuitInstruction{GateType::MPAD, mpp_op.args, &t});
+            start = end;
+            continue;
         }
-        used |= inner_used;
 
-        // Append operations that are equivalent to the desired measurement.
-        for (size_t i = start; i < end; i += 2) {
-            auto t = mpp_op.targets[i];
-            auto q = t.qubit_value();
-            if (t.data & TARGET_PAULI_X_BIT) {
-                if (t.data & TARGET_PAULI_Z_BIT) {
-                    h_yz.push_back({q});
-                } else {
-                    h_xz.push_back({q});
+        // If there's overlap with previous groups, the previous groups need to be flushed.
+        if (current.xs.intersects(merged) || current.zs.intersects(merged)) {
+            flush();
+        }
+        merged |= current.xs;
+        merged |= current.zs;
+
+        // Buffer operations to perform the desired measurement.
+        size_t n64 = current.xs.num_u64_padded();
+        bool first = true;
+        for (size_t i = 0; i < n64; i++) {
+            uint64_t x64 = current.xs.u64[i];
+            uint64_t z64 = current.zs.u64[i];
+            uint64_t u64 = x64 | z64;
+            if (u64) {
+                for (size_t j = 0; j < 64; j++) {
+                    bool x = (x64 >> j) & 1;
+                    bool z = (z64 >> j) & 1;
+                    if (x | z) {
+                        uint32_t q = (uint32_t)(i * 64 + j);
+                        // Include single qubit gates transforming the Pauli into a Z.
+                        if (x) {
+                            if (z) {
+                                h_yz.push_back({q});
+                            } else {
+                                h_xz.push_back({q});
+                            }
+                        }
+                        // Include CNOT gates folding onto a single measured qubit.
+                        if (first) {
+                            meas.push_back(GateTarget::qubit(q, current.sign));
+                            first = false;
+                        } else {
+                            cnot.push_back({q});
+                            cnot.push_back({meas.back().qubit_value()});
+                        }
+                    }
                 }
             }
-            if (i == start) {
-                meas.push_back({q});
-            } else {
-                cnot.push_back({q});
-                cnot.push_back({meas.back().qubit_value()});
-            }
-            meas.back().data ^= t.data & TARGET_INVERTED_BIT;
+            assert(!first);
         }
 
         start = end;
     }
 
     // Flush remaining groups.
-    callback(
-        CircuitInstruction{GateType::H, {}, h_xz},
-        CircuitInstruction{GateType::H_YZ, {}, h_yz},
-        CircuitInstruction{GateType::CX, {}, cnot},
-        CircuitInstruction{GateType::M, mpp_op.args, meas});
+    flush();
 }
 
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(

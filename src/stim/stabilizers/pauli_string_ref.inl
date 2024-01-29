@@ -652,12 +652,32 @@ void PauliStringRef<W>::scatter_into(PauliStringRef<W> out, SpanRef<const size_t
 }
 
 template <size_t W>
+bool PauliStringRef<W>::intersects(const PauliStringRef<W> other) const {
+    size_t n = std::min(xs.num_u64_padded(), other.xs.num_u64_padded());
+    uint64_t v = 0;
+    for (size_t k = 0; k < n; k++) {
+        v |= (xs.u64[k] | zs.u64[k]) & (other.xs.u64[k] | other.zs.u64[k]);
+    }
+    return v != 0;
+}
+
+template <size_t W>
 size_t PauliStringRef<W>::weight() const {
     size_t total = 0;
     xs.for_each_word(zs, [&](const simd_word<W> &w1, const simd_word<W> &w2) {
         total += (w1 | w2).popcount();
     });
     return total;
+}
+
+template <size_t W>
+bool PauliStringRef<W>::has_no_pauli_terms() const {
+    size_t total = 0;
+    size_t n = xs.num_u64_padded();
+    for (size_t k = 0; k < n; k++) {
+        total |= xs.u64[k] | zs.u64[k];
+    }
+    return total == 0;
 }
 
 template <size_t W>

@@ -633,25 +633,117 @@ TEST_EACH_WORD_SIZE_W(pauli_string, before_tableau, {
         std::invalid_argument);
 })
 
-TEST_EACH_WORD_SIZE_W(pauli_string, weight, {
-    ASSERT_EQ(PauliString<W>::from_str("+").ref().weight(), 0);
-    ASSERT_EQ(PauliString<W>::from_str("+I").ref().weight(), 0);
-    ASSERT_EQ(PauliString<W>::from_str("+X").ref().weight(), 1);
-    ASSERT_EQ(PauliString<W>::from_str("+Y").ref().weight(), 1);
-    ASSERT_EQ(PauliString<W>::from_str("+Z").ref().weight(), 1);
+TEST_EACH_WORD_SIZE_W(pauli_string, safe_accumulate_pauli_term, {
+    PauliString<W> p(0);
+    bool imag = false;
 
-    ASSERT_EQ(PauliString<W>::from_str("+IX").ref().weight(), 1);
-    ASSERT_EQ(PauliString<W>::from_str("+XZ").ref().weight(), 2);
-    ASSERT_EQ(PauliString<W>::from_str("+YY").ref().weight(), 2);
-    ASSERT_EQ(PauliString<W>::from_str("+XI").ref().weight(), 1);
+    p.safe_accumulate_pauli_term(GateTarget::x(5), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("_____X"));
 
-    PauliString<W> p(1000);
-    ASSERT_EQ(p.ref().weight(), 0);
-    for (size_t k = 0; k < 1000; k++) {
-        p.xs[k] = k % 3 == 1;
-        p.zs[k] = k % 5 == 1;
-    }
-    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
-    p.sign = true;
-    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
+    p.safe_accumulate_pauli_term(GateTarget::x(5), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("______"));
+
+    p.safe_accumulate_pauli_term(GateTarget::x(5), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("_____X"));
+
+    p.safe_accumulate_pauli_term(GateTarget::z(5), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("_____Y"));
+
+    p.safe_accumulate_pauli_term(GateTarget::z(5), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("_____X"));
+
+    p.safe_accumulate_pauli_term(GateTarget::y(5), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-_____Z"));
+
+    p.safe_accumulate_pauli_term(GateTarget::y(15), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-_____Z_________Y"));
+
+    p.safe_accumulate_pauli_term(GateTarget::y(15, true), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("_____Z__________"));
+})
+
+TEST_EACH_WORD_SIZE_W(pauli_string, safe_accumulate_pauli_term_mul_table, {
+    PauliString<W> p(1);
+    bool imag = false;
+
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-I"));
+
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("I"));
+
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("I"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-Z"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("Y"));
+
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("Z"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("I"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-X"));
+
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::x(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("-Y"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::y(0), &imag);
+    ASSERT_EQ(imag, 1);
+    ASSERT_EQ(p, PauliString<W>("X"));
+    p = PauliString<W>(1);
+    imag = false;
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    p.safe_accumulate_pauli_term(GateTarget::z(0), &imag);
+    ASSERT_EQ(imag, 0);
+    ASSERT_EQ(p, PauliString<W>("I"));
 })

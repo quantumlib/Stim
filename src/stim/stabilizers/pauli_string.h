@@ -131,6 +131,8 @@ struct PauliString {
     ///          many times the number of requested qubits. Use this to
     ///          avoid quadratic overheads from constant slight expansions.
     void ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor);
+
+    void safe_accumulate_pauli_term(GateTarget t, bool *imag);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

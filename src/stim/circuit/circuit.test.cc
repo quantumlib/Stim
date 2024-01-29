@@ -169,8 +169,9 @@ TEST(circuit, from_text) {
         expected);
 }
 
-TEST(circuit, parse_combiners) {
+TEST(circuit, parse_mpp) {
     ASSERT_THROW({ Circuit("H *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP 0"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP *"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1 *"); }, std::invalid_argument);
@@ -179,6 +180,9 @@ TEST(circuit, parse_combiners) {
     ASSERT_THROW({ Circuit("MPP X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(1.1) X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1*rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP sweep[0]"); }, std::invalid_argument);
     auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].args.size(), 0);
@@ -197,6 +201,11 @@ TEST(circuit, parse_combiners) {
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations[0].args.size(), 1);
     ASSERT_EQ(c.operations[0].args[0], 0.125);
+
+    c = Circuit("MPP X1*X1");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 3);
+}
 }
 
 TEST(circuit, parse_sweep_bits) {

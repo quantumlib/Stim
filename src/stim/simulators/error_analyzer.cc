@@ -374,6 +374,9 @@ void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat)
 void ErrorAnalyzer::undo_MPAD(const CircuitInstruction &inst) {
     for (size_t k = inst.targets.size(); k-- > 0;) {
         tracker.num_measurements_in_past--;
+
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        xor_sorted_measurement_error(d.range(), inst);
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
@@ -506,10 +509,10 @@ PauliString<MAX_BITWORD_WIDTH> ErrorAnalyzer::current_error_sensitivity_for(DemT
     return result;
 }
 
-void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &dat) {
+void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &inst) {
     // Measurement error.
-    if (!dat.args.empty() && dat.args[0] > 0) {
-        add_error(dat.args[0], targets);
+    if (!inst.args.empty() && inst.args[0] > 0) {
+        add_error(inst.args[0], targets);
     }
 }
 
@@ -1612,22 +1615,16 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
     decompose_mpp_operation(
         CircuitInstruction{GateType::MPP, target_data.args, reversed_targets},
         tracker.xs.size(),
-        [&](const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
-            undo_H_XZ(h_xz);
-            undo_H_YZ(h_yz);
-            undo_ZCX(cnot);
-            reversed_measure_targets.clear();
-            for (size_t k = meas.targets.size(); k--;) {
-                reversed_measure_targets.push_back(meas.targets[k]);
+        [&](const CircuitInstruction &inst) {
+            if (inst.gate_type == GateType::M) {
+                reversed_measure_targets.clear();
+                for (size_t k = inst.targets.size(); k--;) {
+                    reversed_measure_targets.push_back(inst.targets[k]);
+                }
+                undo_MZ_with_context(CircuitInstruction{GateType::M, inst.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
+            } else {
+                undo_gate(inst);
             }
-            undo_MZ_with_context(
-                {GateType::M, meas.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
-            undo_ZCX(cnot);
-            undo_H_YZ(h_yz);
-            undo_H_XZ(h_xz);
         });
 }
 

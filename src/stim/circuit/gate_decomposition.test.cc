@@ -22,47 +22,44 @@ using namespace stim;
 
 TEST(gate_decomposition, decompose_mpp_operation) {
     Circuit out;
-    auto append_into_circuit = [&](const CircuitInstruction &h_xz,
-                                   const CircuitInstruction &h_yz,
-                                   const CircuitInstruction &cnot,
-                                   const CircuitInstruction &meas) {
-        out.safe_append(h_xz);
-        out.safe_append(h_yz);
-        out.safe_append(cnot);
-        out.safe_append(meas);
-        out.safe_append(cnot);
-        out.safe_append(h_yz);
-        out.safe_append(h_xz);
+    auto append_into_circuit = [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
         out.append_from_text("TICK");
     };
     decompose_mpp_operation(
         Circuit("MPP(0.125) X0*X1*X2 Z3*Z4*Z5 X2*Y4 Z3 Z3 Z4*Z5").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         H 0 1 2
-        H_YZ
+        TICK
         CX 1 0 2 0 4 3 5 3
+        TICK
         M(0.125) 0 3
+        TICK
         CX 1 0 2 0 4 3 5 3
-        H_YZ
+        TICK
         H 0 1 2
         TICK
 
         H 2
+        TICK
         H_YZ 4
+        TICK
         CX 4 2
+        TICK
         M(0.125) 2 3
+        TICK
         CX 4 2
+        TICK
         H_YZ 4
+        TICK
         H 2
         TICK
 
-        H
-        H_YZ
         CX 5 4
+        TICK
         M(0.125) 3 4
+        TICK
         CX 5 4
-        H_YZ
-        H
         TICK
     )CIRCUIT"));
 
@@ -70,23 +67,54 @@ TEST(gate_decomposition, decompose_mpp_operation) {
     decompose_mpp_operation(Circuit("MPP X0*Z1*Y2 X3*X4 Y0*Y1*Y2*Y3*Y4").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         H 0 3 4
+        TICK
         H_YZ 2
+        TICK
         CX 1 0 2 0 4 3
+        TICK
         M 0 3
+        TICK
         CX 1 0 2 0 4 3
+        TICK
         H_YZ 2
+        TICK
         H 0 3 4
         TICK
 
-        H
         H_YZ 0 1 2 3 4
+        TICK
         CX 1 0 2 0 3 0 4 0
+        TICK
         M 0
+        TICK
         CX 1 0 2 0 3 0 4 0
+        TICK
         H_YZ 0 1 2 3 4
-        H
         TICK
     )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_mpp_to_mpad) {
+    Circuit out;
+    auto append_into_circuit = [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
+        out.append_from_text("TICK");
+    };
+    decompose_mpp_operation(
+        Circuit("MPP(0.125) X0*X0 X0*!X0 X0*Y0*Z0*X1*Y1*Z1").operations[0], 10, append_into_circuit);
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        MPAD(0.125) 0
+        TICK
+        MPAD(0.125) 1
+        TICK
+        MPAD(0.125) 1
+        TICK
+    )CIRCUIT"));
+
+    ASSERT_THROW({
+            decompose_mpp_operation(
+        Circuit("MPP(0.125) X0*Y0*Z0").operations[0], 10, append_into_circuit);
+    }, std::invalid_argument);
 }
 
 TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_use_controls) {

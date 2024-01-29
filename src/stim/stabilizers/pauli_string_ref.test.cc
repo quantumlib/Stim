@@ -76,3 +76,76 @@ TEST_EACH_WORD_SIZE_W(pauli_string, do_instruction_agrees_with_tableau_sim, {
         }
     }
 })
+
+TEST_EACH_WORD_SIZE_W(pauli_string, intersects, {
+    ASSERT_FALSE((PauliString<W>("_").ref().intersects(PauliString<W>("_"))));
+    ASSERT_FALSE((PauliString<W>("_").ref().intersects(PauliString<W>("X"))));
+    ASSERT_FALSE((PauliString<W>("_").ref().intersects(PauliString<W>("Y"))));
+    ASSERT_FALSE((PauliString<W>("_").ref().intersects(PauliString<W>("Z"))));
+    ASSERT_FALSE((PauliString<W>("X").ref().intersects(PauliString<W>("_"))));
+    ASSERT_TRUE((PauliString<W>("X").ref().intersects(PauliString<W>("X"))));
+    ASSERT_TRUE((PauliString<W>("X").ref().intersects(PauliString<W>("Y"))));
+    ASSERT_TRUE((PauliString<W>("X").ref().intersects(PauliString<W>("Z"))));
+    ASSERT_FALSE((PauliString<W>("Y").ref().intersects(PauliString<W>("_"))));
+    ASSERT_TRUE((PauliString<W>("Y").ref().intersects(PauliString<W>("X"))));
+    ASSERT_TRUE((PauliString<W>("Y").ref().intersects(PauliString<W>("Y"))));
+    ASSERT_TRUE((PauliString<W>("Y").ref().intersects(PauliString<W>("Z"))));
+    ASSERT_FALSE((PauliString<W>("Z").ref().intersects(PauliString<W>("_"))));
+    ASSERT_TRUE((PauliString<W>("Z").ref().intersects(PauliString<W>("X"))));
+    ASSERT_TRUE((PauliString<W>("Z").ref().intersects(PauliString<W>("Y"))));
+    ASSERT_TRUE((PauliString<W>("Z").ref().intersects(PauliString<W>("Z"))));
+
+    ASSERT_TRUE((PauliString<W>("_Z").ref().intersects(PauliString<W>("ZZ"))));
+    ASSERT_TRUE((PauliString<W>("Z_").ref().intersects(PauliString<W>("ZZ"))));
+    ASSERT_TRUE((PauliString<W>("ZZ").ref().intersects(PauliString<W>("ZZ"))));
+    ASSERT_FALSE((PauliString<W>("ZZ").ref().intersects(PauliString<W>("__"))));
+    ASSERT_FALSE((PauliString<W>("__").ref().intersects(PauliString<W>("XZ"))));
+    ASSERT_FALSE((PauliString<W>("________________________________________________").ref().intersects(PauliString<W>("________________________________________________"))));
+    ASSERT_TRUE((PauliString<W>("_______________________________________X________").ref().intersects(PauliString<W>("_______________________________________X________"))));
+})
+
+TEST_EACH_WORD_SIZE_W(pauli_string, weight, {
+    ASSERT_EQ(PauliString<W>::from_str("+").ref().weight(), 0);
+    ASSERT_EQ(PauliString<W>::from_str("+I").ref().weight(), 0);
+    ASSERT_EQ(PauliString<W>::from_str("+X").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+Y").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+Z").ref().weight(), 1);
+
+    ASSERT_EQ(PauliString<W>::from_str("+IX").ref().weight(), 1);
+    ASSERT_EQ(PauliString<W>::from_str("+XZ").ref().weight(), 2);
+    ASSERT_EQ(PauliString<W>::from_str("+YY").ref().weight(), 2);
+    ASSERT_EQ(PauliString<W>::from_str("+XI").ref().weight(), 1);
+
+    PauliString<W> p(1000);
+    ASSERT_EQ(p.ref().weight(), 0);
+    for (size_t k = 0; k < 1000; k++) {
+        p.xs[k] = k % 3 == 1;
+        p.zs[k] = k % 5 == 1;
+    }
+    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
+    p.sign = true;
+    ASSERT_EQ(p.ref().weight(), 333 + 199 - 66);
+})
+
+TEST_EACH_WORD_SIZE_W(pauli_string, has_no_pauli_terms, {
+    ASSERT_EQ((PauliString<W>::from_str("+").ref().has_no_pauli_terms()), true);
+    ASSERT_EQ((PauliString<W>::from_str("+I").ref().has_no_pauli_terms()), true);
+    ASSERT_EQ((PauliString<W>::from_str("+X").ref().has_no_pauli_terms()), false);
+    ASSERT_EQ((PauliString<W>::from_str("+Y").ref().has_no_pauli_terms()), false);
+    ASSERT_EQ((PauliString<W>::from_str("+Z").ref().has_no_pauli_terms()), false);
+
+    ASSERT_EQ((PauliString<W>::from_str("+II").ref().has_no_pauli_terms()), true);
+    ASSERT_EQ((PauliString<W>::from_str("+IX").ref().has_no_pauli_terms()), false);
+    ASSERT_EQ((PauliString<W>::from_str("+XZ").ref().has_no_pauli_terms()), false);
+    ASSERT_EQ((PauliString<W>::from_str("+YY").ref().has_no_pauli_terms()), false);
+    ASSERT_EQ((PauliString<W>::from_str("+XI").ref().has_no_pauli_terms()), false);
+
+    PauliString<W> p(1000);
+    ASSERT_TRUE(p.ref().has_no_pauli_terms());
+    p.xs[700] = true;
+    ASSERT_FALSE(p.ref().has_no_pauli_terms());
+    p.zs[700] = true;
+    ASSERT_FALSE(p.ref().has_no_pauli_terms());
+    p.xs[700] = false;
+    ASSERT_FALSE(p.ref().has_no_pauli_terms());
+})

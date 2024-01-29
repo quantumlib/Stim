@@ -53,15 +53,11 @@ namespace stim {
 /// Args:
 ///     mpp_op: The operation to decompose.
 ///     num_qubits: The number of qubits in the system. All targets must be less than this.
-///     callback: The method told each chunk of the decomposition.
+///     callback: How to execute decomposed instructions.
 void decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
-    const std::function<void(
-        const CircuitInstruction &h_xz,
-        const CircuitInstruction &h_yz,
-        const CircuitInstruction &cnot,
-        const CircuitInstruction &meas)> &callback);
+    const std::function<void(const CircuitInstruction &inst)> &callback);
 
 /// Finds contiguous segments where the first target of each pair is used once.
 ///

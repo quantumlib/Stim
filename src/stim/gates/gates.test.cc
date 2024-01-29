@@ -74,9 +74,7 @@ TEST(gate_data, hash_matches_storage_location) {
 
 template <size_t W>
 std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_output_eq_val(const Circuit &circuit) {
-    if (circuit.count_measurements() > 1) {
-        throw std::invalid_argument("count_measurements > 1");
-    }
+    // CAUTION: this is not 100% reliable when measurement count is larger than 1.
     TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), -1);
     TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), +1);
     sim1.safe_do_circuit(circuit);
@@ -91,19 +89,25 @@ bool is_decomposition_correct(const Gate &gate) {
         return false;
     }
 
-    std::vector<uint32_t> qs{0};
-    if (gate.flags & GATE_TARGETS_PAIRS) {
-        qs.push_back(1);
+    Circuit original;
+    if (gate.id == GateType::MPP) {
+        original.append_from_text("MPP X0*Y1*Z2 X3*X4");
+    } else if (gate.flags & GATE_TARGETS_PAIRS) {
+        original.safe_append_u(gate.name, {0, 1});
+    } else {
+        original.safe_append_u(gate.name, {0});
     }
+    uint32_t n = original.count_qubits();
 
     Circuit epr;
-    epr.safe_append_u("H", qs);
-    for (auto q : qs) {
-        epr.safe_append_u("CNOT", {q, q + 2});
+    for (uint32_t q = 0; q < n; q++) {
+        epr.safe_append_u("H", {q});
+    }
+    for (uint32_t q = 0; q < n; q++) {
+        epr.safe_append_u("CNOT", {q, q + n});
     }
 
-    Circuit circuit1 = epr;
-    circuit1.safe_append_u(gate.name, qs);
+    Circuit circuit1 = epr + original;
     Circuit circuit2 = epr + Circuit(decomposition);
 
     // Reset gates make the ancillary qubits irrelevant because the final value is unrelated to the initial value.
@@ -111,9 +115,9 @@ bool is_decomposition_correct(const Gate &gate) {
     // CAUTION: this could give false positives if "partial reset" gates are added in the future.
     //          (E.g. a two qubit gate that resets only one of the qubits.)
     if ((gate.flags & GATE_IS_RESET) && !(gate.flags & GATE_PRODUCES_RESULTS)) {
-        for (auto q : qs) {
-            circuit1.safe_append_u("R", {q + 2});
-            circuit2.safe_append_u("R", {q + 2});
+        for (uint32_t q = 0; q < n; q++) {
+            circuit1.safe_append_u("R", {q + n});
+            circuit2.safe_append_u("R", {q + n});
         }
     }
 
@@ -134,7 +138,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
         if (g.flags & GATE_IS_UNITARY) {
             EXPECT_TRUE(g.h_s_cx_m_r_decomposition != nullptr) << g.name;
         }
-        if (g.h_s_cx_m_r_decomposition != nullptr && g.id != GateType::MPP) {
+        if (g.h_s_cx_m_r_decomposition != nullptr) {
             EXPECT_TRUE(is_decomposition_correct<W>(g)) << g.name;
         }
     }

@@ -131,45 +131,14 @@ struct QasmExporter {
     }
 
     void output_decomposed_mpp_operation(const CircuitInstruction &inst) {
+        out << "// --- begin decomposed " << inst << "\n";
         decompose_mpp_operation(
             inst,
             stats.num_qubits,
-            [&](const CircuitInstruction &h_xz,
-                const CircuitInstruction &h_yz,
-                const CircuitInstruction &cnot,
-                const CircuitInstruction &meas) {
-                for (const auto t : h_xz.targets) {
-                    out << "h q[" << t.qubit_value() << "];";
-                }
-                for (const auto t : h_yz.targets) {
-                    out << "sx q[" << t.qubit_value() << "];";
-                }
-                for (size_t k = 0; k < cnot.targets.size(); k += 2) {
-                    auto t1 = cnot.targets[k];
-                    auto t2 = cnot.targets[k + 1];
-                    out << "cx q[" << t1.qubit_value() << "],q[" << t2.qubit_value() << "];";
-                }
-                for (auto t : meas.targets) {
-                    buf_q1.str("");
-                    buf_m.str("");
-                    buf_q1 << "q[" << t.qubit_value() << "]";
-                    buf_m << "rec[" << measurement_offset << "]";
-                    output_measurement(t.is_inverted_result_target(), buf_q1.str().c_str(), buf_m.str().c_str());
-                    measurement_offset++;
-                }
-                for (size_t k = 0; k < cnot.targets.size(); k += 2) {
-                    auto t1 = cnot.targets[k];
-                    auto t2 = cnot.targets[k + 1];
-                    out << "cx q[" << t1.qubit_value() << "],q[" << t2.qubit_value() << "];";
-                }
-                for (const auto t : h_yz.targets) {
-                    out << "sxdg q[" << t.qubit_value() << "];";
-                }
-                for (const auto t : h_xz.targets) {
-                    out << "h q[" << t.qubit_value() << "];";
-                }
-                out << " // decomposed MPP\n";
+            [&](const CircuitInstruction &inst) {
+                output_instruction(inst);
             });
+        out << "// --- end decomposed MPP\n";
     }
 
     void output_decomposable_instruction(const CircuitInstruction &instruction, bool decompose_inline) {
@@ -460,7 +429,20 @@ struct QasmExporter {
                 return;
 
             case GateType::MPAD:
-                measurement_offset += instruction.count_measurement_results();
+                for (const auto &t : instruction.targets) {
+                    if (open_qasm_version == 3) {
+                        out << "rec[" << measurement_offset << "] = " << t.qubit_value() << ";\n";
+                    } else {
+                        if (t.qubit_value()) {
+                            throw std::invalid_argument(
+                                "The circuit contains a vacuous measurement with a non-zero result "
+                                "(like MPAD 1 or MPP !X1*X1) but OPENQASM 2 doesn't support classical assignment.\n"
+                                "Pass the argument `open_qasm_version=3` to fix this.");
+
+                        }
+                    }
+                    measurement_offset++;
+                }
                 return;
 
             case GateType::TICK:
