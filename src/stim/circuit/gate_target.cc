@@ -18,6 +18,13 @@
 
 using namespace stim;
 
+GateTarget GateTarget::pauli_xz(uint32_t qubit, bool x, bool z, bool inverted) {
+    if (qubit != (qubit & TARGET_VALUE_MASK)) {
+        throw std::invalid_argument("qubit target larger than " + std::to_string(TARGET_VALUE_MASK));
+    }
+    return {qubit | (TARGET_INVERTED_BIT * inverted) | (TARGET_PAULI_X_BIT * x) | (TARGET_PAULI_Z_BIT * z)};
+}
+
 GateTarget GateTarget::x(uint32_t qubit, bool inverted) {
     if (qubit != (qubit & TARGET_VALUE_MASK)) {
         throw std::invalid_argument("qubit target larger than " + std::to_string(TARGET_VALUE_MASK));

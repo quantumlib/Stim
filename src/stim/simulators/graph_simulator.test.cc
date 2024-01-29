@@ -16,8 +16,8 @@ void expect_graph_circuit_is_equivalent(const Circuit &circuit) {
     Circuit converted = sim.to_circuit();
     TableauSimulator<64> sim1(std::mt19937_64{}, n);
     TableauSimulator<64> sim2(std::mt19937_64{}, n);
-    sim1.expand_do_circuit(circuit);
-    sim2.expand_do_circuit(converted);
+    sim1.safe_do_circuit(circuit);
+    sim2.safe_do_circuit(converted);
     auto s1 = sim1.canonical_stabilizers();
     auto s2 = sim2.canonical_stabilizers();
     if (s1 != s2) {
@@ -35,9 +35,9 @@ void expect_graph_sim_effect_matches_tableau_sim(const GraphSimulator &state, co
 
     TableauSimulator<64> tableau_sim1(std::mt19937_64{}, n);
     TableauSimulator<64> tableau_sim2(std::mt19937_64{}, n);
-    tableau_sim1.expand_do_circuit(state.to_circuit());
-    tableau_sim1.expand_do_circuit(effect);
-    tableau_sim2.expand_do_circuit(state_after_effect.to_circuit());
+    tableau_sim1.safe_do_circuit(state.to_circuit());
+    tableau_sim1.safe_do_circuit(effect);
+    tableau_sim2.safe_do_circuit(state_after_effect.to_circuit());
     auto s1 = tableau_sim1.canonical_stabilizers();
     auto s2 = tableau_sim2.canonical_stabilizers();
     if (s1 != s2) {
@@ -240,8 +240,8 @@ TEST(graph_simulator, do_complementation) {
 
         TableauSimulator<64> tableau_sim1(std::mt19937_64{}, 8);
         TableauSimulator<64> tableau_sim2(std::mt19937_64{}, 8);
-        tableau_sim1.expand_do_circuit(sim.to_circuit());
-        tableau_sim2.expand_do_circuit(sim2.to_circuit());
+        tableau_sim1.safe_do_circuit(sim.to_circuit());
+        tableau_sim2.safe_do_circuit(sim2.to_circuit());
         auto s1 = tableau_sim1.canonical_stabilizers();
         auto s2 = tableau_sim2.canonical_stabilizers();
         if (s1 != s2) {

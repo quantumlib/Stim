@@ -96,7 +96,7 @@ struct TableauSimulator {
     /// Runs all of the operations in the given circuit.
     ///
     /// Automatically expands the tableau simulator's state, if needed.
-    void expand_do_circuit(const Circuit &circuit, uint64_t reps = 1);
+    void safe_do_circuit(const Circuit &circuit, uint64_t reps = 1);
     void do_operation_ensure_size(const CircuitInstruction &operation);
 
     void apply_tableau(const Tableau<W> &tableau, const std::vector<size_t> &targets);

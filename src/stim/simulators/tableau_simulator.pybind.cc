@@ -29,10 +29,10 @@ using namespace stim_pybind;
 template <size_t W>
 void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
-        self.expand_do_circuit(pybind11::cast<Circuit>(obj));
+        self.safe_do_circuit(pybind11::cast<Circuit>(obj));
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
-        self.expand_do_circuit(block.body, block.repeat_count);
+        self.safe_do_circuit(block.body, block.repeat_count);
     } else if (pybind11::isinstance<FlexPauliString>(obj)) {
         const FlexPauliString &pauli_string = pybind11::cast<FlexPauliString>(obj);
         self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
@@ -474,7 +474,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
     c.def(
         "do_circuit",
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const Circuit &circuit) {
-            self.expand_do_circuit(circuit);
+            self.safe_do_circuit(circuit);
         },
         pybind11::arg("circuit"),
         clean_doc_string(R"DOC(

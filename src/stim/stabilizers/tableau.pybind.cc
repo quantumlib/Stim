@@ -697,7 +697,33 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                         Note: "graph_state" treats the tableau as a state instead of as a
                         Clifford operation. It will preserve the set of stabilizers, but
                         not the exact choice of generators.
+                    "mpp_state": Prepares the tableau's state using MPP and feedback.
+                        Gate set: MPP, CX rec, CY rec, CZ rec
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
 
+                        The circuit will be made up of two layers:
+                            1. An MPP layer measuring each of the tableau's stabilizers.
+                            2. A feedback layer using the measurement results to control
+                                whether or not to apply each of the tableau's destabilizers
+                                in order to get the correct sign for each stabilizer.
+
+                        Note: "mpp_state" treats the tableau as a state instead of as a
+                        Clifford operation. It will preserve the set of stabilizers, but
+                        not the exact choice of generators.
+                    "mpp_state_unsigned": Prepares the tableau's state up to sign using MPP.
+                        Gate set: MPP
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
+
+                        The circuit will contain a series of MPP measurements measuring each
+                        of the tableau's stabilizers. The stabilizers are measured in the
+                        order used by the tableau (i.e. tableau.z_output(k) is the k'th
+                        stabilizer measured).
+
+                        Note: "mpp_state_unsigned" treats the tableau as a state instead of
+                        as a Clifford operation. It will preserve the set of stabilizers,
+                        but not the exact choice of generators.
             Returns:
                 The synthesized circuit.
 
@@ -751,6 +777,19 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     S 2 3
                     H 3
                     S 3
+                ''')
+
+                >>> tableau.to_circuit("mpp_state_unsigned")
+                stim.Circuit('''
+                    MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+                ''')
+
+                >>> tableau.to_circuit("mpp_state")
+                stim.Circuit('''
+                    MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+                    CX rec[-3] 2 rec[-1] 2
+                    CY rec[-4] 0 rec[-3] 0 rec[-3] 3 rec[-2] 3 rec[-1] 0
+                    CZ rec[-4] 1 rec[-1] 1
                 ''')
         )DOC")
             .data());

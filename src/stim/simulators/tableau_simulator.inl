@@ -1107,7 +1107,7 @@ void TableauSimulator<W>::do_Z(const CircuitInstruction &target_data) {
 template <size_t W>
 simd_bits<W> TableauSimulator<W>::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator<W> sim(std::move(rng), circuit.count_qubits(), sign_bias);
-    sim.expand_do_circuit(circuit);
+    sim.safe_do_circuit(circuit);
 
     const std::vector<bool> &v = sim.measurement_record.storage;
     simd_bits<W> result(v.size());
@@ -1347,7 +1347,7 @@ void TableauSimulator<W>::collapse_isolate_qubit_z(size_t target, TableauTranspo
 }
 
 template <size_t W>
-void TableauSimulator<W>::expand_do_circuit(const Circuit &circuit, uint64_t reps) {
+void TableauSimulator<W>::safe_do_circuit(const Circuit &circuit, uint64_t reps) {
     ensure_large_enough_for_qubits(circuit.count_qubits());
     for (uint64_t k = 0; k < reps; k++) {
         circuit.for_each_operation([&](const CircuitInstruction &op) {
