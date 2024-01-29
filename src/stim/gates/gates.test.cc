@@ -79,8 +79,8 @@ std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_outp
     }
     TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), -1);
     TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), +1);
-    sim1.expand_do_circuit(circuit);
-    sim2.expand_do_circuit(circuit);
+    sim1.safe_do_circuit(circuit);
+    sim2.safe_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};
 }
 

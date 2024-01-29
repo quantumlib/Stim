@@ -815,3 +815,59 @@ TEST(conversions, independent_vs_disjoint_xyz_errors_round_trip_fuzz) {
         ASSERT_NEAR(z, z3, 1e-6) << "x=" << x << ",y=" << y << ",z=" << z;
     }
 }
+
+TEST_EACH_WORD_SIZE_W(conversions, fuzz_mpp_circuit_produces_correct_state, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto tableau = Tableau<W>::random(10, rng);
+    auto circuit = tableau_to_circuit_mpp_method<W>(tableau, false);
+    TableauSimulator<W> sim(std::move(rng), 10);
+    sim.safe_do_circuit(circuit);
+    auto expected = tableau.stabilizers(true);
+    auto actual = sim.canonical_stabilizers();
+    ASSERT_EQ(actual, expected);
+})
+
+TEST_EACH_WORD_SIZE_W(conversions, fuzz_mpp_circuit_produces_correct_state_unsigned, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto tableau = Tableau<W>::random(10, rng);
+    auto circuit = tableau_to_circuit_mpp_method<W>(tableau, true);
+    TableauSimulator<W> sim(std::move(rng), 10);
+    sim.safe_do_circuit(circuit);
+    auto expected = tableau.stabilizers(true);
+    auto actual = sim.canonical_stabilizers();
+    for (auto &e : expected) {
+        e.sign = false;
+    }
+    for (auto &e : actual) {
+        e.sign = false;
+    }
+    ASSERT_EQ(actual, expected);
+})
+
+TEST_EACH_WORD_SIZE_W(conversions, perfect_code_mpp_circuit, {
+    Tableau<W> tableau(5);
+
+    tableau.zs[0] = PauliString<W>("XZZX_");
+    tableau.zs[1] = PauliString<W>("_XZZX");
+    tableau.zs[2] = PauliString<W>("X_XZZ");
+    tableau.zs[3] = PauliString<W>("ZX_XZ");
+    tableau.zs[4] = PauliString<W>("ZZZZZ");
+
+    tableau.xs[0] = PauliString<W>("Z_Z__");
+    tableau.xs[1] = PauliString<W>("ZZZZ_");
+    tableau.xs[2] = PauliString<W>("ZZ_ZZ");
+    tableau.xs[3] = PauliString<W>("_Z__Z");
+    tableau.xs[4] = PauliString<W>("XXXXX");
+
+    ASSERT_TRUE(tableau.satisfies_invariants());
+
+    ASSERT_EQ(tableau_to_circuit_mpp_method<W>(tableau, true), Circuit(R"CIRCUIT(
+        MPP X0*Z1*Z2*X3 X1*Z2*Z3*X4 X0*X2*Z3*Z4 Z0*X1*X3*Z4 Z0*Z1*Z2*Z3*Z4
+    )CIRCUIT"));
+
+    ASSERT_EQ(tableau_to_circuit_mpp_method<W>(tableau, false), Circuit(R"CIRCUIT(
+        MPP X0*Z1*Z2*X3 X1*Z2*Z3*X4 X0*X2*Z3*Z4 Z0*X1*X3*Z4 Z0*Z1*Z2*Z3*Z4
+        CX rec[-1] 0 rec[-1] 1 rec[-1] 2 rec[-1] 3 rec[-1] 4
+        CZ rec[-5] 0 rec[-5] 2 rec[-4] 0 rec[-4] 1 rec[-4] 2 rec[-4] 3 rec[-3] 0 rec[-3] 1 rec[-3] 3 rec[-3] 4 rec[-2] 1 rec[-2] 4
+    )CIRCUIT"));
+})

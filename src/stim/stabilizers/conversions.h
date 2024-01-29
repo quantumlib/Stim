@@ -133,6 +133,8 @@ Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method)
 template <size_t W>
 Circuit tableau_to_circuit_graph_method(const Tableau<W> &tableau);
 template <size_t W>
+Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign);
+template <size_t W>
 Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau);
 
 /// Converts a unitary matrix into a stabilizer tableau.

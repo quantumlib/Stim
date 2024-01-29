@@ -39,6 +39,7 @@ struct GateTarget {
     static GateTarget x(uint32_t qubit, bool inverted = false);
     static GateTarget y(uint32_t qubit, bool inverted = false);
     static GateTarget z(uint32_t qubit, bool inverted = false);
+    static GateTarget pauli_xz(uint32_t qubit, bool x, bool z, bool inverted = false);
     static GateTarget qubit(uint32_t qubit, bool inverted = false);
     static GateTarget rec(int32_t lookback);
     static GateTarget sweep_bit(uint32_t index);

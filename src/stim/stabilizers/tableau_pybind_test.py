@@ -953,3 +953,25 @@ def test_to_circuit_graph_state_preserves_stabilizers():
     original = t.to_stabilizers(canonicalize=True)
     reconstructed = c.to_tableau().to_stabilizers(canonicalize=True)
     assert original == reconstructed
+
+
+def test_to_circuit_mpp_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    original = t.to_stabilizers(canonicalize=True)
+    sim = stim.TableauSimulator()
+    sim.do_circuit(t.to_circuit("mpp_state"))
+    reconstructed = sim.canonical_stabilizers()
+    assert original == reconstructed
+
+
+def test_to_circuit_mpp_unsigned_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    original = t.to_stabilizers(canonicalize=True)
+    sim = stim.TableauSimulator()
+    sim.do_circuit(t.to_circuit("mpp_state_unsigned"))
+    reconstructed = sim.canonical_stabilizers()
+    for e in original:
+        e.sign = +1
+    for e in reconstructed:
+        e.sign = +1
+    assert original == reconstructed

@@ -216,11 +216,17 @@ Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method)
         return tableau_to_circuit_elimination_method(tableau);
     } else if (method == "graph_state") {
         return tableau_to_circuit_graph_method(tableau);
+    } else if (method == "mpp_state") {
+        return tableau_to_circuit_mpp_method(tableau, false);
+    } else if (method == "mpp_state_unsigned") {
+        return tableau_to_circuit_mpp_method(tableau, true);
     } else {
         std::stringstream ss;
         ss << "Unknown method: '" << method << "'. Known methods:\n";
-        ss << "    - 'elimination'";
-        ss << "    - 'graph'";
+        ss << "    - 'elimination'\n";
+        ss << "    - 'graph_state'\n";
+        ss << "    - 'mpp_state'\n";
+        ss << "    - 'mpp_state_unsigned'\n";
         throw std::invalid_argument(ss.str());
     }
 }
@@ -230,6 +236,63 @@ Circuit tableau_to_circuit_graph_method(const Tableau<W> &tableau) {
     GraphSimulator sim(tableau.num_qubits);
     sim.do_circuit(tableau_to_circuit_elimination_method(tableau));
     return sim.to_circuit(true);
+}
+
+template <size_t W>
+Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign) {
+    Circuit result;
+    std::vector<GateTarget> targets;
+    size_t n = tableau.num_qubits;
+
+    // Measure each stabilizer with MPP.
+    for (size_t k = 0; k < n; k++) {
+        const auto &stabilizer = tableau.zs[k];
+        bool need_sign = stabilizer.sign;
+        for (size_t q = 0; q < n; q++) {
+            bool x = stabilizer.xs[q];
+            bool z = stabilizer.zs[q];
+            if (x || z) {
+                targets.push_back(GateTarget::pauli_xz(q, x, z, need_sign));
+                targets.push_back(GateTarget::combiner());
+                need_sign = false;
+            }
+        }
+        assert(!targets.empty());
+        targets.pop_back();
+        result.safe_append(GateType::MPP, targets, {});
+        targets.clear();
+    }
+
+    if (!skip_sign) {
+        // Correct each stabilizer's sign with feedback.
+        std::vector<GateTarget> targets_x;
+        std::vector<GateTarget> targets_y;
+        std::vector<GateTarget> targets_z;
+        std::array<std::vector<GateTarget> *, 4> targets_ptrs = {nullptr, &targets_x, &targets_z, &targets_y};
+        for (size_t k = 0; k < n; k++) {
+            const auto &destabilizer = tableau.xs[k];
+            for (size_t q = 0; q < n; q++) {
+                bool x = destabilizer.xs[q];
+                bool z = destabilizer.zs[q];
+                auto *out = targets_ptrs[x + z*2];
+                if (out != nullptr) {
+                    out->push_back(GateTarget::rec(-(int32_t)(n - k)));
+                    out->push_back(GateTarget::qubit(q));
+                }
+            }
+        }
+        if (!targets_x.empty()) {
+            result.safe_append(GateType::CX, targets_x, {});
+        }
+        if (!targets_y.empty()) {
+            result.safe_append(GateType::CY, targets_y, {});
+        }
+        if (!targets_z.empty()) {
+            result.safe_append(GateType::CZ, targets_z, {});
+        }
+    }
+
+    return result;
 }
 
 template <size_t W>
