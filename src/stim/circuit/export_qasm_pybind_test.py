@@ -69,6 +69,7 @@ def test_to_qasm2_runs_in_qiskit():
     stim_circuit = stim.Circuit("""
         R 0 1
         MZZ !0 1
+        MPAD 1
     """)
     qasm = stim_circuit.to_qasm(open_qasm_version=2)
 

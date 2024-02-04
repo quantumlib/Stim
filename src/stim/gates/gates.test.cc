@@ -92,6 +92,8 @@ bool is_decomposition_correct(const Gate &gate) {
     Circuit original;
     if (gate.id == GateType::MPP) {
         original.append_from_text("MPP X0*Y1*Z2 X3*X4");
+    } else if (gate.id == GateType::CPP) {
+        original.append_from_text("CPP X0*Y1 Z2*Z3");
     } else if (gate.flags & GATE_TARGETS_PAIRS) {
         original.safe_append_u(gate.name, {0, 1});
     } else {

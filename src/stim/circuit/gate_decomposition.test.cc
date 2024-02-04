@@ -101,7 +101,9 @@ TEST(gate_decomposition, decompose_mpp_to_mpad) {
         out.append_from_text("TICK");
     };
     decompose_mpp_operation(
-        Circuit("MPP(0.125) X0*X0 X0*!X0 X0*Y0*Z0*X1*Y1*Z1").operations[0], 10, append_into_circuit);
+        Circuit(R"CIRCUIT(
+            MPP(0.125) X0*X0 X0*!X0 X0*Y0*Z0*X1*Y1*Z1
+        )CIRCUIT").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         MPAD(0.125) 0
         TICK
@@ -117,6 +119,31 @@ TEST(gate_decomposition, decompose_mpp_to_mpad) {
     }, std::invalid_argument);
 }
 
+//TEST(gate_decomposition, decompose_mpp_rec_targets) {
+//    Circuit out;
+//    auto append_into_circuit = [&](const CircuitInstruction &inst) {
+//        out.safe_append(inst);
+//        out.append_from_text("TICK");
+//    };
+//    decompose_mpp_operation(
+//        Circuit(R"CIRCUIT(
+//            MPP(0.125) rec[-1]*X0 rec[-2] X0*!X0*rec[-5]
+//        )CIRCUIT").operations[0], 10, append_into_circuit);
+//    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+//        MPAD(0.125) 0
+//        TICK
+//        MPAD(0.125) 1
+//        TICK
+//        MPAD(0.125) 1
+//        TICK
+//    )CIRCUIT"));
+//
+//    ASSERT_THROW({
+//            decompose_mpp_operation(
+//        Circuit("MPP(0.125) X0*Y0*Z0").operations[0], 10, append_into_circuit);
+//    }, std::invalid_argument);
+//}
+
 TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_use_controls) {
     Circuit out;
     auto append_into_circuit = [&](const CircuitInstruction &segment) {
@@ -131,6 +158,30 @@ TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_us
     };
     decompose_pair_instruction_into_segments_with_single_use_controls(
         Circuit("MXX(0.125) 0 1 0 2 3 5 4 5 3 4").operations[0], 10, append_into_circuit);
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CX 0 1
+        MX(0.125) 0
+        CX 0 1
+        TICK
+
+        CX 0 2 3 5 4 5
+        MX(0.125) 0 3 4
+        CX 0 2 3 5 4 5
+        TICK
+
+        CX 3 4
+        MX(0.125) 3
+        CX 3 4
+        TICK
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_with_reverse_independence_swap) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*X1 Z0*Z1").operations[0],
+        10,
+        [&](const CircuitInstruction &inst) { out.safe_append(inst); });
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         CX 0 1
         MX(0.125) 0

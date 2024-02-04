@@ -246,3 +246,31 @@ TEST(gate_target, target_str_round_trip) {
         ASSERT_EQ(GateTarget::from_target_str(t.target_str().c_str()), t) << t;
     }
 }
+
+TEST(gate_target, is_pauli_target) {
+    ASSERT_FALSE(GateTarget::qubit(2).is_pauli_target());
+    ASSERT_FALSE(GateTarget::qubit(3, true).is_pauli_target());
+    ASSERT_FALSE(GateTarget::sweep_bit(5).is_pauli_target());
+    ASSERT_FALSE(GateTarget::rec(-7).is_pauli_target());
+    ASSERT_TRUE(GateTarget::x(11).is_pauli_target());
+    ASSERT_TRUE(GateTarget::x(13, true).is_pauli_target());
+    ASSERT_TRUE(GateTarget::y(17).is_pauli_target());
+    ASSERT_TRUE(GateTarget::y(19, true).is_pauli_target());
+    ASSERT_TRUE(GateTarget::z(23).is_pauli_target());
+    ASSERT_TRUE(GateTarget::z(29, true).is_pauli_target());
+    ASSERT_FALSE(GateTarget::combiner().is_pauli_target());
+}
+
+TEST(gate_target, is_classical_bit_target) {
+    ASSERT_TRUE(GateTarget::sweep_bit(5).is_classical_bit_target());
+    ASSERT_TRUE(GateTarget::rec(-7).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::qubit(2).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::qubit(3, true).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::x(11).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::x(13, true).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::y(17).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::y(19, true).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::z(23).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::z(29, true).is_classical_bit_target());
+    ASSERT_FALSE(GateTarget::combiner().is_classical_bit_target());
+}

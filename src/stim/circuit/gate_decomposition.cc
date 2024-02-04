@@ -16,14 +16,80 @@
 
 #include "stim/circuit/gate_decomposition.h"
 
+#include <span>
+
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 
+struct ConjugateBySelfInverse {
+    CircuitInstruction inst;
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback;
+    ConjugateBySelfInverse(
+        CircuitInstruction inst,
+        const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback)
+        : inst(inst),
+          do_instruction_callback(do_instruction_callback) {
+        if (!inst.targets.empty()) {
+            do_instruction_callback(inst);
+        }
+    }
+    ~ConjugateBySelfInverse() {
+        if (!inst.targets.empty()) {
+            do_instruction_callback(inst);
+        }
+    }
+};
+
+static bool accumulate_next_obs_terms_to_pauli_string_helper(
+    CircuitInstruction instruction,
+    size_t *start,
+    PauliString<64> *obs,
+    std::vector<GateTarget> *bits) {
+
+    if (*start >= instruction.targets.size()) {
+        return false;
+    }
+
+    if (bits != nullptr) {
+        bits->clear();
+    }
+    obs->xs.clear();
+    obs->zs.clear();
+    obs->sign = false;
+    bool imag = false;
+
+    // Find end of current product.
+    size_t end = *start + 1;
+    while (end < instruction.targets.size() && instruction.targets[end].is_combiner()) {
+        GateTarget t = instruction.targets[end];
+
+        if (t.is_pauli_target()) {
+            obs->safe_accumulate_pauli_term(t, &imag);
+        } else {
+            assert(t.is_classical_bit_target());
+            if (bits == nullptr) {
+                throw std::invalid_argument(
+                    "Found an unsupported classical bit in " + instruction.str());
+            }
+            bits->push_back(t);
+        }
+        end += 2;
+    }
+
+    if (imag) {
+        throw std::invalid_argument(
+            "Acted on an anti-Hermitian operator (e.g. X0*Z0 instead of Y0) in " + instruction.str());
+    }
+
+    *start = end;
+    return true;
+}
+
 void stim::decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
-    const std::function<void(const CircuitInstruction &inst)> &callback) {
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
     PauliString<64> current(num_qubits);
     simd_bits<64> merged(num_qubits);
     std::vector<GateTarget> h_xz;
@@ -35,38 +101,11 @@ void stim::decompose_mpp_operation(
         if (meas.empty()) {
             return;
         }
-        if (!h_xz.empty()) {
-            callback(CircuitInstruction{GateType::H, {}, h_xz});
-        }
-        if (!h_yz.empty()) {
-            callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
-        }
-        if (!cnot.empty()) {
-            callback(CircuitInstruction{GateType::CX, {}, cnot});
-        }
-        try {
-            callback(CircuitInstruction{GateType::M, mpp_op.args, meas});
-        } catch (const std::exception &ex) {
-            // If the measurement was somehow illegal, unwind the conjugations to return to the original state.
-            if (!cnot.empty()) {
-                callback(CircuitInstruction{GateType::CX, {}, cnot});
-            }
-            if (!h_yz.empty()) {
-                callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
-            }
-            if (!h_xz.empty()) {
-                callback(CircuitInstruction{GateType::H, {}, h_xz});
-            }
-            throw;
-        }
-        if (!cnot.empty()) {
-            callback(CircuitInstruction{GateType::CX, {}, cnot});
-        }
-        if (!h_yz.empty()) {
-            callback(CircuitInstruction{GateType::H_YZ, {}, h_yz});
-        }
-        if (!h_xz.empty()) {
-            callback(CircuitInstruction{GateType::H, {}, h_xz});
+        {
+            ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, h_xz}, do_instruction_callback);
+            ConjugateBySelfInverse c2(CircuitInstruction{GateType::H_YZ, {}, h_yz}, do_instruction_callback);
+            ConjugateBySelfInverse c3(CircuitInstruction{GateType::CX, {}, cnot}, do_instruction_callback);
+            do_instruction_callback(CircuitInstruction{GateType::M, mpp_op.args, meas});
         }
         h_xz.clear();
         h_yz.clear();
@@ -76,31 +115,17 @@ void stim::decompose_mpp_operation(
     };
 
     size_t start = 0;
-    while (start < mpp_op.targets.size()) {
-        size_t end = start + 1;
-        while (end < mpp_op.targets.size() && mpp_op.targets[end].is_combiner()) {
-            end += 2;
-        }
-
-        // Determine which qubits are being touched by the next group.
-        current.xs.clear();
-        current.zs.clear();
-        current.sign = false;
-        bool imag = 0;
-        for (size_t i = start; i < end; i += 2) {
-            current.safe_accumulate_pauli_term(mpp_op.targets[i], &imag);
-        }
-        if (imag) {
-            throw std::invalid_argument(
-                "Asked to measure an anti-Hermitian operator (e.g. X0*Z0 instead of Y0) in " + mpp_op.str());
-        }
+    while (accumulate_next_obs_terms_to_pauli_string_helper(
+        mpp_op,
+        &start,
+        &current,
+        nullptr)) {
 
         // Products equal to +-I become MPAD instructions.
         if (current.ref().has_no_pauli_terms()) {
             flush();
             GateTarget t = GateTarget::qubit((uint32_t)current.sign);
-            callback(CircuitInstruction{GateType::MPAD, mpp_op.args, &t});
-            start = end;
+            do_instruction_callback(CircuitInstruction{GateType::MPAD, mpp_op.args, &t});
             continue;
         }
 
@@ -143,16 +168,278 @@ void stim::decompose_mpp_operation(
                     }
                 }
             }
-            assert(!first);
         }
-
-        start = end;
+        assert(!first);
     }
 
     // Flush remaining groups.
     flush();
 }
 
+static void decompose_spp_operation_helper(
+    PauliStringRef<64> observable,
+    std::span<const GateTarget> classical_bits,
+    bool spp_dag,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
+    std::vector<GateTarget> *h_xz_buf,
+    std::vector<GateTarget> *h_yz_buf,
+    std::vector<GateTarget> *cnot_buf) {
+
+    h_xz_buf->clear();
+    h_yz_buf->clear();
+    cnot_buf->clear();
+
+    // Assemble quantum terms from the observable.
+    uint64_t focus_qubit = UINT64_MAX;
+    size_t n64 = observable.xs.num_u64_padded();
+    for (size_t i = 0; i < n64; i++) {
+        uint64_t x64 = observable.xs.u64[i];
+        uint64_t z64 = observable.zs.u64[i];
+        uint64_t u64 = x64 | z64;
+        if (u64) {
+            for (size_t j = 0; j < 64; j++) {
+                bool x = (x64 >> j) & 1;
+                bool z = (z64 >> j) & 1;
+                if (x | z) {
+                    uint32_t q = (uint32_t)(i * 64 + j);
+                    // Include single qubit gates transforming the Pauli into a Z.
+                    if (x) {
+                        if (z) {
+                            h_yz_buf->push_back({q});
+                        } else {
+                            h_xz_buf->push_back({q});
+                        }
+                    }
+                    // Include CNOT gates folding onto a single measured qubit.
+                    if (focus_qubit == UINT64_MAX) {
+                        focus_qubit = q;
+                    } else {
+                        cnot_buf->push_back({q});
+                        cnot_buf->push_back({(uint32_t)focus_qubit});
+                    }
+                }
+            }
+        }
+    }
+
+    // Products need a quantum part to have an observable effect.
+    if (focus_qubit == UINT64_MAX) {
+        return;
+    }
+
+    for (const auto &t : classical_bits) {
+        cnot_buf->push_back({t});
+        cnot_buf->push_back({(uint32_t)focus_qubit});
+    }
+
+    GateTarget t = GateTarget::qubit(focus_qubit);
+    bool sign = spp_dag ^ observable.sign;
+    GateType g = sign ? GateType::S_DAG : GateType::S;
+    {
+        ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, *h_xz_buf}, do_instruction_callback);
+        ConjugateBySelfInverse c2(CircuitInstruction{GateType::H_YZ, {}, *h_yz_buf}, do_instruction_callback);
+        ConjugateBySelfInverse c3(CircuitInstruction{GateType::CX, {}, *cnot_buf}, do_instruction_callback);
+        do_instruction_callback(CircuitInstruction{g, {}, &t});
+    }
+}
+
+void stim::decompose_spp_operation(
+    const CircuitInstruction &spp_op,
+    size_t num_qubits,
+    bool spp_dag,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
+    PauliString<64> obs(num_qubits);
+    std::vector<GateTarget> h_xz_buf;
+    std::vector<GateTarget> h_yz_buf;
+    std::vector<GateTarget> cnot_buf;
+    std::vector<GateTarget> bits;
+
+    size_t start = 0;
+    while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
+        decompose_spp_operation_helper(
+            obs,
+            bits,
+            spp_dag,
+            do_instruction_callback,
+            &h_xz_buf,
+            &h_yz_buf,
+            &cnot_buf);
+    }
+}
+
+template <bool use_x, bool use_z, typename CALLBACK>
+static void for_each_active_qubit_in(PauliStringRef<64> obs, CALLBACK callback) {
+    size_t n = obs.xs.num_u64_padded();
+    for (size_t w = 0; w < n; w++) {
+        uint64_t v = 0;
+        if (use_x) {
+            v |= obs.xs.u64[w];
+        }
+        if (use_z) {
+            v |= obs.zs.u64[w];
+        }
+        while (v) {
+            size_t j = std::countr_zero(v);
+            v &= ~(uint64_t{1} << j);
+            bool b = false;
+            uint32_t q = (uint32_t)(w*64 + j);
+            if (use_x) {
+                b |= obs.xs[q];
+            }
+            if (use_z) {
+                b |= obs.zs[q];
+            }
+            if (b) {
+                callback(w * 64 + j);
+            }
+        }
+    }
+}
+
+static void decompose_cpp_operation_with_reverse_independence_helper(
+    CircuitInstruction cpp_op,
+    PauliStringRef<64> obs1,
+    PauliStringRef<64> obs2,
+    std::span<const GateTarget> classical_bits1,
+    std::span<const GateTarget> classical_bits2,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
+    Circuit *workspace,
+    std::vector<GateTarget> *buf) {
+    assert(obs1.num_qubits == obs2.num_qubits);
+
+    if (!obs1.commutes(obs2)) {
+        std::stringstream ss;
+        ss << "Attempted to CPP two anticommuting observables.\n";
+        ss << "    obs1: " << obs1 << "\n";
+        ss << "    obs2: " << obs2 << "\n";
+        ss << "    instruction: " << cpp_op;
+        throw std::invalid_argument(ss.str());
+    }
+
+    workspace->clear();
+    auto apply_fixup = [&](CircuitInstruction inst) {
+        workspace->safe_append(inst);
+        obs1.do_instruction(inst);
+        obs2.do_instruction(inst);
+    };
+
+    auto reduce = [&](PauliStringRef<64> target_obs) {
+        // Turn all non-identity terms into Z terms.
+        for_each_active_qubit_in<true, false>(target_obs, [&](uint32_t q) {
+            GateTarget t = GateTarget::qubit(q);
+            apply_fixup({target_obs.zs[q] ? GateType::H_YZ : GateType::H, {}, &t});
+        });
+
+        // Cancel any extra Z terms.
+        uint64_t pivot = UINT64_MAX;
+        for_each_active_qubit_in<true, true>(target_obs, [&](uint32_t q) {
+            if (pivot == UINT64_MAX) {
+                pivot = q;
+            } else {
+                std::array<GateTarget, 2> ts{GateTarget::qubit(pivot), GateTarget::qubit(q)};
+                apply_fixup({GateType::CX, {}, ts});
+            }
+        });
+
+        return pivot;
+    };
+
+    uint64_t pivot1 = reduce(obs1);
+    uint64_t pivot2 = reduce(obs2);
+    assert(obs1.weight() <= 1);
+    assert(obs2.weight() <= 1);
+    assert((pivot1 == UINT64_MAX) == (obs1.weight() == 0));
+    assert((pivot2 == UINT64_MAX) == (obs2.weight() == 0));
+    assert(pivot1 == UINT64_MAX || obs1.xs[pivot1] + 2*obs1.zs[pivot1] == 2);
+    assert(pivot1 == UINT64_MAX || obs2.xs[pivot1] + 2*obs2.zs[pivot1] == 0);
+    assert(pivot2 == UINT64_MAX || obs1.xs[pivot2] + 2*obs1.zs[pivot2] == 0);
+    assert(pivot2 == UINT64_MAX || obs2.xs[pivot2] + 2*obs2.zs[pivot2] == 2);
+
+    // Apply rewrites.
+    workspace->for_each_operation(do_instruction_callback);
+
+    // Handle the quantum-quantum interaction.
+    if (pivot1 != UINT64_MAX && pivot2 != UINT64_MAX) {
+        assert(!obs1.sign);
+        assert(!obs2.sign);
+        assert(pivot1 != pivot2);
+        std::array<GateTarget, 2> ts{GateTarget::qubit(pivot1), GateTarget::qubit(pivot2)};
+        do_instruction_callback({GateType::CZ, {}, ts});
+    }
+
+    // Handle sign and classical feedback into obs1.
+    if (pivot1 != UINT64_MAX) {
+        for (const auto &t : classical_bits2) {
+            std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot1)};
+            do_instruction_callback({GateType::CZ, {}, ts});
+        }
+        if (obs2.sign) {
+            GateTarget t = GateTarget::qubit(pivot1);
+            do_instruction_callback({GateType::Z, {}, &t});
+        }
+    }
+
+    // Handle sign and classical feedback into obs2.
+    if (pivot2 != UINT64_MAX) {
+        for (const auto &t : classical_bits1) {
+            std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot2)};
+            do_instruction_callback({GateType::CZ, {}, ts});
+        }
+        if (obs1.sign) {
+            GateTarget t = GateTarget::qubit(pivot2);
+            do_instruction_callback({GateType::Z, {}, &t});
+        }
+    }
+
+    // Undo rewrites.
+    workspace->for_each_operation_reverse([&](CircuitInstruction inst) {
+        assert(inst.args.empty());
+        if (inst.gate_type == GateType::CX) {
+            buf->clear();
+            for (size_t k = inst.targets.size(); k--;) {
+                buf->push_back(inst.targets[k]);
+            }
+            do_instruction_callback({GateType::XCZ, {}, *buf});
+        } else {
+            assert(inst.gate_type == GATE_DATA[inst.gate_type].inverse().id);
+            do_instruction_callback(inst);
+        }
+    });
+}
+
+void stim::decompose_cpp_operation_with_reverse_independence(
+    const CircuitInstruction &cpp_op,
+    size_t num_qubits,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
+    PauliString<64> obs1(num_qubits);
+    PauliString<64> obs2(num_qubits);
+    std::vector<GateTarget> bits1;
+    std::vector<GateTarget> bits2;
+    Circuit circuit_workspace;
+    std::vector<GateTarget> target_buf;
+
+    size_t start = 0;
+    while (true) {
+        bool b1 = accumulate_next_obs_terms_to_pauli_string_helper(cpp_op, &start, &obs1, &bits1);
+        bool b2 = accumulate_next_obs_terms_to_pauli_string_helper(cpp_op, &start, &obs2, &bits2);
+        if (!b2) {
+            break;
+        }
+        if (!b1) {
+            throw std::invalid_argument("Odd number of products.");
+        }
+
+        decompose_cpp_operation_with_reverse_independence_helper(
+            cpp_op,
+            obs1,
+            obs2,
+            bits1,
+            bits2,
+            do_instruction_callback,
+            &circuit_workspace,
+            &target_buf);
+    }
+}
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));

@@ -217,10 +217,19 @@ void CircuitInstruction::validate() const {
             }
         }
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        for (GateTarget q : targets) {
-            if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
-                throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
+        if (gate.flags & GATE_CAN_TARGET_BITS) {
+            for (GateTarget q : targets) {
+                if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER | TARGET_SWEEP_BIT | TARGET_RECORD_BIT))) {
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) + " only takes Pauli targets or bit targets ('X2', 'Y3', 'Z5', 'rec[-1]', 'sweep[0]', etc).");
+                }
+            }
+        } else {
+            for (GateTarget q : targets) {
+                if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
+                }
             }
         }
     } else {
