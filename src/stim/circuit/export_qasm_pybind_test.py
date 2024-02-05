@@ -69,13 +69,13 @@ def test_to_qasm2_runs_in_qiskit():
     stim_circuit = stim.Circuit("""
         R 0 1
         MZZ !0 1
-        MPAD 1
+        MPAD 0 0
     """)
     qasm = stim_circuit.to_qasm(open_qasm_version=2)
 
     qiskit_circuit = qiskit.QuantumCircuit.from_qasm_str(qasm)
     counts = qiskit_aer.AerSimulator().run(qiskit_circuit, shots=8).result().get_counts(qiskit_circuit)
-    assert counts['1'] == 8
+    assert counts['001'] == 8
 
 
 def test_to_qasm3_parses_in_qiskit():

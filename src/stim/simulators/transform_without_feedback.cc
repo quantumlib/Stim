@@ -103,7 +103,11 @@ struct WithoutFeedbackHelper {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (!b1 && !b2) {
-                reversed_semi_flattened_output.safe_append(op_piece);
+                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
+                    op_piece.gate_type,
+                    reversed_semi_flattened_output.arg_buf.take_copy(op_piece.args),
+                    reversed_semi_flattened_output.target_buf.take_copy(op_piece.targets),
+                });
             }
             tracker.undo_gate(op_piece);
         }
@@ -111,7 +115,7 @@ struct WithoutFeedbackHelper {
         for (const auto &e : obs_changes) {
             if (!e.second.empty()) {
                 reversed_semi_flattened_output.arg_buf.append_tail((double)e.first);
-                reversed_semi_flattened_output.safe_append(CircuitInstruction{
+                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
                     GateType::OBSERVABLE_INCLUDE,
                     reversed_semi_flattened_output.arg_buf.commit_tail(),
                     reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
