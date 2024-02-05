@@ -132,35 +132,25 @@ struct QasmExporter {
 
     void output_decomposed_mpp_operation(const CircuitInstruction &inst) {
         out << "// --- begin decomposed " << inst << "\n";
-        decompose_mpp_operation(
-            inst,
-            stats.num_qubits,
-            [&](const CircuitInstruction &inst) {
-                output_instruction(inst);
-            });
+        decompose_mpp_operation(inst, stats.num_qubits, [&](const CircuitInstruction &inst) {
+            output_instruction(inst);
+        });
         out << "// --- end decomposed MPP\n";
     }
 
     void output_decomposed_cpp_operation(const CircuitInstruction &inst) {
         out << "// --- begin decomposed " << inst << "\n";
-        decompose_cpp_operation_with_reverse_independence(
-            inst,
-            stats.num_qubits,
-            [&](const CircuitInstruction &inst) {
-                output_instruction(inst);
-            });
+        decompose_cpp_operation_with_reverse_independence(inst, stats.num_qubits, [&](const CircuitInstruction &inst) {
+            output_instruction(inst);
+        });
         out << "// --- end decomposed CPP\n";
     }
 
     void output_decomposed_spp_or_spp_dag_operation(const CircuitInstruction &inst) {
         out << "// --- begin decomposed " << inst << "\n";
-        decompose_spp_or_spp_dag_operation(
-            inst,
-            stats.num_qubits,
-            false,
-            [&](const CircuitInstruction &inst) {
-                output_instruction(inst);
-            });
+        decompose_spp_or_spp_dag_operation(inst, stats.num_qubits, false, [&](const CircuitInstruction &inst) {
+            output_instruction(inst);
+        });
         out << "// --- end decomposed SPP\n";
     }
 
@@ -461,7 +451,6 @@ struct QasmExporter {
                                 "The circuit contains a vacuous measurement with a non-zero result "
                                 "(like MPAD 1 or MPP !X1*X1) but OPENQASM 2 doesn't support classical assignment.\n"
                                 "Pass the argument `open_qasm_version=3` to fix this.");
-
                         }
                     }
                     measurement_offset++;

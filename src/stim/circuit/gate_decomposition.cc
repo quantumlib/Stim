@@ -26,10 +26,8 @@ struct ConjugateBySelfInverse {
     CircuitInstruction inst;
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback;
     ConjugateBySelfInverse(
-        CircuitInstruction inst,
-        const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback)
-        : inst(inst),
-          do_instruction_callback(do_instruction_callback) {
+        CircuitInstruction inst, const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback)
+        : inst(inst), do_instruction_callback(do_instruction_callback) {
         if (!inst.targets.empty()) {
             do_instruction_callback(inst);
         }
@@ -56,7 +54,7 @@ static void for_each_active_qubit_in(PauliStringRef<64> obs, CALLBACK callback) 
             size_t j = std::countr_zero(v);
             v &= ~(uint64_t{1} << j);
             bool b = false;
-            uint32_t q = (uint32_t)(w*64 + j);
+            uint32_t q = (uint32_t)(w * 64 + j);
             if (use_x) {
                 b |= obs.xs[q];
             }
@@ -76,7 +74,6 @@ bool stim::accumulate_next_obs_terms_to_pauli_string_helper(
     PauliString<64> *obs,
     std::vector<GateTarget> *bits,
     bool allow_imaginary) {
-
     if (*start >= instruction.targets.size()) {
         return false;
     }
@@ -104,8 +101,7 @@ bool stim::accumulate_next_obs_terms_to_pauli_string_helper(
         } else if (t.is_classical_bit_target() && bits != nullptr) {
             bits->push_back(t);
         } else {
-            throw std::invalid_argument(
-                "Found an unsupported target `" + t.str() + "` in " + instruction.str());
+            throw std::invalid_argument("Found an unsupported target `" + t.str() + "` in " + instruction.str());
         }
     }
 
@@ -129,7 +125,7 @@ void stim::decompose_mpp_operation(
     std::vector<GateTarget> cnot;
     std::vector<GateTarget> meas;
 
-    auto flush = [&](){
+    auto flush = [&]() {
         if (meas.empty()) {
             return;
         }
@@ -147,12 +143,7 @@ void stim::decompose_mpp_operation(
     };
 
     size_t start = 0;
-    while (accumulate_next_obs_terms_to_pauli_string_helper(
-        mpp_op,
-        &start,
-        &current,
-        nullptr)) {
-
+    while (accumulate_next_obs_terms_to_pauli_string_helper(mpp_op, &start, &current, nullptr)) {
         // Products equal to +-I become MPAD instructions.
         if (current.ref().has_no_pauli_terms()) {
             flush();
@@ -205,7 +196,6 @@ static void decompose_spp_or_spp_dag_operation_helper(
     std::vector<GateTarget> *h_xz_buf,
     std::vector<GateTarget> *h_yz_buf,
     std::vector<GateTarget> *cnot_buf) {
-
     h_xz_buf->clear();
     h_yz_buf->clear();
     cnot_buf->clear();
@@ -275,13 +265,7 @@ void stim::decompose_spp_or_spp_dag_operation(
     size_t start = 0;
     while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
         decompose_spp_or_spp_dag_operation_helper(
-            obs,
-            bits,
-            invert_sign,
-            do_instruction_callback,
-            &h_xz_buf,
-            &h_yz_buf,
-            &cnot_buf);
+            obs, bits, invert_sign, do_instruction_callback, &h_xz_buf, &h_yz_buf, &cnot_buf);
     }
 }
 
@@ -351,10 +335,10 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
     assert(obs2.weight() <= 1);
     assert((pivot1 == UINT64_MAX) == (obs1.weight() == 0));
     assert((pivot2 == UINT64_MAX) == (obs2.weight() == 0));
-    assert(pivot1 == UINT64_MAX || obs1.xs[pivot1] + 2*obs1.zs[pivot1] == 2);
-    assert(pivot1 == UINT64_MAX || obs2.xs[pivot1] + 2*obs2.zs[pivot1] == 0);
-    assert(pivot2 == UINT64_MAX || obs1.xs[pivot2] + 2*obs1.zs[pivot2] == 0);
-    assert(pivot2 == UINT64_MAX || obs2.xs[pivot2] + 2*obs2.zs[pivot2] == 2);
+    assert(pivot1 == UINT64_MAX || obs1.xs[pivot1] + 2 * obs1.zs[pivot1] == 2);
+    assert(pivot1 == UINT64_MAX || obs2.xs[pivot1] + 2 * obs2.zs[pivot1] == 0);
+    assert(pivot2 == UINT64_MAX || obs1.xs[pivot2] + 2 * obs1.zs[pivot2] == 0);
+    assert(pivot2 == UINT64_MAX || obs2.xs[pivot2] + 2 * obs2.zs[pivot2] == 2);
 
     // Apply rewrites.
     workspace->for_each_operation(do_instruction_callback);
@@ -431,14 +415,7 @@ void stim::decompose_cpp_operation_with_reverse_independence(
         }
 
         decompose_cpp_operation_with_reverse_independence_helper(
-            cpp_op,
-            obs1,
-            obs2,
-            bits1,
-            bits2,
-            do_instruction_callback,
-            &circuit_workspace,
-            &target_buf);
+            cpp_op, obs1, obs2, bits1, bits2, do_instruction_callback, &circuit_workspace, &target_buf);
     }
 }
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(

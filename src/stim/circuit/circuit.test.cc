@@ -229,7 +229,9 @@ TEST(circuit, parse_cpp) {
     c = Circuit("CPP X1 Z2");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].targets.size(), 2);
-    ASSERT_EQ(c.operations[0].targets, ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
 TEST(circuit, parse_spp) {
@@ -249,7 +251,9 @@ TEST(circuit, parse_spp) {
     c = Circuit("SPP X1 Z2");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].targets.size(), 2);
-    ASSERT_EQ(c.operations[0].targets, ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
 TEST(circuit, parse_spp_dag) {
@@ -269,7 +273,9 @@ TEST(circuit, parse_spp_dag) {
     c = Circuit("SPP_DAG X1 Z2");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].targets.size(), 2);
-    ASSERT_EQ(c.operations[0].targets, ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
 TEST(circuit, parse_sweep_bits) {

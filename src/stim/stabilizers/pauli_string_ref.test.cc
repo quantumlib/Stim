@@ -100,8 +100,12 @@ TEST_EACH_WORD_SIZE_W(pauli_string, intersects, {
     ASSERT_TRUE((PauliString<W>("ZZ").ref().intersects(PauliString<W>("ZZ"))));
     ASSERT_FALSE((PauliString<W>("ZZ").ref().intersects(PauliString<W>("__"))));
     ASSERT_FALSE((PauliString<W>("__").ref().intersects(PauliString<W>("XZ"))));
-    ASSERT_FALSE((PauliString<W>("________________________________________________").ref().intersects(PauliString<W>("________________________________________________"))));
-    ASSERT_TRUE((PauliString<W>("_______________________________________X________").ref().intersects(PauliString<W>("_______________________________________X________"))));
+    ASSERT_FALSE((PauliString<W>("________________________________________________")
+                      .ref()
+                      .intersects(PauliString<W>("________________________________________________"))));
+    ASSERT_TRUE((PauliString<W>("_______________________________________X________")
+                     .ref()
+                     .intersects(PauliString<W>("_______________________________________X________"))));
 })
 
 TEST_EACH_WORD_SIZE_W(pauli_string, weight, {

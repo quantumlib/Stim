@@ -1602,7 +1602,9 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
                 for (size_t k = inst.targets.size(); k--;) {
                     reversed_measure_targets.push_back(inst.targets[k]);
                 }
-                undo_MZ_with_context(CircuitInstruction{GateType::M, inst.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
+                undo_MZ_with_context(
+                    CircuitInstruction{GateType::M, inst.args, reversed_measure_targets},
+                    "a Pauli product measurement (MPP)");
             } else {
                 undo_gate(inst);
             }

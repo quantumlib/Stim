@@ -99,11 +99,8 @@ S 1
             .id = GateType::CPP,
             .best_candidate_inverse_id = GateType::CPP,
             .arg_count = 0,
-            .flags = (GateFlags)(
-                GATE_CAN_TARGET_BITS
-                | GATE_TARGETS_PAULI_STRING
-                | GATE_TARGETS_COMBINERS
-                | GATE_TARGETS_PAIRS),
+            .flags = (GateFlags)(GATE_CAN_TARGET_BITS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
+                                 GATE_TARGETS_PAIRS),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
 The generalized CNOT gate. Negates states in the intersection of Pauli product observables.
