@@ -486,7 +486,8 @@ struct Simplifier {
                 used[t.qubit_value()] = true;
             }
         }
-        simplify_disjoint_1q_instruction(CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
+        simplify_disjoint_1q_instruction(
+            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
     }
 
     void simplify_potentially_overlapping_2q_instruction(const CircuitInstruction &inst) {
@@ -496,8 +497,7 @@ struct Simplifier {
         for (size_t k = 0; k < inst.targets.size(); k += 2) {
             auto a = inst.targets[k];
             auto b = inst.targets[k + 1];
-            if ((a.has_qubit_value() && used[a.qubit_value()])
-                || (b.has_qubit_value() && used[b.qubit_value()])) {
+            if ((a.has_qubit_value() && used[a.qubit_value()]) || (b.has_qubit_value() && used[b.qubit_value()])) {
                 CircuitInstruction disjoint = CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k)};
                 simplify_disjoint_2q_instruction(disjoint);
                 used.clear();
@@ -510,7 +510,8 @@ struct Simplifier {
                 used[b.qubit_value()] = true;
             }
         }
-        simplify_disjoint_2q_instruction(CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
+        simplify_disjoint_2q_instruction(
+            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
     }
 
     void simplify_disjoint_1q_instruction(const CircuitInstruction &inst) {
@@ -852,7 +853,7 @@ struct Simplifier {
         const Gate &g = GATE_DATA[inst.gate_type];
 
         switch (inst.gate_type) {
-        case GateType::MPP:
+            case GateType::MPP:
                 decompose_mpp_operation(inst, num_qubits, [&](const CircuitInstruction sub) {
                     simplify_instruction(sub);
                 });
@@ -903,7 +904,8 @@ struct Simplifier {
                 } else if (g.flags & GATE_TARGETS_PAIRS) {
                     simplify_potentially_overlapping_2q_instruction(inst);
                 } else {
-                    throw std::invalid_argument("Unhandled in simplify_potentially_overlapping_instruction: " + inst.str());
+                    throw std::invalid_argument(
+                        "Unhandled in simplify_potentially_overlapping_instruction: " + inst.str());
                 }
             }
         }
@@ -918,8 +920,7 @@ Circuit stim::simplified_circuit(const Circuit &circuit) {
     for (auto inst : circuit.operations) {
         if (inst.gate_type == GateType::REPEAT) {
             output.append_repeat_block(
-                inst.repeat_block_rep_count(),
-                simplified_circuit(inst.repeat_block_body(circuit)));
+                inst.repeat_block_rep_count(), simplified_circuit(inst.repeat_block_body(circuit)));
         } else {
             simplifier.simplify_instruction(inst);
         }

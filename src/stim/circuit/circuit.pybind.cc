@@ -2223,9 +2223,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     SWAP 0 1
                 ... ''').decomposed()
                 stim.Circuit('''
-                    CX 0 1
-                    CX 1 0
-                    CX 0 1
+                    CX 0 1 1 0 0 1
                 ''')
 
                 >>> stim.Circuit('''

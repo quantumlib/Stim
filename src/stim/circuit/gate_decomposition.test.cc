@@ -480,7 +480,8 @@ TEST(gate_decomposition, decompose_cpp_operation_bad) {
         std::invalid_argument);
 }
 
-static std::pair<std::vector<PauliString<64>>, std::vector<PauliString<64>>> circuit_output_eq_val(const Circuit &circuit) {
+static std::pair<std::vector<PauliString<64>>, std::vector<PauliString<64>>> circuit_output_eq_val(
+    const Circuit &circuit) {
     // CAUTION: this is not 100% reliable when measurement count is larger than 1.
     TableauSimulator<64> sim1(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), -1);
     TableauSimulator<64> sim2(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), +1);
@@ -491,7 +492,8 @@ static std::pair<std::vector<PauliString<64>>, std::vector<PauliString<64>>> cir
 
 bool is_simplification_correct(const Gate &gate) {
     std::vector<double> args;
-    while (args.size() < gate.arg_count && gate.arg_count != ARG_COUNT_SYGIL_ANY && gate.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE) {
+    while (args.size() < gate.arg_count && gate.arg_count != ARG_COUNT_SYGIL_ANY &&
+           gate.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE) {
         args.push_back(args.empty() ? 1 : 0);
     }
 
