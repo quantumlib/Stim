@@ -18,6 +18,7 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/stabilizer_flow.h"
+#include "stim/cmd/command_help.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
@@ -90,15 +91,7 @@ bool is_decomposition_correct(const Gate &gate) {
     }
 
     Circuit original;
-    if (gate.id == GateType::MPP) {
-        original.append_from_text("MPP X0*Y1*Z2 X3*X4");
-    } else if (gate.id == GateType::CPP) {
-        original.append_from_text("CPP X0*Y1 Z2*Z3");
-    } else if (gate.flags & GATE_TARGETS_PAIRS) {
-        original.safe_append_u(gate.name, {0, 1});
-    } else {
-        original.safe_append_u(gate.name, {0});
-    }
+    original.safe_append(gate.id, gate_decomposition_help_targets_for_gate_type(gate.id), {});
     uint32_t n = original.count_qubits();
 
     Circuit epr;
@@ -162,22 +155,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
         if (flows.empty()) {
             continue;
         }
-        std::vector<GateTarget> targets;
-        if (g.id == GateType::MPP) {
-            targets.push_back(GateTarget::x(0));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::y(1));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::z(2));
-            targets.push_back(GateTarget::x(3));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::x(4));
-        } else {
-            targets.push_back(GateTarget::qubit(0));
-            if (g.flags & GATE_TARGETS_PAIRS) {
-                targets.push_back(GateTarget::qubit(1));
-            }
-        }
+        std::vector<GateTarget> targets = gate_decomposition_help_targets_for_gate_type(g.id);
 
         Circuit c;
         c.safe_append(g.id, targets, {});
@@ -196,22 +174,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_also_correct_for_decompose
         if (flows.empty()) {
             continue;
         }
-        std::vector<GateTarget> targets;
-        if (g.id == GateType::MPP) {
-            targets.push_back(GateTarget::x(0));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::y(1));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::z(2));
-            targets.push_back(GateTarget::x(3));
-            targets.push_back(GateTarget::combiner());
-            targets.push_back(GateTarget::x(4));
-        } else {
-            targets.push_back(GateTarget::qubit(0));
-            if (g.flags & GATE_TARGETS_PAIRS) {
-                targets.push_back(GateTarget::qubit(1));
-            }
-        }
+        std::vector<GateTarget> targets = gate_decomposition_help_targets_for_gate_type(g.id);
 
         Circuit c(g.h_s_cx_m_r_decomposition);
         auto r = sample_if_circuit_has_stabilizer_flows<W>(256, rng, c, flows);

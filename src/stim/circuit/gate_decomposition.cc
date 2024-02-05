@@ -41,11 +41,41 @@ struct ConjugateBySelfInverse {
     }
 };
 
-static bool accumulate_next_obs_terms_to_pauli_string_helper(
+template <bool use_x, bool use_z, typename CALLBACK>
+static void for_each_active_qubit_in(PauliStringRef<64> obs, CALLBACK callback) {
+    size_t n = obs.xs.num_u64_padded();
+    for (size_t w = 0; w < n; w++) {
+        uint64_t v = 0;
+        if (use_x) {
+            v |= obs.xs.u64[w];
+        }
+        if (use_z) {
+            v |= obs.zs.u64[w];
+        }
+        while (v) {
+            size_t j = std::countr_zero(v);
+            v &= ~(uint64_t{1} << j);
+            bool b = false;
+            uint32_t q = (uint32_t)(w*64 + j);
+            if (use_x) {
+                b |= obs.xs[q];
+            }
+            if (use_z) {
+                b |= obs.zs[q];
+            }
+            if (b) {
+                callback(w * 64 + j);
+            }
+        }
+    }
+}
+
+bool stim::accumulate_next_obs_terms_to_pauli_string_helper(
     CircuitInstruction instruction,
     size_t *start,
     PauliString<64> *obs,
-    std::vector<GateTarget> *bits) {
+    std::vector<GateTarget> *bits,
+    bool allow_imaginary) {
 
     if (*start >= instruction.targets.size()) {
         return false;
@@ -62,22 +92,24 @@ static bool accumulate_next_obs_terms_to_pauli_string_helper(
     // Find end of current product.
     size_t end = *start + 1;
     while (end < instruction.targets.size() && instruction.targets[end].is_combiner()) {
-        GateTarget t = instruction.targets[end];
-
-        if (t.is_pauli_target()) {
-            obs->safe_accumulate_pauli_term(t, &imag);
-        } else {
-            assert(t.is_classical_bit_target());
-            if (bits == nullptr) {
-                throw std::invalid_argument(
-                    "Found an unsupported classical bit in " + instruction.str());
-            }
-            bits->push_back(t);
-        }
         end += 2;
     }
 
-    if (imag) {
+    // Accumulate terms.
+    for (size_t k = *start; k < end; k += 2) {
+        GateTarget t = instruction.targets[k];
+
+        if (t.is_pauli_target()) {
+            obs->safe_accumulate_pauli_term(t, &imag);
+        } else if (t.is_classical_bit_target() && bits != nullptr) {
+            bits->push_back(t);
+        } else {
+            throw std::invalid_argument(
+                "Found an unsupported target `" + t.str() + "` in " + instruction.str());
+        }
+    }
+
+    if (imag && !allow_imaginary) {
         throw std::invalid_argument(
             "Acted on an anti-Hermitian operator (e.g. X0*Z0 instead of Y0) in " + instruction.str());
     }
@@ -137,38 +169,27 @@ void stim::decompose_mpp_operation(
         merged |= current.zs;
 
         // Buffer operations to perform the desired measurement.
-        size_t n64 = current.xs.num_u64_padded();
         bool first = true;
-        for (size_t i = 0; i < n64; i++) {
-            uint64_t x64 = current.xs.u64[i];
-            uint64_t z64 = current.zs.u64[i];
-            uint64_t u64 = x64 | z64;
-            if (u64) {
-                for (size_t j = 0; j < 64; j++) {
-                    bool x = (x64 >> j) & 1;
-                    bool z = (z64 >> j) & 1;
-                    if (x | z) {
-                        uint32_t q = (uint32_t)(i * 64 + j);
-                        // Include single qubit gates transforming the Pauli into a Z.
-                        if (x) {
-                            if (z) {
-                                h_yz.push_back({q});
-                            } else {
-                                h_xz.push_back({q});
-                            }
-                        }
-                        // Include CNOT gates folding onto a single measured qubit.
-                        if (first) {
-                            meas.push_back(GateTarget::qubit(q, current.sign));
-                            first = false;
-                        } else {
-                            cnot.push_back({q});
-                            cnot.push_back({meas.back().qubit_value()});
-                        }
-                    }
+        for_each_active_qubit_in<true, true>(current, [&](uint32_t q) {
+            bool x = current.xs[q];
+            bool z = current.zs[q];
+            // Include single qubit gates transforming the Pauli into a Z.
+            if (x) {
+                if (z) {
+                    h_yz.push_back({q});
+                } else {
+                    h_xz.push_back({q});
                 }
             }
-        }
+            // Include CNOT gates folding onto a single measured qubit.
+            if (first) {
+                meas.push_back(GateTarget::qubit(q, current.sign));
+                first = false;
+            } else {
+                cnot.push_back({q});
+                cnot.push_back({meas.back().qubit_value()});
+            }
+        });
         assert(!first);
     }
 
@@ -176,10 +197,10 @@ void stim::decompose_mpp_operation(
     flush();
 }
 
-static void decompose_spp_operation_helper(
+static void decompose_spp_or_spp_dag_operation_helper(
     PauliStringRef<64> observable,
     std::span<const GateTarget> classical_bits,
-    bool spp_dag,
+    bool invert_sign,
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
     std::vector<GateTarget> *h_xz_buf,
     std::vector<GateTarget> *h_yz_buf,
@@ -191,36 +212,25 @@ static void decompose_spp_operation_helper(
 
     // Assemble quantum terms from the observable.
     uint64_t focus_qubit = UINT64_MAX;
-    size_t n64 = observable.xs.num_u64_padded();
-    for (size_t i = 0; i < n64; i++) {
-        uint64_t x64 = observable.xs.u64[i];
-        uint64_t z64 = observable.zs.u64[i];
-        uint64_t u64 = x64 | z64;
-        if (u64) {
-            for (size_t j = 0; j < 64; j++) {
-                bool x = (x64 >> j) & 1;
-                bool z = (z64 >> j) & 1;
-                if (x | z) {
-                    uint32_t q = (uint32_t)(i * 64 + j);
-                    // Include single qubit gates transforming the Pauli into a Z.
-                    if (x) {
-                        if (z) {
-                            h_yz_buf->push_back({q});
-                        } else {
-                            h_xz_buf->push_back({q});
-                        }
-                    }
-                    // Include CNOT gates folding onto a single measured qubit.
-                    if (focus_qubit == UINT64_MAX) {
-                        focus_qubit = q;
-                    } else {
-                        cnot_buf->push_back({q});
-                        cnot_buf->push_back({(uint32_t)focus_qubit});
-                    }
-                }
+    for_each_active_qubit_in<true, true>(observable, [&](uint32_t q) {
+        bool x = observable.xs[q];
+        bool z = observable.zs[q];
+        // Include single qubit gates transforming the Pauli into a Z.
+        if (x) {
+            if (z) {
+                h_yz_buf->push_back({q});
+            } else {
+                h_xz_buf->push_back({q});
             }
         }
-    }
+        // Include CNOT gates folding onto a single measured qubit.
+        if (focus_qubit == UINT64_MAX) {
+            focus_qubit = q;
+        } else {
+            cnot_buf->push_back({q});
+            cnot_buf->push_back({(uint32_t)focus_qubit});
+        }
+    });
 
     // Products need a quantum part to have an observable effect.
     if (focus_qubit == UINT64_MAX) {
@@ -233,7 +243,7 @@ static void decompose_spp_operation_helper(
     }
 
     GateTarget t = GateTarget::qubit(focus_qubit);
-    bool sign = spp_dag ^ observable.sign;
+    bool sign = invert_sign ^ observable.sign;
     GateType g = sign ? GateType::S_DAG : GateType::S;
     {
         ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, *h_xz_buf}, do_instruction_callback);
@@ -243,10 +253,10 @@ static void decompose_spp_operation_helper(
     }
 }
 
-void stim::decompose_spp_operation(
+void stim::decompose_spp_or_spp_dag_operation(
     const CircuitInstruction &spp_op,
     size_t num_qubits,
-    bool spp_dag,
+    bool invert_sign,
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
     PauliString<64> obs(num_qubits);
     std::vector<GateTarget> h_xz_buf;
@@ -254,45 +264,24 @@ void stim::decompose_spp_operation(
     std::vector<GateTarget> cnot_buf;
     std::vector<GateTarget> bits;
 
+    if (spp_op.gate_type == GateType::SPP) {
+        // No sign inversion needed.
+    } else if (spp_op.gate_type == GateType::SPP_DAG) {
+        invert_sign ^= true;
+    } else {
+        throw std::invalid_argument("Not an SPP or SPP_DAG instruction: " + spp_op.str());
+    }
+
     size_t start = 0;
     while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
-        decompose_spp_operation_helper(
+        decompose_spp_or_spp_dag_operation_helper(
             obs,
             bits,
-            spp_dag,
+            invert_sign,
             do_instruction_callback,
             &h_xz_buf,
             &h_yz_buf,
             &cnot_buf);
-    }
-}
-
-template <bool use_x, bool use_z, typename CALLBACK>
-static void for_each_active_qubit_in(PauliStringRef<64> obs, CALLBACK callback) {
-    size_t n = obs.xs.num_u64_padded();
-    for (size_t w = 0; w < n; w++) {
-        uint64_t v = 0;
-        if (use_x) {
-            v |= obs.xs.u64[w];
-        }
-        if (use_z) {
-            v |= obs.zs.u64[w];
-        }
-        while (v) {
-            size_t j = std::countr_zero(v);
-            v &= ~(uint64_t{1} << j);
-            bool b = false;
-            uint32_t q = (uint32_t)(w*64 + j);
-            if (use_x) {
-                b |= obs.xs[q];
-            }
-            if (use_z) {
-                b |= obs.zs[q];
-            }
-            if (b) {
-                callback(w * 64 + j);
-            }
-        }
     }
 }
 
@@ -336,7 +325,7 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
             if (pivot == UINT64_MAX) {
                 pivot = q;
             } else {
-                std::array<GateTarget, 2> ts{GateTarget::qubit(pivot), GateTarget::qubit(q)};
+                std::array<GateTarget, 2> ts{GateTarget::qubit(q), GateTarget::qubit(pivot)};
                 apply_fixup({GateType::CX, {}, ts});
             }
         });
@@ -346,6 +335,18 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
 
     uint64_t pivot1 = reduce(obs1);
     uint64_t pivot2 = reduce(obs2);
+
+    if (pivot1 == pivot2 && pivot1 != UINT64_MAX) {
+        // Both observables had identical quantum parts (up to sign).
+        // If their sign differed, we should do nothing.
+        // If their sign matched, we should apply Z to obs1.
+        assert(obs1.xs == obs2.xs);
+        assert(obs1.zs == obs2.zs);
+        obs2.zs[pivot2] = false;
+        obs2.sign ^= obs1.sign;
+        obs2.sign ^= true;
+        pivot2 = UINT64_MAX;
+    }
     assert(obs1.weight() <= 1);
     assert(obs2.weight() <= 1);
     assert((pivot1 == UINT64_MAX) == (obs1.weight() == 0));
@@ -360,8 +361,6 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
 
     // Handle the quantum-quantum interaction.
     if (pivot1 != UINT64_MAX && pivot2 != UINT64_MAX) {
-        assert(!obs1.sign);
-        assert(!obs2.sign);
         assert(pivot1 != pivot2);
         std::array<GateTarget, 2> ts{GateTarget::qubit(pivot1), GateTarget::qubit(pivot2)};
         do_instruction_callback({GateType::CZ, {}, ts});
@@ -396,10 +395,12 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
         assert(inst.args.empty());
         if (inst.gate_type == GateType::CX) {
             buf->clear();
-            for (size_t k = inst.targets.size(); k--;) {
+            for (size_t k = inst.targets.size(); k;) {
+                k -= 2;
                 buf->push_back(inst.targets[k]);
+                buf->push_back(inst.targets[k + 1]);
             }
-            do_instruction_callback({GateType::XCZ, {}, *buf});
+            do_instruction_callback({GateType::CX, {}, *buf});
         } else {
             assert(inst.gate_type == GATE_DATA[inst.gate_type].inverse().id);
             do_instruction_callback(inst);

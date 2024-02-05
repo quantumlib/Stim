@@ -181,7 +181,7 @@ CX 3 2
             .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
-The generalized S gate. Negates states in the intersection of Pauli product observables.
+The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
 
 Parens Arguments:
 
@@ -189,60 +189,60 @@ Parens Arguments:
 
 Targets:
 
-    A series of pairs of Pauli products to intersect.
+    A series of Pauli products to phase.
 
-    Each Pauli product is a series of Pauli targets (`[XYZ]#`), record targets (`rec[-#]`),
-    or sweep targets (`sweep[#]`) separated by combiners (`*`). Each product can be negated
-    by prefixing a Pauli target in the product with an inverter (`!`).
+    Each Pauli product is a series of Pauli targets (like `X1`, `Y2`, or `Z3`) separated by
+    combiners (`*`). Each Pauli term can be inverted (like `!Y2` instead of `Y2`), to negate
+    the product.
 
-    The number of products must be even. CPP X1 Y2 Z3 isn't allowed.
-    Within each pair of products, the pair must commute. CPP X1 Z1 isn't allowed.
+    Note that, although you can write down instructions that phase anti-Hermitian products,
+    like `SPP X1*Z1`, doing this will cause exceptions when you simulate or analyze the
+    circuit since phasing an anti-Hermitian operator doesn't have well defined semantics.
+
+    Using overly-complicated Hermitian products, like saying `SPP X1*Y1*Y2*Z2` instead of
+    `SPP !Z1*X2`, is technically allowed. But probably not a great idea since tools consuming
+    the circuit may have assumed that each qubit would appear at most once in each product.
 
 Examples:
 
-    # Perform a CNOT gate with qubit 1 as the control and qubit 2 as the target.
-    CPP X1 Z2
+    # Perform an S gate on qubit 1.
+    SPP Z1
 
-    # Perform a CZ gate between qubit 2 and qubit 5, then between qubit 3 and 4.
-    CPP Z2 Z5 Z3 Z4
+    # Perform a SQRT_X gate on qubit 1.
+    SPP X1
 
-    # Perform many CX gates, all controlled by qubit 2, targeting qubits 5 through 10.
-    CPP Z2 X5*X6*X7*X8*X9*X10
+    # Perform a SQRT_X_DAG gate on qubit 1.
+    SPP !X1
 
-    # Swap qubit 1 and qubit 5 by negating their overlap with the singlet state.
-    CPP X1*X5 Z1*Z5
+    # Perform a SQRT_XX gate between qubit 1 and qubit 2.
+    SPP X1*X2
 
-    # Negate the amplitude of the |00> state.
-    CPP !Z0 !Z1
+    # Perform a SQRT_YY gate between qubit 1 and 2, and a SQRT_ZZ_DAG between qubit 3 and 4.
+    SPP Y1*Y2 !Z1*Z2
 
-    # Measure qubit 0 and do Pauli operations conditioned on the measurement returning TRUE.
-    M 0
-    CPP rec[-1] X1*Y2*Z3
+    # Phase the -1 eigenspace of -X1*Y2*Z3 by i.
+    SPP !X1*Y2*Z3
 
 )MARKDOWN",
             .unitary_data = {},
             .flow_data =
                 {
-                    // For "CPP X0*Y1 Z2*Z3"
-                    "X___ -> X___",
-                    "Z___ -> Z_ZZ",
-                    "_X__ -> _XZZ",
-                    "_Z__ -> _ZZZ",
-                    "__X_ -> XYX_",
-                    "__Z_ -> __Z_",
-                    "___X -> XY_X",
-                    "___Z -> ___Z",
+                    // For "SPP X0*Y1*Z2"
+                    "X__ -> X__",
+                    "Z__ -> -YYZ",
+                    "_X_ -> -XZZ",
+                    "_Z_ -> XXZ",
+                    "__X -> XYY",
+                    "__Z -> __Z",
                 },
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-CX 3 2
-CX 1 0
-S 1
-S 1
-S 1
 CX 2 1
-S 1
 CX 1 0
-CX 3 2
+S 1
+S 1
+H 1
+CX 1 0
+CX 2 1
 )CIRCUIT",
         });
 
@@ -256,7 +256,7 @@ CX 3 2
             .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
-The generalized S gate. Negates states in the intersection of Pauli product observables.
+The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
 
 Parens Arguments:
 
@@ -264,60 +264,60 @@ Parens Arguments:
 
 Targets:
 
-    A series of pairs of Pauli products to intersect.
+    A series of Pauli products to phase.
 
-    Each Pauli product is a series of Pauli targets (`[XYZ]#`), record targets (`rec[-#]`),
-    or sweep targets (`sweep[#]`) separated by combiners (`*`). Each product can be negated
-    by prefixing a Pauli target in the product with an inverter (`!`).
+    Each Pauli product is a series of Pauli targets (like `X1`, `Y2`, or `Z3`) separated by
+    combiners (`*`). Each Pauli term can be inverted (like `!Y2` instead of `Y2`), to negate
+    the product.
 
-    The number of products must be even. CPP X1 Y2 Z3 isn't allowed.
-    Within each pair of products, the pair must commute. CPP X1 Z1 isn't allowed.
+    Note that, although you can write down instructions that phase anti-Hermitian products,
+    like `SPP X1*Z1`, doing this will cause exceptions when you simulate or analyze the
+    circuit since phasing an anti-Hermitian operator doesn't have well defined semantics.
+
+    Using overly-complicated Hermitian products, like saying `SPP X1*Y1*Y2*Z2` instead of
+    `SPP !Z1*X2`, is technically allowed. But probably not a great idea since tools consuming
+    the circuit may have assumed that each qubit would appear at most once in each product.
 
 Examples:
 
-    # Perform a CNOT gate with qubit 1 as the control and qubit 2 as the target.
-    CPP X1 Z2
+    # Perform an S_DAG gate on qubit 1.
+    SPP_DAG Z1
 
-    # Perform a CZ gate between qubit 2 and qubit 5, then between qubit 3 and 4.
-    CPP Z2 Z5 Z3 Z4
+    # Perform a SQRT_X_DAG gate on qubit 1.
+    SPP_DAG X1
 
-    # Perform many CX gates, all controlled by qubit 2, targeting qubits 5 through 10.
-    CPP Z2 X5*X6*X7*X8*X9*X10
+    # Perform a SQRT_X gate on qubit 1.
+    SPP_DAG !X1
 
-    # Swap qubit 1 and qubit 5 by negating their overlap with the singlet state.
-    CPP X1*X5 Z1*Z5
+    # Perform a SQRT_XX_DAG gate between qubit 1 and qubit 2.
+    SPP_DAG X1*X2
 
-    # Negate the amplitude of the |00> state.
-    CPP !Z0 !Z1
+    # Perform a SQRT_YY_DAG gate between qubit 1 and 2, and a SQRT_ZZ between qubit 3 and 4.
+    SPP_DAG Y1*Y2 !Z1*Z2
 
-    # Measure qubit 0 and do Pauli operations conditioned on the measurement returning TRUE.
-    M 0
-    CPP rec[-1] X1*Y2*Z3
+    # Phase the -1 eigenspace of -X1*Y2*Z3 by -i.
+    SPP_DAG !X1*Y2*Z3
 
 )MARKDOWN",
             .unitary_data = {},
             .flow_data =
                 {
-                    // For "CPP X0*Y1 Z2*Z3"
-                    "X___ -> X___",
-                    "Z___ -> Z_ZZ",
-                    "_X__ -> _XZZ",
-                    "_Z__ -> _ZZZ",
-                    "__X_ -> XYX_",
-                    "__Z_ -> __Z_",
-                    "___X -> XY_X",
-                    "___Z -> ___Z",
+                    // For "SPP_DAG X0*Y1*Z2"
+                    "X__ -> X__",
+                    "Z__ -> YYZ",
+                    "_X_ -> XZZ",
+                    "_Z_ -> -XXZ",
+                    "__X -> -XYY",
+                    "__Z -> __Z",
                 },
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
-CX 3 2
-CX 1 0
-S 1
-S 1
-S 1
 CX 2 1
+CX 1 0
+H 1
+S 1
 S 1
 CX 1 0
-CX 3 2
+CX 2 1
 )CIRCUIT",
         });
 }

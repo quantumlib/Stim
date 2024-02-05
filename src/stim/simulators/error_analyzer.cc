@@ -80,6 +80,13 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::MPP:
             undo_MPP(inst);
             break;
+        case GateType::CPP:
+            undo_CPP(inst);
+            break;
+        case GateType::SPP:
+        case GateType::SPP_DAG:
+            undo_SPP(inst);
+            break;
         case GateType::MPAD:
             undo_MPAD(inst);
             break;
@@ -119,15 +126,6 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             undo_ZCZ(inst);
             break;
-        case GateType::H:
-            undo_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            undo_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            undo_H_YZ(inst);
-            break;
         case GateType::DEPOLARIZE1:
             undo_DEPOLARIZE1(inst);
             break;
@@ -156,14 +154,8 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
-            undo_I(inst);
-            break;
         case GateType::X:
-            undo_I(inst);
-            break;
         case GateType::Y:
-            undo_I(inst);
-            break;
         case GateType::Z:
             undo_I(inst);
             break;
@@ -173,39 +165,30 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::C_ZYX:
             undo_C_ZYX(inst);
             break;
+        case GateType::H_YZ:
         case GateType::SQRT_X:
-            undo_H_YZ(inst);
-            break;
         case GateType::SQRT_X_DAG:
             undo_H_YZ(inst);
             break;
         case GateType::SQRT_Y:
-            undo_H_XZ(inst);
-            break;
         case GateType::SQRT_Y_DAG:
+        case GateType::H:
             undo_H_XZ(inst);
             break;
         case GateType::S:
-            undo_H_XY(inst);
-            break;
         case GateType::S_DAG:
+        case GateType::H_XY:
             undo_H_XY(inst);
             break;
         case GateType::SQRT_XX:
-            undo_SQRT_XX(inst);
-            break;
         case GateType::SQRT_XX_DAG:
             undo_SQRT_XX(inst);
             break;
         case GateType::SQRT_YY:
-            undo_SQRT_YY(inst);
-            break;
         case GateType::SQRT_YY_DAG:
             undo_SQRT_YY(inst);
             break;
         case GateType::SQRT_ZZ:
-            undo_SQRT_ZZ(inst);
-            break;
         case GateType::SQRT_ZZ_DAG:
             undo_SQRT_ZZ(inst);
             break;
@@ -213,8 +196,6 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_SWAP(inst);
             break;
         case GateType::ISWAP:
-            undo_ISWAP(inst);
-            break;
         case GateType::ISWAP_DAG:
             undo_ISWAP(inst);
             break;
@@ -1625,6 +1606,37 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
             } else {
                 undo_gate(inst);
             }
+        });
+}
+
+void ErrorAnalyzer::undo_CPP(const CircuitInstruction &target_data) {
+    size_t n = target_data.targets.size();
+    std::vector<GateTarget> reversed_targets(n);
+    std::vector<GateTarget> reversed_measure_targets;
+    for (size_t k = 0; k < n; k++) {
+        reversed_targets[k] = target_data.targets[n - k - 1];
+    }
+    decompose_cpp_operation_with_reverse_independence(
+        CircuitInstruction{GateType::CPP, target_data.args, reversed_targets},
+        tracker.xs.size(),
+        [&](const CircuitInstruction &inst) {
+            undo_gate(inst);
+        });
+}
+
+void ErrorAnalyzer::undo_SPP(const CircuitInstruction &target_data) {
+    size_t n = target_data.targets.size();
+    std::vector<GateTarget> reversed_targets(n);
+    std::vector<GateTarget> reversed_measure_targets;
+    for (size_t k = 0; k < n; k++) {
+        reversed_targets[k] = target_data.targets[n - k - 1];
+    }
+    decompose_spp_or_spp_dag_operation(
+        CircuitInstruction{GateType::SPP, target_data.args, reversed_targets},
+        tracker.xs.size(),
+        false,
+        [&](const CircuitInstruction &inst) {
+            undo_gate(inst);
         });
 }
 

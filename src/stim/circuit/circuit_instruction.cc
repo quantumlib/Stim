@@ -117,19 +117,35 @@ void CircuitInstruction::validate() const {
     }
 
     if (gate.flags & GATE_TARGETS_PAIRS) {
-        if (targets.size() & 1) {
-            throw std::invalid_argument(
-                "Two qubit gate " + std::string(gate.name) +
-                " requires an even number of targets but was given "
-                "(" +
-                comma_sep(args).str() + ").");
-        }
-        for (size_t k = 0; k < targets.size(); k += 2) {
-            if (targets[k] == targets[k + 1]) {
+        if (gate.flags & GATE_TARGETS_PAULI_STRING) {
+            size_t term_count = targets.size();
+            for (auto t : targets) {
+                if (t.is_combiner()) {
+                    term_count -= 2;
+                }
+            }
+            if (term_count & 1) {
                 throw std::invalid_argument(
-                    "The two qubit gate " + std::string(gate.name) +
-                    " was applied to a target pair with the same target (" + targets[k].target_str() +
-                    ") twice. Gates can't interact targets with themselves.");
+                    "The gate " + std::string(gate.name) +
+                    " requires an even number of products to target, but was given "
+                    "(" +
+                    comma_sep(args).str() + ").");
+            }
+        } else {
+            if (targets.size() & 1) {
+                throw std::invalid_argument(
+                    "Two qubit gate " + std::string(gate.name) +
+                    " requires an even number of targets but was given "
+                    "(" +
+                    comma_sep(args).str() + ").");
+            }
+            for (size_t k = 0; k < targets.size(); k += 2) {
+                if (targets[k] == targets[k + 1]) {
+                    throw std::invalid_argument(
+                        "The two qubit gate " + std::string(gate.name) +
+                        " was applied to a target pair with the same target (" + targets[k].target_str() +
+                        ") twice. Gates can't interact targets with themselves.");
+                }
             }
         }
     }

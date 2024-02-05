@@ -69,10 +69,10 @@ void decompose_cpp_operation_with_reverse_independence(
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
 
 /// Decomposes SPP operations into sequences of simpler operations with the same effect.
-void decompose_spp_operation(
-    const CircuitInstruction &cpp_op,
+void decompose_spp_or_spp_dag_operation(
+    const CircuitInstruction &spp_op,
     size_t num_qubits,
-    bool spp_dag_instead_of_spp,
+    bool invert_sign,
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
 
 /// Finds contiguous segments where the first target of each pair is used once.
@@ -107,6 +107,13 @@ void decompose_spp_operation(
 ///     callback: The method called with each decomposed segment.
 void decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback);
+
+bool accumulate_next_obs_terms_to_pauli_string_helper(
+    CircuitInstruction instruction,
+    size_t *start,
+    PauliString<64> *obs,
+    std::vector<GateTarget> *bits,
+    bool allow_imaginary = false);
 
 }  // namespace stim
 

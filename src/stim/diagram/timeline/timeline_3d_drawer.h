@@ -57,7 +57,10 @@ struct DiagramTimeline3DDrawer {
         const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
     void do_single_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
+    void do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op);
     void do_mpp(const ResolvedTimelineOperation &op);
+    void do_spp(const ResolvedTimelineOperation &op);
+    void do_cpp(const ResolvedTimelineOperation &op);
     void do_correlated_error(const ResolvedTimelineOperation &op);
     void do_qubit_coords(const ResolvedTimelineOperation &op);
     void do_else_correlated_error(const ResolvedTimelineOperation &op);

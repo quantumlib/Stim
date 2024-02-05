@@ -172,6 +172,8 @@ struct ErrorAnalyzer {
     void undo_MY(const CircuitInstruction &inst);
     void undo_MZ(const CircuitInstruction &inst);
     void undo_MPP(const CircuitInstruction &inst);
+    void undo_CPP(const CircuitInstruction &inst);
+    void undo_SPP(const CircuitInstruction &inst);
     void undo_MXX(const CircuitInstruction &inst);
     void undo_MYY(const CircuitInstruction &inst);
     void undo_MZZ(const CircuitInstruction &inst);

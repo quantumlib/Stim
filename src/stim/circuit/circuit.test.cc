@@ -211,7 +211,8 @@ TEST(circuit, parse_cpp) {
     ASSERT_THROW({ Circuit("CPP X1"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("CPP 1 2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("CPP X1 X2 X3"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit("CPP X1*X2 Z1*Z3"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("CPP X1*X2 X2 X3"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("CPP X1*X4 X2*Z5*Z9*Z10 X3"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("CPP rec[-1]"); }, std::invalid_argument);
 
     Circuit c;
@@ -233,19 +234,16 @@ TEST(circuit, parse_cpp) {
 
 TEST(circuit, parse_spp) {
     ASSERT_THROW({ Circuit("SPP 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]*X0"); }, std::invalid_argument);
 
     Circuit c;
 
     c = Circuit("SPP");
     ASSERT_EQ(c.operations.size(), 1);
 
-    c = Circuit("SPP rec[-1]");
-    ASSERT_EQ(c.operations.size(), 1);
-
-    c = Circuit("SPP rec[-1] X1*Y2*Z3");
-    ASSERT_EQ(c.operations.size(), 1);
-
-    c = Circuit("SPP sweep[0] rec[-1]*X1*sweep[2]");
+    c = Circuit("SPP X0 X1*Y2*Z3");
     ASSERT_EQ(c.operations.size(), 1);
 
     c = Circuit("SPP X1 Z2");
@@ -255,20 +253,17 @@ TEST(circuit, parse_spp) {
 }
 
 TEST(circuit, parse_spp_dag) {
-    ASSERT_THROW({ Circuit("SPP 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]*X0"); }, std::invalid_argument);
 
     Circuit c;
 
     c = Circuit("SPP_DAG");
     ASSERT_EQ(c.operations.size(), 1);
 
-    c = Circuit("SPP_DAG rec[-1]");
-    ASSERT_EQ(c.operations.size(), 1);
-
-    c = Circuit("SPP_DAG rec[-1] X1*Y2*Z3");
-    ASSERT_EQ(c.operations.size(), 1);
-
-    c = Circuit("SPP_DAG sweep[0] rec[-1]*X1*sweep[2]");
+    c = Circuit("SPP_DAG X0 X1*Y2*Z3");
     ASSERT_EQ(c.operations.size(), 1);
 
     c = Circuit("SPP_DAG X1 Z2");

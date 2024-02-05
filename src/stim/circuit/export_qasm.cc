@@ -141,6 +141,29 @@ struct QasmExporter {
         out << "// --- end decomposed MPP\n";
     }
 
+    void output_decomposed_cpp_operation(const CircuitInstruction &inst) {
+        out << "// --- begin decomposed " << inst << "\n";
+        decompose_cpp_operation_with_reverse_independence(
+            inst,
+            stats.num_qubits,
+            [&](const CircuitInstruction &inst) {
+                output_instruction(inst);
+            });
+        out << "// --- end decomposed CPP\n";
+    }
+
+    void output_decomposed_spp_or_spp_dag_operation(const CircuitInstruction &inst) {
+        out << "// --- begin decomposed " << inst << "\n";
+        decompose_spp_or_spp_dag_operation(
+            inst,
+            stats.num_qubits,
+            false,
+            [&](const CircuitInstruction &inst) {
+                output_instruction(inst);
+            });
+        out << "// --- end decomposed SPP\n";
+    }
+
     void output_decomposable_instruction(const CircuitInstruction &instruction, bool decompose_inline) {
         auto f = GATE_DATA[instruction.gate_type].flags;
         auto step = (f & GATE_TARGETS_PAIRS) ? 2 : 1;
@@ -519,6 +542,13 @@ struct QasmExporter {
 
             case GateType::MPP:
                 output_decomposed_mpp_operation(instruction);
+                return;
+            case GateType::SPP:
+            case GateType::SPP_DAG:
+                output_decomposed_spp_or_spp_dag_operation(instruction);
+                return;
+            case GateType::CPP:
+                output_decomposed_cpp_operation(instruction);
                 return;
 
             default:

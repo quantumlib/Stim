@@ -77,7 +77,7 @@ void TableauSimulator<W>::do_CPP(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void TableauSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
-    decompose_spp_operation(
+    decompose_spp_or_spp_dag_operation(
         target_data,
         inv_state.num_qubits,
         false,
@@ -88,10 +88,10 @@ void TableauSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void TableauSimulator<W>::do_SPP_DAG(const CircuitInstruction &target_data) {
-    decompose_spp_operation(
+    decompose_spp_or_spp_dag_operation(
         target_data,
         inv_state.num_qubits,
-        true,
+        false,
         [&](const CircuitInstruction &inst) {
             do_gate(inst);
         });

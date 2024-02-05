@@ -1,8 +1,10 @@
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -271,6 +273,75 @@ void DiagramTimeline3DDrawer::do_mpp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimeline3DDrawer::do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op) {
+    reserve_drawing_room_for_targets(op.targets);
+
+    PauliString<64> obs1(num_qubits);
+    PauliString<64> obs2(num_qubits);
+    std::vector<GateTarget> bits1;
+    std::vector<GateTarget> bits2;
+
+    size_t start = 0;
+    accumulate_next_obs_terms_to_pauli_string_helper(
+        CircuitInstruction{op.gate_type, op.args, op.targets},
+        &start,
+        &obs1,
+        &bits1,
+        true);
+    accumulate_next_obs_terms_to_pauli_string_helper(
+        CircuitInstruction{op.gate_type, op.args, op.targets},
+        &start,
+        &obs2,
+        &bits2,
+        true);
+
+    Coord<3> prev{};
+    bool has_prev = false;
+    const auto &gate_data = GATE_DATA[op.gate_type];
+    for (size_t q = 0; q < num_qubits; q++) {
+        uint8_t p1 = obs1.xs[q] + obs1.zs[q] * 2;
+        uint8_t p2 = obs2.xs[q] + obs2.zs[q] * 2;
+        if (p1 | p2) {
+            std::stringstream ss;
+            ss << gate_data.name;
+            ss << "[";
+            ss << "IXZY"[p1];
+            // TODO: include bits.
+            // for (auto t : bits1) {
+            //     ss << "*" << t;
+            // }
+            bits1.clear();
+            ss << ":";
+            ss << "IXZY"[p2];
+            // TODO: include bits
+            // for (auto t : bits2) {
+            //     ss << "*" << t;
+            // }
+            bits2.clear();
+            ss << "]";
+            // TODO: include args
+            // if (!op.args.empty()) {
+            //     ss << "(" << comma_sep(op.args, ",") << ")";
+            // }
+            auto center = mq2xyz(cur_moment, q);
+            diagram_out.elements.push_back({ss.str(), center});
+            if (has_prev) {
+                draw_gate_connecting_line(center, prev);
+            }
+            prev = center;
+            has_prev = true;
+        }
+    }
+}
+
+void DiagramTimeline3DDrawer::do_spp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_pauli_targets(op);
+}
+
+void DiagramTimeline3DDrawer::do_cpp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_paired_pauli_targets(op);
+}
+
 void DiagramTimeline3DDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -297,6 +368,10 @@ void DiagramTimeline3DDrawer::do_observable_include(const ResolvedTimelineOperat
 void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
     if (op.gate_type == GateType::MPP) {
         do_mpp(op);
+    } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_spp(op);
+    } else if (op.gate_type == GateType::CPP) {
+        do_cpp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
