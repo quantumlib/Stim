@@ -3018,7 +3018,7 @@ Examples:
     M 0
     CPP rec[-1] X1*Y2*Z3
 
-Stabilizer Generators:
+Stabilizer Generators (for `CPP X0*Y1 Z2*Z3`):
 
     X___ -> X___
     Z___ -> Z_ZZ
@@ -3154,7 +3154,7 @@ Examples:
     # Phase the -1 eigenspace of -X1*Y2*Z3 by i.
     SPP !X1*Y2*Z3
 
-Stabilizer Generators:
+Stabilizer Generators (for `SPP X0*Y1*Z2`):
 
     X__ -> X__
     Z__ -> -YYZ
@@ -3220,7 +3220,7 @@ Examples:
     # Phase the -1 eigenspace of -X1*Y2*Z3 by -i.
     SPP_DAG !X1*Y2*Z3
 
-Stabilizer Generators:
+Stabilizer Generators (for `SPP_DAG X0*Y1*Z2`):
 
     X__ -> X__
     Z__ -> YYZ
