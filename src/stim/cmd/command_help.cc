@@ -233,6 +233,12 @@ std::vector<GateTarget> stim::gate_decomposition_help_targets_for_gate_type(Gate
             GateTarget::combiner(),
             GateTarget::z(3),
         };
+    } else if (g == GateType::DETECTOR || g == GateType::OBSERVABLE_INCLUDE) {
+        return {GateTarget::rec(-1)};
+    } else if (g == GateType::TICK || g == GateType::SHIFT_COORDS) {
+        return {};
+    } else if (g == GateType::E || g == GateType::ELSE_CORRELATED_ERROR) {
+        return {GateTarget::x(0)};
     } else if (GATE_DATA[g].flags & GATE_TARGETS_PAIRS) {
         return {GateTarget::qubit(0), GateTarget::qubit(1)};
     } else {

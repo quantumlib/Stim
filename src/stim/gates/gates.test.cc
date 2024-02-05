@@ -74,7 +74,7 @@ TEST(gate_data, hash_matches_storage_location) {
 }
 
 template <size_t W>
-std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_output_eq_val(const Circuit &circuit) {
+static std::pair<std::vector<PauliString<W>>, std::vector<PauliString<W>>> circuit_output_eq_val(const Circuit &circuit) {
     // CAUTION: this is not 100% reliable when measurement count is larger than 1.
     TableauSimulator<W> sim1(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), -1);
     TableauSimulator<W> sim2(INDEPENDENT_TEST_RNG(), circuit.count_qubits(), +1);

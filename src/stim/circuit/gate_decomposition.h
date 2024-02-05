@@ -115,6 +115,8 @@ bool accumulate_next_obs_terms_to_pauli_string_helper(
     std::vector<GateTarget> *bits,
     bool allow_imaginary = false);
 
+Circuit simplified_circuit(const Circuit &circuit);
+
 }  // namespace stim
 
 #endif

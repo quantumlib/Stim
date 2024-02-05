@@ -1688,3 +1688,30 @@ def test_has_flow_shorthands():
     assert c.has_flow("-iX_ -> -iXX xor rec[1] xor rec[3]")
     with pytest.raises(ValueError):
         c.has_flow("iX_ -> XX")
+
+
+def test_decomposed():
+    assert stim.Circuit("""
+        ISWAP 0 1 2 1
+        TICK
+        CPP X2*X1 !Z1*Z2
+    """).decomposed() == stim.Circuit("""
+        H 0
+        CX 0 1 1 0
+        H 1
+        S 1 0
+        H 2
+        CX 2 1 1 2
+        H 1
+        S 1 2
+        TICK
+        H 1 2
+        CX 2 1
+        H 2 2
+        CX 1 2
+        H 2
+        S 1 1
+        H 2
+        CX 2 1
+        H 1 2
+    """)
