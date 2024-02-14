@@ -4,6 +4,7 @@
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/stabilizers/flex_pauli_string.h"
 
 namespace stim {
 
@@ -104,22 +105,14 @@ PauliString<W> parse_non_empty_pauli_string_allowing_i(std::string_view text, bo
         throw std::invalid_argument("Got an ambiguously blank pauli string. Use '1' for the empty Pauli string.");
     }
 
-    bool negate = false;
-    if (text.starts_with('i')) {
-        *imag_out = true;
-        text = text.substr(1);
-    } else if (text.starts_with("-i")) {
-        negate = true;
-        *imag_out = true;
-        text = text.substr(2);
-    } else if (text.starts_with("+i")) {
-        *imag_out = true;
-        text = text.substr(2);
-    }
-    PauliString<W> result = PauliString<W>::from_str(text);
-    if (negate) {
-        result.sign ^= 1;
-    }
+    auto flex = FlexPauliString::from_text(text);
+    *imag_out = flex.imag;
+
+    PauliString<W> result(flex.value.num_qubits);
+    size_t nb = std::min(flex.value.xs.num_u8_padded(), result.xs.num_u8_padded());
+    memcpy(result.xs.u8, flex.value.xs.u8, nb);
+    memcpy(result.zs.u8, flex.value.zs.u8, nb);
+    result.sign = flex.value.sign;
     return result;
 }
 

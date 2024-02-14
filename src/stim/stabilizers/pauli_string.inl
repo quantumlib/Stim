@@ -166,7 +166,7 @@ void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_
 }
 
 template <size_t W>
-void PauliString<W>::safe_accumulate_pauli_term(GateTarget t, bool *imag) {
+void PauliString<W>::mul_pauli_term(GateTarget t, bool *imag, bool right_mul) {
     auto q = t.qubit_value();
     ensure_num_qubits(q + 1, 1.25);
     bool x2 = (bool)(t.data & TARGET_PAULI_X_BIT);
@@ -188,6 +188,17 @@ void PauliString<W>::safe_accumulate_pauli_term(GateTarget t, bool *imag) {
     sign ^= (*imag ^ old_x1 ^ old_z1 ^ x1z2) & anti_commutes;
     sign ^= (bool)(t.data & TARGET_INVERTED_BIT);
     *imag ^= anti_commutes;
+    sign ^= right_mul && anti_commutes;
+}
+
+template <size_t W>
+void PauliString<W>::left_mul_pauli(GateTarget t, bool *imag) {
+    mul_pauli_term(t, imag, false);
+}
+
+template <size_t W>
+void PauliString<W>::right_mul_pauli(GateTarget t, bool *imag) {
+    mul_pauli_term(t, imag, true);
 }
 
 template <size_t W>

@@ -309,6 +309,11 @@ size_t simd_bits<W>::popcnt() const {
 }
 
 template <size_t W>
+uint64_t simd_bits<W>::as_u64() const {
+    return simd_bits_range_ref<W>(*this).as_u64();
+}
+
+template <size_t W>
 size_t simd_bits<W>::countr_zero() const {
     return simd_bits_range_ref<W>(*this).countr_zero();
 }

@@ -418,8 +418,11 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
             When given a string, the string is parsed as a pauli string. The string can
             optionally start with a sign ('+', '-', 'i', '+i', or '-i'). The rest of the
-            string should be characters from '_IXYZ' where '_' and 'I' mean identity, 'X'
-            means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z.
+            string should be either a dense pauli string or a sparse pauli string. A dense
+            pauli string is made up of characters from '_IXYZ' where '_' and 'I' mean
+            identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z. A sparse
+            pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
+            'Y', or 'Z'.
 
             Arguments:
                 arg [position-only]: This can be a variety of types, including:
@@ -451,6 +454,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                 >>> stim.PauliString("X" for _ in range(4))
                 stim.PauliString("+XXXX")
+
+                >>> stim.PauliString("-X2*Y6")
+                stim.PauliString("-__X___Y")
+
+                >>> stim.PauliString("X6*Y6")
+                stim.PauliString("+i______Z")
         )DOC")
             .data());
 

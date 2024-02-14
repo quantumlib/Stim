@@ -2341,14 +2341,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
             Args:
-                shorthand: Specifies the flow as a short string like "IX -> -YZ xor rec[1]".
+                shorthand: Specifies the flow as a short string like "X1 -> -YZ xor rec[1]".
                     The text must contain "->" to separate the input pauli string from the
-                    output pauli string. Each pauli string should be a sequence of
-                    characters from "_IXYZ" (or else just "1" to indicate the empty Pauli
-                    string) optionally prefixed by "+" or "-". Measurements are included
-                    by appending " xor rec[k]" for each measurement index k. Indexing uses
-                    the python convention where non-negative indices index from the start
-                    and negative indices index from the end.
+                    output pauli string. Measurements are included by appending
+                    " xor rec[k]" for each measurement index k. Indexing uses the python
+                    convention where non-negative indices index from the start and negative
+                    indices index from the end. The pauli strings are parsed as if by
+                    `stim.PauliString.__init__`.
                 start: The input into the flow at the start of the circuit. Defaults to None
                     (the identity Pauli string). When specified, this should be a
                     `stim.PauliString`, or a `str` (which will be parsed using
@@ -2390,6 +2389,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> m.has_flow('Z -> I xor rec[-1]')
                 True
                 >>> m.has_flow('Z -> rec[-1]')
+                True
+
+                >>> cx58 = stim.Circuit('CX 5 8')
+                >>> cx58.has_flow('X5 -> X5*X8')
+                True
+                >>> cx58.has_flow('X_ -> XX')
+                False
+                >>> cx58.has_flow('_____X___ -> _____X__X')
                 True
 
                 >>> stim.Circuit('''

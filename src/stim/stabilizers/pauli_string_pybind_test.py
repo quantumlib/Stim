@@ -66,6 +66,9 @@ def test_from_str():
     assert p[0] == 1
     assert p.sign == -1j
 
+    assert stim.PauliString("X5*Y10") == stim.PauliString("_____X____Y")
+    assert stim.PauliString("X5*Y5") == stim.PauliString("iZ5")
+
 
 def test_equality():
     assert not (stim.PauliString(4) == None)
