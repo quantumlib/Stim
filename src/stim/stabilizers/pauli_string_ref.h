@@ -139,6 +139,8 @@ struct PauliStringRef {
     PauliString<W> before(const CircuitInstruction &operation) const;
 
     size_t weight() const;
+    bool has_no_pauli_terms() const;
+    bool intersects(PauliStringRef<W> other) const;
 
    private:
     void check_avoids_MPP(const CircuitInstruction &inst);
