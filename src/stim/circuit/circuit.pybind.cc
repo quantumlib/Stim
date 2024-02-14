@@ -2335,10 +2335,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
             the CNOT flows implemented by the circuit involve these measurements.
 
-            A flow like P -> Q means that the circuit transforms P into Q.
-            A flow like 1 -> P means that the circuit prepares P.
-            A flow like P -> 1 means that the circuit measures P.
-            A flow like 1 -> 1 means that the circuit contains a detector.
+            A flow like P -> Q means the circuit transforms P into Q.
+            A flow like 1 -> P means the circuit prepares P.
+            A flow like P -> 1 means the circuit measures P.
+            A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
             Args:
                 shorthand: Specifies the flow as a short string like "IX -> -YZ xor rec[1]".
@@ -2388,6 +2388,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 >>> m.has_flow('Z -> I')
                 False
                 >>> m.has_flow('Z -> I xor rec[-1]')
+                True
+                >>> m.has_flow('Z -> rec[-1]')
                 True
 
                 >>> stim.Circuit('''

@@ -177,7 +177,163 @@ std::string FlexPauliString::str() const {
     return ss.str();
 }
 
+static size_t parse_size_of_pauli_string_shorthand_if_sparse(std::string_view text) {
+    size_t cur_index = 0;
+    bool has_cur_index = false;
+    size_t max_size = 0;
+    for (char c : text) {
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                has_cur_index = true;
+                cur_index *= 10;
+                cur_index += c - '0';
+                break;
+            default:
+                // do nothing.
+                if (has_cur_index) {
+                    max_size = std::max(max_size, cur_index + 1);
+                    cur_index = 0;
+                    has_cur_index = false;
+                }
+                break;
+        }
+    }
+    return max_size;
+}
+
+template <size_t W>
+static size_t parse_sparse_pauli_string(std::string_view text, PauliString<W> *out) {
+    size_t cur_index = 0;
+    bool has_cur_index = false;
+    uint8_t cur_pauli = 0;
+
+    auto flush = [&]() {
+        if (cur_pauli == '\0' || !has_cur_index) {
+            throw std::invalid_argument("");
+        }
+        out->ref().->ad
+        out->xs[cur_index] = cur_pauli == 'X' || cur_pauli == 'Y';
+        out->zs[cur_index] = cur_pauli == 'Z' || cur_pauli == 'Y';
+    };
+
+    for (char c : text) {
+        switch (c) {
+            case '*':
+                flush();
+                break;
+            case 'x':
+            case 'X':
+            case 'y':
+            case 'Y':
+            case 'z':
+            case 'Z':
+                if (cur_pauli != '\0') {
+                    throw std::invalid_argument("");
+                }
+                cur_pauli = toupper(c);
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                if (cur_pauli == '\0') {
+                    throw std::invalid_argument("");
+                }
+                has_cur_index = true;
+                cur_index *= 10;
+                cur_index += c - '0';
+                break;
+            default:
+                throw std::invalid_argument("");
+        }
+    }
+    return max_size;
+}
+
 FlexPauliString FlexPauliString::from_text(std::string_view text) {
+    size_t n = text.size();
+    if (n == 0) {
+        return FlexPauliString(0);
+    }
+
+    size_t k = 0;
+    bool negated = false;
+    bool imaginary = false;
+    if (k < n) {
+        if (text[k] == '-') {
+            negated = true;
+            k++;
+        } else if (text[k] == '+') {
+            k++;
+        }
+    }
+    if (k < n && text[k] == 'i') {
+        imaginary = true;
+        k++;
+    }
+
+    size_t sparse_size = compute_size_of_pauli_string_shorthand_if_sparse(text);
+    if (sparse_size == 0) {
+
+    }
+    bool is_sparse = false;
+    size_t v = 0;
+    size_t max_v = 0;
+    for (size_t k2 = 0; k2 < n; k2++) {
+        switch (text[k]) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                is_sparse = true;
+                v *= 10;
+                v += text[k] - '0';
+                break;
+            default:
+                // do nothing.
+                max_v = std::max(max_v, v);
+                v = 0;
+                break;
+        }
+    }
+
+    if (is_sparse) {
+
+    }
+    while (k < n) {
+        switch (text[k]) {
+            case 'x':
+            case 'X':
+
+            case 'z':
+            case 'Z':
+            case 'y':
+            case 'Y':
+        }
+        k++;
+    }
+
     std::complex<float> factor{1, 0};
     int offset = 0;
     if (text.starts_with('i')) {
@@ -190,6 +346,8 @@ FlexPauliString FlexPauliString::from_text(std::string_view text) {
         factor = {0, 1};
         offset = 2;
     }
+
+
     FlexPauliString value{PauliString<MAX_BITWORD_WIDTH>::from_str(text.substr(offset)), false};
     value *= factor;
     return value;
