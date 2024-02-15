@@ -177,20 +177,154 @@ std::string FlexPauliString::str() const {
     return ss.str();
 }
 
-FlexPauliString FlexPauliString::from_text(std::string_view text) {
-    std::complex<float> factor{1, 0};
-    int offset = 0;
-    if (text.starts_with('i')) {
-        factor = {0, 1};
-        offset = 1;
-    } else if (text.starts_with("-i")) {
-        factor = {0, -1};
-        offset = 2;
-    } else if (text.starts_with("+i")) {
-        factor = {0, 1};
-        offset = 2;
+static size_t parse_size_of_pauli_string_shorthand_if_sparse(std::string_view text) {
+    uint64_t cur_index = 0;
+    bool has_cur_index = false;
+    size_t num_qubits = 0;
+
+    auto flush = [&]() {
+        if (has_cur_index) {
+            num_qubits = std::max(num_qubits, (size_t)cur_index + 1);
+            if (cur_index == UINT64_MAX || num_qubits <= cur_index) {
+                throw std::invalid_argument("");
+            }
+            cur_index = 0;
+            has_cur_index = false;
+        }
+    };
+
+    for (char c : text) {
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                has_cur_index = true;
+                cur_index = mul_saturate(cur_index, 10);
+                cur_index = add_saturate(cur_index, c - '0');
+                break;
+            default:
+                flush();
+                break;
+        }
     }
-    FlexPauliString value{PauliString<MAX_BITWORD_WIDTH>::from_str(text.substr(offset)), false};
-    value *= factor;
-    return value;
+    flush();
+    return num_qubits;
+}
+
+static void parse_sparse_pauli_string(std::string_view text, FlexPauliString *out) {
+    uint64_t cur_index = 0;
+    bool has_cur_index = false;
+    char cur_pauli = '\0';
+
+    auto flush = [&]() {
+        if (cur_pauli == '\0' || !has_cur_index || cur_index > out->value.num_qubits) {
+            throw std::invalid_argument("");
+        }
+        out->value.right_mul_pauli(
+            GateTarget::pauli_xz(cur_index, cur_pauli == 'X' || cur_pauli == 'Y', cur_pauli == 'Z' || cur_pauli == 'Y'),
+            &out->imag);
+        has_cur_index = false;
+        cur_pauli = '\0';
+        cur_index = 0;
+    };
+
+    for (char c : text) {
+        switch (c) {
+            case '*':
+                flush();
+                break;
+            case 'I':
+            case 'x':
+            case 'X':
+            case 'y':
+            case 'Y':
+            case 'z':
+            case 'Z':
+                if (cur_pauli != '\0') {
+                    throw std::invalid_argument("");
+                }
+                cur_pauli = toupper(c);
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                if (cur_pauli == '\0') {
+                    throw std::invalid_argument("");
+                }
+                has_cur_index = true;
+                cur_index = mul_saturate(cur_index, 10);
+                cur_index = add_saturate(cur_index, c - '0');
+                break;
+            default:
+                throw std::invalid_argument("");
+        }
+    }
+    flush();
+}
+
+FlexPauliString FlexPauliString::from_text(std::string_view text) {
+    bool negated = false;
+    bool imaginary = false;
+    if (text.starts_with("-")) {
+        negated = true;
+        text = text.substr(1);
+    } else if (text.starts_with("+")) {
+        text = text.substr(1);
+    }
+    if (text.starts_with("i")) {
+        imaginary = true;
+        text = text.substr(1);
+    }
+
+    size_t sparse_size = parse_size_of_pauli_string_shorthand_if_sparse(text);
+    size_t num_qubits = sparse_size > 0 ? sparse_size : text.size();
+    FlexPauliString result(num_qubits);
+    result.imag = imaginary;
+    result.value.sign = negated;
+    if (sparse_size > 0) {
+        try {
+            parse_sparse_pauli_string(text, &result);
+        } catch (const std::invalid_argument &) {
+            throw std::invalid_argument("Not a valid Pauli string shorthand: '" + std::string(text) + "'");
+        }
+    } else {
+        for (size_t k = 0; k < text.size(); k++) {
+            switch (text[k]) {
+                case 'I':
+                case '_':
+                    break;
+                case 'x':
+                case 'X':
+                    result.value.xs[k] = true;
+                    break;
+                case 'y':
+                case 'Y':
+                    result.value.xs[k] = true;
+                    result.value.zs[k] = true;
+                    break;
+                case 'z':
+                case 'Z':
+                    result.value.zs[k] = true;
+                    break;
+                default:
+                    throw std::invalid_argument("Not a valid Pauli string shorthand: '" + std::string(text) + "'");
+            }
+        }
+    }
+
+    return result;
 }

@@ -156,6 +156,8 @@ struct simd_bits {
     inline size_t num_bits_padded() const {
         return num_simd_words * W;
     }
+
+    uint64_t as_u64() const;
 };
 
 template <size_t W>

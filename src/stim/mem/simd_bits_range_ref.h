@@ -81,6 +81,9 @@ struct simd_bits_range_ref {
     bool operator!=(const simd_bits_range_ref<W> &other) const;
     /// Determines whether or not any of the bits in the referenced range are non-zero.
     bool not_zero() const;
+    /// Treats the referenced range as an unsigned integer, and returns it as a uint64_t.
+    /// If the integer is too large  to fit, an exception is raised.
+    uint64_t as_u64() const;
 
     /// Returns a reference to a given bit within the referenced range.
     inline bit_ref operator[](size_t k) {
