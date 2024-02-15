@@ -166,6 +166,31 @@ void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_
 }
 
 template <size_t W>
+void PauliString<W>::safe_accumulate_pauli_term(GateTarget t, bool *imag) {
+    auto q = t.qubit_value();
+    ensure_num_qubits(q + 1, 1.25);
+    bool x2 = (bool)(t.data & TARGET_PAULI_X_BIT);
+    bool z2 = (bool)(t.data & TARGET_PAULI_Z_BIT);
+    if (!(x2 | z2)) {
+        throw std::invalid_argument("Not a pauli target: " + t.str());
+    }
+
+    bit_ref x1 = xs[q];
+    bit_ref z1 = zs[q];
+    bool old_x1 = x1;
+    bool old_z1 = z1;
+    x1 ^= x2;
+    z1 ^= z2;
+
+    // At each bit position: accumulate anti-commutation (+i or -i) counts.
+    bool x1z2 = x1 & z2;
+    bool anti_commutes = (x2 & z1) ^ x1z2;
+    sign ^= (*imag ^ old_x1 ^ old_z1 ^ x1z2) & anti_commutes;
+    sign ^= (bool)(t.data & TARGET_INVERTED_BIT);
+    *imag ^= anti_commutes;
+}
+
+template <size_t W>
 uint8_t PauliString<W>::py_get_item(int64_t index) const {
     if (index < 0) {
         index += num_qubits;
