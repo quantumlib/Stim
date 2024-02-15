@@ -37,6 +37,55 @@ function make_gate_map() {
     }
     return result;
 }
-const GATE_MAP = /** @type {Map<!string, !Gate>} */ make_gate_map();
 
-export {GATE_MAP};
+/**
+ * @returns {!Map<!string, !{name: undefined|!string, rev_pair: undefined|!boolean, ignore: undefined|!boolean}>}
+ */
+function make_gate_alias_map() {
+    let result = new Map();
+
+    result.set("CNOT", {name: "CX"});
+    result.set("MZ", {name: "M"});
+    result.set("MRZ", {name: "MR"});
+    result.set("RZ", {name: "R"});
+    result.set("H_XZ", {name: "H"});
+    result.set("SQRT_Z", {name: "S"});
+    result.set("SQRT_Z_DAG", {name: "S_DAG"});
+    result.set("ZCX", {name: "CX"});
+    result.set("ZCY", {name: "CY"});
+    result.set("ZCZ", {name: "CZ"});
+    result.set("SWAPCZ", {name: "CZSWAP"});
+
+    // Ordered-flipped aliases.
+    result.set("XCZ", {name: "CX", rev_pair: true});
+    result.set("YCX", {name: "XCY", rev_pair: true});
+    result.set("YCZ", {name: "CY", rev_pair: true});
+    result.set("SWAPCX", {name: "CXSWAP", rev_pair: true});
+
+    // Noise.
+    result.set("CORRELATED_ERROR", {ignore: true});
+    result.set("DEPOLARIZE1", {ignore: true});
+    result.set("DEPOLARIZE2", {ignore: true});
+    result.set("E", {ignore: true});
+    result.set("ELSE_CORRELATED_ERROR", {ignore: true});
+    result.set("PAULI_CHANNEL_1", {ignore: true});
+    result.set("PAULI_CHANNEL_2", {ignore: true});
+    result.set("X_ERROR", {ignore: true});
+    result.set("Y_ERROR", {ignore: true});
+    result.set("Z_ERROR", {ignore: true});
+    result.set("HERALDED_ERASE", {ignore: true});
+    result.set("HERALDED_PAULI_CHANNEL_1", {ignore: true});
+
+    // Annotations.
+    result.set("MPAD", {ignore: true});
+    result.set("DETECTOR", {ignore: true});
+    result.set("OBSERVABLE_INCLUDE", {ignore: true});
+    result.set("SHIFT_COORDS", {ignore: true});
+
+    return result;
+}
+
+const GATE_MAP = /** @type {Map<!string, !Gate>} */ make_gate_map();
+const GATE_ALIAS_MAP = /** @type {!Map<!string, !{name: undefined|!string, rev_pair: undefined|!boolean, ignore: undefined|!boolean}>} */ make_gate_alias_map();
+
+export {GATE_MAP, GATE_ALIAS_MAP};

@@ -327,6 +327,7 @@ jobs:
       - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc
       - run: pip install -e glue/sample
       - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates'])" | grep "    " | sed 's/^ *//g') glue/crumble/test/generated_gate_name_list.txt
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
     steps:

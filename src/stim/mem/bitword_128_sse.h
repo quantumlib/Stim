@@ -38,7 +38,6 @@ struct bitword<128> {
 
     union {
         __m128i val;
-        uint64_t u64[2];
         uint8_t u8[16];
     };
 
@@ -76,14 +75,8 @@ struct bitword<128> {
         return {_mm_set1_epi64x(pattern)};
     }
 
-    std::array<uint64_t, 2> to_u64_array() const {
-        // I would use '_mm_extract_epi64' here but when using `-O3` it causes the compilation
-        // to fail in continuous integration. It seems to be a bug in the compiler, where
-        // it thinks it can't inline the intrinsic. Failures were on linux systems with
-        // gcc 12.2.0
-        uint64_t w0 = u64[0];
-        uint64_t w1 = u64[1];
-        return std::array<uint64_t, 2>{(uint64_t)w0, (uint64_t)w1};
+    inline std::array<uint64_t, 2> to_u64_array() const {
+        return std::bit_cast<std::array<uint64_t, 2>>(val);
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
@@ -141,7 +134,8 @@ struct bitword<128> {
     }
 
     inline uint16_t popcount() const {
-        return std::popcount(u64[0]) + std::popcount(u64[1]);
+        auto words = to_u64_array();
+        return std::popcount(words[0]) + std::popcount(words[1]);
     }
 
     inline bitword<128> shifted(int offset) const {
