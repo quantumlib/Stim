@@ -10525,6 +10525,33 @@ def read_shot_data_file(
         array([[False, False, False, False],
                [False,  True, False,  True]])
     """
+def target_combined_paulis(
+    paulis: Union[stim.PauliString, List[stim.GateTarget]],
+    invert: bool = False,
+) -> stim.GateTarget:
+    """Returns a list of targets encoding a pauli product for instructions like MPP.
+
+    Args:
+        paulis: The paulis to encode into the targets. This can be a
+            `stim.PauliString` or a list of pauli targets from `stim.target_x`,
+            `stim.target_pauli`, etc.
+        invert: Defaults to False. If True, the product is inverted (like "!X2*Y3").
+            Note that this is in addition to any inversions specified by the
+            `paulis` argument.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     *stim.target_combined_paulis(stim.PauliString("-XYZ")),
+        ...     *stim.target_combined_paulis([stim.target_x(2), stim.target_y(5)]),
+        ...     *stim.target_combined_paulis([stim.target_z(9)], invert=True),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP !X0*Y1*Z2 X2*Y5 !Z9
+        ''')
+    """
 def target_combiner(
 ) -> stim.GateTarget:
     """Returns a target combiner that can be used to build Pauli products.
@@ -10586,6 +10613,45 @@ def target_logical_observable_id(
         >>> print(repr(m))
         stim.DetectorErrorModel('''
             error(0.25) L13
+        ''')
+    """
+def target_pauli(
+    qubit_index: int,
+    pauli: Union[str, int],
+    invert: bool = False,
+) -> stim.GateTarget:
+    """Returns a pauli target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        qubit_index: The qubit that the Pauli applies to.
+        pauli: The pauli gate to use. This can either be a string identifying the
+            pauli by name ("x", "X", "y", "Y", "z", or "Z") or an integer following
+            the convention (1=X, 2=Y, 3=Z). Setting this argument to "I" or to
+            0 will return a qubit target instead of a pauli target.
+        invert: Defaults to False. If True, the target is inverted (like "!X10"),
+            indicating that, for example, measurement results should be inverted).
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_pauli(2, "X"),
+        ...     stim.target_combiner(),
+        ...     stim.target_pauli(3, "y", invert=True),
+        ...     stim.target_pauli(5, 3),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3 Z5
+        ''')
+
+        >>> circuit.append("M", [
+        ...     stim.target_pauli(7, "I"),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3 Z5
+            M 7
         ''')
     """
 def target_rec(
