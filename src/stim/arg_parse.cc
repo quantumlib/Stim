@@ -408,8 +408,9 @@ double stim::parse_exact_double_from_string(std::string_view text) {
     if (text.starts_with("+")) {
         text = text.substr(1);
     }
-    const char *end = text.data() + text.size();
-    std::from_chars_result result = std::from_chars(text.data(), end, out);
+    const char *start = text.data();
+    const char *end = start + text.size();
+    std::from_chars_result result = std::from_chars(start, end, out);
     if (result.ptr == end && !text.empty() && !isspace(text.front()) && !isspace(text.back()) && !std::isinf(out) &&
         !std::isnan(out)) {
         return out;
