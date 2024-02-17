@@ -44,7 +44,7 @@ void stim_pybind::pybind_tableau_iter_methods(
     c.def(
         "__iter__",
         [](TableauIterator<MAX_BITWORD_WIDTH> &self) -> TableauIterator<MAX_BITWORD_WIDTH> {
-            TableauIterator copy = self;
+            TableauIterator<MAX_BITWORD_WIDTH> copy = self;
             return copy;
         },
         clean_doc_string(R"DOC(
