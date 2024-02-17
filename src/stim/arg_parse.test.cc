@@ -295,14 +295,14 @@ TEST(arg_parse, find_open_file_argument) {
     fclose(tmp);
 }
 
-TEST(arg_parse, split) {
-    ASSERT_EQ(split(',', ""), (std::vector<std::string>{""}));
-    ASSERT_EQ(split(',', "abc"), (std::vector<std::string>{"abc"}));
-    ASSERT_EQ(split(',', ","), (std::vector<std::string>{"", ""}));
-    ASSERT_EQ(split(',', "abc,"), (std::vector<std::string>{"abc", ""}));
-    ASSERT_EQ(split(',', ",abc"), (std::vector<std::string>{"", "abc"}));
-    ASSERT_EQ(split(',', "abc,def,ghi"), (std::vector<std::string>{"abc", "def", "ghi"}));
-    ASSERT_EQ(split(',', "abc,def,ghi,"), (std::vector<std::string>{"abc", "def", "ghi", ""}));
+TEST(arg_parse, split_view) {
+    ASSERT_EQ(split_view(',', ""), (std::vector<std::string_view>{""}));
+    ASSERT_EQ(split_view(',', "abc"), (std::vector<std::string_view>{"abc"}));
+    ASSERT_EQ(split_view(',', ","), (std::vector<std::string_view>{"", ""}));
+    ASSERT_EQ(split_view(',', "abc,"), (std::vector<std::string_view>{"abc", ""}));
+    ASSERT_EQ(split_view(',', ",abc"), (std::vector<std::string_view>{"", "abc"}));
+    ASSERT_EQ(split_view(',', "abc,def,ghi"), (std::vector<std::string_view>{"abc", "def", "ghi"}));
+    ASSERT_EQ(split_view(',', "abc,def,ghi,"), (std::vector<std::string_view>{"abc", "def", "ghi", ""}));
 }
 
 TEST(arg_parse, parse_exact_double_from_string) {
@@ -320,6 +320,7 @@ TEST(arg_parse, parse_exact_double_from_string) {
     ASSERT_EQ(parse_exact_double_from_string("0"), 0);
     ASSERT_EQ(parse_exact_double_from_string("1"), 1);
     ASSERT_EQ(parse_exact_double_from_string("+1"), 1);
+    ASSERT_EQ(parse_exact_double_from_string("-1"), -1);
     ASSERT_EQ(parse_exact_double_from_string("1e3"), 1000);
     ASSERT_EQ(parse_exact_double_from_string("1.5"), 1.5);
     ASSERT_EQ(parse_exact_double_from_string("-1.5"), -1.5);
@@ -343,7 +344,9 @@ TEST(arg_parse, parse_exact_uint64_t_from_string) {
 
     ASSERT_EQ(parse_exact_uint64_t_from_string("0"), 0);
     ASSERT_EQ(parse_exact_uint64_t_from_string("1"), 1);
+    ASSERT_EQ(parse_exact_uint64_t_from_string("+1"), 1);
     ASSERT_EQ(parse_exact_uint64_t_from_string("2"), 2);
+    ASSERT_EQ(parse_exact_uint64_t_from_string("13"), 13);
     ASSERT_EQ(parse_exact_uint64_t_from_string("18446744073709551615"), UINT64_MAX);
 }
 

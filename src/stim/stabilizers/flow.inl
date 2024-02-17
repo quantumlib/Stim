@@ -1,10 +1,10 @@
 #include "stim/arg_parse.h"
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/flex_pauli_string.h"
+#include "stim/stabilizers/flow.h"
 
 namespace stim {
 
@@ -26,31 +26,50 @@ void _pauli_string_controlled_not(PauliStringRef<W> control, uint32_t target, Ci
 }
 
 template <size_t W>
-bool _sample_if_circuit_has_stabilizer_flow(
-    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const StabilizerFlow<W> &flow) {
-    uint32_t n = (uint32_t)circuit.count_qubits();
-    n = std::max(n, (uint32_t)flow.input.num_qubits);
-    n = std::max(n, (uint32_t)flow.output.num_qubits);
-    Circuit augmented_circuit;
-    for (uint32_t k = 0; k < n; k++) {
-        augmented_circuit.safe_append_u("XCX", {k, k + n + 1}, {});
+static GateTarget measurement_index_to_target(int32_t m, uint64_t num_measurements, const Flow<W> &flow) {
+    if ((m >= 0 && (uint64_t)m >= num_measurements) || (m < 0 && (uint64_t) - (int64_t)m > num_measurements)) {
+        std::stringstream ss;
+        ss << "The flow '" << flow;
+        ss << "' is malformed for the given circuit. ";
+        ss << "The flow mentions a measurement index '" << m;
+        ss << "', but this index out of range because the circuit only has ";
+        ss << num_measurements << " measurements.";
+        throw std::invalid_argument(ss.str());
     }
-    for (uint32_t k = 0; k < n; k++) {
+    if (m >= 0) {
+        m -= num_measurements;
+    }
+    return GateTarget::rec(m);
+}
+
+template <size_t W>
+bool _sample_if_circuit_has_stabilizer_flow(
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const Flow<W> &flow) {
+    uint32_t num_qubits = (uint32_t)circuit.count_qubits();
+    uint64_t num_measurements = circuit.count_measurements();
+
+    num_qubits = std::max(num_qubits, (uint32_t)flow.input.num_qubits);
+    num_qubits = std::max(num_qubits, (uint32_t)flow.output.num_qubits);
+    Circuit augmented_circuit;
+    for (uint32_t k = 0; k < num_qubits; k++) {
+        augmented_circuit.safe_append_u("XCX", {k, k + num_qubits + 1}, {});
+    }
+    for (uint32_t k = 0; k < num_qubits; k++) {
         augmented_circuit.safe_append_u("DEPOLARIZE1", {k}, {0.75});
     }
     augmented_circuit.append_from_text("TICK");
-    _pauli_string_controlled_not<W>(flow.input, n, augmented_circuit);
+    _pauli_string_controlled_not<W>(flow.input, num_qubits, augmented_circuit);
     augmented_circuit.append_from_text("TICK");
     augmented_circuit += circuit;
     augmented_circuit.append_from_text("TICK");
 
-    _pauli_string_controlled_not<W>(flow.output, n, augmented_circuit);
-    for (const auto &m : flow.measurement_outputs) {
-        assert(m.is_measurement_record_target());
-        std::vector<GateTarget> targets{m, GateTarget::qubit(n)};
+    _pauli_string_controlled_not<W>(flow.output, num_qubits, augmented_circuit);
+    for (int32_t m : flow.measurements) {
+        std::array<GateTarget, 2> targets{
+            measurement_index_to_target<W>(m, num_measurements, flow), GateTarget::qubit(num_qubits)};
         augmented_circuit.safe_append(GateType::CX, targets, {});
     }
-    augmented_circuit.safe_append_u("M", {n}, {});
+    augmented_circuit.safe_append_u("M", {num_qubits}, {});
 
     auto out = sample_batch_measurements(
         augmented_circuit, TableauSimulator<W>::reference_sample_circuit(augmented_circuit), num_samples, rng, false);
@@ -61,7 +80,7 @@ bool _sample_if_circuit_has_stabilizer_flow(
 
 template <size_t W>
 std::vector<bool> sample_if_circuit_has_stabilizer_flows(
-    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, std::span<const Flow<W>> flows) {
     std::vector<bool> result;
     for (const auto &flow : flows) {
         result.push_back(_sample_if_circuit_has_stabilizer_flow(num_samples, rng, circuit, flow));
@@ -69,8 +88,7 @@ std::vector<bool> sample_if_circuit_has_stabilizer_flows(
     return result;
 }
 
-inline bool parse_rec_allowing_non_negative(
-    std::string_view rec, size_t num_measurements_for_non_neg, GateTarget *out) {
+inline bool parse_rec_allowing_non_negative(std::string_view rec, int32_t *out) {
     if (rec.size() < 6 || rec[0] != 'r' || rec[1] != 'e' || rec[2] != 'c' || rec[3] != '[' || rec.back() != ']') {
         throw std::invalid_argument("");  // Caught and given a message below.
     }
@@ -79,12 +97,8 @@ inline bool parse_rec_allowing_non_negative(
         return false;
     }
 
-    if (i >= INT32_MIN && i < 0) {
-        *out = stim::GateTarget::rec((int32_t)i);
-        return true;
-    }
-    if (i >= 0 && (size_t)i < num_measurements_for_non_neg) {
-        *out = stim::GateTarget::rec((int32_t)i - (int32_t)num_measurements_for_non_neg);
+    if (i >= INT32_MIN && i <= INT32_MAX) {
+        *out = (int32_t)i;
         return true;
     }
     return false;
@@ -117,21 +131,21 @@ PauliString<W> parse_non_empty_pauli_string_allowing_i(std::string_view text, bo
 }
 
 template <size_t W>
-StabilizerFlow<W> StabilizerFlow<W>::from_str(const char *text, uint64_t num_measurements_for_non_neg_recs) {
+Flow<W> Flow<W>::from_str(std::string_view text) {
     try {
-        auto parts = split('>', text);
+        auto parts = split_view('>', text);
         if (parts.size() != 2 || parts[0].empty() || parts[0].back() != '-') {
             throw std::invalid_argument("");  // Caught and given a message below.
         }
-        parts[0].pop_back();
+        parts[0] = parts[0].substr(0, parts[0].size() - 1);
         while (!parts[0].empty() && parts[0].back() == ' ') {
-            parts[0].pop_back();
+            parts[0] = parts[0].substr(0, parts[0].size() - 1);
         }
         bool imag_inp = false;
         bool imag_out = false;
         PauliString<W> inp = parse_non_empty_pauli_string_allowing_i<W>(parts[0], &imag_inp);
 
-        parts = split(' ', parts[1]);
+        parts = split_view(' ', parts[1]);
         size_t k = 0;
         while (k < parts.size() && parts[k].empty()) {
             k += 1;
@@ -140,89 +154,124 @@ StabilizerFlow<W> StabilizerFlow<W>::from_str(const char *text, uint64_t num_mea
             throw std::invalid_argument("");  // Caught and given a message below.
         }
         PauliString<W> out(0);
-        std::vector<GateTarget> measurements;
+        std::vector<int32_t> measurements;
         if (!parts[k].empty() && parts[k][0] != 'r') {
             out = parse_non_empty_pauli_string_allowing_i<W>(parts[k], &imag_out);
         } else {
-            GateTarget t;
-            if (!parse_rec_allowing_non_negative(parts[k], num_measurements_for_non_neg_recs, &t)) {
+            int32_t rec;
+            if (!parse_rec_allowing_non_negative(parts[k], &rec)) {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
-            measurements.push_back(t);
+            measurements.push_back(rec);
         }
         k++;
         while (k < parts.size()) {
             if (parts[k] != "xor" || k + 1 == parts.size()) {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
-            GateTarget rec;
-            if (!parse_rec_allowing_non_negative(parts[k + 1], num_measurements_for_non_neg_recs, &rec)) {
+            int32_t rec;
+            if (!parse_rec_allowing_non_negative(parts[k + 1], &rec)) {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
             measurements.push_back(rec);
             k += 2;
         }
         if (imag_inp != imag_out) {
-            throw std::invalid_argument("Anti-hermitian flows aren't allowed.");
+            throw std::invalid_argument("Anti-Hermitian flows aren't allowed.");
         }
-        return StabilizerFlow{inp, out, measurements};
+        return Flow{inp, out, measurements};
     } catch (const std::invalid_argument &ex) {
+        if (*ex.what() != '\0') {
+            throw;
+        }
         throw std::invalid_argument("Invalid stabilizer flow text: '" + std::string(text) + "'.");
     }
 }
 
 template <size_t W>
-bool StabilizerFlow<W>::operator==(const StabilizerFlow<W> &other) const {
-    return input == other.input && output == other.output && measurement_outputs == other.measurement_outputs;
+bool Flow<W>::operator==(const Flow<W> &other) const {
+    return input == other.input && output == other.output && measurements == other.measurements;
 }
 
 template <size_t W>
-bool StabilizerFlow<W>::operator!=(const StabilizerFlow<W> &other) const {
+bool Flow<W>::operator!=(const Flow<W> &other) const {
     return !(*this == other);
 }
 
 template <size_t W>
-std::string StabilizerFlow<W>::str() const {
+std::string Flow<W>::str() const {
     std::stringstream result;
     result << *this;
     return result.str();
 }
 
 template <size_t W>
-std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow) {
-    if (flow.input.num_qubits == 0) {
-        if (flow.input.sign) {
+std::ostream &operator<<(std::ostream &out, const Flow<W> &flow) {
+    bool use_sparse = false;
+
+    // Sparse is only useful if most terms are identity.
+    if (flow.input.num_qubits > 8 && flow.input.ref().weight() * 8 <= flow.input.num_qubits) {
+        use_sparse = true;
+    }
+    if (flow.output.num_qubits > 8 && flow.output.ref().weight() * 8 <= flow.output.num_qubits) {
+        use_sparse = true;
+    }
+
+    // Sparse would lose length data if the last pauli is an identity.
+    if (flow.input.num_qubits > 0 && !flow.input.xs[flow.input.num_qubits - 1] &&
+        !flow.input.zs[flow.input.num_qubits - 1]) {
+        use_sparse = false;
+    }
+    if (flow.output.num_qubits > 0 && !flow.output.xs[flow.output.num_qubits - 1] &&
+        !flow.output.zs[flow.output.num_qubits - 1]) {
+        use_sparse = false;
+    }
+
+    auto write_sparse = [&](const PauliString<W> &ps) -> bool {
+        if (ps.sign) {
             out << "-";
         }
+        bool has_any = false;
+        for (size_t q = 0; q < ps.num_qubits; q++) {
+            uint8_t p = ps.xs[q] + 2 * ps.zs[q];
+            if (use_sparse) {
+                if (p) {
+                    if (has_any) {
+                        out << "*";
+                    }
+                    out << "_XZY"[p];
+                    out << q;
+                    has_any = true;
+                }
+            } else {
+                out << "_XZY"[p];
+                has_any = true;
+            }
+        }
+        return has_any;
+    };
+
+    if (!write_sparse(flow.input)) {
         out << "1";
-    } else {
-        out << flow.input;
     }
     out << " -> ";
-    bool skip_xor = false;
-    if (flow.output.num_qubits == 0) {
-        if (flow.output.sign) {
-            out << "-1";
-        } else if (flow.measurement_outputs.empty()) {
-            out << "+1";
-        }
-        skip_xor = true;
-    } else {
-        out << flow.output;
-    }
-    for (const auto &t : flow.measurement_outputs) {
-        if (!skip_xor) {
+    bool has_out = write_sparse(flow.output);
+    for (const auto &t : flow.measurements) {
+        if (has_out) {
             out << " xor ";
         }
-        skip_xor = false;
-        t.write_succinct(out);
+        has_out = true;
+        out << "rec[" << t << "]";
+    }
+    if (!has_out) {
+        out << "1";
     }
     return out;
 }
 
 template <size_t W>
 std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
-    const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows) {
+    const Circuit &circuit, std::span<const Flow<W>> flows) {
     auto stats = circuit.compute_stats();
     size_t num_qubits = stats.num_qubits;
     for (const auto &flow : flows) {
@@ -247,7 +296,11 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
     // Mark measurements for inclusion.
     for (size_t f = flows.size(); f--;) {
         const auto &flow = flows[f];
-        rev.undo_DETECTOR(CircuitInstruction{GateType::DETECTOR, {}, flow.measurement_outputs});
+        std::vector<GateTarget> targets;
+        for (int32_t m : flow.measurements) {
+            targets.push_back(measurement_index_to_target<W>(m, stats.num_measurements, flow));
+        }
+        rev.undo_DETECTOR(CircuitInstruction{GateType::DETECTOR, {}, targets});
     }
 
     // Undo the circuit.
