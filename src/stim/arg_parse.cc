@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -403,21 +402,29 @@ std::vector<std::string_view> stim::split_view(char splitter, std::string_view t
     return result;
 }
 
-double stim::parse_exact_double_from_string(std::string_view text) {
-    double out = 0;
-    if (text.starts_with("+")) {
-        text = text.substr(1);
-    }
-    const char *start = text.data();
-    const char *end = start + text.size();
-    std::from_chars_result result = std::from_chars(start, end, out);
-    if (result.ptr == end && !text.empty() && !isspace(text.front()) && !isspace(text.back()) && !std::isinf(out) &&
-        !std::isnan(out)) {
-        return out;
+static double parse_exact_double_from_null_terminated(const char *c, size_t size) {
+    char *end = nullptr;
+    double d = strtod(c, &end);
+    if (size > 0 && !isspace(*c)) {
+        if (end == c + size && !std::isinf(d) && !std::isnan(d)) {
+            return d;
+        }
     }
     std::stringstream ss;
-    ss << "Not an exact finite double: '" << text << "'";
+    ss << "Not an exact finite double: '" << c << "'";
     throw std::invalid_argument(ss.str());
+}
+
+double stim::parse_exact_double_from_string(std::string_view text) {
+    if (text.size() + 1 < 15) {
+        char buf[16];
+        memcpy(buf, text.data(), text.size());
+        buf[text.size()] = '\0';
+        return parse_exact_double_from_null_terminated(&buf[0], text.size());
+    } else {
+        std::string s(text);
+        return parse_exact_double_from_null_terminated(s.c_str(), text.size());
+    }
 }
 
 static bool try_parse_exact_uint64_t_from_string(std::string_view text, uint64_t *out) {
