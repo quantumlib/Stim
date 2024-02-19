@@ -1,14 +1,11 @@
 import {GATE_MAP, GATE_ALIAS_MAP} from "./gateset.js"
 import {test, assertThat, skipRestOfTestIfHeadless} from "../test/test_util.js";
 import {Operation} from '../circuit/operation.js';
+import {KNOWN_GATE_NAMES_FROM_STIM} from '../test/generated_gate_name_list.test.js';
 
-test("gateset.expected_gates", async () => {
-    let gateNamesFile = await fetch("generated_gate_name_list.txt");
-    assertThat(gateNamesFile.ok).withInfo(gateNamesFile.url).isEqualTo(true);
-    let gateNamesText = await gateNamesFile.text();
-
+test("gateset.expected_gates", () => {
     let expectedGates = new Set();
-    for (let e of gateNamesText.split("\n")) {
+    for (let e of KNOWN_GATE_NAMES_FROM_STIM.split("\n")) {
         if (e.length > 0) {
             expectedGates.add(e);
         }
