@@ -36,6 +36,7 @@
 #include "stim/simulators/matched_error.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
+#include "stim/stabilizers/flow.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/pauli_string_iter.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -90,6 +91,95 @@ GateTarget target_z(const pybind11::object &qubit, bool invert) {
         return GateTarget::z(t.qubit_value(), t.is_inverted_result_target() ^ invert);
     }
     return GateTarget::z(pybind11::cast<uint32_t>(qubit), invert);
+}
+
+std::vector<GateTarget> target_combined_paulis(const pybind11::object &paulis, bool invert) {
+    std::vector<GateTarget> result;
+    if (pybind11::isinstance<FlexPauliString>(paulis)) {
+        const FlexPauliString &ps = pybind11::cast<const FlexPauliString &>(paulis);
+        if (ps.imag) {
+            std::stringstream ss;
+            ss << "Imaginary sign: paulis=";
+            ss << paulis;
+            throw std::invalid_argument(ss.str());
+        }
+        invert ^= ps.value.sign;
+        for (size_t q = 0; q < ps.value.num_qubits; q++) {
+            bool x = ps.value.xs[q];
+            bool z = ps.value.zs[q];
+            if (x | z) {
+                result.push_back(GateTarget::pauli_xz(q, x, z));
+                result.push_back(GateTarget::combiner());
+            }
+        }
+    } else {
+        for (const auto &h : paulis) {
+            if (pybind11::isinstance<GateTarget>(h)) {
+                GateTarget g = pybind11::cast<GateTarget>(h);
+                if (g.pauli_type() != 'I') {
+                    if (g.is_inverted_result_target()) {
+                        invert ^= true;
+                        g.data ^= TARGET_INVERTED_BIT;
+                    }
+                    result.push_back(g);
+                    result.push_back(GateTarget::combiner());
+                    continue;
+                }
+            }
+
+            std::stringstream ss;
+            ss << "Expected a pauli string or iterable of stim.GateTarget but got this when iterating: ";
+            ss << h;
+            throw std::invalid_argument(ss.str());
+        }
+    }
+
+    if (result.empty()) {
+        std::stringstream ss;
+        ss << "Identity pauli product: paulis=";
+        ss << paulis;
+        throw std::invalid_argument(ss.str());
+    }
+    result.pop_back();
+    if (invert) {
+        result[0].data ^= TARGET_INVERTED_BIT;
+    }
+    return result;
+}
+
+GateTarget target_pauli(uint32_t qubit_index, const pybind11::object &pauli, bool invert) {
+    if ((qubit_index & TARGET_VALUE_MASK) != qubit_index) {
+        std::stringstream ss;
+        ss << "qubit_index=" << qubit_index << " is too large. Maximum qubit index is " << TARGET_VALUE_MASK << ".";
+        throw std::invalid_argument(ss.str());
+    }
+    if (pybind11::isinstance<pybind11::str>(pauli)) {
+        std::string p = pybind11::cast<std::string>(pauli);
+        if (p == "X" || p == "x") {
+            return GateTarget::x(qubit_index, invert);
+        } else if (p == "Y" || p == "y") {
+            return GateTarget::y(qubit_index, invert);
+        } else if (p == "Z" || p == "z") {
+            return GateTarget::z(qubit_index, invert);
+        } else if (p == "I") {
+            return GateTarget::qubit(qubit_index, invert);
+        }
+    } else if (pybind11::isinstance<pybind11::int_>(pauli)) {
+        uint8_t p = pybind11::cast<uint8_t>(pauli);
+        if (p == 1) {
+            return GateTarget::x(qubit_index, invert);
+        } else if (p == 2) {
+            return GateTarget::y(qubit_index, invert);
+        } else if (p == 3) {
+            return GateTarget::z(qubit_index, invert);
+        } else if (p == 0) {
+            return GateTarget::qubit(qubit_index, invert);
+        }
+    }
+
+    std::stringstream ss;
+    ss << "Expected pauli in [0, 1, 2, 3, *'IXYZxyz'] but got pauli=" << pauli;
+    throw std::invalid_argument(ss.str());
 }
 
 GateTarget target_sweep_bit(uint32_t qubit) {
@@ -300,6 +390,82 @@ void top_level(pybind11::module &m) {
             .data());
 
     m.def(
+        "target_pauli",
+        &target_pauli,
+        pybind11::arg("qubit_index"),
+        pybind11::arg("pauli"),
+        pybind11::arg("invert") = false,
+        clean_doc_string(R"DOC(
+            @signature def target_pauli(qubit_index: int, pauli: Union[str, int], invert: bool = False) -> stim.GateTarget:
+            Returns a pauli target that can be passed into `stim.Circuit.append`.
+
+            Args:
+                qubit_index: The qubit that the Pauli applies to.
+                pauli: The pauli gate to use. This can either be a string identifying the
+                    pauli by name ("x", "X", "y", "Y", "z", or "Z") or an integer following
+                    the convention (1=X, 2=Y, 3=Z). Setting this argument to "I" or to
+                    0 will return a qubit target instead of a pauli target.
+                invert: Defaults to False. If True, the target is inverted (like "!X10"),
+                    indicating that, for example, measurement results should be inverted).
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     stim.target_pauli(2, "X"),
+                ...     stim.target_combiner(),
+                ...     stim.target_pauli(3, "y", invert=True),
+                ...     stim.target_pauli(5, 3),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*!Y3 Z5
+                ''')
+
+                >>> circuit.append("M", [
+                ...     stim.target_pauli(7, "I"),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*!Y3 Z5
+                    M 7
+                ''')
+        )DOC")
+            .data());
+
+    m.def(
+        "target_combined_paulis",
+        &target_combined_paulis,
+        pybind11::arg("paulis"),
+        pybind11::arg("invert") = false,
+        clean_doc_string(R"DOC(
+            @signature def target_combined_paulis(paulis: Union[stim.PauliString, List[stim.GateTarget]], invert: bool = False) -> stim.GateTarget:
+            Returns a list of targets encoding a pauli product for instructions like MPP.
+
+            Args:
+                paulis: The paulis to encode into the targets. This can be a
+                    `stim.PauliString` or a list of pauli targets from `stim.target_x`,
+                    `stim.target_pauli`, etc.
+                invert: Defaults to False. If True, the product is inverted (like "!X2*Y3").
+                    Note that this is in addition to any inversions specified by the
+                    `paulis` argument.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     *stim.target_combined_paulis(stim.PauliString("-XYZ")),
+                ...     *stim.target_combined_paulis([stim.target_x(2), stim.target_y(5)]),
+                ...     *stim.target_combined_paulis([stim.target_z(9)], invert=True),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP !X0*Y1*Z2 X2*Y5 !Z9
+                ''')
+        )DOC")
+            .data());
+
+    m.def(
         "target_sweep_bit",
         &target_sweep_bit,
         pybind11::arg("sweep_bit_index"),
@@ -444,6 +610,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit_targets_inside_instruction = pybind_circuit_targets_inside_instruction(m);
     auto c_circuit_error_location = pybind_circuit_error_location(m);
     auto c_circuit_error_location_methods = pybind_explained_error(m);
+    auto c_flow = pybind_flow(m);
 
     auto c_diagram_helper = pybind_diagram(m);
 
@@ -484,6 +651,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_targets_inside_instruction_methods(m, c_circuit_targets_inside_instruction);
     pybind_circuit_error_location_methods(m, c_circuit_error_location);
     pybind_explained_error_methods(m, c_circuit_error_location_methods);
+    pybind_flow_methods(m, c_flow);
 
     pybind_diagram_methods(m, c_diagram_helper);
 }

@@ -197,3 +197,92 @@ def test_target_methods_accept_gate_targets():
 
     with pytest.raises(ValueError):
         stim.target_z(stim.target_sweep_bit(4))
+
+
+def test_target_pauli():
+    assert stim.target_pauli(2, "I") == stim.GateTarget(2)
+    assert stim.target_pauli(2, "X") == stim.target_x(2)
+    assert stim.target_pauli(2, "Y") == stim.target_y(2)
+    assert stim.target_pauli(2, "Z") == stim.target_z(2)
+    assert stim.target_pauli(5, "x") == stim.target_x(5)
+    assert stim.target_pauli(2, "y") == stim.target_y(2)
+    assert stim.target_pauli(2, "z") == stim.target_z(2)
+    assert stim.target_pauli(2, 0) == stim.GateTarget(2)
+    assert stim.target_pauli(2, 1) == stim.target_x(2)
+    assert stim.target_pauli(2, 2) == stim.target_y(2)
+    assert stim.target_pauli(2, 3) == stim.target_z(2)
+    assert stim.target_pauli(2, 3, True) == stim.target_z(2, True)
+    assert stim.target_pauli(qubit_index=2, pauli=3, invert=True) == stim.target_z(2, True)
+
+    with pytest.raises(ValueError, match="too large"):
+        stim.target_pauli(2**31, 'X')
+    with pytest.raises(ValueError, match="Expected pauli"):
+        stim.target_pauli(5, 'F')
+
+
+def test_target_combined_paulis():
+    assert stim.target_combined_paulis(stim.PauliString("XYZ")) == [
+        stim.target_x(0),
+        stim.target_combiner(),
+        stim.target_y(1),
+        stim.target_combiner(),
+        stim.target_z(2),
+    ]
+
+    assert stim.target_combined_paulis(stim.PauliString("X"), True) == [
+        stim.target_x(0, True),
+    ]
+
+    assert stim.target_combined_paulis(stim.PauliString("-XYIZ")) == [
+        stim.target_x(0, invert=True),
+        stim.target_combiner(),
+        stim.target_y(1),
+        stim.target_combiner(),
+        stim.target_z(3),
+    ]
+
+    assert stim.target_combined_paulis(stim.PauliString("-XYIZ"), True) == [
+        stim.target_x(0),
+        stim.target_combiner(),
+        stim.target_y(1),
+        stim.target_combiner(),
+        stim.target_z(3),
+    ]
+
+    assert stim.target_combined_paulis([stim.target_x(5), stim.target_z(9)]) == [
+        stim.target_x(5),
+        stim.target_combiner(),
+        stim.target_z(9),
+    ]
+
+    assert stim.target_combined_paulis([stim.target_x(5, True), stim.target_z(9)]) == [
+        stim.target_x(5, True),
+        stim.target_combiner(),
+        stim.target_z(9),
+    ]
+    assert stim.target_combined_paulis([stim.target_x(5), stim.target_z(9, True)]) == [
+        stim.target_x(5, True),
+        stim.target_combiner(),
+        stim.target_z(9),
+    ]
+    assert stim.target_combined_paulis([stim.target_x(5), stim.target_z(9)], True) == [
+        stim.target_x(5, True),
+        stim.target_combiner(),
+        stim.target_z(9),
+    ]
+    assert stim.target_combined_paulis([stim.target_y(4)]) == [
+        stim.target_y(4),
+    ]
+
+    with pytest.raises(ValueError, match="Expected a pauli string"):
+        stim.target_combined_paulis([stim.target_rec(-2)])
+    with pytest.raises(ValueError, match="Expected a pauli string"):
+        stim.target_combined_paulis([object()])
+    with pytest.raises(ValueError, match="Identity pauli product"):
+        stim.target_combined_paulis([])
+    with pytest.raises(ValueError, match="Identity pauli product"):
+        stim.target_combined_paulis(stim.PauliString(0))
+    with pytest.raises(ValueError, match="Identity pauli product"):
+        stim.target_combined_paulis(stim.PauliString(10))
+    with pytest.raises(ValueError, match="Imaginary"):
+        stim.target_combined_paulis(stim.PauliString("iX"))

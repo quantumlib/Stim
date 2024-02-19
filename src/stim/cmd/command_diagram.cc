@@ -94,7 +94,7 @@ std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
     }
 
     std::vector<CoordFilter> result;
-    for (const auto &term : split(':', arg)) {
+    for (std::string_view term : split_view(':', arg)) {
         result.push_back(CoordFilter::parse_from(term));
     }
     return result;
