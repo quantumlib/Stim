@@ -76,7 +76,12 @@ struct bitword<256> {
     }
 
     inline std::array<uint64_t, 4> to_u64_array() const {
-        return std::bit_cast<std::array<uint64_t, 4>>(val);
+        return std::array<uint64_t, 4>{
+            (uint64_t)_mm256_extract_epi64(val, 0),
+            (uint64_t)_mm256_extract_epi64(val, 1),
+            (uint64_t)_mm256_extract_epi64(val, 2),
+            (uint64_t)_mm256_extract_epi64(val, 3),
+        };
     }
 
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)

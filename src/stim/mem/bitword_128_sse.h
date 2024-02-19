@@ -39,6 +39,7 @@ struct bitword<128> {
     union {
         __m128i val;
         uint8_t u8[16];
+        uint64_t u64[2];
     };
 
     static void *aligned_malloc(size_t bytes) {
@@ -76,7 +77,14 @@ struct bitword<128> {
     }
 
     inline std::array<uint64_t, 2> to_u64_array() const {
-        return std::bit_cast<std::array<uint64_t, 2>>(val);
+        // I would use std::bit_cast here, but it failed to build in CI.
+
+        // I would use '_mm_extract_epi64' here, but it failed to build in CI when using `-O3`.
+        // Failures were on linux systems with gcc 12.2.0
+
+        uint64_t w0 = u64[0];
+        uint64_t w1 = u64[1];
+        return std::array<uint64_t, 2>{(uint64_t)w0, (uint64_t)w1};
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
