@@ -38,7 +38,6 @@ struct bitword<256> {
 
     union {
         __m256i val;
-        uint64_t u64[4];
         uint8_t u8[32];
     };
 
@@ -76,7 +75,7 @@ struct bitword<256> {
         return {_mm256_set1_epi64x(pattern)};
     }
 
-    std::array<uint64_t, 4> to_u64_array() const {
+    inline std::array<uint64_t, 4> to_u64_array() const {
         return std::array<uint64_t, 4>{
             (uint64_t)_mm256_extract_epi64(val, 0),
             (uint64_t)_mm256_extract_epi64(val, 1),
@@ -84,6 +83,7 @@ struct bitword<256> {
             (uint64_t)_mm256_extract_epi64(val, 3),
         };
     }
+
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
         return (bool)(words[0] | words[1] | words[2] | words[3]);
@@ -140,7 +140,8 @@ struct bitword<256> {
     }
 
     inline uint16_t popcount() const {
-        return std::popcount(u64[0]) + std::popcount(u64[1]) + std::popcount(u64[2]) + (uint16_t)std::popcount(u64[3]);
+        auto v = to_u64_array();
+        return std::popcount(v[0]) + std::popcount(v[1]) + std::popcount(v[2]) + (uint16_t)std::popcount(v[3]);
     }
 
     inline bitword<256> shifted(int offset) const {
