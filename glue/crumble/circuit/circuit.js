@@ -1,7 +1,7 @@
 import {Operation} from "./operation.js"
 import {GATE_ALIAS_MAP, GATE_MAP} from "../gates/gateset.js"
 import {Layer} from "./layer.js"
-import {make_mpp_gate} from '../gates/gateset_mpp.js';
+import {make_mpp_gate, make_spp_gate} from '../gates/gateset_mpp.js';
 import {describe} from "../base/describe.js";
 
 /**
@@ -110,7 +110,42 @@ function simplifiedMPP(args, combinedTargets) {
 
     let gate = GATE_MAP.get('M' + bases);
     if (gate === undefined) {
+        gate = GATE_MAP.get('MPP:' + bases);
+    }
+    if (gate === undefined) {
         gate = make_mpp_gate(bases);
+    }
+    return new Operation(gate, args, new Uint32Array(qubits));
+}
+
+/**
+ * @param {!Float32Array} args
+ * @param {!boolean} dag
+ * @param {!Array.<!string>} combinedTargets
+ * @returns {!Operation}
+ */
+function simplifiedSPP(args, dag, combinedTargets) {
+    let bases = '';
+    let qubits = [];
+    for (let t of combinedTargets) {
+        if (t[0] === '!') {
+            t = t.substring(1);
+        }
+        if (t[0] === 'X' || t[0] === 'Y' || t[0] === 'Z') {
+            bases += t[0];
+            let v = parseInt(t.substring(1));
+            if (v !== v) {
+                throw Error(`Non-Pauli target given to SPP: ${combinedTargets}`);
+            }
+            qubits.push(v);
+        } else {
+            throw Error(`Non-Pauli target given to SPP: ${combinedTargets}`);
+        }
+    }
+
+    let gate = GATE_MAP.get((dag ? 'SPP_DAG:' : 'SPP:') + bases);
+    if (gate === undefined) {
+        gate = make_spp_gate(bases, dag);
     }
     return new Operation(gate, args, new Uint32Array(qubits));
 }
@@ -244,6 +279,20 @@ class Circuit {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
                         layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                    }
+                }
+                return;
+            } else if (name === 'SPP' || name === 'SPP_DAG') {
+                let dag = name === 'SPP_DAG';
+                let combinedTargets = splitUncombinedTargets(targets);
+                let layer = layers[layers.length - 1]
+                for (let combo of combinedTargets) {
+                    try {
+                        layer.put(simplifiedSPP(new Float32Array(args), dag, combo), false);
+                    } catch (_) {
+                        layers.push(new Layer());
+                        layer = layers[layers.length - 1];
+                        layer.put(simplifiedSPP(new Float32Array(args), dag, combo), false);
                     }
                 }
                 return;
@@ -495,8 +544,14 @@ class Circuit {
         for (let layer of this.layers) {
             let opsByName = groupBy(layer.iter_gates_and_markers(), op => {
                 let key = op.gate.name;
-                if (key.startsWith('M') && !GATE_MAP.has(key)) {
+                if (key.startsWith('MPP:') && !GATE_MAP.has(key)) {
                     key = 'MPP';
+                }
+                if (key.startsWith('SPP:') && !GATE_MAP.has(key)) {
+                    key = 'SPP';
+                }
+                if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
+                    key = 'SPP_DAG';
                 }
                 if (op.args.length > 0) {
                     key += '(' + [...op.args].join(',') + ')';
@@ -520,11 +575,12 @@ class Circuit {
                 let gateName = nameWithArgs.split('(')[0];
 
                 let gate = GATE_MAP.get(gateName);
-                if (gate === undefined && gateName === 'MPP') {
-                    let line = ['MPP '];
+                if (gate === undefined && (gateName === 'MPP' || gateName === 'SPP' || gateName === 'SPP_DAG')) {
+                    let line = [gateName + ' '];
                     for (let op of group) {
+                        let bases = op.gate.name.substring(4);
                         for (let k = 0; k < op.id_targets.length; k++) {
-                            line.push(op.gate.name[k + 1] + old2new.get(op.id_targets[k]));
+                            line.push(bases[k] + old2new.get(op.id_targets[k]));
                             line.push('*');
                         }
                         line.pop();

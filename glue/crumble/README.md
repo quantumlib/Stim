@@ -161,9 +161,9 @@ Note: use `shift` to get the inverse of a gate.
 - `c+s+x`: Overwrite selection with `SQRT_XX` gate targeting mouse
 - `c+s+y`: Overwrite selection with `SQRT_YY` gate targeting mouse
 - `c+s+z`: Overwrite selection with `SQRT_ZZ` gate targeting mouse
-- `c+m+x`: Overwrite selection with `MPP X*X` gate targeting mouse
-- `c+m+y`: Overwrite selection with `MPP Y*Y` gate targeting mouse
-- `c+m+z`: Overwrite selection with `MPP Z*Z` gate targeting mouse
+- `c+m+x`: Overwrite selection with `MXX` gate targeting mouse
+- `c+m+y`: Overwrite selection with `MYY` gate targeting mouse
+- `c+m+z`: Overwrite selection with `MZZ` gate targeting mouse
 
 **Keyboard Buttons as Gate Adjectives**
 
@@ -187,7 +187,7 @@ Here are some examples:
 - `m+r+y` is the **Y basis variant** of the **measure** (m) and **reset** (r) operation (i.e. the gate `MRY 0`).
 - `c+m+x` is the **two qubit variant** (c)
 of **measurement** (m)
-in the **X basis** (x) (i.e. the gate `MPP X1*X2`).
+in the **X basis** (x) (i.e. the gate `MXX 1 2`).
 - `shift+c+s+y` is the **inverse** (shift)
 of the **two qubit variant** (c)
 of the **square root** (s)

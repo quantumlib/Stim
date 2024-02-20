@@ -27,8 +27,9 @@ test("gateset.expected_gates", () => {
     expectedGates.add("MARKZ");
     expectedGates.add("MARK");
 
-    // Not supported yet.
+    // Special handling.
     expectedGates.delete("MPP");
+    expectedGates.delete("SPP");
 
     assertThat(new Set([...GATE_MAP.keys()])).isEqualTo(expectedGates);
 });

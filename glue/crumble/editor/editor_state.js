@@ -297,11 +297,12 @@ class EditorState {
                     for (let q of op.id_targets) {
                         inferredBases.set(q, opBasis);
                     }
-                } else if (op.gate.name.startsWith('M') && op.gate.tableau_map === undefined && op.id_targets.length === op.gate.name.length - 1) {
+                } else if (op.gate.name.startsWith('MPP:') && op.gate.tableau_map === undefined && op.id_targets.length === op.gate.name.length - 1) {
                     // MPP special case.
+                    let bases = op.gate.name.substring(4);
                     for (let k = 0; k < op.id_targets.length; k++) {
                         let q = op.id_targets[k];
-                        inferredBases.set(q, op.gate.name[k + 1]);
+                        inferredBases.set(q, bases[k]);
                     }
                 }
             }

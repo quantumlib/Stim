@@ -1,3 +1,5 @@
+import {describe} from "../base/describe.js";
+
 class PauliFrame {
     /**
      * @param {!int} num_frames
@@ -234,6 +236,9 @@ class PauliFrame {
      * @param {!Uint32Array|!Array.<!int>} targets
      */
     do_mpp(bases, targets) {
+        if (bases.length !== targets.length) {
+            throw new Error('bases.length !== targets.length');
+        }
         let anticommutes = 0;
         for (let k = 0; k < bases.length; k++) {
             let t = targets[k];
@@ -251,6 +256,52 @@ class PauliFrame {
         for (let k = 0; k < bases.length; k++) {
             let t = targets[k];
             this.flags[t] |= anticommutes;
+        }
+    }
+
+    /**
+     * @param {!string} bases
+     * @param {!Uint32Array|!Array.<!int>} targets
+     */
+    do_spp(bases, targets) {
+        if (bases.length !== targets.length) {
+            throw new Error('bases.length !== targets.length');
+        }
+        let anticommutes = 0;
+        for (let k = 0; k < bases.length; k++) {
+            let t = targets[k];
+            let obs = bases[k];
+            if (obs === 'X') {
+                anticommutes ^= this.zs[t];
+            } else if (obs === 'Z') {
+                anticommutes ^= this.xs[t];
+            } else if (obs === 'Y') {
+                anticommutes ^= this.xs[t] ^ this.zs[t];
+            } else {
+                throw new Error(`Unrecognized spp obs: '${obs}'`);
+            }
+        }
+        for (let k = 0; k < bases.length; k++) {
+            let t = targets[k];
+            let obs = bases[k];
+            let x = 0;
+            let z = 0;
+            if (obs === 'X') {
+                x = 1;
+            } else if (obs === 'Z') {
+                z = 1;
+            } else if (obs === 'Y') {
+                x = 1;
+                z = 1;
+            } else {
+                throw new Error(`Unrecognized spp obs: '${obs}'`);
+            }
+            if (x) {
+                this.xs[t] ^= anticommutes;
+            }
+            if (z) {
+                this.zs[t] ^= anticommutes;
+            }
         }
     }
 
