@@ -97,7 +97,7 @@ bool stim::accumulate_next_obs_terms_to_pauli_string_helper(
         GateTarget t = instruction.targets[k];
 
         if (t.is_pauli_target()) {
-            obs->safe_accumulate_pauli_term(t, &imag);
+            obs->left_mul_pauli(t, &imag);
         } else if (t.is_classical_bit_target() && bits != nullptr) {
             bits->push_back(t);
         } else {

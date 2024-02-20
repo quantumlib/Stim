@@ -531,3 +531,120 @@ QUBIT_COORDS(6, 0) 6
 MPP Z0*Z1*Z2 Z3*Z4*Z5*X6
     `.trim())
 });
+
+test("circuit.fromStimCircuit_manygates", () => {
+    let c = Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 2, 3) 0
+
+        # Pauli gates
+        I 0
+        X 1
+        Y 2
+        Z 3
+        TICK
+
+        # Single Qubit Clifford Gates
+        C_XYZ 0
+        C_ZYX 1
+        H_XY 2
+        H_XZ 3
+        H_YZ 4
+        SQRT_X 0
+        SQRT_X_DAG 1
+        SQRT_Y 2
+        SQRT_Y_DAG 3
+        SQRT_Z 4
+        SQRT_Z_DAG 5
+        TICK
+
+        # Two Qubit Clifford Gates
+        CXSWAP 0 1
+        ISWAP 2 3
+        ISWAP_DAG 4 5
+        SWAP 6 7
+        SWAPCX 8 9
+        CZSWAP 10 11
+        SQRT_XX 0 1
+        SQRT_XX_DAG 2 3
+        SQRT_YY 4 5
+        SQRT_YY_DAG 6 7
+        SQRT_ZZ 8 9
+        SQRT_ZZ_DAG 10 11
+        XCX 0 1
+        XCY 2 3
+        XCZ 4 5
+        YCX 6 7
+        YCY 8 9
+        YCZ 10 11
+        ZCX 12 13
+        ZCY 14 15
+        ZCZ 16 17
+        TICK
+
+        # Noise Channels
+        CORRELATED_ERROR(0.01) X1 Y2 Z3
+        ELSE_CORRELATED_ERROR(0.02) X4 Y7 Z6
+        DEPOLARIZE1(0.02) 0
+        DEPOLARIZE2(0.03) 1 2
+        PAULI_CHANNEL_1(0.01, 0.02, 0.03) 3
+        PAULI_CHANNEL_2(0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010, 0.011, 0.012, 0.013, 0.014, 0.015) 4 5
+        X_ERROR(0.01) 0
+        Y_ERROR(0.02) 1
+        Z_ERROR(0.03) 2
+        HERALDED_ERASE(0.04) 3
+        HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 6
+        TICK
+
+        # Collapsing Gates
+        MPP X0*Y1*Z2 Z0*Z1
+        MRX 0
+        MRY 1
+        MRZ 2
+        MX 3
+        MY 4
+        MZ 5 6
+        RX 7
+        RY 8
+        RZ 9
+        TICK
+
+        # Pair Measurement Gates
+        MXX 0 1 2 3
+        MYY 4 5
+        MZZ 6 7
+        TICK
+
+        # Control Flow
+        REPEAT 3 {
+            H 0
+            CX 0 1
+            S 1
+            TICK
+        }
+        TICK
+
+        # Annotations
+        MR 0
+        X_ERROR(0.1) 0
+        MR(0.01) 0
+        SHIFT_COORDS(1, 2, 3)
+        DETECTOR(1, 2, 3) rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        MPAD 0 1 0
+        TICK
+
+        # Inverted measurements.
+        MRX !0
+        MY !1
+        MZZ !2 3
+        MYY !4 !5
+        MPP X6*!Y7*Z8
+        TICK
+
+        # Feedback
+        CX rec[-1] 0
+        CY sweep[0] 1
+        CZ 2 rec[-1]
+    `);
+    assertThat(c).isNotEqualTo(undefined);
+})

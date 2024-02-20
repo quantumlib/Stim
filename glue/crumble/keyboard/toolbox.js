@@ -5,10 +5,9 @@ let toolboxCanvas = /** @type {!HTMLCanvasElement} */ document.getElementById('t
 let DIAM = 28;
 let PITCH = DIAM + 4;
 let PAD = 10.5;
-let GRACE_DELAY = 200;
 
-let COLUMNS = ['H', 'S', 'R', 'M', 'C', '1', '2', '3', '4'];
-let DEF_ROW = [1, 2, 2, 2, undefined, -1, -1, -1, -1];
+let COLUMNS = ['H', 'S', 'R', 'M', 'C', 'W', 'SC', 'MC', 'P', '1', '2', '3', '4'];
+let DEF_ROW = [1,    2,   2,   2,  1,   2,   2,    2,    -1, -1, -1, -1, -1];
 
 /**
  * @param {!ChordEvent} ev
@@ -42,49 +41,57 @@ function getFocusedCol(ev) {
     }
     let best = undefined;
     for (let k = 0; k < COLUMNS.length; k++) {
-        let s = ev.chord.has(COLUMNS[k].toLowerCase());
-        if (s > 0) {
-            if (best === undefined || s > best.strength) {
-                best = {col: k, strength: s};
+        let s = 0;
+        for (let c of COLUMNS[k].toLowerCase()) {
+            s += ev.chord.has(c.toLowerCase());
+        }
+        if (s === COLUMNS[k].length) {
+            if (best === undefined || s >= best.strength) {
+                best = {col: k, strength: s / COLUMNS[k].length};
             }
         }
     }
     return best;
 }
 
-let POS_TO_GATE_DICT = new Map([
-    ['0,0', GATE_MAP.get("H_YZ")],
-    ['0,1', GATE_MAP.get("H")],
-    ['0,2', GATE_MAP.get("H_XY")],
-    ['1,0', GATE_MAP.get("SQRT_X")],
-    ['1,1', GATE_MAP.get("SQRT_Y")],
-    ['1,2', GATE_MAP.get("S")],
-    ['2,0', GATE_MAP.get("RX")],
-    ['2,1', GATE_MAP.get("RY")],
-    ['2,2', GATE_MAP.get("R")],
-    ['3,0', GATE_MAP.get("MX")],
-    ['3,1', GATE_MAP.get("MY")],
-    ['3,2', GATE_MAP.get("M")],
-    ['4,0', GATE_MAP.get("CX")],
-    ['4,1', GATE_MAP.get("CY")],
-    ['4,2', GATE_MAP.get("CZ")],
-    ['5,0', GATE_MAP.get("MARKX").withDefaultArgument(0)],
-    ['5,1', GATE_MAP.get("MARKY").withDefaultArgument(0)],
-    ['5,2', GATE_MAP.get("MARKZ").withDefaultArgument(0)],
-    ['6,0', GATE_MAP.get("MARKX").withDefaultArgument(1)],
-    ['6,1', GATE_MAP.get("MARKY").withDefaultArgument(1)],
-    ['6,2', GATE_MAP.get("MARKZ").withDefaultArgument(1)],
-    ['7,0', GATE_MAP.get("MARKX").withDefaultArgument(2)],
-    ['7,1', GATE_MAP.get("MARKY").withDefaultArgument(2)],
-    ['7,2', GATE_MAP.get("MARKZ").withDefaultArgument(2)],
-    ['8,0', GATE_MAP.get("MARKX").withDefaultArgument(3)],
-    ['8,1', GATE_MAP.get("MARKY").withDefaultArgument(3)],
-    ['8,2', GATE_MAP.get("MARKZ").withDefaultArgument(3)],
-    ['5,-1', GATE_MAP.get("MARK").withDefaultArgument(0)],
-    ['6,-1', GATE_MAP.get("MARK").withDefaultArgument(1)],
-    ['7,-1', GATE_MAP.get("MARK").withDefaultArgument(2)],
-    ['8,-1', GATE_MAP.get("MARK").withDefaultArgument(3)],
-])
+function make_pos_to_gate_dict() {
+    let result = new Map([
+        ['0,0', GATE_MAP.get("H_YZ")],
+        ['0,1', GATE_MAP.get("H")],
+        ['0,2', GATE_MAP.get("H_XY")],
+        ['1,0', GATE_MAP.get("SQRT_X")],
+        ['1,1', GATE_MAP.get("SQRT_Y")],
+        ['1,2', GATE_MAP.get("S")],
+        ['2,0', GATE_MAP.get("RX")],
+        ['2,1', GATE_MAP.get("RY")],
+        ['2,2', GATE_MAP.get("R")],
+        ['3,0', GATE_MAP.get("MX")],
+        ['3,1', GATE_MAP.get("MY")],
+        ['3,2', GATE_MAP.get("M")],
+        ['4,0', GATE_MAP.get("CX")],
+        ['4,1', GATE_MAP.get("CY")],
+        ['4,2', GATE_MAP.get("CZ")],
+        ['5,0', GATE_MAP.get("CXSWAP")],
+        ['5,1', GATE_MAP.get("SWAP")],
+        ['5,2', GATE_MAP.get("CZSWAP")],
+        ['6,0', GATE_MAP.get("SQRT_XX")],
+        ['6,1', GATE_MAP.get("SQRT_YY")],
+        ['6,2', GATE_MAP.get("SQRT_ZZ")],
+        ['7,0', GATE_MAP.get("MXX")],
+        ['7,1', GATE_MAP.get("MYY")],
+        ['7,2', GATE_MAP.get("MZZ")],
+    ]);
+    let x = 9;
+    for (let k = 0; k < 4; k++) {
+        result.set(`${x},0`, GATE_MAP.get("MARKX").withDefaultArgument(k));
+        result.set(`${x},1`, GATE_MAP.get("MARKY").withDefaultArgument(k));
+        result.set(`${x},2`, GATE_MAP.get("MARKZ").withDefaultArgument(k));
+        result.set(`${x},-1`, GATE_MAP.get("MARK").withDefaultArgument(k));
+        x += 1;
+    }
+    return result;
+}
+let POS_TO_GATE_DICT = make_pos_to_gate_dict();
 
 /**
  * @param {!ChordEvent} ev
@@ -135,9 +142,9 @@ function drawToolbox(ev) {
 
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
-    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'C_X', 'X1', 'X2', 'X3', 'X4'];
-    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'C_Y', 'Y1', 'Y2', 'Y3', 'Y4'];
-    let zGates = ['H_XY', 'S',   'R',   'M',   'C_Z', 'Z1', 'Z2', 'Z3', 'Z4'];
+    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'C_X', 'CXSWAP', '√XX', 'M_XX', 'red', 'X1', 'X1', 'X2', 'X3', 'X4'];
+    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'C_Y', 'SWAP',   '√YY', 'M_YY',  'green',  'Y1', 'Y1', 'Y2', 'Y3', 'Y4'];
+    let zGates = ['H_XY', 'S',   'R',   'M',   'C_Z', 'CZSWAP', '√ZZ', 'M_ZZ', 'blue', 'Z1', 'Z1', 'Z2', 'Z3', 'Z4'];
     let gates = [xGates, yGates, zGates];
     for (let k = 0; k < COLUMNS.length; k++) {
         for (let p = 0; p < 3; p++) {
@@ -162,7 +169,14 @@ function drawToolbox(ev) {
                 ctx.textBaseline = 'top';
                 ctx.fillText(sub, cx, cy);
             } else {
-                ctx.font = '16pt monospace';
+                let k = 16;
+                while (k > 4) {
+                    ctx.font = `${k}pt monospace`;
+                    if (ctx.measureText(text).width <= 28) {
+                        break;
+                    }
+                    k -= 1;
+                }
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(text, cx, cy);
@@ -170,7 +184,6 @@ function drawToolbox(ev) {
         }
     }
 
-    let curTime = performance.now();
     let focus = getToolboxFocusedData(ev);
 
     if (focus.partialFocusedRow !== undefined) {
@@ -189,12 +202,6 @@ function drawToolbox(ev) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
-    ctx.fillText("W=SWAP", PAD + PITCH * COLUMNS.length, PAD);
-    ctx.fillText("F=C_XYZ", PAD + PITCH * COLUMNS.length, PAD + 20);
-    ctx.fillText("P=POLYGON", PAD + PITCH * COLUMNS.length, PAD + 40);
-    ctx.fillText("space=unmark", PAD + PITCH * COLUMNS.length, PAD + 60);
-    ctx.fillText("I=ISWAP", PAD + PITCH * COLUMNS.length, PAD + 80);
-    ctx.fillText("L=TIMELINEFOCUS", PAD + PITCH * COLUMNS.length, PAD + 100);
 }
 
 export {getToolboxFocusedData, drawToolbox};

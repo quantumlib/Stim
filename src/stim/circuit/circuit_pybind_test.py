@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import pathlib
-import re
 import tempfile
 from typing import cast
 
@@ -1579,12 +1579,12 @@ def test_has_flow_ry():
     c = stim.Circuit("""
         RY 0
     """)
-    assert c.has_flow(end=stim.PauliString("Y"))
-    assert not c.has_flow(end=stim.PauliString("-Y"))
-    assert not c.has_flow(end=stim.PauliString("X"))
-    assert c.has_flow(end=stim.PauliString("Y"), unsigned=True)
-    assert not c.has_flow(end=stim.PauliString("X"), unsigned=True)
-    assert c.has_flow(end=stim.PauliString("-Y"), unsigned=True)
+    assert c.has_flow(stim.Flow("1 -> Y"))
+    assert not c.has_flow(stim.Flow("1 -> -Y"))
+    assert not c.has_flow(stim.Flow("1 -> X"))
+    assert c.has_flow(stim.Flow("1 -> Y"), unsigned=True)
+    assert not c.has_flow(stim.Flow("1 -> X"), unsigned=True)
+    assert c.has_flow(stim.Flow("1 -> -Y"), unsigned=True)
 
 
 def test_has_flow_cxs():
@@ -1593,15 +1593,15 @@ def test_has_flow_cxs():
         S 0
     """)
 
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"))
-    assert c.has_flow(start=stim.PauliString("Y_"), end=stim.PauliString("-XX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-XX"))
+    assert c.has_flow(stim.Flow("X_ -> YX"))
+    assert c.has_flow(stim.Flow("Y_ -> -XX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -XX"))
 
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"), unsigned=True)
-    assert c.has_flow(start=stim.PauliString("Y_"), end=stim.PauliString("-XX"), unsigned=True)
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-XX"), unsigned=True)
+    assert c.has_flow(stim.Flow("X_ -> YX"), unsigned=True)
+    assert c.has_flow(stim.Flow("Y_ -> -XX"), unsigned=True)
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert not c.has_flow(stim.Flow("X_ -> -XX"), unsigned=True)
 
 
 def test_has_flow_cxm():
@@ -1609,14 +1609,14 @@ def test_has_flow_cxm():
         CX 0 1
         M 1
     """)
-    assert c.has_flow(end=stim.PauliString("_Z"), measurements=[0])
-    assert c.has_flow(start=stim.PauliString("ZZ"), measurements=[0])
-    assert c.has_flow(start=stim.PauliString("ZZ"), end=stim.PauliString("_Z"))
-    assert c.has_flow(start=stim.PauliString("XX"), end=stim.PauliString("X_"))
-    assert c.has_flow(end=stim.PauliString("_Z"), measurements=[0], unsigned=True)
-    assert c.has_flow(start=stim.PauliString("ZZ"), measurements=[0], unsigned=True)
-    assert c.has_flow(start=stim.PauliString("ZZ"), end=stim.PauliString("_Z"), unsigned=True)
-    assert c.has_flow(start=stim.PauliString("XX"), end=stim.PauliString("X_"), unsigned=True)
+    assert c.has_flow(stim.Flow("1 -> _Z xor rec[0]"))
+    assert c.has_flow(stim.Flow("ZZ -> rec[0]"))
+    assert c.has_flow(stim.Flow("ZZ -> _Z"))
+    assert c.has_flow(stim.Flow("XX -> X_"))
+    assert c.has_flow(stim.Flow("1 -> _Z xor rec[0]"), unsigned=True)
+    assert c.has_flow(stim.Flow("ZZ -> rec[0]"), unsigned=True)
+    assert c.has_flow(stim.Flow("ZZ -> _Z"), unsigned=True)
+    assert c.has_flow(stim.Flow("XX -> X_"), unsigned=True)
 
 
 def test_has_flow_lattice_surgery():
@@ -1631,16 +1631,16 @@ def test_has_flow_lattice_surgery():
 
         S 0
     """)
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"))
-    assert c.has_flow(start=stim.PauliString("Z_"), end=stim.PauliString("Z_"))
-    assert c.has_flow(start=stim.PauliString("_X"), end=stim.PauliString("_X"))
-    assert c.has_flow(start=stim.PauliString("_Z"), end=stim.PauliString("ZZ"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+    assert c.has_flow(stim.Flow("X_ -> YX"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
 
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"), unsigned=True)
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -YX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert c.has_flow(stim.Flow("X_ -> -YX"), unsigned=True)
 
 
 def test_has_flow_lattice_surgery_without_feedback():
@@ -1653,16 +1653,26 @@ def test_has_flow_lattice_surgery_without_feedback():
 
         S 0
     """)
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("YX"), measurements=[1])
-    assert c.has_flow(start=stim.PauliString("Z_"), end=stim.PauliString("Z_"))
-    assert c.has_flow(start=stim.PauliString("_X"), end=stim.PauliString("_X"))
-    assert c.has_flow(start=stim.PauliString("_Z"), end=stim.PauliString("ZZ"), measurements=[0, 2])
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
+    assert c.has_flow(stim.Flow("X_ -> YX xor rec[1]"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ xor rec[0] xor rec[2]"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert c.has_all_flows([])
+    assert c.has_all_flows([
+        stim.Flow("X_ -> YX xor rec[1]"),
+        stim.Flow("Z_ -> Z_"),
+    ])
+    assert not c.has_all_flows([
+        stim.Flow("X_ -> YX xor rec[1]"),
+        stim.Flow("Z_ -> Z_"),
+        stim.Flow("X_ -> XX"),
+    ])
 
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"))
-    assert not c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("XX"), unsigned=True)
-    assert c.has_flow(start=stim.PauliString("X_"), end=stim.PauliString("-YX"), unsigned=True, measurements=[1])
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -YX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert c.has_flow(stim.Flow("X_ -> -YX xor rec[1]"), unsigned=True)
 
 
 def test_has_flow_shorthands():
@@ -1673,21 +1683,20 @@ def test_has_flow_shorthands():
         MX 99
     """)
 
-    assert c.has_flow("X_ -> XX xor rec[1] xor rec[3]")
-    assert c.has_flow("Z_ -> Z_")
-    assert c.has_flow("_X -> _X")
-    assert c.has_flow("_Z -> ZZ", measurements=[0, 2])
-    assert c.has_flow("_Z -> ZZ xor rec[0]", measurements=[2])
+    assert c.has_flow(stim.Flow("X_ -> XX xor rec[1] xor rec[3]"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ xor rec[0] xor rec[2]"))
 
-    assert c.has_flow(start="X_", end="XX", measurements=[1, 3])
-    assert not c.has_flow("Z_ -> -Z_")
-    assert not c.has_flow("-Z_ -> Z_")
-    assert not c.has_flow("Z_ -> X_")
-    assert c.has_flow("iX_ -> iXX xor rec[1] xor rec[3]")
-    assert not c.has_flow("-iX_ -> iXX xor rec[1] xor rec[3]")
-    assert c.has_flow("-iX_ -> -iXX xor rec[1] xor rec[3]")
-    with pytest.raises(ValueError):
-        c.has_flow("iX_ -> XX")
+    assert c.has_flow(stim.Flow("X_ -> XX xor rec[1] xor rec[3]"))
+    assert not c.has_flow(stim.Flow("Z_ -> -Z_"))
+    assert not c.has_flow(stim.Flow("-Z_ -> Z_"))
+    assert not c.has_flow(stim.Flow("Z_ -> X_"))
+    assert c.has_flow(stim.Flow("iX_ -> iXX xor rec[1] xor rec[3]"))
+    assert not c.has_flow(stim.Flow("-iX_ -> iXX xor rec[1] xor rec[3]"))
+    assert c.has_flow(stim.Flow("-iX_ -> -iXX xor rec[1] xor rec[3]"))
+    with pytest.raises(ValueError, match="Anti-Hermitian"):
+        stim.Flow("iX_ -> XX")
 
 
 def test_decomposed():

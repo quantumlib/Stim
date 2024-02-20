@@ -32,7 +32,7 @@ template <size_t W>
 struct Tableau;
 
 template <size_t W>
-struct StabilizerFlow;
+struct Flow;
 
 template <size_t W>
 struct PauliString;
@@ -259,25 +259,25 @@ struct Gate {
     }
 
     template <size_t W>
-    std::vector<StabilizerFlow<W>> flows() const {
+    std::vector<Flow<W>> flows() const {
         if (flags & GateFlags::GATE_IS_UNITARY) {
             auto t = tableau<W>();
             if (flags & GateFlags::GATE_TARGETS_PAIRS) {
                 return {
-                    StabilizerFlow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
-                    StabilizerFlow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
-                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
-                    StabilizerFlow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
+                    Flow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
+                    Flow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
+                    Flow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
+                    Flow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
                 };
             }
             return {
-                StabilizerFlow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
-                StabilizerFlow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
+                Flow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
+                Flow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
             };
         }
-        std::vector<StabilizerFlow<W>> out;
+        std::vector<Flow<W>> out;
         for (const auto &c : flow_data) {
-            out.push_back(StabilizerFlow<W>::from_str(c));
+            out.push_back(Flow<W>::from_str(c));
         }
         return out;
     }

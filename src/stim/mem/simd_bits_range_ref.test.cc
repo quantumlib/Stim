@@ -401,3 +401,27 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, prefix_ref, {
     prefix[0] = true;
     ASSERT_TRUE(data[0]);
 })
+
+TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, as_u64, {
+    simd_bits<W> data(1024);
+    simd_bits_range_ref<W> ref(data);
+    ASSERT_EQ(data.as_u64(), 0);
+    ASSERT_EQ(ref.as_u64(), 0);
+
+    ref[63] = 1;
+    ASSERT_EQ(data.as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(ref.as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(0, 0).as_u64(), 0);
+    ASSERT_EQ(data.word_range_ref(0, 1).as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(0, 2).as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(1, 1).as_u64(), 0);
+    ASSERT_EQ(data.word_range_ref(1, 2).as_u64(), 0);
+
+    ref[64] = 1;
+    ASSERT_THROW({ data.as_u64(); }, std::invalid_argument);
+    ASSERT_THROW({ data.word_range_ref(0, 2).as_u64(); }, std::invalid_argument);
+    ASSERT_THROW({ ref.as_u64(); }, std::invalid_argument);
+    if (data.num_simd_words > 2) {
+        ASSERT_EQ(data.word_range_ref(2, 1).as_u64(), 0);
+    }
+})

@@ -1,7 +1,8 @@
 import {Operation} from "./operation.js"
-import {GATE_MAP} from "../gates/gateset.js"
+import {GATE_ALIAS_MAP, GATE_MAP} from "../gates/gateset.js"
 import {Layer} from "./layer.js"
 import {make_mpp_gate} from '../gates/gateset_mpp.js';
+import {describe} from "../base/describe.js";
 
 /**
  * @param {!Iterator<TItem>}items
@@ -92,6 +93,9 @@ function simplifiedMPP(args, combinedTargets) {
     let bases = '';
     let qubits = [];
     for (let t of combinedTargets) {
+        if (t[0] === '!') {
+            t = t.substring(1);
+        }
         if (t[0] === 'X' || t[0] === 'Y' || t[0] === 'Z') {
             bases += t[0];
             let v = parseInt(t.substring(1));
@@ -216,32 +220,17 @@ class Circuit {
             let reverse_pairs = false;
             if (name === '') {
                 return;
-            } else if (name === 'XCZ') {
-                reverse_pairs = true;
-                name = 'CX';
-            } else if (name === 'SWAPCX') {
-                reverse_pairs = true;
-                name = 'CXSWAP';
-            } else if (name === 'CNOT') {
-                name = 'CX';
-            } else if (name === 'RZ') {
-                name = 'R';
-            } else if (name === 'MZ') {
-                name = 'M';
-            } else if (name === 'MRZ') {
-                name = 'MR';
-            } else if (name === 'ZCX') {
-                name = 'CX';
-            } else if (name === 'ZCY') {
-                name = 'CY';
-            } else if (name === 'ZCZ') {
-                name = 'CZ';
-            } else if (name === 'YCX') {
-                reverse_pairs = true;
-                name = 'XCY';
-            } else if (name === 'YCZ') {
-                reverse_pairs = true;
-                name = 'CY';
+            }
+            let alias = GATE_ALIAS_MAP.get(name);
+            if (alias !== undefined) {
+                if (alias.ignore) {
+                    return;
+                } else if (alias.name !== undefined) {
+                    reverse_pairs = alias.reverse_pairs !== undefined && alias.reverse_pairs;
+                    name = alias.name;
+                } else {
+                    throw new Error(`Unimplemented alias ${name}: ${describe(alias)}.`);
+                }
             } else if (name === 'TICK') {
                 layers.push(new Layer());
                 return;
@@ -257,17 +246,6 @@ class Circuit {
                         layer.put(simplifiedMPP(new Float32Array(args), combo), false);
                     }
                 }
-                return;
-            } else if (name === "X_ERROR" ||
-                       name === "Y_ERROR" ||
-                       name === "Z_ERROR" ||
-                       name === "DETECTOR" ||
-                       name === "OBSERVABLE_INCLUDE" ||
-                       name === "DEPOLARIZE1" ||
-                       name === "DEPOLARIZE2" ||
-                       name === "SHIFT_COORDS" ||
-                       name === "REPEAT" ||
-                       name === "}") {
                 return;
             } else if (name.startsWith('QUBIT_COORDS')) {
                 let x = args.length < 1 ? 0 : args[0];
@@ -294,7 +272,6 @@ class Circuit {
                         break;
                     }
                 }
-                let t = parseInt(targ);
                 if (typeof parseInt(targ) !== 'number') {
                     throw new Error(line);
                 }

@@ -34,7 +34,7 @@ struct bitword<64> {
     constexpr static size_t BIT_POW = 6;
 
     union {
-        uint64_t u64[1];
+        uint64_t val;
         uint8_t u8[8];
     };
 
@@ -45,13 +45,13 @@ struct bitword<64> {
         free(ptr);
     }
 
-    inline constexpr bitword<64>() : u64{} {
+    inline constexpr bitword<64>() : val{} {
     }
-    inline constexpr bitword<64>(uint64_t v) : u64{v} {
+    inline constexpr bitword<64>(uint64_t v) : val{v} {
     }
-    inline constexpr bitword<64>(int64_t v) : u64{(uint64_t)v} {
+    inline constexpr bitword<64>(int64_t v) : val{(uint64_t)v} {
     }
-    inline constexpr bitword<64>(int v) : u64{(uint64_t)v} {
+    inline constexpr bitword<64>(int v) : val{(uint64_t)v} {
     }
 
     constexpr inline static bitword<64> tile64(uint64_t pattern) {
@@ -62,55 +62,55 @@ struct bitword<64> {
         return bitword<64>(tile64_helper(pattern, 8));
     }
 
-    std::array<uint64_t, 1> to_u64_array() const {
-        return std::array<uint64_t, 1>{u64[0]};
+    inline std::array<uint64_t, 1> to_u64_array() const {
+        return std::array<uint64_t, 1>{val};
     }
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
-        return (bool)(u64[0]);
+        return (bool)(val);
     }
     inline operator int() const {  // NOLINT(hicpp-explicit-conversions)
         return (int64_t) * this;
     }
     inline operator uint64_t() const {  // NOLINT(hicpp-explicit-conversions)
-        return u64[0];
+        return val;
     }
     inline operator int64_t() const {  // NOLINT(hicpp-explicit-conversions)
-        return (int64_t)u64[0];
+        return (int64_t)val;
     }
 
     inline bitword<64> &operator^=(const bitword<64> &other) {
-        u64[0] ^= other.u64[0];
+        val ^= other.val;
         return *this;
     }
 
     inline bitword<64> &operator&=(const bitword<64> &other) {
-        u64[0] &= other.u64[0];
+        val &= other.val;
         return *this;
     }
 
     inline bitword<64> &operator|=(const bitword<64> &other) {
-        u64[0] |= other.u64[0];
+        val |= other.val;
         return *this;
     }
 
     inline bitword<64> operator^(const bitword<64> &other) const {
-        return bitword<64>(u64[0] ^ other.u64[0]);
+        return bitword<64>(val ^ other.val);
     }
 
     inline bitword<64> operator&(const bitword<64> &other) const {
-        return bitword<64>(u64[0] & other.u64[0]);
+        return bitword<64>(val & other.val);
     }
 
     inline bitword<64> operator|(const bitword<64> &other) const {
-        return bitword<64>(u64[0] | other.u64[0]);
+        return bitword<64>(val | other.val);
     }
 
     inline bitword<64> andnot(const bitword<64> &other) const {
-        return bitword<64>(~u64[0] & other.u64[0]);
+        return bitword<64>(~val & other.val);
     }
 
     inline uint16_t popcount() const {
-        return std::popcount(u64[0]);
+        return std::popcount(val);
     }
 
     inline std::string str() const {
@@ -120,7 +120,7 @@ struct bitword<64> {
     }
 
     inline bitword<64> shifted(int offset) const {
-        uint64_t v = u64[0];
+        uint64_t v = val;
         if (offset >= 64 || offset <= -64) {
             v = 0;
         } else if (offset > 0) {
