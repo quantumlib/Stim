@@ -56,6 +56,7 @@ src/stim/search/hyper/edge.test.cc
 src/stim/search/hyper/graph.test.cc
 src/stim/search/hyper/node.test.cc
 src/stim/search/hyper/search_state.test.cc
+src/stim/search/sat/wcnf.test.cc
 src/stim/simulators/count_determined_measurements.test.cc
 src/stim/simulators/dem_sampler.test.cc
 src/stim/simulators/error_analyzer.test.cc

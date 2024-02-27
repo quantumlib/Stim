@@ -80,6 +80,11 @@ std::vector<ExplainedError> py_find_undetectable_logical_error(
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
+std::string py_shortest_undetectable_logical_error_wcnf(const Circuit& self, size_t num_distinct_weights) {
+    DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
+    return stim::shortest_undetectable_logical_error_wcnf(dem, num_distinct_weights);
+}
+
 void circuit_append(
     Circuit &self,
     const pybind11::object &obj,
@@ -1964,6 +1969,45 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     dont_explore_edges_increasing_symptom_degree=True,
                 ... )))
                 5
+        )DOC")
+            .data());
+
+    c.def(
+        "shortest_undetectable_logical_error_wcnf",
+        &py_shortest_undetectable_logical_error_wcnf,
+        pybind11::kw_only(),
+        pybind11::arg("num_distinct_weights") = 1,
+        clean_doc_string(R"DOC(
+            Generates a maxSAT problem instance in WDIMACS format whose optimal value is
+            the distance of the protocol, i.e. the minimum weight of any set of errors
+            that forms an undetectable logical error.
+
+            Args:
+                num_distinct_weights: Defaults to 1 (unweighted). If > 1, the weights of
+                the errors will be quantized accordingly and the sum of the weights will
+                be minimized. For a reasonably large quantization (num_distinct_weights >
+                100), the .wcnf file solution should be the (approximately) most likely
+                undetectable logical error. Note, however, that maxSAT solvers often
+                become slower when many distinct weights are provided, so for computing
+                the distance it is better to use the default quantization
+                num_distinct_weights = 1.
+
+            Returns:
+                A WCNF file in [WDIMACS format](http://www.maxhs.org/docs/wdimacs.html)
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit.generated(
+                ...     "surface_code:rotated_memory_x",
+                ...     rounds=5,
+                ...     distance=5,
+                ...     after_clifford_depolarization=0.001)
+                >>> print(circuit.shortest_undetectable_logical_error_wcnf(
+                                num_distinct_weights=1))
+                ....
+                >>> print(circuit.shortest_undetectable_logical_error_wcnf(
+                                num_distinct_weights=10))
+                ....
         )DOC")
             .data());
     c.def(
