@@ -208,6 +208,15 @@ std::string stim::shortest_undetectable_logical_error_wcnf(const DetectorErrorMo
       }
       ++error_index;
   });
+  assert(error_index == num_errors);
+
+  // Add a hard clause for each detector to be inactive
+  for (size_t d=0; d<num_detectors; ++d) {
+      Clause clause;
+      if (detectors_activated[d].variable == BOOL_LITERAL_FALSE) continue;
+      clause.add_var(~detectors_activated[d]);
+      instance.add_clause(clause);
+  }
 
   // Add a hard clause for any observable to be flipped
   Clause clause;

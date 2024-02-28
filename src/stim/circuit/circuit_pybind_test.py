@@ -837,9 +837,9 @@ def test_shortest_undetectable_logical_error_wcnf():
         DETECTOR rec[-1] rec[-2]
     """)
     wcnf_str = c.shortest_undetectable_logical_error_wcnf()
-    assert wcnf_str == 'p wcnf 2 3 4\n1 -1 0\n1 -2 0\n4 2 0\n'
+    assert wcnf_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
     wcnf_str = c.shortest_undetectable_logical_error_wcnf(num_distinct_weights=2)
-    assert wcnf_str == 'p wcnf 2 3 7\n1 -1 0\n2 -2 0\n7 2 0\n'
+    assert wcnf_str == 'p wcnf 2 4 9\n1 -1 0\n2 -2 0\n9 -1 0\n9 2 0\n'
 
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""

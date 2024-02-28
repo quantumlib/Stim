@@ -27,23 +27,29 @@ TEST(shortest_undetectable_logical_error_wcnf, single_detector_single_observable
   // hard clause x != (0, 1, 0)
   // hard clause x != (1, 0, 0)
   // hard clause x != (1, 1, 1)
+  // Plus 1 hard clause to ensure detector is not flipped
+  // hard clause -x_2
   // Plus 1 hard clause to ensure an observable is flipped:
   // hard clause x_0
-  // This gives a total of 7 clauses
-  // The top value should be at least 1 + 1 + 1 = 3. In our implementation ends up being 8.
+  // This gives a total of 8 clauses
+  // The top value should be at least 1 + 1 + 1 = 3. In our implementation ends up being 9.
   std::stringstream expected;
   // WDIMACS header format: p wcnf nbvar nbclauses top
-  expected << "p wcnf 3 7 8\n";
+  expected << "p wcnf 3 8 9\n";
   // Soft clause
-  expected << "1 -0\n";
+  expected << "1 -1 0\n";
   // Hard clauses
-  expected << "8 0 1 -2\n";
-  expected << "8 0 -1 2\n";
-  expected << "8 -0 1 2\n";
-  expected << "8 -0 -1 -2\n";
+  expected << "9 1 2 -3 0\n";
+  expected << "9 1 -2 3 0\n";
+  expected << "9 -1 2 3 0\n";
+  expected << "9 -1 -2 -3 0\n";
   // Soft clause
-  expected << "1 -1\n";
+  expected << "1 -2 0\n";
+  // Hard clause for the detector not to be flipped
+  expected << "9 -3 0\n";
   // Hard clause for the observable flipped
-  expected << "8 0\n";
+  expected << "9 1 0\n";
   ASSERT_EQ(wcnf, expected.str());
+  // The optimal value of this wcnf file should be 2, but we don't have
+  // a maxSAT solver to be able to test it here.
 }
