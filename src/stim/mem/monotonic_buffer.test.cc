@@ -39,7 +39,7 @@ TEST(pointer_range, equality) {
     ASSERT_NE(r1, r2);
 }
 
-TEST(monotonic_buffer, x) {
+TEST(monotonic_buffer, append_tail) {
     MonotonicBuffer<int> buf;
     for (size_t k = 0; k < 100; k++) {
         buf.append_tail(k);
@@ -50,4 +50,16 @@ TEST(monotonic_buffer, x) {
     for (size_t k = 0; k < 100; k++) {
         ASSERT_EQ(rng[k], k);
     }
+}
+
+TEST(monotonic_buffer, ensure_available) {
+    MonotonicBuffer<int> buf;
+    buf.append_tail(std::vector<int>{1, 2, 3, 4});
+    buf.append_tail(std::vector<int>{5, 6});
+    buf.append_tail(std::vector<int>{7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+    SpanRef<const int> rng = buf.commit_tail();
+    std::vector<int> expected{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    SpanRef<const int> v = expected;
+    ASSERT_EQ(rng, v);
 }

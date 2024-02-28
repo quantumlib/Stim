@@ -59,16 +59,7 @@ ErrorMatcher::ErrorMatcher(
     }
 }
 
-void ErrorMatcher::err_atom(const CircuitInstruction &effect) {
-    assert(error_analyzer.error_class_probabilities.empty());
-    error_analyzer.undo_gate(effect);
-    if (error_analyzer.error_class_probabilities.empty()) {
-        /// Maybe there were no detectors or observables nearby? Or the noise probability was zero?
-        return;
-    }
-
-    assert(error_analyzer.error_class_probabilities.size() == 1);
-    SpanRef<const DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
+void ErrorMatcher::add_dem_error_terms(SpanRef<const DemTarget> dem_error_terms) {
     auto entry = output_map.find(dem_error_terms);
     if (!dem_error_terms.empty() && (allow_adding_new_dem_errors_to_output_map || entry != output_map.end())) {
         // We have a desired match! Record it.
@@ -88,6 +79,19 @@ void ErrorMatcher::err_atom(const CircuitInstruction &effect) {
             out[0] = std::move(new_loc);
         }
     }
+}
+
+void ErrorMatcher::err_atom(const CircuitInstruction &effect) {
+    assert(error_analyzer.error_class_probabilities.empty());
+    error_analyzer.undo_gate(effect);
+    if (error_analyzer.error_class_probabilities.empty()) {
+        /// Maybe there were no detectors or observables nearby? Or the noise probability was zero?
+        return;
+    }
+
+    assert(error_analyzer.error_class_probabilities.size() == 1);
+    SpanRef<const DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
+    add_dem_error_terms(dem_error_terms);
 
     // Restore the pristine state.
     error_analyzer.mono_buf.clear();
@@ -125,6 +129,58 @@ void ErrorMatcher::err_xyz(const CircuitInstruction &op, uint32_t target_flags) 
         resolve_paulis_into(&op.targets[k], target_flags, cur_loc.flipped_pauli_product);
         err_atom({op.gate_type, a, &t[k]});
         cur_loc.flipped_pauli_product.clear();
+    }
+}
+
+void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
+    assert(op.args.size() == 4);
+    for (size_t k = op.targets.size(); k--;) {
+        auto q = op.targets[k].qubit_value();
+        cur_loc.instruction_targets.target_range_start = k;
+        cur_loc.instruction_targets.target_range_end = k + 1;
+
+        cur_loc.flipped_measurement.measurement_record_index = error_analyzer.tracker.num_measurements_in_past - 1;
+        SpanRef<const DemTarget> herald_symptoms = error_analyzer.tracker.rec_bits[error_analyzer.tracker.num_measurements_in_past - 1].range();
+        SpanRef<const DemTarget> x_symptoms = error_analyzer.tracker.zs[q].range();
+        SpanRef<const DemTarget> z_symptoms = error_analyzer.tracker.xs[q].range();
+        if (op.args[0] != 0) {
+            add_dem_error_terms(herald_symptoms);
+        }
+        if (op.args[1] != 0) {
+            error_analyzer.mono_buf.append_tail(herald_symptoms);
+            error_analyzer.mono_buf.append_tail(x_symptoms);
+            error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
+            resolve_paulis_into(&op.targets[k], TARGET_PAULI_X_BIT, cur_loc.flipped_pauli_product);
+            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            cur_loc.flipped_pauli_product.clear();
+            error_analyzer.mono_buf.discard_tail();
+        }
+        if (op.args[2] != 0) {
+            error_analyzer.mono_buf.append_tail(herald_symptoms);
+            error_analyzer.mono_buf.append_tail(x_symptoms);
+            error_analyzer.mono_buf.append_tail(z_symptoms);
+            error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
+            resolve_paulis_into(&op.targets[k], TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT, cur_loc.flipped_pauli_product);
+            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            cur_loc.flipped_pauli_product.clear();
+            error_analyzer.mono_buf.discard_tail();
+        }
+        if (op.args[3] != 0) {
+            error_analyzer.mono_buf.append_tail(herald_symptoms);
+            error_analyzer.mono_buf.append_tail(z_symptoms);
+            error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
+            resolve_paulis_into(&op.targets[k], TARGET_PAULI_Z_BIT, cur_loc.flipped_pauli_product);
+            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            cur_loc.flipped_pauli_product.clear();
+            error_analyzer.mono_buf.discard_tail();
+        }
+        cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
+
+        assert(error_analyzer.error_class_probabilities.empty());
+        error_analyzer.tracker.undo_gate(op);
+        error_analyzer.mono_buf.clear();
+        error_analyzer.error_class_probabilities.clear();
+        error_analyzer.flushed_reversed_model.clear();
     }
 }
 
@@ -187,12 +243,17 @@ void ErrorMatcher::err_m(const CircuitInstruction &op, uint32_t obs_mask) {
     const auto &t = op.targets;
     const auto &a = op.args;
 
+    bool q2 = GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS;
     size_t end = t.size();
     while (end > 0) {
         size_t start = end - 1;
         while (start > 0 && t[start - 1].is_combiner()) {
             start -= std::min(start, size_t{2});
         }
+        if (q2) {
+            start--;
+        }
+
 
         SpanRef<const GateTarget> slice{t.begin() + start, t.begin() + end};
 
@@ -227,48 +288,86 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
                 entry->second.push_back(d);
             }
         }
+        return;
     } else if (op.gate_type == GateType::SHIFT_COORDS) {
         error_analyzer.undo_SHIFT_COORDS(op);
         for (size_t k = 0; k < op.args.size(); k++) {
             cur_coord_offset[k] -= op.args[k];
         }
+        return;
     } else if (!(flags & (GATE_IS_NOISY | GATE_PRODUCES_RESULTS))) {
         error_analyzer.undo_gate(op);
-    } else if (op.gate_type == GateType::E || op.gate_type == GateType::ELSE_CORRELATED_ERROR) {
-        cur_loc.instruction_targets.target_range_start = 0;
-        cur_loc.instruction_targets.target_range_end = op.targets.size();
-        resolve_paulis_into(op.targets, 0, cur_loc.flipped_pauli_product);
-        err_atom(op);
-        cur_loc.flipped_pauli_product.clear();
-    } else if (op.gate_type == GateType::X_ERROR) {
-        err_xyz(op, TARGET_PAULI_X_BIT);
-    } else if (op.gate_type == GateType::Y_ERROR) {
-        err_xyz(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-    } else if (op.gate_type == GateType::Z_ERROR) {
-        err_xyz(op, TARGET_PAULI_Z_BIT);
-    } else if (op.gate_type == GateType::PAULI_CHANNEL_1) {
-        err_pauli_channel_1(op);
-    } else if (op.gate_type == GateType::DEPOLARIZE1) {
-        float p = op.args[0];
-        std::array<double, 3> spread{p, p, p};
-        err_pauli_channel_1({op.gate_type, spread, op.targets});
-    } else if (op.gate_type == GateType::PAULI_CHANNEL_2) {
-        err_pauli_channel_2(op);
-    } else if (op.gate_type == GateType::DEPOLARIZE2) {
-        float p = op.args[0];
-        std::array<double, 15> spread{p, p, p, p, p, p, p, p, p, p, p, p, p, p, p};
-        err_pauli_channel_2({op.gate_type, spread, op.targets});
-    } else if (op.gate_type == GateType::MPP) {
-        err_m(op, 0);
-    } else if (op.gate_type == GateType::MX || op.gate_type == GateType::MRX) {
-        err_m(op, TARGET_PAULI_X_BIT);
-    } else if (op.gate_type == GateType::MY || op.gate_type == GateType::MRY) {
-        err_m(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-    } else if (op.gate_type == GateType::M || op.gate_type == GateType::MR) {
-        err_m(op, TARGET_PAULI_Z_BIT);
-    } else {
-        throw std::invalid_argument(
-            "Not implemented in ErrorMatcher::rev_process_instruction: " + std::string(GATE_DATA[op.gate_type].name));
+        return;
+    }
+    switch (op.gate_type) {
+        case GateType::MPAD:
+            error_analyzer.undo_gate(op);
+            break;
+        case GateType::E:
+        case GateType::ELSE_CORRELATED_ERROR: {
+            cur_loc.instruction_targets.target_range_start = 0;
+            cur_loc.instruction_targets.target_range_end = op.targets.size();
+            resolve_paulis_into(op.targets, 0, cur_loc.flipped_pauli_product);
+            CircuitInstruction op2 = op;
+            op2.gate_type = GateType::E;
+            err_atom(op2);
+            cur_loc.flipped_pauli_product.clear();
+            break;
+        } case GateType::X_ERROR:
+            err_xyz(op, TARGET_PAULI_X_BIT);
+            break;
+        case GateType::Y_ERROR:
+            err_xyz(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
+                break;
+        case GateType::Z_ERROR:
+            err_xyz(op, TARGET_PAULI_Z_BIT);
+            break;
+        case GateType::PAULI_CHANNEL_1:
+            err_pauli_channel_1(op);
+            break;
+        case GateType::HERALDED_PAULI_CHANNEL_1:
+            err_heralded_pauli_channel_1(op);
+            break;
+        case GateType::HERALDED_ERASE: {
+            float p = op.args[0] / 4;
+            std::array<double, 4> spread{p, p, p, p};
+            err_heralded_pauli_channel_1({op.gate_type, spread, op.targets});
+            break;
+        } case GateType::DEPOLARIZE1: {
+            float p = op.args[0];
+            std::array<double, 3> spread{p, p, p};
+            err_pauli_channel_1({op.gate_type, spread, op.targets});
+            break;
+        } case GateType::PAULI_CHANNEL_2:
+            err_pauli_channel_2(op);
+            break;
+        case GateType::DEPOLARIZE2: {
+            float p = op.args[0];
+            std::array<double, 15> spread{p, p, p, p, p, p, p, p, p, p, p, p, p, p, p};
+            err_pauli_channel_2({op.gate_type, spread, op.targets});
+            break;
+        }
+        case GateType::MPP:
+            err_m(op, 0);
+            break;
+        case GateType::MX:
+        case GateType::MRX:
+        case GateType::MXX:
+            err_m(op, TARGET_PAULI_X_BIT);
+            break;
+        case GateType::MY:
+        case GateType::MRY:
+        case GateType::MYY:
+            err_m(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
+            break;
+        case GateType::M:
+        case GateType::MR:
+        case GateType::MZZ:
+            err_m(op, TARGET_PAULI_Z_BIT);
+            break;
+        default:
+            throw std::invalid_argument(
+                "Not implemented in ErrorMatcher::rev_process_instruction: " + std::string(GATE_DATA[op.gate_type].name));
     }
 }
 
