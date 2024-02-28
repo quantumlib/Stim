@@ -194,10 +194,21 @@ std::string stim::shortest_error_problem_as_wcnf_file(
               observables_flipped[t.val()] = instance.Xor(observables_flipped[t.val()], err_x);
             }
         }
-        // Add a soft clause for this error to be inactive
+        // Add a soft clause for this error
         Clause clause;
-        clause.add_var(~err_x);
-        clause.weight = -std::log(e.arg_data[0] / (1 - e.arg_data[0]));
+        double p = e.arg_data[0];
+        if (!weighted or p <= 0.5) {
+          // For unweighted search or when the error has probability <= 0.5, the
+          // soft clause should be that the error is inactive.
+          clause.add_var(~err_x);
+          clause.weight = -std::log(p / (1 - p));
+        } else {
+          // Invert for weighted search when the probability is > 0.5 and invert
+          // the weight so that the clause decreases the overall cost when the
+          // error is active.
+          clause.add_var(err_x);
+          clause.weight = -std::log((1 - p) / p);
+        }
         instance.add_clause(clause);
       }
       ++error_index;

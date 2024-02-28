@@ -1986,7 +1986,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             [2023 maxSAT competition](https://maxsat-evaluations.github.io/2023/) and
             run the solver on a file produced with this method:
             ```
-            wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+            # first download nzip CASHWMaxSAT-CorePlus.zip from 
+            # https://maxsat-evaluations.github.io/2023
             unzip CASHWMaxSAT-CorePlus.zip
             time ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m problem.wcnf 
             ```

@@ -2452,6 +2452,15 @@ def shortest_error_problem_as_wcnf_file(
     """Generates a maxSAT problem instance in WDIMACS format whose optimal value is
     the distance of the protocol, i.e. the minimum weight of any set of errors
     that forms an undetectable logical error.
+    FYI: here is how you could fetch a solver from the
+    [2023 maxSAT competition](https://maxsat-evaluations.github.io/2023/) and
+    run the solver on a file produced with this method:
+    ```
+    # first download nzip CASHWMaxSAT-CorePlus.zip from 
+    # https://maxsat-evaluations.github.io/2023
+    unzip CASHWMaxSAT-CorePlus.zip
+    time ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m problem.wcnf 
+    ```
 
     Args:
         weighted: Defaults to False (unweighted), so that the problem is to find
@@ -2473,17 +2482,31 @@ def shortest_error_problem_as_wcnf_file(
 
     Examples:
         >>> import stim
-        >>> circuit = stim.Circuit.generated(
-        ...     "surface_code:rotated_memory_x",
-        ...     rounds=5,
-        ...     distance=5,
-        ...     after_clifford_depolarization=0.001)
-        >>> print(circuit.shortest_undetectable_logical_error_wcnf(
-                        num_distinct_weights=1))
-        ....
-        >>> print(circuit.shortest_undetectable_logical_error_wcnf(
-                        num_distinct_weights=10))
-        ....
+        >>> circuit = stim.Circuit("""
+        ...     X_ERROR(0.1) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ...     X_ERROR(0.4) 0
+        ...     M 0
+        ...     DETECTOR rec[-1] rec[-2]
+        ... """)
+        >>> print(circuit.shortest_error_problem_as_wcnf_file())
+        p wcnf 2 4 5
+        1 -1 0
+        1 -2 0
+        5 -1 0
+        5 2 0
+
+        >>> 
+        >>> print(circuit.shortest_error_problem_as_wcnf_file(
+        ...   weighted=True,
+        ...   num_distinct_weights=10
+        ... ))
+        p wcnf 2 4 41
+        2 -1 0
+        10 -2 0
+        41 -1 0
+        41 2 0
     """
 ```
 

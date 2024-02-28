@@ -837,11 +837,19 @@ def test_shortest_error_problem_as_wcnf_file():
         DETECTOR rec[-1] rec[-2]
     """)
     wcnf_str = c.shortest_error_problem_as_wcnf_file()
-    print(wcnf_str)
     assert wcnf_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
-    wcnf_str = c.shortest_error_problem_as_wcnf_file(num_distinct_weights=2)
-    print(wcnf_str)
+    wcnf_str = c.shortest_error_problem_as_wcnf_file(weighted=True, num_distinct_weights=2)
     assert wcnf_str == 'p wcnf 2 4 9\n1 -1 0\n2 -2 0\n9 -1 0\n9 2 0\n'
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.7) 0
+        M 0
+        DETECTOR rec[-1] rec[-2]
+    """)
+    wcnf_str = c.shortest_error_problem_as_wcnf_file(weighted=True)
+    assert wcnf_str == 'p wcnf 2 4 5\n1 1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
 
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""
