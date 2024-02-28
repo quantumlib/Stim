@@ -827,7 +827,7 @@ def test_search_for_undetectable_logical_errors_msgs():
             dont_explore_detection_event_sets_with_size_above=4,
         )
 
-def test_shortest_undetectable_logical_error_wcnf():
+def test_shortest_error_problem_as_wcnf_file():
     c = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
@@ -836,9 +836,11 @@ def test_shortest_undetectable_logical_error_wcnf():
         M 0
         DETECTOR rec[-1] rec[-2]
     """)
-    wcnf_str = c.shortest_undetectable_logical_error_wcnf()
+    wcnf_str = c.shortest_error_problem_as_wcnf_file()
+    print(wcnf_str)
     assert wcnf_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
-    wcnf_str = c.shortest_undetectable_logical_error_wcnf(num_distinct_weights=2)
+    wcnf_str = c.shortest_error_problem_as_wcnf_file(num_distinct_weights=2)
+    print(wcnf_str)
     assert wcnf_str == 'p wcnf 2 4 9\n1 -1 0\n2 -2 0\n9 -1 0\n9 2 0\n'
 
 def test_shortest_graphlike_error_ignore():

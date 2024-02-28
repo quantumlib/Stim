@@ -28,7 +28,8 @@ namespace stim {
 ///     users must separately manage the process of selecting and running the solver. This approach is designed to
 ///     sidestep the need for direct integration with any particular solver and allow
 ///     for experimentation with different solvers to achieve the best performance.
-std::string shortest_undetectable_logical_error_wcnf(const DetectorErrorModel &model, size_t num_distinct_weights=1);
+std::string shortest_error_problem_as_wcnf_file(
+  const DetectorErrorModel &model, bool weighted=false, size_t num_distinct_weights=1);
 
 }  // namespace stim
 

@@ -80,9 +80,9 @@ std::vector<ExplainedError> py_find_undetectable_logical_error(
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
-std::string py_shortest_undetectable_logical_error_wcnf(const Circuit& self, size_t num_distinct_weights) {
+std::string py_shortest_error_problem_as_wcnf_file(const Circuit& self, bool weighted, size_t num_distinct_weights) {
     DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
-    return stim::shortest_undetectable_logical_error_wcnf(dem, num_distinct_weights);
+    return stim::shortest_error_problem_as_wcnf_file(dem, weighted, num_distinct_weights);
 }
 
 void circuit_append(
@@ -1973,41 +1973,69 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
-        "shortest_undetectable_logical_error_wcnf",
-        &py_shortest_undetectable_logical_error_wcnf,
+        "shortest_error_problem_as_wcnf_file",
+        &py_shortest_error_problem_as_wcnf_file,
         pybind11::kw_only(),
+        pybind11::arg("weighted") = false,
         pybind11::arg("num_distinct_weights") = 1,
         clean_doc_string(R"DOC(
             Generates a maxSAT problem instance in WDIMACS format whose optimal value is
             the distance of the protocol, i.e. the minimum weight of any set of errors
             that forms an undetectable logical error.
+            FYI: here is how you could fetch a solver from the
+            [2023 maxSAT competition](https://maxsat-evaluations.github.io/2023/) and
+            run the solver on a file produced with this method:
+            ```
+            wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+            unzip CASHWMaxSAT-CorePlus.zip
+            time ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m problem.wcnf 
+            ```
 
             Args:
-                num_distinct_weights: Defaults to 1 (unweighted). If > 1, the weights of
-                the errors will be quantized accordingly and the sum of the weights will
-                be minimized. For a reasonably large quantization (num_distinct_weights >
-                100), the .wcnf file solution should be the (approximately) most likely
-                undetectable logical error. Note, however, that maxSAT solvers often
-                become slower when many distinct weights are provided, so for computing
-                the distance it is better to use the default quantization
-                num_distinct_weights = 1.
+                weighted: Defaults to False (unweighted), so that the problem is to find
+                the minimum size set of errors that leads to an undetectable logical
+                error.
+                num_distinct_weights: Defaults to 1. If weighted==False, must set
+                num_distinct_weights to 1. If weighted==True, num_distinct_weights can be
+                set to a value > 1. For a weighted problem, the errors will be quantized
+                into at most this many distinct weight values and the sum of the weights
+                will be minimized rather than the cardinality of the set of errors. For
+                a reasonably large quantization (num_distinct_weights > 100), the .wcnf
+                file solution should be the (approximately) most likely undetectable
+                logical error. Note, however, that maxSAT solvers often become slower
+                when many distinct weights are provided, so for computing the distance
+                it is better to use the default quantization num_distinct_weights = 1.
 
             Returns:
                 A WCNF file in [WDIMACS format](http://www.maxhs.org/docs/wdimacs.html)
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit.generated(
-                ...     "surface_code:rotated_memory_x",
-                ...     rounds=5,
-                ...     distance=5,
-                ...     after_clifford_depolarization=0.001)
-                >>> print(circuit.shortest_undetectable_logical_error_wcnf(
-                                num_distinct_weights=1))
-                ....
-                >>> print(circuit.shortest_undetectable_logical_error_wcnf(
-                                num_distinct_weights=10))
-                ....
+                >>> circuit = stim.Circuit("""
+                ...     X_ERROR(0.1) 0
+                ...     M 0
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ...     X_ERROR(0.4) 0
+                ...     M 0
+                ...     DETECTOR rec[-1] rec[-2]
+                ... """)
+                >>> print(circuit.shortest_error_problem_as_wcnf_file())
+                p wcnf 2 4 5
+                1 -1 0
+                1 -2 0
+                5 -1 0
+                5 2 0
+
+                >>> 
+                >>> print(circuit.shortest_error_problem_as_wcnf_file(
+                ...   weighted=True,
+                ...   num_distinct_weights=10
+                ... ))
+                p wcnf 2 4 41
+                2 -1 0
+                10 -2 0
+                41 -1 0
+                41 2 0
         )DOC")
             .data());
     c.def(

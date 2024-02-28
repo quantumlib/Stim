@@ -1774,6 +1774,48 @@ class Circuit:
             ... )))
             5
         """
+    def shortest_error_problem_as_wcnf_file(
+        self,
+        *,
+        weighted: bool = False,
+        num_distinct_weights: int = 1,
+    ) -> str:
+        """Generates a maxSAT problem instance in WDIMACS format whose optimal value is
+        the distance of the protocol, i.e. the minimum weight of any set of errors
+        that forms an undetectable logical error.
+
+        Args:
+            weighted: Defaults to False (unweighted), so that the problem is to find
+            the minimum size set of errors that leads to an undetectable logical
+            error.
+            num_distinct_weights: Defaults to 1. If weighted==False, must set
+            num_distinct_weights to 1. If weighted==True, num_distinct_weights can be
+            set to a value > 1. For a weighted problem, the errors will be quantized
+            into at most this many distinct weight values and the sum of the weights
+            will be minimized rather than the cardinality of the set of errors. For
+            a reasonably large quantization (num_distinct_weights > 100), the .wcnf
+            file solution should be the (approximately) most likely undetectable
+            logical error. Note, however, that maxSAT solvers often become slower
+            when many distinct weights are provided, so for computing the distance
+            it is better to use the default quantization num_distinct_weights = 1.
+
+        Returns:
+            A WCNF file in [WDIMACS format](http://www.maxhs.org/docs/wdimacs.html)
+
+        Examples:
+            >>> import stim
+            >>> circuit = stim.Circuit.generated(
+            ...     "surface_code:rotated_memory_x",
+            ...     rounds=5,
+            ...     distance=5,
+            ...     after_clifford_depolarization=0.001)
+            >>> print(circuit.shortest_undetectable_logical_error_wcnf(
+                            num_distinct_weights=1))
+            ....
+            >>> print(circuit.shortest_undetectable_logical_error_wcnf(
+                            num_distinct_weights=10))
+            ....
+        """
     def shortest_graphlike_error(
         self,
         *,

@@ -21,8 +21,11 @@ using namespace stim;
 typedef double Weight;
 constexpr Weight HARD_CLAUSE_WEIGHT = -1.0;
 
+const std::string UNSAT_WCNF_STR = "p wcnf 1 2 3\n3 -1 0\n3 1 0\n";
+
 constexpr size_t BOOL_LITERAL_FALSE = SIZE_MAX - 1;
 constexpr size_t BOOL_LITERAL_TRUE = SIZE_MAX;
+
 struct BoolRef {
   size_t variable = BOOL_LITERAL_FALSE;
   bool negated = false;
@@ -118,9 +121,11 @@ struct MaxSATInstance {
     return std::max(1ul, (size_t)std::round(weight / max_weight * (double)num_distinct_weights));
   }
 
-  std::string to_wdimacs(size_t num_distinct_weights=1) {
+  std::string to_wdimacs(bool weighted, size_t num_distinct_weights) {
     if (num_distinct_weights < 1) {
       throw std::invalid_argument("There must be at least 1 distinct weight value");
+    } else if (num_distinct_weights != 1 and !weighted) {
+      throw std::invalid_argument("Can only set num_distinct_weights > 1 when performing a weighted search.");
     }
     // 'top' is a special weight used to indicate a hard clause.
     // Should be at least the sum of the weights of all soft clauses plus 1.
@@ -152,30 +157,19 @@ struct MaxSATInstance {
   }
 };
 
-std::string stim::shortest_undetectable_logical_error_wcnf(const DetectorErrorModel &model, size_t num_distinct_weights) {
+std::string stim::shortest_error_problem_as_wcnf_file(
+  const DetectorErrorModel &model, bool weighted, size_t num_distinct_weights) {
   MaxSATInstance inst;
+
+  if (num_distinct_weights == 0) {
+    throw std::invalid_argument("num_distinct_weights must be >= 1");
+  }
 
   size_t num_observables = model.count_observables();
   size_t num_detectors = model.count_detectors();
   size_t num_errors = model.count_errors();
   if (num_observables == 0 or num_detectors == 0 or num_errors == 0) {
-    std::stringstream err_msg;
-    err_msg << "Failed to find any logical errors.";
-    if (num_observables == 0) {
-        err_msg << "\n    WARNING: NO OBSERVABLES. The circuit or detector error model didn't define any observables, "
-                   "making it vacuously impossible to find a logical error.";
-    }
-    if (num_detectors == 0) {
-        err_msg << "\n    WARNING: NO DETECTORS. The circuit or detector error model didn't define any detectors.";
-    }
-    if (num_errors == 0) {
-        err_msg << "\n    WARNING: NO ERRORS. The circuit or detector error model didn't include any errors, making it "
-                   "vacuously impossible to find a logical error.";
-    }
-    throw std::invalid_argument(err_msg.str());
-  }
-  if (num_distinct_weights == 0) {
-    throw std::invalid_argument("num_distinct_weights must be >= 1");
+    return UNSAT_WCNF_STR;
   }
 
   MaxSATInstance instance;
@@ -225,5 +219,5 @@ std::string stim::shortest_undetectable_logical_error_wcnf(const DetectorErrorMo
   }
   instance.add_clause(clause);
 
-  return instance.to_wdimacs(num_distinct_weights);
+  return instance.to_wdimacs(weighted, num_distinct_weights);
 }

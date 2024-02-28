@@ -3,15 +3,15 @@
 
 using namespace stim;
 
-TEST(shortest_undetectable_logical_error_wcnf, no_error) {
-    // No error.
-    ASSERT_THROW(
-        { stim::shortest_undetectable_logical_error_wcnf(DetectorErrorModel()); },
-        std::invalid_argument);
+TEST(shortest_error_problem_as_wcnf_file, no_error) {
+    // No errors. Should get an unsatisfiable formula.
+    ASSERT_EQ(
+      stim::shortest_error_problem_as_wcnf_file(DetectorErrorModel()),
+      "p wcnf 1 2 3\n3 -1 0\n3 1 0\n");
 }
 
-TEST(shortest_undetectable_logical_error_wcnf, single_detector_single_observable) {
-  std::string wcnf = stim::shortest_undetectable_logical_error_wcnf(DetectorErrorModel(R"DEM(
+TEST(shortest_error_problem_as_wcnf_file, single_detector_single_observable) {
+  std::string wcnf = stim::shortest_error_problem_as_wcnf_file(DetectorErrorModel(R"DEM(
       error(0.1) D0 L0
       error(0.1) D0
     )DEM"));
