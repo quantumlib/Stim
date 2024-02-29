@@ -114,22 +114,28 @@ struct MaxSATInstance {
     return z;
   }
 
-  size_t quantized_weight(size_t num_distinct_weights, size_t top, Weight weight) {
+  size_t quantized_weight(bool weighted, size_t weight_scale_factor, size_t top, Weight weight) {
     if (weight == HARD_CLAUSE_WEIGHT) {
+      // Hard clause
       return top;
     }
-    return std::max(1ul, (size_t)std::round(weight / max_weight * (double)num_distinct_weights));
+    // Soft clause
+    if (!weighted) {
+      // For unweighted problems, all soft clauses have weight 1.
+      return 1;
+    }
+    return std::round(weight / max_weight * (double)weight_scale_factor);
   }
 
-  std::string to_wdimacs(bool weighted, size_t num_distinct_weights) {
-    if (num_distinct_weights < 1) {
-      throw std::invalid_argument("There must be at least 1 distinct weight value");
-    } else if (num_distinct_weights != 1 and !weighted) {
-      throw std::invalid_argument("Can only set num_distinct_weights > 1 when performing a weighted search.");
-    }
+  std::string to_wdimacs(bool weighted, size_t weight_scale_factor) {
     // 'top' is a special weight used to indicate a hard clause.
     // Should be at least the sum of the weights of all soft clauses plus 1.
-    size_t top = 1 + num_distinct_weights * clauses.size();
+    size_t top;
+    if (weighted) {
+      top = 1 + weight_scale_factor * clauses.size();
+    } else {
+      top = 1 + clauses.size();
+    }
 
     // WDIMACS header format: p wcnf nbvar nbclauses top
     // see http://www.maxhs.org/docs/wdimacs.html
@@ -140,7 +146,12 @@ struct MaxSATInstance {
     for (const auto& clause : clauses) {
       // WDIMACS clause format: weight var1 var2 ...
       // To show negation of a variable, the index should be negated.
-      ss << quantized_weight(num_distinct_weights, top, clause.weight);
+      size_t qw = quantized_weight(weighted, weight_scale_factor, top, clause.weight);
+      // There is no need to add a clause with zero weight.
+      // This can happen if the error has probability 0.5 or if the weight_scale_factor is too
+      // small to accomodate the entire dynamic range of weight values.
+      if (qw == 0) continue;
+      ss << qw;
       for (size_t i=0; i<clause.vars.size(); ++i) {
         BoolRef var = clause.vars[i];
         // Variables are 1-indexed
@@ -158,11 +169,14 @@ struct MaxSATInstance {
 };
 
 std::string stim::shortest_error_problem_as_wcnf_file(
-  const DetectorErrorModel &model, bool weighted, size_t num_distinct_weights) {
+  const DetectorErrorModel &model, bool weighted, size_t weight_scale_factor) {
   MaxSATInstance inst;
 
-  if (num_distinct_weights == 0) {
-    throw std::invalid_argument("num_distinct_weights must be >= 1");
+  if (weighted and weight_scale_factor < 1) {
+    throw std::invalid_argument("for weighted problems, weight_scale_factor must be >= 1");
+  }
+  if (!weighted and weight_scale_factor != 0) {
+    throw std::invalid_argument("for unweighted problems, weight_scale_factor must be == 0");
   }
 
   size_t num_observables = model.count_observables();
@@ -197,19 +211,32 @@ std::string stim::shortest_error_problem_as_wcnf_file(
         // Add a soft clause for this error
         Clause clause;
         double p = e.arg_data[0];
-        if (!weighted or p <= 0.5) {
-          // For unweighted search or when the error has probability <= 0.5, the
-          // soft clause should be that the error is inactive.
+        if (weighted) {
+          // Weighted search
+          if (p < 0.5) {
+            // If the probability < 0.5, the weight should be positive
+            // and we add the clause for the error to be inactive.
+            clause.add_var(~err_x);
+            clause.weight = -std::log(p / (1 - p));
+            instance.add_clause(clause);
+          } else if (p == 0.5) {
+            // If the probability == 0.5, the error can be included "for free"
+            // so we don't bother adding any soft clause.
+          } else {
+            // If the probability is > 0.5, the cost is negative so we emulate this by
+            // inverting the sign of the weight and negating the clause so that the
+            // clause has a positive weight.
+            clause.add_var(err_x);
+            clause.weight = -std::log((1 - p) / p);
+            instance.add_clause(clause);
+          }
+        } else {
+          // For unweighted search the error should be soft clause should be that
+          // the error is inactive.
           clause.add_var(~err_x);
           clause.weight = -std::log(p / (1 - p));
-        } else {
-          // Invert for weighted search when the probability is > 0.5 and invert
-          // the weight so that the clause decreases the overall cost when the
-          // error is active.
-          clause.add_var(err_x);
-          clause.weight = -std::log((1 - p) / p);
+          instance.add_clause(clause);
         }
-        instance.add_clause(clause);
       }
       ++error_index;
   });
@@ -230,5 +257,5 @@ std::string stim::shortest_error_problem_as_wcnf_file(
   }
   instance.add_clause(clause);
 
-  return instance.to_wdimacs(weighted, num_distinct_weights);
+  return instance.to_wdimacs(weighted, weight_scale_factor);
 }

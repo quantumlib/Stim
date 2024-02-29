@@ -16,7 +16,10 @@ namespace stim {
 ///
 /// Args:
 ///     model: The detector error model to be converted into .wcnf format for minimum distance calculation.
-///     num_distinct_weights: The number of different integer weight values for quantization (default = 1).
+///     weighted: (default = false) If false, all errors have cost 1. If true, errors are given a cost based
+///               on their likelihood cost scaled by the weight scale factor divided by the maximum cost value.
+///               if false, must set weight_scale_factor to 0. If true, must set weight_scale_factor >= 1.
+///     weight_scale_factor: The scaling factor used for quantization. (default = 0 for unweighted).
 ///
 /// Returns:
 ///     A string which is interpreted as the contents of a .wcnf file. This should be written to a file which can then be passed to various maxSAT
@@ -29,7 +32,7 @@ namespace stim {
 ///     sidestep the need for direct integration with any particular solver and allow
 ///     for experimentation with different solvers to achieve the best performance.
 std::string shortest_error_problem_as_wcnf_file(
-  const DetectorErrorModel &model, bool weighted=false, size_t num_distinct_weights=1);
+  const DetectorErrorModel &model, bool weighted=false, size_t weight_scale_factor=0);
 
 }  // namespace stim
 

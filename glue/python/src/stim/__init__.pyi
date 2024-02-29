@@ -1778,7 +1778,7 @@ class Circuit:
         self,
         *,
         weighted: bool = False,
-        num_distinct_weights: int = 1,
+        weight_scale_factor: int = 0,
     ) -> str:
         """Generates a maxSAT problem instance in WDIMACS format whose optimal value is
         the distance of the protocol, i.e. the minimum weight of any set of errors
@@ -1797,16 +1797,17 @@ class Circuit:
             weighted: Defaults to False (unweighted), so that the problem is to find
             the minimum size set of errors that leads to an undetectable logical
             error.
-            num_distinct_weights: Defaults to 1. If weighted==False, must set
-            num_distinct_weights to 1. If weighted==True, num_distinct_weights can be
-            set to a value > 1. For a weighted problem, the errors will be quantized
-            into at most this many distinct weight values and the sum of the weights
+            weight_scale_factor: Defaults to 0. If weighted==False, must set
+            weight_scale_factor to 0. If weighted==True, weight_scale_factor must be
+            set to a value >= 1. For a weighted problem, the errors will be quantized
+            into integers using this scale factor and the sum of the weights
             will be minimized rather than the cardinality of the set of errors. For
-            a reasonably large quantization (num_distinct_weights > 100), the .wcnf
-            file solution should be the (approximately) most likely undetectable
-            logical error. Note, however, that maxSAT solvers often become slower
-            when many distinct weights are provided, so for computing the distance
-            it is better to use the default quantization num_distinct_weights = 1.
+            a reasonably large quantization (weight_scale_factor > 100 is often
+            sufficient), the .wcnf file solution should be the (approximately)
+            most likely undetectable logical error. Note, however, that maxSAT solvers
+            can become slower when many distinct weights are provided, so for computing
+            the distance it is better to simply use the defaults weighted=False and
+            weight_scale_factor = 0.
 
         Returns:
             A WCNF file in [WDIMACS format](http://www.maxhs.org/docs/wdimacs.html)
@@ -1814,12 +1815,12 @@ class Circuit:
         Examples:
             >>> import stim
             >>> circuit = stim.Circuit("""
-            ...     X_ERROR(0.1) 0
-            ...     M 0
-            ...     OBSERVABLE_INCLUDE(0) rec[-1]
-            ...     X_ERROR(0.4) 0
-            ...     M 0
-            ...     DETECTOR rec[-1] rec[-2]
+            ...   X_ERROR(0.1) 0
+            ...   M 0
+            ...   OBSERVABLE_INCLUDE(0) rec[-1]
+            ...   X_ERROR(0.4) 0
+            ...   M 0
+            ...   DETECTOR rec[-1] rec[-2]
             ... """)
             >>> print(circuit.shortest_error_problem_as_wcnf_file())
             p wcnf 2 4 5
@@ -1828,16 +1829,15 @@ class Circuit:
             5 -1 0
             5 2 0
 
-            >>>
             >>> print(circuit.shortest_error_problem_as_wcnf_file(
             ...   weighted=True,
-            ...   num_distinct_weights=10
+            ...   weight_scale_factor=1000
             ... ))
-            p wcnf 2 4 41
-            2 -1 0
-            10 -2 0
-            41 -1 0
-            41 2 0
+            p wcnf 2 4 4001
+            185 -1 0
+            1000 -2 0
+            4001 -1 0
+            4001 2 0
         """
     def shortest_graphlike_error(
         self,
