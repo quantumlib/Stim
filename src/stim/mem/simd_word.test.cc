@@ -55,7 +55,7 @@ TEST_EACH_WORD_SIZE_W(simd_word_pick, popcount, {
 
 TEST_EACH_WORD_SIZE_W(simd_word_pick, operator_bool, {
     bitword<W> w{};
-    auto p = &w.u64[0];
+    auto p = &w.u8[0];
     ASSERT_EQ((bool)w, false);
     p[0] = 5;
     ASSERT_EQ((bool)w, true);

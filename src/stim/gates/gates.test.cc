@@ -17,9 +17,9 @@
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/stabilizers/flow.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
