@@ -1822,17 +1822,16 @@ class Circuit:
             ...   M 0
             ...   DETECTOR rec[-1] rec[-2]
             ... """)
-            >>> print(circuit.shortest_error_problem_as_wcnf_file())
+            >>> print(circuit.shortest_error_problem_as_wcnf_file(), end='')
             p wcnf 2 4 5
             1 -1 0
             1 -2 0
             5 -1 0
             5 2 0
-
             >>> print(circuit.shortest_error_problem_as_wcnf_file(
             ...   weighted=True,
             ...   weight_scale_factor=1000
-            ... ))
+            ... ), end='')
             p wcnf 2 4 4001
             185 -1 0
             1000 -2 0
