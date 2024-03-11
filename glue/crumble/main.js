@@ -23,6 +23,9 @@ const btnExport = /** @type {!HTMLButtonElement} */ document.getElementById('btn
 const btnImport = /** @type {!HTMLButtonElement} */ document.getElementById('btnImport');
 const btnClear = /** @type {!HTMLButtonElement} */ document.getElementById('clear');
 const txtStimCircuit = /** @type {!HTMLTextAreaElement} */ document.getElementById('txtStimCircuit');
+const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnTimelineFocus');
+const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
+const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
 txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
@@ -62,6 +65,22 @@ btnClear.addEventListener('click', _ev => {
 btnUndo.addEventListener('click', _ev => {
     editorState.undo();
 });
+
+btnTimelineFocus.addEventListener('click', _ev => {
+    editorState.timelineSet = new Map(editorState.focusedSet.entries());
+    editorState.force_redraw();
+});
+
+btnClearSelectedMarkers.addEventListener('click', _ev => {
+    editorState.unmarkFocusInferBasis(false);
+    editorState.force_redraw();
+});
+
+btnClearTimelineFocus.addEventListener('click', _ev => {
+    editorState.timelineSet = new Map();
+    editorState.force_redraw();
+});
+
 btnRedo.addEventListener('click', _ev => {
     editorState.redo();
 });
@@ -233,6 +252,7 @@ function makeChordHandlers() {
     addGateChords(['m+r+x', 'm+r+y+z'], "MRX");
     addGateChords(['m+r+y', 'm+r+x+z'], "MRY");
     addGateChords(['m+r', 'm+r+z', 'm+r+x+y'], "MR");
+    addGateChords(['c'], "CX", "CX");
     addGateChords(['c+x'], "CX", "CX");
     addGateChords(['c+y'], "CY", "CY");
     addGateChords(['c+z'], "CZ", "CZ");
@@ -244,15 +264,20 @@ function makeChordHandlers() {
     addGateChords(['w+x'], "CXSWAP", undefined);
     addGateChords(['c+w+x'], "CXSWAP", undefined);
     addGateChords(['i+w'], "ISWAP", "ISWAP_DAG");
+    addGateChords(['w+z'], "CZSWAP", undefined);
+    addGateChords(['c+w+z'], "CZSWAP", undefined);
+    addGateChords(['c+w'], "CZSWAP", undefined);
 
     addGateChords(['f'], "C_XYZ", "C_ZYX");
     addGateChords(['c+s+x'], "SQRT_XX", "SQRT_XX_DAG");
     addGateChords(['c+s+y'], "SQRT_YY", "SQRT_YY_DAG");
     addGateChords(['c+s+z'], "SQRT_ZZ", "SQRT_ZZ_DAG");
+    addGateChords(['c+s'], "SQRT_ZZ", "SQRT_ZZ_DAG");
 
     addGateChords(['c+m+x'], "MXX", "MXX");
     addGateChords(['c+m+y'], "MYY", "MYY");
     addGateChords(['c+m+z'], "MZZ", "MZZ");
+    addGateChords(['c+m'], "MZZ", "MZZ");
 
     return res;
 }

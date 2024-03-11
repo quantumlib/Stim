@@ -16,3 +16,4 @@ python dev/gen_sinter_api_reference.py -dev > doc/sinter_api.md
 python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])" > doc/gates.md
 python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])" > doc/result_formats.md
 python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])" > doc/usage_command_line.md
+dev/gen_known_gates_for_js.sh > glue/crumble/test/generated_gate_name_list.test.js

@@ -260,10 +260,10 @@ struct ostream_else_cout {
 ///         Command line argument isn't present and default_std_out is false.
 ostream_else_cout find_output_stream_argument(const char *name, bool default_std_out, int argc, const char **argv);
 
-std::vector<std::string> split(char splitter, const std::string &text);
+std::vector<std::string_view> split_view(char splitter, std::string_view text);
 
-double parse_exact_double_from_string(const std::string &text);
-uint64_t parse_exact_uint64_t_from_string(const std::string &text);
+double parse_exact_double_from_string(std::string_view text);
+uint64_t parse_exact_uint64_t_from_string(std::string_view text);
 bool parse_int64(std::string_view data, int64_t *out);
 
 }  // namespace stim

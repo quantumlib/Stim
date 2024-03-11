@@ -10,26 +10,6 @@ import {
 
 function *iter_gates_controlled_paulis() {
     yield new Gate(
-        'CXSWAP',
-        2,
-        true,
-        false,
-        new Map([
-            ['IX', 'XI'],
-            ['IZ', 'ZZ'],
-            ['XI', 'XX'],
-            ['ZI', 'IZ'],
-        ]),
-        (frame, targets) => frame.do_cx_swap(targets),
-        (op, coordFunc, ctx) => {
-            let [x1, y1] = coordFunc(op.id_targets[0]);
-            let [x2, y2] = coordFunc(op.id_targets[1]);
-            draw_connector(ctx, x1, y1, x2, y2);
-            draw_zswap_control(ctx, x1, y1);
-            draw_xswap_control(ctx, x2, y2);
-        },
-    )
-    yield new Gate(
         'CX',
         2,
         true,

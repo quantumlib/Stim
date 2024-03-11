@@ -75,4 +75,6 @@ TEST(flex_pauli_string, from_text) {
     ASSERT_EQ(f.value.zs.as_u64(), 0b100000100);
 
     ASSERT_EQ(FlexPauliString::from_text("X1"), FlexPauliString::from_text("_X"));
+
+    ASSERT_EQ(FlexPauliString::from_text("X20*I21"), FlexPauliString::from_text("____________________X_"));
 }

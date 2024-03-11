@@ -36,6 +36,7 @@
 #include "stim/simulators/matched_error.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
+#include "stim/stabilizers/flow.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/pauli_string_iter.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -124,7 +125,6 @@ std::vector<GateTarget> target_combined_paulis(const pybind11::object &paulis, b
                     result.push_back(GateTarget::combiner());
                     continue;
                 }
-
             }
 
             std::stringstream ss;
@@ -610,6 +610,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit_targets_inside_instruction = pybind_circuit_targets_inside_instruction(m);
     auto c_circuit_error_location = pybind_circuit_error_location(m);
     auto c_circuit_error_location_methods = pybind_explained_error(m);
+    auto c_flow = pybind_flow(m);
 
     auto c_diagram_helper = pybind_diagram(m);
 
@@ -650,6 +651,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_targets_inside_instruction_methods(m, c_circuit_targets_inside_instruction);
     pybind_circuit_error_location_methods(m, c_circuit_error_location);
     pybind_explained_error_methods(m, c_circuit_error_location_methods);
+    pybind_flow_methods(m, c_flow);
 
     pybind_diagram_methods(m, c_diagram_helper);
 }
