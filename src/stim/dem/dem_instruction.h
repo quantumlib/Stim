@@ -37,6 +37,8 @@ struct DemTarget {
     bool operator!=(const DemTarget &other) const;
     bool operator<(const DemTarget &other) const;
     std::string str() const;
+
+    static DemTarget from_text(std::string_view text);
 };
 
 struct DetectorErrorModel;
