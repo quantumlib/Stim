@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/circuit/circuit.test.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 
@@ -149,6 +150,126 @@ TEST(ErrorMatcher, MPP_ERROR) {
             at instruction #3 (MPP) in the circuit
             at targets #2 to #6 of the instruction
             resolving to MPP(0.125) Y0[coords 5,6]*Z3*Z4
+    }
+})RESULT");
+}
+
+TEST(ErrorMatcher, MXX_ERROR) {
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(5, 6) 0
+            RX 0
+            CX 0 1
+            MXX(0.125) 0 1
+            DETECTOR(2, 3) rec[-1]
+        )CIRCUIT"),
+        nullptr,
+        false);
+    ASSERT_EQ(actual.size(), 1);
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D0[coords 2,3]
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 0
+        flipped_measurement.measured_observable: X0[coords 5,6]*X1
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (MXX) in the circuit
+            at targets #1 to #2 of the instruction
+            resolving to MXX(0.125) 0[coords 5,6] 1
+    }
+})RESULT");
+}
+
+TEST(ErrorMatcher, ELSE_CORRELATED_ERROR) {
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            R 0 1
+            H 1
+            CORRELATED_ERROR(0.25) X0
+            ELSE_CORRELATED_ERROR(0.125) Z1
+            H 1
+            M 0 1
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        nullptr,
+        false);
+    ASSERT_EQ(actual.size(), 1);
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D0
+    CircuitErrorLocation {
+        flipped_pauli_product: Z1
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (ELSE_CORRELATED_ERROR) in the circuit
+            at target #1 of the instruction
+            resolving to ELSE_CORRELATED_ERROR(0.125) Z1
+    }
+})RESULT");
+}
+
+TEST(ErrorMatcher, HERALDED_ERASE) {
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            MXX 0 1
+            MYY 0 1
+            MZZ 0 1
+            HERALDED_ERASE(0.125) 0
+            MXX 0 1
+            MYY 0 1
+            MZZ 0 1
+            DETECTOR rec[-1] rec[-5]
+            DETECTOR rec[-2] rec[-6]
+            DETECTOR rec[-3] rec[-7]
+            DETECTOR rec[-4]
+        )CIRCUIT"),
+        nullptr,
+        false);
+    ASSERT_EQ(actual.size(), 4);
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D0 D1 D3
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        flipped_measurement.measurement_record_index: 3
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.125) 0
+    }
+})RESULT");
+    ASSERT_EQ(actual[1].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D0 D2 D3
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        flipped_measurement.measurement_record_index: 3
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.125) 0
+    }
+})RESULT");
+    ASSERT_EQ(actual[2].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D1 D2 D3
+    CircuitErrorLocation {
+        flipped_pauli_product: Z0
+        flipped_measurement.measurement_record_index: 3
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.125) 0
+    }
+})RESULT");
+    ASSERT_EQ(actual[3].str(), R"RESULT(ExplainedError {
+    dem_error_terms: D3
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 3
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #4 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.125) 0
     }
 })RESULT");
 }
@@ -400,6 +521,25 @@ ExplainedError {
             at targets #9 to #10 of the instruction
             resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
     }
+}
+)RESULT");
+}
+
+TEST(ErrorMatcher, runs_on_all_gates_circuit) {
+    DetectorErrorModel filter(R"MODEL(
+        error(1) D0
+)MODEL");
+
+    auto circuit = generate_test_circuit_with_all_operations();
+    auto actual = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
+    std::stringstream ss;
+    for (const auto &match : actual) {
+        ss << "\n" << match << "\n";
+    }
+    ASSERT_EQ(ss.str(), R"RESULT(
+ExplainedError {
+    dem_error_terms: D0[coords 2,4,6]
+    [no single circuit error had these exact symptoms]
 }
 )RESULT");
 }

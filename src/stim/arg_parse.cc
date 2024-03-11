@@ -389,8 +389,8 @@ ostream_else_cout stim::find_output_stream_argument(
     return {std::move(f)};
 }
 
-std::vector<std::string> stim::split(char splitter, const std::string &text) {
-    std::vector<std::string> result;
+std::vector<std::string_view> stim::split_view(char splitter, std::string_view text) {
+    std::vector<std::string_view> result;
     size_t start = 0;
     for (size_t k = 0; k < text.size(); k++) {
         if (text[k] == splitter) {
@@ -402,31 +402,69 @@ std::vector<std::string> stim::split(char splitter, const std::string &text) {
     return result;
 }
 
-double stim::parse_exact_double_from_string(const std::string &text) {
+static double parse_exact_double_from_null_terminated(const char *c, size_t size) {
     char *end = nullptr;
-    const char *c = text.c_str();
     double d = strtod(c, &end);
-    if (text.size() > 0 && !isspace(*c)) {
-        if (end == c + text.size() && !std::isinf(d) && !std::isnan(d)) {
+    if (size > 0 && !isspace(*c)) {
+        if (end == c + size && !std::isinf(d) && !std::isnan(d)) {
             return d;
         }
     }
-    throw std::invalid_argument("Not an exact double: '" + text + "'");
+    std::stringstream ss;
+    ss << "Not an exact finite double: '" << c << "'";
+    throw std::invalid_argument(ss.str());
 }
 
-uint64_t stim::parse_exact_uint64_t_from_string(const std::string &text) {
-    char *end = nullptr;
-    const char *c = text.c_str();
-    auto v = strtoull(c, &end, 10);
-    if (end == c + text.size()) {
-        // strtoull silently accepts spaces and negative signs and overflowing
-        // values. The only guaranteed way I've found to ensure it actually
-        // worked is to recreate the string and check that it's the same.
-        std::stringstream ss;
-        ss << v;
-        if (ss.str() == text) {
-            return v;
-        }
+double stim::parse_exact_double_from_string(std::string_view text) {
+    if (text.size() + 1 < 15) {
+        char buf[16];
+        memcpy(buf, text.data(), text.size());
+        buf[text.size()] = '\0';
+        return parse_exact_double_from_null_terminated(&buf[0], text.size());
+    } else {
+        std::string s(text);
+        return parse_exact_double_from_null_terminated(s.c_str(), text.size());
     }
-    throw std::invalid_argument("Not an integer that can be stored in a uint64_t: '" + text + "'");
+}
+
+static bool try_parse_exact_uint64_t_from_string(std::string_view text, uint64_t *out) {
+    if (text.empty()) {
+        return false;
+    }
+    if (text[0] == '-') {
+        return false;
+    }
+    size_t k = 0;
+    if (text[k] == '+') {
+        k += 1;
+    }
+    uint64_t acc = 0;
+    while (k < text.size()) {
+        char c = text[k];
+        if (c < '0' || c > '9') {
+            return false;
+        }
+        if (acc > UINT64_MAX / 10) {
+            return false;
+        }
+        acc *= 10;
+        uint8_t d = c - '0';
+        if (acc > UINT64_MAX - d) {
+            return false;
+        }
+        acc += d;
+        k++;
+    }
+    *out = acc;
+    return true;
+}
+
+uint64_t stim::parse_exact_uint64_t_from_string(std::string_view text) {
+    uint64_t result = 0;
+    if (try_parse_exact_uint64_t_from_string(text, &result)) {
+        return result;
+    }
+    std::stringstream ss;
+    ss << "Not an exact integer that can be stored in a uint64_t: '" << text << "'";
+    throw std::invalid_argument(ss.str());
 }

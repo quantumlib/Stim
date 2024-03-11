@@ -32,7 +32,7 @@ struct CoordFilter {
     stim::DemTarget exact_target{};
 
     bool matches(stim::SpanRef<const double> coords, stim::DemTarget target) const;
-    static CoordFilter parse_from(const std::string &data);
+    static CoordFilter parse_from(std::string_view data);
 };
 
 struct DetectorSliceSet {

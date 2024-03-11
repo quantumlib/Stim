@@ -192,7 +192,7 @@ bool CoordFilter::matches(stim::SpanRef<const double> coords, stim::DemTarget ta
     }
     return true;
 }
-CoordFilter CoordFilter::parse_from(const std::string &data) {
+CoordFilter CoordFilter::parse_from(std::string_view data) {
     CoordFilter filter;
     if (data.empty()) {
         // no filter
@@ -203,7 +203,7 @@ CoordFilter CoordFilter::parse_from(const std::string &data) {
         filter.use_target = true;
         filter.exact_target = DemTarget::observable_id(parse_exact_double_from_string(data.substr(1)));
     } else {
-        for (const auto &v : split(',', data)) {
+        for (const auto &v : split_view(',', data)) {
             if (v == "*") {
                 filter.coordinates.push_back(std::numeric_limits<double>::quiet_NaN());
             } else {
