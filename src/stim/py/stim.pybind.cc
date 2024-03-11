@@ -124,7 +124,6 @@ std::vector<GateTarget> target_combined_paulis(const pybind11::object &paulis, b
                     result.push_back(GateTarget::combiner());
                     continue;
                 }
-
             }
 
             std::stringstream ss;

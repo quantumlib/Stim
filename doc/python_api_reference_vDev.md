@@ -8828,7 +8828,7 @@ def pauli_indices(
             An exception is thrown if other characters are in the string.
 
     Returns:
-        A list containing the indices of matching Pauli terms.
+        A list containing the ascending indices of matching Pauli terms.
 
     Examples:
         >>> import stim

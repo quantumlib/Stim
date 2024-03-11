@@ -685,7 +685,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 }
                 while (u) {
                     uint8_t v = std::countr_zero(u);
-                    uint64_t q = k*64 + v;
+                    uint64_t q = k * 64 + v;
                     if (q >= self.value.num_qubits) {
                         return result;
                     }
