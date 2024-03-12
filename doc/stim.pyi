@@ -755,7 +755,7 @@ class Circuit:
             >>> stim.Circuit('''
             ...     ISWAP 0 1 2 1
             ...     TICK
-            ...     CPP X2*X1 !Z1*Z2
+            ...     MPP !X1*Y2*Z3
             ... ''').decomposed()
             stim.Circuit('''
                 H 0
@@ -768,15 +768,146 @@ class Circuit:
                 S 1 2
                 TICK
                 H 1 2
-                CX 2 1
-                H 2 2
-                CX 1 2
+                S 2
                 H 2
-                S 1 1
+                S 2 2
+                CX 2 1 3 1
+                M !1
+                CX 2 1 3 1
                 H 2
-                CX 2 1
-                H 1 2
+                S 2
+                H 2
+                S 2 2
+                H 1
             ''')
+        """
+    def detecting_regions(
+        self,
+        *,
+        targets: Optional[Iterable[stim.DemTarget | str | Iterable[float]]] = None,
+        ticks: Optional[Iterable[int]] = None,
+    ) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
+        """Records where detectors and observables are sensitive to errors over time.
+
+        The result of this method is a nested dictionary, mapping detectors/observables
+        and ticks to Pauli sensitivities for that detector/observable at that time.
+
+        For example, if observable 2 has Z-type sensitivity on qubits 5 and 6 during
+        tick 3, then `result[stim.target_logical_observable_id(2)][3]` will be equal to
+        `stim.PauliString("Z5*Z6")`.
+
+        If you want sensitivities from more places in the circuit, besides just at the
+        TICK instructions, you can work around this by making a version of the circuit
+        with more TICKs.
+
+        Args:
+            targets: Defaults to everything (None).
+
+                When specified, this should be an iterable of filters where items
+                matching any one filter are included.
+
+                A variety of filters are supported:
+                    stim.DemTarget: Includes the targeted detector or observable.
+                    Iterable[float]: Coordinate prefix match. Includes detectors whose
+                        coordinate data begins with the same floats.
+                    "D": Includes all detectors.
+                    "L": Includes all observables.
+                    "D#" (e.g. "D5"): Includes the detector with the specified index.
+                    "L#" (e.g. "L5"): Includes the observable with the specified index.
+
+            ticks: Defaults to everything (None).
+                When specified, this should be a list of integers corresponding to
+                the tick indices to report sensitivities for.
+
+            ignore_anticommutation_errors: Defaults to False.
+                When set to False, invalid detecting regions that anticommute with a
+                reset will cause the method to raise an exception. When set to True,
+                the offending component will simply be silently dropped. This can
+                result in broken detectors having apparently enormous detecting
+                regions.
+
+        Returns:
+            Nested dictionaries keyed first by a `stim.DemTarget` identifying the
+            detector or observable, then by the index of the tick, leading to a
+            PauliString with that target's error sensitivity at that tick.
+
+            Note you can use `stim.PauliString.pauli_indices` to quickly get to the
+            non-identity terms in the sensitivity.
+
+        Examples:
+            >>> import stim
+
+            >>> detecting_regions = stim.Circuit('''
+            ...     R 0
+            ...     TICK
+            ...     H 0
+            ...     TICK
+            ...     CX 0 1
+            ...     TICK
+            ...     MX 0 1
+            ...     DETECTOR rec[-1] rec[-2]
+            ... ''').detecting_regions()
+            >>> for target, tick_regions in detecting_regions.items():
+            ...     print("target", target)
+            ...     for tick, sensitivity in tick_regions.items():
+            ...         print("    tick", tick, "=", sensitivity)
+            target D0
+                tick 0 = +Z_
+                tick 1 = +X_
+                tick 2 = +XX
+
+            >>> circuit = stim.Circuit.generated(
+            ...     "surface_code:rotated_memory_x",
+            ...     rounds=5,
+            ...     distance=4,
+            ... )
+
+            >>> detecting_regions = circuit.detecting_regions(
+            ...     targets=["L0", (2, 4), stim.DemTarget.relative_detector_id(5)],
+            ...     ticks=range(5, 15),
+            ... )
+            >>> for target, tick_regions in detecting_regions.items():
+            ...     print("target", target)
+            ...     for tick, sensitivity in tick_regions.items():
+            ...         print("    tick", tick, "=", sensitivity)
+            target D1
+                tick 5 = +____________________X______________________
+                tick 6 = +____________________Z______________________
+            target D5
+                tick 5 = +______X____________________________________
+                tick 6 = +______Z____________________________________
+            target D14
+                tick 5 = +__________X_X______XXX_____________________
+                tick 6 = +__________X_X______XZX_____________________
+                tick 7 = +__________X_X______XZX_____________________
+                tick 8 = +__________X_X______XXX_____________________
+                tick 9 = +__________XXX_____XXX______________________
+                tick 10 = +__________XXX_______X______________________
+                tick 11 = +__________X_________X______________________
+                tick 12 = +____________________X______________________
+                tick 13 = +____________________Z______________________
+            target D29
+                tick 7 = +____________________Z______________________
+                tick 8 = +____________________X______________________
+                tick 9 = +____________________XX_____________________
+                tick 10 = +___________________XXX_______X_____________
+                tick 11 = +____________X______XXXX______X_____________
+                tick 12 = +__________X_X______XXX_____________________
+                tick 13 = +__________X_X______XZX_____________________
+                tick 14 = +__________X_X______XZX_____________________
+            target D44
+                tick 14 = +____________________Z______________________
+            target L0
+                tick 5 = +_X________X________X________X______________
+                tick 6 = +_X________X________X________X______________
+                tick 7 = +_X________X________X________X______________
+                tick 8 = +_X________X________X________X______________
+                tick 9 = +_X________X_______XX________X______________
+                tick 10 = +_X________X________X________X______________
+                tick 11 = +_X________XX_______X________XX_____________
+                tick 12 = +_X________X________X________X______________
+                tick 13 = +_X________X________X________X______________
+                tick 14 = +_X________X________X________X______________
         """
     def detector_error_model(
         self,
