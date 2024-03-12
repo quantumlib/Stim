@@ -53,15 +53,12 @@ namespace stim {
 /// Args:
 ///     mpp_op: The operation to decompose.
 ///     num_qubits: The number of qubits in the system. All targets must be less than this.
-///     callback: The method told each chunk of the decomposition.
+///     callback: How to execute decomposed instructions.
 void decompose_mpp_operation(
     const CircuitInstruction &mpp_op,
     size_t num_qubits,
-    const std::function<void(
-        const CircuitInstruction &h_xz,
-        const CircuitInstruction &h_yz,
-        const CircuitInstruction &cnot,
-        const CircuitInstruction &meas)> &callback);
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
+
 
 /// Finds contiguous segments where the first target of each pair is used once.
 ///
@@ -95,6 +92,15 @@ void decompose_mpp_operation(
 ///     callback: The method called with each decomposed segment.
 void decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback);
+
+bool accumulate_next_obs_terms_to_pauli_string_helper(
+    CircuitInstruction instruction,
+    size_t *start,
+    PauliString<64> *obs,
+    std::vector<GateTarget> *bits,
+    bool allow_imaginary = false);
+
+Circuit simplified_circuit(const Circuit &circuit);
 
 }  // namespace stim
 

@@ -57,6 +57,8 @@ struct GateTarget {
     bool is_measurement_record_target() const;
     bool is_qubit_target() const;
     bool is_sweep_bit_target() const;
+    bool is_classical_bit_target() const;
+    bool is_pauli_target() const;
     uint32_t qubit_value() const;
     bool operator==(const GateTarget &other) const;
     bool operator!=(const GateTarget &other) const;

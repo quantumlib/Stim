@@ -716,6 +716,68 @@ class Circuit:
             >>> circuit.num_detectors + circuit.num_observables
             217
         """
+    def decomposed(
+        self,
+    ) -> stim.Circuit:
+        """Recreates the circuit using (mostly) the {H,S,CX,M,R} gate set.
+
+        The intent of this method is to simplify the circuit to use fewer gate types,
+        so it's easier for other tools to consume. Currently, this method performs the
+        following simplifications:
+
+        - Single qubit cliffords are decomposed into {H,S}.
+        - Multi-qubit cliffords are decomposed into {H,S,CX}.
+        - Single qubit dissipative gates are decomposed into {H,S,M,R}.
+        - Multi-qubit dissipative gates are decomposed into {H,S,CX,M,R}.
+
+        Currently, the following types of gate *aren't* simplified, but they may be
+        in the future:
+
+        - Noise instructions (like X_ERROR, DEPOLARIZE2, and E).
+        - Annotations (like TICK, DETECTOR, and SHIFT_COORDS).
+        - The MPAD instruction.
+        - Repeat blocks are not flattened.
+
+        Returns:
+            A `stim.Circuit` whose function is equivalent to the original circuit,
+            but with most gates decomposed into the {H,S,CX,M,R} gate set.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     SWAP 0 1
+            ... ''').decomposed()
+            stim.Circuit('''
+                CX 0 1 1 0 0 1
+            ''')
+
+            >>> stim.Circuit('''
+            ...     ISWAP 0 1 2 1
+            ...     TICK
+            ...     MPP !X1*Y2*Z3
+            ... ''').decomposed()
+            stim.Circuit('''
+                H 0
+                CX 0 1 1 0
+                H 1
+                S 1 0
+                H 2
+                CX 2 1 1 2
+                H 1
+                S 1 2
+                TICK
+                H 1 2
+                CX 2 1
+                H 2 2
+                CX 1 2
+                H 2
+                S 1 1
+                H 2
+                CX 2 1
+                H 1 2
+            ''')
+        """
     def detector_error_model(
         self,
         *,

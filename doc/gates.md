@@ -3143,6 +3143,12 @@ This can be useful for ensuring measurements are aligned to word boundaries, or 
 number of measurement bits produced per circuit layer is always the same even if the number
 of measured qubits varies.
 
+Parens Arguments:
+
+    If no parens argument is given, the padding bits are recorded perfectly.
+    If one parens argument is given, the padding bits are recorded noisily.
+    The argument is the probability of recording the wrong result.
+
 Targets:
 
     Each target is a measurement result to add.
