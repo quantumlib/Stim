@@ -61,6 +61,23 @@ inline T *xor_merge_sort(SpanRef<const T> sorted_in1, SpanRef<const T> sorted_in
 }
 
 template <typename T>
+inline SpanRef<T> inplace_xor_sort(SpanRef<T> items) {
+    std::sort(items.begin(), items.end());
+    size_t new_size = 0;
+    for (size_t k = 0; k < items.size(); k++) {
+        if (new_size > 0 && items[k] == items[new_size - 1]) {
+            new_size--;
+        } else {
+            if (k != new_size) {
+                std::swap(items[new_size], items[k]);
+            }
+            new_size++;
+        }
+    }
+    return items.sub(0, new_size);
+}
+
+template <typename T>
 bool is_subset_of_sorted(SpanRef<const T> subset, SpanRef<const T> superset) {
     const T *p_sub = subset.ptr_start;
     const T *p_sup = superset.ptr_start;

@@ -78,6 +78,8 @@ struct ErrorMatcher {
     void err_atom(const CircuitInstruction &effect);
     /// Processes operations with X, Y, Z errors on each target.
     void err_pauli_channel_1(const CircuitInstruction &op);
+    /// Processes operations with M, X, Y, Z errors on each target.
+    void err_heralded_pauli_channel_1(const CircuitInstruction &op);
     /// Processes operations with 15 two-qubit Pauli product errors on each target pair.
     void err_pauli_channel_2(const CircuitInstruction &op);
     /// Processes measurement operations.
@@ -88,6 +90,8 @@ struct ErrorMatcher {
     void rev_process_instruction(const CircuitInstruction &op);
     /// Processes entire circuits.
     void rev_process_circuit(uint64_t reps, const Circuit &block);
+
+    void add_dem_error_terms(SpanRef<const DemTarget> dem_error_terms);
 };
 
 }  // namespace stim
