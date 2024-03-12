@@ -2149,7 +2149,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("ticks") = pybind11::none(),
         pybind11::arg("ignore_anticommutation_errors") = false,
         clean_doc_string(R"DOC(
-            @signature def detecting_regions(self, *, included_targets: Iterable[Iterable[float] | str | stim.DemTarget] | None = None, included_ticks: None | Iterable[int] = None) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
+            @signature def detecting_regions(self, *, targets: Optional[Iterable[stim.DemTarget | str | Iterable[float]]] = None, ticks: Optional[Iterable[int]] = None) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
             Records where detectors and observables are sensitive to errors over time.
 
             The result of this method is a nested dictionary, mapping detectors/observables

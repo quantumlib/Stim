@@ -1714,3 +1714,13 @@ def test_detecting_regions():
         1: stim.PauliString("X_"),
         2: stim.PauliString("XX"),
     }}
+
+
+def test_detecting_region_filters():
+    c = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    assert len(c.detecting_regions(targets=["D"])) == c.num_detectors
+    assert len(c.detecting_regions(targets=["L"])) == c.num_observables
+    assert len(c.detecting_regions()) == c.num_observables + c.num_detectors
+    assert len(c.detecting_regions(targets=["D0"])) == 1
+    assert len(c.detecting_regions(targets=["D0", "L0"])) == 2
+    assert len(c.detecting_regions(targets=[stim.target_relative_detector_id(0), "D0"])) == 1

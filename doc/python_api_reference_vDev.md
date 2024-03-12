@@ -1281,8 +1281,8 @@ def count_determined_measurements(
 def detecting_regions(
     self,
     *,
-    included_targets: Iterable[Iterable[float] | str | stim.DemTarget] | None = None,
-    included_ticks: None | Iterable[int] = None,
+    targets: Optional[Iterable[stim.DemTarget | str | Iterable[float]]] = None,
+    ticks: Optional[Iterable[int]] = None,
 ) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
     """Records where detectors and observables are sensitive to errors over time.
 
