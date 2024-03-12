@@ -2150,13 +2150,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("ignore_anticommutation_errors") = false,
         clean_doc_string(R"DOC(
             @signature def detecting_regions(self, *, included_targets: Iterable[Iterable[float] | str | stim.DemTarget] | None = None, included_ticks: None | Iterable[int] = None) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
-            Records where detectors are sensitive to errors over time.
+            Records where detectors and observables are sensitive to errors over time.
 
             The result of this method is a nested dictionary, mapping detectors/observables
             and ticks to Pauli sensitivities for that detector/observable at that time.
 
             For example, if observable 2 has Z-type sensitivity on qubits 5 and 6 during
-            tick 3, then `result[stim.DemTarget.observable(2)][3]` will be equal to
+            tick 3, then `result[stim.target_logical_observable_id(2)][3]` will be equal to
             `stim.PauliString("Z5*Z6")`.
 
             If you want sensitivities from more places in the circuit, besides just at the
