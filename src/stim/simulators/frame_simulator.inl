@@ -688,17 +688,8 @@ void FrameSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
     decompose_mpp_operation(
         target_data,
         num_qubits,
-        [&](const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
-            do_H_XZ(h_xz);
-            do_H_YZ(h_yz);
-            do_ZCX(cnot);
-            do_MZ(meas);
-            do_ZCX(cnot);
-            do_H_YZ(h_yz);
-            do_H_XZ(h_xz);
+        [&](const CircuitInstruction &inst) {
+            safe_do_instruction(inst);
         });
 }
 
@@ -893,10 +884,11 @@ void FrameSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
 
 template <size_t W>
 void FrameSimulator<W>::do_MPAD(const CircuitInstruction &inst) {
+    m_record.reserve_noisy_space_for_results(inst, rng);
     simd_bits<W> empty(batch_size);
-    assert(inst.args.empty());
     for (size_t k = 0; k < inst.targets.size(); k++) {
-        m_record.record_result(empty);
+        // 0-vs-1 is ignored because it's accounted for in the reference sample.
+        m_record.xor_record_reserved_result(empty);
     }
 }
 
