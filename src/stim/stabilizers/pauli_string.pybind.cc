@@ -637,6 +637,103 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             .data());
 
     c.def(
+        "pauli_indices",
+        [](const FlexPauliString &self, const std::string &include) {
+            std::vector<uint64_t> result;
+            size_t n64 = self.value.xs.num_u64_padded();
+            bool keep_i = false;
+            bool keep_x = false;
+            bool keep_y = false;
+            bool keep_z = false;
+            for (char c : include) {
+                switch (c) {
+                    case '_':
+                    case 'I':
+                        keep_i = true;
+                        break;
+                    case 'x':
+                    case 'X':
+                        keep_x = true;
+                        break;
+                    case 'y':
+                    case 'Y':
+                        keep_y = true;
+                        break;
+                    case 'z':
+                    case 'Z':
+                        keep_z = true;
+                        break;
+                    default:
+                        throw std::invalid_argument("Invalid character in include string: " + std::string(1, c));
+                }
+            }
+            for (size_t k = 0; k < n64; k++) {
+                uint64_t x = self.value.xs.u64[k];
+                uint64_t z = self.value.zs.u64[k];
+                uint64_t u = 0;
+                if (keep_i) {
+                    u |= ~x & ~z;
+                }
+                if (keep_x) {
+                    u |= x & ~z;
+                }
+                if (keep_y) {
+                    u |= x & z;
+                }
+                if (keep_z) {
+                    u |= ~x & z;
+                }
+                while (u) {
+                    uint8_t v = std::countr_zero(u);
+                    uint64_t q = k * 64 + v;
+                    if (q >= self.value.num_qubits) {
+                        return result;
+                    }
+                    result.push_back(q);
+                    u &= u - 1;
+                }
+            }
+            return result;
+        },
+        pybind11::arg("included_paulis") = "XYZ",
+        clean_doc_string(R"DOC(
+            @signature def pauli_indices(self, included_paulis: str = "XYZ") -> List[int]:
+            Returns the indices of non-identity Paulis, or of specified Paulis.
+
+            Args:
+                include: A string containing the Pauli types to include.
+                    X type Pauli indices are included if "X" or "x" is in the string.
+                    Y type Pauli indices are included if "Y" or "y" is in the string.
+                    Z type Pauli indices are included if "Z" or "z" is in the string.
+                    I type Pauli indices are included if "I" or "_" is in the string.
+                    An exception is thrown if other characters are in the string.
+
+            Returns:
+                A list containing the ascending indices of matching Pauli terms.
+
+            Examples:
+                >>> import stim
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices()
+                [5, 9, 14]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("XZ")
+                [5, 14]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("X")
+                [5]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("Y")
+                [9]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("IY")
+                [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
+
+                >>> stim.PauliString("-X103*Y100").pauli_indices()
+                [100, 103]
+        )DOC")
+            .data());
+
+    c.def(
         "commutes",
         [](const FlexPauliString &self, const FlexPauliString &other) {
             return self.value.ref().commutes(other.value.ref());

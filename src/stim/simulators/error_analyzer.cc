@@ -821,7 +821,7 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
 
 void ErrorAnalyzer::undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &dat) {
     if (accumulate_errors) {
-        throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR" + dat.str());
+        throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR: " + dat.str());
     }
 }
 

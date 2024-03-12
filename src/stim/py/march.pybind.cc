@@ -6,8 +6,8 @@
 //  Windows
 #include <intrin.h>
 #define cpuid(info, x) __cpuidex(info, x, 0)
-#elif (defined(__arm64__) && defined(__APPLE__)) || defined(__aarch64__)
-// macOS ARM64 (dummied out)
+#elif (defined(__arm64__) && defined(__APPLE__)) || defined(__aarch64__) || defined(_ARCH_PPC)
+// macOS ARM64 and IBM PowerPC (dummied out)
 void cpuid(int info[4], int infoType) {
     info[0] = 0;
     info[1] = 0;

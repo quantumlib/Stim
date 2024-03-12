@@ -155,7 +155,7 @@ struct MonotonicBuffer {
             return;
         }
 
-        size_t alloc_count = std::max(min_required, cur.size() << 1);
+        size_t alloc_count = std::max(min_required + tail.size(), cur.size() << 1);
         if (cur.ptr_start != nullptr) {
             old_areas.push_back(cur);
         }
