@@ -18,6 +18,8 @@
 #define _STIM_STABILIZERS_CONVERSIONS_H
 
 #include "stim/circuit/circuit.h"
+#include "stim/dem/dem_instruction.h"
+#include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 
 namespace stim {
@@ -178,6 +180,12 @@ double depolarize1_probability_to_independent_per_channel_probability(double p);
 double depolarize2_probability_to_independent_per_channel_probability(double p);
 double independent_per_channel_probability_to_depolarize1_probability(double p);
 double independent_per_channel_probability_to_depolarize2_probability(double p);
+
+std::map<DemTarget, std::map<uint64_t, FlexPauliString>> circuit_to_detecting_regions(
+    const Circuit &circuit,
+    std::set<stim::DemTarget> included_targets,
+    std::set<uint64_t> included_ticks,
+    bool ignore_anticommutation_errors);
 
 }  // namespace stim
 
