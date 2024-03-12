@@ -1697,3 +1697,30 @@ def test_has_flow_shorthands():
     assert c.has_flow(stim.Flow("-iX_ -> -iXX xor rec[1] xor rec[3]"))
     with pytest.raises(ValueError):
         stim.Flow("iX_ -> XX")
+
+
+def test_detecting_regions():
+    assert stim.Circuit('''
+        R 0
+        TICK
+        H 0
+        TICK
+        CX 0 1
+        TICK
+        MX 0 1
+        DETECTOR rec[-1] rec[-2]
+    ''').detecting_regions() == {stim.DemTarget.relative_detector_id(0): {
+        0: stim.PauliString("Z_"),
+        1: stim.PauliString("X_"),
+        2: stim.PauliString("XX"),
+    }}
+
+
+def test_detecting_region_filters():
+    c = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    assert len(c.detecting_regions(targets=["D"])) == c.num_detectors
+    assert len(c.detecting_regions(targets=["L"])) == c.num_observables
+    assert len(c.detecting_regions()) == c.num_observables + c.num_detectors
+    assert len(c.detecting_regions(targets=["D0"])) == 1
+    assert len(c.detecting_regions(targets=["D0", "L0"])) == 2
+    assert len(c.detecting_regions(targets=[stim.target_relative_detector_id(0), "D0"])) == 1
