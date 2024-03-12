@@ -14,9 +14,9 @@
 
 #include "stim/gates/gates.h"
 
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/gates/gates.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/stabilizers/flow.h"
 #include "stim/str_util.h"
 
 using namespace stim;
@@ -478,22 +478,22 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
                 >>> for e in stim.gate_data('H').__unstable_flows:
                 ...     print(e)
-                +X -> +Z
-                +Z -> +X
+                X -> Z
+                Z -> X
 
                 >>> for e in stim.gate_data('ISWAP').__unstable_flows:
                 ...     print(e)
-                +X_ -> +ZY
-                +Z_ -> +_Z
-                +_X -> +YZ
-                +_Z -> +Z_
+                X_ -> ZY
+                Z_ -> _Z
+                _X -> YZ
+                _Z -> Z_
 
                 >>> for e in stim.gate_data('MXX').__unstable_flows:
                 ...     print(e)
-                +X_ -> +X_
-                +_X -> +_X
-                +ZZ -> +ZZ
-                +XX -> rec[-1]
+                X_ -> X_
+                _X -> _X
+                ZZ -> ZZ
+                XX -> rec[-1]
         )DOC")
             .data());
 

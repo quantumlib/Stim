@@ -42,6 +42,8 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         out << indent
             << "    flipped_measurement.measurement_record_index: " << e.flipped_measurement.measurement_record_index
             << "\n";
+    }
+    if (!e.flipped_measurement.measured_observable.empty()) {
         out << indent << "    flipped_measurement.measured_observable: ";
         print_pauli_product(out, e.flipped_measurement.measured_observable);
         out << "\n";

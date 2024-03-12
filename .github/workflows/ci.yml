@@ -322,6 +322,7 @@ jobs:
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
       - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
+      - run: diff <(dev/gen_known_gates_for_js.sh) glue/crumble/test/generated_gate_name_list.test.js
       - run: python doc/stim.pyi
       - run: npm install -g rollup@3.21.2 uglify-js@3.17.4
       - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc

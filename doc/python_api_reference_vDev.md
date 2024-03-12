@@ -35,6 +35,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.generated`](#stim.Circuit.generated)
     - [`stim.Circuit.get_detector_coordinates`](#stim.Circuit.get_detector_coordinates)
     - [`stim.Circuit.get_final_qubit_coordinates`](#stim.Circuit.get_final_qubit_coordinates)
+    - [`stim.Circuit.has_all_flows`](#stim.Circuit.has_all_flows)
     - [`stim.Circuit.has_flow`](#stim.Circuit.has_flow)
     - [`stim.Circuit.inverse`](#stim.Circuit.inverse)
     - [`stim.Circuit.num_detectors`](#stim.Circuit.num_detectors)
@@ -188,6 +189,15 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
+- [`stim.Flow`](#stim.Flow)
+    - [`stim.Flow.__eq__`](#stim.Flow.__eq__)
+    - [`stim.Flow.__init__`](#stim.Flow.__init__)
+    - [`stim.Flow.__ne__`](#stim.Flow.__ne__)
+    - [`stim.Flow.__repr__`](#stim.Flow.__repr__)
+    - [`stim.Flow.__str__`](#stim.Flow.__str__)
+    - [`stim.Flow.input_copy`](#stim.Flow.input_copy)
+    - [`stim.Flow.measurements_copy`](#stim.Flow.measurements_copy)
+    - [`stim.Flow.output_copy`](#stim.Flow.output_copy)
 - [`stim.GateData`](#stim.GateData)
     - [`stim.GateData.__eq__`](#stim.GateData.__eq__)
     - [`stim.GateData.__init__`](#stim.GateData.__init__)
@@ -1888,6 +1898,66 @@ def get_final_qubit_coordinates(
     """
 ```
 
+<a name="stim.Circuit.has_all_flows"></a>
+```python
+# stim.Circuit.has_all_flows
+
+# (in class stim.Circuit)
+def has_all_flows(
+    self,
+    flows: Iterable[stim.Flow],
+    *,
+    unsigned: bool = False,
+) -> bool:
+    """Determines if the circuit has all the given stabilizer flow or not.
+
+    This is a faster version of `all(c.has_flow(f) for f in flows)`. It's faster
+    because, behind the scenes, the circuit can be iterated once instead of once
+    per flow.
+
+    Args:
+        flows: An iterable of `stim.Flow` instances representing the flows to check.
+        unsigned: Defaults to False. When False, the flows must be correct including
+            the sign of the Pauli strings. When True, only the Pauli terms need to
+            be correct; the signs are permitted to be inverted. In effect, this
+            requires the circuit to be correct up to Pauli gates.
+
+    Returns:
+        True if the circuit has the given flow; False otherwise.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ])
+        False
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> -Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ])
+        True
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ], unsigned=True)
+        True
+
+    Caveats:
+        Currently, the unsigned=False version of this method is implemented by
+        performing 256 randomized tests. Each test has a 50% chance of a false
+        positive, and a 0% chance of a false negative. So, when the method returns
+        True, there is technically still a 2^-256 chance the circuit doesn't have
+        the flow. This is lower than the chance of a cosmic ray flipping the result.
+    """
+```
+
 <a name="stim.Circuit.has_flow"></a>
 ```python
 # stim.Circuit.has_flow
@@ -1895,14 +1965,11 @@ def get_final_qubit_coordinates(
 # (in class stim.Circuit)
 def has_flow(
     self,
-    shorthand: Optional[str] = None,
+    flow: stim.Flow,
     *,
-    start: Union[None, str, stim.PauliString] = None,
-    end: Union[None, str, stim.PauliString] = None,
-    measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
     unsigned: bool = False,
 ) -> bool:
-    """Determines if the circuit has a stabilizer flow or not.
+    """Determines if the circuit has the given stabilizer flow or not.
 
     A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
     P at the start of the circuit to the instantaneous stabilizer Q at the end of
@@ -1916,26 +1983,7 @@ def has_flow(
     A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
     Args:
-        shorthand: Specifies the flow as a short string like "X1 -> -YZ xor rec[1]".
-            The text must contain "->" to separate the input pauli string from the
-            output pauli string. Measurements are included by appending
-            " xor rec[k]" for each measurement index k. Indexing uses the python
-            convention where non-negative indices index from the start and negative
-            indices index from the end. The pauli strings are parsed as if by
-            `stim.PauliString.__init__`.
-        start: The input into the flow at the start of the circuit. Defaults to None
-            (the identity Pauli string). When specified, this should be a
-            `stim.PauliString`, or a `str` (which will be parsed using
-            `stim.PauliString.__init__`).
-        end: The output from the flow at the end of the circuit. Defaults to None
-            (the identity Pauli string). When specified, this should be a
-            `stim.PauliString`, or a `str` (which will be parsed using
-            `stim.PauliString.__init__`).
-        measurements: Defaults to None (empty). The indices of measurements to
-            include in the flow. This should be a collection of integers and/or
-            stim.GateTarget instances. Indexing uses the python convention where
-            non-negative indices index from the start and negative indices index
-            from the end.
+        flow: The flow to check for.
         unsigned: Defaults to False. When False, the flows must be correct including
             the sign of the Pauli strings. When True, only the Pauli terms need to
             be correct; the signs are permitted to be inverted. In effect, this
@@ -1944,56 +1992,49 @@ def has_flow(
     Returns:
         True if the circuit has the given flow; False otherwise.
 
-    References:
-        Stim's gate documentation includes the stabilizer flows of each gate.
-
-        Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
-        defined and provides a circuit construction for experimentally verifying
-        their presence.
-
     Examples:
         >>> import stim
 
         >>> m = stim.Circuit('M 0')
-        >>> m.has_flow('Z -> Z')
+        >>> m.has_flow(stim.Flow('Z -> Z'))
         True
-        >>> m.has_flow('X -> X')
+        >>> m.has_flow(stim.Flow('X -> X'))
         False
-        >>> m.has_flow('Z -> I')
+        >>> m.has_flow(stim.Flow('Z -> I'))
         False
-        >>> m.has_flow('Z -> I xor rec[-1]')
+        >>> m.has_flow(stim.Flow('Z -> I xor rec[-1]'))
         True
-        >>> m.has_flow('Z -> rec[-1]')
+        >>> m.has_flow(stim.Flow('Z -> rec[-1]'))
         True
 
         >>> cx58 = stim.Circuit('CX 5 8')
-        >>> cx58.has_flow('X5 -> X5*X8')
+        >>> cx58.has_flow(stim.Flow('X5 -> X5*X8'))
         True
-        >>> cx58.has_flow('X_ -> XX')
+        >>> cx58.has_flow(stim.Flow('X_ -> XX'))
         False
-        >>> cx58.has_flow('_____X___ -> _____X__X')
+        >>> cx58.has_flow(stim.Flow('_____X___ -> _____X__X'))
         True
 
         >>> stim.Circuit('''
         ...     RY 0
-        ... ''').has_flow(
-        ...     end=stim.PauliString("Y"),
-        ... )
+        ... ''').has_flow(stim.Flow(
+        ...     output=stim.PauliString("Y"),
+        ... ))
         True
 
         >>> stim.Circuit('''
         ...     RY 0
-        ... ''').has_flow(
-        ...     end=stim.PauliString("X"),
-        ... )
+        ... ''').has_flow(stim.Flow(
+        ...     output=stim.PauliString("X"),
+        ... ))
         False
 
         >>> stim.Circuit('''
         ...     CX 0 1
-        ... ''').has_flow(
-        ...     start=stim.PauliString("+X_"),
-        ...     end=stim.PauliString("+XX"),
-        ... )
+        ... ''').has_flow(stim.Flow(
+        ...     input=stim.PauliString("+X_"),
+        ...     output=stim.PauliString("+XX"),
+        ... ))
         True
 
         >>> stim.Circuit('''
@@ -2002,21 +2043,28 @@ def has_flow(
         ...     MXX 0 1
         ...     MZZ 1 2
         ...     MX 1
-        ... ''').has_flow(
-        ...     start=stim.PauliString("+X_X"),
-        ...     end=stim.PauliString("+__X"),
+        ... ''').has_flow(stim.Flow(
+        ...     input=stim.PauliString("+X_X"),
+        ...     output=stim.PauliString("+__X"),
         ...     measurements=[0, 2],
+        ... ))
+        True
+
+        >>> stim.Circuit('''
+        ...     H 0
+        ... ''').has_flow(
+        ...     stim.Flow("Y -> Y"),
+        ...     unsigned=True,
         ... )
         True
 
         >>> stim.Circuit('''
         ...     H 0
         ... ''').has_flow(
-        ...     start=stim.PauliString("Y"),
-        ...     end=stim.PauliString("Y"),
-        ...     unsigned=True,
+        ...     stim.Flow("Y -> Y"),
+        ...     unsigned=False,
         ... )
-        True
+        False
 
     Caveats:
         Currently, the unsigned=False version of this method is implemented by
@@ -6748,6 +6796,219 @@ def record_index(
     """The measurement record index of the flipped measurement.
     For example, the fifth measurement in a circuit has a measurement
     record index of 4.
+    """
+```
+
+<a name="stim.Flow"></a>
+```python
+# stim.Flow
+
+# (at top-level in the stim module)
+class Flow:
+    """A stabilizer flow (e.g. "XI -> XX xor rec[-1]").
+
+    Stabilizer circuits implement, and can be defined by, how they turn input
+    stabilizers into output stabilizers mediated by measurements. These
+    relationships are called stabilizer flows, and `stim.Flow` is a representation
+    of such a flow. For example, a `stim.Flow` can be given to
+    `stim.Circuit.has_flow` to verify that a circuit implements the flow.
+
+    A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
+    P at the start of the circuit to the instantaneous stabilizer Q at the end of
+    the circuit. The flow may be mediated by certain measurements. For example,
+    a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
+    the CNOT flows implemented by the circuit involve these measurements.
+
+    A flow like P -> Q means the circuit transforms P into Q.
+    A flow like 1 -> P means the circuit prepares P.
+    A flow like P -> 1 means the circuit measures P.
+    A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
+
+    References:
+        Stim's gate documentation includes the stabilizer flows of each gate.
+
+        Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
+        defined and provides a circuit construction for experimentally verifying
+        their presence.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit("CNOT 2 4")
+
+        >>> c.has_flow(stim.Flow("__X__ -> __X_X"))
+        True
+
+        >>> c.has_flow(stim.Flow("X2*X4 -> X2"))
+        True
+
+        >>> c.has_flow(stim.Flow("Z4 -> Z4"))
+        False
+    """
+```
+
+<a name="stim.Flow.__eq__"></a>
+```python
+# stim.Flow.__eq__
+
+# (in class stim.Flow)
+def __eq__(
+    self,
+    arg0: stim.Flow,
+) -> bool:
+    """Determines if two flows have identical contents.
+    """
+```
+
+<a name="stim.Flow.__init__"></a>
+```python
+# stim.Flow.__init__
+
+# (in class stim.Flow)
+def __init__(
+    self,
+    arg: Union[None, str, stim.Flow] = None,
+    /,
+    *,
+    input: Optional[stim.PauliString] = None,
+    output: Optional[stim.PauliString] = None,
+    measurements: Optional[Iterable[Union[int, GateTarget]]] = None,
+) -> None:
+    """Initializes a stim.Flow.
+
+    When given a string, the string is parsed as flow shorthand. For example,
+    the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
+    "X_", output pauli string "ZZ", and measurement indices [-1].
+
+    Arguments:
+        arg [position-only]: Defaults to None. Must be specified by itself if used.
+            str: Initializes a flow by parsing the given shorthand text.
+            stim.Flow: Initializes a copy of the given flow.
+            None (default): Initializes an empty flow.
+        input: Defaults to None. Can be set to a stim.PauliString to directly
+            specify the flow's input stabilizer.
+        output: Defaults to None. Can be set to a stim.PauliString to directly
+            specify the flow's output stabilizer.
+        measurements: Can be set to a list of integers or gate targets like
+            `stim.target_rec(-1)`, to specify the measurements that mediate the
+            flow. Negative and positive measurement indices are allowed. Indexes
+            follow the python convention where -1 is the last measurement in a
+            circuit and 0 is the first measurement in a circuit.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Flow("X2 -> -Y2*Z4 xor rec[-1]")
+        stim.Flow("__X -> -__Y_Z xor rec[-1]")
+
+        >>> stim.Flow("Z -> 1 xor rec[-1]")
+        stim.Flow("Z -> rec[-1]")
+
+        >>> stim.Flow(
+        ...     input=stim.PauliString("XX"),
+        ...     output=stim.PauliString("_X"),
+        ...     measurements=[],
+        ... )
+        stim.Flow("XX -> _X")
+    """
+```
+
+<a name="stim.Flow.__ne__"></a>
+```python
+# stim.Flow.__ne__
+
+# (in class stim.Flow)
+def __ne__(
+    self,
+    arg0: stim.Flow,
+) -> bool:
+    """Determines if two flows have non-identical contents.
+    """
+```
+
+<a name="stim.Flow.__repr__"></a>
+```python
+# stim.Flow.__repr__
+
+# (in class stim.Flow)
+def __repr__(
+    self,
+) -> str:
+    """Returns valid python code evaluating to an equivalent `stim.Flow`.
+    """
+```
+
+<a name="stim.Flow.__str__"></a>
+```python
+# stim.Flow.__str__
+
+# (in class stim.Flow)
+def __str__(
+    self,
+) -> str:
+    """Returns a shorthand description of the flow.
+    """
+```
+
+<a name="stim.Flow.input_copy"></a>
+```python
+# stim.Flow.input_copy
+
+# (in class stim.Flow)
+def input_copy(
+    self,
+) -> stim.PauliString:
+    """Returns a copy of the flow's input stabilizer.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(input=stim.PauliString('XX'))
+        >>> f.input_copy()
+        stim.PauliString("+XX")
+
+        >>> f.input_copy() is f.input_copy()
+        False
+    """
+```
+
+<a name="stim.Flow.measurements_copy"></a>
+```python
+# stim.Flow.measurements_copy
+
+# (in class stim.Flow)
+def measurements_copy(
+    self,
+) -> List[int]:
+    """Returns a copy of the flow's measurement indices.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(measurements=[-1, 2])
+        >>> f.measurements_copy()
+        [-1, 2]
+
+        >>> f.measurements_copy() is f.measurements_copy()
+        False
+    """
+```
+
+<a name="stim.Flow.output_copy"></a>
+```python
+# stim.Flow.output_copy
+
+# (in class stim.Flow)
+def output_copy(
+    self,
+) -> stim.PauliString:
+    """Returns a copy of the flow's output stabilizer.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(output=stim.PauliString('XX'))
+        >>> f.output_copy()
+        stim.PauliString("+XX")
+
+        >>> f.output_copy() is f.output_copy()
+        False
     """
 ```
 

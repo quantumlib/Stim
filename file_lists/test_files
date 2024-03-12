@@ -4,7 +4,6 @@ src/stim/circuit/circuit.test.cc
 src/stim/circuit/export_qasm.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc
-src/stim/circuit/stabilizer_flow.test.cc
 src/stim/cmd/command_analyze_errors.test.cc
 src/stim/cmd/command_convert.test.cc
 src/stim/cmd/command_detect.test.cc
@@ -73,6 +72,7 @@ src/stim/simulators/transform_without_feedback.test.cc
 src/stim/simulators/vector_simulator.test.cc
 src/stim/stabilizers/conversions.test.cc
 src/stim/stabilizers/flex_pauli_string.test.cc
+src/stim/stabilizers/flow.test.cc
 src/stim/stabilizers/pauli_string.test.cc
 src/stim/stabilizers/pauli_string_iter.test.cc
 src/stim/stabilizers/pauli_string_ref.test.cc

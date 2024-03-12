@@ -227,9 +227,12 @@ static void parse_sparse_pauli_string(std::string_view text, FlexPauliString *ou
         if (cur_pauli == '\0' || !has_cur_index || cur_index > out->value.num_qubits) {
             throw std::invalid_argument("");
         }
-        out->value.right_mul_pauli(
-            GateTarget::pauli_xz(cur_index, cur_pauli == 'X' || cur_pauli == 'Y', cur_pauli == 'Z' || cur_pauli == 'Y'),
-            &out->imag);
+        if (cur_pauli != 'I') {
+            out->value.right_mul_pauli(
+                GateTarget::pauli_xz(
+                    cur_index, cur_pauli == 'X' || cur_pauli == 'Y', cur_pauli == 'Z' || cur_pauli == 'Y'),
+                &out->imag);
+        }
         has_cur_index = false;
         cur_pauli = '\0';
         cur_index = 0;

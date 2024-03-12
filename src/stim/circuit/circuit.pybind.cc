@@ -20,7 +20,6 @@
 #include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/circuit/export_qasm.h"
 #include "stim/circuit/gate_target.pybind.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
@@ -41,6 +40,7 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
 #include "stim/stabilizers/conversions.h"
+#include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 
 using namespace stim;
@@ -300,90 +300,6 @@ uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
     ss << "Expected a detector id but didn't get a stim.DemTarget or a uint64_t.";
     ss << " Got " << pybind11::repr(obj);
     throw std::invalid_argument(ss.str());
-}
-
-FlexPauliString arg_to_pauli_string(const pybind11::object &arg) {
-    if (arg.is_none()) {
-        return FlexPauliString(PauliString<MAX_BITWORD_WIDTH>(0));
-    } else if (pybind11::isinstance<FlexPauliString>(arg)) {
-        return pybind11::cast<FlexPauliString>(arg);
-    } else if (pybind11::isinstance<pybind11::str>(arg)) {
-        return FlexPauliString::from_text(pybind11::cast<std::string>(arg).c_str());
-    } else {
-        throw std::invalid_argument(
-            "Don't know how to get a stim.PauliString from " + pybind11::cast<std::string>(pybind11::repr(arg)));
-    }
-}
-
-void append_measurements_from_args(
-    uint64_t num_circuit_measurements,
-    const pybind11::object &arg_measurements,
-    std::vector<GateTarget> &out_measurements) {
-    if (arg_measurements.is_none()) {
-        return;
-    }
-    for (const pybind11::handle &e : arg_measurements) {
-        if (pybind11::isinstance<GateTarget>(e)) {
-            auto d = pybind11::cast<GateTarget>(e);
-            if (d.is_measurement_record_target()) {
-                out_measurements.push_back(d);
-                continue;
-            }
-        } else {
-            try {
-                int64_t s = pybind11::cast<int32_t>(e);
-                if (s >= 0 && s < (int64_t)num_circuit_measurements) {
-                    s -= num_circuit_measurements;
-                }
-                if (s < 0 && -s <= (int64_t)num_circuit_measurements) {
-                    out_measurements.push_back(GateTarget::rec(s));
-                    continue;
-                }
-            } catch (const pybind11::cast_error &) {
-            }
-        }
-        throw std::invalid_argument(
-            "Each measurement must be an integer in `range(-circuit.num_measurements, "
-            "circuit.num_measurements)`, or a `stim.GateTarget`.");
-    }
-}
-
-StabilizerFlow<MAX_BITWORD_WIDTH> args_to_flow(
-    uint64_t num_circuit_measurements,
-    const pybind11::object &shorthand,
-    const pybind11::object &start,
-    const pybind11::object &end,
-    const pybind11::object &measurements) {
-    StabilizerFlow<MAX_BITWORD_WIDTH> flow{
-        .input = PauliString<MAX_BITWORD_WIDTH>{0},
-        .output = PauliString<MAX_BITWORD_WIDTH>{0},
-        .measurement_outputs = {},
-    };
-    if (!shorthand.is_none() && !start.is_none()) {
-        throw std::invalid_argument("Can't specify both `shorthand` and `start`.");
-    }
-    if (!shorthand.is_none() && !end.is_none()) {
-        throw std::invalid_argument("Can't specify both `shorthand` and `end`.");
-    }
-
-    if (!shorthand.is_none()) {
-        flow = StabilizerFlow<MAX_BITWORD_WIDTH>::from_str(
-            pybind11::cast<std::string>(shorthand).c_str(), num_circuit_measurements);
-    } else {
-        FlexPauliString in = arg_to_pauli_string(start);
-        FlexPauliString out = arg_to_pauli_string(end);
-        if (in.imag != out.imag) {
-            throw std::invalid_argument(
-                "The requested flow '" + in.str() + " -> " + out.str() +
-                "' is anti-Hermitian (unbalanced imaginary signs). Stabilizer flows are always Hermitian.");
-        }
-        flow.input = std::move(in.value);
-        flow.output = std::move(out.value);
-    }
-
-    append_measurements_from_args(num_circuit_measurements, measurements, flow.measurement_outputs);
-
-    return flow;
 }
 
 std::set<uint64_t> obj_to_abs_detector_id_set(
@@ -2533,30 +2449,21 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "has_flow",
-        [](const Circuit &self,
-           const pybind11::object &shorthand,
-           const pybind11::object &start,
-           const pybind11::object &end,
-           const pybind11::object &measurements,
-           bool unsigned_only) -> bool {
-            StabilizerFlow<MAX_BITWORD_WIDTH> flow =
-                args_to_flow(self.count_measurements(), shorthand, start, end, measurements);
+        [](const Circuit &self, const Flow<MAX_BITWORD_WIDTH> &flow, bool unsigned_only) -> bool {
+            std::span<const Flow<MAX_BITWORD_WIDTH>> flows = {&flow, &flow + 1};
             if (unsigned_only) {
-                return check_if_circuit_has_unsigned_stabilizer_flows<MAX_BITWORD_WIDTH>(self, &flow)[0];
+                return check_if_circuit_has_unsigned_stabilizer_flows<MAX_BITWORD_WIDTH>(self, flows)[0];
             } else {
                 auto rng = externally_seeded_rng();
-                return sample_if_circuit_has_stabilizer_flows<MAX_BITWORD_WIDTH>(256, rng, self, &flow)[0];
+                return sample_if_circuit_has_stabilizer_flows<MAX_BITWORD_WIDTH>(256, rng, self, flows)[0];
             }
         },
-        pybind11::arg("shorthand") = pybind11::none(),
+        pybind11::arg("flow"),
         pybind11::kw_only(),
-        pybind11::arg("start") = pybind11::none(),
-        pybind11::arg("end") = pybind11::none(),
-        pybind11::arg("measurements") = pybind11::none(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def has_flow(self, shorthand: Optional[str] = None, *, start: Union[None, str, stim.PauliString] = None, end: Union[None, str, stim.PauliString] = None, measurements: Optional[Iterable[Union[int, stim.GateTarget]]] = None, unsigned: bool = False) -> bool:
-            Determines if the circuit has a stabilizer flow or not.
+            @signature def has_flow(self, flow: stim.Flow, *, unsigned: bool = False) -> bool:
+            Determines if the circuit has the given stabilizer flow or not.
 
             A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
             P at the start of the circuit to the instantaneous stabilizer Q at the end of
@@ -2570,26 +2477,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
             Args:
-                shorthand: Specifies the flow as a short string like "X1 -> -YZ xor rec[1]".
-                    The text must contain "->" to separate the input pauli string from the
-                    output pauli string. Measurements are included by appending
-                    " xor rec[k]" for each measurement index k. Indexing uses the python
-                    convention where non-negative indices index from the start and negative
-                    indices index from the end. The pauli strings are parsed as if by
-                    `stim.PauliString.__init__`.
-                start: The input into the flow at the start of the circuit. Defaults to None
-                    (the identity Pauli string). When specified, this should be a
-                    `stim.PauliString`, or a `str` (which will be parsed using
-                    `stim.PauliString.__init__`).
-                end: The output from the flow at the end of the circuit. Defaults to None
-                    (the identity Pauli string). When specified, this should be a
-                    `stim.PauliString`, or a `str` (which will be parsed using
-                    `stim.PauliString.__init__`).
-                measurements: Defaults to None (empty). The indices of measurements to
-                    include in the flow. This should be a collection of integers and/or
-                    stim.GateTarget instances. Indexing uses the python convention where
-                    non-negative indices index from the start and negative indices index
-                    from the end.
+                flow: The flow to check for.
                 unsigned: Defaults to False. When False, the flows must be correct including
                     the sign of the Pauli strings. When True, only the Pauli terms need to
                     be correct; the signs are permitted to be inverted. In effect, this
@@ -2598,56 +2486,49 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Returns:
                 True if the circuit has the given flow; False otherwise.
 
-            References:
-                Stim's gate documentation includes the stabilizer flows of each gate.
-
-                Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
-                defined and provides a circuit construction for experimentally verifying
-                their presence.
-
             Examples:
                 >>> import stim
 
                 >>> m = stim.Circuit('M 0')
-                >>> m.has_flow('Z -> Z')
+                >>> m.has_flow(stim.Flow('Z -> Z'))
                 True
-                >>> m.has_flow('X -> X')
+                >>> m.has_flow(stim.Flow('X -> X'))
                 False
-                >>> m.has_flow('Z -> I')
+                >>> m.has_flow(stim.Flow('Z -> I'))
                 False
-                >>> m.has_flow('Z -> I xor rec[-1]')
+                >>> m.has_flow(stim.Flow('Z -> I xor rec[-1]'))
                 True
-                >>> m.has_flow('Z -> rec[-1]')
+                >>> m.has_flow(stim.Flow('Z -> rec[-1]'))
                 True
 
                 >>> cx58 = stim.Circuit('CX 5 8')
-                >>> cx58.has_flow('X5 -> X5*X8')
+                >>> cx58.has_flow(stim.Flow('X5 -> X5*X8'))
                 True
-                >>> cx58.has_flow('X_ -> XX')
+                >>> cx58.has_flow(stim.Flow('X_ -> XX'))
                 False
-                >>> cx58.has_flow('_____X___ -> _____X__X')
+                >>> cx58.has_flow(stim.Flow('_____X___ -> _____X__X'))
                 True
 
                 >>> stim.Circuit('''
                 ...     RY 0
-                ... ''').has_flow(
-                ...     end=stim.PauliString("Y"),
-                ... )
+                ... ''').has_flow(stim.Flow(
+                ...     output=stim.PauliString("Y"),
+                ... ))
                 True
 
                 >>> stim.Circuit('''
                 ...     RY 0
-                ... ''').has_flow(
-                ...     end=stim.PauliString("X"),
-                ... )
+                ... ''').has_flow(stim.Flow(
+                ...     output=stim.PauliString("X"),
+                ... ))
                 False
 
                 >>> stim.Circuit('''
                 ...     CX 0 1
-                ... ''').has_flow(
-                ...     start=stim.PauliString("+X_"),
-                ...     end=stim.PauliString("+XX"),
-                ... )
+                ... ''').has_flow(stim.Flow(
+                ...     input=stim.PauliString("+X_"),
+                ...     output=stim.PauliString("+XX"),
+                ... ))
                 True
 
                 >>> stim.Circuit('''
@@ -2656,20 +2537,98 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     MXX 0 1
                 ...     MZZ 1 2
                 ...     MX 1
-                ... ''').has_flow(
-                ...     start=stim.PauliString("+X_X"),
-                ...     end=stim.PauliString("+__X"),
+                ... ''').has_flow(stim.Flow(
+                ...     input=stim.PauliString("+X_X"),
+                ...     output=stim.PauliString("+__X"),
                 ...     measurements=[0, 2],
+                ... ))
+                True
+
+                >>> stim.Circuit('''
+                ...     H 0
+                ... ''').has_flow(
+                ...     stim.Flow("Y -> Y"),
+                ...     unsigned=True,
                 ... )
                 True
 
                 >>> stim.Circuit('''
                 ...     H 0
                 ... ''').has_flow(
-                ...     start=stim.PauliString("Y"),
-                ...     end=stim.PauliString("Y"),
-                ...     unsigned=True,
+                ...     stim.Flow("Y -> Y"),
+                ...     unsigned=False,
                 ... )
+                False
+
+            Caveats:
+                Currently, the unsigned=False version of this method is implemented by
+                performing 256 randomized tests. Each test has a 50% chance of a false
+                positive, and a 0% chance of a false negative. So, when the method returns
+                True, there is technically still a 2^-256 chance the circuit doesn't have
+                the flow. This is lower than the chance of a cosmic ray flipping the result.
+        )DOC")
+            .data());
+
+    c.def(
+        "has_all_flows",
+        [](const Circuit &self, const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows, bool unsigned_only) -> bool {
+            std::vector<bool> results;
+            if (unsigned_only) {
+                results = check_if_circuit_has_unsigned_stabilizer_flows<MAX_BITWORD_WIDTH>(self, flows);
+            } else {
+                auto rng = externally_seeded_rng();
+                results = sample_if_circuit_has_stabilizer_flows<MAX_BITWORD_WIDTH>(256, rng, self, flows);
+            }
+            for (auto b : results) {
+                if (!b) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        pybind11::arg("flows"),
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(R"DOC(
+            @signature def has_all_flows(self, flows: Iterable[stim.Flow], *, unsigned: bool = False) -> bool:
+            Determines if the circuit has all the given stabilizer flow or not.
+
+            This is a faster version of `all(c.has_flow(f) for f in flows)`. It's faster
+            because, behind the scenes, the circuit can be iterated once instead of once
+            per flow.
+
+            Args:
+                flows: An iterable of `stim.Flow` instances representing the flows to check.
+                unsigned: Defaults to False. When False, the flows must be correct including
+                    the sign of the Pauli strings. When True, only the Pauli terms need to
+                    be correct; the signs are permitted to be inverted. In effect, this
+                    requires the circuit to be correct up to Pauli gates.
+
+            Returns:
+                True if the circuit has the given flow; False otherwise.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('H 0').has_all_flows([
+                ...     stim.Flow('X -> Z'),
+                ...     stim.Flow('Y -> Y'),
+                ...     stim.Flow('Z -> X'),
+                ... ])
+                False
+
+                >>> stim.Circuit('H 0').has_all_flows([
+                ...     stim.Flow('X -> Z'),
+                ...     stim.Flow('Y -> -Y'),
+                ...     stim.Flow('Z -> X'),
+                ... ])
+                True
+
+                >>> stim.Circuit('H 0').has_all_flows([
+                ...     stim.Flow('X -> Z'),
+                ...     stim.Flow('Y -> Y'),
+                ...     stim.Flow('Z -> X'),
+                ... ], unsigned=True)
                 True
 
             Caveats:

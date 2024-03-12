@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_CIRCUIT_STABILIZER_FLOW_H
-#define _STIM_CIRCUIT_STABILIZER_FLOW_H
+#ifndef _STIM_STABILIZERS_FLOW_H
+#define _STIM_STABILIZERS_FLOW_H
 
 #include <iostream>
 #include <span>
@@ -26,14 +26,15 @@
 namespace stim {
 
 template <size_t W>
-struct StabilizerFlow {
+struct Flow {
     stim::PauliString<W> input;
     stim::PauliString<W> output;
-    std::vector<stim::GateTarget> measurement_outputs;
+    /// Indexing follows python convention: -1 is the last element, 0 is the first element.
+    std::vector<int32_t> measurements;
 
-    static StabilizerFlow<W> from_str(const char *text, uint64_t num_measurements_for_non_neg_recs = 0);
-    bool operator==(const StabilizerFlow<W> &other) const;
-    bool operator!=(const StabilizerFlow<W> &other) const;
+    static Flow<W> from_str(std::string_view text);
+    bool operator==(const Flow<W> &other) const;
+    bool operator!=(const Flow<W> &other) const;
     std::string str() const;
 };
 
@@ -51,17 +52,17 @@ struct StabilizerFlow {
 ///     k'th flow passed all checks.
 template <size_t W>
 std::vector<bool> sample_if_circuit_has_stabilizer_flows(
-    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows);
+    size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, std::span<const Flow<W>> flows);
 
 template <size_t W>
 std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
-    const Circuit &circuit, SpanRef<const StabilizerFlow<W>> flows);
+    const Circuit &circuit, std::span<const Flow<W>> flows);
 
 template <size_t W>
-std::ostream &operator<<(std::ostream &out, const StabilizerFlow<W> &flow);
+std::ostream &operator<<(std::ostream &out, const Flow<W> &flow);
 
 }  // namespace stim
 
-#include "stim/circuit/stabilizer_flow.inl"
+#include "stim/stabilizers/flow.inl"
 
 #endif
