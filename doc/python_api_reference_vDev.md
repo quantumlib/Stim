@@ -1284,7 +1284,18 @@ def detecting_regions(
     included_targets: Iterable[Iterable[float] | str | stim.DemTarget] | None = None,
     included_ticks: None | Iterable[int] = None,
 ) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
-    """Explains how detector error model errors are produced by circuit errors.
+    """Records where detectors are sensitive to errors over time.
+
+    The result of this method is a nested dictionary, mapping detectors/observables
+    and ticks to Pauli sensitivities for that detector/observable at that time.
+
+    For example, if observable 2 has Z-type sensitivity on qubits 5 and 6 during
+    tick 3, then `result[stim.DemTarget.observable(2)][3]` will be equal to
+    `stim.PauliString("Z5*Z6")`.
+
+    If you want sensitivities from more places in the circuit, besides just at the
+    TICK instructions, you can work around this by making a version of the circuit
+    with more TICKs.
 
     Args:
         targets: Defaults to everything (None).

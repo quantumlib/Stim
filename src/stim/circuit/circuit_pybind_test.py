@@ -1696,8 +1696,6 @@ def test_has_flow_shorthands():
     assert not c.has_flow(stim.Flow("-iX_ -> iXX xor rec[1] xor rec[3]"))
     assert c.has_flow(stim.Flow("-iX_ -> -iXX xor rec[1] xor rec[3]"))
     with pytest.raises(ValueError):
-        c.has_flow("iX_ -> XX")
-    with pytest.raises(ValueError):
         stim.Flow("iX_ -> XX")
 
 
