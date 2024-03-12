@@ -264,6 +264,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
     - [`stim.PauliString.from_unitary_matrix`](#stim.PauliString.from_unitary_matrix)
     - [`stim.PauliString.iter_all`](#stim.PauliString.iter_all)
+    - [`stim.PauliString.pauli_indices`](#stim.PauliString.pauli_indices)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
@@ -9065,6 +9066,50 @@ def iter_all(
         +_XZ
         +_ZX
         +_ZZ
+    """
+```
+
+<a name="stim.PauliString.pauli_indices"></a>
+```python
+# stim.PauliString.pauli_indices
+
+# (in class stim.PauliString)
+def pauli_indices(
+    self,
+    included_paulis: str = "XYZ",
+) -> List[int]:
+    """Returns the indices of non-identity Paulis, or of specified Paulis.
+
+    Args:
+        include: A string containing the Pauli types to include.
+            X type Pauli indices are included if "X" or "x" is in the string.
+            Y type Pauli indices are included if "Y" or "y" is in the string.
+            Z type Pauli indices are included if "Z" or "z" is in the string.
+            I type Pauli indices are included if "I" or "_" is in the string.
+            An exception is thrown if other characters are in the string.
+
+    Returns:
+        A list containing the ascending indices of matching Pauli terms.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices()
+        [5, 9, 14]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("XZ")
+        [5, 14]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("X")
+        [5]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("Y")
+        [9]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("IY")
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
+
+        >>> stim.PauliString("-X103*Y100").pauli_indices()
+        [100, 103]
     """
 ```
 
