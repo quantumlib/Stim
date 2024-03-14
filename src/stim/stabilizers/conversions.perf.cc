@@ -110,7 +110,7 @@ BENCHMARK(stabilizers_to_tableau) {
     benchmark_go([&]() {
         Tableau<128> t = stabilizers_to_tableau(stabilizers, true, true, false);
         dep += t.xs[0].zs[0];
-    }).goal_millis(140);
+    }).goal_millis(6);
     if (dep == 99999999) {
         std::cout << "data dependence";
     }
