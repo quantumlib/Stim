@@ -576,7 +576,15 @@ Tableau<W> stabilizers_to_tableau(
 
     size_t used = 0;
     for (const auto &e : stabilizers) {
-        buf = e;
+        if (e.num_qubits == num_qubits) {
+            buf = e;
+        } else {
+            buf.xs.clear();
+            buf.zs.clear();
+            memcpy(buf.xs.u8, e.xs.u8, e.xs.num_u8_padded());
+            memcpy(buf.zs.u8, e.zs.u8, e.zs.num_u8_padded());
+            buf.sign = e.sign;
+        }
         buf.ref().do_circuit(elimination_instructions);
 
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
