@@ -648,8 +648,10 @@ Tableau<W> stabilizers_to_tableau(
     }
 
     if (num_qubits > 0) {
+        // Force size of resulting tableau to be correct.
         GateTarget t = GateTarget::qubit(num_qubits - 1);
-        elimination_instructions.safe_append(CircuitInstruction{GateType::I, {}, &t});
+        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
+        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
     }
 
     if (invert) {
