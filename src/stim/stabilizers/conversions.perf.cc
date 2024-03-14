@@ -88,12 +88,12 @@ BENCHMARK(stabilizers_to_tableau) {
         return (int)c.real() / 2 + c.imag() * (w / 2);
     };
 
-    std::vector<stim::PauliString<128>> stabilizers;
+    std::vector<stim::PauliString<64>> stabilizers;
     for (size_t x = 0; x < w; x++) {
         for (size_t y = x % 2; y < h; y += 2) {
             std::complex<float> s{x % 2 ? -1.0f : +1.0f, 0.0f};
             std::complex<float> c{(float)x, (float)y};
-            stim::PauliString<128> ps(w * h / 2);
+            stim::PauliString<64> ps(w * h / 2);
             for (const auto &offset : offsets) {
                 size_t i = q2i(c + offset * s);
                 if (x % 2 == 0) {
@@ -108,9 +108,9 @@ BENCHMARK(stabilizers_to_tableau) {
 
     size_t dep = 0;
     benchmark_go([&]() {
-        Tableau<128> t = stabilizers_to_tableau(stabilizers, true, true, false);
+        Tableau<64> t = stabilizers_to_tableau(stabilizers, true, true, false);
         dep += t.xs[0].zs[0];
-    }).goal_millis(6);
+    }).goal_millis(5);
     if (dep == 99999999) {
         std::cout << "data dependence";
     }
