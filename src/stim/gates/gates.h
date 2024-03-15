@@ -278,26 +278,6 @@ struct Gate {
         return out;
     }
 
-    std::vector<std::vector<std::complex<float>>> unitary() const;
-
-    /// Converts a single qubit unitary gate into an euler-angles rotation.
-    ///
-    /// Returns:
-    ///     {theta, phi, lambda} using the same convention as qiskit.
-    ///     Each angle is in radians.
-    ///     For stabilizer operations, every angle will be a multiple of pi/2.
-    ///
-    ///     The unitary matrix U of the operation can be recovered (up to global phase)
-    ///     by computing U = RotZ(phi) * RotY(theta) * RotZ(lambda).
-    std::array<float, 3> to_euler_angles() const;
-
-    /// Converts a single qubit unitary gate into an axis-angle rotation.
-    ///
-    /// Returns:
-    ///     An array {x, y, z, a}.
-    ///     <x, y, z> is a unit vector indicating the axis of rotation.
-    ///     <a> is the angle of rotation in radians.
-    std::array<float, 4> to_axis_angle() const;
 };
 
 inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {
@@ -321,19 +301,6 @@ struct GateDataMap {
    private:
     void add_gate(bool &failed, const Gate &data);
     void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
-    void add_gate_data_annotations(bool &failed);
-    void add_gate_data_blocks(bool &failed);
-    void add_gate_data_heralded(bool &failed);
-    void add_gate_data_collapsing(bool &failed);
-    void add_gate_data_controlled(bool &failed);
-    void add_gate_data_hada(bool &failed);
-    void add_gate_data_noisy(bool &failed);
-    void add_gate_data_pauli(bool &failed);
-    void add_gate_data_period_3(bool &failed);
-    void add_gate_data_period_4(bool &failed);
-    void add_gate_data_pp(bool &failed);
-    void add_gate_data_swaps(bool &failed);
-    void add_gate_data_pair_measure(bool &failed);
 
    public:
     std::array<GateDataMapHashEntry, 512> hashed_name_to_gate_type_table;

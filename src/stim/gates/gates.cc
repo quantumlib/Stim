@@ -17,31 +17,7 @@
 using namespace stim;
 
 GateDataMap::GateDataMap() {
-    bool failed = false;
     items[0].name = "NOT_A_GATE";
-
-//    add_gate_data_annotations(failed);
-//    add_gate_data_blocks(failed);
-//    add_gate_data_collapsing(failed);
-//    add_gate_data_controlled(failed);
-//    add_gate_data_hada(failed);
-//    add_gate_data_heralded(failed);
-//    add_gate_data_noisy(failed);
-//    add_gate_data_pauli(failed);
-//    add_gate_data_period_3(failed);
-//    add_gate_data_period_4(failed);
-//    add_gate_data_pp(failed);
-//    add_gate_data_swaps(failed);
-//    add_gate_data_pair_measure(failed);
-//    for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-//        if (items[k].name == nullptr) {
-//            std::cerr << "Uninitialized gate id: " << k << ".\n";
-//            failed = true;
-//        }
-//    }
-//    if (failed) {
-//        throw std::out_of_range("Failed to initialize gate data.");
-//    }
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
