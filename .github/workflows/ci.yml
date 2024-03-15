@@ -38,6 +38,6 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }} --gtest_filter=${{ filter }}
+    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }} --gtest_filter=${{ matrix.filter }}
     - run: make stim_test -j 2
     - run: out/stim_test
