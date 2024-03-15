@@ -558,10 +558,9 @@ Tableau<W> stabilizers_to_tableau(
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
-    simd_bit_table<W> buf_xs(num_qubits, stabilizers.size());
-    simd_bit_table<W> buf_zs(num_qubits, stabilizers.size());
+    simd_bit_table<W> buf_xs(stabilizers.size(), num_qubits);
+    simd_bit_table<W> buf_zs(stabilizers.size(), num_qubits);
     simd_bits<W> buf_signs(stabilizers.size());
-    simd_bits<W> buf_workspace(stabilizers.size());
     for (size_t k = 0; k < stabilizers.size(); k++) {
         memcpy(buf_xs[k].u8, stabilizers[k].xs.u8, stabilizers[k].xs.num_u8_padded());
         memcpy(buf_zs[k].u8, stabilizers[k].zs.u8, stabilizers[k].zs.num_u8_padded());
@@ -570,19 +569,6 @@ Tableau<W> stabilizers_to_tableau(
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
 
-    for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
-        for (size_t k2 = k1 + 1; k2 < stabilizers.size(); k2++) {
-            if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
-                std::stringstream ss;
-                ss << "Some of the given stabilizers anticommute.\n";
-                ss << "For example:\n    ";
-                ss << stabilizers[k1];
-                ss << "\nanticommutes with\n";
-                ss << stabilizers[k2] << "\n";
-                throw std::invalid_argument(ss.str());
-            }
-        }
-    }
     Circuit elimination_instructions;
 
     size_t used = 0;
@@ -597,11 +583,6 @@ Tableau<W> stabilizers_to_tableau(
 
         // Check for incompatible / redundant stabilizers.
         if (pivot == num_qubits) {
-            for (size_t q = 0; q < num_qubits; q++) {
-                if (buf_xs[q][k]) {
-                    throw std::invalid_argument("Some of the given stabilizers anticommute.");
-                }
-            }
             if (buf_signs[k]) {
                 throw std::invalid_argument("Some of the given stabilizers contradict each other.");
             }
@@ -620,19 +601,21 @@ Tableau<W> stabilizers_to_tableau(
             CircuitInstruction instruction{g, {}, &t};
             elimination_instructions.safe_append(instruction);
             size_t q = pivot;
+            simd_bits_range_ref<W> xs1 = buf_xs[q];
+            simd_bits_range_ref<W> zs1 = buf_zs[q];
+            simd_bits_range_ref<W> ss = buf_signs;
             switch (g) {
                 case GateType::H_YZ:
-                    buf_xs[q] ^= buf_zs[q];
-                    buf_workspace = buf_zs[q];
-                    buf_workspace.invert_bits();
-                    buf_workspace &= buf_xs[q];
-                    buf_signs ^= buf_workspace;
+                    ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
+                        x ^= z;
+                        s ^= z.andnot(x);
+                    });
                     break;
                 case GateType::H:
-                    buf_xs[q].swap_with(buf_zs[q]);
-                    buf_workspace = buf_zs[q];
-                    buf_workspace &= buf_xs[q];
-                    buf_signs ^= buf_workspace;
+                    ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
+                        std::swap(x, z);
+                        s ^= x & z;
+                    });
                     break;
                 default:
                     throw std::invalid_argument("Unrecognized gate type.");
@@ -649,47 +632,34 @@ Tableau<W> stabilizers_to_tableau(
                 elimination_instructions.safe_append(instruction);
                 size_t q1 = targets[0].qubit_value();
                 size_t q2 = targets[1].qubit_value();
-                simd_bits_range_ref<W> x1 = buf_xs[q1];
-                simd_bits_range_ref<W> z1 = buf_zs[q1];
-                simd_bits_range_ref<W> x2 = buf_xs[q2];
-                simd_bits_range_ref<W> z2 = buf_zs[q2];
+                simd_bits_range_ref<W> ss = buf_signs;
+                simd_bits_range_ref<W> xs1 = buf_xs[q1];
+                simd_bits_range_ref<W> zs1 = buf_zs[q1];
+                simd_bits_range_ref<W> xs2 = buf_xs[q2];
+                simd_bits_range_ref<W> zs2 = buf_zs[q2];
                 switch (g) {
                     case GateType::XCX:
-                        buf_workspace = x1;
-                        buf_workspace ^= x2;
-                        buf_workspace &= z1;
-                        buf_workspace &= z2;
-                        buf_signs ^= buf_workspace;
-                        x1 ^= z2;
-                        x2 ^= z1;
+                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+                            s ^= (x1 ^ x2) & z1 & z2;
+                            x1 ^= z2;
+                            x2 ^= z1;
+                        });
                         break;
                     case GateType::XCY:
-                        x1 ^= x2;
-                        x1 ^= z2;
-                        x2 ^= z1;
-                        z2 ^= z1;
-                        buf_workspace = x1;
-                        buf_workspace |= x2;
-                        buf_workspace.invert_bits();
-                        buf_workspace &= z1;
-                        buf_workspace &= z2;
-                        buf_signs ^= buf_workspace;
-                        buf_workspace = z2;
-                        buf_workspace.invert_bits();
-                        buf_workspace &= z1;
-                        buf_workspace &= x1;
-                        buf_workspace &= x2;
-                        buf_signs ^= buf_workspace;
+                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+                            x1 ^= x2 ^ z2;
+                            x2 ^= z1;
+                            z2 ^= z1;
+                            s ^= x1.andnot(z1) & x2.andnot(z2);
+                            s ^= x1 & z1 & z2.andnot(x2);
+                        });
                         break;
                     case GateType::XCZ:
-                        z2 ^= z1;
-                        x1 ^= x2;
-                        buf_workspace = z2;
-                        buf_workspace ^= x1;
-                        buf_workspace.invert_bits();
-                        buf_workspace &= x2;
-                        buf_workspace &= z1;
-                        buf_signs ^= buf_workspace;
+                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+                            z2 ^= z1;
+                            x1 ^= x2;
+                            s ^= (z2 ^ x1).andnot(z1 & x2);
+                        });
                         break;
                     default:
                         throw std::invalid_argument("Unrecognized gate type.");
@@ -715,6 +685,26 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         used++;
+    }
+
+    // All stabilizers will have been mapped into Z products, if they commuted.
+    for (size_t q = 0; q < num_qubits; q++) {
+        if (buf_xs[q].not_zero()) {
+            for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
+                for (size_t k2 = k1 + 1; k2 < stabilizers.size(); k2++) {
+                    if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
+                        std::stringstream ss;
+                        ss << "Some of the given stabilizers anticommute.\n";
+                        ss << "For example:\n    ";
+                        ss << stabilizers[k1];
+                        ss << "\nanticommutes with\n";
+                        ss << stabilizers[k2] << "\n";
+                        throw std::invalid_argument(ss.str());
+                    }
+                }
+            }
+            throw std::invalid_argument("The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please report this as a bug.");
+        }
     }
 
     if (used < num_qubits) {

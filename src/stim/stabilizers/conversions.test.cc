@@ -663,6 +663,19 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizer_to_tableau_detect_anticommutation,
     ASSERT_THROW({ stabilizers_to_tableau<W>(input_stabilizers, false, false, false); }, std::invalid_argument);
 })
 
+TEST_EACH_WORD_SIZE_W(conversions, stabilizer_to_tableau_size_affecting_redundancy, {
+    std::vector<stim::PauliString<W>> input_stabilizers;
+    input_stabilizers.push_back(PauliString<W>::from_str("X_"));
+    input_stabilizers.push_back(PauliString<W>::from_str("_X"));
+    for (size_t k = 0; k < 150; k++) {
+        input_stabilizers.push_back(PauliString<W>::from_str("__"));
+    }
+    auto t = stabilizers_to_tableau<W>(input_stabilizers, true, true, false);
+    ASSERT_EQ(t.num_qubits, 2);
+    ASSERT_EQ(t.zs[0], PauliString<W>::from_str("X_"));
+    ASSERT_EQ(t.zs[1], PauliString<W>::from_str("_X"));
+})
+
 TEST(conversions, independent_to_disjoint_xyz_errors) {
     double out_x;
     double out_y;
