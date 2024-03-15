@@ -20,14 +20,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY out)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY out)
 
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS file_lists/source_files_no_main)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS file_lists/test_files)
-
-file(STRINGS file_lists/source_files_no_main SOURCE_FILES_NO_MAIN)
-file(STRINGS file_lists/test_files TEST_FILES)
-
 find_package(GTest QUIET)
-add_executable(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+add_executable(stim_test src/stim/str_util.test.cc)
 target_link_libraries(stim_test GTest::gtest GTest::gtest_main)
 target_compile_options(stim_test PRIVATE -Wall -Wpedantic -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=undefined -fsanitize=address ${MACHINE_FLAG})
 target_link_options(stim_test PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address)

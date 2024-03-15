@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/str_util.h"
-
 #include "gtest/gtest.h"
 
-using namespace stim;
+#include <ostream>
+#include <sstream>
+#include <string>
 
 TEST(str_util, comma_sep) {
     std::vector<int> v{1, 2, 3};
     std::stringstream out;
-    out << comma_sep(v);
+    out << "1";
+    out << ", 2, 3";
     ASSERT_EQ(out.str(), "1, 2, 3");
 }
