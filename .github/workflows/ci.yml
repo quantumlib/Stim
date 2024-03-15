@@ -27,8 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        simd_width: [64]
-        filter: ["s.*", "st.*", "str.*", "str_.*", "str_u.*", "str_ut.*", "str_uti.*", "str_util.*"]
+        para: [0, 1, 2, 3, 4, 5, 6, 7, 8]
     steps:
     - uses: actions/checkout@v1
     - run: |
@@ -38,6 +37,5 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_test -j 2
-    - run: out/stim_test --gtest_filter=${{ matrix.filter }}
+    - run: g++ -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -o out/stim_test /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a
+    - run: out/stim_test
