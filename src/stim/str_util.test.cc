@@ -13,15 +13,3 @@
 // limitations under the License.
 
 #include "gtest/gtest.h"
-
-#include <ostream>
-#include <sstream>
-#include <string>
-
-TEST(str_util, comma_sep) {
-    std::vector<int> v{1, 2, 3};
-    std::stringstream out;
-    out << "1";
-    out << ", 2, 3";
-    ASSERT_EQ(out.str(), "1, 2, 3");
-}
