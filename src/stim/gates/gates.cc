@@ -33,118 +33,15 @@ GateDataMap::GateDataMap() {
     add_gate_data_pp(failed);
     add_gate_data_swaps(failed);
     add_gate_data_pair_measure(failed);
-    for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-        if (items[k].name == nullptr) {
-            std::cerr << "Uninitialized gate id: " << k << ".\n";
-            failed = true;
-        }
-    }
-    if (failed) {
-        throw std::out_of_range("Failed to initialize gate data.");
-    }
-}
-
-std::array<float, 3> Gate::to_euler_angles() const {
-    if (unitary_data.size() != 2) {
-        throw std::out_of_range(std::string(name) + " doesn't have 1q unitary data.");
-    }
-    auto a = unitary_data[0][0];
-    auto b = unitary_data[0][1];
-    auto c = unitary_data[1][0];
-    auto d = unitary_data[1][1];
-    std::array<float, 3> xyz;
-    if (a == std::complex<float>{0}) {
-        xyz[0] = 3.14159265359f;
-        xyz[1] = 0;
-        xyz[2] = arg(-b / c);
-    } else if (b == std::complex<float>{0}) {
-        xyz[0] = 0;
-        xyz[1] = 0;
-        xyz[2] = arg(d / a);
-    } else {
-        xyz[0] = 3.14159265359f / 2;
-        xyz[1] = arg(c / a);
-        xyz[2] = arg(-b / a);
-    }
-    return xyz;
-}
-
-std::array<float, 4> Gate::to_axis_angle() const {
-    if (unitary_data.size() != 2) {
-        throw std::out_of_range(std::string(name) + " doesn't have 1q unitary data.");
-    }
-    auto a = unitary_data[0][0];
-    auto b = unitary_data[0][1];
-    auto c = unitary_data[1][0];
-    auto d = unitary_data[1][1];
-    auto i = std::complex<float>{0, 1};
-    auto x = b + c;
-    auto y = b * i + c * -i;
-    auto z = a - d;
-    auto s = a + d;
-    s *= -i;
-    std::complex<double> p = 1;
-    if (s.imag() != 0) {
-        p = s;
-    }
-    if (x.imag() != 0) {
-        p = x;
-    }
-    if (y.imag() != 0) {
-        p = y;
-    }
-    if (z.imag() != 0) {
-        p = z;
-    }
-    p /= sqrt(p.imag() * p.imag() + p.real() * p.real());
-    p *= 2;
-    x /= p;
-    y /= p;
-    z /= p;
-    s /= p;
-    assert(x.imag() == 0);
-    assert(y.imag() == 0);
-    assert(z.imag() == 0);
-    assert(s.imag() == 0);
-    auto rx = x.real();
-    auto ry = y.real();
-    auto rz = z.real();
-    auto rs = s.real();
-
-    // At this point it's more of a quaternion. Normalize the axis.
-    auto r = sqrt(rx * rx + ry * ry + rz * rz);
-    if (r == 0) {
-        rx = 1;
-    } else {
-        rx /= r;
-        ry /= r;
-        rz /= r;
-    }
-
-    return {rx, ry, rz, acosf(rs) * 2};
-}
-
-std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
-    if (unitary_data.size() != 2 && unitary_data.size() != 4) {
-        throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
-    }
-    std::vector<std::vector<std::complex<float>>> result;
-    for (size_t k = 0; k < unitary_data.size(); k++) {
-        const auto &d = unitary_data[k];
-        result.emplace_back();
-        for (size_t j = 0; j < d.size(); j++) {
-            result.back().push_back(d[j]);
-        }
-    }
-    return result;
-}
-
-const Gate &Gate::inverse() const {
-    std::string inv_name = name;
-    if ((flags & GATE_IS_UNITARY) || id == GateType::TICK) {
-        return GATE_DATA[best_candidate_inverse_id];
-    }
-    throw std::out_of_range(inv_name + " has no inverse.");
+//    for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
+//        if (items[k].name == nullptr) {
+//            std::cerr << "Uninitialized gate id: " << k << ".\n";
+//            failed = true;
+//        }
+//    }
+//    if (failed) {
+//        throw std::out_of_range("Failed to initialize gate data.");
+//    }
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
