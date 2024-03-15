@@ -18,5 +18,6 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
+    - run: g++ -v
     - run: g++ -fsanitize=address -o stim_test /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a
     - run: ./stim_test
