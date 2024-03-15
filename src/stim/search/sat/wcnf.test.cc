@@ -4,9 +4,42 @@
 
 using namespace stim;
 
+const std::string unsatisfiable_wdimacs = "p wcnf 1 2 3\n3 -1 0\n3 1 0\n";
+
 TEST(shortest_error_sat_problem, no_error) {
     // No errors. Should get an unsatisfiable formula.
     ASSERT_EQ(stim::shortest_error_sat_problem(DetectorErrorModel()), "p wcnf 1 2 3\n3 -1 0\n3 1 0\n");
+}
+
+TEST(shortest_error_sat_problem, single_obs_no_dets) {
+    std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(R"DEM(
+        error(0.1) L0
+    )DEM"));
+    EXPECT_EQ(
+        wcnf,
+        R"WDIMACS(p wcnf 1 2 3
+1 -1 0
+3 1 0
+)WDIMACS");
+}
+
+TEST(shortest_error_sat_problem, single_dets_no_obs) {
+    std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(R"DEM(
+        error(0.1) D0
+    )DEM"));
+    EXPECT_EQ(wcnf, unsatisfiable_wdimacs);
+}
+
+TEST(shortest_error_sat_problem, no_dets_no_obs) {
+    std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(R"DEM(
+        error(0.1)
+    )DEM"));
+    EXPECT_EQ(wcnf, unsatisfiable_wdimacs);
+}
+
+TEST(shortest_error_sat_problem, no_errors) {
+    std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(R"DEM()DEM"));
+    EXPECT_EQ(wcnf, unsatisfiable_wdimacs);
 }
 
 TEST(shortest_error_sat_problem, single_detector_single_observable) {
@@ -78,7 +111,7 @@ TEST(shortest_error_sat_problem, single_detector_single_observable) {
 
 TEST(likeliest_error_sat_problem, no_error) {
     // No errors. Should get an unsatisfiable formula.
-    ASSERT_EQ(stim::likeliest_error_sat_problem(DetectorErrorModel()), "p wcnf 1 2 3\n3 -1 0\n3 1 0\n");
+    ASSERT_EQ(stim::likeliest_error_sat_problem(DetectorErrorModel()), unsatisfiable_wdimacs);
 }
 
 TEST(likeliest_error_sat_problem, single_detector_single_observable) {

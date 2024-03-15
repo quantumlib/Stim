@@ -180,7 +180,7 @@ std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool wei
     size_t num_observables = model.count_observables();
     size_t num_detectors = model.count_detectors();
     size_t num_errors = model.count_errors();
-    if (num_observables == 0 or num_detectors == 0 or num_errors == 0) {
+    if (num_observables == 0 or num_errors == 0) {
         return UNSAT_WCNF_STR;
     }
 
