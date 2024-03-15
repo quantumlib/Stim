@@ -37,5 +37,5 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - run: g++ -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -o out/stim_test /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a
-    - run: out/stim_test
+    - run: g++ -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -o stim_test /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a
+    - run: stim_test
