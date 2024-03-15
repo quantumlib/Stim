@@ -5,17 +5,6 @@ src/stim/circuit/circuit_instruction.cc
 src/stim/circuit/export_qasm.cc
 src/stim/circuit/gate_decomposition.cc
 src/stim/circuit/gate_target.cc
-src/stim/cmd/command_analyze_errors.cc
-src/stim/cmd/command_convert.cc
-src/stim/cmd/command_detect.cc
-src/stim/cmd/command_diagram.cc
-src/stim/cmd/command_explain_errors.cc
-src/stim/cmd/command_gen.cc
-src/stim/cmd/command_help.cc
-src/stim/cmd/command_m2d.cc
-src/stim/cmd/command_repl.cc
-src/stim/cmd/command_sample.cc
-src/stim/cmd/command_sample_dem.cc
 src/stim/dem/dem_instruction.cc
 src/stim/dem/detector_error_model.cc
 src/stim/diagram/ascii_diagram.cc
@@ -61,7 +50,6 @@ src/stim/io/measure_record_writer.cc
 src/stim/io/raii_file.cc
 src/stim/io/sparse_shot.cc
 src/stim/io/stim_data_formats.cc
-src/stim/main_namespaced.cc
 src/stim/mem/bit_ref.cc
 src/stim/mem/simd_util.cc
 src/stim/mem/simd_word.cc

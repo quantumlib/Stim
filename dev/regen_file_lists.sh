@@ -32,5 +32,3 @@ find src | grep "\\.pybind\\.cc$" | LC_ALL=C sort > "${FOLDER}/python_api_files"
     echo "#endif";
 } > src/stim.h
 
-# Regenerate crumble's unit test imports.
-find glue/crumble | grep "\\.test.js$" | LC_ALL=C sort | sed 's/glue\/crumble\(.*\)/import "..\1"/g' > "glue/crumble/test/test_import_all.js"
