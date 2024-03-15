@@ -16,8 +16,6 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
-
 using namespace stim;
 
 TEST(str_util, comma_sep) {

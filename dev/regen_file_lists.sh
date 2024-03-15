@@ -20,15 +20,3 @@ find src | grep "\\.cc$" | grep -v "\\.\(test\|perf\|pybind\)\\.cc$" | grep -v "
 find src | grep "\\.test\\.cc$" | LC_ALL=C sort > "${FOLDER}/test_files"
 find src | grep "\\.perf\\.cc$" | LC_ALL=C sort > "${FOLDER}/benchmark_files"
 find src | grep "\\.pybind\\.cc$" | LC_ALL=C sort > "${FOLDER}/python_api_files"
-
-# Regenerate 'stim.h' to include all relevant headers.
-{
-    echo "#ifndef _STIM_H";
-    echo "#define _STIM_H";
-    echo "/// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES.";
-    echo "/// It may change arbitrarily and catastrophically from minor version to minor version.";
-    echo "/// If you need a stable API, use stim's Python API.";
-    find src | grep "\\.h$" | grep -v "\\.\(test\|perf\|pybind\)\\.h$" | grep -v "src/stim\\.h" | grep -v "src/stim/mem/simd_word_.*" | LC_ALL=C sort | sed 's/src\/\(.*\)/#include "\1"/g';
-    echo "#endif";
-} > src/stim.h
-

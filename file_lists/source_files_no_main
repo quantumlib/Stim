@@ -1,5 +1,3 @@
-src/stim.cc
-src/stim/arg_parse.cc
 src/stim/gates/gate_data_annotations.cc
 src/stim/gates/gate_data_blocks.cc
 src/stim/gates/gate_data_collapsing.cc
@@ -14,4 +12,3 @@ src/stim/gates/gate_data_period_4.cc
 src/stim/gates/gate_data_pp.cc
 src/stim/gates/gate_data_swaps.cc
 src/stim/gates/gates.cc
-src/stim/probability_util.cc
