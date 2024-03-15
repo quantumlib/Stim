@@ -14,8 +14,4 @@ src/stim/gates/gate_data_period_4.cc
 src/stim/gates/gate_data_pp.cc
 src/stim/gates/gate_data_swaps.cc
 src/stim/gates/gates.cc
-src/stim/mem/bit_ref.cc
-src/stim/mem/simd_util.cc
-src/stim/mem/simd_word.cc
-src/stim/mem/sparse_xor_vec.cc
 src/stim/probability_util.cc

@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         simd_width: [64]
-        filter: ["str_.*", "str_u.*", "str_ut.*", "str_uti.*", "str_util.*"]
+        filter: ["s.*", "st.*", "str.*", "str_.*", "str_u.*", "str_ut.*", "str_uti.*", "str_util.*"]
     steps:
     - uses: actions/checkout@v1
     - run: |
