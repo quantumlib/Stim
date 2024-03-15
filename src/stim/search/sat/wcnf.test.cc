@@ -10,46 +10,70 @@ TEST(shortest_error_sat_problem, no_error) {
 }
 
 TEST(shortest_error_sat_problem, single_detector_single_observable) {
-    std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(R"DEM(
-      error(0.1) D0 L0
-      error(0.1) D0
-    )DEM"));
-    // x_0 -- error 0 occurred
-    // x_1 -- error 1 occurred
-    // x_2 -- XOR of x_0 and x_1
-    // There should be 2 soft clauses:
-    // soft clause NOT(x_0) with weight 1
-    // soft clause NOT(x_0) with weight 1
-    // There should be 4 hard clauses to forbid the strings such that x_2 != XOR(x_0, x_1):
-    // hard clause x != (0, 0, 1)
-    // hard clause x != (0, 1, 0)
-    // hard clause x != (1, 0, 0)
-    // hard clause x != (1, 1, 1)
-    // Plus 1 hard clause to ensure detector is not flipped
-    // hard clause -x_2
-    // Plus 1 hard clause to ensure an observable is flipped:
-    // hard clause x_0
-    // This gives a total of 8 clauses
-    // The top value should be at least 1 + 1 + 1 = 3. In our implementation ends up being 9.
-    std::stringstream expected;
-    // WDIMACS header format: p wcnf nbvar nbclauses top
-    expected << "p wcnf 3 8 9\n";
-    // Soft clause
-    expected << "1 -1 0\n";
-    // Hard clauses
-    expected << "9 1 2 -3 0\n";
-    expected << "9 1 -2 3 0\n";
-    expected << "9 -1 2 3 0\n";
-    expected << "9 -1 -2 -3 0\n";
-    // Soft clause
-    expected << "1 -2 0\n";
-    // Hard clause for the detector not to be flipped
-    expected << "9 -3 0\n";
-    // Hard clause for the observable flipped
-    expected << "9 1 0\n";
-    ASSERT_EQ(wcnf, expected.str());
-    // The optimal value of this wcnf file should be 2, but we don't have
-    // a maxSAT solver to be able to test it here.
+    // To test that it ignores weights entirely, we try several combinations of weights.
+    for (std::string dem_str : {
+             R"DEM(
+            error(0.1) D0 L0
+            error(0.1) D0
+        )DEM",
+             R"DEM(
+            error(1.0) D0 L0
+            error(0) D0
+        )DEM",
+             R"DEM(
+            error(0.5) D0 L0
+            error(0.999) D0
+        )DEM",
+             R"DEM(
+            error(0.001) D0 L0
+            error(0.999) D0
+        )DEM",
+             R"DEM(
+            error(0) D0 L0
+            error(0) D0
+        )DEM",
+             R"DEM(
+            error(0.5) D0 L0
+            error(0.5) D0
+        )DEM"}) {
+        std::string wcnf = stim::shortest_error_sat_problem(DetectorErrorModel(dem_str.c_str()));
+        // x_0 -- error 0 occurred
+        // x_1 -- error 1 occurred
+        // x_2 -- XOR of x_0 and x_1
+        // There should be 2 soft clauses:
+        // soft clause NOT(x_0) with weight 1
+        // soft clause NOT(x_0) with weight 1
+        // There should be 4 hard clauses to forbid the strings such that x_2 != XOR(x_0, x_1):
+        // hard clause x != (0, 0, 1)
+        // hard clause x != (0, 1, 0)
+        // hard clause x != (1, 0, 0)
+        // hard clause x != (1, 1, 1)
+        // Plus 1 hard clause to ensure detector is not flipped
+        // hard clause -x_2
+        // Plus 1 hard clause to ensure an observable is flipped:
+        // hard clause x_0
+        // This gives a total of 8 clauses
+        // The top value should be at least 1 + 1 + 1 = 3. In our implementation ends up being 9.
+        std::stringstream expected;
+        // WDIMACS header format: p wcnf nbvar nbclauses top
+        expected << "p wcnf 3 8 9\n";
+        // Soft clause
+        expected << "1 -1 0\n";
+        // Hard clauses
+        expected << "9 1 2 -3 0\n";
+        expected << "9 1 -2 3 0\n";
+        expected << "9 -1 2 3 0\n";
+        expected << "9 -1 -2 -3 0\n";
+        // Soft clause
+        expected << "1 -2 0\n";
+        // Hard clause for the detector not to be flipped
+        expected << "9 -3 0\n";
+        // Hard clause for the observable flipped
+        expected << "9 1 0\n";
+        ASSERT_EQ(wcnf, expected.str());
+        // The optimal value of this wcnf file should be 2, but we don't have
+        // a maxSAT solver to be able to test it here.
+    }
 }
 
 TEST(likeliest_error_sat_problem, no_error) {

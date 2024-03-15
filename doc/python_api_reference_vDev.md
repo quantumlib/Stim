@@ -2145,13 +2145,13 @@ def likeliest_error_sat_problem(
     quantization: int = 100,
     format: str = 'WDIMACS',
 ) -> str:
-    """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+    """Makes a maxSAT problem of the circuit's most likely undetectable logical
+    error, that other tools can solve.
 
     The output is a string describing the maxSAT problem in WDIMACS format
     (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-    problem is the fault distance of the circuit (the minimum number of error
-    mechanisms that combine to flip any logical observable while producing no
-    detection events).
+    problem is the highest likelihood set of error mechanisms that combine to
+    flip any logical observable while producing no detection events).
 
     There are many tools that can solve maxSAT problems in WDIMACS format.
     For example, you can download one of the entries in the 2023 maxSAT
@@ -2165,12 +2165,12 @@ def likeliest_error_sat_problem(
     Args:
         format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
         described here: http://www.maxhs.org/docs/wdimacs.html
-        weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
-            converted to log-odds and scaled/rounded to be positive integers at
-            most this large. Setting this argument to a larger number results in
-            the solution to the problem being the most likely logical error
-            weighted by probability of its parts, instead of just the one with
-            the fewest parts.
+        quantization: Defaults to 10. Error probabilities are converted to log-odds
+            and scaled/rounded to be positive integers at most this large. Setting
+            this argument to a larger number results in more accurate quantization
+            such that the returned error set should have a likelihood closer to the
+            true most likely solution. This comes at the cost of making some maxSAT
+            solvers slower.
 
     Returns:
         A string corresponding to the contents of a WCNF file in the requested
@@ -2541,12 +2541,6 @@ def shortest_error_sat_problem(
     Args:
         format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
         described here: http://www.maxhs.org/docs/wdimacs.html
-        weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
-            converted to log-odds and scaled/rounded to be positive integers at
-            most this large. Setting this argument to a larger number results in
-            the solution to the problem being the most likely logical error
-            weighted by probability of its parts, instead of just the one with
-            the fewest parts.
 
     Returns:
         A string corresponding to the contents of a WCNF file in the requested

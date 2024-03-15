@@ -2003,12 +2003,6 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Args:
                 format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
                 described here: http://www.maxhs.org/docs/wdimacs.html
-                weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
-                    converted to log-odds and scaled/rounded to be positive integers at
-                    most this large. Setting this argument to a larger number results in
-                    the solution to the problem being the most likely logical error
-                    weighted by probability of its parts, instead of just the one with
-                    the fewest parts.
 
             Returns:
                 A string corresponding to the contents of a WCNF file in the requested
@@ -2051,13 +2045,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("quantization") = 100,
         pybind11::arg("format") = "WDIMACS",
         clean_doc_string(R"DOC(
-            Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+            Makes a maxSAT problem of the circuit's most likely undetectable logical
+            error, that other tools can solve.
 
             The output is a string describing the maxSAT problem in WDIMACS format
             (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-            problem is the fault distance of the circuit (the minimum number of error
-            mechanisms that combine to flip any logical observable while producing no
-            detection events).
+            problem is the highest likelihood set of error mechanisms that combine to
+            flip any logical observable while producing no detection events).
 
             There are many tools that can solve maxSAT problems in WDIMACS format.
             For example, you can download one of the entries in the 2023 maxSAT
@@ -2071,12 +2065,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Args:
                 format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
                 described here: http://www.maxhs.org/docs/wdimacs.html
-                weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
-                    converted to log-odds and scaled/rounded to be positive integers at
-                    most this large. Setting this argument to a larger number results in
-                    the solution to the problem being the most likely logical error
-                    weighted by probability of its parts, instead of just the one with
-                    the fewest parts.
+                quantization: Defaults to 10. Error probabilities are converted to log-odds
+                    and scaled/rounded to be positive integers at most this large. Setting
+                    this argument to a larger number results in more accurate quantization
+                    such that the returned error set should have a likelihood closer to the
+                    true most likely solution. This comes at the cost of making some maxSAT
+                    solvers slower.
 
             Returns:
                 A string corresponding to the contents of a WCNF file in the requested
@@ -2111,72 +2105,6 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 4001 2 0
         )DOC")
             .data());
-
-    // c.def(
-    //     "shortest_error_problem_as_wcnf_file",
-    //     &py_shortest_error_problem_as_wcnf_file,
-    //     pybind11::kw_only(),
-    //     pybind11::arg("weighted") = false,
-    //     pybind11::arg("weight_scale_factor") = 0,
-    //     clean_doc_string(R"DOC(
-    //         Makes a maxSAT problem of the circuit's distance, that other tools can solve.
-
-    //         The output is a string describing the maxSAT problem in WDIMACS format
-    //         (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-    //         problem is the fault distance of the circuit (the minimum number of error
-    //         mechanisms that combine to flip any logical observable while producing no
-    //         detection events).
-
-    //         There are many tools that can solve maxSAT problems in WDIMACS format.
-    //         For example, you can download one of the entries in the 2023 maxSAT
-    //         competition (see https://maxsat-evaluations.github.io/2023), for example
-    //         CASHWMaxSAT-CorePlus.zip and run it on your problem by running these
-    //         BASH terminal commands:
-
-    //             unzip CASHWMaxSAT-CorePlus.zip
-    //             ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
-
-    //         Args:
-    //             format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
-    //             described here: http://www.maxhs.org/docs/wdimacs.html
-    //             weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
-    //                 converted to log-odds and scaled/rounded to be positive integers at
-    //                 most this large. Setting this argument to a larger number results in
-    //                 the solution to the problem being the most likely logical error
-    //                 weighted by probability of its parts, instead of just the one with
-    //                 the fewest parts.
-
-    //         Returns:
-    //             A string corresponding to the contents of a WCNF file in the requested
-    //             format.
-
-    //         Examples:
-    //             >>> import stim
-    //             >>> circuit = stim.Circuit("""
-    //             ...   X_ERROR(0.1) 0
-    //             ...   M 0
-    //             ...   OBSERVABLE_INCLUDE(0) rec[-1]
-    //             ...   X_ERROR(0.4) 0
-    //             ...   M 0
-    //             ...   DETECTOR rec[-1] rec[-2]
-    //             ... """)
-    //             >>> print(circuit.shortest_error_problem_as_wcnf_file(), end='')
-    //             p wcnf 2 4 5
-    //             1 -1 0
-    //             1 -2 0
-    //             5 -1 0
-    //             5 2 0
-    //             >>> print(circuit.shortest_error_problem_as_wcnf_file(
-    //             ...   weighted=True,
-    //             ...   weight_scale_factor=1000
-    //             ... ), end='')
-    //             p wcnf 2 4 4001
-    //             185 -1 0
-    //             1000 -2 0
-    //             4001 -1 0
-    //             4001 2 0
-    //     )DOC")
-    //         .data());
 
     c.def(
         "explain_detector_error_model_errors",

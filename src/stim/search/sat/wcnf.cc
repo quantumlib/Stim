@@ -196,7 +196,7 @@ std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool wei
 
     size_t error_index = 0;
     model.iter_flatten_error_instructions([&](const DemInstruction& e) {
-        if (e.arg_data[0] != 0) {
+        if (!weighted or e.arg_data[0] != 0) {
             BoolRef err_x = errors_activated[error_index];
             // Add parity contribution to the detectors and observables
             for (const auto& t : e.target_data) {
@@ -232,7 +232,7 @@ std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool wei
                 // For unweighted search the error should be soft clause should be that
                 // the error is inactive.
                 clause.add_var(~err_x);
-                clause.weight = -std::log(p / (1 - p));
+                clause.weight = 1.0;
                 instance.add_clause(clause);
             }
         }
