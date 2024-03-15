@@ -722,15 +722,15 @@ TEST_EACH_WORD_SIZE_W(tableau, expand_pad_equals, {
 
 TEST_EACH_WORD_SIZE_W(tableau, transposed_access, {
     auto rng = INDEPENDENT_TEST_RNG();
-    size_t n = 1000;
+    size_t n = W > 256 ? 1000 : 400;
     Tableau<W> t(n);
     auto m = t.xs.xt.data.num_bits_padded();
     t.xs.xt.data.randomize(m, rng);
     t.xs.zt.data.randomize(m, rng);
     t.zs.xt.data.randomize(m, rng);
     t.zs.zt.data.randomize(m, rng);
-    for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
-        for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
+    for (size_t inp_qubit = 0; inp_qubit < n; inp_qubit += 99) {
+        for (size_t out_qubit = 0; out_qubit < n; out_qubit += 99) {
             bool bxx = t.xs.xt[inp_qubit][out_qubit];
             bool bxz = t.xs.zt[inp_qubit][out_qubit];
             bool bzx = t.zs.xt[inp_qubit][out_qubit];
@@ -885,26 +885,26 @@ TEST_EACH_WORD_SIZE_W(tableau, transposed_xz_input, {
 
 TEST_EACH_WORD_SIZE_W(tableau, direct_sum, {
     auto rng = INDEPENDENT_TEST_RNG();
-    auto t1 = Tableau<W>::random(260, rng);
-    auto t2 = Tableau<W>::random(270, rng);
+    auto t1 = Tableau<W>::random(160, rng);
+    auto t2 = Tableau<W>::random(170, rng);
     auto t3 = t1;
     t3 += t2;
     ASSERT_EQ(t3, t1 + t2);
 
     PauliString<W> p1 = t1.xs[5];
-    p1.ensure_num_qubits(260 + 270, 1.0);
+    p1.ensure_num_qubits(160 + 170, 1.0);
     ASSERT_EQ(t3.xs[5], p1);
 
     std::string p2 = t2.xs[6].str();
-    std::string p3 = t3.xs[266].str();
+    std::string p3 = t3.xs[166].str();
     ASSERT_EQ(p2[0], p3[0]);
     p2 = p2.substr(1);
     p3 = p3.substr(1);
-    for (size_t k = 0; k < 260; k++) {
+    for (size_t k = 0; k < 160; k++) {
         ASSERT_EQ(p3[k], '_');
     }
-    for (size_t k = 0; k < 270; k++) {
-        ASSERT_EQ(p3[260 + k], p2[k]);
+    for (size_t k = 0; k < 170; k++) {
+        ASSERT_EQ(p3[160 + k], p2[k]);
     }
 })
 

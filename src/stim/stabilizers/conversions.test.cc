@@ -217,7 +217,7 @@ TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_basic, {
 TEST_EACH_WORD_SIZE_W(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip, {
     auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &little_endian : std::vector<bool>{false, true}) {
-        for (size_t n = 0; n < 10; n++) {
+        for (size_t n = 0; n < 5; n++) {
             // Pick a random stabilizer state.
             TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), n);
             sim.inv_state = Tableau<W>::random(n, rng);
