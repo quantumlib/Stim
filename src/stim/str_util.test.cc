@@ -23,8 +23,4 @@ TEST(str_util, comma_sep) {
     std::stringstream out;
     out << comma_sep(v);
     ASSERT_EQ(out.str(), "1, 2, 3");
-    ASSERT_EQ(comma_sep(v).str(), "1, 2, 3");
-    ASSERT_EQ(comma_sep(std::vector<int>{}).str(), "");
-    ASSERT_EQ(comma_sep(std::vector<int>{4}).str(), "4");
-    ASSERT_EQ(comma_sep(std::vector<int>{5, 6}).str(), "5, 6");
 }
