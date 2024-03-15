@@ -38,6 +38,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.has_all_flows`](#stim.Circuit.has_all_flows)
     - [`stim.Circuit.has_flow`](#stim.Circuit.has_flow)
     - [`stim.Circuit.inverse`](#stim.Circuit.inverse)
+    - [`stim.Circuit.likeliest_error_sat_problem`](#stim.Circuit.likeliest_error_sat_problem)
     - [`stim.Circuit.num_detectors`](#stim.Circuit.num_detectors)
     - [`stim.Circuit.num_measurements`](#stim.Circuit.num_measurements)
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
@@ -46,7 +47,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
-    - [`stim.Circuit.shortest_error_problem_as_wcnf_file`](#stim.Circuit.shortest_error_problem_as_wcnf_file)
+    - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
@@ -2133,6 +2134,78 @@ def inverse(
     """
 ```
 
+<a name="stim.Circuit.likeliest_error_sat_problem"></a>
+```python
+# stim.Circuit.likeliest_error_sat_problem
+
+# (in class stim.Circuit)
+def likeliest_error_sat_problem(
+    self,
+    *,
+    quantization: int = 100,
+    format: str = 'WDIMACS',
+) -> str:
+    """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the fault distance of the circuit (the minimum number of error
+    mechanisms that combine to flip any logical observable while producing no
+    detection events).
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    For example, you can download one of the entries in the 2023 maxSAT
+    competition (see https://maxsat-evaluations.github.io/2023), for example
+    CASHWMaxSAT-CorePlus.zip and run it on your problem by running these
+    BASH terminal commands:
+
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
+
+    Args:
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+        described here: http://www.maxhs.org/docs/wdimacs.html
+        weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
+            converted to log-odds and scaled/rounded to be positive integers at
+            most this large. Setting this argument to a larger number results in
+            the solution to the problem being the most likely logical error
+            weighted by probability of its parts, instead of just the one with
+            the fewest parts.
+
+    Returns:
+        A string corresponding to the contents of a WCNF file in the requested
+        format.
+
+    Examples:
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit("""
+        ...   X_ERROR(0.1) 0
+        ...   M 0
+        ...   OBSERVABLE_INCLUDE(0) rec[-1]
+        ...   X_ERROR(0.4) 0
+        ...   M 0
+        ...   DETECTOR rec[-1] rec[-2]
+        ... """)
+        >>> print(circuit.shortest_error_problem_as_wcnf_file(), end='')
+        p wcnf 2 4 5
+        1 -1 0
+        1 -2 0
+        5 -1 0
+        5 2 0
+        >>> print(circuit.shortest_error_problem_as_wcnf_file(
+        ...   weighted=True,
+        ...   weight_scale_factor=1000
+        ... ), end='')
+        p wcnf 2 4 4001
+        185 -1 0
+        1000 -2 0
+        4001 -1 0
+        4001 2 0
+    """
+```
+
 <a name="stim.Circuit.num_detectors"></a>
 ```python
 # stim.Circuit.num_detectors
@@ -2438,48 +2511,48 @@ def search_for_undetectable_logical_errors(
     """
 ```
 
-<a name="stim.Circuit.shortest_error_problem_as_wcnf_file"></a>
+<a name="stim.Circuit.shortest_error_sat_problem"></a>
 ```python
-# stim.Circuit.shortest_error_problem_as_wcnf_file
+# stim.Circuit.shortest_error_sat_problem
 
 # (in class stim.Circuit)
-def shortest_error_problem_as_wcnf_file(
+def shortest_error_sat_problem(
     self,
     *,
-    weighted: bool = False,
-    weight_scale_factor: int = 0,
+    format: str = 'WDIMACS',
 ) -> str:
-    """Generates a maxSAT problem instance in WDIMACS format whose optimal value is
-    the distance of the protocol, i.e. the minimum weight of any set of errors
-    that forms an undetectable logical error.
-    FYI: here is how you could fetch a solver from the
-    [2023 maxSAT competition](https://maxsat-evaluations.github.io/2023/) and
-    run the solver on a file produced with this method:
-    ```
-    # first download nzip CASHWMaxSAT-CorePlus.zip from 
-    # https://maxsat-evaluations.github.io/2023
-    unzip CASHWMaxSAT-CorePlus.zip
-    time ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m problem.wcnf 
-    ```
+    """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the fault distance of the circuit (the minimum number of error
+    mechanisms that combine to flip any logical observable while producing no
+    detection events).
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    For example, you can download one of the entries in the 2023 maxSAT
+    competition (see https://maxsat-evaluations.github.io/2023), for example
+    CASHWMaxSAT-CorePlus.zip and run it on your problem by running these
+    BASH terminal commands:
+
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
 
     Args:
-        weighted: Defaults to False (unweighted), so that the problem is to find
-        the minimum size set of errors that leads to an undetectable logical
-        error.
-        weight_scale_factor: Defaults to 0. If weighted==False, must set
-        weight_scale_factor to 0. If weighted==True, weight_scale_factor must be
-        set to a value >= 1. For a weighted problem, the errors will be quantized
-        into integers using this scale factor and the sum of the weights
-        will be minimized rather than the cardinality of the set of errors. For
-        a reasonably large quantization (weight_scale_factor > 100 is often
-        sufficient), the .wcnf file solution should be the (approximately)
-        most likely undetectable logical error. Note, however, that maxSAT solvers
-        can become slower when many distinct weights are provided, so for computing
-        the distance it is better to simply use the defaults weighted=False and
-        weight_scale_factor = 0.
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+        described here: http://www.maxhs.org/docs/wdimacs.html
+        weight_bins: Defaults to 1 (unweighted errors). Error probabilities are
+            converted to log-odds and scaled/rounded to be positive integers at
+            most this large. Setting this argument to a larger number results in
+            the solution to the problem being the most likely logical error
+            weighted by probability of its parts, instead of just the one with
+            the fewest parts.
 
     Returns:
-        A WCNF file in [WDIMACS format](http://www.maxhs.org/docs/wdimacs.html)
+        A string corresponding to the contents of a WCNF file in the requested
+        format.
+
+    Examples:
 
     Examples:
         >>> import stim

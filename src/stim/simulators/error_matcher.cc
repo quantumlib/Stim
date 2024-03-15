@@ -140,7 +140,8 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
         cur_loc.instruction_targets.target_range_end = k + 1;
 
         cur_loc.flipped_measurement.measurement_record_index = error_analyzer.tracker.num_measurements_in_past - 1;
-        SpanRef<const DemTarget> herald_symptoms = error_analyzer.tracker.rec_bits[error_analyzer.tracker.num_measurements_in_past - 1].range();
+        SpanRef<const DemTarget> herald_symptoms =
+            error_analyzer.tracker.rec_bits[error_analyzer.tracker.num_measurements_in_past - 1].range();
         SpanRef<const DemTarget> x_symptoms = error_analyzer.tracker.zs[q].range();
         SpanRef<const DemTarget> z_symptoms = error_analyzer.tracker.xs[q].range();
         if (op.args[0] != 0) {
@@ -254,7 +255,6 @@ void ErrorMatcher::err_m(const CircuitInstruction &op, uint32_t obs_mask) {
             start--;
         }
 
-
         SpanRef<const GateTarget> slice{t.begin() + start, t.begin() + end};
 
         cur_loc.instruction_targets.target_range_start = start;
@@ -313,12 +313,13 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
             err_atom(op2);
             cur_loc.flipped_pauli_product.clear();
             break;
-        } case GateType::X_ERROR:
+        }
+        case GateType::X_ERROR:
             err_xyz(op, TARGET_PAULI_X_BIT);
             break;
         case GateType::Y_ERROR:
             err_xyz(op, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-                break;
+            break;
         case GateType::Z_ERROR:
             err_xyz(op, TARGET_PAULI_Z_BIT);
             break;
@@ -333,12 +334,14 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
             std::array<double, 4> spread{p, p, p, p};
             err_heralded_pauli_channel_1({op.gate_type, spread, op.targets});
             break;
-        } case GateType::DEPOLARIZE1: {
+        }
+        case GateType::DEPOLARIZE1: {
             float p = op.args[0];
             std::array<double, 3> spread{p, p, p};
             err_pauli_channel_1({op.gate_type, spread, op.targets});
             break;
-        } case GateType::PAULI_CHANNEL_2:
+        }
+        case GateType::PAULI_CHANNEL_2:
             err_pauli_channel_2(op);
             break;
         case GateType::DEPOLARIZE2: {
@@ -367,7 +370,8 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
             break;
         default:
             throw std::invalid_argument(
-                "Not implemented in ErrorMatcher::rev_process_instruction: " + std::string(GATE_DATA[op.gate_type].name));
+                "Not implemented in ErrorMatcher::rev_process_instruction: " +
+                std::string(GATE_DATA[op.gate_type].name));
     }
 }
 

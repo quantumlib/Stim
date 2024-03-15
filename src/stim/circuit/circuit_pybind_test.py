@@ -827,7 +827,8 @@ def test_search_for_undetectable_logical_errors_msgs():
             dont_explore_detection_event_sets_with_size_above=4,
         )
 
-def test_shortest_error_problem_as_wcnf_file():
+
+def test_shortest_error_sat_problem_unrecognized_format():
     c = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
@@ -836,20 +837,36 @@ def test_shortest_error_problem_as_wcnf_file():
         M 0
         DETECTOR rec[-1] rec[-2]
     """)
-    wcnf_str = c.shortest_error_problem_as_wcnf_file()
-    assert wcnf_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
-    wcnf_str = c.shortest_error_problem_as_wcnf_file(weighted=True, weight_scale_factor=100)
-    assert wcnf_str == 'p wcnf 2 4 401\n18 -1 0\n100 -2 0\n401 -1 0\n401 2 0\n'
+    with pytest.raises(ValueError, match='Unsupported format'):
+      sat_str = c.shortest_error_sat_problem(format='unsupported format name')
+
+
+def test_shortest_error_sat_problem():
     c = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
-        X_ERROR(0.7) 0
+        X_ERROR(0.4) 0
         M 0
         DETECTOR rec[-1] rec[-2]
     """)
-    with pytest.raises(ValueError, match='for weighted problems, weight_scale_factor must be >= 1'):
-      wcnf_str = c.shortest_error_problem_as_wcnf_file(weighted=True)
+    sat_str = c.shortest_error_sat_problem()
+    assert sat_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
+
+
+def test_likeliest_error_sat_problem():
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.4) 0
+        M 0
+        DETECTOR rec[-1] rec[-2]
+    """)
+    sat_str = c.likeliest_error_sat_problem(quantization=100)
+    print(sat_str)
+    assert sat_str == 'p wcnf 2 4 401\n18 -1 0\n100 -2 0\n401 -1 0\n401 2 0\n'
+
 
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""
