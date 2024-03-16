@@ -1989,7 +1989,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
             problem is the fault distance of the circuit (the minimum number of error
             mechanisms that combine to flip any logical observable while producing no
-            detection events).
+            detection events). This method ignores the probabilities of the error
+            mechanisms since it only cares about minimizing the number of errors
+            triggered.
 
             There are many tools that can solve maxSAT problems in WDIMACS format.
             One quick way to get started is to install pysat by running this BASH
@@ -2060,6 +2062,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
             problem is the highest likelihood set of error mechanisms that combine to
             flip any logical observable while producing no detection events).
+
+            If there are any errors with probability p > 0.5, they are inverted so
+            that the resulting weight ends up being positive. If there are errors
+            with weight close or equal to 0.5, they can end up with 0 weight meaning
+            that they can be included or not in the solution with no affect on the
+            likelihood.
 
             There are many tools that can solve maxSAT problems in WDIMACS format.
             One quick way to get started is to install pysat by running this BASH
