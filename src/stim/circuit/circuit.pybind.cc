@@ -2113,14 +2113,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit("""
+                >>> circuit = stim.Circuit('''
                 ...   X_ERROR(0.1) 0
                 ...   M 0
                 ...   OBSERVABLE_INCLUDE(0) rec[-1]
                 ...   X_ERROR(0.4) 0
                 ...   M 0
                 ...   DETECTOR rec[-1] rec[-2]
-                ... """)
+                ... ''')
                 >>> print(circuit.shortest_error_sat_problem(), end='')
                 p wcnf 2 4 5
                 1 -1 0
@@ -2194,14 +2194,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit("""
+                >>> circuit = stim.Circuit('''
                 ...   X_ERROR(0.1) 0
                 ...   M 0
                 ...   OBSERVABLE_INCLUDE(0) rec[-1]
                 ...   X_ERROR(0.4) 0
                 ...   M 0
                 ...   DETECTOR rec[-1] rec[-2]
-                ... """)
+                ... ''')
                 >>> print(circuit.likeliest_error_sat_problem(
                 ...   quantization=1000
                 ... ), end='')

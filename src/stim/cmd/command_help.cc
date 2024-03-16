@@ -69,8 +69,13 @@ std::string stim::clean_doc_string(const char *c, bool allow_too_long) {
             }
             line_length++;
         }
+        const char *start_of_line = result.c_str() + result.size() - line_length - 1;
+        if (strstr(start_of_line, "\"\"\"") != nullptr) {
+            std::stringstream ss;
+            ss << "Docstring line contains \"\"\" (please use ''' instead):\n" << start_of_line << "\n";
+            throw std::invalid_argument(ss.str());
+        }
         if (!allow_too_long && line_length > 80) {
-            const char *start_of_line = result.c_str() + result.size() - line_length - 1;
             if (memcmp(start_of_line, "@signature", strlen("@signature")) != 0 &&
                 memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&
                 strstr(start_of_line, "https://") == nullptr) {
