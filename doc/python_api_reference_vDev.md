@@ -2407,8 +2407,8 @@ def likeliest_error_sat_problem(
             solvers slower.
 
     Returns:
-        A string corresponding to the contents of a WCNF file in the requested
-        format.
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
 
     Examples:
         >>> import stim
@@ -2420,7 +2420,7 @@ def likeliest_error_sat_problem(
         ...   M 0
         ...   DETECTOR rec[-1] rec[-2]
         ... """)
-        >>> print(circuit.likeliest_error_problem_as_wcnf_file(
+        >>> print(circuit.likeliest_error_sat_problem(
         ...   quantization=1000
         ... ), end='')
         p wcnf 2 4 4001
@@ -2788,8 +2788,8 @@ def shortest_error_sat_problem(
             described here: http://www.maxhs.org/docs/wdimacs.html
 
     Returns:
-        A string corresponding to the contents of a WCNF file in the requested
-        format.
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
 
     Examples:
 

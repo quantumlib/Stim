@@ -2108,8 +2108,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     described here: http://www.maxhs.org/docs/wdimacs.html
 
             Returns:
-                A string corresponding to the contents of a WCNF file in the requested
-                format.
+                A string corresponding to the contents of a maxSAT problem file in the
+                requested format.
 
             Examples:
 
@@ -2191,8 +2191,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     solvers slower.
 
             Returns:
-                A string corresponding to the contents of a WCNF file in the requested
-                format.
+                A string corresponding to the contents of a maxSAT problem file in the
+                requested format.
 
             Examples:
                 >>> import stim
@@ -2204,7 +2204,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...   M 0
                 ...   DETECTOR rec[-1] rec[-2]
                 ... """)
-                >>> print(circuit.likeliest_error_problem_as_wcnf_file(
+                >>> print(circuit.likeliest_error_sat_problem(
                 ...   quantization=1000
                 ... ), end='')
                 p wcnf 2 4 4001
