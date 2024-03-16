@@ -2098,8 +2098,6 @@ class Circuit:
             requested format.
 
         Examples:
-
-        Examples:
             >>> import stim
             >>> circuit = stim.Circuit("""
             ...   X_ERROR(0.1) 0

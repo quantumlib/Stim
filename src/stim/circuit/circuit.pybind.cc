@@ -2112,8 +2112,6 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 requested format.
 
             Examples:
-
-            Examples:
                 >>> import stim
                 >>> circuit = stim.Circuit("""
                 ...   X_ERROR(0.1) 0
