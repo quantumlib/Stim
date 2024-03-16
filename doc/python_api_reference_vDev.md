@@ -2177,11 +2177,12 @@ def likeliest_error_sat_problem(
         print(rc2.compute())  
         print(rc2.cost)
 
-    Much faster solvers than RC2 are available on the 2023 maxSAT competition
-    website (see https://maxsat-evaluations.github.io/2023), for example
-    CASHWMaxSAT-CorePlus.zip. If you download this solver you can run it on your
-    problem by running these BASH terminal commands:
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
 
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
         unzip CASHWMaxSAT-CorePlus.zip
         ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
 
@@ -2563,11 +2564,12 @@ def shortest_error_sat_problem(
         print(rc2.compute())  
         print(rc2.cost)
 
-    Much faster solvers than RC2 are available on the 2023 maxSAT competition
-    website (see https://maxsat-evaluations.github.io/2023), for example
-    CASHWMaxSAT-CorePlus.zip. If you download this solver you can run it on your
-    problem by running these BASH terminal commands:
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
 
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
         unzip CASHWMaxSAT-CorePlus.zip
         ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
 
