@@ -899,3 +899,32 @@ def test_backwards_compatibility_init():
     assert stim.PauliString(text="XYZ") == stim.PauliString("+XYZ")
     # noinspection PyArgumentList
     assert stim.PauliString(other=stim.PauliString("XYZ")) == stim.PauliString("+XYZ")
+
+
+def test_pauli_indices():
+    assert stim.PauliString().pauli_indices() == []
+    assert stim.PauliString().pauli_indices("X") == []
+    assert stim.PauliString().pauli_indices("I") == []
+    assert stim.PauliString(5).pauli_indices() == []
+    assert stim.PauliString(5).pauli_indices("X") == []
+    assert stim.PauliString(5).pauli_indices("I") == [0, 1, 2, 3, 4]
+    assert stim.PauliString("X1000").pauli_indices() == [1000]
+    assert stim.PauliString("Y1000").pauli_indices() == [1000]
+    assert stim.PauliString("Z1000").pauli_indices() == [1000]
+    assert stim.PauliString("X1000").pauli_indices("YZ") == []
+    assert stim.PauliString("Y1000").pauli_indices("XZ") == []
+    assert stim.PauliString("Z1000").pauli_indices("XY") == []
+    assert stim.PauliString("X1000").pauli_indices("X") == [1000]
+    assert stim.PauliString("Y1000").pauli_indices("Y") == [1000]
+    assert stim.PauliString("Z1000").pauli_indices("Z") == [1000]
+
+    assert stim.PauliString("_XYZ").pauli_indices("x") == [1]
+    assert stim.PauliString("_XYZ").pauli_indices("X") == [1]
+    assert stim.PauliString("_XYZ").pauli_indices("y") == [2]
+    assert stim.PauliString("_XYZ").pauli_indices("Y") == [2]
+    assert stim.PauliString("_XYZ").pauli_indices("z") == [3]
+    assert stim.PauliString("_XYZ").pauli_indices("Z") == [3]
+    assert stim.PauliString("_XYZ").pauli_indices("I") == [0]
+    assert stim.PauliString("_XYZ").pauli_indices("_") == [0]
+    with pytest.raises(ValueError, match="Invalid character"):
+        assert stim.PauliString("_XYZ").pauli_indices("k")

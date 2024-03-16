@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import pathlib
-import re
 import tempfile
 from typing import cast
 
@@ -1735,5 +1735,62 @@ def test_has_flow_shorthands():
     assert c.has_flow(stim.Flow("iX_ -> iXX xor rec[1] xor rec[3]"))
     assert not c.has_flow(stim.Flow("-iX_ -> iXX xor rec[1] xor rec[3]"))
     assert c.has_flow(stim.Flow("-iX_ -> -iXX xor rec[1] xor rec[3]"))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Anti-Hermitian"):
         stim.Flow("iX_ -> XX")
+
+
+def test_decomposed():
+    assert stim.Circuit("""
+        ISWAP 0 1 2 1
+        TICK
+        MPP X1*Z2*Y3
+    """).decomposed() == stim.Circuit("""
+        H 0
+        CX 0 1 1 0
+        H 1
+        S 1 0
+        H 2
+        CX 2 1 1 2
+        H 1
+        S 1 2
+        TICK
+        H 1 3
+        S 3
+        H 3
+        S 3 3
+        CX 2 1 3 1
+        M 1
+        CX 2 1 3 1
+        H 3
+        S 3
+        H 3
+        S 3 3
+        H 1
+    """)
+
+
+def test_detecting_regions():
+    assert stim.Circuit('''
+        R 0
+        TICK
+        H 0
+        TICK
+        CX 0 1
+        TICK
+        MX 0 1
+        DETECTOR rec[-1] rec[-2]
+    ''').detecting_regions() == {stim.DemTarget.relative_detector_id(0): {
+        0: stim.PauliString("Z_"),
+        1: stim.PauliString("X_"),
+        2: stim.PauliString("XX"),
+    }}
+
+
+def test_detecting_region_filters():
+    c = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    assert len(c.detecting_regions(targets=["D"])) == c.num_detectors
+    assert len(c.detecting_regions(targets=["L"])) == c.num_observables
+    assert len(c.detecting_regions()) == c.num_observables + c.num_detectors
+    assert len(c.detecting_regions(targets=["D0"])) == 1
+    assert len(c.detecting_regions(targets=["D0", "L0"])) == 2
+    assert len(c.detecting_regions(targets=[stim.target_relative_detector_id(0), "D0"])) == 1

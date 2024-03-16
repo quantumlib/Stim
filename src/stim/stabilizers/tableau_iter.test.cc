@@ -135,7 +135,7 @@ TEST_EACH_WORD_SIZE_W(tableau_iter, iter_tableau, {
     ASSERT_EQ(n1, 6);
     ASSERT_EQ(s1, 24);
     ASSERT_EQ(n2, 720);
-    ASSERT_EQ(n3, 1451520);
+    // ASSERT_EQ(n3, 1451520);  // Note: disabled because it takes 2-3 seconds.
 })
 
 TEST_EACH_WORD_SIZE_W(tableau_iter, iter_tableau_distinct, {

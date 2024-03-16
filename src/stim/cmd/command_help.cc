@@ -204,18 +204,37 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
     out.change_indent(-4);
 }
 
+std::vector<GateTarget> stim::gate_decomposition_help_targets_for_gate_type(GateType g) {
+    if (g == GateType::MPP) {
+        return {
+            GateTarget::x(0),
+            GateTarget::combiner(),
+            GateTarget::y(1),
+            GateTarget::combiner(),
+            GateTarget::z(2),
+            GateTarget::x(3),
+            GateTarget::combiner(),
+            GateTarget::x(4),
+        };
+    } else if (g == GateType::DETECTOR || g == GateType::OBSERVABLE_INCLUDE) {
+        return {GateTarget::rec(-1)};
+    } else if (g == GateType::TICK || g == GateType::SHIFT_COORDS) {
+        return {};
+    } else if (g == GateType::E || g == GateType::ELSE_CORRELATED_ERROR) {
+        return {GateTarget::x(0)};
+    } else if (GATE_DATA[g].flags & GATE_TARGETS_PAIRS) {
+        return {GateTarget::qubit(0), GateTarget::qubit(1)};
+    } else {
+        return {GateTarget::qubit(0)};
+    }
+}
+
 void print_decomposition(Acc &out, const Gate &gate) {
     const char *decomposition = gate.h_s_cx_m_r_decomposition;
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
-        if (gate.id == GateType::MPP) {
-            undecomposed << "MPP X0*Y1*Z2 X3*X4";
-        } else {
-            undecomposed << gate.name << " 0";
-            if (gate.flags & GATE_TARGETS_PAIRS) {
-                undecomposed << " 1";
-            }
-        }
+        auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
+        undecomposed << CircuitInstruction{gate.id, {}, decomp_targets};
 
         out << "Decomposition (into H, S, CX, M, R):\n";
         out.change_indent(+4);
@@ -234,8 +253,11 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (flows.empty()) {
         return;
     }
-    if (gate.id == GateType::MPP) {
-        out << "Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):\n";
+    auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
+    if (decomp_targets.size() > 2) {
+        out << "Stabilizer Generators (for `";
+        out << CircuitInstruction{gate.id, {}, decomp_targets};
+        out << "`):\n";
     } else {
         out << "Stabilizer Generators:\n";
     }

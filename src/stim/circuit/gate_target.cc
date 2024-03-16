@@ -92,6 +92,9 @@ bool GateTarget::is_inverted_result_target() const {
 bool GateTarget::is_measurement_record_target() const {
     return data & TARGET_RECORD_BIT;
 }
+bool GateTarget::is_pauli_target() const {
+    return data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
+}
 bool GateTarget::has_qubit_value() const {
     return !(data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER));
 }
@@ -103,6 +106,9 @@ bool GateTarget::is_combiner() const {
 }
 bool GateTarget::is_sweep_bit_target() const {
     return data & TARGET_SWEEP_BIT;
+}
+bool GateTarget::is_classical_bit_target() const {
+    return data & (TARGET_SWEEP_BIT | TARGET_RECORD_BIT);
 }
 bool GateTarget::operator==(const GateTarget &other) const {
     return data == other.data;

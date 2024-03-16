@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/str_util.h"
@@ -11,14 +12,17 @@ using namespace stim;
 constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
 constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
 
+constexpr uint64_t MAX_OBS = 0xFFFFFFFF;
+constexpr uint64_t MAX_DET = (uint64_t{1} << 62) - 1;
+
 DemTarget DemTarget::observable_id(uint64_t id) {
-    if (id > 0xFFFFFFFF) {
+    if (id > MAX_OBS) {
         throw std::invalid_argument("id > 0xFFFFFFFF");
     }
     return {OBSERVABLE_BIT | id};
 }
 DemTarget DemTarget::relative_detector_id(uint64_t id) {
-    if (id >= (uint64_t{1} << 62)) {
+    if (id > MAX_DET) {
         throw std::invalid_argument("Relative detector id too large.");
     }
     return {id};
@@ -74,6 +78,25 @@ void DemTarget::shift_if_detector_id(int64_t offset) {
     if (is_relative_detector_id()) {
         data = (uint64_t)((int64_t)data + offset);
     }
+}
+DemTarget DemTarget::from_text(std::string_view text) {
+    if (!text.empty()) {
+        bool is_det = text[0] == 'D';
+        bool is_obs = text[0] == 'L';
+        if (is_det || is_obs) {
+            int64_t parsed = 0;
+            if (parse_int64(text.substr(1), &parsed)) {
+                if (parsed >= 0) {
+                    if (is_det && parsed <= (int64_t)MAX_DET) {
+                        return DemTarget::relative_detector_id(parsed);
+                    } else if (is_obs && parsed <= (int64_t)MAX_OBS) {
+                        return DemTarget::observable_id(parsed);
+                    }
+                }
+            }
+        }
+    }
+    throw std::invalid_argument("Failed to parse as a stim.DemTarget: '" + std::string(text) + "'");
 }
 
 bool DemInstruction::operator<(const DemInstruction &other) const {

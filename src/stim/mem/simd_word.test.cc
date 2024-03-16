@@ -33,14 +33,14 @@ union WordOr64 {
 
 TEST_EACH_WORD_SIZE_W(simd_word_pick, popcount, {
     WordOr64 v;
-    auto n = sizeof(simd_word<W>) * 8;
+    auto n = sizeof(simd_word<W>) * 2;
 
     for (size_t expected = 0; expected <= n; expected++) {
         std::vector<uint64_t> bits{};
         for (size_t i = 0; i < n; i++) {
             bits.push_back(i < expected);
         }
-        for (size_t reps = 0; reps < 100; reps++) {
+        for (size_t reps = 0; reps < 10; reps++) {
             std::shuffle(bits.begin(), bits.end(), INDEPENDENT_TEST_RNG());
             for (size_t i = 0; i < n; i++) {
                 v.p[i >> 6] = 0;

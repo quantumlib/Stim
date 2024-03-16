@@ -60,17 +60,8 @@ void TableauSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
     decompose_mpp_operation(
         target_data,
         inv_state.num_qubits,
-        [&](const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
-            do_H_XZ(h_xz);
-            do_H_YZ(h_yz);
-            do_ZCX(cnot);
-            do_MZ(meas);
-            do_ZCX(cnot);
-            do_H_YZ(h_yz);
-            do_H_XZ(h_xz);
+        [&](const CircuitInstruction &inst) {
+            do_gate(inst);
         });
 }
 
@@ -326,6 +317,7 @@ void TableauSimulator<W>::do_MPAD(const CircuitInstruction &inst) {
     for (const auto &t : inst.targets) {
         measurement_record.record_result(t.qubit_value() != 0);
     }
+    noisify_new_measurements(inst);
 }
 
 template <size_t W>
