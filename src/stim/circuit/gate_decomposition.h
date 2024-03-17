@@ -59,6 +59,12 @@ void decompose_mpp_operation(
     size_t num_qubits,
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
 
+/// Decomposes SPP operations into sequences of simpler operations with the same effect.
+void decompose_spp_or_spp_dag_operation(
+    const CircuitInstruction &spp_op,
+    size_t num_qubits,
+    bool invert_sign,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
 
 /// Finds contiguous segments where the first target of each pair is used once.
 ///

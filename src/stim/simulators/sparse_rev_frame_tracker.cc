@@ -56,6 +56,10 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::MPP:
             undo_MPP(inst);
             break;
+        case GateType::SPP:
+        case GateType::SPP_DAG:
+            undo_SPP(inst);
+            break;
         case GateType::XCX:
             undo_XCX(inst);
             break;
@@ -333,6 +337,22 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_da
             } else {
                 undo_gate(inst);
             }
+        });
+}
+
+void SparseUnsignedRevFrameTracker::undo_SPP(const CircuitInstruction &target_data) {
+    size_t n = target_data.targets.size();
+    std::vector<GateTarget> reversed_targets(n);
+    std::vector<GateTarget> reversed_measure_targets;
+    for (size_t k = 0; k < n; k++) {
+        reversed_targets[k] = target_data.targets[n - k - 1];
+    }
+    decompose_spp_or_spp_dag_operation(
+        CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
+        xs.size(),
+        false,
+        [&](const CircuitInstruction &inst) {
+            undo_gate(inst);
         });
 }
 

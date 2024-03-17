@@ -66,6 +66,28 @@ void TableauSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
+    decompose_spp_or_spp_dag_operation(
+        target_data,
+        inv_state.num_qubits,
+        false,
+        [&](const CircuitInstruction &inst) {
+            do_gate(inst);
+        });
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_SPP_DAG(const CircuitInstruction &target_data) {
+    decompose_spp_or_spp_dag_operation(
+        target_data,
+        inv_state.num_qubits,
+        false,
+        [&](const CircuitInstruction &inst) {
+            do_gate(inst);
+        });
+}
+
+template <size_t W>
 void TableauSimulator<W>::postselect_helper(
     SpanRef<const GateTarget> targets,
     bool desired_result,
@@ -456,8 +478,8 @@ void TableauSimulator<W>::noisify_new_measurements(SpanRef<const double> args, s
 }
 
 template <size_t W>
-void TableauSimulator<W>::noisify_new_measurements(const CircuitInstruction &target_data) {
-    noisify_new_measurements(target_data.args, target_data.targets.size());
+void TableauSimulator<W>::noisify_new_measurements(const CircuitInstruction &inst) {
+    noisify_new_measurements(inst.args, inst.targets.size());
 }
 
 template <size_t W>
@@ -1535,6 +1557,12 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::MPP:
             do_MPP(inst);
+            break;
+        case GateType::SPP:
+            do_SPP(inst);
+            break;
+        case GateType::SPP_DAG:
+            do_SPP_DAG(inst);
             break;
         case GateType::MXX:
             do_MXX(inst);

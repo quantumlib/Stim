@@ -403,6 +403,36 @@ cx q[1], q[0];
 measure q[0] -> rec[3];
 cx q[1], q[0];
 // --- end decomposed MPP
+// --- begin decomposed SPP X0*Y1*Z2 X3
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+s q[0];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+h q[3];
+s q[3];
+h q[3];
+// --- end decomposed SPP
+// --- begin decomposed SPP_DAG X0*Y1*Z2 X2
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+sdg q[0];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+h q[2];
+sdg q[2];
+h q[2];
+// --- end decomposed SPP
+barrier q;
+
 rec[4] = mrx(q[0]);
 rec[5] = mry(q[1]);
 rec[6] = mr(q[2]);
@@ -581,6 +611,36 @@ cx q[1], q[0];
 measure q[0] -> rec[3];
 cx q[1], q[0];
 // --- end decomposed MPP
+// --- begin decomposed SPP X0*Y1*Z2 X3
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+s q[0];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+h q[3];
+s q[3];
+h q[3];
+// --- end decomposed SPP
+// --- begin decomposed SPP_DAG X0*Y1*Z2 X2
+h q[0];
+hyz q[1];
+cx q[1], q[0];
+cx q[2], q[0];
+sdg q[0];
+cx q[1], q[0];
+cx q[2], q[0];
+hyz q[1];
+h q[0];
+h q[2];
+sdg q[2];
+h q[2];
+// --- end decomposed SPP
+barrier q;
+
 h q[0]; measure q[0] -> rec[4]; reset q[0]; h q[0]; // decomposed MRX
 s q[1]; s q[1]; s q[1]; h q[1]; measure q[1] -> rec[5]; reset q[1]; h q[1]; s q[1]; // decomposed MRY
 measure q[2] -> rec[6]; reset q[2]; // decomposed MR

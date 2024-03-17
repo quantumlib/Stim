@@ -171,7 +171,7 @@ function makeChordHandlers() {
     res.set('ctrl+z', preview => { if (!preview) editorState.undo() });
     res.set('ctrl+y', preview => { if (!preview) editorState.redo() });
     res.set('ctrl+shift+z', preview => { if (!preview) editorState.redo() });
-    res.set('ctrl+c', async preview => { if (!preview) await copyToClipboard(); });
+    res.set('ctrl+c', async preview => { await copyToClipboard(); });
     res.set('ctrl+v', pasteFromClipboard);
     res.set('ctrl+x', async preview => {
         await copyToClipboard();
@@ -184,8 +184,8 @@ function makeChordHandlers() {
         }
     });
     res.set(' ', preview => editorState.unmarkFocusInferBasis(preview));
-    res.set('q', preview => { if (!preview) editorState.changeCurLayerTo(editorState.curLayer - 1); });
-    res.set('e', preview => { if (!preview) editorState.changeCurLayerTo(editorState.curLayer + 1); });
+    res.set('q', preview => { editorState.changeCurLayerTo(editorState.curLayer - 1); });
+    res.set('e', preview => { editorState.changeCurLayerTo(editorState.curLayer + 1); });
 
     for (let [key, val] of [
         ['1', 0],
@@ -282,7 +282,7 @@ function makeChordHandlers() {
     return res;
 }
 
-let emulatedClipboard = undefined;
+let fallbackEmulatedClipboard = undefined;
 async function copyToClipboard() {
     let c = editorState.copyOfCurCircuit();
     c.layers = [c.layers[editorState.curLayer]]
@@ -297,12 +297,11 @@ async function copyToClipboard() {
     }
 
     let content = c.toStimCircuit()
+    fallbackEmulatedClipboard = content;
     try {
         await navigator.clipboard.writeText(content);
-        emulatedClipboard = undefined;
     } catch (ex) {
-        emulatedClipboard = content;
-        console.error(ex);
+        console.warn("Failed to write to clipboard. Using fallback emulated clipboard.", ex);
     }
 }
 
@@ -314,8 +313,8 @@ async function pasteFromClipboard(preview) {
     try {
         text = await navigator.clipboard.readText();
     } catch (ex) {
-        text = emulatedClipboard;
-        console.error(ex);
+        console.warn("Failed to read from clipboard. Using fallback emulated clipboard.", ex);
+        text = fallbackEmulatedClipboard;
     }
     if (text === undefined) {
         return;

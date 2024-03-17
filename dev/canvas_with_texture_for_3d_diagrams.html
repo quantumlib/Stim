@@ -104,6 +104,19 @@ function drawHeraldErase(ctx, i) {
     ctx.fillText('ERASE', x * 32 + 16 - ctx.measureText('ERASE').width / 2, y * 32 + 18);
 }
 
+function drawCpp(ctx, c1, c2, i) {
+    let {x, y} = pickRect(i);
+    ctx.fillStyle = '#' + (c1 === 'X' || c2 === 'X' ? 'f' : '4') + (c1 === 'Y' || c2 === 'Y' ? 'f' : '4') + (c1 === 'Z' || c2 === 'Z' ? 'f' : '4');
+    ctx.fillRect(x * 32, y * 32, 32, 32);
+    ctx.fillStyle = 'black';
+    ctx.font = '12pt serif';
+    let t1 = 'CPP';
+    ctx.fillText(t1, x * 32 + 16 - ctx.measureText(t1).width / 2, y * 32 + 5);
+    let t2 = c1 + ':' + c2;
+    ctx.font = '12pt serif';
+    ctx.fillText(t2, x * 32 + 16 - ctx.measureText(t2).width / 2, y * 32 + 18);
+}
+
 function drawHeraldPauliError1(ctx, i) {
     let {x, y} = pickRect(i);
     ctx.fillStyle = 'black';
@@ -203,6 +216,30 @@ function draw(ctx) {
     drawRect(ctx, "M_PAD", "#888", "#000", n++);
     drawHeraldErase(ctx, n++);
     drawHeraldPauliError1(ctx, n++);
+
+    drawRect(ctx, "SPP_X", "#F44", "#000", n++);
+    drawRect(ctx, "SPP_Y", "#4F4", "#000", n++);
+    drawRect(ctx, "SPP_Z", "#44F", "#000", n++);
+    drawRect(ctx, "SPP_X†", "#F44", "#000", n++);
+    drawRect(ctx, "SPP_Y†", "#4F4", "#000", n++);
+    drawRect(ctx, "SPP_Z†", "#44F", "#000", n++);
+
+    n = 128 + 48;
+    drawCpp(ctx, 'I', 'X', n++);
+    drawCpp(ctx, 'I', 'Y', n++);
+    drawCpp(ctx, 'I', 'Z', n++);
+    drawCpp(ctx, 'X', 'I', n++);
+    drawCpp(ctx, 'X', 'X', n++);
+    drawCpp(ctx, 'X', 'Y', n++);
+    drawCpp(ctx, 'X', 'Z', n++);
+    drawCpp(ctx, 'Y', 'I', n++);
+    drawCpp(ctx, 'Y', 'X', n++);
+    drawCpp(ctx, 'Y', 'Y', n++);
+    drawCpp(ctx, 'Y', 'Z', n++);
+    drawCpp(ctx, 'Z', 'I', n++);
+    drawCpp(ctx, 'Z', 'X', n++);
+    drawCpp(ctx, 'Z', 'Y', n++);
+    drawCpp(ctx, 'Z', 'Z', n++);
 }
 
 draw(document.getElementById('cv').getContext('2d'))

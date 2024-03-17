@@ -76,7 +76,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 68;
+constexpr const size_t NUM_DEFINED_GATES = 70;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -99,7 +99,6 @@ enum class GateType : uint8_t {
     RX,
     RY,
     R,  // alias when parsing: RZ
-    MPP,
     // Controlled gates
     XCX,
     XCY,
@@ -142,13 +141,17 @@ enum class GateType : uint8_t {
     SQRT_Y_DAG,
     S,      // alias when parsing: SQRT_Z
     S_DAG,  // alias when parsing: SQRT_Z_DAG
-    // Pauli product gates
+    // Pair measurement gates
     SQRT_XX,
     SQRT_XX_DAG,
     SQRT_YY,
     SQRT_YY_DAG,
     SQRT_ZZ,
     SQRT_ZZ_DAG,
+    // Pauli product gates
+    MPP,
+    SPP,
+    SPP_DAG,
     // Swap gates
     SWAP,
     ISWAP,
@@ -334,6 +337,7 @@ struct GateDataMap {
     void add_gate_data_pp(bool &failed);
     void add_gate_data_swaps(bool &failed);
     void add_gate_data_pair_measure(bool &failed);
+    void add_gate_data_pauli_product(bool &failed);
 
    public:
     std::array<GateDataMapHashEntry, 512> hashed_name_to_gate_type_table;

@@ -169,8 +169,9 @@ TEST(circuit, from_text) {
         expected);
 }
 
-TEST(circuit, parse_combiners) {
+TEST(circuit, parse_mpp) {
     ASSERT_THROW({ Circuit("H *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP 0"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP *"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1 *"); }, std::invalid_argument);
@@ -179,6 +180,9 @@ TEST(circuit, parse_combiners) {
     ASSERT_THROW({ Circuit("MPP X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(1.1) X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1*rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP sweep[0]"); }, std::invalid_argument);
     auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].args.size(), 0);
@@ -197,6 +201,54 @@ TEST(circuit, parse_combiners) {
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations[0].args.size(), 1);
     ASSERT_EQ(c.operations[0].args[0], 0.125);
+
+    c = Circuit("MPP X1*X1");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 3);
+}
+
+TEST(circuit, parse_spp) {
+    ASSERT_THROW({ Circuit("SPP 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]*X0"); }, std::invalid_argument);
+
+    Circuit c;
+
+    c = Circuit("SPP");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP X0 X1*Y2*Z3");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP X1 Z2");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
+}
+
+TEST(circuit, parse_spp_dag) {
+    ASSERT_THROW({ Circuit("SPP_DAG 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]*X0"); }, std::invalid_argument);
+
+    Circuit c;
+
+    c = Circuit("SPP_DAG");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP_DAG X0 X1*Y2*Z3");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP_DAG X1 Z2");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
 TEST(circuit, parse_sweep_bits) {
@@ -1651,8 +1703,13 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 6
         TICK
 
-        # Collapsing Gates
+        # Pauli Product Gates
         MPP X0*Y1*Z2 Z0*Z1
+        SPP X0*Y1*Z2 X3
+        SPP_DAG X0*Y1*Z2 X2
+        TICK
+
+        # Collapsing Gates
         MRX 0
         MRY 1
         MRZ 2
