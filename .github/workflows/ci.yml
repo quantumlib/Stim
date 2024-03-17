@@ -29,20 +29,20 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp312-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp36-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp37-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp38-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp39-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp310-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp311-manylinux_x86_64},
+          {os: ubuntu-20.04, dist: cp312-manylinux_x86_64},
 
-          {os: ubuntu-latest, dist: cp36-manylinux_i686},
-          {os: ubuntu-latest, dist: cp37-manylinux_i686},
+          {os: ubuntu-20.04, dist: cp36-manylinux_i686},
+          {os: ubuntu-20.04, dist: cp37-manylinux_i686},
           # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
+          # {os: ubuntu-20.04, dist: cp38-manylinux_i686},
           # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
+          # {os: ubuntu-20.04, dist: cp39-manylinux_i686},
           # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
@@ -51,7 +51,7 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          #{os: ubuntu-latest, dist: cp310-manylinux_i686},
+          #{os: ubuntu-20.04, dist: cp310-manylinux_i686},
 
           # pypy manylinux builds disabled because scipy isn't prebuilt and fails to build.
           #
@@ -61,12 +61,12 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp39-manylinux_i686},
+          # {os: ubuntu-20.04, dist: pp37-manylinux_x86_64},
+          # {os: ubuntu-20.04, dist: pp38-manylinux_x86_64},
+          # {os: ubuntu-20.04, dist: pp39-manylinux_x86_64},
+          # {os: ubuntu-20.04, dist: pp37-manylinux_i686},
+          # {os: ubuntu-20.04, dist: pp38-manylinux_i686},
+          # {os: ubuntu-20.04, dist: pp39-manylinux_i686},
 
           # musllinux builds disabled because scipy isn't prebuilt and fails to build.
           #
@@ -76,16 +76,16 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp310-musllinux_i686},
+          # {os: ubuntu-20.04, dist: cp36-musllinux_x86_64},
+          # {os: ubuntu-20.04, dist: cp37-musllinux_x86_64},
+          # {os: ubuntu-20.04, dist: cp38-musllinux_x86_64},
+          # {os: ubuntu-20.04, dist: cp39-musllinux_x86_64},
+          # {os: ubuntu-20.04, dist: cp310-musllinux_x86_64},
+          # {os: ubuntu-20.04, dist: cp36-musllinux_i686},
+          # {os: ubuntu-20.04, dist: cp37-musllinux_i686},
+          # {os: ubuntu-20.04, dist: cp38-musllinux_i686},
+          # {os: ubuntu-20.04, dist: cp39-musllinux_i686},
+          # {os: ubuntu-20.04, dist: cp310-musllinux_i686},
 
           {os: macos-latest, dist: cp36-macosx_x86_64, macosarch: x86_64},
           {os: macos-latest, dist: cp37-macosx_x86_64, macosarch: x86_64},
@@ -173,7 +173,7 @@ jobs:
             ./output/sinter/*.tar.gz
             ./output/stim/*
   check_sdist_installs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -183,7 +183,7 @@ jobs:
   upload_dev_release_to_pypi:
     needs: ["build_dist"]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/download-artifact@v2
         with:
@@ -205,14 +205,14 @@ jobs:
           packages_dir: dist/sinter/
           password: ${{ secrets.pypi_token_sinter }}
   run_main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
     - run: make stim -j 2
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - uses: bazelbuild/setup-bazelisk@v1
@@ -236,7 +236,7 @@ jobs:
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
     - run: cmake --build .
   build_lib:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
@@ -245,7 +245,7 @@ jobs:
     - run: g++ -std=c++20 test.cc out/libstim.a -I src
     - run: ./a.out test
   build_lib_install:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - run: mkdir install_dir
@@ -265,7 +265,7 @@ jobs:
       - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
       - run: msbuild_out/stim_benchmark.exe
   benchmark:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]
@@ -275,7 +275,7 @@ jobs:
     - run: make stim_benchmark -j 2
     - run: out/stim_benchmark
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]
@@ -292,7 +292,7 @@ jobs:
     - run: make stim_test -j 2
     - run: out/stim_test
   test_o3:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - run: |
@@ -306,7 +306,7 @@ jobs:
     - run: make stim_test_o3 -j 2
     - run: out/stim_test_o3
   test_generated_docs_are_fresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -329,7 +329,7 @@ jobs:
       - run: pip install -e glue/sample
       - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
   test_generated_file_lists_are_fresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - run: dev/regen_file_lists.sh /tmp
@@ -338,7 +338,7 @@ jobs:
       - run: diff /tmp/source_files_no_main file_lists/source_files_no_main
       - run: diff /tmp/test_files file_lists/test_files
   test_pybind:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -349,7 +349,7 @@ jobs:
       - run: pytest src
       - run: dev/doctest_proper.py --module stim
   test_stimcirq:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -361,7 +361,7 @@ jobs:
       - run: pytest glue/cirq
       - run: dev/doctest_proper.py --module stimcirq --import cirq sympy
   test_sinter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -374,7 +374,7 @@ jobs:
       - run: dev/doctest_proper.py --module sinter
       - run: sinter help
   test_stimzx:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -386,7 +386,7 @@ jobs:
       - run: pytest glue/zx
       - run: dev/doctest_proper.py --module stimzx
   test_stimjs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: mymindstorm/setup-emsdk@v9
@@ -400,7 +400,7 @@ jobs:
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
   test_crumble:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
