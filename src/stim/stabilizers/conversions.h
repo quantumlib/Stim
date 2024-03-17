@@ -83,11 +83,13 @@ Circuit stabilizer_state_vector_to_circuit(
 ///     ignore_noise: If the circuit contains noise channels, ignore them instead of raising an exception.
 ///     ignore_measurement: If the circuit contains measurements, ignore them instead of raising an exception.
 ///     ignore_reset: If the circuit contains resets, ignore them instead of raising an exception.
+///     inverse: The last step of the implementation is to invert the tableau. Setting this argument
+///         to true will skip this inversion, saving time but returning the inverse tableau.
 ///
 /// Returns:
 ///     A tableau encoding the given circuit's Clifford operation.
 template <size_t W>
-Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset);
+Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset, bool inverse = false);
 
 /// Simulates the given circuit and outputs a state vector.
 ///
