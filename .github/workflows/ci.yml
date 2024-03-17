@@ -19,5 +19,5 @@ jobs:
         make
         sudo make install
     - run: g++ -v
-    - run: g++ -fsanitize=address -o stim_test /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a
+    - run: g++ -fsanitize=address /usr/local/lib/libgtest_main.a /usr/local/lib/libgtest.a -o stim_test
     - run: ./stim_test
