@@ -164,16 +164,20 @@ GateTarget target_pauli(uint32_t qubit_index, const pybind11::object &pauli, boo
         } else if (p == "I") {
             return GateTarget::qubit(qubit_index, invert);
         }
-    } else if (pybind11::isinstance<pybind11::int_>(pauli)) {
-        uint8_t p = pybind11::cast<uint8_t>(pauli);
-        if (p == 1) {
-            return GateTarget::x(qubit_index, invert);
-        } else if (p == 2) {
-            return GateTarget::y(qubit_index, invert);
-        } else if (p == 3) {
-            return GateTarget::z(qubit_index, invert);
-        } else if (p == 0) {
-            return GateTarget::qubit(qubit_index, invert);
+    } else {
+        try {
+            uint8_t p = pybind11::cast<uint8_t>(pauli);
+            if (p == 1) {
+                return GateTarget::x(qubit_index, invert);
+            } else if (p == 2) {
+                return GateTarget::y(qubit_index, invert);
+            } else if (p == 3) {
+                return GateTarget::z(qubit_index, invert);
+            } else if (p == 0) {
+                return GateTarget::qubit(qubit_index, invert);
+            }
+        } catch (const pybind11::cast_error &ex) {
+            // Wasn't an integer.
         }
     }
 

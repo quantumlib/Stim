@@ -1,7 +1,9 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -340,10 +342,6 @@ void DiagramTimelineAsciiDrawer::do_end_repeat(const CircuitTimelineLoopData &lo
     tick_start_moment = cur_moment;
 }
 
-void DiagramTimelineAsciiDrawer::do_mpp(const ResolvedTimelineOperation &op) {
-    do_multi_qubit_gate_with_pauli_targets(op);
-}
-
 void DiagramTimelineAsciiDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -438,8 +436,8 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate_type == GateType::MPP) {
-        do_mpp(op);
+    if (op.gate_type == GateType::MPP || op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_multi_qubit_gate_with_pauli_targets(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {

@@ -188,6 +188,87 @@ void stim::decompose_mpp_operation(
     flush();
 }
 
+static void decompose_spp_or_spp_dag_operation_helper(
+    PauliStringRef<64> observable,
+    std::span<const GateTarget> classical_bits,
+    bool invert_sign,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
+    std::vector<GateTarget> *h_xz_buf,
+    std::vector<GateTarget> *h_yz_buf,
+    std::vector<GateTarget> *cnot_buf) {
+    h_xz_buf->clear();
+    h_yz_buf->clear();
+    cnot_buf->clear();
+
+    // Assemble quantum terms from the observable.
+    uint64_t focus_qubit = UINT64_MAX;
+    for_each_active_qubit_in<true, true>(observable, [&](uint32_t q) {
+        bool x = observable.xs[q];
+        bool z = observable.zs[q];
+        // Include single qubit gates transforming the Pauli into a Z.
+        if (x) {
+            if (z) {
+                h_yz_buf->push_back({q});
+            } else {
+                h_xz_buf->push_back({q});
+            }
+        }
+        // Include CNOT gates folding onto a single measured qubit.
+        if (focus_qubit == UINT64_MAX) {
+            focus_qubit = q;
+        } else {
+            cnot_buf->push_back({q});
+            cnot_buf->push_back({(uint32_t)focus_qubit});
+        }
+    });
+
+    // Products need a quantum part to have an observable effect.
+    if (focus_qubit == UINT64_MAX) {
+        return;
+    }
+
+    for (const auto &t : classical_bits) {
+        cnot_buf->push_back({t});
+        cnot_buf->push_back({(uint32_t)focus_qubit});
+    }
+
+    GateTarget t = GateTarget::qubit(focus_qubit);
+    bool sign = invert_sign ^ observable.sign;
+    GateType g = sign ? GateType::S_DAG : GateType::S;
+    {
+        ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, *h_xz_buf}, do_instruction_callback);
+        ConjugateBySelfInverse c2(CircuitInstruction{GateType::H_YZ, {}, *h_yz_buf}, do_instruction_callback);
+        ConjugateBySelfInverse c3(CircuitInstruction{GateType::CX, {}, *cnot_buf}, do_instruction_callback);
+        do_instruction_callback(CircuitInstruction{g, {}, &t});
+    }
+}
+
+void stim::decompose_spp_or_spp_dag_operation(
+    const CircuitInstruction &spp_op,
+    size_t num_qubits,
+    bool invert_sign,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
+    PauliString<64> obs(num_qubits);
+    std::vector<GateTarget> h_xz_buf;
+    std::vector<GateTarget> h_yz_buf;
+    std::vector<GateTarget> cnot_buf;
+    std::vector<GateTarget> bits;
+
+    if (spp_op.gate_type == GateType::SPP) {
+        // No sign inversion needed.
+    } else if (spp_op.gate_type == GateType::SPP_DAG) {
+        invert_sign ^= true;
+    } else {
+        throw std::invalid_argument("Not an SPP or SPP_DAG instruction: " + spp_op.str());
+    }
+
+    size_t start = 0;
+    while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
+        decompose_spp_or_spp_dag_operation_helper(
+            obs, bits, invert_sign, do_instruction_callback, &h_xz_buf, &h_yz_buf, &cnot_buf);
+    }
+}
+
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));
@@ -625,6 +706,12 @@ struct Simplifier {
         switch (inst.gate_type) {
             case GateType::MPP:
                 decompose_mpp_operation(inst, num_qubits, [&](const CircuitInstruction sub) {
+                    simplify_instruction(sub);
+                });
+                break;
+            case GateType::SPP:
+            case GateType::SPP_DAG:
+                decompose_spp_or_spp_dag_operation(inst, num_qubits, false, [&](const CircuitInstruction sub) {
                     simplify_instruction(sub);
                 });
                 break;

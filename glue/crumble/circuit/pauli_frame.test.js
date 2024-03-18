@@ -1,7 +1,7 @@
 import {test, assertThat} from "../test/test_util.js"
 import {PauliFrame} from "./pauli_frame.js"
 import {GATE_MAP} from "../gates/gateset.js"
-import {make_mpp_gate} from "../gates/gateset_mpp.js"
+import {make_mpp_gate, make_spp_gate} from "../gates/gateset_mpp.js"
 import {Operation} from "./operation.js";
 
 test("pauli_frame.to_from", () => {
@@ -31,7 +31,7 @@ test("pauli_frame.to_from_dicts", () => {
 });
 
 test("pauli_frame.do_gate_vs_old_frame_updates", () => {
-    let gates = [...GATE_MAP.values(), make_mpp_gate("XYY")];
+    let gates = [...GATE_MAP.values(), make_mpp_gate("XYY"), make_spp_gate("XYY")];
     for (let g of gates) {
         let before, after;
         if (g.num_qubits === 1) {
@@ -46,8 +46,12 @@ test("pauli_frame.do_gate_vs_old_frame_updates", () => {
             before.zs[0] = 0b0000111100001111;
             before.xs[1] = 0b0011001100110011;
             before.zs[1] = 0b0101010101010101;
+            let targets = [0, 1];
+            for (let k = 2; k < g.num_qubits; k++) {
+                targets.push(k);
+            }
             after = before.copy();
-            after.do_gate(g, [0, 1]);
+            after.do_gate(g, targets);
         }
 
         let before_strings = before.to_strings();

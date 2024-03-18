@@ -5733,47 +5733,6 @@ class GateData:
         """Returns text describing the gate data.
         """
     @property
-    def __unstable_flows(
-        self,
-    ) -> object:
-        """[DEPRECATED]
-        This method is not actually deprecated it's just still in development.
-        Its API is not yet finalized and is subject to sudden change.
-        ---
-
-        Returns the stabilizer flows of the gate, or else None.
-
-        Although some variable-qubit gates and and pauli-targeting gates
-        like MPP have stabilizer flows, this method returns None for them
-        because it does not have the necessary context.
-
-        A stabilizer flow describes an input-output relationship that the
-        gate satisfies, where an input PauliString is transformed into an
-        output PauliString possibly mediated by measurement results.
-
-        Examples:
-            >>> import stim
-
-            >>> for e in stim.gate_data('H').__unstable_flows:
-            ...     print(e)
-            X -> Z
-            Z -> X
-
-            >>> for e in stim.gate_data('ISWAP').__unstable_flows:
-            ...     print(e)
-            X_ -> ZY
-            Z_ -> _Z
-            _X -> YZ
-            _Z -> Z_
-
-            >>> for e in stim.gate_data('MXX').__unstable_flows:
-            ...     print(e)
-            X_ -> X_
-            _X -> _X
-            ZZ -> ZZ
-            XX -> rec[-1]
-        """
-    @property
     def aliases(
         self,
     ) -> List[str]:
@@ -5788,6 +5747,43 @@ class GateData:
             ['H', 'H_XZ']
             >>> stim.gate_data('cnot').aliases
             ['CNOT', 'CX', 'ZCX']
+        """
+    @property
+    def flows(
+        self,
+    ) -> Optional[List[stim.Flow]]:
+        """Returns stabilizer flow generators for the gate, or else None.
+
+        A stabilizer flow describes an input-output relationship that the gate
+        satisfies, where an input pauli string is transformed into an output
+        pauli string mediated by certain measurement results.
+
+        Caution: this method returns None for variable-target-count gates like MPP.
+        Not because MPP has no stabilizer flows, but because its stabilizer flows
+        depend on how many qubits it targets and what basis it targets them in.
+
+        Returns:
+            A list of stim.Flow instances representing the generators.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('H').flows
+            [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+            >>> for e in stim.gate_data('ISWAP').flows:
+            ...     print(e)
+            X_ -> ZY
+            Z_ -> _Z
+            _X -> YZ
+            _Z -> Z_
+
+            >>> for e in stim.gate_data('MXX').flows:
+            ...     print(e)
+            X_ -> X_
+            _X -> _X
+            ZZ -> ZZ
+            XX -> rec[-1]
         """
     @property
     def generalized_inverse(

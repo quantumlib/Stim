@@ -156,6 +156,131 @@ TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_us
     )CIRCUIT"));
 }
 
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_simple) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(Circuit("SPP Z0").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
+    });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_inverted) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(
+        Circuit("SPP !Z0").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S_DAG 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_inverted2) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(Circuit("SPP Z0").operations[0], 10, true, [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
+    });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S_DAG 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_inverted3) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(
+        Circuit("SPP_DAG Z0").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S_DAG 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_double_inverted) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(Circuit("SPP !Z0").operations[0], 10, true, [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
+    });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_triple_inverted) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(
+        Circuit("SPP_DAG !Z0").operations[0], 10, true, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        S_DAG 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_complex) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(
+        Circuit("SPP X0*Y1*Z2").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0
+        H_YZ 1
+        CX 1 0 2 0
+        S 0
+        CX 1 0 2 0
+        H_YZ 1
+        H 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_multiple) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(
+        Circuit("SPP X0 Y0*!Z2").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0
+        S 0
+        H 0
+        H_YZ 0
+        CX 2 0
+        S_DAG 0
+        CX 2 0
+        H_YZ 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_empty) {
+    Circuit out;
+    decompose_spp_or_spp_dag_operation(Circuit("SPP").operations[0], 10, false, [&](const CircuitInstruction &inst) {
+        out.safe_append(inst);
+    });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_bad) {
+    ASSERT_THROW(
+        {
+            decompose_spp_or_spp_dag_operation(
+                Circuit("SPP X0*Z0").operations[0], 10, false, [](const CircuitInstruction &inst) {
+                });
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            decompose_spp_or_spp_dag_operation(
+                Circuit("MPP X0*Z0").operations[0], 10, false, [](const CircuitInstruction &inst) {
+                });
+        },
+        std::invalid_argument);
+}
+
 static std::pair<std::vector<PauliString<64>>, std::vector<PauliString<64>>> circuit_output_eq_val(
     const Circuit &circuit) {
     // CAUTION: this is not 100% reliable when measurement count is larger than 1.

@@ -16,6 +16,8 @@ import pathlib
 import tempfile
 
 import doctest
+
+import numpy as np
 import pytest
 import types
 
@@ -59,7 +61,7 @@ def test_targets():
 
 def test_gate_data():
     data = stim.gate_data()
-    assert len(data) == 67
+    assert len(data) == 69
     assert data["CX"].name == "CX"
     assert data["CX"].aliases == ["CNOT", "CX", "ZCX"]
     assert data["X"].is_unitary
@@ -213,11 +215,16 @@ def test_target_pauli():
     assert stim.target_pauli(2, 3) == stim.target_z(2)
     assert stim.target_pauli(2, 3, True) == stim.target_z(2, True)
     assert stim.target_pauli(qubit_index=2, pauli=3, invert=True) == stim.target_z(2, True)
+    assert stim.target_pauli(5, np.array([2], dtype=np.uint8)[0]) == stim.target_y(5)
+    assert stim.target_pauli(5, np.array([2], dtype=np.uint32)[0]) == stim.target_y(5)
+    assert stim.target_pauli(5, np.array([2], dtype=np.int16)[0]) == stim.target_y(5)
 
     with pytest.raises(ValueError, match="too large"):
         stim.target_pauli(2**31, 'X')
     with pytest.raises(ValueError, match="Expected pauli"):
         stim.target_pauli(5, 'F')
+    with pytest.raises(ValueError, match="Expected pauli"):
+        stim.target_pauli(5, np.array([257], dtype=np.uint32)[0])
 
 
 def test_target_combined_paulis():

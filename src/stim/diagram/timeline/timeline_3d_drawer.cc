@@ -1,8 +1,10 @@
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -271,6 +273,10 @@ void DiagramTimeline3DDrawer::do_mpp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimeline3DDrawer::do_spp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_pauli_targets(op);
+}
+
 void DiagramTimeline3DDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -297,6 +303,8 @@ void DiagramTimeline3DDrawer::do_observable_include(const ResolvedTimelineOperat
 void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
     if (op.gate_type == GateType::MPP) {
         do_mpp(op);
+    } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_spp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {

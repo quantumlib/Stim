@@ -445,50 +445,47 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             .data());
 
     c.def_property_readonly(
-        "__unstable_flows",
+        "flows",
         [](const Gate &self) -> pybind11::object {
             auto f = self.flows<MAX_BITWORD_WIDTH>();
             if (f.empty()) {
                 return pybind11::none();
             }
-            std::vector<pybind11::object> results;
+            std::vector<Flow<MAX_BITWORD_WIDTH>> results;
             for (const auto &e : f) {
-                results.push_back(pybind11::cast(e.str()));
+                results.push_back(e);
             }
             return pybind11::cast(results);
         },
         clean_doc_string(R"DOC(
-            [DEPRECATED]
-            This method is not actually deprecated it's just still in development.
-            Its API is not yet finalized and is subject to sudden change.
-            ---
+            @signature def flows(self) -> Optional[List[stim.Flow]]:
+            Returns stabilizer flow generators for the gate, or else None.
 
-            Returns the stabilizer flows of the gate, or else None.
+            A stabilizer flow describes an input-output relationship that the gate
+            satisfies, where an input pauli string is transformed into an output
+            pauli string mediated by certain measurement results.
 
-            Although some variable-qubit gates and and pauli-targeting gates
-            like MPP have stabilizer flows, this method returns None for them
-            because it does not have the necessary context.
+            Caution: this method returns None for variable-target-count gates like MPP.
+            Not because MPP has no stabilizer flows, but because its stabilizer flows
+            depend on how many qubits it targets and what basis it targets them in.
 
-            A stabilizer flow describes an input-output relationship that the
-            gate satisfies, where an input PauliString is transformed into an
-            output PauliString possibly mediated by measurement results.
+            Returns:
+                A list of stim.Flow instances representing the generators.
 
             Examples:
                 >>> import stim
 
-                >>> for e in stim.gate_data('H').__unstable_flows:
-                ...     print(e)
-                X -> Z
-                Z -> X
+                >>> stim.gate_data('H').flows
+                [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
 
-                >>> for e in stim.gate_data('ISWAP').__unstable_flows:
+                >>> for e in stim.gate_data('ISWAP').flows:
                 ...     print(e)
                 X_ -> ZY
                 Z_ -> _Z
                 _X -> YZ
                 _Z -> Z_
 
-                >>> for e in stim.gate_data('MXX').__unstable_flows:
+                >>> for e in stim.gate_data('MXX').flows:
                 ...     print(e)
                 X_ -> X_
                 _X -> _X

@@ -18,6 +18,7 @@
 #include <queue>
 #include <sstream>
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
@@ -58,7 +59,7 @@ struct WithoutFeedbackHelper {
         }
     }
 
-    void undo_feedback_capable_operation(const CircuitInstruction &op) {
+    void undo_feedback_capable_pcp_operation(const CircuitInstruction &op) {
         for (size_t k = op.targets.size(); k > 0;) {
             k -= 2;
             CircuitInstruction op_piece = {op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}};
@@ -87,7 +88,11 @@ struct WithoutFeedbackHelper {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (!b1 && !b2) {
-                reversed_semi_flattened_output.operations.push_back(op_piece);
+                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
+                    op_piece.gate_type,
+                    reversed_semi_flattened_output.arg_buf.take_copy(op_piece.args),
+                    reversed_semi_flattened_output.target_buf.take_copy(op_piece.targets),
+                });
             }
             tracker.undo_gate(op_piece);
         }
@@ -118,16 +123,22 @@ struct WithoutFeedbackHelper {
         reversed_semi_flattened_output = std::move(tmp);
     }
 
+    void undo_gate(const CircuitInstruction &op) {
+        if (GATE_DATA[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
+            undo_feedback_capable_pcp_operation(op);
+        } else {
+            reversed_semi_flattened_output.safe_append(op);
+            tracker.undo_gate(op);
+        }
+    }
+
     void undo_circuit(const Circuit &circuit) {
         for (size_t k = circuit.operations.size(); k--;) {
             const auto &op = circuit.operations[k];
             if (op.gate_type == GateType::REPEAT) {
                 undo_repeat_block(circuit, op);
-            } else if (GATE_DATA[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
-                undo_feedback_capable_operation(op);
             } else {
-                reversed_semi_flattened_output.operations.push_back(op);
-                tracker.undo_gate(op);
+                undo_gate(op);
             }
         }
     }
@@ -220,5 +231,6 @@ Circuit stim::circuit_with_inlined_feedback(const Circuit &circuit) {
     helper.undo_circuit(circuit);
     assert(helper.tracker.num_measurements_in_past == 0);
     assert(helper.tracker.num_detectors_in_past == 0);
-    return circuit_with_identical_adjacent_loops_fused(helper.build_output(helper.reversed_semi_flattened_output));
+    Circuit output = helper.build_output(helper.reversed_semi_flattened_output);
+    return circuit_with_identical_adjacent_loops_fused(output);
 }

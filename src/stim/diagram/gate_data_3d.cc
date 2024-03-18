@@ -452,6 +452,13 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("HERALDED_ERASE", 14, 9),
         f("HERALDED_PAULI_CHANNEL_1", 15, 9),
 
+        f("SPP:X", 0, 10),
+        f("SPP:Y", 1, 10),
+        f("SPP:Z", 2, 10),
+        f("SPP_DAG:X", 3, 10),
+        f("SPP_DAG:Y", 4, 10),
+        f("SPP_DAG:Z", 5, 10),
+
         make_x_control_mesh(),
         make_y_control_mesh(),
         make_z_control_mesh(),

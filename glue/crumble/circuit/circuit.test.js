@@ -647,4 +647,22 @@ test("circuit.fromStimCircuit_manygates", () => {
         CZ 2 rec[-1]
     `);
     assertThat(c).isNotEqualTo(undefined);
-})
+});
+
+test("circuit.fromStimCircuit_cx_ordering", () => {
+    assertThat(Circuit.fromStimCircuit(`
+        CX 0 1
+    `)).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        CX 0 1
+    `));
+
+    assertThat(Circuit.fromStimCircuit(`
+        XCZ 1 0
+    `)).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        CX 0 1
+    `));
+});
