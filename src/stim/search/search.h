@@ -19,5 +19,6 @@
 
 #include "stim/search/graphlike/algo.h"
 #include "stim/search/hyper/algo.h"
+#include "stim/search/sat/wcnf.h"
 
 #endif
