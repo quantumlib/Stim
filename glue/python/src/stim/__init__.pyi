@@ -1,5 +1,5 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
-# (This a stubs file describing the classes and methods in stim.)
+# (This is a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
 if TYPE_CHECKING:
@@ -958,7 +958,7 @@ class Circuit:
                 error mechanisms). When set to true, the probabilities of the disjoint
                 cases are instead assumed to be independent probabilities. For example,
                 a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
-                `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an
+                `X_ERROR(0.1)` followed by a `Y_ERROR(0.2)`. This assumption is an
                 approximation, but it is a good approximation for small probabilities.
 
                 This argument can also be set to a probability between 0 and 1, setting

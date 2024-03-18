@@ -18,7 +18,7 @@ def main():
         version = "v" + version
     print(f'''
 """Stim {version}: a fast quantum stabilizer circuit library."""
-# (This a stubs file describing the classes and methods in stim.)
+# (This is a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
 if TYPE_CHECKING:
