@@ -261,7 +261,7 @@ class Circuit {
                 if (alias.ignore) {
                     return;
                 } else if (alias.name !== undefined) {
-                    reverse_pairs = alias.reverse_pairs !== undefined && alias.reverse_pairs;
+                    reverse_pairs = alias.rev_pair !== undefined && alias.rev_pair;
                     name = alias.name;
                 } else {
                     throw new Error(`Unimplemented alias ${name}: ${describe(alias)}.`);

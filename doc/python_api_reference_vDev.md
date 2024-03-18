@@ -40,6 +40,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.has_all_flows`](#stim.Circuit.has_all_flows)
     - [`stim.Circuit.has_flow`](#stim.Circuit.has_flow)
     - [`stim.Circuit.inverse`](#stim.Circuit.inverse)
+    - [`stim.Circuit.likeliest_error_sat_problem`](#stim.Circuit.likeliest_error_sat_problem)
     - [`stim.Circuit.num_detectors`](#stim.Circuit.num_detectors)
     - [`stim.Circuit.num_measurements`](#stim.Circuit.num_measurements)
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
@@ -48,6 +49,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
+    - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
@@ -207,6 +209,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
     - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
+    - [`stim.GateData.flows`](#stim.GateData.flows)
     - [`stim.GateData.generalized_inverse`](#stim.GateData.generalized_inverse)
     - [`stim.GateData.inverse`](#stim.GateData.inverse)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
@@ -1535,7 +1538,7 @@ def detector_error_model(
             error mechanisms). When set to true, the probabilities of the disjoint
             cases are instead assumed to be independent probabilities. For example,
             a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
-            `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an
+            `X_ERROR(0.1)` followed by a `Y_ERROR(0.2)`. This assumption is an
             approximation, but it is a good approximation for small probabilities.
 
             This argument can also be set to a probability between 0 and 1, setting
@@ -2342,6 +2345,93 @@ def inverse(
     """
 ```
 
+<a name="stim.Circuit.likeliest_error_sat_problem"></a>
+```python
+# stim.Circuit.likeliest_error_sat_problem
+
+# (in class stim.Circuit)
+def likeliest_error_sat_problem(
+    self,
+    *,
+    quantization: int = 100,
+    format: str = 'WDIMACS',
+) -> str:
+    """Makes a maxSAT problem of the circuit's most likely undetectable logical
+    error, that other tools can solve.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the highest likelihood set of error mechanisms that combine to
+    flip any logical observable while producing no detection events).
+
+    If there are any errors with probability p > 0.5, they are inverted so
+    that the resulting weight ends up being positive. If there are errors
+    with weight close or equal to 0.5, they can end up with 0 weight meaning
+    that they can be included or not in the solution with no affect on the
+    likelihood.
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    One quick way to get started is to install pysat by running this BASH
+    terminal command:
+
+        pip install python-sat
+
+    Afterwards, you can run the included maxSAT solver "RC2" with this
+    Python code:
+
+        from pysat.examples.rc2 import RC2
+        from pysat.formula import WCNF
+
+        wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
+
+        with RC2(wcnf) as rc2:
+        print(rc2.compute())
+        print(rc2.cost)
+
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
+
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
+
+    Args:
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+            described here: http://www.maxhs.org/docs/wdimacs.html
+        quantization: Defaults to 10. Error probabilities are converted to log-odds
+            and scaled/rounded to be positive integers at most this large. Setting
+            this argument to a larger number results in more accurate quantization
+            such that the returned error set should have a likelihood closer to the
+            true most likely solution. This comes at the cost of making some maxSAT
+            solvers slower.
+
+    Returns:
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...   X_ERROR(0.1) 0
+        ...   M 0
+        ...   OBSERVABLE_INCLUDE(0) rec[-1]
+        ...   X_ERROR(0.4) 0
+        ...   M 0
+        ...   DETECTOR rec[-1] rec[-2]
+        ... ''')
+        >>> print(circuit.likeliest_error_sat_problem(
+        ...   quantization=1000
+        ... ), end='')
+        p wcnf 2 4 4001
+        185 -1 0
+        1000 -2 0
+        4001 -1 0
+        4001 2 0
+    """
+```
+
 <a name="stim.Circuit.num_detectors"></a>
 ```python
 # stim.Circuit.num_detectors
@@ -2644,6 +2734,80 @@ def search_for_undetectable_logical_errors(
         ...     dont_explore_edges_increasing_symptom_degree=True,
         ... )))
         5
+    """
+```
+
+<a name="stim.Circuit.shortest_error_sat_problem"></a>
+```python
+# stim.Circuit.shortest_error_sat_problem
+
+# (in class stim.Circuit)
+def shortest_error_sat_problem(
+    self,
+    *,
+    format: str = 'WDIMACS',
+) -> str:
+    """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the fault distance of the circuit (the minimum number of error
+    mechanisms that combine to flip any logical observable while producing no
+    detection events). This method ignores the probabilities of the error
+    mechanisms since it only cares about minimizing the number of errors
+    triggered.
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    One quick way to get started is to install pysat by running this BASH
+    terminal command:
+
+        pip install python-sat
+
+    Afterwards, you can run the included maxSAT solver "RC2" with this
+    Python code:
+
+        from pysat.examples.rc2 import RC2
+        from pysat.formula import WCNF
+
+        wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
+
+        with RC2(wcnf) as rc2:
+        print(rc2.compute())
+        print(rc2.cost)
+
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
+
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
+
+    Args:
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+            described here: http://www.maxhs.org/docs/wdimacs.html
+
+    Returns:
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...   X_ERROR(0.1) 0
+        ...   M 0
+        ...   OBSERVABLE_INCLUDE(0) rec[-1]
+        ...   X_ERROR(0.4) 0
+        ...   M 0
+        ...   DETECTOR rec[-1] rec[-2]
+        ... ''')
+        >>> print(circuit.shortest_error_sat_problem(), end='')
+        p wcnf 2 4 5
+        1 -1 0
+        1 -2 0
+        5 -1 0
+        5 2 0
     """
 ```
 
@@ -7335,6 +7499,50 @@ def aliases(
         ['H', 'H_XZ']
         >>> stim.gate_data('cnot').aliases
         ['CNOT', 'CX', 'ZCX']
+    """
+```
+
+<a name="stim.GateData.flows"></a>
+```python
+# stim.GateData.flows
+
+# (in class stim.GateData)
+@property
+def flows(
+    self,
+) -> Optional[List[stim.Flow]]:
+    """Returns stabilizer flow generators for the gate, or else None.
+
+    A stabilizer flow describes an input-output relationship that the gate
+    satisfies, where an input pauli string is transformed into an output
+    pauli string mediated by certain measurement results.
+
+    Caution: this method returns None for variable-target-count gates like MPP.
+    Not because MPP has no stabilizer flows, but because its stabilizer flows
+    depend on how many qubits it targets and what basis it targets them in.
+
+    Returns:
+        A list of stim.Flow instances representing the generators.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').flows
+        [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+        >>> for e in stim.gate_data('ISWAP').flows:
+        ...     print(e)
+        X_ -> ZY
+        Z_ -> _Z
+        _X -> YZ
+        _Z -> Z_
+
+        >>> for e in stim.gate_data('MXX').flows:
+        ...     print(e)
+        X_ -> X_
+        _X -> _X
+        ZZ -> ZZ
+        XX -> rec[-1]
     """
 ```
 

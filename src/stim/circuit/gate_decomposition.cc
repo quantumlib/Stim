@@ -418,6 +418,7 @@ void stim::decompose_cpp_operation_with_reverse_independence(
             cpp_op, obs1, obs2, bits1, bits2, do_instruction_callback, &circuit_workspace, &target_buf);
     }
 }
+
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));

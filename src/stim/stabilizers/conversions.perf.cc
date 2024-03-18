@@ -81,7 +81,7 @@ BENCHMARK(stabilizers_to_tableau_144) {
     size_t h = 12;
 
     auto normalize = [&](std::complex<float> c) -> std::complex<float> {
-        return {fmodf(c.real() + w*10, w), fmodf(c.imag() + h*10, h)};
+        return {fmodf(c.real() + w * 10, w), fmodf(c.imag() + h * 10, h)};
     };
     auto q2i = [&](std::complex<float> c) -> size_t {
         c = normalize(c);
@@ -116,7 +116,6 @@ BENCHMARK(stabilizers_to_tableau_144) {
     }
 }
 
-
 BENCHMARK(stabilizers_to_tableau_576) {
     std::vector<std::complex<float>> offsets{
         {1, 0},
@@ -126,11 +125,11 @@ BENCHMARK(stabilizers_to_tableau_576) {
         {3, 6},
         {-6, 3},
     };
-    size_t w = 24*4;
-    size_t h = 12*4;
+    size_t w = 24 * 4;
+    size_t h = 12 * 4;
 
     auto normalize = [&](std::complex<float> c) -> std::complex<float> {
-        return {fmodf(c.real() + w*10, w), fmodf(c.imag() + h*10, h)};
+        return {fmodf(c.real() + w * 10, w), fmodf(c.imag() + h * 10, h)};
     };
     auto q2i = [&](std::complex<float> c) -> size_t {
         c = normalize(c);

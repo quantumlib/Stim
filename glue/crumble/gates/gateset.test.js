@@ -30,6 +30,7 @@ test("gateset.expected_gates", () => {
     // Special handling.
     expectedGates.delete("MPP");
     expectedGates.delete("SPP");
+    expectedGates.delete("SPP_DAG");
 
     assertThat(new Set([...GATE_MAP.keys()])).isEqualTo(expectedGates);
 });
