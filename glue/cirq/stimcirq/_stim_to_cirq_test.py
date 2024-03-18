@@ -644,3 +644,41 @@ def test_stim_circuit_to_cirq_circuit_mxx_myy_mzz():
         MPP !Z0*Z1
         TICK
     """)
+
+
+def test_stim_circuit_to_cirq_circuit_spp():
+    stim_circuit = stim.Circuit("""
+        SPP X1*Y2*Z3
+        SPP !Y4
+        SPP_DAG X5
+        SPP_DAG !Z0
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert cirq_circuit.to_text_diagram(use_unicode_characters=False).strip() == """
+0: ---[Z]^0.5----
+
+1: ---[X]--------
+      |
+2: ---[Y]--------
+      |
+3: ---[Z]^0.5----
+
+4: ---[Y]^-0.5---
+
+5: ---[X]^-0.5---
+    """.strip()
+    q0, q1, q2, q3, q4, q5 = cirq.LineQubit.range(6)
+    assert cirq_circuit == cirq.Circuit([
+        cirq.Moment(
+            cirq.PauliStringPhasor(cirq.X(q1)*cirq.Y(q2)*cirq.Z(q3), exponent_neg=0.5),
+            cirq.PauliStringPhasor(cirq.Y(q4), exponent_neg=0, exponent_pos=0.5),
+            cirq.PauliStringPhasor(cirq.X(q5), exponent_neg=-0.5),
+            cirq.PauliStringPhasor(cirq.Z(q0), exponent_neg=0, exponent_pos=-0.5),
+        ),
+    ])
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit("""
+        SPP X1*Y2*Z3
+        SPP_DAG Y4 X5
+        SPP Z0
+        TICK
+    """)

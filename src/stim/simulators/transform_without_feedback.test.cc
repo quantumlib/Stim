@@ -116,3 +116,31 @@ TEST(circuit_with_inlined_feedback, loop) {
         DETECTOR rec[-3] rec[-2] rec[-1]
     )CIRCUIT"));
 }
+
+TEST(circuit_with_inlined_feedback, mpp) {
+    Circuit inp = Circuit(R"CIRCUIT(
+        RX 0
+        RY 1
+        RZ 2
+        MPP X0*Y1*Z2 Z5
+        CX rec[-2] 3
+        M 3
+        DETECTOR rec[-1]
+    )CIRCUIT");
+    auto actual = circuit_with_inlined_feedback(inp);
+
+    auto dem1 = ErrorAnalyzer::circuit_to_detector_error_model(inp, true, true, false, 0, false, true);
+    auto dem2 = ErrorAnalyzer::circuit_to_detector_error_model(actual, true, true, false, 0, false, true);
+    dem1 = dem1.flattened();
+    dem2 = dem2.flattened();
+    ASSERT_TRUE(dem1.approx_equals(dem2, 1e-5));
+
+    ASSERT_EQ(actual, Circuit(R"CIRCUIT(
+        RX 0
+        RY 1
+        R 2
+        MPP X0*Y1*Z2 Z5
+        M 3
+        DETECTOR rec[-3] rec[-1]
+    )CIRCUIT"));
+}

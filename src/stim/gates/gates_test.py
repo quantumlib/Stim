@@ -74,3 +74,10 @@ def test_gate_data_inverse():
     assert stim.gate_data('MR').generalized_inverse == stim.gate_data('MR')
     assert stim.gate_data('MPP').generalized_inverse == stim.gate_data('MPP')
     assert stim.gate_data('ELSE_CORRELATED_ERROR').generalized_inverse == stim.gate_data('ELSE_CORRELATED_ERROR')
+
+
+def test_gate_data_flows():
+    assert stim.GateData('H').flows == [
+        stim.Flow("X -> Z"),
+        stim.Flow("Z -> X"),
+    ]

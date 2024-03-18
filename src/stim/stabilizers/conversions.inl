@@ -277,7 +277,7 @@ Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign)
             for (size_t q = 0; q < n; q++) {
                 bool x = destabilizer.xs[q];
                 bool z = destabilizer.zs[q];
-                auto *out = targets_ptrs[x + z * 2];
+                auto *out = targets_ptrs[x + z*2];
                 if (out != nullptr) {
                     out->push_back(GateTarget::rec(-(int32_t)(n - k)));
                     out->push_back(GateTarget::qubit(q));

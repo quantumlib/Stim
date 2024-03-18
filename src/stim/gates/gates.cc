@@ -33,6 +33,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_pp(failed);
     add_gate_data_swaps(failed);
     add_gate_data_pair_measure(failed);
+    add_gate_data_pauli_product(failed);
     for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
         if (items[k].name == nullptr) {
             std::cerr << "Uninitialized gate id: " << k << ".\n";

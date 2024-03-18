@@ -1,9 +1,11 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -208,7 +210,7 @@ void DiagramTimelineSvgDrawer::draw_generic_box(
     float cx, float cy, const std::string &text, SpanRef<const double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
-        throw std::invalid_argument("DiagramTimelineSvgDrawer unhandled gate case: " + text);
+        throw std::invalid_argument("DiagramTimelineSvgDrawer::draw_generic_box unhandled gate case: " + text);
     }
     SvgGateData data = f->second;
     draw_annotated_gate(cx, cy, data, end_args);
@@ -632,6 +634,10 @@ void DiagramTimelineSvgDrawer::do_mpp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimelineSvgDrawer::do_spp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_pauli_targets(op);
+}
+
 void DiagramTimelineSvgDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -749,6 +755,8 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
     }
     if (op.gate_type == GateType::MPP) {
         do_mpp(op);
+    } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_spp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {

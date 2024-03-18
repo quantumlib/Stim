@@ -89,7 +89,8 @@ Circuit stabilizer_state_vector_to_circuit(
 /// Returns:
 ///     A tableau encoding the given circuit's Clifford operation.
 template <size_t W>
-Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset, bool inverse = false);
+Tableau<W> circuit_to_tableau(
+    const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset, bool inverse = false);
 
 /// Simulates the given circuit and outputs a state vector.
 ///

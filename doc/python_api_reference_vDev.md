@@ -209,6 +209,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
     - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
+    - [`stim.GateData.flows`](#stim.GateData.flows)
     - [`stim.GateData.generalized_inverse`](#stim.GateData.generalized_inverse)
     - [`stim.GateData.inverse`](#stim.GateData.inverse)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
@@ -7498,6 +7499,50 @@ def aliases(
         ['H', 'H_XZ']
         >>> stim.gate_data('cnot').aliases
         ['CNOT', 'CX', 'ZCX']
+    """
+```
+
+<a name="stim.GateData.flows"></a>
+```python
+# stim.GateData.flows
+
+# (in class stim.GateData)
+@property
+def flows(
+    self,
+) -> Optional[List[stim.Flow]]:
+    """Returns stabilizer flow generators for the gate, or else None.
+
+    A stabilizer flow describes an input-output relationship that the gate
+    satisfies, where an input pauli string is transformed into an output
+    pauli string mediated by certain measurement results.
+
+    Caution: this method returns None for variable-target-count gates like MPP.
+    Not because MPP has no stabilizer flows, but because its stabilizer flows
+    depend on how many qubits it targets and what basis it targets them in.
+
+    Returns:
+        A list of stim.Flow instances representing the generators.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').flows
+        [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+        >>> for e in stim.gate_data('ISWAP').flows:
+        ...     print(e)
+        X_ -> ZY
+        Z_ -> _Z
+        _X -> YZ
+        _Z -> Z_
+
+        >>> for e in stim.gate_data('MXX').flows:
+        ...     print(e)
+        X_ -> X_
+        _X -> _X
+        ZZ -> ZZ
+        XX -> rec[-1]
     """
 ```
 
