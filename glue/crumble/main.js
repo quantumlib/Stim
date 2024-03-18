@@ -184,8 +184,6 @@ function makeChordHandlers() {
         }
     });
     res.set(' ', preview => editorState.unmarkFocusInferBasis(preview));
-    res.set('q', preview => { editorState.changeCurLayerTo(editorState.curLayer - 1); });
-    res.set('e', preview => { editorState.changeCurLayerTo(editorState.curLayer + 1); });
 
     for (let [key, val] of [
         ['1', 0],
@@ -370,6 +368,16 @@ const CHORD_HANDLERS = makeChordHandlers();
  */
 function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
+    if (ev.type === 'keydown') {
+        if (ev.key === 'q') {
+            editorState.changeCurLayerTo(editorState.curLayer - 1);
+            return;
+        }
+        if (ev.key === 'e') {
+            editorState.changeCurLayerTo(editorState.curLayer + 1);
+            return;
+        }
+    }
     let evs = editorState.chorder.queuedEvents;
     if (evs.length === 0) {
         return;
