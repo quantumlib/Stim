@@ -2384,7 +2384,7 @@ def likeliest_error_sat_problem(
         wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
 
         with RC2(wcnf) as rc2:
-        print(rc2.compute())  
+        print(rc2.compute())
         print(rc2.cost)
 
     Much faster solvers are available online. For example, you can download
@@ -2771,7 +2771,7 @@ def shortest_error_sat_problem(
         wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
 
         with RC2(wcnf) as rc2:
-        print(rc2.compute())  
+        print(rc2.compute())
         print(rc2.cost)
 
     Much faster solvers are available online. For example, you can download
