@@ -694,6 +694,16 @@ void FrameSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void FrameSimulator<W>::do_CPP(const CircuitInstruction &target_data) {
+    decompose_cpp_operation_with_reverse_independence(
+        target_data,
+        num_qubits,
+        [&](const CircuitInstruction &inst) {
+            safe_do_instruction(inst);
+        });
+}
+
+template <size_t W>
 void FrameSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
     decompose_spp_or_spp_dag_operation(
         target_data,
@@ -952,6 +962,9 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::MPP:
             do_MPP(inst);
+            break;
+        case GateType::CPP:
+            do_CPP(inst);
             break;
         case GateType::SPP:
             do_SPP(inst);

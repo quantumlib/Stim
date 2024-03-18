@@ -76,7 +76,7 @@ constexpr inline uint16_t gate_name_to_hash(const char *c) {
     return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 70;
+constexpr const size_t NUM_DEFINED_GATES = 71;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -150,6 +150,7 @@ enum class GateType : uint8_t {
     SQRT_ZZ_DAG,
     // Pauli product gates
     MPP,
+    CPP,
     SPP,
     SPP_DAG,
     // Swap gates

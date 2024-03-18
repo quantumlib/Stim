@@ -269,6 +269,156 @@ void stim::decompose_spp_or_spp_dag_operation(
     }
 }
 
+static void decompose_cpp_operation_with_reverse_independence_helper(
+    CircuitInstruction cpp_op,
+    PauliStringRef<64> obs1,
+    PauliStringRef<64> obs2,
+    std::span<const GateTarget> classical_bits1,
+    std::span<const GateTarget> classical_bits2,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
+    Circuit *workspace,
+    std::vector<GateTarget> *buf) {
+    assert(obs1.num_qubits == obs2.num_qubits);
+
+    if (!obs1.commutes(obs2)) {
+        std::stringstream ss;
+        ss << "Attempted to CPP two anticommuting observables.\n";
+        ss << "    obs1: " << obs1 << "\n";
+        ss << "    obs2: " << obs2 << "\n";
+        ss << "    instruction: " << cpp_op;
+        throw std::invalid_argument(ss.str());
+    }
+
+    workspace->clear();
+    auto apply_fixup = [&](CircuitInstruction inst) {
+        workspace->safe_append(inst);
+        obs1.do_instruction(inst);
+        obs2.do_instruction(inst);
+    };
+
+    auto reduce = [&](PauliStringRef<64> target_obs) {
+        // Turn all non-identity terms into Z terms.
+        for_each_active_qubit_in<true, false>(target_obs, [&](uint32_t q) {
+            GateTarget t = GateTarget::qubit(q);
+            apply_fixup({target_obs.zs[q] ? GateType::H_YZ : GateType::H, {}, &t});
+        });
+
+        // Cancel any extra Z terms.
+        uint64_t pivot = UINT64_MAX;
+        for_each_active_qubit_in<true, true>(target_obs, [&](uint32_t q) {
+            if (pivot == UINT64_MAX) {
+                pivot = q;
+            } else {
+                std::array<GateTarget, 2> ts{GateTarget::qubit(q), GateTarget::qubit(pivot)};
+                apply_fixup({GateType::CX, {}, ts});
+            }
+        });
+
+        return pivot;
+    };
+
+    uint64_t pivot1 = reduce(obs1);
+    uint64_t pivot2 = reduce(obs2);
+
+    if (pivot1 == pivot2 && pivot1 != UINT64_MAX) {
+        // Both observables had identical quantum parts (up to sign).
+        // If their sign differed, we should do nothing.
+        // If their sign matched, we should apply Z to obs1.
+        assert(obs1.xs == obs2.xs);
+        assert(obs1.zs == obs2.zs);
+        obs2.zs[pivot2] = false;
+        obs2.sign ^= obs1.sign;
+        obs2.sign ^= true;
+        pivot2 = UINT64_MAX;
+    }
+    assert(obs1.weight() <= 1);
+    assert(obs2.weight() <= 1);
+    assert((pivot1 == UINT64_MAX) == (obs1.weight() == 0));
+    assert((pivot2 == UINT64_MAX) == (obs2.weight() == 0));
+    assert(pivot1 == UINT64_MAX || obs1.xs[pivot1] + 2 * obs1.zs[pivot1] == 2);
+    assert(pivot1 == UINT64_MAX || obs2.xs[pivot1] + 2 * obs2.zs[pivot1] == 0);
+    assert(pivot2 == UINT64_MAX || obs1.xs[pivot2] + 2 * obs1.zs[pivot2] == 0);
+    assert(pivot2 == UINT64_MAX || obs2.xs[pivot2] + 2 * obs2.zs[pivot2] == 2);
+
+    // Apply rewrites.
+    workspace->for_each_operation(do_instruction_callback);
+
+    // Handle the quantum-quantum interaction.
+    if (pivot1 != UINT64_MAX && pivot2 != UINT64_MAX) {
+        assert(pivot1 != pivot2);
+        std::array<GateTarget, 2> ts{GateTarget::qubit(pivot1), GateTarget::qubit(pivot2)};
+        do_instruction_callback({GateType::CZ, {}, ts});
+    }
+
+    // Handle sign and classical feedback into obs1.
+    if (pivot1 != UINT64_MAX) {
+        for (const auto &t : classical_bits2) {
+            std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot1)};
+            do_instruction_callback({GateType::CZ, {}, ts});
+        }
+        if (obs2.sign) {
+            GateTarget t = GateTarget::qubit(pivot1);
+            do_instruction_callback({GateType::Z, {}, &t});
+        }
+    }
+
+    // Handle sign and classical feedback into obs2.
+    if (pivot2 != UINT64_MAX) {
+        for (const auto &t : classical_bits1) {
+            std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot2)};
+            do_instruction_callback({GateType::CZ, {}, ts});
+        }
+        if (obs1.sign) {
+            GateTarget t = GateTarget::qubit(pivot2);
+            do_instruction_callback({GateType::Z, {}, &t});
+        }
+    }
+
+    // Undo rewrites.
+    workspace->for_each_operation_reverse([&](CircuitInstruction inst) {
+        assert(inst.args.empty());
+        if (inst.gate_type == GateType::CX) {
+            buf->clear();
+            for (size_t k = inst.targets.size(); k;) {
+                k -= 2;
+                buf->push_back(inst.targets[k]);
+                buf->push_back(inst.targets[k + 1]);
+            }
+            do_instruction_callback({GateType::CX, {}, *buf});
+        } else {
+            assert(inst.gate_type == GATE_DATA[inst.gate_type].inverse().id);
+            do_instruction_callback(inst);
+        }
+    });
+}
+
+void stim::decompose_cpp_operation_with_reverse_independence(
+    const CircuitInstruction &cpp_op,
+    size_t num_qubits,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
+    PauliString<64> obs1(num_qubits);
+    PauliString<64> obs2(num_qubits);
+    std::vector<GateTarget> bits1;
+    std::vector<GateTarget> bits2;
+    Circuit circuit_workspace;
+    std::vector<GateTarget> target_buf;
+
+    size_t start = 0;
+    while (true) {
+        bool b1 = accumulate_next_obs_terms_to_pauli_string_helper(cpp_op, &start, &obs1, &bits1);
+        bool b2 = accumulate_next_obs_terms_to_pauli_string_helper(cpp_op, &start, &obs2, &bits2);
+        if (!b2) {
+            break;
+        }
+        if (!b1) {
+            throw std::invalid_argument("Odd number of products.");
+        }
+
+        decompose_cpp_operation_with_reverse_independence_helper(
+            cpp_op, obs1, obs2, bits1, bits2, do_instruction_callback, &circuit_workspace, &target_buf);
+    }
+}
+
 void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));
@@ -706,6 +856,11 @@ struct Simplifier {
         switch (inst.gate_type) {
             case GateType::MPP:
                 decompose_mpp_operation(inst, num_qubits, [&](const CircuitInstruction sub) {
+                    simplify_instruction(sub);
+                });
+                break;
+            case GateType::CPP:
+                decompose_cpp_operation_with_reverse_independence(inst, num_qubits, [&](const CircuitInstruction sub) {
                     simplify_instruction(sub);
                 });
                 break;
