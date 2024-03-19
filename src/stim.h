@@ -81,6 +81,7 @@
 #include "stim/search/hyper/graph.h"
 #include "stim/search/hyper/node.h"
 #include "stim/search/hyper/search_state.h"
+#include "stim/search/sat/wcnf.h"
 #include "stim/search/search.h"
 #include "stim/simulators/count_determined_measurements.h"
 #include "stim/simulators/dem_sampler.h"
@@ -106,4 +107,6 @@
 #include "stim/stabilizers/tableau_iter.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
 #include "stim/str_util.h"
+#include "stim/util_bot/error_decomp.h"
+#include "stim/util_top/circuit_inverse_unitary.h"
 #endif

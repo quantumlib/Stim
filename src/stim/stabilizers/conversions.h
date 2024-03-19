@@ -41,24 +41,6 @@ inline uint8_t is_power_of_2(size_t value) {
 template <size_t W>
 std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau<W> &tableau, bool little_endian);
 
-/// Inverts the given circuit, as long as it only contains unitary operations.
-inline Circuit unitary_circuit_inverse(const Circuit &unitary_circuit) {
-    Circuit inverted;
-    unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
-        const auto &gate_data = GATE_DATA[op.gate_type];
-        if (!(gate_data.flags & GATE_IS_UNITARY)) {
-            throw std::invalid_argument("Not unitary: " + op.str());
-        }
-        size_t step = (gate_data.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
-        auto s = op.targets.ptr_start;
-        const auto &inv_gate = gate_data.inverse();
-        for (size_t k = op.targets.size(); k > 0; k -= step) {
-            inverted.safe_append(inv_gate.id, {s + k - step, s + k}, op.args);
-        }
-    });
-    return inverted;
-}
-
 /// Synthesizes a circuit to generate the given state vector.
 ///
 /// Args:
@@ -175,14 +157,6 @@ Tableau<W> stabilizers_to_tableau(
     bool allow_redundant,
     bool allow_underconstrained,
     bool invert);
-
-void independent_to_disjoint_xyz_errors(double x, double y, double z, double *out_x, double *out_y, double *out_z);
-bool try_disjoint_to_independent_xyz_errors_approx(
-    double x, double y, double z, double *out_x, double *out_y, double *out_z, size_t max_steps = 50);
-double depolarize1_probability_to_independent_per_channel_probability(double p);
-double depolarize2_probability_to_independent_per_channel_probability(double p);
-double independent_per_channel_probability_to_depolarize1_probability(double p);
-double independent_per_channel_probability_to_depolarize2_probability(double p);
 
 std::map<DemTarget, std::map<uint64_t, FlexPauliString>> circuit_to_detecting_regions(
     const Circuit &circuit,

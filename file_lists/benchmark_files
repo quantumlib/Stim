@@ -19,3 +19,4 @@ src/stim/stabilizers/pauli_string.perf.cc
 src/stim/stabilizers/pauli_string_iter.perf.cc
 src/stim/stabilizers/tableau.perf.cc
 src/stim/stabilizers/tableau_iter.perf.cc
+src/stim/util_bot/error_decomp.perf.cc

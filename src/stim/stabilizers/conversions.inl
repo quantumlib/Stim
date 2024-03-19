@@ -3,6 +3,7 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/conversions.h"
+#include "stim/util_top/circuit_inverse_unitary.h"
 
 namespace stim {
 
