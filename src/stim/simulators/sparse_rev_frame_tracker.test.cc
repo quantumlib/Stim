@@ -712,3 +712,21 @@ TEST(SparseUnsignedRevFrameTracker, tracks_anticommutation) {
     SparseUnsignedRevFrameTracker rev2(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors());
     ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
 }
+
+TEST(SparseUnsignedRevFrameTracker, MZZ) {
+    Circuit circuit(R"CIRCUIT(
+        MZZ 0 1 1 2
+        M 2
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    SparseUnsignedRevFrameTracker rev(
+        circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), false);
+    rev.undo_circuit(circuit);
+    ASSERT_TRUE(rev.xs[0].empty());
+    ASSERT_TRUE(rev.xs[1].empty());
+    ASSERT_TRUE(rev.xs[2].empty());
+    ASSERT_TRUE(rev.zs[0].empty());
+    ASSERT_TRUE(rev.zs[1].empty());
+    ASSERT_EQ(rev.zs[2].sorted_items, (std::vector<DemTarget>{DemTarget::relative_detector_id(0)}));
+}

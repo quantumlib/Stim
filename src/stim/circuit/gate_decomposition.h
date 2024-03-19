@@ -96,7 +96,7 @@ void decompose_spp_or_spp_dag_operation(
 ///         instruction must be less than this.
 ///     inst: The circuit instruction to decompose.
 ///     callback: The method called with each decomposed segment.
-void decompose_pair_instruction_into_segments_with_single_use_controls(
+void decompose_pair_instruction_into_disjoint_segments(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback);
 
 bool accumulate_next_obs_terms_to_pauli_string_helper(
