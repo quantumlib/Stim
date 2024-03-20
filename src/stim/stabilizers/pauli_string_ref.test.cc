@@ -153,3 +153,22 @@ TEST_EACH_WORD_SIZE_W(pauli_string, has_no_pauli_terms, {
     p.xs[700] = false;
     ASSERT_FALSE(p.ref().has_no_pauli_terms());
 })
+
+TEST_EACH_WORD_SIZE_W(pauli_string, for_each_active_pauli, {
+    auto v = PauliString<W>(500);
+    v.zs[0] = true;
+    v.xs[20] = true;
+    v.xs[50] = true;
+    v.zs[50] = true;
+    v.xs[63] = true;
+    v.zs[63] = true;
+    v.zs[100] = true;
+    v.xs[200] = true;
+    v.xs[301] = true;
+    v.zs[301] = true;
+    std::vector<size_t> indices;
+    v.ref().for_each_active_pauli([&](size_t index) {
+        indices.push_back(index);
+    });
+    ASSERT_EQ(indices, (std::vector<size_t>{0, 20, 50, 63, 100, 200, 301}));
+})

@@ -455,6 +455,46 @@ void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets,
     }
 }
 
+void Circuit::safe_append_reversed_targets(
+    GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs) {
+    if (reverse_in_pairs) {
+        if (targets.size() % 2 != 0) {
+            throw std::invalid_argument("targets.size() % 2 != 0");
+        }
+        for (size_t k = targets.size(); k;) {
+            k -= 2;
+            target_buf.append_tail(targets[k]);
+            target_buf.append_tail(targets[k + 1]);
+        }
+    } else {
+        for (size_t k = targets.size(); k-- > 0;) {
+            target_buf.append_tail(targets[k]);
+        }
+    }
+
+    CircuitInstruction to_add = {gate, args, target_buf.tail};
+    try {
+        to_add.validate();
+    } catch (const std::invalid_argument &ex) {
+        target_buf.discard_tail();
+        throw;
+    }
+
+    // Commit reversed tail data.
+    to_add.targets = target_buf.commit_tail();
+
+    // Ensure arg data is backed by copying it into this circuit's buffers.
+    to_add.args = arg_buf.take_copy(to_add.args);
+
+    if (!operations.empty() && operations.back().can_fuse(to_add)) {
+        // Extend targets of last gate.
+        fuse_data(operations.back().targets, to_add.targets, target_buf);
+    } else {
+        // Add a fresh new operation with its own target data.
+        operations.push_back(to_add);
+    }
+}
+
 void Circuit::append_from_file(FILE *file, bool stop_asap) {
     circuit_read_operations(
         *this,
@@ -875,7 +915,6 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
     result.arg_buf.ensure_available(arg_buf.total_allocated());
     size_t skip_reversing = 0;
 
-    std::vector<GateTarget> reversed_targets_buf;
     std::vector<double> args_buf;
     for (size_t k = 0; k < operations.size(); k++) {
         const auto &op = operations[k];
@@ -936,21 +975,8 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
         }
 
         // Add inverse operation to inverse circuit.
-        reversed_targets_buf.clear();
-        auto src = op.targets;
-        if (flags & GATE_TARGETS_PAIRS) {
-            assert(op.targets.size() % 2 == 0);
-            for (size_t j = src.size(); j > 0;) {
-                j -= 2;
-                reversed_targets_buf.push_back(src[j]);
-                reversed_targets_buf.push_back(src[j + 1]);
-            }
-        } else {
-            for (size_t j = src.size(); j--;) {
-                reversed_targets_buf.push_back(src[j]);
-            }
-        }
-        result.safe_append(gate_data.best_candidate_inverse_id, reversed_targets_buf, args);
+        result.safe_append_reversed_targets(
+            gate_data.best_candidate_inverse_id, op.targets, args, gate_data.flags & GATE_TARGETS_PAIRS);
     }
 
     // Put the qubit coordinates in the original order.

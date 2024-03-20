@@ -1609,9 +1609,9 @@ TEST(circuit, inverse) {
             .inverse(true),
         Circuit(R"CIRCUIT(
             MPP(0.125) Y6*Z5 Y4*Y3*Y2 X1*X0
-            MR 20 19
-            MRY 18 17
-            MRX 16 15
+            M 20 19
+            MY 18 17
+            MX 16 15
             MR(0.125) 14 13
             MRY(0.125) 12 11
             MRX(0.125) 10 9

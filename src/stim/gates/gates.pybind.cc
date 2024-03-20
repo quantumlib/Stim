@@ -732,7 +732,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 stim.gate_data('MRY')
 
                 >>> stim.gate_data('R').generalized_inverse
-                stim.gate_data('MR')
+                stim.gate_data('M')
 
                 >>> stim.gate_data('DETECTOR').generalized_inverse
                 stim.gate_data('DETECTOR')

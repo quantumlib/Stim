@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -51,6 +52,11 @@ struct SpanRef {
     SpanRef(const SpanRef<typename std::remove_const<T>::type> &other)
         : ptr_start(other.ptr_start), ptr_end(other.ptr_end) {
     }
+    SpanRef(std::span<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
+    SpanRef(const std::span<typename std::remove_const<T>::type> &items)
+        : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
     SpanRef(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
     SpanRef(const std::vector<typename std::remove_const<T>::type> &items)
@@ -62,6 +68,13 @@ struct SpanRef {
     template <size_t K>
     SpanRef(const std::array<typename std::remove_const<T>::type, K> &items)
         : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
+
+    operator std::span<T>() {
+        return {ptr_start, ptr_end};
+    }
+    operator std::span<const T>() const {
+        return {ptr_start, ptr_end};
     }
 
     SpanRef sub(size_t start_offset, size_t end_offset) const {

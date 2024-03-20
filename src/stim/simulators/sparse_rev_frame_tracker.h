@@ -169,9 +169,9 @@ struct SparseUnsignedRevFrameTracker {
     std::string str() const;
 
    private:
-    void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
+    void undo_MXX_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MYY_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MZZ_disjoint_segment(const CircuitInstruction &inst);
 };
 std::ostream &operator<<(std::ostream &out, const SparseUnsignedRevFrameTracker &tracker);
 

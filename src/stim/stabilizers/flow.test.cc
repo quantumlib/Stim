@@ -216,3 +216,18 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_unsigned_stabilizer_
         });
     ASSERT_EQ(results, (std::vector<bool>{1, 1, 0}));
 })
+
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, check_if_circuit_has_unsigned_stabilizer_flows_mzz, {
+    auto results = check_if_circuit_has_unsigned_stabilizer_flows<W>(
+        Circuit(R"CIRCUIT(
+            MZZ 0 1
+        )CIRCUIT"),
+        std::vector<Flow<W>>{
+            Flow<W>::from_str("X0*X1 -> Y0*Y1 xor rec[-1]"),
+            Flow<W>::from_str("X0*X1 -> Z0*Z1 xor rec[-1]"),
+            Flow<W>::from_str("X0*X1 -> X0*X1"),
+            Flow<W>::from_str("Z0 -> Z1 xor rec[-1]"),
+            Flow<W>::from_str("Z0 -> Z0"),
+        });
+    ASSERT_EQ(results, (std::vector<bool>{1, 0, 1, 1, 1}));
+})

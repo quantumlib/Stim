@@ -871,26 +871,23 @@ void FrameSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstructio
 
 template <size_t W>
 void FrameSimulator<W>::do_MXX(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_disjoint_segments(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MXX_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MXX_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MYY(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_disjoint_segments(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MYY_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MYY_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_disjoint_segments(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MZZ_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MZZ_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>
