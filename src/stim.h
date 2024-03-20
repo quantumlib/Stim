@@ -97,7 +97,6 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
 #include "stim/simulators/vector_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -110,6 +109,9 @@
 #include "stim/util_bot/error_decomp.h"
 #include "stim/util_bot/twiddle.h"
 #include "stim/util_top/circuit_inverse_unitary.h"
+#include "stim/util_top/circuit_to_detecting_regions.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
 #include "stim/util_top/stabilizers_vs_amplitudes.h"
 #endif

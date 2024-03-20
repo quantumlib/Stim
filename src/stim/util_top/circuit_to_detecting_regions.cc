@@ -1,4 +1,4 @@
-#include "stim/stabilizers/conversions.h"
+#include "stim/util_top/circuit_to_detecting_regions.h"
 
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 

@@ -6,7 +6,7 @@
 namespace stim {
 
 /// Inverts the given circuit, as long as it only contains unitary operations.
-Circuit unitary_circuit_inverse(const Circuit &unitary_circuit);
+Circuit circuit_inverse_unitary(const Circuit &unitary_circuit);
 
 }
 

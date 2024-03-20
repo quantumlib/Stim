@@ -1,9 +1,4 @@
-#include "stim/probability_util.h"
-#include "stim/simulators/graph_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/vector_simulator.h"
-#include "stim/stabilizers/conversions.h"
-#include "stim/util_top/circuit_inverse_unitary.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
 #include "stim/util_top/circuit_vs_tableau.h"
 
 namespace stim {

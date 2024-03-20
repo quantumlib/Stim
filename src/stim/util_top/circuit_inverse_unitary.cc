@@ -2,7 +2,7 @@
 
 using namespace stim;
 
-Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
+Circuit stim::circuit_inverse_unitary(const Circuit &unitary_circuit) {
     Circuit inverted;
     unitary_circuit.for_each_operation_reverse([&](const CircuitInstruction &op) {
         const auto &gate_data = GATE_DATA[op.gate_type];

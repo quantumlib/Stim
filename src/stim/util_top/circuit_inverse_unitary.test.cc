@@ -4,9 +4,9 @@
 
 using namespace stim;
 
-TEST(conversions, unitary_circuit_inverse) {
+TEST(conversions, circuit_inverse_unitary) {
     ASSERT_EQ(
-        unitary_circuit_inverse(Circuit(R"CIRCUIT(
+        circuit_inverse_unitary(Circuit(R"CIRCUIT(
         H 0
         ISWAP 0 1 1 2 3 2
         S 0 3 4
@@ -17,5 +17,5 @@ TEST(conversions, unitary_circuit_inverse) {
         H 0
     )CIRCUIT"));
 
-    ASSERT_THROW({ unitary_circuit_inverse(Circuit("M 0")); }, std::invalid_argument);
+    ASSERT_THROW({ circuit_inverse_unitary(Circuit("M 0")); }, std::invalid_argument);
 }

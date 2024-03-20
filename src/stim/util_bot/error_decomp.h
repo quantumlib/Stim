@@ -1,5 +1,5 @@
-#ifndef _STIM_UTIL_TOP_CIRCUIT_INVERSE_UNITARY_H
-#define _STIM_UTIL_TOP_CIRCUIT_INVERSE_UNITARY_H
+#ifndef _STIM_UTIL_BOT_ERROR_DECOM_H
+#define _STIM_UTIL_BOT_ERROR_DECOM_H
 
 #include "stim/circuit/circuit.h"
 
