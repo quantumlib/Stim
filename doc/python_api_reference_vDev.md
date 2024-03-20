@@ -2356,8 +2356,7 @@ def likeliest_error_sat_problem(
     quantization: int = 100,
     format: str = 'WDIMACS',
 ) -> str:
-    """Makes a maxSAT problem of the circuit's most likely undetectable logical
-    error, that other tools can solve.
+    """Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
     The output is a string describing the maxSAT problem in WDIMACS format
     (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the

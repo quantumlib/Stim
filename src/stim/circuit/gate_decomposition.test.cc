@@ -124,35 +124,43 @@ TEST(gate_decomposition, decompose_mpp_to_mpad) {
         std::invalid_argument);
 }
 
-TEST(gate_decomposition, decompose_pair_instruction_into_segments_with_single_use_controls) {
+TEST(gate_decomposition, decompose_pair_instruction_into_disjoint_segments) {
     Circuit out;
     auto append_into_circuit = [&](const CircuitInstruction &segment) {
-        std::vector<GateTarget> evens;
-        for (size_t k = 0; k < segment.targets.size(); k += 2) {
-            evens.push_back(segment.targets[k]);
-        }
-        out.safe_append(CircuitInstruction{GateType::CX, {}, segment.targets});
-        out.safe_append(CircuitInstruction{GateType::MX, segment.args, evens});
-        out.safe_append(CircuitInstruction{GateType::CX, {}, segment.targets});
+        out.safe_append(segment);
         out.append_from_text("TICK");
     };
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         Circuit("MXX(0.125) 0 1 0 2 3 5 4 5 3 4").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
-        CX 0 1
-        MX(0.125) 0
-        CX 0 1
+        MXX(0.125) 0 1
         TICK
 
-        CX 0 2 3 5 4 5
-        MX(0.125) 0 3 4
-        CX 0 2 3 5 4 5
+        MXX(0.125) 0 2 3 5
         TICK
 
-        CX 3 4
-        MX(0.125) 3
-        CX 3 4
+        MXX(0.125) 4 5
         TICK
+
+        MXX(0.125) 3 4
+        TICK
+    )CIRCUIT"));
+
+    out.clear();
+    decompose_pair_instruction_into_disjoint_segments(
+        Circuit("MZZ 0 1 1 2").operations[0], 10, append_into_circuit);
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        MZZ 0 1
+        TICK
+
+        MZZ 1 2
+        TICK
+    )CIRCUIT"));
+
+    out.clear();
+    decompose_pair_instruction_into_disjoint_segments(
+        Circuit("MZZ").operations[0], 10, append_into_circuit);
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
     )CIRCUIT"));
 }
 

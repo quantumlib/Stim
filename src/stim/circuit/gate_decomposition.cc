@@ -269,30 +269,32 @@ void stim::decompose_spp_or_spp_dag_operation(
     }
 }
 
-void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
+void stim::decompose_pair_instruction_into_disjoint_segments(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
-    simd_bits<64> used_as_control(std::max(num_qubits, size_t{1}));
-    size_t done = 0;
-    size_t k = 0;
-    while (done < inst.targets.size()) {
-        bool flush = true;
-        size_t q0 = 0;
-        if (k < inst.targets.size()) {
-            q0 = inst.targets[k].qubit_value();
-            size_t q1 = inst.targets[k + 1].qubit_value();
-            flush = used_as_control[q0] || used_as_control[q1];
-        }
-        if (flush) {
-            callback(CircuitInstruction{
-                inst.gate_type,
-                inst.args,
-                inst.targets.sub(done, k),
-            });
-            used_as_control.clear();
-            done = k;
+    simd_bits<64> used_as_control(num_qubits);
+    size_t num_flushed = 0;
+    size_t cur_index = 0;
+    auto flush = [&](){
+        callback(CircuitInstruction{
+            inst.gate_type,
+            inst.args,
+            inst.targets.sub(num_flushed, cur_index),
+        });
+        used_as_control.clear();
+        num_flushed = cur_index;
+    };
+    while (cur_index < inst.targets.size()) {
+        size_t q0 = inst.targets[cur_index].qubit_value();
+        size_t q1 = inst.targets[cur_index + 1].qubit_value();
+        if (used_as_control[q0] || used_as_control[q1]) {
+            flush();
         }
         used_as_control[q0] = true;
-        k += 2;
+        used_as_control[q1] = true;
+        cur_index += 2;
+    }
+    if (num_flushed < inst.targets.size()) {
+        flush();
     }
 }
 
