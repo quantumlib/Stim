@@ -2967,12 +2967,14 @@ def time_reversed_for_flows(
         >>> inv_circuit, inv_flows = stim.Circuit('''
         ...     R 0
         ...     H 0
-        ...     MX 0
+        ...     S 0
+        ...     MY 0
         ...     DETECTOR rec[-1]
         ... ''').time_reversed_for_flows([])
         >>> inv_circuit
         stim.Circuit('''
-            RX 0
+            RY 0
+            S_DAG 0
             H 0
             M 0
             DETECTOR rec[-1]
@@ -2982,7 +2984,9 @@ def time_reversed_for_flows(
 
         >>> inv_circuit, inv_flows = stim.Circuit('''
         ...     M 0
-        ... ''').time_reversed_for_flows([stim.Flow("Z -> rec[-1]")])
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("Z -> rec[-1]"),
+        ... ])
         >>> inv_circuit
         stim.Circuit('''
             R 0
@@ -2994,7 +2998,9 @@ def time_reversed_for_flows(
 
         >>> inv_circuit, inv_flows = stim.Circuit('''
         ...     R 0
-        ... ''').time_reversed_for_flows([stim.Flow("1 -> Z")])
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("1 -> Z"),
+        ... ])
         >>> inv_circuit
         stim.Circuit('''
             M 0
@@ -3004,7 +3010,9 @@ def time_reversed_for_flows(
 
         >>> inv_circuit, inv_flows = stim.Circuit('''
         ...     M 0
-        ... ''').time_reversed_for_flows([stim.Flow("1 -> Z xor rec[-1]")])
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("1 -> Z xor rec[-1]"),
+        ... ])
         >>> inv_circuit
         stim.Circuit('''
             M 0
@@ -3035,6 +3043,21 @@ def time_reversed_for_flows(
         ''')
         >>> inv_flows
         []
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     MXX 0 1
+        ...     H 0
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("ZZ -> YY xor rec[-1]"),
+        ...     stim.Flow("ZZ -> XZ"),
+        ... ])
+        >>> inv_circuit
+        stim.Circuit('''
+            H 0
+            MXX 0 1
+        ''')
+        >>> inv_flows
+        [stim.Flow("YY -> ZZ xor rec[-1]"), stim.Flow("XZ -> ZZ")]
 
         >>> stim.Circuit.generated(
         ...     "surface_code:rotated_memory_x",
