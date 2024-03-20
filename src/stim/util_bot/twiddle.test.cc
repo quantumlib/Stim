@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "stim/util_bot/twiddle.h"
+
 #include <bit>
 
 #include "gtest/gtest.h"

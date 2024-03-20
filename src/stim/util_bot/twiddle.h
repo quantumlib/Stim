@@ -25,7 +25,7 @@
 namespace stim {
 
 inline uint8_t floor_lg2(size_t value) {
-    return sizeof(value)*8 - 1 - std::countl_zero(value);
+    return sizeof(value) * 8 - 1 - std::countl_zero(value);
 }
 
 inline size_t first_set_bit(size_t value, size_t min_result) {
