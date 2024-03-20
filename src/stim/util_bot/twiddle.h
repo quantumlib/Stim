@@ -24,6 +24,11 @@
 
 namespace stim {
 
+inline uint8_t is_power_of_2(size_t value) {
+    // Note: would use std::has_single_bit here, but as of March 2024 that method is missing when building with emscripten.
+    return std::popcount(value) == 1;
+}
+
 inline uint8_t floor_lg2(size_t value) {
     return sizeof(value) * 8 - 1 - std::countl_zero(value);
 }

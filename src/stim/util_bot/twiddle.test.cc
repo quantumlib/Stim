@@ -20,16 +20,29 @@
 
 using namespace stim;
 
+TEST(twiddle, is_power_of_2) {
+    ASSERT_EQ(is_power_of_2(0), 0);
+    ASSERT_EQ(is_power_of_2(1), 1);
+    ASSERT_EQ(is_power_of_2(2), 1);
+    ASSERT_EQ(is_power_of_2(3), 0);
+    ASSERT_EQ(is_power_of_2(4), 1);
+    ASSERT_EQ(is_power_of_2(5), 0);
+    ASSERT_EQ(is_power_of_2(6), 0);
+    ASSERT_EQ(is_power_of_2(7), 0);
+    ASSERT_EQ(is_power_of_2(8), 1);
+    ASSERT_EQ(is_power_of_2(9), 0);
+}
+
 TEST(twiddle, floor_lg2) {
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)1), 0);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)2), 1);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)3), 1);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)4), 2);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)5), 2);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)6), 2);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)7), 2);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)8), 3);
-    ASSERT_EQ(63 - std::countl_zero((uint64_t)9), 3);
+    ASSERT_EQ(floor_lg2(1), 0);
+    ASSERT_EQ(floor_lg2(2), 1);
+    ASSERT_EQ(floor_lg2(3), 1);
+    ASSERT_EQ(floor_lg2(4), 2);
+    ASSERT_EQ(floor_lg2(5), 2);
+    ASSERT_EQ(floor_lg2(6), 2);
+    ASSERT_EQ(floor_lg2(7), 2);
+    ASSERT_EQ(floor_lg2(8), 3);
+    ASSERT_EQ(floor_lg2(9), 3);
 }
 
 TEST(twiddle, first_set_bit) {

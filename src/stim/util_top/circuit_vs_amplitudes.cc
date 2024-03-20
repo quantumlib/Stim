@@ -32,7 +32,7 @@ inline static size_t compute_occupation(const std::vector<std::complex<float>> &
 
 Circuit stim::stabilizer_state_vector_to_circuit(
     const std::vector<std::complex<float>> &state_vector, bool little_endian) {
-    if (!std::has_single_bit(state_vector.size())) {
+    if (!is_power_of_2(state_vector.size())) {
         std::stringstream ss;
         ss << "Expected number of amplitudes to be a power of 2.";
         ss << " The given state vector had " << state_vector.size() << " amplitudes.";
@@ -82,7 +82,7 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     }
     sim.smooth_stabilizer_state(sim.state[0]);
     size_t occupation = compute_occupation(sim.state);
-    if (!std::has_single_bit(occupation)) {
+    if (!is_power_of_2(occupation)) {
         throw std::invalid_argument("State vector isn't a stabilizer state.");
     }
 
