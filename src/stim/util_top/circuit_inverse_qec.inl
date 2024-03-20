@@ -32,6 +32,7 @@ Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flo
     Circuit result;
 
     std::vector<GateTarget> buf;
+    simd_bits<64> qubit_workspace(stats.num_qubits);
 
     circuit.for_each_operation_reverse([&](const CircuitInstruction &inst) {
         Gate g = GATE_DATA[inst.gate_type];
@@ -105,33 +106,86 @@ Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flo
             case GateType::RX:
             case GateType::RY:
             case GateType::R: {
-                if (!inst.args.empty()) {
-                    throw std::invalid_argument(inst.str());
-                }
-                for (size_t q = inst.targets.size(); q-- > 0;) {
-                    for (auto d : rev.xs[q]) {
-                        d2ms[d].insert(num_new_measurements);
+                for_each_disjoint_target_segment_in_instruction_reversed(inst, qubit_workspace, [&](CircuitInstruction segment) {
+                    // Each reset effect becomes a measurement effect in the inverted circuit. Index these measurements.
+                    for (size_t k = inst.targets.size(); k-- > 0;) {
+                        auto q = inst.targets[k].qubit_value();
+                        for (auto d : rev.xs[q]) {
+                            d2ms[d].insert(num_new_measurements);
+                        }
+                        for (auto d : rev.zs[q]) {
+                            d2ms[d].insert(num_new_measurements);
+                        }
+                        num_new_measurements++;
                     }
-                    for (auto d : rev.zs[q]) {
-                        d2ms[d].insert(num_new_measurements);
+
+                    // Undo the gate, ignoring measurement noise.
+                    rev.undo_gate(segment);
+                    result.safe_append_reversed_targets(g.best_candidate_inverse_id, segment.targets, {}, false);
+
+                    // Measurement noise becomes noise-after-reset in the reversed circuit.
+                    if (!inst.args.empty()) {
+                        GateType ejected_noise;
+                        if (inst.gate_type == GateType::MRX) {
+                            ejected_noise = GateType::Z_ERROR;
+                        } else if (inst.gate_type == GateType::MRY) {
+                            ejected_noise = GateType::Z_ERROR;
+                        } else if (inst.gate_type == GateType::MR) {
+                            ejected_noise = GateType::X_ERROR;
+                        } else {
+                            throw std::invalid_argument("Don't know how to invert " + inst.str());
+                        }
+                        result.safe_append_reversed_targets(ejected_noise, segment.targets, segment.args, false);
                     }
-                    GateTarget t = GateTarget::qubit(q);
-                    rev.undo_gate(CircuitInstruction{g.id, {}, &t});
-                    num_new_measurements++;
-                }
-                result.safe_append_reversed_targets(g.best_candidate_inverse_id, inst.targets, {}, false);
+                });
                 break;
             }
 
-            case GateType::MPAD:
             case GateType::MX:
             case GateType::MY:
-            case GateType::M:
+            case GateType::M: {
+                // Figure out the type of reset each measurement might be turned into.
+                GateType reset;
+                if (inst.gate_type == GateType::MX) {
+                    reset = GateType::RX;
+                } else if (inst.gate_type == GateType::MY) {
+                    reset = GateType::RY;
+                } else if (inst.gate_type == GateType::M) {
+                    reset = GateType::R;
+                } else {
+                    throw std::invalid_argument("Don't know how to invert " + inst.str());
+                }
+
+                for (size_t k = inst.targets.size(); k-- > 0;) {
+                    GateTarget t = inst.targets[k];
+                    auto q = t.qubit_value();
+                    if (rev.xs[q].empty() && rev.zs[q].empty() && rev.rec_bits.contains(rev.num_measurements_in_past - 1) && inst.args.empty()) {
+                        // Noiseless measurements with past-dependence and no future-dependence become resets.
+                        result.safe_append(reset, &t, inst.args);
+                    } else {
+                        // Measurements that aren't turned into resets need to be re-indexed.
+                        auto f = rev.rec_bits.find(rev.num_measurements_in_past - k - 1);
+                        if (f != rev.rec_bits.end()) {
+                            for (auto &dem_target : f->second) {
+                                d2ms[dem_target].insert(num_new_measurements);
+                            }
+                        }
+                        num_new_measurements++;
+                        result.safe_append(g.best_candidate_inverse_id, &t, inst.args);
+                    }
+
+                    rev.undo_gate(CircuitInstruction{g.id, {}, &t});
+                }
+                break;
+            }
+            case GateType::MPAD:
             case GateType::MPP:
             case GateType::MXX:
             case GateType::MYY:
             case GateType::MZZ: {
                 auto m = inst.count_measurement_results();
+
+                // Re-index the measurements for the reversed detectors.
                 for (size_t k = 0; k < m; k++) {
                     auto f = rev.rec_bits.find(rev.num_measurements_in_past - k - 1);
                     if (f != rev.rec_bits.end()) {
@@ -141,8 +195,9 @@ Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flo
                     }
                     num_new_measurements++;
                 }
-                rev.undo_gate(inst);
                 result.safe_append_reversed_targets(g.best_candidate_inverse_id, inst.targets, inst.args, false);
+
+                rev.undo_gate(inst);
                 break;
             }
 
@@ -150,10 +205,10 @@ Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flo
             case GateType::SHIFT_COORDS:
             case GateType::ELSE_CORRELATED_ERROR:
             default:
-                throw std::invalid_argument("Instruction not supported by qec_inverse: " + inst.str());
+                throw std::invalid_argument("Don't know how to invert " + inst.str());
         }
 
-        if (g.flags & (GATE_IS_RESET | stim::GATE_PRODUCES_RESULTS)) {
+        if (g.flags & (GATE_IS_RESET | GATE_PRODUCES_RESULTS)) {
             std::set<DemTarget> active_detectors;
             for (const auto &ds : rev.xs) {
                 for (const auto &t : ds) {
@@ -175,11 +230,11 @@ Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flo
                 SpanRef<const double> out_args{};
                 GateType out_gate = GateType::DETECTOR;
                 double id = 0;
-                ;
+
                 if (d.first.is_observable_id()) {
                     id = d.first.raw_id();
                     out_args = &id;
-                } else if (!active_detectors.contains(d.first)) {
+                } else if (active_detectors.contains(d.first)) {
                     continue;
                 } else {
                     out_args = d2coords[d.first];

@@ -113,6 +113,7 @@
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/simplified_circuit.h"
 #include "stim/util_top/stabilizers_to_tableau.h"
 #include "stim/util_top/stabilizers_vs_amplitudes.h"
 #endif

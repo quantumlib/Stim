@@ -106,7 +106,10 @@ bool accumulate_next_obs_terms_to_pauli_string_helper(
     std::vector<GateTarget> *bits,
     bool allow_imaginary = false);
 
-Circuit simplified_circuit(const Circuit &circuit);
+void for_each_disjoint_target_segment_in_instruction_reversed(
+    const CircuitInstruction &inst,
+    simd_bits_range_ref<64> workspace,
+    const std::function<void(CircuitInstruction)> &callback);
 
 }  // namespace stim
 
