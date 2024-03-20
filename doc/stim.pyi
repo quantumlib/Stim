@@ -4627,24 +4627,6 @@ class DetectorErrorModel:
             >>> c2 == c1
             True
         """
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-svg"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-3d"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-3d-html"]',
-    ) -> 'stim._DiagramHelper':
-        pass
     def diagram(
         self,
         type: str,
@@ -4657,6 +4639,8 @@ class DetectorErrorModel:
                     detector error model. Red lines are errors crossing a
                     logical observable. Blue lines are undecomposed hyper
                     errors.
+                "matchgraph-svg-html": Same as matchgraph-svg but with the
+                    SVG wrapped in a resizable HTML iframe.
                 "matchgraph-3d": A 3d model of the decoding graph of the
                     detector error model. Red lines are errors crossing a
                     logical observable. Blue lines are undecomposed hyper
@@ -4688,12 +4672,12 @@ class DetectorErrorModel:
             >>> dem = circuit.detector_error_model(decompose_errors=True)
 
             >>> with tempfile.TemporaryDirectory() as d:
-            ...     diagram = circuit.diagram(type="match-graph-svg")
+            ...     diagram = circuit.diagram("match-graph-svg")
             ...     with open(f"{d}/dem_image.svg", "w") as f:
             ...         print(diagram, file=f)
 
             >>> with tempfile.TemporaryDirectory() as d:
-            ...     diagram = circuit.diagram(type="match-graph-3d")
+            ...     diagram = circuit.diagram("match-graph-3d")
             ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
             ...         print(diagram, file=f)
         """
