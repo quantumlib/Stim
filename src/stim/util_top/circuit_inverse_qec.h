@@ -6,7 +6,8 @@
 namespace stim {
 
 template <size_t W>
-Circuit circuit_inverse_qec(const Circuit &circuit, std::span<const Flow<W>> flows);
+std::pair<Circuit, std::vector<Flow<W>>> circuit_inverse_qec(
+    const Circuit &circuit, std::span<const Flow<W>> flows, bool dont_turn_measurements_into_resets = false);
 
 }  // namespace stim
 

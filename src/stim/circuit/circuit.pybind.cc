@@ -40,8 +40,10 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
 #include "stim/stabilizers/flow.h"
+#include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/simplified_circuit.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -2879,6 +2881,191 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 positive, and a 0% chance of a false negative. So, when the method returns
                 True, there is technically still a 2^-256 chance the circuit doesn't have
                 the flow. This is lower than the chance of a cosmic ray flipping the result.
+        )DOC")
+            .data());
+
+    c.def(
+        "time_reversed_for_flows",
+        [](const Circuit &self,
+           const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows,
+           bool dont_turn_measurements_into_resets) -> pybind11::object {
+            auto [inv_circuit, inv_flows] =
+                circuit_inverse_qec<MAX_BITWORD_WIDTH>(self, flows, dont_turn_measurements_into_resets);
+            return pybind11::make_tuple(inv_circuit, inv_flows);
+        },
+        pybind11::arg("flows"),
+        pybind11::kw_only(),
+        pybind11::arg("dont_turn_measurements_into_resets") = false,
+        clean_doc_string(R"DOC(
+            Time-reverses the circuit while preserving error correction structure.
+
+            This method can be used to turn a fault tolerant measurement into a fault
+            tolerant preparation (and vice versa). It guarantees that the detecting
+            regions of the returned circuit are exactly the same as the given circuit,
+            but reversed.
+
+            Note that this method doesn't guarantee that it will preserve the *sign* of the
+            stabilizer flows. For example, inverting a memory circuit that preserves a
+            logical observable ("X -> X" and "Z -> Z") may produce a memory circuit that
+            always bit flips the logical observable ("X -> X" and "Z -> -Z") or that
+            dynamically adjusts the logical observable in response to measurements (like
+            "X -> X xor rec[-1]" and "Z -> Z xor rec[-2]").
+
+            This method will turn time-reversed resets into measurements, and attempts to
+            turn time-reversed measurements into resets. A measurement will time-reverse
+            into a reset if some annotated detectors, annotated observables, or given flows
+            have detecting regions with sensitivity just before the measurement but none
+            have detecting regions with sensitivity after the measurement.
+
+            When measurement-reset operation has a noisy result, this measurement noise
+            will be time-reversed into reset noise by removing the noise parameter from
+            the operation and adding X_ERROR or Z_ERROR noise after the time-reversed
+            operation.
+
+            Args:
+                flows: Flows you care about, that reach past the start/end of the given
+                    circuit. The result will contain an inverted flow for each of these
+                    given flows. You need this information because it reveals the
+                    measurements needed to produce the inverted flows that you care
+                    about.
+
+                    An exception will be raised if the circuit doesn't have all these
+                    flows. The inverted circuit will have the inverses of these flows
+                    (ignoring sign).
+                dont_turn_measurements_into_resets: Defaults to False. When set to
+                    True, measurements will time-reverse into measurements even if
+                    nothing is sensitive to the measured qubit after the measurement
+                    completes. This guarantees the output circuit has *all* flows
+                    that the input circuit has (up to sign and feedback), even ones
+                    that aren't annotated.
+
+            Returns:
+                An (inverted_circuit, inverted_flows) tuple.
+
+                inverted_circuit is the qec inverse of the given circuit.
+
+                inverted_flows is a list of flows, matching up by index with the flows
+                given as arguments to the method. The input, output, and sign fields
+                of these flows are boring. The useful field is measurement_indices,
+                because it's difficult to predict which measurements are needed for
+                the inverted flow due to effects such as implicitly-included resets
+                inverting into explicitly-included measurements.
+
+            Caveats:
+                Currently, this method doesn't compute the sign of the inverted flows.
+                It unconditionally sets the sign to False.
+
+            Examples:
+                >>> import stim
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     R 0
+                ...     H 0
+                ...     MX 0
+                ...     DETECTOR rec[-1]
+                ... ''').time_reversed_for_flows([])
+                >>> inv_circuit
+                stim.Circuit('''
+                    RX 0
+                    H 0
+                    M 0
+                    DETECTOR rec[-1]
+                ''')
+                >>> inv_flows
+                []
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows([stim.Flow("Z -> rec[-1]")])
+                >>> inv_circuit
+                stim.Circuit('''
+                    R 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("1 -> Z")]
+                >>> inv_circuit.has_all_flows(inv_flows, unsigned=True)
+                True
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     R 0
+                ... ''').time_reversed_for_flows([stim.Flow("1 -> Z")])
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("Z -> rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows([stim.Flow("1 -> Z xor rec[-1]")])
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("Z -> rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows(
+                ...     flows=[stim.Flow("Z -> rec[-1]")],
+                ...     dont_turn_measurements_into_resets=True,
+                ... )
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("1 -> Z xor rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     MR(0.125) 0
+                ... ''').time_reversed_for_flows([])
+                >>> inv_circuit
+                stim.Circuit('''
+                    MR 0
+                    X_ERROR(0.125) 0
+                ''')
+                >>> inv_flows
+                []
+
+                >>> stim.Circuit.generated(
+                ...     "surface_code:rotated_memory_x",
+                ...     distance=2,
+                ...     rounds=1,
+                ... ).time_reversed_for_flows([])[0]
+                stim.Circuit('''
+                    QUBIT_COORDS(1, 1) 1
+                    QUBIT_COORDS(2, 0) 2
+                    QUBIT_COORDS(3, 1) 3
+                    QUBIT_COORDS(1, 3) 6
+                    QUBIT_COORDS(2, 2) 7
+                    QUBIT_COORDS(3, 3) 8
+                    QUBIT_COORDS(2, 4) 12
+                    RX 8 6 3 1
+                    MR 12 7 2
+                    TICK
+                    H 12 2
+                    TICK
+                    CX 1 7 12 6
+                    TICK
+                    CX 6 7 12 8
+                    TICK
+                    CX 3 7 2 1
+                    TICK
+                    CX 8 7 2 3
+                    TICK
+                    H 12 2
+                    TICK
+                    M 12 7 2
+                    DETECTOR(2, 0, 1) rec[-1]
+                    DETECTOR(2, 4, 1) rec[-3]
+                    MX 8 6 3 1
+                    DETECTOR(2, 0, 0) rec[-5] rec[-2] rec[-1]
+                    DETECTOR(2, 4, 0) rec[-7] rec[-4] rec[-3]
+                    OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
+                ''')
         )DOC")
             .data());
 

@@ -245,7 +245,7 @@ void stim::decompose_pair_instruction_into_disjoint_segments(
     simd_bits<64> used_as_control(num_qubits);
     size_t num_flushed = 0;
     size_t cur_index = 0;
-    auto flush = [&](){
+    auto flush = [&]() {
         callback(CircuitInstruction{
             inst.gate_type,
             inst.args,
@@ -273,11 +273,10 @@ void stim::for_each_disjoint_target_segment_in_instruction_reversed(
     const CircuitInstruction &inst,
     simd_bits_range_ref<64> workspace,
     const std::function<void(CircuitInstruction)> &callback) {
-
     workspace.clear();
     size_t cur_end = inst.targets.size();
     size_t cur_start = inst.targets.size();
-    auto flush = [&](){
+    auto flush = [&]() {
         callback(CircuitInstruction{
             inst.gate_type,
             inst.args,

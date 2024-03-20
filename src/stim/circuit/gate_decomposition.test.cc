@@ -145,8 +145,7 @@ TEST(gate_decomposition, decompose_pair_instruction_into_disjoint_segments) {
     )CIRCUIT"));
 
     out.clear();
-    decompose_pair_instruction_into_disjoint_segments(
-        Circuit("MZZ 0 1 1 2").operations[0], 10, append_into_circuit);
+    decompose_pair_instruction_into_disjoint_segments(Circuit("MZZ 0 1 1 2").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         MZZ 0 1
         TICK
@@ -156,8 +155,7 @@ TEST(gate_decomposition, decompose_pair_instruction_into_disjoint_segments) {
     )CIRCUIT"));
 
     out.clear();
-    decompose_pair_instruction_into_disjoint_segments(
-        Circuit("MZZ").operations[0], 10, append_into_circuit);
+    decompose_pair_instruction_into_disjoint_segments(Circuit("MZZ").operations[0], 10, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
     )CIRCUIT"));
 }
@@ -296,9 +294,7 @@ TEST(gate_decomposition, for_each_disjoint_target_segment_in_instruction_reverse
         out.append_from_text("TICK");
     };
     for_each_disjoint_target_segment_in_instruction_reversed(
-        Circuit("M(0.25) 0 1 2 3 2 5 6 7 1 5 6 6").operations[0],
-        buf,
-        append_into_circuit);
+        Circuit("M(0.25) 0 1 2 3 2 5 6 7 1 5 6 6").operations[0], buf, append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         M(0.25) 6
         TICK

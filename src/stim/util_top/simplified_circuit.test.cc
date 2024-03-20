@@ -1,9 +1,10 @@
+#include "stim/util_top/simplified_circuit.h"
+
 #include "gtest/gtest.h"
 
 #include "stim/cmd/command_help.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
-#include "stim/util_top/simplified_circuit.h"
 
 using namespace stim;
 

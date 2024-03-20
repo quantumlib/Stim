@@ -70,6 +70,13 @@ struct SpanRef {
         : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
+    operator std::span<T>() {
+        return {ptr_start, ptr_end};
+    }
+    operator std::span<const T>() const {
+        return {ptr_start, ptr_end};
+    }
+
     SpanRef sub(size_t start_offset, size_t end_offset) const {
         return SpanRef<T>(ptr_start + start_offset, ptr_start + end_offset);
     }

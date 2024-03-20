@@ -427,7 +427,7 @@ void SparseUnsignedRevFrameTracker::undo_MZ(const CircuitInstruction &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MXX_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
 
@@ -440,7 +440,7 @@ void SparseUnsignedRevFrameTracker::undo_MXX_disjoint_controls_segment(const Cir
     undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
 }
 
-void SparseUnsignedRevFrameTracker::undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MYY_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
 
@@ -453,7 +453,7 @@ void SparseUnsignedRevFrameTracker::undo_MYY_disjoint_controls_segment(const Cir
     undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
 }
 
-void SparseUnsignedRevFrameTracker::undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MZZ_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
     undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
 
@@ -476,7 +476,7 @@ void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
 
     decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MXX_disjoint_controls_segment(segment);
+            undo_MXX_disjoint_segment(segment);
         });
 }
 
@@ -490,7 +490,7 @@ void SparseUnsignedRevFrameTracker::undo_MYY(const CircuitInstruction &inst) {
 
     decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MYY_disjoint_controls_segment(segment);
+            undo_MYY_disjoint_segment(segment);
         });
 }
 
@@ -504,7 +504,7 @@ void SparseUnsignedRevFrameTracker::undo_MZZ(const CircuitInstruction &inst) {
 
     decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MZZ_disjoint_controls_segment(segment);
+            undo_MZZ_disjoint_segment(segment);
         });
 }
 

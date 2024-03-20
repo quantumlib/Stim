@@ -119,7 +119,8 @@ struct Circuit {
     void append_repeat_block(uint64_t repeat_count, Circuit &&body);
 
     /// Appends the given gate, but with targets reversed.
-    void safe_append_reversed_targets(GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs);
+    void safe_append_reversed_targets(
+        GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs);
 
     /// Resets the circuit back to an empty circuit.
     void clear();

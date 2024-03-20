@@ -455,7 +455,8 @@ void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets,
     }
 }
 
-void Circuit::safe_append_reversed_targets(GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs) {
+void Circuit::safe_append_reversed_targets(
+    GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs) {
     if (reverse_in_pairs) {
         if (targets.size() % 2 != 0) {
             throw std::invalid_argument("targets.size() % 2 != 0");
@@ -974,7 +975,8 @@ Circuit Circuit::inverse(bool allow_weak_inverse) const {
         }
 
         // Add inverse operation to inverse circuit.
-        result.safe_append_reversed_targets(gate_data.best_candidate_inverse_id, op.targets, args, gate_data.flags & GATE_TARGETS_PAIRS);
+        result.safe_append_reversed_targets(
+            gate_data.best_candidate_inverse_id, op.targets, args, gate_data.flags & GATE_TARGETS_PAIRS);
     }
 
     // Put the qubit coordinates in the original order.
