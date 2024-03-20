@@ -18,7 +18,6 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/util_top/export_qasm.h"
 #include "stim/circuit/gate_target.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -43,6 +42,8 @@
 #include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/export_crumble_url.h"
+#include "stim/util_top/export_qasm.h"
 #include "stim/util_top/simplified_circuit.h"
 
 using namespace stim;
@@ -3218,6 +3219,32 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 q0: -Z:D0-
                      |
                 q1: -Z:D0-
+        )DOC")
+            .data());
+
+    c.def(
+        "to_crumble_url",
+        &export_crumble_url,
+        clean_doc_string(R"DOC(
+            Returns a URL that opens up crumble and loads this circuit into it.
+
+            Crumble is a tool for editing stabilizer circuits, and visualizing their
+            stabilizer flows. Its source code is in the `glue/crumble` directory of
+            the stim code repository on github. A prebuilt version is made available
+            at https://algassert.com/crumble, which is what the URL returned by this
+            method will point to.
+
+            Returns:
+                A URL that can be opened in a web browser.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ...     S 1
+                ... ''').to_crumble_url()
+                https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1
         )DOC")
             .data());
 }
