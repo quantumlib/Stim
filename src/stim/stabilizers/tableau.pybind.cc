@@ -14,14 +14,16 @@
 
 #include "stim/stabilizers/tableau.pybind.h"
 
+#include "flex_pauli_string.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_iter.h"
 #include "stim/util_top/stabilizers_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -205,7 +207,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "iter_all",
-        [](size_t num_qubits, bool unsigned_only) {
+        [](size_t num_qubits, bool unsigned_only) -> TableauIterator<MAX_BITWORD_WIDTH> {
             return TableauIterator<MAX_BITWORD_WIDTH>(num_qubits, !unsigned_only);
         },
         pybind11::arg("num_qubits"),
@@ -2115,7 +2117,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             }
 
             return circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false);
+                stabilizer_state_vector_to_circuit(v, little_endian), false, false, false);
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),

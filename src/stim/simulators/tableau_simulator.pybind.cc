@@ -19,9 +19,10 @@
 #include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -2072,7 +2073,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             self.inv_state =
                 circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                    stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false)
+                    stabilizer_state_vector_to_circuit(v, little_endian), false, false, false)
                     .inverse();
         },
         pybind11::arg("state_vector"),

@@ -39,9 +39,9 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/transform_without_feedback.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/flow.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/circuit_to_detecting_regions.h"
 
 using namespace stim;
 using namespace stim_pybind;
