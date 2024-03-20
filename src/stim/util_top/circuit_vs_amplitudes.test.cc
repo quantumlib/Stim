@@ -181,9 +181,7 @@ TEST(conversions, circuit_to_output_state_vector) {
         circuit_to_output_state_vector(Circuit("H 0 1"), false),
         (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector(Circuit("X 1"), false),
-        (std::vector<std::complex<float>>{{0}, {1}, {0}, {0}}));
+        circuit_to_output_state_vector(Circuit("X 1"), false), (std::vector<std::complex<float>>{{0}, {1}, {0}, {0}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector(Circuit("X 1"), true),
-        (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}}));
+        circuit_to_output_state_vector(Circuit("X 1"), true), (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}}));
 }

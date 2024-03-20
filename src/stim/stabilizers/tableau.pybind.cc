@@ -21,9 +21,9 @@
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_iter.h"
-#include "stim/util_top/stabilizers_vs_amplitudes.h"
-#include "stim/util_top/stabilizers_to_tableau.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
+#include "stim/util_top/stabilizers_vs_amplitudes.h"
 
 using namespace stim;
 using namespace stim_pybind;

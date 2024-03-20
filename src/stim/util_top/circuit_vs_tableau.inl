@@ -5,7 +5,8 @@
 namespace stim {
 
 template <size_t W>
-Tableau<W> circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset, bool inverse) {
+Tableau<W> circuit_to_tableau(
+    const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset, bool inverse) {
     Tableau<W> result(circuit.count_qubits());
     TableauSimulator<W> sim(std::mt19937_64(0), circuit.count_qubits());
 
@@ -111,7 +112,7 @@ Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign)
             for (size_t q = 0; q < n; q++) {
                 bool x = destabilizer.xs[q];
                 bool z = destabilizer.zs[q];
-                auto *out = targets_ptrs[x + z*2];
+                auto *out = targets_ptrs[x + z * 2];
                 if (out != nullptr) {
                     out->push_back(GateTarget::rec(-(int32_t)(n - k)));
                     out->push_back(GateTarget::qubit(q));

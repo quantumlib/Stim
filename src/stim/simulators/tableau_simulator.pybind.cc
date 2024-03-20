@@ -2071,10 +2071,9 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 v.push_back(pybind11::cast<std::complex<float>>(obj));
             }
 
-            self.inv_state =
-                circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                    stabilizer_state_vector_to_circuit(v, little_endian), false, false, false)
-                    .inverse();
+            self.inv_state = circuit_to_tableau<MAX_BITWORD_WIDTH>(
+                                 stabilizer_state_vector_to_circuit(v, little_endian), false, false, false)
+                                 .inverse();
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),

@@ -1,5 +1,5 @@
-#include "stim/util_top/stabilizers_to_tableau.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
 
 namespace stim {
 
@@ -156,7 +156,9 @@ Tableau<W> stabilizers_to_tableau(
                     }
                 }
             }
-            throw std::invalid_argument("The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please report this as a bug.");
+            throw std::invalid_argument(
+                "The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please "
+                "report this as a bug.");
         }
     }
 

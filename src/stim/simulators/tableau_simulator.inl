@@ -57,34 +57,23 @@ bool TableauSimulator<W>::is_deterministic_z(size_t target) const {
 
 template <size_t W>
 void TableauSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation(
-        target_data,
-        inv_state.num_qubits,
-        [&](const CircuitInstruction &inst) {
-            do_gate(inst);
-        });
+    decompose_mpp_operation(target_data, inv_state.num_qubits, [&](const CircuitInstruction &inst) {
+        do_gate(inst);
+    });
 }
 
 template <size_t W>
 void TableauSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        inv_state.num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            do_gate(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, inv_state.num_qubits, false, [&](const CircuitInstruction &inst) {
+        do_gate(inst);
+    });
 }
 
 template <size_t W>
 void TableauSimulator<W>::do_SPP_DAG(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        inv_state.num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            do_gate(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, inv_state.num_qubits, false, [&](const CircuitInstruction &inst) {
+        do_gate(inst);
+    });
 }
 
 template <size_t W>

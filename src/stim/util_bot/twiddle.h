@@ -38,7 +38,7 @@ inline uint8_t is_power_of_2(size_t value) {
 inline size_t first_set_bit(size_t value, size_t min_result) {
     size_t t = min_result;
     value >>= min_result;
-//    assert(value);
+    //    assert(value);
     while (!(value & 1)) {
         value >>= 1;
         t += 1;

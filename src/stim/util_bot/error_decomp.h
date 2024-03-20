@@ -13,6 +13,6 @@ double depolarize2_probability_to_independent_per_channel_probability(double p);
 double independent_per_channel_probability_to_depolarize1_probability(double p);
 double independent_per_channel_probability_to_depolarize2_probability(double p);
 
-}
+}  // namespace stim
 
 #endif

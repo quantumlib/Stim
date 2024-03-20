@@ -685,34 +685,23 @@ void FrameSimulator<W>::do_Z_ERROR(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void FrameSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation(
-        target_data,
-        num_qubits,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_mpp_operation(target_data, num_qubits, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, num_qubits, false, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SPP_DAG(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, num_qubits, false, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>

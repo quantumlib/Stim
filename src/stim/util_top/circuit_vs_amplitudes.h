@@ -29,8 +29,7 @@ Circuit stabilizer_state_vector_to_circuit(
 ///
 /// Returns:
 ///     The state vector, using the requested endianness.
-std::vector<std::complex<float>> circuit_to_output_state_vector(
-    const Circuit &circuit, bool little_endian);
+std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &circuit, bool little_endian);
 
 }  // namespace stim
 
