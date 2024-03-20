@@ -126,32 +126,30 @@ void TableauSimulator<W>::postselect_helper(
 template <size_t W>
 uint32_t TableauSimulator<W>::try_isolate_observable_to_qubit_z(PauliStringRef<W> observable, bool undo) {
     uint32_t pivot = UINT32_MAX;
-    for (uint32_t k = 0; k < observable.num_qubits; k++) {
-        uint8_t p = observable.xs[k] + observable.zs[k] * 2;
-        if (p) {
-            if (pivot == UINT32_MAX) {
-                pivot = k;
-                if (!undo) {
-                    if (p == 1) {
-                        inv_state.prepend_H_XZ(pivot);
-                    } else if (p == 3) {
-                        inv_state.prepend_H_YZ(pivot);
-                    }
-                    if (observable.sign) {
-                        inv_state.prepend_X(pivot);
-                    }
-                }
-            } else {
+    observable.for_each_active_pauli([&](size_t q) {
+        uint8_t p = observable.xs[q] + observable.zs[q] * 2;
+        if (pivot == UINT32_MAX) {
+            pivot = q;
+            if (!undo) {
                 if (p == 1) {
-                    inv_state.prepend_XCX(pivot, k);
-                } else if (p == 2) {
-                    inv_state.prepend_XCZ(pivot, k);
+                    inv_state.prepend_H_XZ(pivot);
                 } else if (p == 3) {
-                    inv_state.prepend_XCY(pivot, k);
+                    inv_state.prepend_H_YZ(pivot);
+                }
+                if (observable.sign) {
+                    inv_state.prepend_X(pivot);
                 }
             }
+        } else {
+            if (p == 1) {
+                inv_state.prepend_XCX(pivot, q);
+            } else if (p == 2) {
+                inv_state.prepend_XCZ(pivot, q);
+            } else if (p == 3) {
+                inv_state.prepend_XCY(pivot, q);
+            }
         }
-    }
+    });
     if (undo && pivot != UINT32_MAX) {
         uint8_t p = observable.xs[pivot] + observable.zs[pivot] * 2;
         if (observable.sign) {
@@ -1474,19 +1472,17 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
     if (observable.sign) {
         state.do_X({GateType::X, {}, &anc});
     }
-    for (size_t i = 0; i < observable.num_qubits; i++) {
-        int p = observable.xs[i] + (observable.zs[i] << 1);
-        std::array<GateTarget, 2> targets{GateTarget{(uint32_t)i}, anc};
-        if (p) {
-            GateType c2_type = GateType::CX;
-            if (p == 1) {
-                c2_type = GateType::XCX;
-            } else if (p == 3) {
-                c2_type = GateType::YCX;
-            }
-            state.do_gate({c2_type, {}, {targets.data(), targets.data() + targets.size()}});
+    observable.ref().for_each_active_pauli([&](size_t q) {
+        int p = observable.xs[q] + (observable.zs[q] << 1);
+        std::array<GateTarget, 2> targets{GateTarget{(uint32_t)q}, anc};
+        GateType c2_type = GateType::CX;
+        if (p == 1) {
+            c2_type = GateType::XCX;
+        } else if (p == 3) {
+            c2_type = GateType::YCX;
         }
-    }
+        state.do_gate({c2_type, {}, {targets.data(), targets.data() + targets.size()}});
+    });
 
     // Use simulator features to determines if the measurement is deterministic.
     if (!state.is_deterministic_z(anc.data)) {

@@ -39,35 +39,6 @@ struct ConjugateBySelfInverse {
     }
 };
 
-template <bool use_x, bool use_z, typename CALLBACK>
-static void for_each_active_qubit_in(PauliStringRef<64> obs, CALLBACK callback) {
-    size_t n = obs.xs.num_u64_padded();
-    for (size_t w = 0; w < n; w++) {
-        uint64_t v = 0;
-        if (use_x) {
-            v |= obs.xs.u64[w];
-        }
-        if (use_z) {
-            v |= obs.zs.u64[w];
-        }
-        while (v) {
-            size_t j = std::countr_zero(v);
-            v &= ~(uint64_t{1} << j);
-            bool b = false;
-            uint32_t q = (uint32_t)(w * 64 + j);
-            if (use_x) {
-                b |= obs.xs[q];
-            }
-            if (use_z) {
-                b |= obs.zs[q];
-            }
-            if (b) {
-                callback(w * 64 + j);
-            }
-        }
-    }
-}
-
 bool stim::accumulate_next_obs_terms_to_pauli_string_helper(
     CircuitInstruction instruction,
     size_t *start,
@@ -161,7 +132,7 @@ void stim::decompose_mpp_operation(
 
         // Buffer operations to perform the desired measurement.
         bool first = true;
-        for_each_active_qubit_in<true, true>(current, [&](uint32_t q) {
+        current.ref().for_each_active_pauli([&](uint32_t q) {
             bool x = current.xs[q];
             bool z = current.zs[q];
             // Include single qubit gates transforming the Pauli into a Z.
@@ -202,7 +173,7 @@ static void decompose_spp_or_spp_dag_operation_helper(
 
     // Assemble quantum terms from the observable.
     uint64_t focus_qubit = UINT64_MAX;
-    for_each_active_qubit_in<true, true>(observable, [&](uint32_t q) {
+    observable.for_each_active_pauli([&](uint32_t q) {
         bool x = observable.xs[q];
         bool z = observable.zs[q];
         // Include single qubit gates transforming the Pauli into a Z.

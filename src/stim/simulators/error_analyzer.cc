@@ -467,12 +467,10 @@ void ErrorAnalyzer::check_for_gauge(
         error_msg << "\n\n";
         error_msg << "The backward-propagating error sensitivity for " << t << " was:";
         auto sensitivity = current_error_sensitivity_for(t);
-        for (size_t q = 0; q < sensitivity.num_qubits; q++) {
+        sensitivity.ref().for_each_active_pauli([&](size_t q) {
             uint8_t p = sensitivity.xs[q] + sensitivity.zs[q] * 2;
-            if (p) {
-                error_msg_qubit_with_coords(q, p);
-            }
-        }
+            error_msg_qubit_with_coords(q, p);
+        });
     }
 
     throw std::invalid_argument(error_msg.str());

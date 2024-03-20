@@ -10,16 +10,17 @@ namespace stim {
 
 template <size_t W>
 void _pauli_string_controlled_not(PauliStringRef<W> control, uint32_t target, Circuit &out) {
-    for (uint32_t q = 0; q < (uint32_t)control.num_qubits; q++) {
+    control.for_each_active_pauli([&](size_t q) {
+        uint32_t q32 = (uint32_t)q;
         auto p = control.xs[q] + 2 * control.zs[q];
         if (p == 1) {
-            out.safe_append_u("XCX", {q, target});
+            out.safe_append_u("XCX", {q32, target});
         } else if (p == 2) {
-            out.safe_append_u("ZCX", {q, target});
+            out.safe_append_u("ZCX", {q32, target});
         } else if (p == 3) {
-            out.safe_append_u("YCX", {q, target});
+            out.safe_append_u("YCX", {q32, target});
         }
-    }
+    });
     if (control.sign) {
         out.safe_append_u("X", {target});
     }
@@ -232,18 +233,19 @@ std::ostream &operator<<(std::ostream &out, const Flow<W> &flow) {
             out << "-";
         }
         bool has_any = false;
-        for (size_t q = 0; q < ps.num_qubits; q++) {
-            uint8_t p = ps.xs[q] + 2 * ps.zs[q];
-            if (use_sparse) {
-                if (p) {
-                    if (has_any) {
-                        out << "*";
-                    }
-                    out << "_XZY"[p];
-                    out << q;
-                    has_any = true;
+        if (use_sparse) {
+            ps.ref().for_each_active_pauli([&](size_t q) {
+                uint8_t p = ps.xs[q] + 2 * ps.zs[q];
+                if (has_any) {
+                    out << "*";
                 }
-            } else {
+                out << "_XZY"[p];
+                out << q;
+                has_any = true;
+            });
+        } else {
+            for (size_t q = 0; q < ps.num_qubits; q++) {
+                uint8_t p = ps.xs[q] + 2 * ps.zs[q];
                 out << "_XZY"[p];
                 has_any = true;
             }

@@ -35,18 +35,14 @@ std::string PauliStringRef<W>::sparse_str() const {
     std::stringstream out;
     out << "+-"[(bool)sign];
     bool first = true;
-    for (size_t k = 0; k < num_qubits; k++) {
-        auto x = xs[k];
-        auto z = zs[k];
-        auto p = x + 2 * z;
-        if (p) {
-            if (!first) {
-                out << '*';
-            }
-            first = false;
-            out << "IXZY"[p] << k;
+    for_each_active_pauli([&](size_t q) {
+        auto p = xs[q] + 2 * zs[q];
+        if (!first) {
+            out << '*';
         }
-    }
+        first = false;
+        out << "IXZY"[p] << q;
+    });
     if (first) {
         out << 'I';
     }

@@ -142,6 +142,19 @@ struct PauliStringRef {
     bool has_no_pauli_terms() const;
     bool intersects(PauliStringRef<W> other) const;
 
+    template <typename CALLBACK>
+    void for_each_active_pauli(CALLBACK callback) const {
+        size_t n = xs.num_u64_padded();
+        for (size_t w = 0; w < n; w++) {
+            uint64_t v = xs.u64[w] | zs.u64[w];
+            while (v) {
+                size_t q = w * 64 + std::countr_zero(v);
+                v &= v - 1;
+                callback(q);
+            }
+        }
+    }
+
    private:
     void check_avoids_MPP(const CircuitInstruction &inst);
     void check_avoids_reset(const CircuitInstruction &inst);
