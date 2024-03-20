@@ -17,33 +17,23 @@
 #ifndef _STIM_UTIL_BOT_TWIDDLE_H
 #define _STIM_UTIL_BOT_TWIDDLE_H
 
+#include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 
 namespace stim {
 
 inline uint8_t floor_lg2(size_t value) {
-    uint8_t result = 0;
-    while (value > 1) {
-        result += 1;
-        value >>= 1;
-    }
-    return result;
-}
-
-inline uint8_t is_power_of_2(size_t value) {
-    return value != 0 && (value & (value - 1)) == 0;
+    return sizeof(value)*8 - 1 - std::countl_zero(value);
 }
 
 inline size_t first_set_bit(size_t value, size_t min_result) {
-    size_t t = min_result;
     value >>= min_result;
-    //    assert(value);
-    while (!(value & 1)) {
-        value >>= 1;
-        t += 1;
+    if (!value) {
+        throw std::invalid_argument("No matching set bit.");
     }
-    return t;
+    return std::countr_zero(value) + min_result;
 }
 
 }  // namespace stim

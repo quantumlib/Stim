@@ -23,7 +23,7 @@ template <size_t W>
 Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
     // Verify matrix is square.
     size_t num_amplitudes = matrix.size();
-    if (!is_power_of_2(num_amplitudes)) {
+    if (!std::has_single_bit(num_amplitudes)) {
         throw std::invalid_argument(
             "Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
     }

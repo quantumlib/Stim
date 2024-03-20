@@ -13,32 +13,35 @@
 // limitations under the License.
 
 #include "stim/util_bot/twiddle.h"
+#include <bit>
 
 #include "gtest/gtest.h"
 
 using namespace stim;
 
-TEST(conversions, is_power_of_2) {
-    ASSERT_FALSE(is_power_of_2(0));
-    ASSERT_TRUE(is_power_of_2(1));
-    ASSERT_TRUE(is_power_of_2(2));
-    ASSERT_FALSE(is_power_of_2(3));
-    ASSERT_TRUE(is_power_of_2(4));
-    ASSERT_FALSE(is_power_of_2(5));
-    ASSERT_FALSE(is_power_of_2(6));
-    ASSERT_FALSE(is_power_of_2(7));
-    ASSERT_TRUE(is_power_of_2(8));
-    ASSERT_FALSE(is_power_of_2(9));
+TEST(twiddle, floor_lg2) {
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)1), 0);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)2), 1);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)3), 1);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)4), 2);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)5), 2);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)6), 2);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)7), 2);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)8), 3);
+    ASSERT_EQ(63 - std::countl_zero((uint64_t)9), 3);
 }
 
-TEST(conversions, floor_lg2) {
-    ASSERT_EQ(floor_lg2(1), 0);
-    ASSERT_EQ(floor_lg2(2), 1);
-    ASSERT_EQ(floor_lg2(3), 1);
-    ASSERT_EQ(floor_lg2(4), 2);
-    ASSERT_EQ(floor_lg2(5), 2);
-    ASSERT_EQ(floor_lg2(6), 2);
-    ASSERT_EQ(floor_lg2(7), 2);
-    ASSERT_EQ(floor_lg2(8), 3);
-    ASSERT_EQ(floor_lg2(9), 3);
+TEST(twiddle, first_set_bit) {
+    ASSERT_EQ(first_set_bit(0b0000111001000, 0), 3);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 1), 3);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 2), 3);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 3), 3);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 4), 6);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 5), 6);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 6), 6);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 7), 7);
+    ASSERT_EQ(first_set_bit(0b0000111001000, 8), 8);
+
+    ASSERT_EQ(first_set_bit(0b0000111001001, 0), 0);
+    ASSERT_EQ(first_set_bit(1 << 20, 0), 20);
 }
