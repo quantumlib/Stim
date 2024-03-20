@@ -108,6 +108,8 @@
 #include "stim/stabilizers/tableau_transposed_raii.h"
 #include "stim/str_util.h"
 #include "stim/util_bot/error_decomp.h"
+#include "stim/util_bot/twiddle.h"
 #include "stim/util_top/circuit_inverse_unitary.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/stabilizers_vs_amplitudes.h"
 #endif

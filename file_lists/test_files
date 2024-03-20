@@ -82,6 +82,8 @@ src/stim/stabilizers/tableau_iter.test.cc
 src/stim/str_util.test.cc
 src/stim/test_util.test.cc
 src/stim/util_bot/error_decomp.test.cc
+src/stim/util_bot/twiddle.test.cc
 src/stim/util_top/circuit_inverse_unitary.test.cc
 src/stim/util_top/circuit_vs_tableau.test.cc
+src/stim/util_top/stabilizers_vs_amplitudes.test.cc
 src/stim_included_twice.test.cc
