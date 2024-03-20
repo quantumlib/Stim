@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -50,6 +51,11 @@ struct SpanRef {
     }
     SpanRef(const SpanRef<typename std::remove_const<T>::type> &other)
         : ptr_start(other.ptr_start), ptr_end(other.ptr_end) {
+    }
+    SpanRef(std::span<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
+    SpanRef(const std::span<typename std::remove_const<T>::type> &items)
+        : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
     SpanRef(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }

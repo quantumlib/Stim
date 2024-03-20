@@ -82,6 +82,7 @@ src/stim/str_util.test.cc
 src/stim/test_util.test.cc
 src/stim/util_bot/error_decomp.test.cc
 src/stim/util_bot/twiddle.test.cc
+src/stim/util_top/circuit_inverse_qec.test.cc
 src/stim/util_top/circuit_inverse_unitary.test.cc
 src/stim/util_top/circuit_to_detecting_regions.test.cc
 src/stim/util_top/circuit_vs_amplitudes.test.cc

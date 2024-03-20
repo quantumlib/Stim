@@ -108,6 +108,7 @@
 #include "stim/str_util.h"
 #include "stim/util_bot/error_decomp.h"
 #include "stim/util_bot/twiddle.h"
+#include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_inverse_unitary.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
