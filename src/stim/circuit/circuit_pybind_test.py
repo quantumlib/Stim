@@ -1794,3 +1794,19 @@ def test_detecting_region_filters():
     assert len(c.detecting_regions(targets=["D0"])) == 1
     assert len(c.detecting_regions(targets=["D0", "L0"])) == 2
     assert len(c.detecting_regions(targets=[stim.target_relative_detector_id(0), "D0"])) == 1
+
+
+def test_detecting_regions_mzz():
+    c = stim.Circuit("""
+        TICK
+        MZZ 0 1 1 2
+        TICK
+        M 2
+        DETECTOR rec[-1]
+    """)
+    assert c.detecting_regions() == {
+        stim.target_relative_detector_id(0): {
+            0: stim.PauliString("__Z"),
+            1: stim.PauliString("__Z"),
+        },
+    }

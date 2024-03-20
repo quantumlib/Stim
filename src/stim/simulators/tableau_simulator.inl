@@ -301,7 +301,7 @@ void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruct
 
 template <size_t W>
 void TableauSimulator<W>::do_MXX(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MXX_disjoint_controls_segment(segment);
         });
@@ -309,7 +309,7 @@ void TableauSimulator<W>::do_MXX(const CircuitInstruction &inst) {
 
 template <size_t W>
 void TableauSimulator<W>::do_MYY(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MYY_disjoint_controls_segment(segment);
         });
@@ -317,7 +317,7 @@ void TableauSimulator<W>::do_MYY(const CircuitInstruction &inst) {
 
 template <size_t W>
 void TableauSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         inst, inv_state.num_qubits, [&](CircuitInstruction segment) {
             do_MZZ_disjoint_controls_segment(segment);
         });

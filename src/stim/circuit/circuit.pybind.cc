@@ -2137,8 +2137,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("quantization") = 100,
         pybind11::arg("format") = "WDIMACS",
         clean_doc_string(R"DOC(
-            Makes a maxSAT problem of the circuit's most likely undetectable logical
-            error, that other tools can solve.
+            Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
             The output is a string describing the maxSAT problem in WDIMACS format
             (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the

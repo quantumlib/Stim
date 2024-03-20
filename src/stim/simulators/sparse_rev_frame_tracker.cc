@@ -474,7 +474,7 @@ void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
@@ -488,7 +488,7 @@ void SparseUnsignedRevFrameTracker::undo_MYY(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
@@ -502,7 +502,7 @@ void SparseUnsignedRevFrameTracker::undo_MZZ(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
