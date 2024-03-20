@@ -389,7 +389,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: mymindstorm/setup-emsdk@vv14
+      - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 2.0.18
           actions-cache-folder: 'emsdk-cache'
