@@ -1004,86 +1004,6 @@ class Circuit:
                 error(0.25) D1
             ''')
         """
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["timeline-text"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["timeline-svg"]',
-        *,
-        tick: Union[None, int, range] = None,
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["timeline-3d", "timeline-3d-html"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-svg"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-3d"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["matchgraph-3d-html"]',
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["detslice-text"]',
-        *,
-        tick: int,
-        filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["detslice-svg"]',
-        *,
-        tick: Union[int, range],
-        filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["detslice-with-ops-svg"]',
-        *,
-        tick: Union[int, range],
-        filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["timeslice-svg"]',
-        *,
-        tick: Union[int, range],
-        filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-    ) -> 'stim._DiagramHelper':
-        pass
-    @overload
-    def diagram(
-        self,
-        type: 'Literal["interactive", "interactive-html"]',
-    ) -> 'stim._DiagramHelper':
-        pass
     def diagram(
         self,
         type: str = 'timeline-text',
@@ -1104,6 +1024,11 @@ class Circuit:
                     the circuit over time. Includes annotations showing the
                     measurement record index that each measurement writes
                     to, and the measurements used by detectors.
+                "timeline-svg-html": A resizable SVG image viewer of the
+                    operations applied by the circuit over time. Includes
+                    annotations showing the measurement record index that
+                    each measurement writes to, and the measurements used
+                    by detectors.
                 "timeline-3d": A 3d model, in GLTF format, of the operations
                     applied by the circuit over time.
                 "timeline-3d-html": Same 3d model as 'timeline-3d' but
@@ -1122,8 +1047,12 @@ class Circuit:
                     usual diagram of a surface code.
 
                     Uses the Pauli color convention XYZ=RGB.
+                "detslice-svg-html": Same as detslice-svg but the SVG image
+                    is inside a resizable HTML iframe.
                 "matchgraph-svg": An SVG image of the match graph extracted
                     from the circuit by stim.Circuit.detector_error_model.
+                "matchgraph-svg-html": Same as matchgraph-svg but the SVG image
+                    is inside a resizable HTML iframe.
                 "matchgraph-3d": An 3D model of the match graph extracted
                     from the circuit by stim.Circuit.detector_error_model.
                 "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
@@ -1132,10 +1061,14 @@ class Circuit:
                 "timeslice-svg": An SVG image of the operations applied
                     between two TICK instructions in the circuit, with the
                     operations laid out in 2d.
+                "timeslice-svg-html": Same as timeslice-svg but the SVG image
+                    is inside a resizable HTML iframe.
                 "detslice-with-ops-svg": A combination of timeslice-svg
                     and detslice-svg, with the operations overlaid
                     over the detector slices taken from the TICK after the
                     operations were applied.
+                "detslice-with-ops-svg-html": Same as detslice-with-ops-svg
+                    but the SVG image is inside a resizable HTML iframe.
                 "interactive" or "interactive-html": An HTML web page
                     containing Crumble (an interactive editor for 2D
                     stabilizer circuits) initialized with the given circuit

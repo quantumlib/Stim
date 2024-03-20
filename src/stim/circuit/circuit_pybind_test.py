@@ -1137,6 +1137,10 @@ q2: ------
         assert c.diagram("time+detector-slice-svg", tick=range(1, 3, 2)) is not None
     with pytest.raises(ValueError, match="stop"):
         assert c.diagram("time+detector-slice-svg", tick=range(3, 3)) is not None
+    assert "iframe" in str(c.diagram(type="match-graph-svg-html"))
+    assert "iframe" in str(c.diagram(type="detslice-svg-html"))
+    assert "iframe" in str(c.diagram(type="timeslice-svg-html"))
+    assert "iframe" in str(c.diagram(type="timeline-svg-html"))
 
 
 def test_circuit_inverse():
