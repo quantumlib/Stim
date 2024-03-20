@@ -1,4 +1,4 @@
-#include "stim/circuit/export_qasm.h"
+#include "stim/util_top/export_qasm.h"
 
 #include "gtest/gtest.h"
 
