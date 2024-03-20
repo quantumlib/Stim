@@ -2319,6 +2319,29 @@ class Circuit:
                 OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
             ''')
         """
+    def to_crumble_url(
+        self,
+    ) -> str:
+        """Returns a URL that opens up crumble and loads this circuit into it.
+
+        Crumble is a tool for editing stabilizer circuits, and visualizing their
+        stabilizer flows. Its source code is in the `glue/crumble` directory of
+        the stim code repository on github. A prebuilt version is made available
+        at https://algassert.com/crumble, which is what the URL returned by this
+        method will point to.
+
+        Returns:
+            A URL that can be opened in a web browser.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     H 0
+            ...     CNOT 0 1
+            ...     S 1
+            ... ''').to_crumble_url()
+            https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1
+        """
     def to_file(
         self,
         file: Union[io.TextIOBase, str, pathlib.Path],

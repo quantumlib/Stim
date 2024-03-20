@@ -52,6 +52,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.time_reversed_for_flows`](#stim.Circuit.time_reversed_for_flows)
+    - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
     - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
@@ -3028,6 +3029,36 @@ def time_reversed_for_flows(
             DETECTOR(2, 4, 0) rec[-7] rec[-4] rec[-3]
             OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
         ''')
+    """
+```
+
+<a name="stim.Circuit.to_crumble_url"></a>
+```python
+# stim.Circuit.to_crumble_url
+
+# (in class stim.Circuit)
+def to_crumble_url(
+    self,
+) -> str:
+    """Returns a URL that opens up crumble and loads this circuit into it.
+
+    Crumble is a tool for editing stabilizer circuits, and visualizing their
+    stabilizer flows. Its source code is in the `glue/crumble` directory of
+    the stim code repository on github. A prebuilt version is made available
+    at https://algassert.com/crumble, which is what the URL returned by this
+    method will point to.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_crumble_url()
+        https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1
     """
 ```
 

@@ -112,6 +112,7 @@
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/export_crumble_url.h"
 #include "stim/util_top/export_qasm.h"
 #include "stim/util_top/simplified_circuit.h"
 #include "stim/util_top/stabilizers_to_tableau.h"
