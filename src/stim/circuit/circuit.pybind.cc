@@ -2897,19 +2897,23 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("dont_turn_measurements_into_resets") = false,
         clean_doc_string(R"DOC(
+            @signature def time_reversed_for_flows(self, flows: Iterable[stim.Flow], *, dont_turn_measurements_into_resets: bool = False) -> Tuple[stim.Circuit, List[stim.Flow]]:
             Time-reverses the circuit while preserving error correction structure.
 
-            This method can be used to turn a fault tolerant measurement into a fault
-            tolerant preparation (and vice versa). It guarantees that the detecting
-            regions of the returned circuit are exactly the same as the given circuit,
-            but reversed.
+            This method returns a circuit that has the same internal detecting regions
+            as the given circuit, as well as the same internal-to-external flows given
+            in the `flows` argument, except they are all time-reversed. For example, if
+            you pass a fault tolerant preparation circuit into this method (1 -> Z), the
+            result will be a fault tolerant *measurement* circuit (Z -> 1). Or, if you
+            pass a fault tolerant C_XYZ circuit into this method (X->Y, Y->Z, and Z->X),
+            the result will be a fault tolerant C_ZYX circuit (X->Z, Y->X, and Z->Y).
 
             Note that this method doesn't guarantee that it will preserve the *sign* of the
-            stabilizer flows. For example, inverting a memory circuit that preserves a
-            logical observable ("X -> X" and "Z -> Z") may produce a memory circuit that
-            always bit flips the logical observable ("X -> X" and "Z -> -Z") or that
-            dynamically adjusts the logical observable in response to measurements (like
-            "X -> X xor rec[-1]" and "Z -> Z xor rec[-2]").
+            detecting regions or stabilizer flows. For example, inverting a memory circuit
+            that preserves a logical observable (X->X and Z->Z) may produce a
+            memory circuit that always bit flips the logical observable (X->X and Z->-Z) or
+            that dynamically adjusts the logical observable in response to measurements
+            (like "X -> X xor rec[-1]" and "Z -> Z xor rec[-2]").
 
             This method will turn time-reversed resets into measurements, and attempts to
             turn time-reversed measurements into resets. A measurement will time-reverse
@@ -2917,10 +2921,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             have detecting regions with sensitivity just before the measurement but none
             have detecting regions with sensitivity after the measurement.
 
-            When measurement-reset operation has a noisy result, this measurement noise
-            will be time-reversed into reset noise by removing the noise parameter from
-            the operation and adding X_ERROR or Z_ERROR noise after the time-reversed
-            operation.
+            In some cases this method will have to introduce new operations. In particular,
+            when a measurement-reset operation has a noisy result, time-reversing this
+            measurement noise produces reset noise. But the measure-reset operations don't
+            have built-in reset noise, so the reset noise is specified by adding an X_ERROR
+            or Z_ERROR noise instruction after the time-reversed measure-reset operation.
 
             Args:
                 flows: Flows you care about, that reach past the start/end of the given
