@@ -87,5 +87,8 @@ src/stim/simulators/matched_error.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc
 src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
-src/stim/stabilizers/conversions.cc
 src/stim/stabilizers/flex_pauli_string.cc
+src/stim/util_bot/error_decomp.cc
+src/stim/util_top/circuit_inverse_unitary.cc
+src/stim/util_top/circuit_to_detecting_regions.cc
+src/stim/util_top/circuit_vs_amplitudes.cc

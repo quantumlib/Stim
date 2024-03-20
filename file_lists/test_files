@@ -71,7 +71,6 @@ src/stim/simulators/sparse_rev_frame_tracker.test.cc
 src/stim/simulators/tableau_simulator.test.cc
 src/stim/simulators/transform_without_feedback.test.cc
 src/stim/simulators/vector_simulator.test.cc
-src/stim/stabilizers/conversions.test.cc
 src/stim/stabilizers/flex_pauli_string.test.cc
 src/stim/stabilizers/flow.test.cc
 src/stim/stabilizers/pauli_string.test.cc
@@ -81,4 +80,12 @@ src/stim/stabilizers/tableau.test.cc
 src/stim/stabilizers/tableau_iter.test.cc
 src/stim/str_util.test.cc
 src/stim/test_util.test.cc
+src/stim/util_bot/error_decomp.test.cc
+src/stim/util_bot/twiddle.test.cc
+src/stim/util_top/circuit_inverse_unitary.test.cc
+src/stim/util_top/circuit_to_detecting_regions.test.cc
+src/stim/util_top/circuit_vs_amplitudes.test.cc
+src/stim/util_top/circuit_vs_tableau.test.cc
+src/stim/util_top/stabilizers_to_tableau.test.cc
+src/stim/util_top/stabilizers_vs_amplitudes.test.cc
 src/stim_included_twice.test.cc

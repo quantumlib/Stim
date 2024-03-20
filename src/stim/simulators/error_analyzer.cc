@@ -19,8 +19,8 @@
 #include <sstream>
 
 #include "stim/circuit/gate_decomposition.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/util_bot/error_decomp.h"
 
 using namespace stim;
 
