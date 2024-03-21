@@ -81,8 +81,8 @@ cc_test(
     data = glob(["testdata/**"]),
     includes = ["src/"],
     deps = [
-        "@gtest",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -99,7 +99,7 @@ cc_binary(
     ],
     includes = ["src/"],
     linkshared = 1,
-    deps = ["@pybind11"],
+    deps = ["@pybind11//:pybind11"],
 )
 
 genrule(
