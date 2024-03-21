@@ -411,6 +411,7 @@ class CirqToStimHelper:
         if self.flatten or op.repetitions == 1:
             moments = cirq.unroll_circuit_op(cirq.Circuit(op), deep=False, tags_to_check=None).moments
             self.process_moments(moments)
+            self.out = self.out[:-1] # Remove a trailing TICK (to avoid double TICK)
             return
 
         child = CirqToStimHelper()
