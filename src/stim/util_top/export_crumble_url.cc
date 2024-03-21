@@ -24,8 +24,8 @@ std::string stim::export_crumble_url(const Circuit &circuit) {
                 out << dst;
                 k += src.size() - 1;
                 matched = true;
+                break;
             }
-            break;
         }
         if (!matched) {
             out << s[k];
