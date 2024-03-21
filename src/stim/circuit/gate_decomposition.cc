@@ -299,3 +299,25 @@ void stim::for_each_disjoint_target_segment_in_instruction_reversed(
         flush();
     }
 }
+
+void stim::for_each_combined_targets_group(
+    const CircuitInstruction &inst,
+    const std::function<void(CircuitInstruction)> &callback) {
+    if (inst.targets.empty()) {
+        return;
+    }
+    size_t start = 0;
+    size_t next_start = 1;
+    while (true) {
+        if (next_start >= inst.targets.size() || !inst.targets[next_start].is_combiner()) {
+            callback(CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, next_start)});
+            start = next_start;
+            next_start = start + 1;
+            if (next_start > inst.targets.size()) {
+                return;
+            }
+        } else {
+            next_start += 2;
+        }
+    }
+}

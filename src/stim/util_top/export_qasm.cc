@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/circuit/export_qasm.h"
+#include "stim/util_top/export_qasm.h"
 
 #include <bitset>
 

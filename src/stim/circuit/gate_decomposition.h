@@ -111,6 +111,10 @@ void for_each_disjoint_target_segment_in_instruction_reversed(
     simd_bits_range_ref<64> workspace,
     const std::function<void(CircuitInstruction)> &callback);
 
+void for_each_combined_targets_group(
+    const CircuitInstruction &inst,
+    const std::function<void(CircuitInstruction)> &callback);
+
 }  // namespace stim
 
 #endif
