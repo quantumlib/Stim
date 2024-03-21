@@ -44,6 +44,7 @@
 #include "stim/util_top/circuit_vs_tableau.h"
 #include "stim/util_top/export_crumble_url.h"
 #include "stim/util_top/export_qasm.h"
+#include "stim/util_top/export_quirk_url.h"
 #include "stim/util_top/simplified_circuit.h"
 
 using namespace stim;
@@ -3244,7 +3245,36 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     CNOT 0 1
                 ...     S 1
                 ... ''').to_crumble_url()
-                https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1
+                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+        )DOC")
+            .data());
+
+    c.def(
+        "to_quirk_url",
+        &export_quirk_url,
+        clean_doc_string(R"DOC(
+            Returns a URL that opens up quirk and loads this circuit into it.
+
+            Quirk is an open source drag and drop circuit editor with support for up to 16
+            qubits. Its source code is available at https://github.com/strilanc/quirk
+            and a prebuilt version is available at https://algassert.com/quirk, which is
+            what the URL returned by this method will point to.
+
+            Quirk doesn't support features like noise, feedback, or detectors. This method
+            will simply drop any unsupported operations from the circuit when producing
+            the URL.
+
+            Returns:
+                A URL that can be opened in a web browser.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ...     S 1
+                ... ''').to_quirk_url()
+                'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
         )DOC")
             .data());
 }

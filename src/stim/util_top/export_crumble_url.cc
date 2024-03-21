@@ -1,7 +1,5 @@
 #include "stim/util_top/export_crumble_url.h"
 
-#include <bitset>
-
 using namespace stim;
 
 std::string stim::export_crumble_url(const Circuit &circuit) {
@@ -11,6 +9,7 @@ std::string stim::export_crumble_url(const Circuit &circuit) {
         {"QUBIT_COORDS", "Q"},
         {", ", ","},
         {") ", ")"},
+        {"    ", ""},
         {" ", "_"},
         {"\n", ";"},
     };

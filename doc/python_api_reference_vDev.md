@@ -55,6 +55,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
+    - [`stim.Circuit.to_quirk_url`](#stim.Circuit.to_quirk_url)
     - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
@@ -3058,7 +3059,7 @@ def to_crumble_url(
         ...     CNOT 0 1
         ...     S 1
         ... ''').to_crumble_url()
-        https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1
+        'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
     """
 ```
 
@@ -3167,6 +3168,39 @@ def to_qasm(
         measure q[0] -> rec[0];
         measure q[1] -> rec[1];
         dets[0] = rec[1] ^ rec[0] ^ 1;
+    """
+```
+
+<a name="stim.Circuit.to_quirk_url"></a>
+```python
+# stim.Circuit.to_quirk_url
+
+# (in class stim.Circuit)
+def to_quirk_url(
+    self,
+) -> str:
+    """Returns a URL that opens up quirk and loads this circuit into it.
+
+    Quirk is an open source drag and drop circuit editor with support for up to 16
+    qubits. Its source code is available at https://github.com/strilanc/quirk
+    and a prebuilt version is available at https://algassert.com/quirk, which is
+    what the URL returned by this method will point to.
+
+    Quirk doesn't support features like noise, feedback, or detectors. This method
+    will simply drop any unsupported operations from the circuit when producing
+    the URL.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_quirk_url()
+        'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
     """
 ```
 
