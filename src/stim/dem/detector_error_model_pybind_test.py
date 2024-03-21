@@ -499,6 +499,7 @@ def test_diagram():
     assert dem.diagram(type="match-graph-svg") is not None
     assert dem.diagram(type="match-graph-3d") is not None
     assert dem.diagram(type="match-graph-3d-html") is not None
+    assert "iframe" in str(dem.diagram(type="match-graph-svg-html"))
 
 
 def test_shortest_graphlike_error_remnant():

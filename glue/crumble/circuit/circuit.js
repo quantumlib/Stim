@@ -183,6 +183,7 @@ class Circuit {
             replaceAll(' ERROR', '_ERROR').
             replaceAll('C XYZ', 'C_XYZ').
             replaceAll('H XY', 'H_XY').
+            replaceAll('H XZ', 'H_XZ').
             replaceAll('H YZ', 'H_YZ').
             replaceAll(' INCLUDE', '_INCLUDE').
             replaceAll('SQRT ', 'SQRT_').
@@ -578,7 +579,7 @@ class Circuit {
                 if (gate === undefined && (gateName === 'MPP' || gateName === 'SPP' || gateName === 'SPP_DAG')) {
                     let line = [gateName + ' '];
                     for (let op of group) {
-                        let bases = op.gate.name.substring(4);
+                        let bases = op.gate.name.substring(gateName.length + 1);
                         for (let k = 0; k < op.id_targets.length; k++) {
                             line.push(bases[k] + old2new.get(op.id_targets[k]));
                             line.push('*');

@@ -52,8 +52,10 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.time_reversed_for_flows`](#stim.Circuit.time_reversed_for_flows)
+    - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
+    - [`stim.Circuit.to_quirk_url`](#stim.Circuit.to_quirk_url)
     - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
@@ -1592,86 +1594,6 @@ def detector_error_model(
 # stim.Circuit.diagram
 
 # (in class stim.Circuit)
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-text"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-svg"]',
-    *,
-    tick: Union[None, int, range] = None,
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-3d", "timeline-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-svg"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-text"]',
-    *,
-    tick: int,
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-with-ops-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeslice-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["interactive", "interactive-html"]',
-) -> 'stim._DiagramHelper':
-    pass
 def diagram(
     self,
     type: str = 'timeline-text',
@@ -1692,6 +1614,11 @@ def diagram(
                 the circuit over time. Includes annotations showing the
                 measurement record index that each measurement writes
                 to, and the measurements used by detectors.
+            "timeline-svg-html": A resizable SVG image viewer of the
+                operations applied by the circuit over time. Includes
+                annotations showing the measurement record index that
+                each measurement writes to, and the measurements used
+                by detectors.
             "timeline-3d": A 3d model, in GLTF format, of the operations
                 applied by the circuit over time.
             "timeline-3d-html": Same 3d model as 'timeline-3d' but
@@ -1710,8 +1637,12 @@ def diagram(
                 usual diagram of a surface code.
 
                 Uses the Pauli color convention XYZ=RGB.
+            "detslice-svg-html": Same as detslice-svg but the SVG image
+                is inside a resizable HTML iframe.
             "matchgraph-svg": An SVG image of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
+            "matchgraph-svg-html": Same as matchgraph-svg but the SVG image
+                is inside a resizable HTML iframe.
             "matchgraph-3d": An 3D model of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
             "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
@@ -1720,10 +1651,14 @@ def diagram(
             "timeslice-svg": An SVG image of the operations applied
                 between two TICK instructions in the circuit, with the
                 operations laid out in 2d.
+            "timeslice-svg-html": Same as timeslice-svg but the SVG image
+                is inside a resizable HTML iframe.
             "detslice-with-ops-svg": A combination of timeslice-svg
                 and detslice-svg, with the operations overlaid
                 over the detector slices taken from the TICK after the
                 operations were applied.
+            "detslice-with-ops-svg-html": Same as detslice-with-ops-svg
+                but the SVG image is inside a resizable HTML iframe.
             "interactive" or "interactive-html": An HTML web page
                 containing Crumble (an interactive editor for 2D
                 stabilizer circuits) initialized with the given circuit
@@ -3098,6 +3033,36 @@ def time_reversed_for_flows(
     """
 ```
 
+<a name="stim.Circuit.to_crumble_url"></a>
+```python
+# stim.Circuit.to_crumble_url
+
+# (in class stim.Circuit)
+def to_crumble_url(
+    self,
+) -> str:
+    """Returns a URL that opens up crumble and loads this circuit into it.
+
+    Crumble is a tool for editing stabilizer circuits, and visualizing their
+    stabilizer flows. Its source code is in the `glue/crumble` directory of
+    the stim code repository on github. A prebuilt version is made available
+    at https://algassert.com/crumble, which is what the URL returned by this
+    method will point to.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_crumble_url()
+        'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+    """
+```
+
 <a name="stim.Circuit.to_file"></a>
 ```python
 # stim.Circuit.to_file
@@ -3203,6 +3168,39 @@ def to_qasm(
         measure q[0] -> rec[0];
         measure q[1] -> rec[1];
         dets[0] = rec[1] ^ rec[0] ^ 1;
+    """
+```
+
+<a name="stim.Circuit.to_quirk_url"></a>
+```python
+# stim.Circuit.to_quirk_url
+
+# (in class stim.Circuit)
+def to_quirk_url(
+    self,
+) -> str:
+    """Returns a URL that opens up quirk and loads this circuit into it.
+
+    Quirk is an open source drag and drop circuit editor with support for up to 16
+    qubits. Its source code is available at https://github.com/strilanc/quirk
+    and a prebuilt version is available at https://algassert.com/quirk, which is
+    what the URL returned by this method will point to.
+
+    Quirk doesn't support features like noise, feedback, or detectors. This method
+    will simply drop any unsupported operations from the circuit when producing
+    the URL.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_quirk_url()
+        'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
     """
 ```
 
@@ -6125,24 +6123,6 @@ def copy(
 # stim.DetectorErrorModel.diagram
 
 # (in class stim.DetectorErrorModel)
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-svg"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
 def diagram(
     self,
     type: str,
@@ -6155,6 +6135,8 @@ def diagram(
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
                 errors.
+            "matchgraph-svg-html": Same as matchgraph-svg but with the
+                SVG wrapped in a resizable HTML iframe.
             "matchgraph-3d": A 3d model of the decoding graph of the
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
@@ -6186,12 +6168,12 @@ def diagram(
         >>> dem = circuit.detector_error_model(decompose_errors=True)
 
         >>> with tempfile.TemporaryDirectory() as d:
-        ...     diagram = circuit.diagram(type="match-graph-svg")
+        ...     diagram = circuit.diagram("match-graph-svg")
         ...     with open(f"{d}/dem_image.svg", "w") as f:
         ...         print(diagram, file=f)
 
         >>> with tempfile.TemporaryDirectory() as d:
-        ...     diagram = circuit.diagram(type="match-graph-3d")
+        ...     diagram = circuit.diagram("match-graph-3d")
         ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
         ...         print(diagram, file=f)
     """
