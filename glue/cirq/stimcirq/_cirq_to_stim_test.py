@@ -352,7 +352,14 @@ def test_loop_with_one_rep():
         )
     )
     sc = stimcirq.cirq_circuit_to_stim_circuit(cc)
-    assert str(sc).splitlines().count('TICK') > 1
+    assert str(sc) == """H 0
+TICK
+H 0
+TICK
+H 0
+TICK
+H 0
+TICK"""
 
 def test_on_tagged_loop():
     a, b = cirq.LineQubit.range(2)
