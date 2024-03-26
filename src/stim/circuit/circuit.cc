@@ -134,7 +134,7 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
     }
     // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
     try {
-        return GATE_DATA.at(name_buf, n);
+        return GATE_DATA.at(std::string_view{&name_buf[0], n});
     } catch (const std::out_of_range &ex) {
         throw std::invalid_argument(ex.what());
     }

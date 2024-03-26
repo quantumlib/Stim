@@ -407,7 +407,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
     for (const auto &entry : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (entry.expected_name_len > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
+        if (entry.expected_name.size() > 0 && entry.id == alt_gate.id && entry.expected_name.data() != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
                 out << "<a name=\"" << entry.expected_name << "\"></a>";
@@ -578,16 +578,16 @@ Use `stim help [topic]` for help on specific topics. Available topics include:
 std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
-            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
+        if (!e.expected_name.empty()) {
+            result[std::string(e.expected_name)] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
         }
     }
 
     std::map<std::string, std::set<std::string>> categories;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
+        if (!e.expected_name.empty()) {
             const auto &rep = GATE_DATA.at(e.expected_name);
-            categories[std::string(rep.category)].insert(e.expected_name);
+            categories[std::string(rep.category)].insert(std::string(e.expected_name));
         }
     }
 
