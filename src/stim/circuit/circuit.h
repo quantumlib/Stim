@@ -107,10 +107,10 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append(const CircuitInstruction &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
+    void safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_u(
-        const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
+        std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args);
     /// Safely copies a repeat block to the end of the circuit.
@@ -349,7 +349,7 @@ double read_normal_double(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-void read_parens_arguments(int &c, const char *name, SOURCE read_char, MonotonicBuffer<double> &out) {
+void read_parens_arguments(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<double> &out) {
     if (c != '(') {
         return;
     }
@@ -375,7 +375,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
 std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
-void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation);
+void print_circuit(std::ostream &out, const Circuit &c, size_t indentation);
 
 }  // namespace stim
 

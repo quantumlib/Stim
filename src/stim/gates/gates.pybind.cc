@@ -32,8 +32,8 @@ pybind11::object gate_num_parens_argument_range(const Gate &self) {
     }
     return r(self.arg_count, self.arg_count + 1);
 }
-std::vector<std::string> gate_aliases(const Gate &self) {
-    std::vector<std::string> aliases;
+std::vector<std::string_view> gate_aliases(const Gate &self) {
+    std::vector<std::string_view> aliases;
     for (const auto &h : GATE_DATA.hashed_name_to_gate_type_table) {
         if (h.id == self.id) {
             aliases.push_back(h.expected_name);
@@ -122,7 +122,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 return pybind11::cast(GATE_DATA.at(pybind11::cast<std::string>(name)));
             }
 
-            std::map<std::string, Gate> result;
+            std::map<std::string_view, Gate> result;
             for (const auto &g : GATE_DATA.items) {
                 if (g.id != GateType::NOT_A_GATE) {
                     result.insert({g.name, g});
@@ -153,7 +153,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
     c.def_property_readonly(
         "name",
-        [](const Gate &self) -> const char * {
+        [](const Gate &self) -> std::string_view {
             return self.name;
         },
         clean_doc_string(R"DOC(

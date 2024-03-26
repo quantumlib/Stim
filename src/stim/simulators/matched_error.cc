@@ -366,7 +366,7 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
     if (gate_type == GateType::NOT_A_GATE || other.gate_type == GateType::NOT_A_GATE) {
         return gate_type < other.gate_type;
     }
-    return strcmp(GATE_DATA[gate_type].name, GATE_DATA[other.gate_type].name) < 0;
+    return GATE_DATA[gate_type].name < GATE_DATA[other.gate_type].name;
 }
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {

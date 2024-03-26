@@ -35,7 +35,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_pair_measure(failed);
     add_gate_data_pauli_product(failed);
     for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-        if (items[k].name == nullptr) {
+        if (items[k].name.empty()) {
             std::cerr << "Uninitialized gate id: " << k << ".\n";
             failed = true;
         }
@@ -141,17 +141,15 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 }
 
 const Gate &Gate::inverse() const {
-    std::string inv_name = name;
     if ((flags & GATE_IS_UNITARY) || id == GateType::TICK) {
         return GATE_DATA[best_candidate_inverse_id];
     }
-    throw std::out_of_range(inv_name + " has no inverse.");
+    throw std::out_of_range(std::string(name) + " has no inverse.");
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     assert((size_t)gate.id < NUM_DEFINED_GATES);
-    const char *c = gate.name;
-    auto h = gate_name_to_hash(c);
+    auto h = gate_name_to_hash(gate.name);
     auto &hash_loc = hashed_name_to_gate_type_table[h];
     if (!hash_loc.expected_name.empty()) {
         std::cerr << "GATE COLLISION " << gate.name << " vs " << items[(size_t)hash_loc.id].name << "\n";

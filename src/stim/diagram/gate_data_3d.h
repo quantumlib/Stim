@@ -5,7 +5,7 @@
 
 namespace stim_draw_internal {
 
-std::map<std::string, std::shared_ptr<GltfMesh>> make_gate_primitives();
+std::map<std::string_view, std::shared_ptr<GltfMesh>> make_gate_primitives();
 
 }
 

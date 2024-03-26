@@ -46,7 +46,7 @@ std::string DemTargetWithCoords_repr(const DemTargetWithCoords &self) {
 pybind11::ssize_t CircuitTargetsInsideInstruction_hash(const CircuitTargetsInsideInstruction &self) {
     return pybind11::hash(pybind11::make_tuple(
         "CircuitTargetsInsideInstruction",
-        self.gate_type == GateType::NOT_A_GATE ? nullptr : GATE_DATA[self.gate_type].name,
+        self.gate_type == GateType::NOT_A_GATE ? std::string_view("") : GATE_DATA[self.gate_type].name,
         self.target_range_start,
         self.target_range_end,
         tuple_tree(self.targets_in_range),

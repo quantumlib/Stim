@@ -3,7 +3,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(GateType gate_type) {
+std::pair<std::string_view, std::string_view> stim_draw_internal::two_qubit_gate_pieces(GateType gate_type) {
     std::pair<std::string, std::string> result;
     if (gate_type == GateType::CX) {
         return {"Z", "X"};

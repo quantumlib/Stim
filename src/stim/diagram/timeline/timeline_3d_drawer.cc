@@ -19,18 +19,18 @@ Coord<3> DiagramTimeline3DDrawer::mq2xyz(size_t m, size_t q) const {
 }
 
 void DiagramTimeline3DDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
-    std::string key = gate;
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string key = std::string(gate);
     if (feedback_target.is_sweep_bit_target()) {
-        key = gate + ":SWEEP";
+        key.append(":SWEEP");
     } else if (feedback_target.is_measurement_record_target()) {
-        key = gate + ":REC";
+        key.append(":REC");
     }
     auto center = mq2xyz(cur_moment, qubit_target.qubit_value());
     diagram_out.elements.push_back({key, center});
 }
 
-void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, const std::string &type) {
+void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, std::string_view type) {
     if (type == "X") {
         diagram_out.elements.push_back({"X_CONTROL", center});
     } else if (type == "Y") {
@@ -38,7 +38,7 @@ void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, con
     } else if (type == "Z") {
         diagram_out.elements.push_back({"Z_CONTROL", center});
     } else {
-        diagram_out.elements.push_back({type, center});
+        diagram_out.elements.push_back({std::string(type), center});
     }
 }
 
@@ -143,7 +143,7 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
 
     auto center = mq2xyz(cur_moment, target.qubit_value());
     const auto &gate_data = GATE_DATA[op.gate_type];
-    diagram_out.elements.push_back({gate_data.name, center});
+    diagram_out.elements.push_back({std::string(gate_data.name), center});
 }
 
 void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {

@@ -34,7 +34,7 @@ struct SvgGateData {
     size_t sub_font_size;
     int32_t y_shift;
 
-    static std::map<std::string, SvgGateData> make_gate_data_map();
+    static std::map<std::string_view, SvgGateData> make_gate_data_map();
 };
 
 }  // namespace stim_draw_internal

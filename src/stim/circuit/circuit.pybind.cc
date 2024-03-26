@@ -139,7 +139,7 @@ std::string circuit_repr(const Circuit &self) {
     }
     std::stringstream ss;
     ss << "stim.Circuit('''\n";
-    print_circuit(ss, self, "    ");
+    print_circuit(ss, self, 4);
     ss << "\n''')";
     return ss.str();
 }

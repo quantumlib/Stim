@@ -408,7 +408,7 @@ void Circuit::safe_append(const CircuitInstruction &operation) {
     safe_append(operation.gate_type, operation.targets, operation.args);
 }
 
-void Circuit::safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
+void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -421,7 +421,7 @@ void Circuit::safe_append_ua(const std::string &gate_name, const std::vector<uin
 }
 
 void Circuit::safe_append_u(
-    const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
+    std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -527,7 +527,7 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &inst
     return out;
 }
 
-void stim::print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation) {
+void stim::print_circuit(std::ostream &out, const Circuit &c, size_t indentation) {
     bool first = true;
     for (const auto &op : c.operations) {
         if (first) {
@@ -539,19 +539,29 @@ void stim::print_circuit(std::ostream &out, const Circuit &c, const std::string 
         // Recurse on repeat blocks.
         if (op.gate_type == GateType::REPEAT) {
             if (op.targets.size() == 3 && op.targets[0].data < c.blocks.size()) {
-                out << indentation << "REPEAT " << op.repeat_block_rep_count() << " {\n";
-                print_circuit(out, c.blocks[op.targets[0].data], indentation + "    ");
-                out << "\n" << indentation << "}";
+                for (size_t k = 0; k < indentation; k++) {
+                    out << ' ';
+                }
+                out << "REPEAT " << op.repeat_block_rep_count() << " {\n";
+                print_circuit(out, c.blocks[op.targets[0].data], indentation + 4);
+                out << '\n';
+                for (size_t k = 0; k < indentation; k++) {
+                    out << ' ';
+                }
+                out << '}';
                 continue;
             }
         }
 
-        out << indentation << op;
+        for (size_t k = 0; k < indentation; k++) {
+            out << ' ';
+        }
+        out << op;
     }
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const Circuit &c) {
-    print_circuit(out, c, "");
+    print_circuit(out, c, 0);
     return out;
 }
 

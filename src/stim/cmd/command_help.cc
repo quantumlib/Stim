@@ -170,7 +170,7 @@ void print_fixed_width_float(Acc &out, float f, char u) {
     }
 }
 
-void print_example(Acc &out, const char *name, const Gate &gate) {
+void print_example(Acc &out, std::string_view name, const Gate &gate) {
     out << "\nExample:\n";
     out.change_indent(+4);
     for (size_t k = 0; k < 3; k++) {
@@ -202,7 +202,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         if (gate.name[0] == 'C' || gate.name[0] == 'Z') {
             out << gate.name << " rec[-1] 111\n";
         }
-        if (gate.name[strlen(gate.name) - 1] == 'Z') {
+        if (gate.name.back() == 'Z') {
             out << gate.name << " 111 rec[-1]\n";
         }
     }

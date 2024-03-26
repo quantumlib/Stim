@@ -205,7 +205,7 @@ enum GateFlags : uint16_t {
 
 struct Gate {
     /// The canonical name of the gate, used when printing it to a circuit file.
-    const char *name;
+    std::string_view name;
     /// The gate's type, such as stim::GateType::X or stim::GateType::MRZ.
     GateType id;
     /// The id of the gate inverse to this one, or at least the closest thing to an inverse.

@@ -54,7 +54,7 @@ size_t DiagramTimelineSvgDrawer::q2y(size_t q) const {
 }
 
 void DiagramTimelineSvgDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
     std::stringstream exponent;
     if (feedback_target.is_sweep_bit_target()) {
         exponent << "sweep";
@@ -74,7 +74,7 @@ void DiagramTimelineSvgDrawer::do_feedback(
         c.xyz[1],
         SvgGateData{
             (uint16_t)(mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE ? 2 : 1),
-            gate,
+            std::string(gate),
             "",
             exponent.str(),
             "lightgray",
@@ -207,10 +207,10 @@ void DiagramTimelineSvgDrawer::draw_iswap_control(float cx, float cy, bool inver
 }
 
 void DiagramTimelineSvgDrawer::draw_generic_box(
-    float cx, float cy, const std::string &text, SpanRef<const double> end_args) {
+    float cx, float cy, std::string_view text, SpanRef<const double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
-        throw std::invalid_argument("DiagramTimelineSvgDrawer::draw_generic_box unhandled gate case: " + text);
+        throw std::invalid_argument("DiagramTimelineSvgDrawer::draw_generic_box unhandled gate case: " + std::string(text));
     }
     SvgGateData data = f->second;
     draw_annotated_gate(cx, cy, data, end_args);
@@ -279,7 +279,7 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
 }
 
 void DiagramTimelineSvgDrawer::draw_two_qubit_gate_end_point(
-    float cx, float cy, const std::string &type, SpanRef<const double> args) {
+    float cx, float cy, std::string_view type, SpanRef<const double> args) {
     if (type == "X") {
         draw_x_control(cx, cy);
     } else if (type == "Y") {
@@ -317,16 +317,18 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
     }
 
     auto pieces = two_qubit_gate_pieces(op.gate_type);
+    std::string piece1 = std::string(pieces.first);
+    std::string piece2 = std::string(pieces.second);
     if (op.gate_type == GateType::PAULI_CHANNEL_2) {
-        pieces.first.append("[0]");
-        pieces.second.append("[1]");
+        piece1.append("[0]");
+        piece2.append("[1]");
     }
 
     auto c1 = q2xy(target1.qubit_value());
     auto c2 = q2xy(target2.qubit_value());
     bool b = c1.xyz[1] > c2.xyz[1];
-    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], pieces.first, b ? op.args : SpanRef<const double>{});
-    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], pieces.second, !b ? op.args : SpanRef<const double>{});
+    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], piece1, b ? op.args : SpanRef<const double>{});
+    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], piece2, !b ? op.args : SpanRef<const double>{});
 }
 
 void DiagramTimelineSvgDrawer::start_next_moment() {
