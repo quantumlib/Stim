@@ -58,7 +58,7 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     auto format_sweep_bits = format_to_enum(sweep_bits_format);
     auto format_out = format_to_enum(detection_events_format);
     RaiiFile file_in(measurements_filepath, "rb");
-    RaiiFile obs_out(obs_out_filepath == nullptr ? std::string_view{} : std::string_view{obs_out_filepath}, "wb");
+    RaiiFile obs_out(obs_out_filepath, "wb");
     RaiiFile sweep_bits_in(sweep_bits_filepath, "rb");
     RaiiFile detections_out(detection_events_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
