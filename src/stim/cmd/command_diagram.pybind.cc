@@ -83,7 +83,7 @@ pybind11::object diagram_as_html(const DiagramHelper &self) {
         // Wrap the SVG image into an img tag.
         std::stringstream out;
         out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
-        write_data_as_base64_to(self.content.data(), self.content.size(), out);
+        write_data_as_base64_to(self.content, out);
         out << R"HTML("/>)HTML";
         output = out.str();
     } else if (self.type == DiagramType::DIAGRAM_TYPE_SVG) {
@@ -167,7 +167,7 @@ CoordFilter item_to_filter_single(const pybind11::handle &obj) {
     }
 
     try {
-        std::string text = pybind11::cast<std::string>(obj);
+        std::string_view text = pybind11::cast<std::string_view>(obj);
         if (text.size() > 1 && text[0] == 'D') {
             CoordFilter filter;
             filter.exact_target = DemTarget::relative_detector_id(parse_exact_uint64_t_from_string(text.substr(1)));

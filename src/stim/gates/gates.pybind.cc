@@ -119,7 +119,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         "gate_data",
         [](const pybind11::object &name) -> pybind11::object {
             if (!name.is_none()) {
-                return pybind11::cast(GATE_DATA.at(pybind11::cast<std::string>(name)));
+                return pybind11::cast(GATE_DATA.at(pybind11::cast<std::string_view>(name)));
             }
 
             std::map<std::string_view, Gate> result;
@@ -206,8 +206,9 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 return x ? "True" : "False";
             };
             auto v = [](const pybind11::object &obj) {
+                pybind11::object obj_repr = pybind11::repr(obj);
                 std::string result;
-                for (char c : pybind11::cast<std::string>(pybind11::repr(obj))) {
+                for (char c : pybind11::cast<std::string_view>(obj_repr)) {
                     result.push_back(c);
                     if (c == '\n') {
                         result.append("    ");

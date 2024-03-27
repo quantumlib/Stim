@@ -44,7 +44,7 @@ void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
     } else {
         std::stringstream ss;
         ss << "Don't know how to handle ";
-        ss << obj;
+        ss << pybind11::repr(obj);
         throw std::invalid_argument(ss.str());
     }
 }

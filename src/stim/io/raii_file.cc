@@ -26,13 +26,15 @@ RaiiFile::RaiiFile(RaiiFile &&other) noexcept : f(other.f), responsible_for_clos
     other.f = nullptr;
 }
 
-RaiiFile::RaiiFile(const char *path, const char *mode) : f(nullptr), responsible_for_closing(true) {
-    if (path == nullptr) {
+RaiiFile::RaiiFile(std::string_view path, const char *mode) : f(nullptr), responsible_for_closing(true) {
+    if (path.empty()) {
         f = nullptr;
         return;
     }
 
-    f = fopen(path, mode);
+    // TODO: avoid needing the string copy (for null termination) to safely open the file.
+    f = fopen(std::string(path).c_str(), mode);
+
     if (f == nullptr) {
         std::stringstream ss;
         ss << "Failed to open '";

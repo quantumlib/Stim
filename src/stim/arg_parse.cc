@@ -102,17 +102,17 @@ void SubCommandHelp::write_help(std::ostream &out) const {
     }
 }
 
-const char *stim::require_find_argument(const char *name, int argc, const char **argv) {
-    const char *result = find_argument(name, argc, argv);
+const char *stim::require_find_argument(const char *name_c_str, int argc, const char **argv) {
+    const char *result = find_argument(name_c_str, argc, argv);
     if (result == 0) {
         std::stringstream msg;
-        msg << "\033[31mMissing command line argument: '" << name << "'";
+        msg << "\033[31mMissing command line argument: '" << name_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
     return result;
 }
 
-const char *stim::find_argument(const char *name, int argc, const char **argv) {
+const char *stim::find_argument(const char *name_c_str, int argc, const char **argv) {
     // Respect that the "--" argument terminates flags.
     size_t flag_count = 1;
     while (flag_count < (size_t)argc && strcmp(argv[flag_count], "--") != 0) {
@@ -120,10 +120,10 @@ const char *stim::find_argument(const char *name, int argc, const char **argv) {
     }
 
     // Search for the desired flag.
-    size_t n = strlen(name);
+    size_t n = strlen(name_c_str);
     for (size_t i = 1; i < flag_count; i++) {
         // Check if argument starts with expected flag.
-        const char *loc = strstr(argv[i], name);
+        const char *loc = strstr(argv[i], name_c_str);
         if (loc != argv[i] || (loc[n] != '\0' && loc[n] != '=')) {
             continue;
         }
@@ -204,8 +204,8 @@ void stim::check_for_unknown_arguments(
     }
 }
 
-bool stim::find_bool_argument(const char *name, int argc, const char **argv) {
-    const char *text = find_argument(name, argc, argv);
+bool stim::find_bool_argument(const char *name_c_str, int argc, const char **argv) {
+    const char *text = find_argument(name_c_str, argc, argv);
     if (text == nullptr) {
         return false;
     }
@@ -213,7 +213,7 @@ bool stim::find_bool_argument(const char *name, int argc, const char **argv) {
         return true;
     }
     std::stringstream msg;
-    msg << "Got non-empty value '" << text << "' for boolean flag '" << name << "'.";
+    msg << "Got non-empty value '" << text << "' for boolean flag '" << name_c_str << "'.";
     throw std::invalid_argument(msg.str());
 }
 
@@ -258,12 +258,12 @@ bool stim::parse_int64(std::string_view data, int64_t *out) {
 }
 
 int64_t stim::find_int64_argument(
-    const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv) {
-    const char *text = find_argument(name, argc, argv);
+    const char *name_c_str, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv) {
+    const char *text = find_argument(name_c_str, argc, argv);
     if (text == nullptr || text[0] == '\0') {
         if (default_value < min_value || default_value > max_value) {
             std::stringstream msg;
-            msg << "Must specify a value for int flag '" << name << "'.";
+            msg << "Must specify a value for int flag '" << name_c_str << "'.";
             throw std::invalid_argument(msg.str());
         }
         return default_value;
@@ -273,14 +273,14 @@ int64_t stim::find_int64_argument(
     int64_t i;
     if (!parse_int64(text, &i)) {
         std::stringstream msg;
-        msg << "Got non-int64 value '" << text << "' for int64 flag '" << name << "'.";
+        msg << "Got non-int64 value '" << text << "' for int64 flag '" << name_c_str << "'.";
         throw std::invalid_argument(msg.str());
     }
 
     // In range?
     if (i < min_value || i > max_value) {
         std::stringstream msg;
-        msg << "Integer value '" << text << "' for flag '" << name << "' doesn't satisfy " << min_value << " <= " << i
+        msg << "Integer value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value << " <= " << i
             << " <= " << max_value << ".";
         throw std::invalid_argument(msg.str());
     }
@@ -289,12 +289,12 @@ int64_t stim::find_int64_argument(
 }
 
 float stim::find_float_argument(
-    const char *name, float default_value, float min_value, float max_value, int argc, const char **argv) {
-    const char *text = find_argument(name, argc, argv);
+    const char *name_c_str, float default_value, float min_value, float max_value, int argc, const char **argv) {
+    const char *text = find_argument(name_c_str, argc, argv);
     if (text == nullptr) {
         if (default_value < min_value || default_value > max_value) {
             std::stringstream msg;
-            msg << "Must specify a value for float flag '" << name << "'.";
+            msg << "Must specify a value for float flag '" << name_c_str << "'.";
             throw std::invalid_argument(msg.str());
         }
         return default_value;
@@ -305,14 +305,14 @@ float stim::find_float_argument(
     float f = strtof(text, &processed);
     if (*processed != '\0') {
         std::stringstream msg;
-        msg << "Got non-float value '" << text << "' for float flag '" << name << "'.";
+        msg << "Got non-float value '" << text << "' for float flag '" << name_c_str << "'.";
         throw std::invalid_argument(msg.str());
     }
 
     // In range?
     if (f < min_value || f > max_value || f != f) {
         std::stringstream msg;
-        msg << "Float value '" << text << "' for flag '" << name << "' doesn't satisfy " << min_value << " <= " << f
+        msg << "Float value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value << " <= " << f
             << " <= " << max_value << ".";
         throw std::invalid_argument(msg.str());
     }
@@ -321,25 +321,25 @@ float stim::find_float_argument(
 }
 
 FILE *stim::find_open_file_argument(
-    const char *name, FILE *default_file, const char *mode, int argc, const char **argv) {
-    const char *path = find_argument(name, argc, argv);
-    if (path == nullptr) {
+    const char *name_c_str, FILE *default_file, const char *mode, int argc, const char **argv) {
+    const char *path_c_str = find_argument(name_c_str, argc, argv);
+    if (path_c_str == nullptr) {
         if (default_file == nullptr) {
             std::stringstream msg;
-            msg << "Missing command line argument: '" << name << "'";
+            msg << "Missing command line argument: '" << name_c_str << "'";
             throw std::invalid_argument(msg.str());
         }
         return default_file;
     }
-    if (*path == '\0') {
+    if (*path_c_str == '\0') {
         std::stringstream msg;
-        msg << "Command line argument '" << name << "' can't be empty. It's supposed to be a file path.";
+        msg << "Command line argument '" << name_c_str << "' can't be empty. It's supposed to be a file path.";
         throw std::invalid_argument(msg.str());
     }
-    FILE *file = fopen(path, mode);
+    FILE *file = fopen(path_c_str, mode);
     if (file == nullptr) {
         std::stringstream msg;
-        msg << "Failed to open '" << path << "'";
+        msg << "Failed to open '" << path_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
     return file;
@@ -357,25 +357,25 @@ std::ostream &ostream_else_cout::stream() {
 }
 
 ostream_else_cout stim::find_output_stream_argument(
-    const char *name, bool default_std_out, int argc, const char **argv) {
-    const char *path = find_argument(name, argc, argv);
-    if (path == nullptr) {
+    const char *name_c_str, bool default_std_out, int argc, const char **argv) {
+    const char *path_c_str = find_argument(name_c_str, argc, argv);
+    if (path_c_str == nullptr) {
         if (!default_std_out) {
             std::stringstream msg;
-            msg << "Missing command line argument: '" << name << "'";
+            msg << "Missing command line argument: '" << name_c_str << "'";
             throw std::invalid_argument(msg.str());
         }
         return {nullptr};
     }
-    if (*path == '\0') {
+    if (*path_c_str == '\0') {
         std::stringstream msg;
-        msg << "Command line argument '" << name << "' can't be empty. It's supposed to be a file path.";
+        msg << "Command line argument '" << name_c_str << "' can't be empty. It's supposed to be a file path.";
         throw std::invalid_argument(msg.str());
     }
-    std::unique_ptr<std::ostream> f(new std::ofstream(path));
+    std::unique_ptr<std::ostream> f(new std::ofstream(path_c_str));
     if (f->fail()) {
         std::stringstream msg;
-        msg << "Failed to open '" << path << "'";
+        msg << "Failed to open '" << path_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
     return {std::move(f)};

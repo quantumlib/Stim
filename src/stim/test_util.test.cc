@@ -114,7 +114,7 @@ RaiiTempNamedFile::RaiiTempNamedFile(std::string_view contents) {
 
 RaiiTempNamedFile::~RaiiTempNamedFile() {
     if (!path.empty()) {
-        remove(path.data());
+        remove(path.c_str());
         path = "";
     }
 }

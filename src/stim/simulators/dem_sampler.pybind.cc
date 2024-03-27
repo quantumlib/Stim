@@ -23,15 +23,16 @@ using namespace stim_pybind;
 
 RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *mode) {
     try {
-        auto path = pybind11::cast<std::string>(obj);
-        return RaiiFile(path.data(), mode);
+        std::string_view path = pybind11::cast<std::string_view>(obj);
+        return RaiiFile(path, mode);
     } catch (pybind11::cast_error &ex) {
     }
 
     auto py_path = pybind11::module::import("pathlib").attr("Path");
     if (pybind11::isinstance(obj, py_path)) {
-        auto path = pybind11::cast<std::string>(pybind11::str(obj));
-        return RaiiFile(path.data(), mode);
+        pybind11::object str_obj = pybind11::str(obj);
+        std::string_view path = pybind11::cast<std::string_view>(str_obj);
+        return RaiiFile(path, mode);
     }
 
     return RaiiFile(nullptr);

@@ -74,11 +74,11 @@ stim::DetectorErrorModel _read_dem(RaiiFile &in, int argc, const char **argv) {
     in.done();
 
     try {
-        return DetectorErrorModel(content.data());
+        return DetectorErrorModel(content);
     } catch (const std::exception &_) {
     }
 
-    auto circuit = Circuit(content.data());
+    Circuit circuit(content);
     auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
     if (dem.count_errors() == 0) {
         std::cerr << "Warning: the detector error model derived from the circuit had no errors.\n"

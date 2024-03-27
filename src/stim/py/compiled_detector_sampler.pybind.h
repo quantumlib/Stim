@@ -46,7 +46,7 @@ struct CompiledDetectorSampler {
         std::string_view format,
         bool prepend_observables,
         bool append_observables,
-        const char *obs_out_filepath,
+        std::string_view obs_out_filepath,
         std::string_view obs_out_format);
     std::string repr() const;
 };

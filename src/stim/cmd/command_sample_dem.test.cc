@@ -29,7 +29,7 @@ TEST(main, sample_dem) {
             {
                 "sample_dem",
                 "--obs_out",
-                obs_out.path.data(),
+                obs_out.path.c_str(),
                 "--out_format",
                 "01",
                 "--obs_out_format",

@@ -71,10 +71,10 @@ void CompiledDetectorSampler::sample_write(
     std::string_view format,
     bool prepend_observables,
     bool append_observables,
-    const char *obs_out_filepath,
+    std::string_view obs_out_filepath,
     std::string_view obs_out_format) {
     auto f = format_to_enum(format);
-    RaiiFile out(filepath.data(), "wb");
+    RaiiFile out(filepath, "wb");
     RaiiFile obs_out(obs_out_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
     sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(

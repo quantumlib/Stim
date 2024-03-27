@@ -283,7 +283,7 @@ TEST(arg_parse, find_open_file_argument) {
     ASSERT_EQ(getc(f2), 'x');
     fclose(f2);
 
-    remove(f.path.data());
+    remove(f.path.c_str());
     args = {"", "-arg", f.path.data()};
     ASSERT_THROW_MSG(
         { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); },

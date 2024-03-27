@@ -35,7 +35,7 @@ std::optional<size_t> py_index_to_optional_size_t(
 
 uint8_t pybind11_object_to_pauli_ixyz(const pybind11::object &obj) {
     if (pybind11::isinstance<pybind11::str>(obj)) {
-        std::string s = pybind11::cast<std::string>(obj);
+        std::string_view s = pybind11::cast<std::string_view>(obj);
         if (s == "X") {
             return 1;
         } else if (s == "Y") {
@@ -736,8 +736,11 @@ void stim_pybind::pybind_frame_simulator_methods(
                 const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(obj);
                 self.safe_do_circuit(block.body, block.repeat_count);
             } else {
-                throw std::invalid_argument(
-                    "Don't know how to do a '" + pybind11::cast<std::string>(pybind11::repr(obj)) + "'.");
+                std::stringstream ss;
+                ss << "Don't know how to do a '";
+                ss << pybind11::repr(obj);
+                ss << "'.";
+                throw std::invalid_argument(ss.str());
             }
         },
         pybind11::arg("obj"),

@@ -254,7 +254,7 @@ void stim_draw_internal::write_html_viewer_for_gltf_data(std::string_view gltf_d
 </head>
 <body>
   <a download="model.gltf" id="stim-3d-viewer-download-link" href="data:text/plain;base64,)HTML";
-    write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
+    write_data_as_base64_to(gltf_data, out);
     out << R"HTML(">Download 3D Model as .GLTF File</a>
   <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
   <div id="stim-3d-viewer-scene-container" style="width: calc(100vw - 32px); height: calc(100vh - 64px);">JavaScript Blocked?</div>

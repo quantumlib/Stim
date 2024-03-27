@@ -349,17 +349,17 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     return FlexPauliString(pybind11::cast<size_t>(num_qubits_or));
                 }
 
-                const auto &text_or = pybind11::isinstance<pybind11::str>(arg) ? arg : text;
+                pybind11::object text_or = pybind11::isinstance<pybind11::str>(arg) ? arg : text;
                 if (!text_or.is_none()) {
-                    return FlexPauliString::from_text(pybind11::cast<std::string>(text_or));
+                    return FlexPauliString::from_text(pybind11::cast<std::string_view>(text_or));
                 }
 
-                const auto &other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
+                pybind11::object other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
                 if (!other_or.is_none()) {
                     return pybind11::cast<FlexPauliString>(other_or);
                 }
 
-                const auto &pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
+                pybind11::object pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
                 if (!pauli_indices_or.is_none()) {
                     std::vector<uint8_t> ps;
                     for (const pybind11::handle &h : pauli_indices_or) {
@@ -370,7 +370,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                             } catch (const pybind11::cast_error &) {
                             }
                         } else if (pybind11::isinstance<pybind11::str>(h)) {
-                            std::string s = pybind11::cast<std::string>(h);
+                            std::string_view s = pybind11::cast<std::string_view>(h);
                             if (s == "I" || s == "_") {
                                 v = 0;
                             } else if (s == "X" || s == "x") {
@@ -1574,7 +1574,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return self.str();
         },
         [](const pybind11::str &d) {
-            return FlexPauliString::from_text(pybind11::cast<std::string>(d).data());
+            return FlexPauliString::from_text(pybind11::cast<std::string_view>(d));
         }));
 
     c.def_static(

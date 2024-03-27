@@ -255,7 +255,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
         out << "# The following circuit is equivalent (up to global phase) to `";
         out << undecomposed.str() << "`";
         out << decomposition;
-        if (Circuit(decomposition) == Circuit(undecomposed.str().data())) {
+        if (Circuit(decomposition) == Circuit(undecomposed.str())) {
             out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
         }
         out.change_indent(-4);
@@ -408,7 +408,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
     for (const auto &entry : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (entry.expected_name.size() > 0 && entry.id == alt_gate.id && entry.expected_name.data() != alt_gate.name) {
+        if (entry.expected_name.size() > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
                 out << "<a name=\"" << entry.expected_name << "\"></a>";

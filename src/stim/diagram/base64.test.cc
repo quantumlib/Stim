@@ -5,9 +5,9 @@
 using namespace stim_draw_internal;
 
 TEST(base64, write_base64) {
-    auto f = [](const char *c) {
+    auto f = [](std::string_view c) {
         std::stringstream ss;
-        write_data_as_base64_to(c, strlen(c), ss);
+        write_data_as_base64_to(c, ss);
         return ss.str();
     };
 
