@@ -4414,7 +4414,7 @@ def sample_write(
     obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
     prepend_observables: bool = False,
     append_observables: bool = False,
-):
+) -> None:
     """Samples detection events from the circuit and writes them to a file.
 
     Args:
