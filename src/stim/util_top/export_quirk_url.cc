@@ -165,6 +165,7 @@ struct QuirkExporter {
             } else if (n == "YDetectControlReset") {
                 cols[col_offset][t.value()] = n;
                 cols[col_offset + 1][t.value()] = "~Hyz";
+                used[(int)GateType::H_YZ] = true;
             } else if (n == "ZDetectControlReset") {
                 cols[col_offset][t.value()] = n;
             } else {

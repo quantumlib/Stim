@@ -30,6 +30,16 @@ TEST(export_quirk, simple) {
     ASSERT_EQ(actual, expected);
 
     actual = export_quirk_url(Circuit(R"CIRCUIT(
+        MRY 0
+    )CIRCUIT"));
+    expected = R"URL(https://algassert.com/quirk#circuit={"cols":[)URL"
+               R"URL(["YDetectControlReset"],)URL"
+               R"URL(["~Hyz"])URL"
+               R"URL(],"gates":[)URL"
+               R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"}]})URL";
+    ASSERT_EQ(actual, expected);
+
+    actual = export_quirk_url(Circuit(R"CIRCUIT(
         R 0
         H_XY 0 1
         S 2
