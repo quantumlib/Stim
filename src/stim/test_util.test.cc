@@ -23,13 +23,13 @@ using namespace stim;
 static bool shared_test_rng_initialized;
 static std::mt19937_64 shared_test_rng;
 
-std::string resolve_test_file(const std::string &name) {
+std::string resolve_test_file(std::string_view name) {
     std::vector<std::string> prefixes{
         "testdata/",
         "../testdata/",
     };
     for (const auto &prefix : prefixes) {
-        std::string full_path = prefix + name;
+        std::string full_path = prefix + std::string(name);
         FILE *f = fopen(full_path.c_str(), "rb");
         if (f != nullptr) {
             fclose(f);
@@ -37,7 +37,7 @@ std::string resolve_test_file(const std::string &name) {
         }
     }
     for (const auto &prefix : prefixes) {
-        std::string full_path = prefix + name;
+        std::string full_path = prefix + std::string(name);
         FILE *f = fopen(full_path.c_str(), "wb");
         if (f != nullptr) {
             fclose(f);
@@ -47,7 +47,7 @@ std::string resolve_test_file(const std::string &name) {
     throw std::invalid_argument("Run tests from the repo root so they can find the testdata/ directory.");
 }
 
-void expect_string_is_identical_to_saved_file(const std::string &actual, const std::string &key) {
+void expect_string_is_identical_to_saved_file(std::string_view actual, std::string_view key) {
     auto path = resolve_test_file(key);
     FILE *f = fopen(path.c_str(), "rb");
     auto expected = rewind_read_close(f);
@@ -107,7 +107,7 @@ RaiiTempNamedFile::RaiiTempNamedFile() {
     init_path(*this);
 }
 
-RaiiTempNamedFile::RaiiTempNamedFile(const std::string &contents) {
+RaiiTempNamedFile::RaiiTempNamedFile(std::string_view contents) {
     init_path(*this);
     write_contents(contents);
 }
@@ -136,7 +136,7 @@ std::string RaiiTempNamedFile::read_contents() {
     return result;
 }
 
-void RaiiTempNamedFile::write_contents(const std::string &contents) {
+void RaiiTempNamedFile::write_contents(std::string_view contents) {
     FILE *f = fopen(path.c_str(), "wb");
     if (f == nullptr) {
         throw std::runtime_error("Failed to open temp named file " + path);

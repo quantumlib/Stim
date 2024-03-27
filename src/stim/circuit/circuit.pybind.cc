@@ -194,7 +194,7 @@ void circuit_append(
     }
 
     if (pybind11::isinstance<pybind11::str>(obj)) {
-        const std::string &gate_name = pybind11::cast<std::string>(obj);
+        std::string_view gate_name = pybind11::cast<std::string_view>(obj);
 
         // Maintain backwards compatibility to when there was always exactly one argument.
         pybind11::object used_arg;
@@ -1146,7 +1146,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def_static(
         "generated",
-        [](const std::string &type,
+        [](std::string_view type,
            size_t distance,
            size_t rounds,
            double after_clifford_depolarization,

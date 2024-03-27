@@ -24,7 +24,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-pybind11::object flex_pauli_string_to_unitary_matrix(const stim::FlexPauliString &ps, const std::string &endian) {
+pybind11::object flex_pauli_string_to_unitary_matrix(const stim::FlexPauliString &ps, std::string_view endian) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -164,7 +164,7 @@ size_t numpy_pair_to_size(
 }
 
 FlexPauliString flex_pauli_string_from_unitary_matrix(
-    const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
+    const pybind11::object &matrix, std::string_view endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -638,7 +638,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "pauli_indices",
-        [](const FlexPauliString &self, const std::string &include) {
+        [](const FlexPauliString &self, std::string_view include) {
             std::vector<uint64_t> result;
             size_t n64 = self.value.xs.num_u64_padded();
             bool keep_i = false;
@@ -1582,7 +1582,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](size_t num_qubits,
            size_t min_weight,
            const pybind11::object &max_weight_obj,
-           const std::string &allowed_paulis) {
+           std::string_view allowed_paulis) -> PauliStringIterator<MAX_BITWORD_WIDTH> {
             bool allow_x = false;
             bool allow_y = false;
             bool allow_z = false;
@@ -1599,7 +1599,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         break;
                     default:
                         throw std::invalid_argument(
-                            "allowed_paulis='" + allowed_paulis + "' had characters other than 'X', 'Y', and 'Z'.");
+                            "allowed_paulis='" + std::string(allowed_paulis) + "' had characters other than 'X', 'Y', and 'Z'.");
                 }
             }
             size_t max_weight = num_qubits;

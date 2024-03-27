@@ -274,13 +274,13 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
         [](DemSampler<MAX_BITWORD_WIDTH> &self,
            size_t shots,
            pybind11::object &det_out_file,
-           const std::string &det_out_format,
+           std::string_view det_out_format,
            pybind11::object &obs_out_file,
-           const std::string &obs_out_format,
+           std::string_view obs_out_format,
            pybind11::object &err_out_file,
-           const std::string &err_out_format,
+           std::string_view err_out_format,
            pybind11::object &replay_err_in_file,
-           const std::string &replay_err_in_format) {
+           std::string_view replay_err_in_format) {
             RaiiFile fd = optional_py_path_to_raii_file(det_out_file, "wb");
             RaiiFile fo = optional_py_path_to_raii_file(obs_out_file, "wb");
             RaiiFile feo = optional_py_path_to_raii_file(err_out_file, "wb");

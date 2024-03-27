@@ -67,12 +67,12 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
 
 void CompiledDetectorSampler::sample_write(
     size_t num_samples,
-    const std::string &filepath,
-    const std::string &format,
+    std::string_view filepath,
+    std::string_view format,
     bool prepend_observables,
     bool append_observables,
     const char *obs_out_filepath,
-    const std::string &obs_out_format) {
+    std::string_view obs_out_format) {
     auto f = format_to_enum(format);
     RaiiFile out(filepath.data(), "wb");
     RaiiFile obs_out(obs_out_filepath, "wb");

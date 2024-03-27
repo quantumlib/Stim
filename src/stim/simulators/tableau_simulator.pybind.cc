@@ -255,7 +255,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "state_vector",
-        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2056,7 +2056,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "set_state_from_state_vector",
-        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::object &state_vector, const std::string &endian) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::object &state_vector, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;

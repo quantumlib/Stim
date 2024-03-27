@@ -45,15 +45,15 @@ std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
 }
 
 void CompiledMeasurementsToDetectionEventsConverter::convert_file(
-    const std::string &measurements_filepath,
-    const std::string &measurements_format,
+    std::string_view measurements_filepath,
+    std::string_view measurements_format,
     const char *sweep_bits_filepath,
-    const std::string &sweep_bits_format,
-    const std::string &detection_events_filepath,
-    const std::string &detection_events_format,
+    std::string_view sweep_bits_format,
+    std::string_view detection_events_filepath,
+    std::string_view detection_events_format,
     bool append_observables,
     const char *obs_out_filepath,
-    const std::string &obs_out_format) {
+    std::string_view obs_out_format) {
     auto format_in = format_to_enum(measurements_format);
     auto format_sweep_bits = format_to_enum(sweep_bits_format);
     auto format_out = format_to_enum(detection_events_format);

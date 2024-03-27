@@ -464,7 +464,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def("__hash__", &CircuitTargetsInsideInstruction_hash);
     c.def(
         pybind11::init(
-            [](const std::string &gate,
+            [](std::string_view gate,
                const std::vector<double> &args,
                size_t target_range_start,
                size_t target_range_end,

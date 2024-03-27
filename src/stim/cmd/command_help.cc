@@ -113,12 +113,13 @@ std::vector<SubCommandHelp> make_sub_command_help() {
     return result;
 }
 
-std::string upper(const std::string &val) {
-    std::string copy = val;
-    for (char &c : copy) {
-        c = toupper(c);
+std::string to_upper_case(std::string_view val) {
+    std::string result;
+    result.reserve(val.size());
+    for (char c : val) {
+        result.push_back(toupper(c));
     }
-    return copy;
+    return result;
 }
 
 struct Acc {
@@ -480,7 +481,7 @@ std::map<std::string, std::string> generate_format_help_markdown() {
     result[std::string("FORMATS")] = all.str();
 
     for (const auto &kv : format_name_to_enum_map()) {
-        result[upper(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
+        result[to_upper_case(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
     }
 
     all.str("");
@@ -528,7 +529,7 @@ std::map<std::string, std::string> generate_command_help_topics() {
     auto sub_command_data = make_sub_command_help();
 
     for (const auto &subcommand : sub_command_data) {
-        result[upper(subcommand.subcommand_name)] = subcommand.str_help();
+        result[to_upper_case(subcommand.subcommand_name)] = subcommand.str_help();
     }
 
     {
@@ -630,7 +631,7 @@ std::string stim::help_for(std::string help_key) {
     auto m2 = generate_format_help_markdown();
     auto m3 = generate_command_help_topics();
 
-    auto key = upper(help_key);
+    auto key = to_upper_case(help_key);
     auto p = m1.find(key);
     if (p == m1.end()) {
         p = m2.find(key);

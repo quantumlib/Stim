@@ -101,7 +101,7 @@ std::vector<CoordFilter> _read_coord_filter(int argc, const char **argv) {
 }
 
 DiagramTypes _read_diagram_type(int argc, const char **argv) {
-    std::map<std::string, DiagramTypes> diagram_types{
+    std::map<std::string_view, DiagramTypes> diagram_types{
         {"timeline-text", DiagramTypes::TIMELINE_TEXT},
         {"timeline-svg", DiagramTypes::TIMELINE_SVG},
         {"timeline-3d", DiagramTypes::TIMELINE_3D},
@@ -115,7 +115,7 @@ DiagramTypes _read_diagram_type(int argc, const char **argv) {
         {"detslice-text", DiagramTypes::DETECTOR_SLICE_TEXT},
         {"detslice-svg", DiagramTypes::DETECTOR_SLICE_SVG},
     };
-    std::map<std::string, DiagramTypes> quietly_allowed_diagram_types{
+    std::map<std::string_view, DiagramTypes> quietly_allowed_diagram_types{
         {"time-slice-svg", DiagramTypes::TIME_SLICE_SVG},
         {"time+detector-slice-svg", DiagramTypes::TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
         {"interactive", DiagramTypes::INTERACTIVE_HTML},

@@ -46,7 +46,7 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
     return c;
 }
 
-std::string escape_html_for_srcdoc(const std::string &src) {
+std::string escape_html_for_srcdoc(std::string_view src) {
     // From https://stackoverflow.com/a/9907752
     std::stringstream dst;
     for (char ch : src) {

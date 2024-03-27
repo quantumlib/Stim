@@ -232,7 +232,7 @@ TEST(arg_parse, find_enum_argument) {
         "-b",
         "-c=rest",
     };
-    std::map<std::string, int> enums{
+    std::map<std::string_view, int> enums{
         {"", 10},
         {"test", 20},
         {"rest", 30},
