@@ -270,8 +270,8 @@ void Circuit::append_from_text(std::string_view text) {
         READ_CONDITION::READ_UNTIL_END_OF_FILE);
 }
 
-void Circuit::safe_append(const CircuitInstruction &operation) {
-    safe_append(operation.gate_type, operation.targets, operation.args);
+void Circuit::safe_append(const CircuitInstruction &operation, bool block_fusion) {
+    safe_append(operation.gate_type, operation.targets, operation.args, block_fusion);
 }
 
 void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
@@ -299,7 +299,7 @@ void Circuit::safe_append_u(
     safe_append(gate.id, converted, args);
 }
 
-void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args) {
+void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool block_fusion) {
     auto flags = GATE_DATA[gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");
@@ -312,7 +312,7 @@ void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets,
     to_add.args = arg_buf.take_copy(to_add.args);
     to_add.targets = target_buf.take_copy(to_add.targets);
 
-    if (!operations.empty() && operations.back().can_fuse(to_add)) {
+    if (!block_fusion && !operations.empty() && operations.back().can_fuse(to_add)) {
         // Extend targets of last gate.
         fuse_data(operations.back().targets, to_add.targets, target_buf);
     } else {
