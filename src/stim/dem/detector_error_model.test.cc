@@ -608,7 +608,7 @@ TEST(detector_error_model, iadd) {
     // Aliased.
     a = original;
     a += a;
-    a = DetectorErrorModel(a.str().data());  // Remove memory deduplication, because it affects equality.
+    a = DetectorErrorModel(a.str());  // Remove memory deduplication, because it affects equality.
     ASSERT_EQ(a, original + original);
 }
 

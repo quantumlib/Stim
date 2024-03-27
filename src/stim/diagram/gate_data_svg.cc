@@ -2,8 +2,8 @@
 
 using namespace stim_draw_internal;
 
-std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
-    std::map<std::string, SvgGateData> result;
+std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
+    std::map<std::string_view, SvgGateData> result;
 
     result.insert({"X", {1, "X", "", "", "white", "black", 0, 10, 0}});
     result.insert({"Y", {1, "Y", "", "", "white", "black", 0, 10, 0}});

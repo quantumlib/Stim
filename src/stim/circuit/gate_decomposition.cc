@@ -301,8 +301,7 @@ void stim::for_each_disjoint_target_segment_in_instruction_reversed(
 }
 
 void stim::for_each_combined_targets_group(
-    const CircuitInstruction &inst,
-    const std::function<void(CircuitInstruction)> &callback) {
+    const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback) {
     if (inst.targets.empty()) {
         return;
     }

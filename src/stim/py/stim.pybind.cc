@@ -154,7 +154,7 @@ GateTarget target_pauli(uint32_t qubit_index, const pybind11::object &pauli, boo
         throw std::invalid_argument(ss.str());
     }
     if (pybind11::isinstance<pybind11::str>(pauli)) {
-        std::string p = pybind11::cast<std::string>(pauli);
+        std::string_view p = pybind11::cast<std::string_view>(pauli);
         if (p == "X" || p == "x") {
             return GateTarget::x(qubit_index, invert);
         } else if (p == "Y" || p == "y") {
@@ -196,7 +196,7 @@ int stim_main(const std::vector<std::string> &args) {
     std::vector<const char *> argv;
     argv.push_back("stim.main");
     for (const auto &arg : args) {
-        argv.push_back(arg.data());
+        argv.push_back(arg.c_str());
     }
     return stim::main(argv.size(), argv.data());
 }
@@ -213,7 +213,7 @@ pybind11::object raw_format_data_solo(const FileFormatData &data) {
 pybind11::dict raw_format_data() {
     pybind11::dict result;
     for (const auto &kv : format_name_to_enum_map()) {
-        result[kv.first.data()] = raw_format_data_solo(kv.second);
+        result[pybind11::str(kv.first)] = raw_format_data_solo(kv.second);
     }
     return result;
 }

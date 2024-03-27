@@ -25,7 +25,7 @@ TEST(command_explain_errors, explain_errors) {
     RaiiTempNamedFile tmp("error(1) D0\n");
 
     ASSERT_EQ(
-        trim(run_captured_stim_main({"explain_errors", "--dem_filter", tmp.path.data()}, R"input(
+        trim(run_captured_stim_main({"explain_errors", "--dem_filter", tmp.path.c_str()}, R"input(
 X_ERROR(0.25) 0 1
 M 0 1
 DETECTOR rec[-1]

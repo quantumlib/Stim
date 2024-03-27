@@ -11,19 +11,19 @@ ExposedCircuit::ExposedCircuit() : circuit() {
 ExposedCircuit::ExposedCircuit(Circuit circuit) : circuit(circuit) {
 }
 
-ExposedCircuit::ExposedCircuit(const std::string &text) : circuit(Circuit(text.data())) {
+ExposedCircuit::ExposedCircuit(const std::string &text) : circuit(Circuit(text)) {
 }
 
 void ExposedCircuit::append_operation(
     const std::string &name, const emscripten::val &targets, const emscripten::val &args) {
     circuit.safe_append_u(
-        name.data(),
+        name,
         emscripten::convertJSArrayToNumberVector<uint32_t>(targets),
         emscripten::convertJSArrayToNumberVector<double>(args));
 }
 
 void ExposedCircuit::append_from_stim_program_text(const std::string &text) {
-    circuit.append_from_text(text.data());
+    circuit.append_from_text(text);
 }
 
 ExposedCircuit ExposedCircuit::repeated(size_t repetitions) const {

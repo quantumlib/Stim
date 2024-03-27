@@ -3,8 +3,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(GateType gate_type) {
-    std::pair<std::string, std::string> result;
+std::pair<std::string_view, std::string_view> stim_draw_internal::two_qubit_gate_pieces(GateType gate_type) {
     if (gate_type == GateType::CX) {
         return {"Z", "X"};
     } else if (gate_type == GateType::CY) {
@@ -35,7 +34,7 @@ std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(Ga
     }
 }
 
-size_t stim_draw_internal::utf8_char_count(const std::string &s) {
+size_t stim_draw_internal::utf8_char_count(std::string_view s) {
     size_t t = 0;
     for (uint8_t c : s) {
         // Continuation bytes start with "10" in binary.

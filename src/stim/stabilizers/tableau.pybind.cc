@@ -244,7 +244,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_unitary_matrix",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -667,7 +667,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_circuit",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &method) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view method) {
             return tableau_to_circuit(self, method);
         },
         pybind11::arg("method") = "elimination",
@@ -1710,7 +1710,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_unitary_matrix",
-        [](const pybind11::object &matrix, const std::string &endian) {
+        [](const pybind11::object &matrix, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2101,7 +2101,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_state_vector",
-        [](pybind11::object &state_vector, const std::string &endian) {
+        [](pybind11::object &state_vector, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2183,7 +2183,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_state_vector",
-        [](const Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;

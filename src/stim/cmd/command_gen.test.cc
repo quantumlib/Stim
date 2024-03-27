@@ -56,21 +56,19 @@ TEST_EACH_WORD_SIZE_W(command_gen, no_noise_no_detections, {
 
 TEST(command_gen, execute) {
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, "")),
+        run_captured_stim_main({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, ""),
         ".+Generated repetition_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main(
-            {"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, ""),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main(
-            {"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        run_captured_stim_main(
+            {"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, ""),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main(
-            {"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
+        run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, ""),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, "")),
+        run_captured_stim_main({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, ""),
         ".+Generated color_code.+"));
 }

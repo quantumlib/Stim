@@ -23,7 +23,7 @@
 
 using namespace stim;
 
-std::string stim::run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content) {
+std::string stim::run_captured_stim_main(std::vector<const char *> flags, std::string_view std_in_content) {
     // Setup input.
     RaiiTempNamedFile raii_temp_file(std_in_content);
     flags.push_back("--in");
@@ -57,7 +57,7 @@ std::string stim::run_captured_stim_main(std::vector<const char *> flags) {
     return out;
 }
 
-std::string stim::trim(std::string text) {
+std::string_view stim::trim(std::string_view text) {
     size_t s = 0;
     size_t e = text.size();
     while (s < e && std::isspace(text[s])) {

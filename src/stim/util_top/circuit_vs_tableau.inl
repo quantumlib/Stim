@@ -49,7 +49,7 @@ Tableau<W> circuit_to_tableau(
 }
 
 template <size_t W>
-Circuit tableau_to_circuit(const Tableau<W> &tableau, const std::string &method) {
+Circuit tableau_to_circuit(const Tableau<W> &tableau, std::string_view method) {
     if (method == "elimination") {
         return tableau_to_circuit_elimination_method(tableau);
     } else if (method == "graph_state") {

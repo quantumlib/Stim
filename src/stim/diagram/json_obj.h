@@ -43,7 +43,7 @@ struct JsonObj {
     JsonObj(std::vector<JsonObj> arr);
 
     void clear();
-    static void write_str(const std::string &s, std::ostream &out);
+    static void write_str(std::string_view s, std::ostream &out);
     void write(std::ostream &out, int64_t indent = INT64_MIN) const;
     std::string str(bool indent = false) const;
 };

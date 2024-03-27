@@ -28,7 +28,7 @@ BENCHMARK(gate_data_hash_all_gate_names) {
     size_t result = 0;
     benchmark_go([&]() {
         for (const auto &s : names) {
-            result += gate_name_to_hash(s.data(), s.size());
+            result += gate_name_to_hash(s);
         }
     })
         .goal_nanos(2.7 * names.size())

@@ -47,10 +47,12 @@ constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
 /// a noiseless result whereas 1 parens argument is a noisy result.
 constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
-constexpr inline uint16_t gate_name_to_hash(const char *v, size_t n) {
+constexpr inline uint16_t gate_name_to_hash(std::string_view text) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
+    size_t n = text.size();
+    const char *v = text.data();
     size_t result = n;
     if (n > 0) {
         auto c_first = v[0] | 0x20;
@@ -70,10 +72,6 @@ constexpr inline uint16_t gate_name_to_hash(const char *v, size_t n) {
         result += c5 * 77;
     }
     return result & 0x1FF;
-}
-
-constexpr inline uint16_t gate_name_to_hash(const char *c) {
-    return gate_name_to_hash(c, std::char_traits<char>::length(c));
 }
 
 constexpr const size_t NUM_DEFINED_GATES = 70;
@@ -207,7 +205,7 @@ enum GateFlags : uint16_t {
 
 struct Gate {
     /// The canonical name of the gate, used when printing it to a circuit file.
-    const char *name;
+    std::string_view name;
     /// The gate's type, such as stim::GateType::X or stim::GateType::MRZ.
     GateType id;
     /// The id of the gate inverse to this one, or at least the closest thing to an inverse.
@@ -303,21 +301,20 @@ struct Gate {
     std::array<float, 4> to_axis_angle() const;
 };
 
-inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {
-    if (bucket_name == nullptr || bucket_len != text_len) {
+inline bool _case_insensitive_mismatch(std::string_view text1, std::string_view text2) {
+    if (text1.size() != text2.size()) {
         return true;
     }
     bool failed = false;
-    for (size_t k = 0; k < text_len; k++) {
-        failed |= toupper(text[k]) != bucket_name[k];
+    for (size_t k = 0; k < text1.size(); k++) {
+        failed |= toupper(text1[k]) != text2[k];
     }
     return failed;
 }
 
 struct GateDataMapHashEntry {
     GateType id;
-    const char *expected_name;
-    size_t expected_name_len;
+    std::string_view expected_name;
 };
 
 struct GateDataMap {
@@ -348,28 +345,20 @@ struct GateDataMap {
         return items[(uint64_t)g];
     }
 
-    inline const Gate &at(const char *text, size_t text_len) const {
-        auto h = gate_name_to_hash(text, text_len);
+    inline const Gate &at(std::string_view text) const {
+        auto h = gate_name_to_hash(text);
         const auto &entry = hashed_name_to_gate_type_table[h];
-        if (_case_insensitive_mismatch(text, text_len, entry.expected_name, entry.expected_name_len)) {
-            throw std::out_of_range("Gate not found: '" + std::string(text, text_len) + "'");
+        if (_case_insensitive_mismatch(text, entry.expected_name)) {
+            throw std::out_of_range("Gate not found: '" + std::string(text) + "'");
         }
         // Canonicalize.
         return (*this)[entry.id];
     }
 
-    inline const Gate &at(const char *text) const {
-        return at(text, strlen(text));
-    }
-
-    inline const Gate &at(const std::string &text) const {
-        return at(text.data(), text.size());
-    }
-
-    inline bool has(const std::string &text) const {
-        auto h = gate_name_to_hash(text.data(), text.size());
+    inline bool has(std::string_view text) const {
+        auto h = gate_name_to_hash(text);
         const auto &entry = hashed_name_to_gate_type_table[h];
-        return !_case_insensitive_mismatch(text.data(), text.size(), entry.expected_name, entry.expected_name_len);
+        return !_case_insensitive_mismatch(text, entry.expected_name);
     }
 };
 

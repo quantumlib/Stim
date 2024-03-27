@@ -3367,12 +3367,12 @@ class CompiledDetectorSampler:
         self,
         shots: int,
         *,
-        filepath: str,
-        format: str = '01',
+        filepath: Union[str, pathlib.Path],
+        format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
+        obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
         prepend_observables: bool = False,
         append_observables: bool = False,
-        obs_out_filepath: str = None,
-        obs_out_format: str = '01',
     ) -> None:
         """Samples detection events from the circuit and writes them to a file.
 

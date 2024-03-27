@@ -58,7 +58,7 @@ struct DiagramTimelineAsciiDrawer {
     void do_tick();
     void do_two_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_feedback(
-        const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+        std::string_view gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
     void do_single_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op);

@@ -383,7 +383,7 @@ bool are_tableau_mutations_equivalent(
 }
 
 template <size_t W>
-bool are_tableau_prepends_equivalent(const std::string &name, const std::function<void(Tableau<W> &t, size_t)> &func) {
+bool are_tableau_prepends_equivalent(std::string_view name, const std::function<void(Tableau<W> &t, size_t)> &func) {
     return are_tableau_mutations_equivalent<W>(
         1,
         [&](Tableau<W> &t, const std::vector<size_t> &targets) {
@@ -396,7 +396,7 @@ bool are_tableau_prepends_equivalent(const std::string &name, const std::functio
 
 template <size_t W>
 bool are_tableau_prepends_equivalent(
-    const std::string &name, const std::function<void(Tableau<W> &t, size_t, size_t)> &func) {
+    std::string_view name, const std::function<void(Tableau<W> &t, size_t, size_t)> &func) {
     return are_tableau_mutations_equivalent<W>(
         2,
         [&](Tableau<W> &t, const std::vector<size_t> &targets) {
