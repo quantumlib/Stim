@@ -45,7 +45,6 @@ struct SubCommandHelp {
 
     void write_help(std::ostream &out) const;
     std::string str_help() const;
-    std::set<std::string> flag_set() const;
 };
 
 /// Searches through command line flags for a particular flag's argument.

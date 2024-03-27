@@ -339,7 +339,7 @@ std::set<uint64_t> obj_to_abs_detector_id_set(
 
 void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Circuit> &c) {
     c.def(
-        pybind11::init([](const char *stim_program_text) {
+        pybind11::init([](std::string_view stim_program_text) {
             Circuit self;
             self.append_from_text(stim_program_text);
             return self;

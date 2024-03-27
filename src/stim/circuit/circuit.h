@@ -78,7 +78,7 @@ struct Circuit {
     /// Parse constructor. Creates a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
     /// Note: operations are automatically fused.
-    Circuit(const char *text);
+    explicit Circuit(std::string_view text);
     /// Parses a circuit from a file containing operations.
     ///
     /// Note: operations are automatically fused.
@@ -97,7 +97,7 @@ struct Circuit {
     /// Grows the circuit using operations from a string.
     ///
     /// Note: operations are automatically fused.
-    void append_from_text(const char *text);
+    void append_from_text(std::string_view text);
 
     Circuit operator+(const Circuit &other) const;
     Circuit operator*(uint64_t repetitions) const;

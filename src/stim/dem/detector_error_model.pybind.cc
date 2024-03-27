@@ -68,7 +68,7 @@ static DemInstructionType non_block_instruction_name_to_enum(std::string_view na
     } else if (low == "logical_observable") {
         return DemInstructionType::DEM_LOGICAL_OBSERVABLE;
     }
-    throw std::invalid_argument("Not a non-block detector error model instruction name: " + name);
+    throw std::invalid_argument("Not a non-block detector error model instruction name: " + std::string(name));
 }
 
 pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_model(pybind11::module &m) {

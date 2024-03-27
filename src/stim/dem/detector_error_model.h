@@ -37,7 +37,7 @@ struct DetectorErrorModel {
     /// Constructs an empty detector error model.
     DetectorErrorModel();
     /// Parses a detector error model from the given text.
-    DetectorErrorModel(const char *text);
+    explicit DetectorErrorModel(std::string_view text);
 
     /// Copy constructor.
     DetectorErrorModel(const DetectorErrorModel &other);
@@ -62,7 +62,7 @@ struct DetectorErrorModel {
     void append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body);
 
     /// Grows the detector error model using operations from a string.
-    void append_from_text(const char *text);
+    void append_from_text(std::string_view text);
     /// Grows the detector error model using operations from a file.
     ///
     /// Args:

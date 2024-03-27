@@ -202,7 +202,7 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
         "__str__",
         [](const Gate &self) -> std::string {
             std::stringstream ss;
-            auto b = [](bool x) {
+            auto b = [](bool x) -> const char * {
                 return x ? "True" : "False";
             };
             auto v = [](const pybind11::object &obj) {

@@ -141,23 +141,6 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-uint32_t read_uint24_t(int &c, SOURCE read_char) {
-    if (!(c >= '0' && c <= '9')) {
-        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
-    }
-    uint32_t result = 0;
-    do {
-        result *= 10;
-        result += c - '0';
-        if (result >= uint32_t{1} << 24) {
-            throw std::invalid_argument("Number too large.");
-        }
-        c = read_char();
-    } while (c >= '0' && c <= '9');
-    return result;
-}
-
-template <typename SOURCE>
 uint64_t read_uint63_t(int &c, SOURCE read_char) {
     if (!(c >= '0' && c <= '9')) {
         throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
@@ -175,127 +158,10 @@ uint64_t read_uint63_t(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-inline GateTarget read_raw_qubit_target(int &c, SOURCE read_char) {
-    return GateTarget::qubit(read_uint24_t(c, read_char));
-}
-
-template <typename SOURCE>
-inline GateTarget read_measurement_record_target(int &c, SOURCE read_char) {
-    if (c != 'r' || read_char() != 'e' || read_char() != 'c' || read_char() != '[' || read_char() != '-') {
-        throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
-    }
-    c = read_char();
-    uint32_t lookback = read_uint24_t(c, read_char);
-    if (c != ']') {
-        throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
-    }
-    c = read_char();
-    return GateTarget{lookback | TARGET_RECORD_BIT};
-}
-
-template <typename SOURCE>
-inline GateTarget read_sweep_bit_target(int &c, SOURCE read_char) {
-    if (c != 's' || read_char() != 'w' || read_char() != 'e' || read_char() != 'e' || read_char() != 'p' ||
-        read_char() != '[') {
-        throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
-    }
-    c = read_char();
-    uint32_t lookback = read_uint24_t(c, read_char);
-    if (c != ']') {
-        throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
-    }
-    c = read_char();
-    return GateTarget{lookback | TARGET_SWEEP_BIT};
-}
-
-template <typename SOURCE>
-inline GateTarget read_pauli_target(int &c, SOURCE read_char) {
-    uint32_t m = 0;
-    if (c == 'x' || c == 'X') {
-        m = TARGET_PAULI_X_BIT;
-    } else if (c == 'y' || c == 'Y') {
-        m = TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
-    } else if (c == 'z' || c == 'Z') {
-        m = TARGET_PAULI_Z_BIT;
-    } else {
-        assert(false);
-    }
-    c = read_char();
-    if (c == ' ') {
-        throw std::invalid_argument(
-            "Pauli target '" + std::string(1, c) + "' followed by a space instead of a qubit index.");
-    }
-    uint32_t q = read_uint24_t(c, read_char);
-
-    return {q | m};
-}
-
-template <typename SOURCE>
-inline GateTarget read_inverted_target(int &c, SOURCE read_char) {
-    assert(c == '!');
-    c = read_char();
-    GateTarget t;
-    if (c == 'X' || c == 'x' || c == 'Y' || c == 'y' || c == 'Z' || c == 'z') {
-        t = read_pauli_target(c, read_char);
-    } else {
-        t = read_raw_qubit_target(c, read_char);
-    }
-    t.data ^= TARGET_INVERTED_BIT;
-    return t;
-}
-
-template <typename SOURCE>
-inline GateTarget read_single_target(int &c, SOURCE read_char) {
-    switch (c) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return read_raw_qubit_target(c, read_char);
-        case 'r':
-            return read_measurement_record_target(c, read_char);
-        case '!':
-            return read_inverted_target(c, read_char);
-        case 'X':
-        case 'Y':
-        case 'Z':
-        case 'x':
-        case 'y':
-        case 'z':
-            return read_pauli_target(c, read_char);
-        case '*':
-            c = read_char();
-            return GateTarget::combiner();
-        case 's':
-            return read_sweep_bit_target(c, read_char);
-        default:
-            throw std::invalid_argument("Unrecognized target prefix '" + std::string(1, c) + "'.");
-    }
-}
-
-GateTarget GateTarget::from_target_str(const char *text) {
-    int c = text[0];
-    size_t k = 1;
-    auto t = read_single_target(c, [&]() {
-        return text[k] != 0 ? text[k++] : EOF;
-    });
-    if (c != EOF) {
-        throw std::invalid_argument("Unparsed text at end of " + std::string(text));
-    }
-    return t;
-}
-
-template <typename SOURCE>
 inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     bool need_space = true;
     while (read_until_next_line_arg(c, read_char, need_space)) {
-        GateTarget t = read_single_target(c, read_char);
+        GateTarget t = read_single_gate_target(c, read_char);
         circuit.target_buf.append_tail(t);
         need_space = !t.is_combiner();
     }
@@ -394,12 +260,12 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
     } while (read_condition != READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE);
 }
 
-void Circuit::append_from_text(const char *text) {
+void Circuit::append_from_text(std::string_view text) {
     size_t k = 0;
     circuit_read_operations(
         *this,
         [&]() {
-            return text[k] != 0 ? text[k++] : EOF;
+            return k < text.size() ? text[k++] : EOF;
         },
         READ_CONDITION::READ_UNTIL_END_OF_FILE);
 }
@@ -676,7 +542,7 @@ Circuit Circuit::from_file(FILE *file) {
     return result;
 }
 
-Circuit::Circuit(const char *text) {
+Circuit::Circuit(std::string_view text) {
     append_from_text(text);
 }
 

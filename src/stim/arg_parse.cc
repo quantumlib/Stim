@@ -32,14 +32,6 @@ std::string SubCommandHelp::str_help() const {
     return ss.str();
 }
 
-std::set<std::string> SubCommandHelp::flag_set() const {
-    std::set<std::string> result;
-    for (const auto &f : flags) {
-        result.insert(f.flag_name);
-    }
-    return result;
-}
-
 void write_indented(std::string_view s, std::ostream &out, size_t indent) {
     bool was_new_line = true;
     for (char c : s) {
