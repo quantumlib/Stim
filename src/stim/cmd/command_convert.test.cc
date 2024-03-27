@@ -320,7 +320,13 @@ TEST(command_convert, convert_circuit_fail_without_types) {
 
     ASSERT_TRUE(matches(
         run_captured_stim_main(
-            {"convert", "--in_format=01", "--out_format", "dets", "--circuit", tmp.path.c_str(), "--num_measurements=2"},
+            {"convert",
+             "--in_format=01",
+             "--out_format",
+             "dets",
+             "--circuit",
+             tmp.path.c_str(),
+             "--num_measurements=2"},
             ""),
         ".*--types required when passing circuit.*"));
 }

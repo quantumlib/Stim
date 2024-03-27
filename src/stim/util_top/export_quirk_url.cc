@@ -4,7 +4,8 @@
 
 using namespace stim;
 
-static void for_each_target_group(CircuitInstruction instruction, const std::function<void(CircuitInstruction)> &callback) {
+static void for_each_target_group(
+    CircuitInstruction instruction, const std::function<void(CircuitInstruction)> &callback) {
     Gate g = GATE_DATA[instruction.gate_type];
     if (g.flags & GATE_TARGETS_COMBINERS) {
         return for_each_combined_targets_group(instruction, callback);
@@ -32,10 +33,14 @@ struct QuirkExporter {
     std::map<size_t, std::map<size_t, std::string>> cols;
 
     QuirkExporter(size_t num_qubits) : num_qubits(num_qubits) {
-        custom_gate_definition[(int)GateType::H_XY] = R"URL({"id":"~Hxy","name":"Hxy","matrix":"{{0,-√½-√½i},{√½-√½i,0}}"})URL";
-        custom_gate_definition[(int)GateType::H_YZ] = R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"})URL";
-        custom_gate_definition[(int)GateType::C_XYZ] = R"URL({"id":"~Cxyz","name":"Cxyz","matrix":"{{½-½i,-½-½i},{½-½i,½+½i}}"})URL";
-        custom_gate_definition[(int)GateType::C_ZYX] = R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::H_XY] =
+            R"URL({"id":"~Hxy","name":"Hxy","matrix":"{{0,-√½-√½i},{√½-√½i,0}}"})URL";
+        custom_gate_definition[(int)GateType::H_YZ] =
+            R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_XYZ] =
+            R"URL({"id":"~Cxyz","name":"Cxyz","matrix":"{{½-½i,-½-½i},{½-½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_ZYX] =
+            R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"})URL";
 
         stim_name_to_quirk_name[(int)GateType::H] = "H";
         stim_name_to_quirk_name[(int)GateType::H_XY] = "~Hxy";
@@ -149,7 +154,8 @@ struct QuirkExporter {
 
     void do_single_qubit_gate(GateType g, GateTarget t) {
         if (t.has_qubit_value()) {
-            if (cols[col_offset].contains(t.value()) || cols[col_offset + 1].contains(t.value()) || cols[col_offset + 2].contains(t.value())) {
+            if (cols[col_offset].contains(t.value()) || cols[col_offset + 1].contains(t.value()) ||
+                cols[col_offset + 2].contains(t.value())) {
                 col_offset += 3;
             }
             auto n = stim_name_to_quirk_name[(int)g];
@@ -327,7 +333,6 @@ struct QuirkExporter {
                 }
             });
         });
-
     }
 };
 

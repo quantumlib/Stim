@@ -1599,7 +1599,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         break;
                     default:
                         throw std::invalid_argument(
-                            "allowed_paulis='" + std::string(allowed_paulis) + "' had characters other than 'X', 'Y', and 'Z'.");
+                            "allowed_paulis='" + std::string(allowed_paulis) +
+                            "' had characters other than 'X', 'Y', and 'Z'.");
                 }
             }
             size_t max_weight = num_qubits;

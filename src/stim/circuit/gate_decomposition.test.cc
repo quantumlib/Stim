@@ -317,12 +317,9 @@ TEST(gate_decomposition, for_each_combined_targets_group) {
         out.safe_append(segment);
         out.append_from_text("TICK");
     };
-    for_each_combined_targets_group(
-        Circuit("MPP(0.25) X0 Z1 Y2*Z3 Y4*Z5*Z6 Z8").operations[0], append_into_circuit);
-    for_each_combined_targets_group(
-        Circuit("MPP(0.25) X0 Y1 Z2").operations[0], append_into_circuit);
-    for_each_combined_targets_group(
-        Circuit("MPP(0.25) X0*Y1 Z2*Z3").operations[0], append_into_circuit);
+    for_each_combined_targets_group(Circuit("MPP(0.25) X0 Z1 Y2*Z3 Y4*Z5*Z6 Z8").operations[0], append_into_circuit);
+    for_each_combined_targets_group(Circuit("MPP(0.25) X0 Y1 Z2").operations[0], append_into_circuit);
+    for_each_combined_targets_group(Circuit("MPP(0.25) X0*Y1 Z2*Z3").operations[0], append_into_circuit);
     ASSERT_EQ(out, Circuit(R"CIRCUIT(
         MPP(0.25) X0
         TICK

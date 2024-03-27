@@ -183,7 +183,11 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///         The command line flag is not specified and the default key is not in the map.
 template <typename T>
 const T &find_enum_argument(
-    const char *name, const char *default_key, const std::map<std::string_view, T> &values, int argc, const char **argv) {
+    const char *name,
+    const char *default_key,
+    const std::map<std::string_view, T> &values,
+    int argc,
+    const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
         if (default_key == nullptr) {

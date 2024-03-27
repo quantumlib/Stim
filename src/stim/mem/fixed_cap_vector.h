@@ -15,7 +15,7 @@ class FixedCapVector {
     size_t num_used;
 
    public:
-    FixedCapVector() : num_used(0){};
+    FixedCapVector() : num_used(0) {};
     FixedCapVector(std::initializer_list<T> list) : num_used(0) {
         if (list.size() > max_size) {
             throw std::out_of_range("list.size() > max_size");

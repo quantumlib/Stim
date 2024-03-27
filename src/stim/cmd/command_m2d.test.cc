@@ -131,7 +131,8 @@ TEST(command_m2d, m2d_obs_size_misalign_1_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "0\n");
 }
@@ -148,7 +149,8 @@ TEST(command_m2d, m2d_obs_size_misalign_11_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "00000000000\n");
 }

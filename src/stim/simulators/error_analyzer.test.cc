@@ -97,7 +97,7 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
         )model"));
 
     ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"circuit(
+                    Circuit(R"circuit(
                 DEPOLARIZE1(0.25) 3
                 M 3
                 DETECTOR rec[-1]

@@ -34,8 +34,7 @@ pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, b
     return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
 }
 
-void CompiledMeasurementSampler::sample_write(
-    size_t num_samples, std::string_view filepath, std::string_view format) {
+void CompiledMeasurementSampler::sample_write(size_t num_samples, std::string_view filepath, std::string_view format) {
     auto f = format_to_enum(format);
     FILE *out = fopen(std::string(filepath).c_str(), "wb");
     if (out == nullptr) {

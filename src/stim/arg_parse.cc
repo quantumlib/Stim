@@ -280,8 +280,8 @@ int64_t stim::find_int64_argument(
     // In range?
     if (i < min_value || i > max_value) {
         std::stringstream msg;
-        msg << "Integer value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value << " <= " << i
-            << " <= " << max_value << ".";
+        msg << "Integer value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value
+            << " <= " << i << " <= " << max_value << ".";
         throw std::invalid_argument(msg.str());
     }
 
@@ -312,8 +312,8 @@ float stim::find_float_argument(
     // In range?
     if (f < min_value || f > max_value || f != f) {
         std::stringstream msg;
-        msg << "Float value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value << " <= " << f
-            << " <= " << max_value << ".";
+        msg << "Float value '" << text << "' for flag '" << name_c_str << "' doesn't satisfy " << min_value
+            << " <= " << f << " <= " << max_value << ".";
         throw std::invalid_argument(msg.str());
     }
 
