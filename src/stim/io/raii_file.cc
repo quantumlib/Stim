@@ -26,19 +26,35 @@ RaiiFile::RaiiFile(RaiiFile &&other) noexcept : f(other.f), responsible_for_clos
     other.f = nullptr;
 }
 
-RaiiFile::RaiiFile(std::string_view path, const char *mode) : f(nullptr), responsible_for_closing(true) {
-    if (path.empty()) {
-        f = nullptr;
+RaiiFile::RaiiFile(const char *optional_path, const char *mode) : f(nullptr), responsible_for_closing(true) {
+    open(optional_path, mode);
+}
+
+RaiiFile::RaiiFile(std::string_view optional_path, const char *mode) : f(nullptr), responsible_for_closing(true) {
+    open(optional_path, mode);
+}
+
+void RaiiFile::open(const char *optional_path, const char *mode) {
+    done();
+    if (optional_path == nullptr) {
+        return;
+    }
+    open(std::string_view(optional_path), mode);
+}
+
+void RaiiFile::open(std::string_view optional_path, const char *mode) {
+    done();
+    if (optional_path.empty()) {
         return;
     }
 
     // TODO: avoid needing the string copy (for null termination) to safely open the file.
-    f = fopen(std::string(path).c_str(), mode);
+    f = fopen(std::string(optional_path).c_str(), mode);
 
     if (f == nullptr) {
         std::stringstream ss;
         ss << "Failed to open '";
-        ss << path;
+        ss << optional_path;
         ss << "' for ";
         if (*mode == 'r') {
             ss << "reading.";

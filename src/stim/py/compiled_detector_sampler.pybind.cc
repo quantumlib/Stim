@@ -67,15 +67,46 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
 
 void CompiledDetectorSampler::sample_write(
     size_t num_samples,
-    std::string_view filepath,
+    pybind11::object filepath_obj,
     std::string_view format,
     bool prepend_observables,
     bool append_observables,
-    std::string_view obs_out_filepath,
+    pybind11::object obs_out_filepath_obj,
     std::string_view obs_out_format) {
     auto f = format_to_enum(format);
+
+    auto py_path = pybind11::module::import("pathlib").attr("Path");
+    if (pybind11::isinstance(filepath_obj, py_path)) {
+        filepath_obj = pybind11::str(filepath_obj);
+    }
+    if (pybind11::isinstance(obs_out_filepath_obj, py_path)) {
+        obs_out_filepath_obj = pybind11::str(obs_out_filepath_obj);
+    }
+
+    std::string_view filepath;
+    if (pybind11::isinstance<pybind11::str>(filepath_obj)) {
+        filepath = pybind11::cast<std::string_view>(filepath_obj);
+    } else {
+        std::stringstream ss;
+        ss << "Don't know how to write to ";
+        ss << pybind11::repr(filepath_obj);
+        throw std::invalid_argument(ss.str());
+    }
+
+    std::string_view obs_out_filepath_view;
+    if (pybind11::isinstance<pybind11::str>(obs_out_filepath_obj)) {
+        obs_out_filepath_view = pybind11::cast<std::string_view>(obs_out_filepath_obj);
+    } else if (obs_out_filepath_obj.is_none()) {
+        // Empty string view does the right thing.
+    } else {
+        std::stringstream ss;
+        ss << "Don't know how to write observables to ";
+        ss << pybind11::repr(obs_out_filepath_obj);
+        throw std::invalid_argument(ss.str());
+    }
+
     RaiiFile out(filepath, "wb");
-    RaiiFile obs_out(obs_out_filepath, "wb");
+    RaiiFile obs_out(obs_out_filepath_view, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
     sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
         circuit,
@@ -291,9 +322,10 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::arg("format") = "01",
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
-        pybind11::arg("obs_out_filepath") = nullptr,
+        pybind11::arg("obs_out_filepath") = pybind11::none(),
         pybind11::arg("obs_out_format") = "01",
         clean_doc_string(R"DOC(
+            @signature def sample_write(shots: int, *, filepath: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01', obs_out_filepath: Optional[Union[str, pathlib.Path]] = None, obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01', prepend_observables: bool = False, append_observables: bool = False):
             Samples detection events from the circuit and writes them to a file.
 
             Args:

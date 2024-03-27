@@ -42,11 +42,11 @@ struct CompiledDetectorSampler {
         bool bit_packed);
     void sample_write(
         size_t num_samples,
-        std::string_view filepath,
+        pybind11::object filepath_obj,
         std::string_view format,
         bool prepend_observables,
         bool append_observables,
-        std::string_view obs_out_filepath,
+        pybind11::object obs_out_filepath_obj,
         std::string_view obs_out_format);
     std::string repr() const;
 };
