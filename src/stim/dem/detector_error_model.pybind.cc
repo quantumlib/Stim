@@ -54,7 +54,7 @@ std::vector<double> python_arg_to_instruction_arguments(const pybind11::object &
     throw std::invalid_argument("parens_arguments must be None, a double, or a list of doubles.");
 }
 
-DemInstructionType non_block_instruction_name_to_enum(const std::string &name) {
+static DemInstructionType non_block_instruction_name_to_enum(std::string_view name) {
     std::string low;
     for (char c : name) {
         low.push_back(tolower(c));

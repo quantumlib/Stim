@@ -200,7 +200,7 @@ struct GltfScene {
     JsonObj to_json();
 };
 
-void write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream &out);
+void write_html_viewer_for_gltf_data(std::string_view gltf_data, std::ostream &out);
 
 }  // namespace stim_draw_internal
 

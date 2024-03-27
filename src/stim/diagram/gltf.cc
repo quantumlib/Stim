@@ -236,7 +236,7 @@ JsonObj GltfNode::to_json() const {
     };
 }
 
-void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream &out) {
+void stim_draw_internal::write_html_viewer_for_gltf_data(std::string_view gltf_data, std::ostream &out) {
     out << R"HTML(
 <!DOCTYPE html>
 <html>

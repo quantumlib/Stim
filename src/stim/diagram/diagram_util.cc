@@ -35,7 +35,7 @@ std::pair<std::string_view, std::string_view> stim_draw_internal::two_qubit_gate
     }
 }
 
-size_t stim_draw_internal::utf8_char_count(const std::string &s) {
+size_t stim_draw_internal::utf8_char_count(std::string_view s) {
     size_t t = 0;
     for (uint8_t c : s) {
         // Continuation bytes start with "10" in binary.
