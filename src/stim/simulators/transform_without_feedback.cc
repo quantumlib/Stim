@@ -127,7 +127,7 @@ struct WithoutFeedbackHelper {
         if (GATE_DATA[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
             undo_feedback_capable_pcp_operation(op);
         } else {
-            reversed_semi_flattened_output.safe_append(op);
+            reversed_semi_flattened_output.safe_append(op, true);
             tracker.undo_gate(op);
         }
     }
