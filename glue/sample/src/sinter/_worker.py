@@ -66,7 +66,7 @@ def auto_dem(circuit: 'stim.Circuit') -> 'stim.DetectorErrorModel':
             approximate_disjoint_errors=True,
             block_decomposition_from_introducing_remnant_edges=False,
             decompose_errors=True,
-            flatten_loops=False,
+            flatten_loops=True,
             ignore_decomposition_failures=False,
         )
     except ValueError:
@@ -106,7 +106,7 @@ def auto_dem(circuit: 'stim.Circuit') -> 'stim.DetectorErrorModel':
         approximate_disjoint_errors=True,
         block_decomposition_from_introducing_remnant_edges=False,
         decompose_errors=False,
-        flatten_loops=True,
+        flatten_loops=False,
         ignore_decomposition_failures=False,
     )
 
