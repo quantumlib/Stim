@@ -9,6 +9,7 @@ def test_repr():
     v = sinter.TaskStats(
         strong_id='test',
         json_metadata={'a': [1, 2, 3]},
+        sampler='stim',
         decoder='pymatching',
         shots=22,
         errors=3,
@@ -22,6 +23,7 @@ def test_to_csv_line():
     v = sinter.TaskStats(
         strong_id='test',
         json_metadata={'a': [1, 2, 3]},
+        sampler='stim',
         decoder='pymatching',
         shots=22,
         errors=3,
@@ -35,6 +37,7 @@ def test_to_anon_stats():
     v = sinter.TaskStats(
         strong_id='test',
         json_metadata={'a': [1, 2, 3]},
+        sampler='stim',
         decoder='pymatching',
         shots=22,
         errors=3,
@@ -46,6 +49,7 @@ def test_to_anon_stats():
 
 def test_add():
     a = sinter.TaskStats(
+        sampler='stim',
         decoder='pymatching',
         json_metadata={'a': 2},
         strong_id='abcdef',
@@ -56,6 +60,7 @@ def test_add():
         custom_counts=collections.Counter({'a': 10, 'b': 20}),
     )
     b = sinter.TaskStats(
+        sampler='stim',
         decoder='pymatching',
         json_metadata={'a': 2},
         strong_id='abcdef',
@@ -66,6 +71,7 @@ def test_add():
         custom_counts=collections.Counter({'a': 1, 'c': 3}),
     )
     c = sinter.TaskStats(
+        sampler='stim',
         decoder='pymatching',
         json_metadata={'a': 2},
         strong_id='abcdef',
@@ -78,6 +84,7 @@ def test_add():
     assert a + b == c
     with pytest.raises(ValueError):
         a + sinter.TaskStats(
+            sampler='stim',
             decoder='pymatching',
             json_metadata={'a': 2},
             strong_id='abcdefDIFFERENT',

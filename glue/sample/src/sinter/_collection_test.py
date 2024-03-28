@@ -19,6 +19,7 @@ def test_iter_collect():
                     rounds=3,
                     distance=3,
                     after_clifford_depolarization=p),
+                sampler='stim',
                 decoder='pymatching',
                 json_metadata={'p': p},
                 collection_options=sinter.CollectionOptions(
@@ -53,6 +54,7 @@ def test_collect():
                     rounds=3,
                     distance=3,
                     after_clifford_depolarization=p),
+                sampler='stim',
                 decoder='pymatching',
                 json_metadata={'p': p},
                 collection_options=sinter.CollectionOptions(
@@ -92,6 +94,7 @@ def test_collect_from_paths():
             ).to_file(path)
             tasks.append(sinter.Task(
                 circuit_path=path,
+                sampler='stim',
                 decoder='pymatching',
                 json_metadata={'p': p},
                 collection_options=sinter.CollectionOptions(
@@ -150,6 +153,7 @@ def test_collect_custom_decoder():
             )
         ],
         max_shots=10000,
+        samplers=['stim'],
         decoders=['alternate'],
         custom_decoders={'alternate': AlternatingPredictionsDecoder()},
     )
@@ -169,6 +173,7 @@ def test_iter_collect_list():
                     rounds=3,
                     distance=3,
                     after_clifford_depolarization=p),
+                sampler='stim',
                 decoder='pymatching',
                 json_metadata={'p': p},
                 collection_options=sinter.CollectionOptions(
@@ -196,6 +201,7 @@ def test_iter_collect_list():
 def test_iter_collect_worker_fails():
     with pytest.raises(RuntimeError, match="Worker failed"):
         _ = list(sinter.iter_collect(
+            samplers=['stim'],
             decoders=['NOT A VALID DECODER'],
             num_workers=1,
             tasks=iter([

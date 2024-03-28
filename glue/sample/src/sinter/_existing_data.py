@@ -38,6 +38,8 @@ class ExistingData:
 
     @staticmethod
     def from_file(path_or_file: Any) -> 'ExistingData':
+        # Do not expect 'sampler' field in CSV files.
+        # This is for backwards compatibility.
         expected_fields = {
             "shots",
             "discards",

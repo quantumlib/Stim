@@ -23,7 +23,7 @@ class Task:
             and logical observable data form.
         sampler: The sampler to use to sample detectors from the circuit.
             This can be set to None if it will be specified later (e.g. by 
-            the call to `collect`). Defaults to 'stim'.
+            the call to `collect`).
         decoder: The decoder to use to predict the logical observable data
             from the detection event data. This can be set to None if it
             will be specified later (e.g. by the call to `collect`).
@@ -70,7 +70,7 @@ class Task:
         self,
         *,
         circuit: Optional['stim.Circuit'] = None,
-        sampler: Optional[str] = 'stim',
+        sampler: Optional[str] = None,
         decoder: Optional[str] = None,
         detector_error_model: Optional['stim.DetectorErrorModel'] = None,
         postselection_mask: Optional[np.ndarray] = None,

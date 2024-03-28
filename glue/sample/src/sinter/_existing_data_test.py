@@ -18,8 +18,8 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
     """.strip(), file=f)
 
         assert sinter.read_stats_from_csv_files(d / 'tmp.csv') == [
-            sinter.TaskStats(strong_id='abc123', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0),
-            sinter.TaskStats(strong_id='def456', decoder='pymatching', json_metadata={'d': 5}, shots=2000, errors=0, discards=10, seconds=2.0),
+            sinter.TaskStats(strong_id='abc123', sampler='stim', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0),
+            sinter.TaskStats(strong_id='def456', sampler='stim', decoder='pymatching', json_metadata={'d': 5}, shots=2000, errors=0, discards=10, seconds=2.0),
         ]
 
         with open(d / 'tmp2.csv', 'w') as f:
@@ -31,13 +31,13 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata,custom_counts
     """.strip(), file=f)
 
         assert sinter.read_stats_from_csv_files(d / 'tmp2.csv') == [
-            sinter.TaskStats(strong_id='abc123', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0, custom_counts=collections.Counter({'dets': 1234})),
-            sinter.TaskStats(strong_id='def456', decoder='pymatching', json_metadata={'d': 5}, shots=2000, errors=0, discards=10, seconds=2.0),
+            sinter.TaskStats(strong_id='abc123', sampler='stim', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0, custom_counts=collections.Counter({'dets': 1234})),
+            sinter.TaskStats(strong_id='def456', sampler='stim', decoder='pymatching', json_metadata={'d': 5}, shots=2000, errors=0, discards=10, seconds=2.0),
         ]
 
         assert sinter.read_stats_from_csv_files(d / 'tmp.csv', d / 'tmp2.csv') == [
-            sinter.TaskStats(strong_id='abc123', decoder='pymatching', json_metadata={'d': 3}, shots=2600, errors=8, discards=120, seconds=8.0, custom_counts=collections.Counter({'dets': 1234})),
-            sinter.TaskStats(strong_id='def456', decoder='pymatching', json_metadata={'d': 5}, shots=4000, errors=0, discards=20, seconds=4.0),
+            sinter.TaskStats(strong_id='abc123', sampler='stim', decoder='pymatching', json_metadata={'d': 3}, shots=2600, errors=8, discards=120, seconds=8.0, custom_counts=collections.Counter({'dets': 1234})),
+            sinter.TaskStats(strong_id='def456', sampler='stim', decoder='pymatching', json_metadata={'d': 5}, shots=4000, errors=0, discards=20, seconds=4.0),
         ]
 
         with open(d / 'tmp3.csv', 'w') as f:
@@ -49,6 +49,6 @@ shots,errors,discards,seconds,sampler,decoder,strong_id,json_metadata,custom_cou
     """.strip(), file=f)
 
         assert sinter.read_stats_from_csv_files(d / 'tmp3.csv') == [
-            sinter.TaskStats(strong_id='abc123', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0, custom_counts=collections.Counter({'dets': 1234})),
+            sinter.TaskStats(strong_id='abc123', sampler='stim', decoder='pymatching', json_metadata={'d': 3}, shots=1300, errors=4, discards=60, seconds=4.0, custom_counts=collections.Counter({'dets': 1234})),
             sinter.TaskStats(strong_id='def456', sampler='mock', decoder='pymatching', json_metadata={'d': 5}, shots=2000, errors=0, discards=10, seconds=2.0),
         ]
