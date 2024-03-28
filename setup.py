@@ -98,7 +98,7 @@ with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
 def _get_extensions():
-    archs=["x86", "i686", "amd64"]
+    archs=["x86", "i686", "i386", "amd64"]
     if any(_ext in platform.processor().lower() for _ext in archs):
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # stim_avx2,
