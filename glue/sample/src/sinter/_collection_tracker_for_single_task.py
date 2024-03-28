@@ -2,8 +2,6 @@ import math
 from typing import Iterator
 from typing import Optional
 
-import stim
-
 from sinter._anon_task_stats import AnonTaskStats
 from sinter._existing_data import ExistingData
 from sinter._task import Task
@@ -167,6 +165,7 @@ class CollectionTrackerForSingleTask:
                 work_key=None,
                 circuit_path=self.circuit_path,
                 dem_path=self.dem_path,
+                sampler=self.unfilled_task.sampler,
                 decoder=self.unfilled_task.decoder,
                 postselection_mask=self.unfilled_task.postselection_mask,
                 postselected_observables_mask=self.unfilled_task.postselected_observables_mask,
@@ -189,6 +188,7 @@ class CollectionTrackerForSingleTask:
             strong_id=self.task_strong_id,
             circuit_path=self.circuit_path,
             dem_path=self.dem_path,
+            sampler=self.unfilled_task.sampler,
             decoder=self.unfilled_task.decoder,
             postselection_mask=self.unfilled_task.postselection_mask,
             postselected_observables_mask=self.unfilled_task.postselected_observables_mask,

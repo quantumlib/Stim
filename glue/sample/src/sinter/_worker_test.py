@@ -25,6 +25,7 @@ def test_worker_loop_infers_dem():
             work_key='test1',
             circuit_path=circuit_path,
             dem_path=dem_path,
+            sampler='stim',
             decoder='pymatching',
             json_metadata=5,
             strong_id=None,
@@ -35,7 +36,7 @@ def test_worker_loop_infers_dem():
             count_observable_error_combos=False,
         ))
         inp.put(None)
-        worker_loop(tmp_dir, inp, out, None, 0)
+        worker_loop(tmp_dir, inp, out, None, None, 0)
         result: WorkOut = out.get(timeout=1)
         assert out.empty()
 
@@ -66,6 +67,7 @@ def test_worker_loop_does_not_recompute_dem():
             work_key='test1',
             circuit_path=circuit_path,
             dem_path=dem_path,
+            sampler='stim',
             decoder='pymatching',
             json_metadata=5,
             strong_id="fake",
@@ -76,7 +78,7 @@ def test_worker_loop_does_not_recompute_dem():
             count_observable_error_combos=False,
         ))
         inp.put(None)
-        worker_loop(tmp_dir, inp, out, None, 0)
+        worker_loop(tmp_dir, inp, out, None, None, 0)
         result: WorkOut = out.get(timeout=1)
         assert out.empty()
 
