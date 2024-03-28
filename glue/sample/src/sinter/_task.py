@@ -70,7 +70,7 @@ class Task:
         self,
         *,
         circuit: Optional['stim.Circuit'] = None,
-        sampler: Optional[str] = None,
+        sampler: str = 'stim',
         decoder: Optional[str] = None,
         detector_error_model: Optional['stim.DetectorErrorModel'] = None,
         postselection_mask: Optional[np.ndarray] = None,

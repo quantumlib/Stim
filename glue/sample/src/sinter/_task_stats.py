@@ -127,9 +127,9 @@ class TaskStats:
             ...     seconds=5,
             ... )
             >>> print(sinter.CSV_HEADER)
-                 shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts
+                 shots,    errors,  discards, seconds,sampler,decoder,strong_id,json_metadata,custom_counts
             >>> print(stat.to_csv_line())
-                    22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
+                    22,         3,         0,       5,stim,pymatching,test,"{""a"":[1,2,3]}",
         """
         return csv_line(
             shots=self.shots,
