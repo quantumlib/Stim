@@ -45,7 +45,7 @@ def iter_collect(*,
                  additional_existing_data: Optional[ExistingData] = None,
                  max_shots: Optional[int] = None,
                  max_errors: Optional[int] = None,
-                 samplers: Optional[Iterable[str]] = None,
+                 samplers: Optional[Iterable[str]] = ('stim',),
                  decoders: Optional[Iterable[str]] = None,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
@@ -76,10 +76,11 @@ def iter_collect(*,
         additional_existing_data: Defaults to None (no additional data).
             Statistical data that has already been collected, in addition to
             anything included in each task's `previous_stats` field.
-        samplers: Defaults to None (specified by each Task). The names of the
-            samplers to use on each Task. It must either be the case that each
-            Task specifies a sampler and this is set to None, or this is an
-            iterable and each Task has its sampler set to None.
+        samplers: Defaults to ('stim',). The names of the samplers to use on each
+            Task. It must either be the case that each Task specifies a sampler
+            and this is set to None, or this is an iterable and each Task has
+            its sampler set to None. If both are set, samplers specified here
+            will be used instead.
         decoders: Defaults to None (specified by each Task). The names of the
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
@@ -191,7 +192,7 @@ def iter_collect(*,
         count_observable_error_combos=count_observable_error_combos,
         count_detection_events=count_detection_events,
         additional_existing_data=additional_existing_data,
-        custom_samplers=custom_samplers,
+        custom_samplers=custom_samplers or dict(),
         custom_decoders=custom_decoders,
         custom_error_count_key=custom_error_count_key,
         allowed_cpu_affinity_ids=allowed_cpu_affinity_ids,
@@ -241,7 +242,7 @@ def collect(*,
             max_errors: Optional[int] = None,
             count_observable_error_combos: bool = False,
             count_detection_events: bool = False,
-            samplers: Optional[Iterable[str]] = None,
+            samplers: Optional[Iterable[str]] = ('stim',),
             decoders: Optional[Iterable[str]] = None,
             max_batch_seconds: Optional[int] = None,
             max_batch_size: Optional[int] = None,
@@ -275,10 +276,11 @@ def collect(*,
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
-        samplers: Defaults to None (specified by each Task). The names of the
-            samplers to use on each Task. It must either be the case that each
-            Task specifies a sampler and this is set to None, or this is an
-            iterable and each Task has its sampler set to None.
+        samplers: Defaults to ('stim',). The names of the samplers to use on each
+            Task. It must either be the case that each Task specifies a sampler
+            and this is set to None, or this is an iterable and each Task has
+            its sampler set to None. If both are set, samplers specified here
+            will be used instead.
         decoders: Defaults to None (specified by each Task). The names of the
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an

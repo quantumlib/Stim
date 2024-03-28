@@ -43,9 +43,9 @@ class TaskStats:
 
     # Information describing the problem that was sampled.
     strong_id: str
-    sampler: str
     decoder: str
     json_metadata: Any
+    sampler: str = 'stim'
 
     # Information describing the results of sampling.
     shots: int = 0

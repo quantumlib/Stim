@@ -28,7 +28,7 @@ class CollectionWorkManager:
         additional_existing_data: Optional[ExistingData],
         count_observable_error_combos: bool,
         count_detection_events: bool,
-        samplers: Optional[Iterable[str]],
+        samplers: Optional[Iterable[str]] = ('stim',),
         custom_samplers: Dict[str, Sampler],
         decoders: Optional[Iterable[str]],
         custom_decoders: Dict[str, Decoder],
@@ -276,15 +276,15 @@ def _iter_tasks_with_assigned_samplers_decoders(
                 circuit_path=task.circuit_path,
             )
 
-        if task.sampler is None and default_samplers is None:
+        if default_samplers is not None:
+            task_samplers = list(default_samplers)
+        elif task.sampler is not None:
+            task_samplers = [task.sampler]
+        else:
             raise ValueError("Samplers to use was not specified. samplers is None and task.sampler is None")
+
         if task.decoder is None and default_decoders is None:
             raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
-        task_samplers = []
-        if default_samplers is not None:
-            task_samplers.extend(default_samplers)
-        if task.sampler is not None and task.sampler not in task_samplers:
-            task_samplers.append(task.sampler)
 
         task_decoders = []
         if default_decoders is not None:
