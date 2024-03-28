@@ -398,3 +398,54 @@ TEST(inv_space_fill_transform, inv_space_fill_transform) {
     ASSERT_EQ(inv_space_fill_transform({0, 0}), 0);
     ASSERT_EQ(inv_space_fill_transform({4, 55.5}), 339946);
 }
+
+TEST(detector_slice_set, from_circuit_with_errors) {
+    CoordFilter empty_filter;
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(
+        stim::Circuit(R"CIRCUIT(
+            TICK
+            R 0
+            TICK
+            R 0
+            TICK
+            MXX 0 1
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        0,
+        5,
+        {&empty_filter});
+    ASSERT_EQ(
+        slice_set.anticommutations,
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{2, DemTarget::relative_detector_id(0)}, {GateTarget::x(0)}},
+        }));
+    ASSERT_EQ(
+        slice_set.slices,
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{3, DemTarget::relative_detector_id(0)}, {GateTarget::x(0), GateTarget::x(1)}},
+        }));
+}
+
+TEST(circuit_diagram_timeline_text, anticommuting_detector_circuit) {
+    auto circuit = Circuit(R"CIRCUIT(
+        TICK
+        R 0
+        TICK
+        R 0
+        TICK
+        MXX 0 1
+        M 2
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    )CIRCUIT");
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    ss << DetectorSliceSet::from_circuit_ticks(circuit, 0, 10, &empty_filter);
+    ASSERT_EQ("\n" + ss.str() + "\n", R"DIAGRAM(
+q0: -------ANTICOMMUTED:D1--X:D1-
+                            |
+q1: ------------------------X:D1-
+
+q2: -Z:D0--Z:D0-------------Z:D0-
+)DIAGRAM");
+}
