@@ -74,7 +74,7 @@ PyCircuitInstruction::operator CircuitInstruction() const {
     return as_operation_ref();
 }
 std::string PyCircuitInstruction::name() const {
-    return GATE_DATA[gate_type].name;
+    return std::string(GATE_DATA[gate_type].name);
 }
 std::vector<uint32_t> PyCircuitInstruction::raw_targets() const {
     std::vector<uint32_t> result;

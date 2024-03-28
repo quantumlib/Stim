@@ -46,7 +46,7 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
     return c;
 }
 
-std::string escape_html_for_srcdoc(const std::string &src) {
+std::string escape_html_for_srcdoc(std::string_view src) {
     // From https://stackoverflow.com/a/9907752
     std::stringstream dst;
     for (char ch : src) {
@@ -83,7 +83,7 @@ pybind11::object diagram_as_html(const DiagramHelper &self) {
         // Wrap the SVG image into an img tag.
         std::stringstream out;
         out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
-        write_data_as_base64_to(self.content.data(), self.content.size(), out);
+        write_data_as_base64_to(self.content, out);
         out << R"HTML("/>)HTML";
         output = out.str();
     } else if (self.type == DiagramType::DIAGRAM_TYPE_SVG) {
@@ -134,12 +134,12 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
 }
 
 DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, std::string_view type) {
-    if (type == "matchgraph-svg" || type == "match-graph-svg" || type == "match-graph-svg-html" || type == "matchgraph-svg-html") {
+    if (type == "matchgraph-svg" || type == "match-graph-svg" || type == "match-graph-svg-html" ||
+        type == "matchgraph-svg-html") {
         std::stringstream out;
         dem_match_graph_to_svg_diagram_write_to(dem, out);
-        DiagramType d_type = type.find("html") != std::string::npos
-                                 ? DiagramType::DIAGRAM_TYPE_SVG_HTML
-                                 : DiagramType::DIAGRAM_TYPE_SVG;
+        DiagramType d_type =
+            type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
     } else if (type == "matchgraph-3d" || type == "match-graph-3d") {
         std::stringstream out;
@@ -167,7 +167,7 @@ CoordFilter item_to_filter_single(const pybind11::handle &obj) {
     }
 
     try {
-        std::string text = pybind11::cast<std::string>(obj);
+        std::string_view text = pybind11::cast<std::string_view>(obj);
         if (text.size() > 1 && text[0] == 'D') {
             CoordFilter filter;
             filter.exact_target = DemTarget::relative_detector_id(parse_exact_uint64_t_from_string(text.substr(1)));
@@ -252,45 +252,31 @@ DiagramHelper stim_pybind::circuit_diagram(
     } else if (type == "timeline-svg" || type == "timeline" || type == "timeline-svg-html" || type == "timeline-html") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit,
-            out,
-            tick_min,
-            num_ticks,
-            DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE,
-            filter_coords);
-        DiagramType d_type = type.find("html") != std::string::npos
-                                 ? DiagramType::DIAGRAM_TYPE_SVG_HTML
-                                 : DiagramType::DIAGRAM_TYPE_SVG;
+            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE, filter_coords);
+        DiagramType d_type =
+            type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
-    } else if (type == "time-slice-svg"
-               || type == "timeslice-svg"
-               || type == "timeslice-html"
-               || type == "timeslice-svg-html"
-               || type == "time-slice-html"
-               || type == "time-slice-svg-html"
-               || type == "timeslice"
-               || type == "time-slice") {
+    } else if (
+        type == "time-slice-svg" || type == "timeslice-svg" || type == "timeslice-html" ||
+        type == "timeslice-svg-html" || type == "time-slice-html" || type == "time-slice-svg-html" ||
+        type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords);
-        DiagramType d_type = type.find("html") != std::string::npos
-                                 ? DiagramType::DIAGRAM_TYPE_SVG_HTML
-                                 : DiagramType::DIAGRAM_TYPE_SVG;
+        DiagramType d_type =
+            type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
     } else if (
-        type == "detslice-svg"
-        || type == "detslice"
-        || type == "detslice-html"
-        || type == "detslice-svg-html"
-        || type == "detector-slice-svg"
-        || type == "detector-slice") {
+        type == "detslice-svg" || type == "detslice" || type == "detslice-html" || type == "detslice-svg-html" ||
+        type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
         DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
-        DiagramType d_type = type.find("html") != std::string::npos
-                                 ? DiagramType::DIAGRAM_TYPE_SVG_HTML
-                                 : DiagramType::DIAGRAM_TYPE_SVG;
+        DiagramType d_type =
+            type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
-    } else if (type == "detslice-with-ops" || type == "detslice-with-ops-svg" || type == "detslice-with-ops-html" || type == "detslice-with-ops-svg-html" || type == "time+detector-slice-svg") {
+    } else if (
+        type == "detslice-with-ops" || type == "detslice-with-ops-svg" || type == "detslice-with-ops-html" ||
+        type == "detslice-with-ops-svg-html" || type == "time+detector-slice-svg") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
             circuit,
@@ -299,9 +285,8 @@ DiagramHelper stim_pybind::circuit_diagram(
             num_ticks,
             DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
             filter_coords);
-        DiagramType d_type = type.find("html") != std::string::npos
-                                 ? DiagramType::DIAGRAM_TYPE_SVG_HTML
-                                 : DiagramType::DIAGRAM_TYPE_SVG;
+        DiagramType d_type =
+            type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
     } else if (type == "timeline-3d") {
         std::stringstream out;
@@ -321,16 +306,11 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         write_crumble_html_with_preloaded_circuit(circuit, out);
         return DiagramHelper{DiagramType::DIAGRAM_TYPE_HTML, out.str()};
-    } else if (type == "match-graph-svg"
-               || type == "matchgraph-svg"
-               || type == "matchgraph-svg-html"
-               || type == "matchgraph-html"
-               || type == "match-graph-svg-html"
-               || type == "match-graph-html"
-               || type == "match-graph-3d"
-               || type == "matchgraph-3d"
-               || type == "match-graph-3d-html"
-               || type == "matchgraph-3d-html") {
+    } else if (
+        type == "match-graph-svg" || type == "matchgraph-svg" || type == "matchgraph-svg-html" ||
+        type == "matchgraph-html" || type == "match-graph-svg-html" || type == "match-graph-html" ||
+        type == "match-graph-3d" || type == "matchgraph-3d" || type == "match-graph-3d-html" ||
+        type == "matchgraph-3d-html") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, type);
     } else {

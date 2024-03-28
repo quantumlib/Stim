@@ -42,7 +42,7 @@ void JsonObj::clear() {
     double_num = 0;
 }
 
-void JsonObj::write_str(const std::string &s, std::ostream &out) {
+void JsonObj::write_str(std::string_view s, std::ostream &out) {
     out << '"';
     for (char c : s) {
         if (c == '\0') {

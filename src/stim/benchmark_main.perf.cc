@@ -79,11 +79,11 @@ std::string si2(double val) {
 
 static std::vector<const char *> known_arguments{"--only", "--target_seconds"};
 
-void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark> &out) {
+void find_benchmarks(std::string_view filter, std::vector<RegisteredBenchmark> &out) {
     bool found = false;
 
     if (!filter.empty() && filter[filter.size() - 1] == '*') {
-        std::string start = filter.substr(0, filter.size() - 1);
+        std::string_view start = filter.substr(0, filter.size() - 1);
         for (const auto &benchmark : *all_registered_benchmarks_data) {
             if (benchmark.name.substr(0, start.size()) == start) {
                 out.push_back(benchmark);

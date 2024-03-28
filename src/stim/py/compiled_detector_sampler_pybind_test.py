@@ -145,6 +145,10 @@ def test_compiled_detector_sampler_sample():
         with open(path, 'rb') as f:
             assert f.read() == b'\x03' * 5
 
+        c.compile_detector_sampler().sample_write(5, filepath=pathlib.Path(path), format='b8')
+        with open(path, 'rb') as f:
+            assert f.read() == b'\x03' * 5
+
         c.compile_detector_sampler().sample_write(5, filepath=path, format='01', prepend_observables=True)
         with open(path, 'r') as f:
             assert f.readlines() == ['1000110\n'] * 5
@@ -182,6 +186,19 @@ def test_write_obs_file():
         with open(d / 'obs') as f:
             assert f.read() == '1\n' * 100
 
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        r.sample_write(
+            shots=100,
+            filepath=d / 'det',
+            format='dets',
+            obs_out_filepath=d / 'obs',
+            obs_out_format='hits',
+        )
+        with open(d / 'det') as f:
+            assert f.read() == 'shot D3\n' * 100
+        with open(d / 'obs') as f:
+            assert f.read() == '1\n' * 100
 
 def test_detector_sampler_actually_fills_array():
     circuit = stim.Circuit('''

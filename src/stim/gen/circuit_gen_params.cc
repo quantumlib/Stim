@@ -41,7 +41,7 @@ void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::
 }
 
 void CircuitGenParameters::append_unitary_1(
-    Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
+    Circuit &circuit, std::string_view name, const std::vector<uint32_t> targets) const {
     circuit.safe_append_u(name, targets);
     if (after_clifford_depolarization > 0) {
         circuit.safe_append_ua("DEPOLARIZE1", targets, after_clifford_depolarization);
@@ -49,7 +49,7 @@ void CircuitGenParameters::append_unitary_1(
 }
 
 void CircuitGenParameters::append_unitary_2(
-    Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
+    Circuit &circuit, std::string_view name, const std::vector<uint32_t> targets) const {
     circuit.safe_append_u(name, targets);
     if (after_clifford_depolarization > 0) {
         circuit.safe_append_ua("DEPOLARIZE2", targets, after_clifford_depolarization);

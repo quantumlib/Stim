@@ -337,12 +337,12 @@ void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
                   : DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
 
-void DetectorErrorModel::append_from_text(const char *text) {
+void DetectorErrorModel::append_from_text(std::string_view text) {
     size_t k = 0;
     model_read_operations(
         *this,
         [&]() {
-            return text[k] != 0 ? text[k++] : EOF;
+            return k < text.size() ? text[k++] : EOF;
         },
         DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
@@ -353,7 +353,7 @@ DetectorErrorModel DetectorErrorModel::from_file(FILE *file) {
     return result;
 }
 
-DetectorErrorModel::DetectorErrorModel(const char *text) {
+DetectorErrorModel::DetectorErrorModel(std::string_view text) {
     append_from_text(text);
 }
 void DetectorErrorModel::clear() {

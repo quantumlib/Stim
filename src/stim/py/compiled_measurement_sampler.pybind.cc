@@ -34,12 +34,11 @@ pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, b
     return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
 }
 
-void CompiledMeasurementSampler::sample_write(
-    size_t num_samples, const std::string &filepath, const std::string &format) {
+void CompiledMeasurementSampler::sample_write(size_t num_samples, std::string_view filepath, std::string_view format) {
     auto f = format_to_enum(format);
-    FILE *out = fopen(filepath.data(), "wb");
+    FILE *out = fopen(std::string(filepath).c_str(), "wb");
     if (out == nullptr) {
-        throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
+        throw std::invalid_argument("Failed to open '" + std::string(filepath) + "' to write.");
     }
     sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
     fclose(out);

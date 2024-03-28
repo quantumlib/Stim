@@ -30,7 +30,7 @@ TEST(command_m2d, m2d) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--append_observables"},
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str(), "--append_observables"},
             "00\n01\n10\n11\n")),
         trim(R"output(
 shot D0
@@ -41,7 +41,7 @@ shot D1 L2
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data()}, "00\n01\n10\n11\n")),
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str()}, "00\n01\n10\n11\n")),
         trim(R"output(
 shot D0
 shot D0 D1
@@ -51,7 +51,7 @@ shot D1
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--skip_reference_sample"},
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str(), "--skip_reference_sample"},
             "00\n01\n10\n11\n")),
         trim(R"output(
 shot
@@ -88,7 +88,7 @@ TEST(command_m2d, m2d_without_feedback) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.data()},
+            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.c_str()},
             "00000\n10000\n01000\n00100\n00010\n00001\n")),
         trim(R"output(
 shot
@@ -106,7 +106,7 @@ shot D3 L0
              "--append_observables",
              "--out_format=dets",
              "--circuit",
-             tmp.path.data(),
+             tmp.path.c_str(),
              "--ran_without_feedback"},
             "00000\n11100\n01100\n00100\n00010\n00001\n")),
         trim(R"output(
@@ -131,7 +131,8 @@ TEST(command_m2d, m2d_obs_size_misalign_1_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "0\n");
 }
@@ -148,7 +149,8 @@ TEST(command_m2d, m2d_obs_size_misalign_11_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "00000000000\n");
 }

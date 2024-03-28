@@ -27,7 +27,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_graph_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, const std::string &key) {
+void expect_graph_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, std::string_view key) {
     auto diagram = dem_match_graph_to_basic_3d_diagram(dem);
     std::stringstream actual_ss;
     diagram.to_gltf_scene().to_json().write(actual_ss);

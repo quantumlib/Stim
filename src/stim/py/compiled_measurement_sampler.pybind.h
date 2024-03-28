@@ -38,7 +38,7 @@ struct CompiledMeasurementSampler {
         bool skip_reference_sample,
         std::mt19937_64 &&rng);
     pybind11::object sample_to_numpy(size_t num_shots, bool bit_packed);
-    void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
+    void sample_write(size_t num_samples, std::string_view filepath, std::string_view format);
     std::string repr() const;
 };
 

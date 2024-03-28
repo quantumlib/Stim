@@ -67,7 +67,7 @@ bool stim_pybind::normalize_index_or_slice(
     return true;
 }
 
-SampleFormat stim_pybind::format_to_enum(const std::string &format) {
+SampleFormat stim_pybind::format_to_enum(std::string_view format) {
     auto found_format = format_name_to_enum_map().find(format);
     if (found_format == format_name_to_enum_map().end()) {
         std::stringstream msg;

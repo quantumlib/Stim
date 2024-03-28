@@ -28,7 +28,7 @@ void _pauli_string_controlled_not(PauliStringRef<W> control, uint32_t target, Ci
 
 template <size_t W>
 static GateTarget measurement_index_to_target(int32_t m, uint64_t num_measurements, const Flow<W> &flow) {
-    if ((m >= 0 && (uint64_t)m >= num_measurements) || (m < 0 && (uint64_t) - (int64_t)m > num_measurements)) {
+    if ((m >= 0 && (uint64_t)m >= num_measurements) || (m < 0 && (uint64_t)-(int64_t)m > num_measurements)) {
         std::stringstream ss;
         ss << "The flow '" << flow;
         ss << "' is malformed for the given circuit. ";

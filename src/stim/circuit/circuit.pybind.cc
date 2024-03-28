@@ -88,7 +88,7 @@ std::set<DemTarget> py_dem_filter_to_dem_target_set(
         if (pybind11::isinstance<ExposedDemTarget>(filter)) {
             result.insert(pybind11::cast<ExposedDemTarget>(filter));
         } else if (pybind11::isinstance<pybind11::str>(filter)) {
-            std::string s = pybind11::cast<std::string>(filter);
+            std::string_view s = pybind11::cast<std::string_view>(filter);
             if (s == "D") {
                 add_all_dets();
             } else if (s == "L") {
@@ -125,7 +125,7 @@ std::set<DemTarget> py_dem_filter_to_dem_target_set(
         if (fail) {
             std::stringstream ss;
             ss << "Don't know how to interpret '";
-            ss << pybind11::cast<std::string>(pybind11::repr(filter));
+            ss << pybind11::cast<std::string_view>(pybind11::repr(filter));
             ss << "' as a dem target filter.";
             throw std::invalid_argument(ss.str());
         }
@@ -139,7 +139,7 @@ std::string circuit_repr(const Circuit &self) {
     }
     std::stringstream ss;
     ss << "stim.Circuit('''\n";
-    print_circuit(ss, self, "    ");
+    print_circuit(ss, self, 4);
     ss << "\n''')";
     return ss.str();
 }
@@ -194,7 +194,7 @@ void circuit_append(
     }
 
     if (pybind11::isinstance<pybind11::str>(obj)) {
-        const std::string &gate_name = pybind11::cast<std::string>(obj);
+        std::string_view gate_name = pybind11::cast<std::string_view>(obj);
 
         // Maintain backwards compatibility to when there was always exactly one argument.
         pybind11::object used_arg;
@@ -339,7 +339,7 @@ std::set<uint64_t> obj_to_abs_detector_id_set(
 
 void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Circuit> &c) {
     c.def(
-        pybind11::init([](const char *stim_program_text) {
+        pybind11::init([](std::string_view stim_program_text) {
             Circuit self;
             self.append_from_text(stim_program_text);
             return self;
@@ -1146,7 +1146,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def_static(
         "generated",
-        [](const std::string &type,
+        [](std::string_view type,
            size_t distance,
            size_t rounds,
            double after_clifford_depolarization,
@@ -1285,28 +1285,30 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_static(
         "from_file",
         [](pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
-                RaiiFile f(path.data(), "rb");
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string_view path = pybind11::cast<std::string_view>(obj);
+                RaiiFile f(path, "rb");
                 return Circuit::from_file(f.f);
-            } catch (pybind11::cast_error &ex) {
             }
 
-            auto py_path = pybind11::module::import("pathlib").attr("Path");
+            pybind11::object py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
-                auto path = pybind11::cast<std::string>(pybind11::str(obj));
-                RaiiFile f(path.data(), "rb");
+                pybind11::object obj_str = pybind11::str(obj);
+                std::string_view path = pybind11::cast<std::string_view>(obj_str);
+                RaiiFile f(path, "rb");
                 return Circuit::from_file(f.f);
             }
 
-            auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
+            pybind11::object py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
             if (pybind11::isinstance(obj, py_text_io_base)) {
-                auto contents = obj.attr("read")();
-                return Circuit(pybind11::cast<std::string>(pybind11::str(contents)).data());
+                pybind11::object contents = obj.attr("read")();
+                return Circuit(pybind11::cast<std::string_view>(contents));
             }
 
-            throw std::invalid_argument(
-                "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to read from ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -1352,15 +1354,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "to_file",
         [](const Circuit &self, pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string path = pybind11::cast<std::string>(obj);
                 std::ofstream out(path, std::ofstream::out);
                 if (!out.is_open()) {
                     throw std::invalid_argument("Failed to open " + path);
                 }
                 out << self << '\n';
                 return;
-            } catch (pybind11::cast_error &ex) {
             }
 
             auto py_path = pybind11::module::import("pathlib").attr("Path");
@@ -1381,8 +1382,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 return;
             }
 
-            throw std::invalid_argument(
-                "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to write to ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -1892,7 +1895,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             return self.str();
         },
         [](const pybind11::str &text) {
-            return Circuit(pybind11::cast<std::string>(text).data());
+            return Circuit(pybind11::cast<std::string_view>(text));
         }));
 
     c.def(

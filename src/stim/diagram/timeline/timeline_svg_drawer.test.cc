@@ -27,7 +27,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, const std::string &key) {
+void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, std::string_view key) {
     std::stringstream ss;
     CoordFilter filter;
     DiagramTimelineSvgDrawer::make_diagram_write_to(

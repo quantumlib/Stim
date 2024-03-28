@@ -10,7 +10,7 @@
 using namespace stim;
 
 int stim::command_gen(int argc, const char **argv) {
-    std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
+    std::map<std::string_view, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
         {"color_code", &generate_color_code_circuit},
         {"repetition_code", &generate_rep_code_circuit},
         {"surface_code", &generate_surface_code_circuit}};

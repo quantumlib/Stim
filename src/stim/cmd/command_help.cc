@@ -113,12 +113,13 @@ std::vector<SubCommandHelp> make_sub_command_help() {
     return result;
 }
 
-std::string upper(const std::string &val) {
-    std::string copy = val;
-    for (char &c : copy) {
-        c = toupper(c);
+std::string to_upper_case(std::string_view val) {
+    std::string result;
+    result.reserve(val.size());
+    for (char c : val) {
+        result.push_back(toupper(c));
     }
-    return copy;
+    return result;
 }
 
 struct Acc {
@@ -170,7 +171,7 @@ void print_fixed_width_float(Acc &out, float f, char u) {
     }
 }
 
-void print_example(Acc &out, const char *name, const Gate &gate) {
+void print_example(Acc &out, std::string_view name, const Gate &gate) {
     out << "\nExample:\n";
     out.change_indent(+4);
     for (size_t k = 0; k < 3; k++) {
@@ -202,7 +203,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         if (gate.name[0] == 'C' || gate.name[0] == 'Z') {
             out << gate.name << " rec[-1] 111\n";
         }
-        if (gate.name[strlen(gate.name) - 1] == 'Z') {
+        if (gate.name.back() == 'Z') {
             out << gate.name << " 111 rec[-1]\n";
         }
     }
@@ -254,7 +255,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
         out << "# The following circuit is equivalent (up to global phase) to `";
         out << undecomposed.str() << "`";
         out << decomposition;
-        if (Circuit(decomposition) == Circuit(undecomposed.str().data())) {
+        if (Circuit(decomposition) == Circuit(undecomposed.str())) {
             out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
         }
         out.change_indent(-4);
@@ -407,7 +408,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
     for (const auto &entry : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (entry.expected_name_len > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
+        if (entry.expected_name.size() > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
                 out << "<a name=\"" << entry.expected_name << "\"></a>";
@@ -480,7 +481,7 @@ std::map<std::string, std::string> generate_format_help_markdown() {
     result[std::string("FORMATS")] = all.str();
 
     for (const auto &kv : format_name_to_enum_map()) {
-        result[upper(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
+        result[to_upper_case(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
     }
 
     all.str("");
@@ -528,7 +529,7 @@ std::map<std::string, std::string> generate_command_help_topics() {
     auto sub_command_data = make_sub_command_help();
 
     for (const auto &subcommand : sub_command_data) {
-        result[upper(subcommand.subcommand_name)] = subcommand.str_help();
+        result[to_upper_case(subcommand.subcommand_name)] = subcommand.str_help();
     }
 
     {
@@ -578,16 +579,16 @@ Use `stim help [topic]` for help on specific topics. Available topics include:
 std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
-            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
+        if (!e.expected_name.empty()) {
+            result[std::string(e.expected_name)] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
         }
     }
 
     std::map<std::string, std::set<std::string>> categories;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
+        if (!e.expected_name.empty()) {
             const auto &rep = GATE_DATA.at(e.expected_name);
-            categories[std::string(rep.category)].insert(e.expected_name);
+            categories[std::string(rep.category)].insert(std::string(e.expected_name));
         }
     }
 
@@ -630,7 +631,7 @@ std::string stim::help_for(std::string help_key) {
     auto m2 = generate_format_help_markdown();
     auto m3 = generate_command_help_topics();
 
-    auto key = upper(help_key);
+    auto key = to_upper_case(help_key);
     auto p = m1.find(key);
     if (p == m1.end()) {
         p = m2.find(key);

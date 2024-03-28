@@ -1478,7 +1478,7 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
         } else if (p == 3) {
             c2_type = GateType::YCX;
         }
-        state.do_gate({c2_type, {}, {targets.data(), targets.data() + targets.size()}});
+        state.do_gate({c2_type, {}, targets});
     });
 
     // Use simulator features to determines if the measurement is deterministic.

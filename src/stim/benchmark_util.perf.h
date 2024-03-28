@@ -34,7 +34,7 @@ struct BenchmarkResult {
         : total_seconds(total_seconds), total_reps(total_reps), marginal_rates(), goal_seconds(-1) {
     }
 
-    BenchmarkResult &show_rate(const std::string &new_unit_name, double new_multiplier) {
+    BenchmarkResult &show_rate(std::string_view new_unit_name, double new_multiplier) {
         marginal_rates.emplace_back(new_unit_name, new_multiplier);
         return *this;
     }

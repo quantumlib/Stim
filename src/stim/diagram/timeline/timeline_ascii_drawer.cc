@@ -20,7 +20,7 @@ size_t DiagramTimelineAsciiDrawer::q2y(size_t q) const {
 }
 
 void DiagramTimelineAsciiDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
     std::stringstream ss;
     ss << gate;
     ss << "^";
