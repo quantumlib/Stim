@@ -98,7 +98,7 @@ with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
 def _get_extensions():
-    if platform.processor().startswith(("x86_64", "i686", "amd64")):
+    if platform.processor().lower().startswith(("x86", "i686", "amd64")):
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # stim_avx2,
         return [stim_detect_machine_architecture, stim_polyfill,
