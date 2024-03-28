@@ -362,3 +362,22 @@ TEST(diagram_timeline_svg_drawer, test_circuit_all_ops_detslice) {
         circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "circuit_all_ops_detslice.svg");
 }
+
+TEST(diagram_timeline_svg_drawer, anticommuting_detector_circuit) {
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    auto circuit = Circuit(R"CIRCUIT(
+        TICK
+        R 0
+        TICK
+        R 0
+        TICK
+        MXX 0 1
+        M 2
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    )CIRCUIT");
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "anticommuting_detslice.svg");
+}

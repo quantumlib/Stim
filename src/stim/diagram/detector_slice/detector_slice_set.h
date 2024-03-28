@@ -45,6 +45,8 @@ struct DetectorSliceSet {
     std::map<uint64_t, std::vector<double>> detector_coordinates;
     /// (tick, DemTarget) -> terms in the slice
     std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> slices;
+    /// (tick, DemTarget) -> anticommutations in the slice
+    std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> anticommutations;
 
     /// Args:
     ///     circuit: The circuit to make a detector slice diagram from.
