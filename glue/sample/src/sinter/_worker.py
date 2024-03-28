@@ -18,6 +18,7 @@ class WorkIn:
             work_key: Any,
             circuit_path: str,
             dem_path: str,
+            sampler: str,
             decoder: str,
             strong_id: Optional[str],
             postselection_mask: 'Optional[np.ndarray]',
@@ -29,6 +30,7 @@ class WorkIn:
         self.work_key = work_key
         self.circuit_path = circuit_path
         self.dem_path = dem_path
+        self.sampler = sampler
         self.decoder = decoder
         self.strong_id = strong_id
         self.postselection_mask = postselection_mask
@@ -43,6 +45,7 @@ class WorkIn:
             work_key=work_key,
             circuit_path=self.circuit_path,
             dem_path=self.dem_path,
+            sampler=self.sampler,
             decoder=self.decoder,
             postselection_mask=self.postselection_mask,
             postselected_observables_mask=self.postselected_observables_mask,
@@ -128,6 +131,7 @@ class WorkOut:
 def worker_loop(tmp_dir: 'pathlib.Path',
                 inp: 'multiprocessing.Queue',
                 out: 'multiprocessing.Queue',
+                custom_samplers: Optional[Dict[str, 'sinter.Sampler']],
                 custom_decoders: Optional[Dict[str, 'sinter.Decoder']],
                 core_affinity: Optional[int]) -> None:
     try:
@@ -143,16 +147,24 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                 work: Optional[WorkIn] = inp.get()
                 if work is None:
                     return
-                out.put(do_work_safely(work, child_dir, custom_decoders))
+                out.put(
+                    do_work_safely(work, child_dir, custom_samplers, custom_decoders)
+                )
     except KeyboardInterrupt:
         pass
 
 
-def do_work_safely(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Decoder']) -> WorkOut:
+def do_work_safely(
+    work: WorkIn,
+    child_dir: str,
+    custom_samplers: Dict[str, 'sinter.Sampler'],
+    custom_decoders: Dict[str, 'sinter.Decoder'],
+) -> WorkOut:
     try:
-        return do_work(work, child_dir, custom_decoders)
+        return do_work(work, child_dir, custom_samplers, custom_decoders)
     except BaseException as ex:
         import traceback
+
         return WorkOut(
             work_key=work.work_key,
             stats=None,
@@ -161,10 +173,15 @@ def do_work_safely(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sin
         )
 
 
-def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Decoder']) -> WorkOut:
+def do_work(
+    work: WorkIn,
+    child_dir: str,
+    custom_samplers: Dict[str, 'sinter.Sampler'],
+    custom_decoders: Dict[str, 'sinter.Decoder'],
+) -> WorkOut:
     import stim
     from sinter._task import Task
-    from sinter._decoding import sample_decode
+    from sinter._sampling_and_decoding import sample_decode
 
     if work.strong_id is None:
         # The work is to compute the DEM, as opposed to taking shots.
@@ -175,6 +192,7 @@ def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Dec
 
         task = Task(
             circuit=circuit,
+            sampler=work.sampler,
             decoder=work.decoder,
             detector_error_model=dem,
             postselection_mask=work.postselection_mask,
@@ -197,6 +215,8 @@ def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Dec
         dem_obj=None,
         post_mask=work.postselection_mask,
         postselected_observable_mask=work.postselected_observables_mask,
+        sampler=work.sampler,
+        custom_samplers=custom_samplers,
         decoder=work.decoder,
         count_observable_error_combos=work.count_observable_error_combos,
         count_detection_events=work.count_detection_events,

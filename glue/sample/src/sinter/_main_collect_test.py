@@ -1,4 +1,3 @@
-import collections
 import pathlib
 import tempfile
 
@@ -127,7 +126,7 @@ def _make_custom_decoders():
 def test_main_collect_with_custom_decoder():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
-        with open(d / f'tmp.stim', 'w') as f:
+        with open(d / 'tmp.stim', 'w') as f:
             print("""
                 M(0.1) 0
                 DETECTOR rec[-1]

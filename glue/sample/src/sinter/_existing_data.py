@@ -5,7 +5,7 @@ from typing import Any, Dict, List, TYPE_CHECKING
 
 from sinter._task_stats import TaskStats
 from sinter._task import Task
-from sinter._decoding import AnonTaskStats
+from sinter._sampling_and_decoding import AnonTaskStats
 
 if TYPE_CHECKING:
     import sinter
@@ -81,6 +81,7 @@ class ExistingData:
                 custom_counts=custom_counts,
                 seconds=float(row['seconds']),
                 strong_id=row['strong_id'],
+                sampler=row.get('sampler', 'stim'),
                 decoder=row['decoder'],
                 json_metadata=json.loads(row['json_metadata']),
             ))

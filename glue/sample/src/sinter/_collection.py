@@ -45,12 +45,14 @@ def iter_collect(*,
                  additional_existing_data: Optional[ExistingData] = None,
                  max_shots: Optional[int] = None,
                  max_errors: Optional[int] = None,
+                 samplers: Optional[Iterable[str]] = None,
                  decoders: Optional[Iterable[str]] = None,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
                  count_observable_error_combos: bool = False,
                  count_detection_events: bool = False,
+                 custom_samplers: Optional[Dict[str, "sinter.Sampler"]] = None,
                  custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
                  custom_error_count_key: Optional[str] = None,
                  allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
@@ -74,6 +76,10 @@ def iter_collect(*,
         additional_existing_data: Defaults to None (no additional data).
             Statistical data that has already been collected, in addition to
             anything included in each task's `previous_stats` field.
+        samplers: Defaults to None (specified by each Task). The names of the
+            samplers to use on each Task. It must either be the case that each
+            Task specifies a sampler and this is set to None, or this is an
+            iterable and each Task has its sampler set to None.
         decoders: Defaults to None (specified by each Task). The names of the
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
@@ -107,6 +113,9 @@ def iter_collect(*,
             taken per shot. This information is then used to predict the
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
+        custom_samplers: Custom samplers that can be used if requested by name.
+            If not specified, only samplers built into sinter, such as 'stim',
+            can be used.
         custom_decoders: Custom decoders that can be used if requested by name.
             If not specified, only decoders built into sinter, such as
             'pymatching' and 'fusion_blossom', can be used.
@@ -156,6 +165,8 @@ def iter_collect(*,
         >>> print(total_shots)
         200
     """
+    if isinstance(samplers, str):
+        samplers = [samplers]
     if isinstance(decoders, str):
         decoders = [decoders]
 
@@ -175,10 +186,12 @@ def iter_collect(*,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
         ),
+        samplers=samplers,
         decoders=decoders,
         count_observable_error_combos=count_observable_error_combos,
         count_detection_events=count_detection_events,
         additional_existing_data=additional_existing_data,
+        custom_samplers=custom_samplers,
         custom_decoders=custom_decoders,
         custom_error_count_key=custom_error_count_key,
         allowed_cpu_affinity_ids=allowed_cpu_affinity_ids,
@@ -228,12 +241,14 @@ def collect(*,
             max_errors: Optional[int] = None,
             count_observable_error_combos: bool = False,
             count_detection_events: bool = False,
+            samplers: Optional[Iterable[str]] = None,
             decoders: Optional[Iterable[str]] = None,
             max_batch_seconds: Optional[int] = None,
             max_batch_size: Optional[int] = None,
             start_batch_size: Optional[int] = None,
             print_progress: bool = False,
             hint_num_tasks: Optional[int] = None,
+            custom_samplers: Optional[Dict[str, "sinter.Sampler"]] = None,
             custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
             custom_error_count_key: Optional[str] = None,
             allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
@@ -260,6 +275,10 @@ def collect(*,
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
+        samplers: Defaults to None (specified by each Task). The names of the
+            samplers to use on each Task. It must either be the case that each
+            Task specifies a sampler and this is set to None, or this is an
+            iterable and each Task has its sampler set to None.
         decoders: Defaults to None (specified by each Task). The names of the
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an
@@ -295,6 +314,10 @@ def collect(*,
             taken per shot. This information is then used to predict the
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
+        custom_samplers: Named child classes of `sinter.Sampler`, that can be
+            used if requested by name by a task or by the samplers list.
+            If not specified, only samplers with support built into sinter, such
+            as 'stim', can be used.
         custom_decoders: Named child classes of `sinter.decoder`, that can be
             used if requested by name by a task or by the decoders list.
             If not specified, only decoders with support built into sinter, such
@@ -386,10 +409,12 @@ def collect(*,
             max_batch_size=max_batch_size,
             count_observable_error_combos=count_observable_error_combos,
             count_detection_events=count_detection_events,
+            samplers=samplers,
             decoders=decoders,
             tasks=tasks,
             hint_num_tasks=hint_num_tasks,
             additional_existing_data=additional_existing_data,
+            custom_samplers=custom_samplers,
             custom_decoders=custom_decoders,
             custom_error_count_key=custom_error_count_key,
             allowed_cpu_affinity_ids=allowed_cpu_affinity_ids,

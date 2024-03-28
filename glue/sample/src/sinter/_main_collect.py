@@ -13,6 +13,7 @@ from sinter._printer import ThrottledProgressPrinter
 from sinter._task import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_predicate
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._sampling_all_built_in_samplers import BUILT_IN_SAMPLERS
 from sinter._main_combine import ExistingData, CSV_HEADER
 
 
@@ -61,6 +62,18 @@ def parse_args(args: List[str]) -> Any:
                         required=True,
                         help='Circuit files to sample from and decode.\n'
                              'This parameter can be given multiple arguments.')
+    parser.add_argument("--samplers",
+                        default=["stim"],
+                        type=str,
+                        nargs="+",
+                        help="The samplers to use to sample detectors from circuits, defaults to `sinter.StimDetectorSampler`.")
+    parser.add_argument("--custom_samplers_module_function",
+                        default=None,
+                        nargs="+",
+                        help='Use the syntax "module:function" to "import function from module" '
+                             'and use the result of "function()" as the custom_samplers '
+                             "dictionary. The dictionary must map strings to sinter.Sampler "
+                             "instances.")
     parser.add_argument('--decoders',
                         type=str,
                         nargs='+',
@@ -226,6 +239,40 @@ def parse_args(args: List[str]) -> Any:
             'lambda index, metadata, coords: ' + cast(str, a.postselected_detectors_predicate),
             filename='postselected_detectors_predicate:command_line_arg',
             mode='eval'))
+
+    if a.custom_samplers_module_function is not None:
+        all_custom_samplers = {}
+        for entry in a.custom_samplers_module_function:
+            terms = entry.split(":")
+            if len(terms) != 2:
+                raise ValueError(
+                    "--custom_samplers_module_function didn't have exactly one colon "
+                    "separating a module name from a function name. Expected an argument "
+                    "of the form --custom_samplers_module_function 'module:function'"
+                )
+            module, function = terms
+            vals = {"__name__": "[]"}
+            exec(f"from {module} import {function} as _custom_samplers", vals)
+            custom_samplers = vals["_custom_samplers"]()
+            all_custom_samplers = {**all_custom_samplers, **custom_samplers}
+        a.custom_samplers = all_custom_samplers
+    else:
+        a.custom_samplers = None
+    
+    for sampler in a.samplers:
+        if sampler not in BUILT_IN_SAMPLERS and (
+            a.custom_samplers is None or sampler not in a.custom_samplers
+        ):
+            message = f"Not a recognized sampler: {sampler=}.\n"
+            message += f"Available built-in samplers: {sorted(e for e in BUILT_IN_SAMPLERS.keys() if 'internal' not in e)}.\n"
+            if a.custom_samplers is None:
+                message += "No custom samplers are available. --custom_samplers_module_function wasn't specified."
+            else:
+                message += (
+                    f"Available custom samplers: {sorted(a.custom_samplers.keys())}."
+                )
+            raise ValueError(message)
+
     if a.custom_decoders_module_function is not None:
         all_custom_decoders = {}
         for entry in a.custom_decoders_module_function:
@@ -338,10 +385,12 @@ def main_collect(*, command_line_args: List[str]):
             max_shots=args.max_shots,
             count_detection_events=args.count_detection_events,
             count_observable_error_combos=args.count_observable_error_combos,
+            samplers=args.samplers,
             decoders=args.decoders,
             max_batch_seconds=args.max_batch_seconds,
             max_batch_size=args.max_batch_size,
             start_batch_size=args.start_batch_size,
+            custom_samplers=args.custom_samplers,
             custom_decoders=args.custom_decoders,
             custom_error_count_key=args.custom_error_count_key,
             allowed_cpu_affinity_ids=args.allowed_cpu_affinity_ids,

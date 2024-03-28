@@ -10,7 +10,7 @@ from typing import Optional, Union, Dict, TYPE_CHECKING
 from sinter._collection import post_selection_mask_from_4th_coord
 from sinter._decoding_decoder_class import Decoder
 from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding import streaming_post_select
+from sinter._sampling_and_decoding import streaming_post_select
 
 if TYPE_CHECKING:
     import sinter

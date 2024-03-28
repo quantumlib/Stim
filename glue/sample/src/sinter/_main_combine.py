@@ -42,6 +42,7 @@ def main_combine(*, command_line_args: List[str]):
         total = [
             sinter.TaskStats(
                 strong_id=task.strong_id,
+                sampler=task.sampler,
                 decoder=task.decoder,
                 json_metadata=task.json_metadata,
                 shots=task.shots,
@@ -55,6 +56,7 @@ def main_combine(*, command_line_args: List[str]):
         total = [
             sinter.TaskStats(
                 strong_id=task.strong_id,
+                sampler=task.sampler,
                 decoder=task.decoder,
                 json_metadata=task.json_metadata,
                 shots=task.shots,

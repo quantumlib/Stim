@@ -5,8 +5,10 @@ import multiprocessing
 import pathlib
 import tempfile
 import stim
+import itertools
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
+from sinter._sampling_sampler_class import Sampler
 from sinter._decoding_decoder_class import Decoder
 from sinter._collection_options import CollectionOptions
 from sinter._existing_data import ExistingData
@@ -26,11 +28,14 @@ class CollectionWorkManager:
         additional_existing_data: Optional[ExistingData],
         count_observable_error_combos: bool,
         count_detection_events: bool,
+        samplers: Optional[Iterable[str]],
+        custom_samplers: Dict[str, Sampler],
         decoders: Optional[Iterable[str]],
         custom_decoders: Dict[str, Decoder],
         custom_error_count_key: Optional[str],
         allowed_cpu_affinity_ids: Optional[List[int]],
     ):
+        self.custom_samplers = custom_samplers
         self.custom_decoders = custom_decoders
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
         self.queue_to_workers: Optional[multiprocessing.Queue] = None
@@ -41,6 +46,7 @@ class CollectionWorkManager:
         self.allowed_cpu_affinity_ids = None if allowed_cpu_affinity_ids is None else sorted(set(allowed_cpu_affinity_ids))
 
         self.global_collection_options = global_collection_options
+        self.samplers: Optional[Tuple[str, ...]] = None if samplers is None else tuple(samplers)
         self.decoders: Optional[Tuple[str, ...]] = None if decoders is None else tuple(decoders)
         self.did_work = False
 
@@ -53,10 +59,12 @@ class CollectionWorkManager:
         self.count_observable_error_combos = count_observable_error_combos
         self.count_detection_events = count_detection_events
 
-        self.tasks_with_decoder_iter: Iterator[Task] = _iter_tasks_with_assigned_decoders(
+        self.tasks_with_sampler_decoder_iter: Iterator[Task] = _iter_tasks_with_assigned_samplers_decoders(
             tasks_iter=tasks_iter,
+            default_samplers=self.samplers,
             default_decoders=self.decoders,
-            global_collections_options=self.global_collection_options)
+            global_collections_options=self.global_collection_options,
+        )
 
     def start_workers(self, num_workers: int) -> None:
         assert self.tmp_dir is not None
@@ -81,7 +89,15 @@ class CollectionWorkManager:
                 cpu_pin = None if len(cpus) == 0 else cpus[index % len(cpus)]
                 w = multiprocessing.Process(
                     target=worker_loop,
-                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, self.custom_decoders, cpu_pin))
+                    args=(
+                        self.tmp_dir,
+                        self.queue_to_workers,
+                        self.queue_from_workers,
+                        self.custom_samplers,
+                        self.custom_decoders,
+                        cpu_pin,
+                    ),
+                )
                 w.start()
                 self.workers.append(w)
         finally:
@@ -89,7 +105,9 @@ class CollectionWorkManager:
 
     def __enter__(self):
         self.exit_stack = contextlib.ExitStack().__enter__()
-        self.tmp_dir = pathlib.Path(self.exit_stack.enter_context(tempfile.TemporaryDirectory()))
+        self.tmp_dir = pathlib.Path(
+            self.exit_stack.enter_context(tempfile.TemporaryDirectory())
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -150,6 +168,7 @@ class CollectionWorkManager:
                 stats = AnonTaskStats()
             return TaskStats(
                 strong_id=result.strong_id,
+                sampler=work_in.sampler,
                 decoder=work_in.decoder,
                 json_metadata=work_in.json_metadata,
                 shots=stats.shots,
@@ -165,7 +184,7 @@ class CollectionWorkManager:
         while True:
             key = self.next_collector_key
             try:
-                task = next(self.tasks_with_decoder_iter)
+                task = next(self.tasks_with_sampler_decoder_iter)
             except StopIteration:
                 break
             collector = CollectionTrackerForSingleTask(
@@ -236,9 +255,10 @@ class CollectionWorkManager:
         return main_status + ''.join(collector_statuses)
 
 
-def _iter_tasks_with_assigned_decoders(
+def _iter_tasks_with_assigned_samplers_decoders(
     *,
     tasks_iter: Iterator[Task],
+    default_samplers: Optional[Iterable[str]],
     default_decoders: Optional[Iterable[str]],
     global_collections_options: CollectionOptions,
 ) -> Iterator[Task]:
@@ -246,6 +266,7 @@ def _iter_tasks_with_assigned_decoders(
         if task.circuit is None:
             task = Task(
                 circuit=stim.Circuit.from_file(task.circuit_path),
+                sampler=task.sampler,
                 decoder=task.decoder,
                 detector_error_model=task.detector_error_model,
                 postselection_mask=task.postselection_mask,
@@ -255,16 +276,25 @@ def _iter_tasks_with_assigned_decoders(
                 circuit_path=task.circuit_path,
             )
 
+        if task.sampler is None and default_samplers is None:
+            raise ValueError("Samplers to use was not specified. samplers is None and task.sampler is None")
         if task.decoder is None and default_decoders is None:
             raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
+        task_samplers = []
+        if default_samplers is not None:
+            task_samplers.extend(default_samplers)
+        if task.sampler is not None and task.sampler not in task_samplers:
+            task_samplers.append(task.sampler)
+
         task_decoders = []
         if default_decoders is not None:
             task_decoders.extend(default_decoders)
         if task.decoder is not None and task.decoder not in task_decoders:
             task_decoders.append(task.decoder)
-        for decoder in task_decoders:
+        for sampler, decoder in itertools.product(task_samplers, task_decoders):
             yield Task(
                 circuit=task.circuit,
+                sampler=sampler,
                 decoder=decoder,
                 detector_error_model=task.detector_error_model,
                 postselection_mask=task.postselection_mask,

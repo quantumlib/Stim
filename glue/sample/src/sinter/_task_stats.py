@@ -17,6 +17,7 @@ class TaskStats:
     Attributes:
         strong_id: The cryptographically unique identifier of the task, from
             `sinter.Task.strong_id()`.
+        sampler: The name of the sampler that was used to sample the task.
         decoder: The name of the decoder that was used to decode the task.
             Errors are counted when this decoder made a wrong prediction.
         json_metadata: A JSON-encodable value (such as a dictionary from strings
@@ -44,6 +45,7 @@ class TaskStats:
     strong_id: str
     decoder: str
     json_metadata: Any
+    sampler: str = "stim"
 
     # Information describing the results of sampling.
     shots: int = 0
@@ -58,6 +60,7 @@ class TaskStats:
         assert isinstance(self.discards, int)
         assert isinstance(self.seconds, (int, float))
         assert isinstance(self.custom_counts, collections.Counter)
+        assert isinstance(self.sampler, str)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
         assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
@@ -73,6 +76,7 @@ class TaskStats:
         total = self.to_anon_stats() + other.to_anon_stats()
 
         return TaskStats(
+            sampler=self.sampler,
             decoder=self.decoder,
             strong_id=self.strong_id,
             json_metadata=self.json_metadata,
@@ -132,6 +136,7 @@ class TaskStats:
             seconds=self.seconds,
             discards=self.discards,
             strong_id=self.strong_id,
+            sampler=self.sampler,
             decoder=self.decoder,
             json_metadata=self.json_metadata,
             custom_counts=self.custom_counts,
@@ -147,6 +152,7 @@ class TaskStats:
                 m.setdefault('original_error_count', self.errors)
             result.append(TaskStats(
                 strong_id=f'{self.strong_id}:{k}',
+                sampler=self.sampler,
                 decoder=self.decoder,
                 json_metadata=m,
                 shots=self.shots,
@@ -163,6 +169,7 @@ class TaskStats:
     def __repr__(self) -> str:
         terms = []
         terms.append(f'strong_id={self.strong_id!r}')
+        terms.append(f"sampler={self.sampler!r}")
         terms.append(f'decoder={self.decoder!r}')
         terms.append(f'json_metadata={self.json_metadata!r}')
         if self.shots:
