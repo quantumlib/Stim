@@ -21,7 +21,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY out)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY out)
 
 # Convert desired SIMD_WIDTH into machine architecture flags.
-if (CMAKE_SYSTEM_PROCESSOR MATCHES x86_64)
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|I386|ARM64)$")
     if(NOT(SIMD_WIDTH))
         set(MACHINE_FLAG "-march=native")
     elseif(SIMD_WIDTH EQUAL 256)
