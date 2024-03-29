@@ -34,7 +34,7 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="396.8" y="80" fill="white">R</text>
 <rect x="64" y="240" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="80" y="256" fill="white">R</text>
-<path d="M396.8,256 L460.8,256 " stroke="black" stroke-width="5"/>
+<path d="M396.8,256 L460.8,256 " fill="none" stroke="black" stroke-width="5"/>
 <rect x="380.8" y="240" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="396.8" y="250" fill="white">M<tspan baseline-shift="sub" font-size="18">XX</tspan></text>
 <rect x="444.8" y="240" width="32" height="32" stroke="black" fill="black"/>

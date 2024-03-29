@@ -381,3 +381,22 @@ TEST(diagram_timeline_svg_drawer, anticommuting_detector_circuit) {
         circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "anticommuting_detslice.svg");
 }
+
+TEST(diagram_timeline_svg_drawer, bezier_curves) {
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    auto circuit = Circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        QUBIT_COORDS(2, 0) 2
+        QUBIT_COORDS(3, 0) 3
+        CX 0 1
+        CX 2 3
+        TICK
+        CX 0 2
+        CX 1 3
+    )CIRCUIT");
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "bezier_time_slice.svg");
+}
