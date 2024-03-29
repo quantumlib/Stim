@@ -409,6 +409,7 @@ FlattenedCoords FlattenedCoords::from(const DetectorSliceSet &set, float desired
     }
 
     float characteristic_distance = pick_characteristic_distance(used, result.qubit_coords);
+    result.unit_distance = desired_unit_distance;
     float scale = desired_unit_distance / characteristic_distance;
     for (auto &c : result.qubit_coords) {
         c *= scale;
