@@ -1,12 +1,12 @@
 import re
-from typing import Dict, Tuple, TypeVar, List, Set, Callable
+from typing import Any, Dict, Tuple, TypeVar, List, Set, Callable
 
 import networkx as nx
 
 K = TypeVar("K")
 
 
-def text_diagram_to_networkx_graph(text_diagram: str, *, value_func: Callable[[str], K] = str) -> nx.MultiGraph:
+def text_diagram_to_networkx_graph(text_diagram: str, *, value_func: Callable[[str], Any] = str) -> nx.MultiGraph:
     r"""Converts a text diagram into a networkx multi graph.
 
     Args:
@@ -112,7 +112,7 @@ def _find_all_edges(char_map: Dict[complex, str], terminal_map: Dict[complex, K]
     return edges
 
 
-def _find_end_of_edge(xy: complex, dxy: complex, char_map: Dict[complex, str], terminal_map: Dict[complex, K], already_travelled: Set[complex]):
+def _find_end_of_edge(xy: complex, dxy: complex, char_map: Dict[complex, str], terminal_map: Dict[complex, K], already_travelled: Set[complex]) -> K:
     while True:
         c = char_map[xy]
         if xy in terminal_map:
