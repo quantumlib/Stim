@@ -204,7 +204,7 @@ def fit_line_y_at_x(*,
                     xs: Sequence[float],
                     ys: Sequence[float],
                     target_x: float,
-                    max_extra_squared_error: float) -> 'sinter.Fit':
+                    max_extra_squared_error: float) -> Fit:
     """Performs a line fit, focusing on the line's y coord at a given x coord.
 
     Finds the y value at the given x of the best fit, but also the minimum and
@@ -257,7 +257,7 @@ def fit_line_y_at_x(*,
 def fit_line_slope(*,
               xs: Sequence[float],
               ys: Sequence[float],
-              max_extra_squared_error: float) -> 'sinter.Fit':
+              max_extra_squared_error: float) -> Fit:
     """Performs a line fit of the given points, focusing on the line's slope.
 
     Finds the slope of the best fit, but also the minimum and maximum slopes
@@ -311,7 +311,7 @@ def fit_binomial(
         *,
         num_shots: int,
         num_hits: int,
-        max_likelihood_factor: float) -> 'sinter.Fit':
+        max_likelihood_factor: float) -> Fit:
     """Determine hypothesis probabilities compatible with the given hit ratio.
 
     The result includes the best fit (the max likelihood hypothis) as well as
@@ -347,16 +347,16 @@ def fit_binomial(
         raise ValueError(f'max_likelihood_factor={max_likelihood_factor} < 1')
     if num_shots == 0:
         return Fit(low=0, high=1, best=0.5)
-    log_max_likelihood = log_binomial(p=num_hits / num_shots, n=num_shots, hits=num_hits)
+    log_max_likelihood = float(log_binomial(p=num_hits / num_shots, n=num_shots, hits=num_hits))
     target_log_likelihood = log_max_likelihood - math.log(max_likelihood_factor)
     acc = 100
     low = binary_search(
-        func=lambda exp_err: log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits),
+        func=lambda exp_err: float(log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits)),
         target=target_log_likelihood,
         min_x=0,
         max_x=num_hits * acc) / acc
     high = binary_search(
-        func=lambda exp_err: -log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits),
+        func=lambda exp_err: -float(log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits)),
         target=-target_log_likelihood,
         min_x=num_hits * acc,
         max_x=num_shots * acc) / acc
@@ -367,9 +367,9 @@ def fit_binomial(
 def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float, values: float = 1) -> float:
     pass
 @overload
-def shot_error_rate_to_piece_error_rate(shot_error_rate: 'sinter.Fit', *, pieces: float, values: float = 1) -> 'sinter.Fit':
+def shot_error_rate_to_piece_error_rate(shot_error_rate: Fit, *, pieces: float, values: float = 1) -> Fit:
     pass
-def shot_error_rate_to_piece_error_rate(shot_error_rate: Union[float, 'sinter.Fit'], *, pieces: float, values: float = 1) -> Union[float, 'sinter.Fit']:
+def shot_error_rate_to_piece_error_rate(shot_error_rate: Union[float, Fit], *, pieces: float, values: float = 1) -> Union[float, Fit]:
     """Convert from total error rate to per-piece error rate.
 
     Args:

@@ -1,4 +1,13 @@
+import pathlib
+from typing import TYPE_CHECKING
+
 from sinter._decoding_decoder_class import Decoder, CompiledDecoder
+
+
+if TYPE_CHECKING:
+  import numpy as np
+  import pymatching
+  import stim
 
 
 class PyMatchingCompiledDecoder(CompiledDecoder):
@@ -10,12 +19,15 @@ class PyMatchingCompiledDecoder(CompiledDecoder):
             *,
             bit_packed_detection_event_data: 'np.ndarray',
     ) -> 'np.ndarray':
-        return self.matcher.decode_batch(
+        result = self.matcher.decode_batch(
             shots=bit_packed_detection_event_data,
             bit_packed_shots=True,
             bit_packed_predictions=True,
             return_weights=False,
         )
+        if isinstance(result, tuple):
+          return result[0]  # pymatching returned predictions and weights
+        return result
 
 
 class PyMatchingDecoder(Decoder):

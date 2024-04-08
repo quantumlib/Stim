@@ -440,7 +440,7 @@ def _set_axis_scale_label_ticks(
         set_ticks(major_ticks)
         set_ticks(minor_ticks, minor=True)
     else:
-        raise NotImplemented(f'{scale_name=}')
+        raise NotImplementedError(f'{scale_name=}')
     return scale_name
 
 

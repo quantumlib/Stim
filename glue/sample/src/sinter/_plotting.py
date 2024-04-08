@@ -1,14 +1,14 @@
 import math
 import sys
-from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union, Literal, Tuple
-from typing import cast
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Protocol, Tuple, TypeAlias, TypeVar, TYPE_CHECKING, Union
+from typing import cast, overload
 
 import numpy as np
 
 from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate, Fit
+from sinter._task_stats import TaskStats
 
 if TYPE_CHECKING:
-    import sinter
     import matplotlib.pyplot as plt
 
 
@@ -16,6 +16,22 @@ MARKERS: str = "ov*sp^<>8PhH+xXDd|" * 100
 T = TypeVar('T')
 TVal = TypeVar('TVal')
 TKey = TypeVar('TKey')
+TCurveId = TypeVar('TCurveId')
+
+
+class _PlotArgsFunc2(Protocol[TCurveId]):
+    def __call__(self, index: int, curve_id: TCurveId) -> Dict[str, Any]:
+        ...
+
+
+class _PlotArgsFunc3(Protocol[TCurveId]):
+    def __call__(self, index: int, curve_id: TCurveId, task_stats: List[TaskStats]) -> Dict[str, Any]:
+        ...
+
+
+class _GroupFunc(Protocol[TCurveId]):
+    def __call__(self, task_stats: TaskStats) -> Optional[TCurveId]:
+        ...
 
 
 def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
@@ -143,7 +159,7 @@ def group_by(items: Iterable[TVal],
         {0: [0, 3, 6, 9], 1: [1, 4, 7], 2: [2, 5, 8]}
     """
 
-    result: Dict[TKey, List[TVal]] = {}
+    result = {}
 
     for item in items:
         curve_id = key(item)
@@ -152,18 +168,15 @@ def group_by(items: Iterable[TVal],
     return result
 
 
-TCurveId = TypeVar('TCurveId')
-
-
 def plot_discard_rate(
         *,
         ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
+        stats: Iterable[TaskStats],
+        x_func: Callable[[TaskStats], Any],
+        failure_units_per_shot_func: Callable[[TaskStats], Any] = lambda _: 1,
+        group_func: _GroupFunc[TCurveId] = lambda _: None,
+        filter_func: Callable[[TaskStats], Any] = lambda _: True,
+        plot_args_func: Union[_PlotArgsFunc2[TCurveId], _PlotArgsFunc3[TCurveId]] = lambda index, group_key, group_stats: dict(),
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
@@ -202,7 +215,7 @@ def plot_discard_rate(
     if highlight_max_likelihood_factor is None:
         highlight_max_likelihood_factor = 1
 
-    def y_func(stat: 'sinter.TaskStats') -> Union[float, 'sinter.Fit']:
+    def y_func(stat: TaskStats) -> Union[float, Fit]:
         result = fit_binomial(
             num_shots=stat.shots,
             num_hits=stat.discards,
@@ -234,13 +247,13 @@ def plot_discard_rate(
 def plot_error_rate(
         *,
         ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        failure_values_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
+        stats: Iterable[TaskStats],
+        x_func: Callable[[TaskStats], Any],
+        failure_units_per_shot_func: Callable[[TaskStats], Any] = lambda _: 1,
+        failure_values_func: Callable[[TaskStats], Any] = lambda _: 1,
+        group_func: _GroupFunc[TCurveId] = lambda _: None,
+        filter_func: Callable[[TaskStats], Any] = lambda _: True,
+        plot_args_func: Union[_PlotArgsFunc2[TCurveId], _PlotArgsFunc3[TCurveId]] = lambda index, group_key, group_stats: dict(),
         highlight_max_likelihood_factor: Optional[float] = 1e3,
         line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
@@ -289,7 +302,7 @@ def plot_error_rate(
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
-    def y_func(stat: 'sinter.TaskStats') -> Union[float, 'sinter.Fit']:
+    def y_func(stat: TaskStats) -> Union[float, Fit]:
         result = fit_binomial(
             num_shots=stat.shots - stat.discards,
             num_hits=stat.errors,
@@ -337,12 +350,12 @@ def _rescale(v: np.ndarray, scale: str, invert: bool) -> np.ndarray:
 def plot_custom(
         *,
         ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        y_func: Callable[['sinter.TaskStats'], Union['sinter.Fit', float, int]],
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
+        stats: Iterable[TaskStats],
+        x_func: Callable[[TaskStats], Any],
+        y_func: Callable[[TaskStats], Union[Fit, float, int]],
+        group_func: _GroupFunc[TCurveId] = lambda _: None,
+        filter_func: Callable[[TaskStats], Any] = lambda _: True,
+        plot_args_func: Union[_PlotArgsFunc2[TCurveId], _PlotArgsFunc3[TCurveId]] = lambda index, group_key, group_stats: dict(),
         line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
@@ -383,10 +396,9 @@ def plot_custom(
     # Backwards compatibility to when the group stats argument wasn't present.
     import inspect
     if len(inspect.signature(plot_args_func).parameters) == 2:
-        old_plot_args_func = cast(Callable[[int, TCurveId], Any], plot_args_func)
-        plot_args_func = lambda a, b, _: old_plot_args_func(a, b)
+        plot_args_func = lambda a, b, _, old_plot_args_func=plot_args_func: old_plot_args_func(a, b)
 
-    filtered_stats: List['sinter.TaskStats'] = [
+    filtered_stats: List[TaskStats] = [
         stat
         for stat in stats
         if filter_func(stat)
@@ -418,7 +430,7 @@ def plot_custom(
                 xs.append(x)
                 ys.append(y)
 
-        kwargs: Dict[str, Any] = dict(plot_args_func(k, curve_id, this_group_stats))
+        kwargs: Dict[str, Any] = dict(cast(_PlotArgsFunc3, plot_args_func)(k, curve_id, this_group_stats))
         kwargs.setdefault('marker', MARKERS[k])
         if curve_id is not None:
             kwargs.setdefault('label', str(curve_id))
@@ -428,8 +440,8 @@ def plot_custom(
 
         if line_fits is not None and len(set(xs)) >= 2:
             x_scale, y_scale = line_fits
-            fit_xs = _rescale(xs, x_scale, False)
-            fit_ys = _rescale(ys, y_scale, False)
+            fit_xs = _rescale(np.asarray(xs), x_scale, False)
+            fit_ys = _rescale(np.asarray(ys), y_scale, False)
 
             from scipy.stats import linregress
             line_fit = linregress(fit_xs, fit_ys)
