@@ -51,7 +51,7 @@ void stim_pybind::pybind_pauli_string_iter_methods(
     c.def(
         "__iter__",
         [](PauliStringIterator<MAX_BITWORD_WIDTH> &self) -> PauliStringIterator<MAX_BITWORD_WIDTH> {
-            PauliStringIterator copy = self;
+            PauliStringIterator<MAX_BITWORD_WIDTH> copy = self;
             return copy;
         },
         clean_doc_string(R"DOC(
