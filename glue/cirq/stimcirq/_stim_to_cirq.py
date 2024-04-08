@@ -63,7 +63,7 @@ def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[
 class CircuitTranslationTracker:
     def __init__(self, flatten: bool):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
-        self.origin: DefaultDict[float] = collections.defaultdict(float)
+        self.origin: DefaultDict[int, float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
         self.full_circuit = cirq.Circuit()
         self.tick_circuit = cirq.Circuit()
@@ -422,7 +422,7 @@ class CircuitTranslationTracker:
         noise = CircuitTranslationTracker.OneToOneNoisyGateHandler
         sweep_gate = CircuitTranslationTracker.SweepableGateHandler
 
-        def not_impl(message) -> Callable[[Any], None]:
+        def not_impl(message) -> Callable[[CircuitTranslationTracker, stim.Circuit], None]:
             def handler(
                 tracker: CircuitTranslationTracker, instruction: stim.CircuitInstruction
             ) -> None:

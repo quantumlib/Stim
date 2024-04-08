@@ -102,8 +102,9 @@ def test_unitary_gate_conversions(gate: cirq.Gate):
 
 def test_more_unitary_gate_conversions():
     for p in [1, 1j, -1, -1j]:
-        assert_unitary_gate_converts_correctly(p * cirq.DensePauliString("IXYZ"))
-        assert_unitary_gate_converts_correctly((p * cirq.DensePauliString("IXYZ")).controlled(1))
+        gate: cirq.Gate = p * cirq.DensePauliString("IXYZ")
+        assert_unitary_gate_converts_correctly(gate)
+        assert_unitary_gate_converts_correctly(gate.controlled(1))
 
     a, b = cirq.LineQubit.range(2)
     c, _ = cirq_circuit_to_stim_data(
@@ -377,7 +378,7 @@ def test_on_tagged_loop():
             repetitions=3,
         ).with_tags('my_tag')
     )
-    
+
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
     assert stim.CircuitRepeatBlock in {type(instr) for instr in stim_circuit}
 

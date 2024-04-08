@@ -1,5 +1,6 @@
 import collections
-from typing import Dict, List, Sequence
+from typing import DefaultDict, Dict, List, Sequence
+import typing
 
 import cirq
 
@@ -35,8 +36,8 @@ class StimSampler(cirq.Sampler):
 
             # Find number of qubits (length), number of instances, and indices for each measurement key.
             lengths: Dict[str, int] = {}
-            instances: Dict[str, int] = collections.Counter()
-            indices: Dict[str, int] = collections.defaultdict(list)
+            instances: typing.Counter[str] = collections.Counter()
+            indices: DefaultDict[str, List[int]] = collections.defaultdict(list)
             k = 0
             for key, length in key_ranges:
                 prev_length = lengths.get(key)
