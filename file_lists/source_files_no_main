@@ -91,6 +91,7 @@ src/stim/util_bot/error_decomp.cc
 src/stim/util_top/circuit_inverse_unitary.cc
 src/stim/util_top/circuit_to_detecting_regions.cc
 src/stim/util_top/circuit_vs_amplitudes.cc
+src/stim/util_top/dem_to_matrix.cc
 src/stim/util_top/export_crumble_url.cc
 src/stim/util_top/export_qasm.cc
 src/stim/util_top/export_quirk_url.cc

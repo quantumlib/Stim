@@ -174,6 +174,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DetectorErrorModel.rounded`](#stim.DetectorErrorModel.rounded)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
     - [`stim.DetectorErrorModel.to_file`](#stim.DetectorErrorModel.to_file)
+    - [`stim.DetectorErrorModel.to_simple_error_lists`](#stim.DetectorErrorModel.to_simple_error_lists)
 - [`stim.ExplainedError`](#stim.ExplainedError)
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
@@ -6578,6 +6579,68 @@ def to_file(
         ...         contents = f.read()
         >>> contents
         'error(0.25) D2 D3\n'
+    """
+```
+
+<a name="stim.DetectorErrorModel.to_simple_error_lists"></a>
+```python
+# stim.DetectorErrorModel.to_simple_error_lists
+
+# (in class stim.DetectorErrorModel)
+def to_simple_error_lists(
+    self,
+) -> Tuple['np.ndarray[float]', List[Set[int]], List[Set[int]]]:
+    """Simplifies the model into lists of chances, detection sets, and obs flips sets.
+
+    Note that this summary doesn't include information about loops, coordinates, or
+    suggested decompositions. Also note that this method will merge all errors with
+    identical symptoms, by Bernoulli summing their probabilities, and will sort the
+    errors. For example, the following two detector error models will give identical
+    results:
+
+        # dem 1
+        error(0.01) D1 D2 ^ D3 D4
+        error(0.125) D1
+        error(0.25) D1
+        detector(2, 3, 5) D1
+
+    vs
+
+        # dem 2
+        error(0.3125) D1
+        error(0.01) D1 D2 D3 D4
+
+    Returns:
+        A tuple of sequences (probabilities, dets, obs).
+
+        `probabilities` will be a numpy array with dtype=np.float64 and
+        shape=(num_errors,).
+
+        `dets` will be a list of detection event sets. Each detection
+        event set is a python set containing the indices of detectors
+        flipped by the error.
+
+        `obs` will be a list of observable flip sets. Each observable
+        flip set is a python set containing the indices of detectors
+        flipped by the error.
+
+        These sequences are paired up by index. They will have the same length, and
+        the combination of probabilities[k], dets[k], and obs[k] form a single
+        error.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.25) D0 D1
+        ...     error(0.125) D0 D2 L1 L5
+        ... ''')
+        >>> probs, dets, obs = dem.to_simple_error_lists()
+        >>> probs
+        array([0.25 , 0.125])
+        >>> dets
+        [{0, 1}, {0, 2}]
+        >>> obs
+        [set(), {1, 5}]
     """
 ```
 
