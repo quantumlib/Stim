@@ -23,10 +23,13 @@
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/search/search.h"
 #include "stim/simulators/dem_sampler.h"
+#include "stim/util_top/dem_to_matrix.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {
@@ -1194,6 +1197,100 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     diagram = circuit.diagram("match-graph-3d")
                 ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
                 ...         print(diagram, file=f)
+        )DOC")
+            .data());
+
+    c.def(
+        "to_simple_error_lists",
+        [](const DetectorErrorModel &self) {
+            auto map = dem_to_map(self);
+            size_t num_errors = map.size();
+
+            pybind11::list dets_list;
+            pybind11::list obs_list;
+            double *probabilities = new double[num_errors];
+
+            size_t row = 0;
+            for (const auto &kv : map) {
+                probabilities[row] = kv.second;
+                pybind11::set dets;
+                pybind11::set obs;
+                for (DemTarget t : kv.first) {
+                    if (t.is_relative_detector_id()) {
+                        dets.add(t.val());
+                    } else {
+                        obs.add(t.val());
+                    }
+                }
+                dets_list.append(dets);
+                obs_list.append(obs);
+                row++;
+            }
+
+            auto prob_array = pybind11::array_t<double>(
+                {(pybind11::ssize_t)num_errors},
+                {(pybind11::ssize_t)sizeof(double)},
+                probabilities,
+                pybind11::capsule(probabilities, [](void *f) {
+                    delete[] reinterpret_cast<double *>(f);
+                })
+            );
+
+            return pybind11::make_tuple(prob_array, dets_list, obs_list);
+        },
+        clean_doc_string(R"DOC(
+            @signature def to_simple_error_lists(self) -> Tuple['np.ndarray[float]', List[Set[int]], List[Set[int]]]:
+            Simplifies the model into lists of chances, detection sets, and obs flips sets.
+
+            Note that this summary doesn't include information about loops, coordinates, or
+            suggested decompositions. Also note that this method will merge all errors with
+            identical symptoms, by Bernoulli summing their probabilities, and will sort the
+            errors. For example, the following two detector error models will give identical
+            results:
+
+                # dem 1
+                error(0.01) D1 D2 ^ D3 D4
+                error(0.125) D1
+                error(0.25) D1
+                detector(2, 3, 5) D1
+
+            vs
+
+                # dem 2
+                error(0.3125) D1
+                error(0.01) D1 D2 D3 D4
+
+            Returns:
+                A tuple of sequences (probabilities, dets, obs).
+
+                `probabilities` will be a numpy array with dtype=np.float64 and
+                shape=(num_errors,).
+
+                `dets` will be a list of detection event sets. Each detection
+                event set is a python set containing the indices of detectors
+                flipped by the error.
+
+                `obs` will be a list of observable flip sets. Each observable
+                flip set is a python set containing the indices of detectors
+                flipped by the error.
+
+                These sequences are paired up by index. They will have the same length, and
+                the combination of probabilities[k], dets[k], and obs[k] form a single
+                error.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.25) D0 D1
+                ...     error(0.125) D0 D2 L1 L5
+                ... ''')
+                >>> probs, dets, obs = dem.to_simple_error_lists()
+                >>> probs
+                array([0.25 , 0.125])
+                >>> dets
+                [{0, 1}, {0, 2}]
+                >>> obs
+                [set(), {1, 5}]
         )DOC")
             .data());
 }

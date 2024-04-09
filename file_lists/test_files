@@ -86,6 +86,7 @@ src/stim/util_top/circuit_inverse_unitary.test.cc
 src/stim/util_top/circuit_to_detecting_regions.test.cc
 src/stim/util_top/circuit_vs_amplitudes.test.cc
 src/stim/util_top/circuit_vs_tableau.test.cc
+src/stim/util_top/dem_to_matrix.test.cc
 src/stim/util_top/export_crumble_url.test.cc
 src/stim/util_top/export_qasm.test.cc
 src/stim/util_top/export_quirk_url.test.cc

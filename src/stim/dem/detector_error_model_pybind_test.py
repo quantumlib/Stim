@@ -14,6 +14,7 @@
 import pathlib
 import tempfile
 
+import numpy as np
 import pytest
 
 import stim
@@ -536,3 +537,41 @@ def test_shortest_graphlike_error_remnant():
     assert len(d.shortest_graphlike_error(ignore_ungraphlike_errors=True)) == 8
     assert len(c.shortest_graphlike_error()) == 8
     assert len(d.shortest_graphlike_error()) == 8
+
+
+def test_to_simple_error_lists():
+    dem = stim.DetectorErrorModel("""
+        error(0.125) D0 D2 L1 L5
+        error(0.25) D0 D1
+    """)
+    probs, dets, obs = dem.to_simple_error_lists()
+    np.testing.assert_array_equal(probs, np.array([0.25, 0.125], dtype=np.float64))
+    assert dets == [
+        {0, 1},
+        {0, 2},
+    ]
+    assert obs == [
+        set(),
+        {1, 5},
+    ]
+
+
+def test_to_simple_error_lists_simplify():
+    dem = stim.DetectorErrorModel("""
+        error(0.125) D0 D2 L1 L5
+        error(0.25) D0 ^ D1
+        error(0) D0 D1
+        error(0) D2
+    """)
+    probs, dets, obs = dem.to_simple_error_lists()
+    np.testing.assert_array_equal(probs, np.array([0.25, 0.125, 0], dtype=np.float64))
+    assert dets == [
+        {0, 1},
+        {0, 2},
+        {2},
+    ]
+    assert obs == [
+        set(),
+        {1, 5},
+        set(),
+    ]
