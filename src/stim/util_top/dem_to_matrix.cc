@@ -15,7 +15,7 @@ std::map<SparseXorVec<DemTarget>, double> stim::dem_to_map(const DetectorErrorMo
                 buf.sorted_items.push_back(t);
             }
         }
-        size_t kept = xor_sort<DemTarget>(buf);
+        size_t kept = xor_sort<DemTarget>(buf.sorted_items);
         buf.sorted_items.resize(kept);
         auto q = instruction.arg_data[0];
         auto &p = result[buf];

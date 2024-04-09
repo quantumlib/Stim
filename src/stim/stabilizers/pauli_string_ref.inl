@@ -883,9 +883,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_ZCX(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         do_single_cx(inst, q1, q2);
     }
 }
@@ -895,9 +895,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_ZCY(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         do_single_cy(inst, q1, q2);
     }
 }
@@ -916,9 +916,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_SWAP(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         zs[q1].swap_with(zs[q2]);
         xs[q1].swap_with(xs[q2]);
     }
