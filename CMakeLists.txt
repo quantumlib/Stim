@@ -22,6 +22,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY out)
 
 # Convert desired SIMD_WIDTH into machine architecture flags.
 if(NOT(SIMD_WIDTH))
+    set(MACHINE_FLAG "")
+elseif(SIMD_WIDTH EQUAL NATIVE)
     set(MACHINE_FLAG "-march=native")
 elseif(SIMD_WIDTH EQUAL 256)
     set(MACHINE_FLAG "-mavx2" "-msse2")
