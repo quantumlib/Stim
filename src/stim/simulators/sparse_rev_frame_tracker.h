@@ -62,7 +62,11 @@ struct SparseUnsignedRevFrameTracker {
     void undo_gate(const CircuitInstruction &inst);
     void undo_gate(const CircuitInstruction &op, const Circuit &parent);
 
-    void handle_xor_gauge(SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2, const CircuitInstruction &inst, GateTarget location);
+    void handle_xor_gauge(
+        SpanRef<const DemTarget> sorted1,
+        SpanRef<const DemTarget> sorted2,
+        const CircuitInstruction &inst,
+        GateTarget location);
     void handle_gauge(SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location);
     void fail_due_to_anticommutation(const CircuitInstruction &inst);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);

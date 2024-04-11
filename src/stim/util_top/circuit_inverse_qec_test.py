@@ -93,3 +93,20 @@ def test_inv_circuit_surface_code():
         inv_region_sets.add(frozenset({t: str(p) for t, p in v.items()}.items()))
     assert len(original_region_sets_reversed) == len(det_regions)
     assert original_region_sets_reversed == inv_region_sets
+
+
+def test_more_flow_qubits_than_circuit_qubits():
+    flows = [
+        stim.Flow("X300 -> X300"),
+        stim.Flow("X2*Z301 -> Z2*Z301"),
+    ]
+    circuit = stim.Circuit("H 2")
+    assert circuit.has_flow(flows[0])
+    assert circuit.has_flow(flows[1])
+    assert circuit.has_all_flows(flows)
+    new_circuit, new_flows = circuit.time_reversed_for_flows(flows=flows)
+    assert new_circuit == circuit
+    assert new_flows == [
+        stim.Flow("X300 -> X300"),
+        stim.Flow("Z2*Z301 -> X2*Z301"),
+    ]
