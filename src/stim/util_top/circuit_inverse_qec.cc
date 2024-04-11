@@ -32,42 +32,39 @@ void CircuitFlowReverser::recompute_active_terms() {
 
 void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) {
     Gate g = GATE_DATA[inst.gate_type];
-    for_each_disjoint_target_segment_in_instruction_reversed(
-        inst, qubit_workspace, [&](CircuitInstruction segment) {
-            // Each reset effect becomes a measurement effect in the inverted circuit. Index these
-            // measurements.
-            for (size_t k = inst.targets.size(); k-- > 0;) {
-                auto q = inst.targets[k].qubit_value();
-                for (auto d : rev.xs[q]) {
-                    d2ms[d].insert(num_new_measurements);
-                }
-                for (auto d : rev.zs[q]) {
-                    d2ms[d].insert(num_new_measurements);
-                }
-                num_new_measurements++;
+    for_each_disjoint_target_segment_in_instruction_reversed(inst, qubit_workspace, [&](CircuitInstruction segment) {
+        // Each reset effect becomes a measurement effect in the inverted circuit. Index these
+        // measurements.
+        for (size_t k = inst.targets.size(); k-- > 0;) {
+            auto q = inst.targets[k].qubit_value();
+            for (auto d : rev.xs[q]) {
+                d2ms[d].insert(num_new_measurements);
             }
-
-            // Undo the gate, ignoring measurement noise.
-            rev.undo_gate(segment);
-            inverted_circuit.safe_append_reversed_targets(
-                g.best_candidate_inverse_id, segment.targets, {}, false);
-
-            // Measurement noise becomes noise-after-reset in the reversed circuit.
-            if (!inst.args.empty()) {
-                GateType ejected_noise;
-                if (inst.gate_type == GateType::MRX) {
-                    ejected_noise = GateType::Z_ERROR;
-                } else if (inst.gate_type == GateType::MRY) {
-                    ejected_noise = GateType::Z_ERROR;
-                } else if (inst.gate_type == GateType::MR) {
-                    ejected_noise = GateType::X_ERROR;
-                } else {
-                    throw std::invalid_argument("Don't know how to invert " + inst.str());
-                }
-                inverted_circuit.safe_append_reversed_targets(
-                    ejected_noise, segment.targets, segment.args, false);
+            for (auto d : rev.zs[q]) {
+                d2ms[d].insert(num_new_measurements);
             }
-        });
+            num_new_measurements++;
+        }
+
+        // Undo the gate, ignoring measurement noise.
+        rev.undo_gate(segment);
+        inverted_circuit.safe_append_reversed_targets(g.best_candidate_inverse_id, segment.targets, {}, false);
+
+        // Measurement noise becomes noise-after-reset in the reversed circuit.
+        if (!inst.args.empty()) {
+            GateType ejected_noise;
+            if (inst.gate_type == GateType::MRX) {
+                ejected_noise = GateType::Z_ERROR;
+            } else if (inst.gate_type == GateType::MRY) {
+                ejected_noise = GateType::Z_ERROR;
+            } else if (inst.gate_type == GateType::MR) {
+                ejected_noise = GateType::X_ERROR;
+            } else {
+                throw std::invalid_argument("Don't know how to invert " + inst.str());
+            }
+            inverted_circuit.safe_append_reversed_targets(ejected_noise, segment.targets, segment.args, false);
+        }
+    });
 }
 
 void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
@@ -169,7 +166,6 @@ void CircuitFlowReverser::flush_detectors_and_observables() {
 }
 
 void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
-
     switch (inst.gate_type) {
         case GateType::DETECTOR: {
             rev.undo_gate(inst);

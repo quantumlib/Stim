@@ -62,7 +62,7 @@ struct CircuitFlowReverser {
     Circuit &&build_and_move_final_inverted_circuit();
 };
 
-}  // namespace stim::internal
+}  // namespace internal
 }  // namespace stim
 
 #include "stim/util_top/circuit_inverse_qec.inl"
