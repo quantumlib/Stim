@@ -280,6 +280,7 @@ Circuit &&CircuitFlowReverser::build_and_move_final_inverted_circuit() {
         return std::move(inverted_circuit);
     }
 
+    std::reverse(qubit_coords_circuit.operations.begin(), qubit_coords_circuit.operations.end());
     qubit_coords_circuit += inverted_circuit;
     return std::move(qubit_coords_circuit);
 }

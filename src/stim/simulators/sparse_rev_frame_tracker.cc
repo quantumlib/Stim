@@ -228,9 +228,8 @@ void SparseUnsignedRevFrameTracker::handle_xor_gauge(
     }
 }
 
-void SparseUnsignedRevFrameTracker::handle_gauge(SpanRef<const DemTarget> sorted,
-    const CircuitInstruction &inst,
-    GateTarget location) {
+void SparseUnsignedRevFrameTracker::handle_gauge(
+    SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location) {
     if (sorted.empty()) {
         return;
     }
