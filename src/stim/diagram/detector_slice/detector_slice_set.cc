@@ -83,7 +83,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Circu
 }
 DetectorSliceSetComputer::DetectorSliceSetComputer(
     const Circuit &circuit, uint64_t first_yield_tick, uint64_t num_yield_ticks)
-    : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors()),
+    : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), false),
       first_yield_tick(first_yield_tick),
       num_yield_ticks(num_yield_ticks) {
     tick_cur = circuit.count_ticks() + 1;  // +1 because of artificial TICKs at start and end.
@@ -110,6 +110,25 @@ std::ostream &stim_draw_internal::operator<<(std::ostream &out, const CoordFilte
 void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
     DiagramTimelineAsciiDrawer drawer(num_qubits, false);
     drawer.moment_spacing = 2;
+
+    for (const auto &s : anticommutations) {
+        drawer.reserve_drawing_room_for_targets(s.second);
+        for (const auto &t : s.second) {
+            std::stringstream ss;
+            ss << "ANTICOMMUTED";
+            ss << ":";
+            ss << s.first.second;
+            drawer.diagram.add_entry(AsciiDiagramEntry{
+                AsciiDiagramPos{
+                    drawer.m2x(drawer.cur_moment + 1),
+                    drawer.q2y(t.qubit_value()),
+                    0,
+                    0.5,
+                },
+                ss.str(),
+            });
+        }
+    }
 
     for (const auto &s : slices) {
         drawer.reserve_drawing_room_for_targets(s.second);
@@ -230,6 +249,23 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     result.num_ticks = num_ticks;
 
     helper.on_tick_callback = [&]() {
+        // Process anticommutations.
+        for (const auto &[d, g] : helper.tracker.anticommutations) {
+            result.anticommutations[{helper.tick_cur, d}].push_back(g);
+
+            // Stop propagating it backwards if it broke.
+            for (size_t q = 0; q < num_qubits; q++) {
+                if (helper.tracker.xs[q].contains(d)) {
+                    helper.tracker.xs[q].xor_item(d);
+                }
+                if (helper.tracker.zs[q].contains(d)) {
+                    helper.tracker.zs[q].xor_item(d);
+                }
+            }
+        }
+        helper.tracker.anticommutations.clear();
+
+        // Record locations of detectors and observables.
         for (size_t q = 0; q < num_qubits; q++) {
             xs.clear();
             ys.clear();
@@ -373,6 +409,7 @@ FlattenedCoords FlattenedCoords::from(const DetectorSliceSet &set, float desired
     }
 
     float characteristic_distance = pick_characteristic_distance(used, result.qubit_coords);
+    result.unit_distance = desired_unit_distance;
     float scale = desired_unit_distance / characteristic_distance;
     for (auto &c : result.qubit_coords) {
         c *= scale;
@@ -861,10 +898,13 @@ void DetectorSliceSet::write_svg_contents_to(
 
     bool haveDrawnCorners = false;
 
-    using tup = std::tuple<uint64_t, stim::DemTarget, SpanRef<const GateTarget>>;
+    using tup = std::tuple<uint64_t, stim::DemTarget, SpanRef<const GateTarget>, bool>;
     std::vector<tup> sorted_terms;
     for (const auto &e : slices) {
-        sorted_terms.push_back({e.first.first, e.first.second, e.second});
+        sorted_terms.push_back({e.first.first, e.first.second, e.second, false});
+    }
+    for (const auto &e : anticommutations) {
+        sorted_terms.push_back({e.first.first, e.first.second, e.second, true});
     }
     std::stable_sort(sorted_terms.begin(), sorted_terms.end(), [](const tup &e1, const tup &e2) -> int {
         int a = (int)std::get<2>(e1).size();
@@ -877,6 +917,22 @@ void DetectorSliceSet::write_svg_contents_to(
         uint64_t tick = std::get<0>(e);
         DemTarget target = std::get<1>(e);
         SpanRef<const GateTarget> terms = std::get<2>(e);
+        bool is_anticommutation = std::get<3>(e);
+        if (is_anticommutation) {
+            for (const auto &anti_target : terms) {
+                auto c = coords(tick + 1, anti_target.qubit_value());
+                out << R"SVG(<circle)SVG";
+                write_key_val(out, "cx", c.xyz[0]);
+                write_key_val(out, "cy", c.xyz[1]);
+                write_key_val(out, "r", scale);
+                write_key_val(out, "fill", "none");
+                write_key_val(out, "stroke", "magenta");
+                write_key_val(out, "stroke-width", scale / 2);
+                out << "/>\n";
+            }
+            continue;
+        }
+
         if (target.is_observable_id()) {
             _draw_observable(
                 out, target.val(), unscaled_coords, coords, tick, terms, pts_workspace, tick < end_tick - 1, scale);

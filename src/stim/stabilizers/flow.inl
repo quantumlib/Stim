@@ -341,8 +341,8 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
             result[t.val()] = false;
         }
     }
-    for (const auto &anti : rev.anticommutations) {
-        result[anti.val()] = false;
+    for (const auto &[dem_target, gate_target] : rev.anticommutations) {
+        result[dem_target.val()] = false;
     }
 
     return result;

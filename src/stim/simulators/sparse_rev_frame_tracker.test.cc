@@ -706,8 +706,11 @@ TEST(SparseUnsignedRevFrameTracker, tracks_anticommutation) {
     rev.undo_circuit(circuit);
     ASSERT_EQ(
         rev.anticommutations,
-        (std::set<DemTarget>{
-            DemTarget::relative_detector_id(0), DemTarget::relative_detector_id(2), DemTarget::observable_id(2)}));
+        (std::set<std::pair<DemTarget, GateTarget>>{
+            {DemTarget::relative_detector_id(0), GateTarget::x(2)},
+            {DemTarget::relative_detector_id(2), GateTarget::x(2)},
+            {DemTarget::observable_id(2), GateTarget::x(1)},
+            {DemTarget::observable_id(2), GateTarget::x(2)}}));
 
     SparseUnsignedRevFrameTracker rev2(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors());
     ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
@@ -729,4 +732,16 @@ TEST(SparseUnsignedRevFrameTracker, MZZ) {
     ASSERT_TRUE(rev.zs[0].empty());
     ASSERT_TRUE(rev.zs[1].empty());
     ASSERT_EQ(rev.zs[2].sorted_items, (std::vector<DemTarget>{DemTarget::relative_detector_id(0)}));
+}
+
+TEST(SparseUnsignedRevFrameTracker, fail_anticommute) {
+    Circuit circuit(R"CIRCUIT(
+        RX 0 1 2
+        M 2
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    SparseUnsignedRevFrameTracker rev(
+        circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), true);
+    ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
 }

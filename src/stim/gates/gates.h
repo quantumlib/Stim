@@ -17,6 +17,7 @@
 #ifndef _STIM_GATES_GATE_DATA_H
 #define _STIM_GATES_GATE_DATA_H
 
+#include <array>
 #include <cassert>
 #include <complex>
 #include <cstdint>
@@ -313,7 +314,7 @@ inline bool _case_insensitive_mismatch(std::string_view text1, std::string_view 
 }
 
 struct GateDataMapHashEntry {
-    GateType id;
+    GateType id = GateType::NOT_A_GATE;
     std::string_view expected_name;
 };
 
