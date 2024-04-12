@@ -90,7 +90,7 @@ void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
             inverted_circuit.safe_append(reset, &t, inst.args);
         } else {
             // Measurements that aren't turned into resets need to be re-indexed.
-            auto f = rev.rec_bits.find(rev.num_measurements_in_past - k - 1);
+            auto f = rev.rec_bits.find(rev.num_measurements_in_past - 1);
             if (f != rev.rec_bits.end()) {
                 for (auto &dem_target : f->second) {
                     d2ms[dem_target].insert(num_new_measurements);
