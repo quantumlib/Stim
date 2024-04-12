@@ -1,5 +1,8 @@
 #include "stim/util_bot/error_decomp.h"
 
+#include <cmath>
+#include <stdexcept>
+
 using namespace stim;
 
 void stim::independent_to_disjoint_xyz_errors(

@@ -14,7 +14,7 @@
 
 #include "stim/simulators/tableau_simulator.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

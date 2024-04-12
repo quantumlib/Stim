@@ -22,7 +22,7 @@
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

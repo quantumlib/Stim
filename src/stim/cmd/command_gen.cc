@@ -1,11 +1,11 @@
 #include "stim/cmd/command_gen.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_PROBABILITY_UTIL_H
-#define _STIM_PROBABILITY_UTIL_H
+#ifndef _STIM_UTIL_BOT_PROBABILITY_UTIL_H
+#define _STIM_UTIL_BOT_PROBABILITY_UTIL_H
 
 #include <random>
 #include <stdexcept>

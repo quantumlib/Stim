@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/count_determined_measurements.h"
+#include "stim/util_top/count_determined_measurements.h"
 
 #include "gtest/gtest.h"
 

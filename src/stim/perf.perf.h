@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_BENCHMARK_UTIL_PERF_H
-#define _STIM_BENCHMARK_UTIL_PERF_H
+#ifndef _STIM_PERF_PERF_H
+#define _STIM_PERF_PERF_H
 
 #include <chrono>
 #include <functional>

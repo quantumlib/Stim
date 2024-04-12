@@ -17,7 +17,7 @@
 #include "stim/gates/gates.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/stabilizers/flow.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;

@@ -262,8 +262,8 @@ jobs:
       - uses: actions/checkout@v1
       - uses: microsoft/setup-msbuild@v1.0.2
       - run: cmake .
-      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
-      - run: msbuild_out/stim_benchmark.exe
+      - run: MSBuild.exe stim_perf.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+      - run: msbuild_out/stim_perf.exe
   benchmark:
     runs-on: ubuntu-latest
     strategy:
@@ -272,8 +272,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_benchmark -j 2
-    - run: out/stim_benchmark
+    - run: make stim_perf -j 2
+    - run: out/stim_perf
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -333,8 +333,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: dev/regen_file_lists.sh /tmp
-      - run: diff /tmp/benchmark_files file_lists/benchmark_files
-      - run: diff /tmp/python_api_files file_lists/python_api_files
+      - run: diff /tmp/perf_files file_lists/perf_files
+      - run: diff /tmp/pybind_files file_lists/pybind_files
       - run: diff /tmp/source_files_no_main file_lists/source_files_no_main
       - run: diff /tmp/test_files file_lists/test_files
   test_pybind:

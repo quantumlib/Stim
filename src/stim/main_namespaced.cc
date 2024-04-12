@@ -16,7 +16,6 @@
 
 #include <cstring>
 
-#include "stim/arg_parse.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/cmd/command_convert.h"
 #include "stim/cmd/command_detect.h"
@@ -28,6 +27,7 @@
 #include "stim/cmd/command_repl.h"
 #include "stim/cmd/command_sample.h"
 #include "stim/cmd/command_sample_dem.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

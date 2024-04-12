@@ -1,6 +1,9 @@
 #include "stim/util_bot/error_decomp.h"
 
-#include "stim/benchmark_util.perf.h"
+#include <iostream>
+
+#include "stim/perf.perf.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 

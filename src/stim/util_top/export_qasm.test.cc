@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.test.h"
-#include "stim/simulators/transform_without_feedback.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 using namespace stim;
 

@@ -1,11 +1,13 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/str_util.h"
+
 constexpr float SLICE_WINDOW_GAP = 1.1f;
 
 using namespace stim;

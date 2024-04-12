@@ -18,6 +18,8 @@
 #include <queue>
 #include <sstream>
 
+#include "stim/util_bot/str_util.h"
+
 using namespace stim;
 
 void print_pauli_product(std::ostream &out, const std::vector<GateTargetWithCoords> &pauli_terms) {

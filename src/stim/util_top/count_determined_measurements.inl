@@ -1,5 +1,5 @@
-#include "stim/simulators/count_determined_measurements.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/util_top/count_determined_measurements.h"
 
 namespace stim {
 
