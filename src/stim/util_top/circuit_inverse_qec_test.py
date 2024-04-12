@@ -110,3 +110,44 @@ def test_more_flow_qubits_than_circuit_qubits():
         stim.Flow("X300 -> X300"),
         stim.Flow("Z2*Z301 -> X2*Z301"),
     ]
+
+
+def test_measurement_ordering():
+    circuit = stim.Circuit("""
+        M 0 1
+    """)
+    flows = [
+        stim.Flow("I -> Z0 xor rec[-2]"),
+        stim.Flow("I -> Z1 xor rec[-1]"),
+    ]
+    assert circuit.has_all_flows(flows, unsigned=True)
+    new_circuit, new_flows = circuit.time_reversed_for_flows(flows)
+    assert new_circuit.has_all_flows(new_flows, unsigned=True)
+
+
+def test_measurement_ordering_2():
+    circuit = stim.Circuit("""
+        MZZ 0 1 2 3
+    """)
+    flows = [
+        stim.Flow("I -> Z0*Z1 xor rec[-2]"),
+        stim.Flow("I -> Z2*Z3 xor rec[-1]"),
+    ]
+    assert circuit.has_all_flows(flows, unsigned=True)
+    new_circuit, new_flows = circuit.time_reversed_for_flows(flows)
+    assert new_circuit.has_all_flows(new_flows, unsigned=True)
+
+
+def test_measurement_ordering_3():
+    circuit = stim.Circuit("""
+        MR 0 1
+    """)
+    flows = [
+        stim.Flow("Z0 -> rec[-2]"),
+        stim.Flow("Z1 -> rec[-1]"),
+        stim.Flow("I -> Z0"),
+        stim.Flow("I -> Z1"),
+    ]
+    assert circuit.has_all_flows(flows, unsigned=True)
+    new_circuit, new_flows = circuit.time_reversed_for_flows(flows)
+    assert new_circuit.has_all_flows(new_flows, unsigned=True)
