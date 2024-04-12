@@ -45,11 +45,11 @@ std::vector<double> python_arg_to_instruction_arguments(const pybind11::object &
     }
     try {
         return {pybind11::cast<double>(arg)};
-    } catch (const pybind11::cast_error &ex) {
+    } catch (const pybind11::cast_error &) {
     }
     try {
         return pybind11::cast<std::vector<double>>(arg);
-    } catch (const pybind11::cast_error &ex) {
+    } catch (const pybind11::cast_error &) {
     }
     throw std::invalid_argument("parens_arguments must be None, a double, or a list of doubles.");
 }
@@ -403,7 +403,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         [](const DetectorErrorModel &self, const pybind11::object &obj, double atol) -> bool {
             try {
                 return self.approx_equals(pybind11::cast<DetectorErrorModel>(obj), atol);
-            } catch (const pybind11::cast_error &ex) {
+            } catch (const pybind11::cast_error &) {
                 return false;
             }
         },
@@ -488,7 +488,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                         } else {
                             conv_targets.push_back(DemTarget{pybind11::cast<ExposedDemTarget>(e).data});
                         }
-                    } catch (pybind11::cast_error &ex) {
+                    } catch (pybind11::cast_error &) {
                         std::stringstream ss;
                         ss << "Bad target '";
                         ss << pybind11::repr(e);
