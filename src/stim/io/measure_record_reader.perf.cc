@@ -14,9 +14,9 @@
 
 #include "stim/io/measure_record_reader.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/io/measure_record_writer.h"
-#include "stim/probability_util.h"
+#include "stim/perf.perf.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 

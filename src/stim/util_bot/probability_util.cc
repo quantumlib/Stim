@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
-#include "arg_parse.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

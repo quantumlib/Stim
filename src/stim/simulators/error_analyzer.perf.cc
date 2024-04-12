@@ -14,8 +14,8 @@
 
 #include "stim/simulators/error_analyzer.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

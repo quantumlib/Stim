@@ -14,7 +14,6 @@
 
 #include "stim/cmd/command_diagram.pybind.h"
 
-#include "stim/arg_parse.h"
 #include "stim/cmd/command_help.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/base64.h"
@@ -26,6 +25,7 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 using namespace stim_pybind;

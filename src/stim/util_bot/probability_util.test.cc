@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

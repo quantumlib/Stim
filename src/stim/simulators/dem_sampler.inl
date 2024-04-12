@@ -18,8 +18,8 @@
 
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/dem_sampler.h"
+#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 

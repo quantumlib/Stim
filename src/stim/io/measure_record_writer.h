@@ -19,7 +19,6 @@
 
 #include <memory>
 
-#include "stim/circuit/circuit.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/span_ref.h"

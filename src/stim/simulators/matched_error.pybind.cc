@@ -20,6 +20,7 @@
 #include "stim/gates/gates.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/matched_error.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;

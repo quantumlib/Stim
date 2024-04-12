@@ -17,12 +17,12 @@
 #include <stdexcept>
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

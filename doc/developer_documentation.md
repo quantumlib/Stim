@@ -20,7 +20,7 @@ These notes generally assume you are on a Linux system.
 - [running performance benchmarks](#perf)
     - [with cmake](#perf.cmake)
     - [with bazel](#perf.bazel)
-    - [interpreting output from `stim_benchmark`](#perf.output)
+    - [interpreting output from `stim_perf`](#perf.output)
     - [profiling with gcc and perf](#perf.profile)
 - [creating a python dev environment](#venv)
 - [running python unit tests](#test.pytest)
@@ -348,19 +348,19 @@ bazel test stim_test
 
 ```bash
 cmake .
-make stim_benchmark
-./out/stim_benchmark
+make stim_perf
+./out/stim_perf
 ```
 
 ## <a name="perf.cmake"></a>Running performance benchmarks with bazel
 
 ```bash
-bazel run stim_benchmark
+bazel run stim_perf
 ```
 
-## <a name="perf.output"></a>Interpreting output from `stim_benchmark`
+## <a name="perf.output"></a>Interpreting output from `stim_perf`
 
-When you run `stim_benchmark` you will see output like:
+When you run `stim_perf` you will see output like:
 
 ```
 [....................*....................] 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
@@ -377,7 +377,7 @@ Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` 
 Basically, if you see `[......*<<<<<<<<<<<<<|....................]` then something is *seriously* wrong, because the
 code is running 25x slower than expected.
 
-The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
+The `stim_perf` binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 

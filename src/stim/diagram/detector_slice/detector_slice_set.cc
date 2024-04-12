@@ -1,11 +1,13 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/str_util.h"
+
 constexpr float SLICE_WINDOW_GAP = 1.1f;
 
 using namespace stim;
@@ -217,10 +219,10 @@ CoordFilter CoordFilter::parse_from(std::string_view data) {
         // no filter
     } else if (data[0] == 'D') {
         filter.use_target = true;
-        filter.exact_target = DemTarget::relative_detector_id(parse_exact_double_from_string(data.substr(1)));
+        filter.exact_target = DemTarget::relative_detector_id(parse_exact_uint64_t_from_string(data.substr(1)));
     } else if (data[0] == 'L') {
         filter.use_target = true;
-        filter.exact_target = DemTarget::observable_id(parse_exact_double_from_string(data.substr(1)));
+        filter.exact_target = DemTarget::observable_id(parse_exact_uint64_t_from_string(data.substr(1)));
     } else {
         for (const auto &v : split_view(',', data)) {
             if (v == "*") {
@@ -346,16 +348,16 @@ Coord<2> flattened_2d(SpanRef<const double> c) {
     float x = 0;
     float y = 0;
     if (c.size() >= 1) {
-        x = c[0];
+        x = (float)c[0];
     }
     if (c.size() >= 2) {
-        y = c[1];
+        y = (float)c[1];
     }
 
     // Arbitrary orthographic projection.
     for (size_t k = 2; k < c.size(); k++) {
-        x += c[k] / k;
-        y += c[k] / (k * k);
+        x += (float)c[k] / k;
+        y += (float)c[k] / (k * k);
     }
 
     return {x, y};
@@ -749,10 +751,10 @@ void _start_two_body_svg_path(
         dif /= dif.norm() / 64;
     }
     Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
-    auto ac1 = average + perp * 0.2 - dif * 0.2;
-    auto ac2 = average + perp * 0.2 + dif * 0.2;
-    auto bc1 = average + perp * -0.2 + dif * 0.2;
-    auto bc2 = average + perp * -0.2 - dif * 0.2;
+    auto ac1 = average + perp * 0.2f - dif * 0.2f;
+    auto ac2 = average + perp * 0.2f + dif * 0.2f;
+    auto bc1 = average + perp * -0.2f + dif * 0.2f;
+    auto bc2 = average + perp * -0.2f - dif * 0.2f;
 
     out << "<path d=\"";
     out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";

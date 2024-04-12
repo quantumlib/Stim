@@ -20,7 +20,7 @@
 #include <iomanip>
 #include <limits>
 
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
