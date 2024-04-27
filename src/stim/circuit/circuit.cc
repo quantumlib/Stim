@@ -20,7 +20,7 @@
 
 #include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
@@ -299,7 +299,8 @@ void Circuit::safe_append_u(
     safe_append(gate.id, converted, args);
 }
 
-void Circuit::safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool block_fusion) {
+void Circuit::safe_append(
+    GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool block_fusion) {
     auto flags = GATE_DATA[gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");

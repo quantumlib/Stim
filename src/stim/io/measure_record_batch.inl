@@ -18,7 +18,7 @@
 
 #include "stim/io/measure_record_batch.h"
 #include "stim/io/measure_record_batch_writer.h"
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 

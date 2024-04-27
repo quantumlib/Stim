@@ -21,8 +21,8 @@
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_writer.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/probability_util.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/probability_util.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

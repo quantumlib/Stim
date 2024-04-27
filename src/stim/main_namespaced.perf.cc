@@ -14,7 +14,7 @@
 
 #include "stim/main_namespaced.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"

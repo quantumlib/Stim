@@ -15,8 +15,8 @@
 #include "stim/cmd/command_explain_errors.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/simulators/error_matcher.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

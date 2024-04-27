@@ -1,6 +1,6 @@
 #include "stim/util_top/stabilizers_to_tableau.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

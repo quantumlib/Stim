@@ -15,9 +15,9 @@
 #include "stim/cmd/command_repl.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 

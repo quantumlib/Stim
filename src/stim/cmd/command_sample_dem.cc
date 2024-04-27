@@ -15,10 +15,10 @@
 #include "stim/cmd/command_sample_dem.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/io/raii_file.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/dem_sampler.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 

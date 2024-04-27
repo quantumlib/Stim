@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_ARG_PARSE_H
-#define _STIM_ARG_PARSE_H
+#ifndef _STIM_UTIL_BOT_ARG_PARSE_H
+#define _STIM_UTIL_BOT_ARG_PARSE_H
 
 #include <cstddef>
 #include <cstdint>

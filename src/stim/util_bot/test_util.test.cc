@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 #include <fstream>
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 

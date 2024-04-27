@@ -12,4 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/util_bot/str_util.h"
+
+#include "gtest/gtest.h"
+
+#include "stim/util_bot/test_util.test.h"
+
+using namespace stim;
+
+TEST(str_util, comma_sep) {
+    std::vector<int> v{1, 2, 3};
+    std::stringstream out;
+    out << comma_sep(v);
+    ASSERT_EQ(out.str(), "1, 2, 3");
+    ASSERT_EQ(comma_sep(v).str(), "1, 2, 3");
+    ASSERT_EQ(comma_sep(std::vector<int>{}).str(), "");
+    ASSERT_EQ(comma_sep(std::vector<int>{4}).str(), "4");
+    ASSERT_EQ(comma_sep(std::vector<int>{5, 6}).str(), "5, 6");
+}

@@ -24,7 +24,7 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_word.h"
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 

@@ -15,10 +15,10 @@
 #include "stim/cmd/command_m2d.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/simulators/measurements_to_detection_events.h"
-#include "stim/simulators/transform_without_feedback.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 using namespace stim;
 
