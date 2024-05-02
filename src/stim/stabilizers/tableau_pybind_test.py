@@ -975,3 +975,31 @@ def test_to_circuit_mpp_unsigned_preserves_stabilizers():
     for e in reconstructed:
         e.sign = +1
     assert original == reconstructed
+
+
+def test_from_stabilizers_error_messages():
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X"),
+        ])
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X" + "_"*500),
+        ])
+    with pytest.raises(ValueError, match="contradict"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z_"),
+            stim.PauliString("-_Z"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("ZZ"),
+        ])
+    with pytest.raises(ValueError, match="redundant"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("-Z_"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("-__Z"),
+            stim.PauliString("_Z_"),
+            stim.PauliString("Z_Z"),
+        ])
