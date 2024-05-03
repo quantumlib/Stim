@@ -21,14 +21,12 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
-#include "stim/simulators/frame_simulator.h"
 
 namespace stim_pybind {
 
 struct CompiledDetectorSampler {
     stim::CircuitStats circuit_stats;
     stim::Circuit circuit;
-    stim::FrameSimulator<stim::MAX_BITWORD_WIDTH> frame_sim;
 
     CompiledDetectorSampler() = delete;
     CompiledDetectorSampler(const CompiledDetectorSampler &) = delete;

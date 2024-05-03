@@ -1,7 +1,4 @@
 #include "stim/circuit/circuit.h"
-#include "stim/simulators/frame_simulator_util.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/util_bot/arg_parse.h"

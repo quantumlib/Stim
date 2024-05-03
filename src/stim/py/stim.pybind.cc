@@ -19,7 +19,6 @@
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/circuit/gate_target.pybind.h"
-#include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
@@ -31,11 +30,6 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/march.pybind.h"
-#include "stim/simulators/dem_sampler.pybind.h"
-#include "stim/simulators/frame_simulator.pybind.h"
-#include "stim/simulators/matched_error.pybind.h"
-#include "stim/simulators/measurements_to_detection_events.pybind.h"
-#include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/flow.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/pauli_string_iter.pybind.h"
@@ -584,10 +578,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     /// `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
 
     /// class definitions
-    auto c_dem_sampler = pybind_dem_sampler(m);
     auto c_compiled_detector_sampler = pybind_compiled_detector_sampler(m);
     auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler(m);
-    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter(m);
     auto c_pauli_string = pybind_pauli_string(m);
     auto c_pauli_string_iter = pybind_pauli_string_iter(m);
     auto c_tableau = pybind_tableau(m);
@@ -604,19 +596,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
 
-    auto c_tableau_simulator = pybind_tableau_simulator(m);
-    auto c_frame_simulator = pybind_frame_simulator(m);
-
-    auto c_circuit_error_location_stack_frame = pybind_circuit_error_location_stack_frame(m);
-    auto c_gate_target_with_coords = pybind_gate_target_with_coords(m);
-    auto c_dem_target_with_coords = pybind_dem_target_with_coords(m);
-    auto c_flipped_measurement = pybind_flipped_measurement(m);
-    auto c_circuit_targets_inside_instruction = pybind_circuit_targets_inside_instruction(m);
-    auto c_circuit_error_location = pybind_circuit_error_location(m);
-    auto c_circuit_error_location_methods = pybind_explained_error(m);
     auto c_flow = pybind_flow(m);
-
-    auto c_diagram_helper = pybind_diagram(m);
 
     /// top level function definitions
     top_level(m);
@@ -630,7 +610,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_methods(m, c_circuit);
 
     pybind_tableau_iter_methods(m, c_tableau_iter);
-    pybind_dem_sampler_methods(m, c_dem_sampler);
 
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
     pybind_detector_error_model_repeat_block_methods(m, c_detector_error_model_repeat_block);
@@ -643,19 +622,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     pybind_compiled_detector_sampler_methods(m, c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(m, c_compiled_measurement_sampler);
-    pybind_compiled_measurements_to_detection_events_converter_methods(m, c_compiled_m2d_converter);
 
-    pybind_tableau_simulator_methods(m, c_tableau_simulator);
-    pybind_frame_simulator_methods(m, c_frame_simulator);
-
-    pybind_circuit_error_location_stack_frame_methods(m, c_circuit_error_location_stack_frame);
-    pybind_gate_target_with_coords_methods(m, c_gate_target_with_coords);
-    pybind_dem_target_with_coords_methods(m, c_dem_target_with_coords);
-    pybind_flipped_measurement_methods(m, c_flipped_measurement);
-    pybind_circuit_targets_inside_instruction_methods(m, c_circuit_targets_inside_instruction);
-    pybind_circuit_error_location_methods(m, c_circuit_error_location);
-    pybind_explained_error_methods(m, c_circuit_error_location_methods);
     pybind_flow_methods(m, c_flow);
-
-    pybind_diagram_methods(m, c_diagram_helper);
 }

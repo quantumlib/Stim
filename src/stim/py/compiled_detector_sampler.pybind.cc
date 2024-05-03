@@ -18,17 +18,13 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/frame_simulator_util.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19937_64 &&rng)
     : circuit_stats(init_circuit.compute_stats()),
-      circuit(std::move(init_circuit)),
-      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, std::move(rng)) {
+      circuit(std::move(init_circuit)) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -37,32 +33,7 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
         throw std::invalid_argument(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
-
-    frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
-    frame_sim.reset_all();
-    frame_sim.do_circuit(circuit);
-
-    const auto &det_data = frame_sim.det_record.storage;
-    const auto &obs_data = frame_sim.obs_record;
-    uint64_t num_dets = circuit_stats.num_detectors;
-    uint64_t num_obs = circuit_stats.num_observables;
-    if (separate_observables) {
-        pybind11::object py_det_data = transposed_simd_bit_table_to_numpy(det_data, num_dets, num_shots, bit_packed);
-        pybind11::object py_obs_data = transposed_simd_bit_table_to_numpy(obs_data, num_obs, num_shots, bit_packed);
-        return pybind11::make_tuple(py_det_data, py_obs_data);
-    }
-
-    size_t num_concat = circuit_stats.num_detectors;
-    simd_bit_table<MAX_BITWORD_WIDTH> concat_data = det_data;
-    if (append_observables) {
-        concat_data = concat_data.concat_major(obs_data, num_concat, circuit_stats.num_observables);
-        num_concat += circuit_stats.num_observables;
-    }
-    if (prepend_observables) {
-        concat_data = obs_data.concat_major(concat_data, circuit_stats.num_observables, num_concat);
-        num_concat += circuit_stats.num_observables;
-    }
-    return transposed_simd_bit_table_to_numpy(concat_data, num_concat, num_shots, bit_packed);
+    return pybind11::none();
 }
 
 void CompiledDetectorSampler::sample_write(
@@ -73,51 +44,6 @@ void CompiledDetectorSampler::sample_write(
     bool append_observables,
     pybind11::object obs_out_filepath_obj,
     std::string_view obs_out_format) {
-    auto f = format_to_enum(format);
-
-    auto py_path = pybind11::module::import("pathlib").attr("Path");
-    if (pybind11::isinstance(filepath_obj, py_path)) {
-        filepath_obj = pybind11::str(filepath_obj);
-    }
-    if (pybind11::isinstance(obs_out_filepath_obj, py_path)) {
-        obs_out_filepath_obj = pybind11::str(obs_out_filepath_obj);
-    }
-
-    std::string_view filepath;
-    if (pybind11::isinstance<pybind11::str>(filepath_obj)) {
-        filepath = pybind11::cast<std::string_view>(filepath_obj);
-    } else {
-        std::stringstream ss;
-        ss << "Don't know how to write to ";
-        ss << pybind11::repr(filepath_obj);
-        throw std::invalid_argument(ss.str());
-    }
-
-    std::string_view obs_out_filepath_view;
-    if (pybind11::isinstance<pybind11::str>(obs_out_filepath_obj)) {
-        obs_out_filepath_view = pybind11::cast<std::string_view>(obs_out_filepath_obj);
-    } else if (obs_out_filepath_obj.is_none()) {
-        // Empty string view does the right thing.
-    } else {
-        std::stringstream ss;
-        ss << "Don't know how to write observables to ";
-        ss << pybind11::repr(obs_out_filepath_obj);
-        throw std::invalid_argument(ss.str());
-    }
-
-    RaiiFile out(filepath, "wb");
-    RaiiFile obs_out(obs_out_filepath_view, "wb");
-    auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
-        circuit,
-        num_samples,
-        prepend_observables,
-        append_observables,
-        out.f,
-        f,
-        frame_sim.rng,
-        obs_out.f,
-        parsed_obs_out_format);
 }
 
 std::string CompiledDetectorSampler::repr() const {

@@ -17,8 +17,6 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/frame_simulator_util.h"
-#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -29,19 +27,10 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
 }
 
 pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, true);
-    size_t bits_per_sample = circuit.count_measurements();
-    return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
+    return pybind11::none();
 }
 
 void CompiledMeasurementSampler::sample_write(size_t num_samples, std::string_view filepath, std::string_view format) {
-    auto f = format_to_enum(format);
-    FILE *out = fopen(std::string(filepath).c_str(), "wb");
-    if (out == nullptr) {
-        throw std::invalid_argument("Failed to open '" + std::string(filepath) + "' to write.");
-    }
-    sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
-    fclose(out);
 }
 
 std::string CompiledMeasurementSampler::repr() const {
@@ -65,21 +54,14 @@ CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     bool skip_reference_sample,
     const pybind11::object &seed,
     const pybind11::object &reference_sample) {
-    if (reference_sample.is_none()) {
-        simd_bits<MAX_BITWORD_WIDTH> ref_sample =
-            skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                  : TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
-        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
-    } else {
-        if (skip_reference_sample) {
-            throw std::invalid_argument("skip_reference_sample = True but reference_sample is not None.");
-        }
-        uint64_t num_bits = circuit.count_measurements();
-        simd_bits<MAX_BITWORD_WIDTH> ref_sample(num_bits);
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample_ref(ref_sample);
-        memcpy_bits_from_numpy_to_simd(num_bits, reference_sample, ref_sample_ref);
-        return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
+    if (skip_reference_sample) {
+        throw std::invalid_argument("skip_reference_sample = True but reference_sample is not None.");
     }
+    uint64_t num_bits = circuit.count_measurements();
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample(num_bits);
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample_ref(ref_sample);
+    memcpy_bits_from_numpy_to_simd(num_bits, reference_sample, ref_sample_ref);
+    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }
 
 void stim_pybind::pybind_compiled_measurement_sampler_methods(
