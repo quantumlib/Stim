@@ -21,11 +21,16 @@
 #include <string>
 #include <vector>
 
+#include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
 
 namespace stim {
 
+int command_help(int argc, const char **argv);
+std::string help_for(std::string help_key);
 std::string clean_doc_string(const char *c, bool allow_too_long = false);
+
+std::vector<GateTarget> gate_decomposition_help_targets_for_gate_type(stim::GateType g);
 
 }  // namespace stim
 
