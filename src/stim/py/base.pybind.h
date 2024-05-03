@@ -22,14 +22,11 @@
 #include <pybind11/stl.h>
 #include <random>
 
-#include "stim/circuit/circuit.h"
 #include "stim/cmd/command_help.h"
-#include "stim/io/stim_data_formats.h"
 
 namespace stim_pybind {
 
 std::mt19937_64 make_py_seeded_rng(const pybind11::object &seed);
-stim::SampleFormat format_to_enum(std::string_view format);
 bool normalize_index_or_slice(
     const pybind11::object &index_or_slice,
     size_t length,

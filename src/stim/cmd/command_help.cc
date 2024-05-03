@@ -17,15 +17,6 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
-#include <map>
-#include <set>
-#include <stim/circuit/circuit.h>
-
-#include "stim/gates/gates.h"
-#include "stim/io/stim_data_formats.h"
-#include "stim/stabilizers/flow.h"
-#include "stim/stabilizers/tableau.h"
-#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

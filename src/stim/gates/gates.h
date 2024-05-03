@@ -241,45 +241,6 @@ struct Gate {
 
     const Gate &inverse() const;
 
-    template <size_t W>
-    Tableau<W> tableau() const {
-        if (!(flags & GateFlags::GATE_IS_UNITARY)) {
-            throw std::invalid_argument(std::string(name) + " isn't unitary so it doesn't have a tableau.");
-        }
-        const auto &d = flow_data;
-        if (flow_data.size() == 2) {
-            return Tableau<W>::gate1(d[0], d[1]);
-        }
-        if (flow_data.size() == 4) {
-            return Tableau<W>::gate2(d[0], d[1], d[2], d[3]);
-        }
-        throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
-    }
-
-    template <size_t W>
-    std::vector<Flow<W>> flows() const {
-        if (flags & GateFlags::GATE_IS_UNITARY) {
-            auto t = tableau<W>();
-            if (flags & GateFlags::GATE_TARGETS_PAIRS) {
-                return {
-                    Flow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
-                };
-            }
-            return {
-                Flow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
-                Flow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
-            };
-        }
-        std::vector<Flow<W>> out;
-        for (const auto &c : flow_data) {
-            out.push_back(Flow<W>::from_str(c));
-        }
-        return out;
-    }
-
     std::vector<std::vector<std::complex<float>>> unitary() const;
 
     /// Converts a single qubit unitary gate into an euler-angles rotation.

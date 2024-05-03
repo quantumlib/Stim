@@ -16,7 +16,6 @@
 
 #include "stim/gates/gates.pybind.h"
 #include "stim/py/base.pybind.h"
-#include "stim/stabilizers/flow.h"
 #include "stim/util_bot/str_util.h"
 
 using namespace stim;
@@ -44,9 +43,6 @@ std::vector<std::string_view> gate_aliases(const Gate &self) {
 }
 
 pybind11::object gate_tableau(const Gate &self) {
-    if (self.flags & GATE_IS_UNITARY) {
-        return pybind11::cast(self.tableau<MAX_BITWORD_WIDTH>());
-    }
     return pybind11::none();
 }
 pybind11::object gate_unitary_matrix(const Gate &self) {
@@ -442,56 +438,6 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 False
                 >>> stim.gate_data('REPEAT').is_single_qubit_gate
                 False
-        )DOC")
-            .data());
-
-    c.def_property_readonly(
-        "flows",
-        [](const Gate &self) -> pybind11::object {
-            auto f = self.flows<MAX_BITWORD_WIDTH>();
-            if (f.empty()) {
-                return pybind11::none();
-            }
-            std::vector<Flow<MAX_BITWORD_WIDTH>> results;
-            for (const auto &e : f) {
-                results.push_back(e);
-            }
-            return pybind11::cast(results);
-        },
-        clean_doc_string(R"DOC(
-            @signature def flows(self) -> Optional[List[stim.Flow]]:
-            Returns stabilizer flow generators for the gate, or else None.
-
-            A stabilizer flow describes an input-output relationship that the gate
-            satisfies, where an input pauli string is transformed into an output
-            pauli string mediated by certain measurement results.
-
-            Caution: this method returns None for variable-target-count gates like MPP.
-            Not because MPP has no stabilizer flows, but because its stabilizer flows
-            depend on how many qubits it targets and what basis it targets them in.
-
-            Returns:
-                A list of stim.Flow instances representing the generators.
-
-            Examples:
-                >>> import stim
-
-                >>> stim.gate_data('H').flows
-                [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
-
-                >>> for e in stim.gate_data('ISWAP').flows:
-                ...     print(e)
-                X_ -> ZY
-                Z_ -> _Z
-                _X -> YZ
-                _Z -> Z_
-
-                >>> for e in stim.gate_data('MXX').flows:
-                ...     print(e)
-                X_ -> X_
-                _X -> _X
-                ZZ -> ZZ
-                XX -> rec[-1]
         )DOC")
             .data());
 
