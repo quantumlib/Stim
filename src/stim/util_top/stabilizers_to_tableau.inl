@@ -24,10 +24,58 @@ Tableau<W> stabilizers_to_tableau(
 
     Circuit elimination_instructions;
 
+    auto fail_due_to_anticommutation = [&]() {
+        for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
+            for (size_t k2 = k1 + 1; k2 < stabilizers.size(); k2++) {
+                if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
+                    std::stringstream ss;
+                    ss << "Some of the given stabilizers anticommute.\n";
+                    ss << "For example:";
+                    ss << "\n    stabilizers[" << k1 << "] = " << stabilizers[k1];
+                    ss << "\nanticommutes with";
+                    ss << "\n    stabilizers[" << k2 << "] = " << stabilizers[k2];
+                    throw std::invalid_argument(ss.str());
+                }
+            }
+        }
+        throw std::invalid_argument(
+            "The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please "
+            "report this as a bug.");
+    };
+
+    auto print_redundant_z_product_parts = [&](size_t stabilizer_index, std::ostream &out) {
+        PauliString<W> target = stabilizers[stabilizer_index];
+        target.ensure_num_qubits(num_qubits, 1.0);
+        target = target.ref().after(elimination_instructions);
+        if (num_qubits > 0) {
+            GateTarget t = GateTarget::qubit(num_qubits - 1);
+            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
+            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
+        }
+        Tableau<W> inverse = circuit_to_tableau<W>(elimination_instructions, false, false, false, true);
+        target.ref().for_each_active_pauli([&](size_t q) {
+            out << "\n    ";
+            for (size_t k = 0; k < stabilizers.size(); k++) {
+                PauliString<W> s = stabilizers[k];
+                s.ensure_num_qubits(num_qubits, 1.0);
+                if (s == inverse.zs[q]) {
+                    out << "stabilizers[" << k << "] = " << stabilizers[k];
+                    return;
+                }
+            }
+            out << inverse.zs[q];
+        });
+    };
+
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
         size_t pivot;
+        for (size_t q = 0; q < used; q++) {
+            if (buf_xs[q][k]) {
+                fail_due_to_anticommutation();
+            }
+        }
         for (pivot = used; pivot < num_qubits; pivot++) {
             if (buf_xs[pivot][k] || buf_zs[pivot][k]) {
                 break;
@@ -37,12 +85,26 @@ Tableau<W> stabilizers_to_tableau(
         // Check for incompatible / redundant stabilizers.
         if (pivot == num_qubits) {
             if (buf_signs[k]) {
-                throw std::invalid_argument("Some of the given stabilizers contradict each other.");
+                std::stringstream ss;
+                ss << "Some of the given stabilizers contradict each other.\n";
+                ss << "For example:";
+                ss << "\n    stabilizers[" << k << "] = " << stabilizers[k];
+                ss << "\nis the negation of the product of the following stabilizers: {";
+                print_redundant_z_product_parts(k, ss);
+                ss << "\n}";
+                throw std::invalid_argument(ss.str());
             }
             if (!allow_redundant) {
-                throw std::invalid_argument(
-                    "Didn't specify allow_redundant=True but one of the given stabilizers is a product of the others. "
-                    "To allow redundant stabilizers, pass the argument allow_redundant=True.");
+                std::stringstream ss;
+                ss << "Some of the given stabilizers are redundant.";
+                ss<< "\nTo allow redundant stabilizers, pass the argument allow_redundant=True.";
+                ss << "\n";
+                ss << "\nFor example:";
+                ss << "\n    stabilizers[" << k << "] = " << stabilizers[k];
+                ss << "\nis the product of the following stabilizers: {";
+                print_redundant_z_product_parts(k, ss);
+                ss << "\n}";
+                throw std::invalid_argument(ss.str());
             }
             continue;
         }
@@ -138,28 +200,6 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         used++;
-    }
-
-    // All stabilizers will have been mapped into Z products, if they commuted.
-    for (size_t q = 0; q < num_qubits; q++) {
-        if (buf_xs[q].not_zero()) {
-            for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
-                for (size_t k2 = k1 + 1; k2 < stabilizers.size(); k2++) {
-                    if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
-                        std::stringstream ss;
-                        ss << "Some of the given stabilizers anticommute.\n";
-                        ss << "For example:\n    ";
-                        ss << stabilizers[k1];
-                        ss << "\nanticommutes with\n";
-                        ss << stabilizers[k2] << "\n";
-                        throw std::invalid_argument(ss.str());
-                    }
-                }
-            }
-            throw std::invalid_argument(
-                "The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please "
-                "report this as a bug.");
-        }
     }
 
     if (used < num_qubits) {
