@@ -69,7 +69,7 @@ struct bitword<64> {
         return (bool)(val);
     }
     inline operator int() const {  // NOLINT(hicpp-explicit-conversions)
-        return (int64_t)*this;
+        return (int)val;
     }
     inline operator uint64_t() const {  // NOLINT(hicpp-explicit-conversions)
         return val;

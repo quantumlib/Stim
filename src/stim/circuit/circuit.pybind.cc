@@ -32,20 +32,21 @@
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/search/search.h"
-#include "stim/simulators/count_determined_measurements.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/transform_without_feedback.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/count_determined_measurements.h"
 #include "stim/util_top/export_crumble_url.h"
 #include "stim/util_top/export_qasm.h"
 #include "stim/util_top/export_quirk_url.h"
+#include "stim/util_top/has_flow.h"
 #include "stim/util_top/simplified_circuit.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 using namespace stim;
 using namespace stim_pybind;

@@ -22,7 +22,7 @@
 #include "stim/gen/gen_rep_code.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

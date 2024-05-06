@@ -4,7 +4,7 @@
 
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

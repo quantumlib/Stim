@@ -483,9 +483,27 @@ void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(SpanRef<const Ga
             svg_out << "<path d=\"";
             svg_out << "M" << coords[0].xyz[0] << "," << coords[0].xyz[1] << " ";
             for (size_t k = 1; k < coords.size(); k++) {
-                svg_out << "L" << coords[k].xyz[0] << "," << coords[k].xyz[1] << " ";
+                auto p1 = coords[k - 1];
+                auto p2 = coords[k];
+                auto dp = p2 - p1;
+                if (dp.norm() < coord_sys.unit_distance * 1.1) {
+                    svg_out << "L";
+                    svg_out << p2.xyz[0] << "," << p2.xyz[1] << " ";
+                } else {
+                    auto dp2 = Coord<2>{-dp.xyz[1], dp.xyz[0]};
+                    if (2 * dp2.xyz[0] + 3 * dp2.xyz[1] < 0) {
+                        dp2 *= -1;
+                    }
+                    auto p3 = p1 + dp * 0.2 + dp2 * 0.2;
+                    auto p4 = p2 + dp * -0.2 + dp2 * 0.2;
+                    svg_out << "C";
+                    svg_out << p3.xyz[0] << " " << p3.xyz[1] << ",";
+                    svg_out << p4.xyz[0] << " " << p4.xyz[1] << ",";
+                    svg_out << p2.xyz[0] << " " << p2.xyz[1] << " ";
+                }
             }
             svg_out << "\"";
+            write_key_val(svg_out, "fill", "none");
             write_key_val(svg_out, "stroke", "black");
             write_key_val(svg_out, "stroke-width", "5");
             svg_out << "/>\n";

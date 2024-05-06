@@ -1,9 +1,8 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 
-#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/diagram_util.h"
-#include "stim/stabilizers/pauli_string.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

@@ -16,8 +16,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "stim/arg_parse.h"
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

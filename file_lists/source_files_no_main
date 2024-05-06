@@ -1,5 +1,4 @@
 src/stim.cc
-src/stim/arg_parse.cc
 src/stim/circuit/circuit.cc
 src/stim/circuit/circuit_instruction.cc
 src/stim/circuit/gate_decomposition.cc
@@ -66,7 +65,6 @@ src/stim/mem/bit_ref.cc
 src/stim/mem/simd_util.cc
 src/stim/mem/simd_word.cc
 src/stim/mem/sparse_xor_vec.cc
-src/stim/probability_util.cc
 src/stim/search/graphlike/algo.cc
 src/stim/search/graphlike/edge.cc
 src/stim/search/graphlike/graph.cc
@@ -84,10 +82,12 @@ src/stim/simulators/force_streaming.cc
 src/stim/simulators/graph_simulator.cc
 src/stim/simulators/matched_error.cc
 src/stim/simulators/sparse_rev_frame_tracker.cc
-src/stim/simulators/transform_without_feedback.cc
 src/stim/simulators/vector_simulator.cc
 src/stim/stabilizers/flex_pauli_string.cc
+src/stim/util_bot/arg_parse.cc
 src/stim/util_bot/error_decomp.cc
+src/stim/util_bot/probability_util.cc
+src/stim/util_top/circuit_inverse_qec.cc
 src/stim/util_top/circuit_inverse_unitary.cc
 src/stim/util_top/circuit_to_detecting_regions.cc
 src/stim/util_top/circuit_vs_amplitudes.cc
@@ -95,3 +95,4 @@ src/stim/util_top/export_crumble_url.cc
 src/stim/util_top/export_qasm.cc
 src/stim/util_top/export_quirk_url.cc
 src/stim/util_top/simplified_circuit.cc
+src/stim/util_top/transform_without_feedback.cc

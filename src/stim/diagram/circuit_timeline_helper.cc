@@ -104,7 +104,7 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
             if (!v.empty() && v.size() <= coords.size()) {
                 SpanRef<const double> prefix = {coords.ptr_start, coords.ptr_start + v.size()};
                 if (prefix == v) {
-                    return GateTarget::qubit(q);
+                    return GateTarget::qubit((uint32_t)q);
                 }
             }
         }

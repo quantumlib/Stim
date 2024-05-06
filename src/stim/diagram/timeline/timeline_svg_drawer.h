@@ -25,6 +25,7 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/gate_data_svg.h"
 #include "stim/diagram/lattice_map.h"
+#include "stim/util_bot/str_util.h"
 
 namespace stim_draw_internal {
 

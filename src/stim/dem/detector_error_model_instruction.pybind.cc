@@ -17,6 +17,7 @@
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;
