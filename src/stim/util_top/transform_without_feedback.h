@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_SIMULATORS_COUNT_DETERMINED_MEASUREMENTS_H
-#define _STIM_SIMULATORS_COUNT_DETERMINED_MEASUREMENTS_H
+#ifndef _STIM_UTIL_TOP_TRANSFORM_WITHOUT_FEEDBACK_H
+#define _STIM_UTIL_TOP_TRANSFORM_WITHOUT_FEEDBACK_H
+
+#include <complex>
+#include <iostream>
+#include <random>
+#include <unordered_map>
 
 #include "stim/circuit/circuit.h"
+#include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 
-template <size_t W>
-uint64_t count_determined_measurements(const Circuit &circuit);
+Circuit circuit_with_inlined_feedback(const Circuit &circuit);
 
 }  // namespace stim
-
-#include "stim/simulators/count_determined_measurements.inl"
 
 #endif

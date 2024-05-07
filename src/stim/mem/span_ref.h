@@ -26,8 +26,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "stim/str_util.h"
-
 namespace stim {
 
 /// Exposes a collection-like interface to a range of memory delineated by start/end pointers.
@@ -163,7 +161,17 @@ struct SpanRef {
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const stim::SpanRef<T> &v) {
-    out << "SpanRef{" << comma_sep(v) << "}";
+    bool first = false;
+    out << "SpanRef{";
+    for (const auto &item : v) {
+        if (!first) {
+            first = true;
+        } else {
+            out << ", ";
+        }
+        out << item;
+    }
+    out << "}";
     return out;
 }
 

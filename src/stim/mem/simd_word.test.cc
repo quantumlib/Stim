@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -112,11 +112,11 @@ TEST_EACH_WORD_SIZE_W(simd_word, shifting, {
     for (size_t k = 0; k < W; k++) {
         std::array<uint64_t, W / 64> expected{};
         expected[k / 64] = uint64_t{1} << (k % 64);
-        EXPECT_EQ((w << k).to_u64_array(), expected) << k;
+        EXPECT_EQ((w << static_cast<uint64_t>(k)).to_u64_array(), expected) << k;
         if (k > 0) {
-            EXPECT_EQ(((w << (k - 1)) << 1).to_u64_array(), expected) << k;
+            EXPECT_EQ(((w << (static_cast<uint64_t>(k) - 1)) << 1).to_u64_array(), expected) << k;
         }
-        EXPECT_EQ(w, (w << k) >> k) << k;
+        EXPECT_EQ(w, (w << static_cast<uint64_t>(k)) >> static_cast<uint64_t>(k)) << k;
     }
 
     ASSERT_EQ(w << 0, 1);
@@ -127,8 +127,8 @@ TEST_EACH_WORD_SIZE_W(simd_word, shifting, {
     ASSERT_EQ(w >> 2, 0);
     ASSERT_EQ((w << 5) >> 5, 1);
     ASSERT_EQ((w >> 5) << 5, 0);
-    ASSERT_EQ((w << (W - 1)) << 1, 0);
-    ASSERT_EQ((w << (W - 1)) >> (W - 1), 1);
+    ASSERT_EQ((w << static_cast<uint64_t>(W - 1)) << 1, 0);
+    ASSERT_EQ((w << static_cast<uint64_t>(W - 1)) >> static_cast<uint64_t>(W - 1), 1);
 })
 
 TEST_EACH_WORD_SIZE_W(simd_word, masking, {

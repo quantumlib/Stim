@@ -317,3 +317,21 @@ TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, flow_flip, {
             Flow<W>::from_str("Z0 -> rec[-3]"),
         }));
 })
+
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, flow_past_end_of_circuit, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            H 0
+        )CIRCUIT"),
+        {std::vector<Flow<W>>{
+            Flow<W>::from_str("X300*Z0 -> X300*X0"),
+        }});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        H 0
+    )CIRCUIT"));
+    ASSERT_EQ(
+        actual.second,
+        (std::vector<Flow<W>>{
+            Flow<W>::from_str("X300*X0 -> X300*Z0"),
+        }));
+})

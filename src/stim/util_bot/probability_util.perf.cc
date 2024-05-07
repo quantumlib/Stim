@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

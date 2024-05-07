@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/transform_without_feedback.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 #include "gtest/gtest.h"
 
@@ -146,30 +146,36 @@ TEST(circuit_with_inlined_feedback, mpp) {
 }
 
 TEST(circuit_with_inlined_feedback, interleaved_feedback_does_not_reorder_operations) {
-    ASSERT_EQ(circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
         H 0
         CZ
         H 1
-    )CIRCUIT")), Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        Circuit(R"CIRCUIT(
         H 0 1
     )CIRCUIT"));
 
-    ASSERT_EQ(circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
         M 0
         CX
         M 1
-    )CIRCUIT")), Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        Circuit(R"CIRCUIT(
         M 0 1
     )CIRCUIT"));
 
-    ASSERT_EQ(circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
         M 0 1
         CX
         M 2
         CX rec[-1] 3
         M 3
         DETECTOR rec[-1]
-    )CIRCUIT")), Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        Circuit(R"CIRCUIT(
         M 0 1 2 3
         DETECTOR rec[-2] rec[-1]
     )CIRCUIT"));

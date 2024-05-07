@@ -21,7 +21,7 @@
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 

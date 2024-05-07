@@ -1,5 +1,4 @@
 src/stim.test.cc
-src/stim/arg_parse.test.cc
 src/stim/circuit/circuit.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc
@@ -45,7 +44,6 @@ src/stim/mem/simd_bits_range_ref.test.cc
 src/stim/mem/simd_util.test.cc
 src/stim/mem/simd_word.test.cc
 src/stim/mem/sparse_xor_vec.test.cc
-src/stim/probability_util.test.cc
 src/stim/search/graphlike/algo.test.cc
 src/stim/search/graphlike/edge.test.cc
 src/stim/search/graphlike/graph.test.cc
@@ -57,7 +55,6 @@ src/stim/search/hyper/graph.test.cc
 src/stim/search/hyper/node.test.cc
 src/stim/search/hyper/search_state.test.cc
 src/stim/search/sat/wcnf.test.cc
-src/stim/simulators/count_determined_measurements.test.cc
 src/stim/simulators/dem_sampler.test.cc
 src/stim/simulators/error_analyzer.test.cc
 src/stim/simulators/error_matcher.test.cc
@@ -68,7 +65,6 @@ src/stim/simulators/matched_error.test.cc
 src/stim/simulators/measurements_to_detection_events.test.cc
 src/stim/simulators/sparse_rev_frame_tracker.test.cc
 src/stim/simulators/tableau_simulator.test.cc
-src/stim/simulators/transform_without_feedback.test.cc
 src/stim/simulators/vector_simulator.test.cc
 src/stim/stabilizers/flex_pauli_string.test.cc
 src/stim/stabilizers/flow.test.cc
@@ -77,19 +73,24 @@ src/stim/stabilizers/pauli_string_iter.test.cc
 src/stim/stabilizers/pauli_string_ref.test.cc
 src/stim/stabilizers/tableau.test.cc
 src/stim/stabilizers/tableau_iter.test.cc
-src/stim/str_util.test.cc
-src/stim/test_util.test.cc
+src/stim/util_bot/arg_parse.test.cc
 src/stim/util_bot/error_decomp.test.cc
+src/stim/util_bot/probability_util.test.cc
+src/stim/util_bot/str_util.test.cc
+src/stim/util_bot/test_util.test.cc
 src/stim/util_bot/twiddle.test.cc
 src/stim/util_top/circuit_inverse_qec.test.cc
 src/stim/util_top/circuit_inverse_unitary.test.cc
 src/stim/util_top/circuit_to_detecting_regions.test.cc
 src/stim/util_top/circuit_vs_amplitudes.test.cc
 src/stim/util_top/circuit_vs_tableau.test.cc
+src/stim/util_top/count_determined_measurements.test.cc
 src/stim/util_top/export_crumble_url.test.cc
 src/stim/util_top/export_qasm.test.cc
 src/stim/util_top/export_quirk_url.test.cc
+src/stim/util_top/has_flow.test.cc
 src/stim/util_top/simplified_circuit.test.cc
 src/stim/util_top/stabilizers_to_tableau.test.cc
 src/stim/util_top/stabilizers_vs_amplitudes.test.cc
+src/stim/util_top/transform_without_feedback.test.cc
 src/stim_included_twice.test.cc

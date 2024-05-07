@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/transform_without_feedback.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 #include <algorithm>
 #include <queue>

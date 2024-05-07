@@ -881,8 +881,7 @@ void PauliStringRef<W>::do_single_cz(const CircuitInstruction &inst, uint32_t c,
 template <size_t W>
 template <bool reverse_order>
 void PauliStringRef<W>::do_ZCX(const CircuitInstruction &inst) {
-    const auto &targets = inst.targets;
-    assert((targets.size() & 1) == 0);
+    assert((inst.targets.size() & 1) == 0);
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
         size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
         size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
@@ -893,8 +892,7 @@ void PauliStringRef<W>::do_ZCX(const CircuitInstruction &inst) {
 template <size_t W>
 template <bool reverse_order>
 void PauliStringRef<W>::do_ZCY(const CircuitInstruction &inst) {
-    const auto &targets = inst.targets;
-    assert((targets.size() & 1) == 0);
+    assert((inst.targets.size() & 1) == 0);
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
         size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
         size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;

@@ -20,7 +20,7 @@
 
 #include "stim/mem/simd_util.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -319,7 +319,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
     // a + b == b + a
     std::uniform_real_distribution<double> dist_real(0, 1);
     for (int i = 0; i < 10; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits), m2(num_bits);
         set_random_words_to_all_set(m1, num_bits, rng, dist_real);
@@ -331,7 +331,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
     }
     // (a + 1) + ~a = allset
     for (int i = 0; i < 10; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits);
         simd_bits<W> zero(num_bits);
@@ -346,7 +346,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
     }
     // m1 += x; m1 = ~m1; m1 += x; m1 is unchanged.
     for (int i = 0; i < 10; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits);
         m1.randomize(num_bits, rng);
@@ -361,7 +361,7 @@ TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_add_assignment, {
     }
     // a + (b + c) == (a + b) + c
     for (int i = 0; i < 10; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> alhs(num_bits);
         simd_bits<W> blhs(num_bits);
@@ -441,12 +441,12 @@ TEST_EACH_WORD_SIZE_W(simd_bits, right_shift_assignment, {
 TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_right_shift_assignment, {
     auto rng = INDEPENDENT_TEST_RNG();
     for (int i = 0; i < 5; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits), m2(num_bits);
         m1.randomize(num_bits, rng);
         m2 = m1;
-        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
+        std::uniform_int_distribution<size_t> dist_shift(0, (int)m1.num_bits_padded());
         size_t shift = dist_shift(rng);
         m1 >>= shift;
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {
@@ -491,12 +491,12 @@ TEST_EACH_WORD_SIZE_W(simd_bits, left_shift_assignment, {
 TEST_EACH_WORD_SIZE_W(simd_bits, fuzz_left_shift_assignment, {
     auto rng = INDEPENDENT_TEST_RNG();
     for (int i = 0; i < 5; i++) {
-        std::uniform_int_distribution dist_bits(1, 1200);
+        std::uniform_int_distribution<int> dist_bits(1, 1200);
         int num_bits = dist_bits(rng);
         simd_bits<W> m1(num_bits), m2(num_bits);
         m1.randomize(num_bits, rng);
         m2 = m1;
-        std::uniform_int_distribution dist_shift(0, (int)m1.num_bits_padded());
+        std::uniform_int_distribution<size_t> dist_shift(0, (int)m1.num_bits_padded());
         size_t shift = dist_shift(rng);
         m1 <<= shift;
         for (size_t k = 0; k < m1.num_bits_padded() - shift; k++) {

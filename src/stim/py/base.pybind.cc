@@ -16,7 +16,7 @@
 
 #include <memory>
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 

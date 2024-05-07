@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/arg_parse.h"
+#include "stim/util_bot/arg_parse.h"
 
 #include <algorithm>
 #include <array>

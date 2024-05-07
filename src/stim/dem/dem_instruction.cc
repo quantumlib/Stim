@@ -2,10 +2,9 @@
 
 #include <cmath>
 
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 

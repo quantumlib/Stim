@@ -1,7 +1,7 @@
 #ifndef _STIM_UTIL_BOT_ERROR_DECOM_H
 #define _STIM_UTIL_BOT_ERROR_DECOM_H
 
-#include "stim/circuit/circuit.h"
+#include <cstddef>
 
 namespace stim {
 

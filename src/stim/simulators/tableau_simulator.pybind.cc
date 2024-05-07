@@ -16,11 +16,12 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_bot/probability_util.h"
+#include "stim/util_bot/str_util.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
 #include "stim/util_top/stabilizers_to_tableau.h"
 

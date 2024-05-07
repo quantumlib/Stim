@@ -30,12 +30,12 @@
 #include "command_repl.h"
 #include "command_sample.h"
 #include "command_sample_dem.h"
-#include "stim/arg_parse.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "stim/gates/gates.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 

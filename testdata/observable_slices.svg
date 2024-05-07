@@ -96,11 +96,11 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="80" y="80">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="154.51" y="64" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="170.51" y="80">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
-<path d="M355.561,80 L400.815,125.255 " stroke="black" stroke-width="5"/>
+<path d="M355.561,80 L400.815,125.255 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="355.561" cy="80" r="12" stroke="none" fill="black"/>
 <circle cx="400.815" cy="125.255" r="12" stroke="black" fill="white"/>
 <path d="M388.815,125.255 L412.815,125.255 M400.815,113.255 L400.815,137.255 " stroke="black"/>
-<path d="M721.631,80 L676.376,125.255 " stroke="black" stroke-width="5"/>
+<path d="M721.631,80 L676.376,125.255 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="721.631" cy="80" r="12" stroke="none" fill="black"/>
 <circle cx="676.376" cy="125.255" r="12" stroke="black" fill="white"/>
 <path d="M664.376,125.255 L688.376,125.255 M676.376,113.255 L676.376,137.255 " stroke="black"/>
@@ -112,11 +112,11 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="80" y="305.78">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="154.51" y="289.78" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="170.51" y="305.78">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
-<path d="M355.561,305.78 L400.815,351.035 " stroke="black" stroke-width="5"/>
+<path d="M355.561,305.78 L400.815,351.035 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="355.561" cy="305.78" r="12" stroke="none" fill="black"/>
 <circle cx="400.815" cy="351.035" r="12" stroke="black" fill="white"/>
 <path d="M388.815,351.035 L412.815,351.035 M400.815,339.035 L400.815,363.035 " stroke="black"/>
-<path d="M721.631,305.78 L676.376,351.035 " stroke="black" stroke-width="5"/>
+<path d="M721.631,305.78 L676.376,351.035 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="721.631" cy="305.78" r="12" stroke="none" fill="black"/>
 <circle cx="676.376" cy="351.035" r="12" stroke="black" fill="white"/>
 <path d="M664.376,351.035 L688.376,351.035 M676.376,339.035 L676.376,363.035 " stroke="black"/>
@@ -128,11 +128,11 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="80" y="531.561">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="154.51" y="515.561" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="170.51" y="531.561">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
-<path d="M355.561,531.561 L400.815,576.815 " stroke="black" stroke-width="5"/>
+<path d="M355.561,531.561 L400.815,576.815 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="355.561" cy="531.561" r="12" stroke="none" fill="black"/>
 <circle cx="400.815" cy="576.815" r="12" stroke="black" fill="white"/>
 <path d="M388.815,576.815 L412.815,576.815 M400.815,564.815 L400.815,588.815 " stroke="black"/>
-<path d="M721.631,531.561 L676.376,576.815 " stroke="black" stroke-width="5"/>
+<path d="M721.631,531.561 L676.376,576.815 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="721.631" cy="531.561" r="12" stroke="none" fill="black"/>
 <circle cx="676.376" cy="576.815" r="12" stroke="black" fill="white"/>
 <path d="M664.376,576.815 L688.376,576.815 M676.376,564.815 L676.376,588.815 " stroke="black"/>

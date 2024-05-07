@@ -17,7 +17,8 @@
 #include "stim/io/sparse_shot.h"
 
 #include <sstream>
-#include <stim/str_util.h>
+
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 

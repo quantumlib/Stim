@@ -45,6 +45,8 @@ struct DetectorSliceSet {
     std::map<uint64_t, std::vector<double>> detector_coordinates;
     /// (tick, DemTarget) -> terms in the slice
     std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> slices;
+    /// (tick, DemTarget) -> anticommutations in the slice
+    std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> anticommutations;
 
     /// Args:
     ///     circuit: The circuit to make a detector slice diagram from.
@@ -79,6 +81,7 @@ struct FlattenedCoords {
     std::vector<Coord<2>> qubit_coords;
     std::map<uint64_t, Coord<2>> det_coords;
     Coord<2> size;
+    float unit_distance;
 
     static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
 };

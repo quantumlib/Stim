@@ -197,31 +197,47 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       anticommutations() {
 }
 
+void SparseUnsignedRevFrameTracker::fail_due_to_anticommutation(const CircuitInstruction &inst) {
+    std::stringstream ss;
+    ss << "While running backwards through the circuit, during reverse-execution of the instruction\n";
+    ss << "    " << inst << "\n";
+    ss << "the following detecting region vs dissipation anticommutations occurred\n";
+    for (auto &[d, g] : anticommutations) {
+        ss << "    " << d << " vs " << g << "\n";
+    }
+    ss << "Therefore invalid detectors/observables are present in the circuit.\n";
+    throw std::invalid_argument(ss.str());
+}
+
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
-    SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2) {
+    SpanRef<const DemTarget> sorted1,
+    SpanRef<const DemTarget> sorted2,
+    const CircuitInstruction &inst,
+    GateTarget location) {
     if (sorted1 == sorted2) {
         return;
-    }
-    if (fail_on_anticommute) {
-        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
     }
     SparseXorVec<DemTarget> dif;
     dif.xor_sorted_items(sorted1);
     dif.xor_sorted_items(sorted2);
     for (const auto &d : dif) {
-        anticommutations.insert(d);
+        anticommutations.insert({d, location});
+    }
+    if (fail_on_anticommute) {
+        fail_due_to_anticommutation(inst);
     }
 }
 
-void SparseUnsignedRevFrameTracker::handle_gauge(SpanRef<const DemTarget> sorted) {
+void SparseUnsignedRevFrameTracker::handle_gauge(
+    SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location) {
     if (sorted.empty()) {
         return;
     }
-    if (fail_on_anticommute) {
-        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
-    }
     for (const auto &d : sorted) {
-        anticommutations.insert(d);
+        anticommutations.insert({d, location});
+    }
+    if (fail_on_anticommute) {
+        fail_due_to_anticommutation(inst);
     }
 }
 
@@ -302,19 +318,19 @@ void SparseUnsignedRevFrameTracker::undo_ZCZ_single(GateTarget c, GateTarget t) 
 void SparseUnsignedRevFrameTracker::handle_x_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_gauge(xs[q].range());
+        handle_gauge(xs[q].range(), dat, GateTarget::x(q));
     }
 }
 void SparseUnsignedRevFrameTracker::handle_y_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_xor_gauge(xs[q].range(), zs[q].range());
+        handle_xor_gauge(xs[q].range(), zs[q].range(), dat, GateTarget::y(q));
     }
 }
 void SparseUnsignedRevFrameTracker::handle_z_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_gauge(zs[q].range());
+        handle_gauge(zs[q].range(), dat, GateTarget::z(q));
     }
 }
 void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_data) {

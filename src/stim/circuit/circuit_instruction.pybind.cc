@@ -17,7 +17,7 @@
 #include "stim/circuit/gate_target.pybind.h"
 #include "stim/gates/gates.h"
 #include "stim/py/base.pybind.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;

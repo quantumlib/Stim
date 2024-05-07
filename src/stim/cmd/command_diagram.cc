@@ -17,7 +17,6 @@
 #include <limits>
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/diagram/crumble.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
@@ -27,6 +26,7 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
