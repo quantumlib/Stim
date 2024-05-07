@@ -205,6 +205,7 @@ class CollectionTrackerForSingleTask:
             t = math.ceil(t)
             t = f'{t}'
         terms = [
+            f'{self.unfilled_task.sampler} '.rjust(22),
             f'{self.unfilled_task.decoder} '.rjust(22),
             f'processes={self.deployed_processes}'.ljust(13),
             f'~core_mins_left={t}'.ljust(24),
