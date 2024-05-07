@@ -276,10 +276,10 @@ def _iter_tasks_with_assigned_samplers_decoders(
                 circuit_path=task.circuit_path,
             )
 
-        if default_samplers is not None:
-            task_samplers = list(default_samplers)
-        elif task.sampler is not None:
+        if task.sampler is not None:
             task_samplers = [task.sampler]
+        elif default_samplers is not None:
+            task_samplers = list(default_samplers)
         else:
             raise ValueError("Samplers to use was not specified. samplers is None and task.sampler is None")
 

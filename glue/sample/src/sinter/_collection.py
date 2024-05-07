@@ -79,8 +79,7 @@ def iter_collect(*,
         samplers: Defaults to ('stim',). The names of the samplers to use on each
             Task. It must either be the case that each Task specifies a sampler
             and this is set to None, or this is an iterable and each Task has
-            its sampler set to None. If both are set, samplers specified here
-            will be used instead.
+            its sampler set to None.
         decoders: Defaults to None (specified by each Task). The names of the
             decoders to use on each Task. It must either be the case that each
             Task specifies a decoder and this is set to None, or this is an

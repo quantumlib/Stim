@@ -70,7 +70,7 @@ class Task:
         self,
         *,
         circuit: Optional['stim.Circuit'] = None,
-        sampler: str = 'stim',
+        sampler: Optional[str] = None,
         decoder: Optional[str] = None,
         detector_error_model: Optional['stim.DetectorErrorModel'] = None,
         postselection_mask: Optional[np.ndarray] = None,
@@ -86,6 +86,8 @@ class Task:
             circuit: The annotated noisy circuit to sample detection event data
                 and logical observable data form.
             sampler: The sampler to use to sample detectors from the circuit.
+                This can be set to None if it will be specified later (e.g. by
+                the call to `collect`).
             decoder: The decoder to use to predict the logical observable data
                 from the detection event data. This can be set to None if it
                 will be specified later (e.g. by the call to `collect`).
@@ -184,6 +186,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_value()
@@ -228,6 +231,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_text()
@@ -247,6 +251,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_bytes()
@@ -263,6 +268,7 @@ class Task:
         This value is affected by:
             - The exact circuit.
             - The exact detector error model.
+            - The sampler.
             - The decoder.
             - The json metadata.
             - The postselection mask.
@@ -273,6 +279,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit(),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id()
