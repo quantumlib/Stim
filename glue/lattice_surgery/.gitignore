@@ -1,9 +1,0 @@
-__pycache__/
-.vscode/
-/tmp/
-.idea/
-*.zip
-new_run/
-*.egg-info
-/build/
-.ipynb_checkpoints/
