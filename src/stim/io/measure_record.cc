@@ -53,3 +53,22 @@ void MeasureRecord::record_result(bool result) {
     storage.push_back(result);
     unwritten++;
 }
+
+void MeasureRecord::record_results(const std::vector<bool> &results) {
+    storage.insert(storage.end(), results.begin(), results.end());
+    unwritten += results.size();
+}
+
+void MeasureRecord::clear() {
+    unwritten = 0;
+    storage.clear();
+}
+
+void MeasureRecord::discard_results_past_max_lookback() {
+    if (storage.size() > max_lookback) {
+        storage.erase(storage.begin(), storage.end() - max_lookback);
+    }
+    if (unwritten > max_lookback) {
+        unwritten = max_lookback;
+    }
+}

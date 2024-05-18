@@ -14,6 +14,7 @@
 
 #include "stim/simulators/tableau_simulator.h"
 
+#include "stim/gen/circuit_gen_params.h"
 #include "stim/perf.perf.h"
 
 using namespace stim;
