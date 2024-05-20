@@ -37,6 +37,13 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
     // Fuse children.
     auto &f = flattened;
     for (size_t k = 0; k < f.size(); k++) {
+        // Combine children with identical contents by adding their rep counts.
+        while (k + 1 < f.size() && f[k].prefix_bits == f[k + 1].prefix_bits && f[k].suffix_children == f[k + 1].suffix_children) {
+            f[k].repetitions += f[k + 1].repetitions;
+            f.erase(f.begin() + k + 1);
+        }
+
+        // Fuse children with unrepeated contents if they can be fused.
         while (k + 1 < f.size() && f[k].repetitions == 1 && f[k].suffix_children.empty() && f[k + 1].repetitions == 1) {
             f[k].suffix_children = std::move(f[k + 1].suffix_children);
             f[k].prefix_bits.insert(f[k].prefix_bits.end(), f[k + 1].prefix_bits.begin(), f[k + 1].prefix_bits.end());
@@ -71,6 +78,24 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
     }
 }
 
+void ReferenceSampleTree::try_factorize(size_t period_factor) {
+    if (prefix_bits.size() != 0 || suffix_children.size() % period_factor != 0) {
+        return;
+    }
+
+    // Check if contents are periodic with the factor.
+    size_t h = suffix_children.size() / period_factor;
+    for (size_t k = h; k < suffix_children.size(); k++) {
+        if (suffix_children[k - h] != suffix_children[k]) {
+            return;
+        }
+    }
+
+    // Factorize.
+    suffix_children.resize(h);
+    repetitions *= period_factor;
+}
+
 ReferenceSampleTree ReferenceSampleTree::simplified() const {
     std::vector<ReferenceSampleTree> flat;
     flatten_and_simplify_into(flat);
@@ -82,11 +107,13 @@ ReferenceSampleTree ReferenceSampleTree::simplified() const {
 
     ReferenceSampleTree result;
     result.repetitions = 1;
+
+     // Take payload from first child.
     if (flat[0].repetitions == 1 && flat[0].suffix_children.empty()) {
-         // Take payload from first child.
          result = std::move(flat[0]);
          flat.erase(flat.begin());
     }
+
     result.suffix_children = std::move(flat);
     return result;
 }

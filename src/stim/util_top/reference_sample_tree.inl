@@ -40,6 +40,26 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_no_folding(
     return result;
 }
 
+static uint64_t max_feedback_lookback_in_loop(const Circuit &loop) {
+    uint64_t furthest_lookback = 0;
+    for (const auto &inst : loop.operations) {
+        if (inst.gate_type == GateType::REPEAT) {
+            furthest_lookback = std::max(furthest_lookback, max_feedback_lookback_in_loop(inst.repeat_block_body(loop)));
+        } else {
+            auto f = GATE_DATA[inst.gate_type].flags;
+            if ((f & GateFlags::GATE_CAN_TARGET_BITS) && (f & GateFlags::GATE_TARGETS_PAIRS)) {
+                // Feedback-capable operation. Check for any measurement record targets.
+                for (auto t : inst.targets) {
+                    if (t.is_measurement_record_target()) {
+                        furthest_lookback = std::max(furthest_lookback, (uint64_t)-t.rec_offset());
+                    }
+                }
+            }
+        }
+    }
+    return furthest_lookback;
+}
+
 template <size_t W>
 ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_hare_folding(const Circuit &loop, uint64_t reps) {
     if (reps < 10) {
@@ -51,6 +71,7 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
 
     CompressedReferenceSampleHelper<W> tortoise(sim);
     CompressedReferenceSampleHelper<W> hare(std::move(sim));
+    uint64_t max_feedback_lookback = max_feedback_lookback_in_loop(loop);
     uint64_t tortoise_steps = 0;
     uint64_t hare_steps = 0;
     while (hare_steps < reps) {
@@ -58,16 +79,8 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
         result.suffix_children.push_back(hare.do_loop_with_no_folding(loop, 1));
         assert(result.suffix_children.size() == hare_steps);
 
-        if (hare_steps < 10) {
-            // Start with cheap equality checks that can have false negatives.
-            if (tortoise.sim.inv_state == hare.sim.inv_state) {
-                break;
-            }
-        } else {
-            // For higher repetition counts, transition to more expensive equality checks.
-            if (tortoise.sim.canonical_stabilizers() == hare.sim.canonical_stabilizers()) {
-                break;
-            }
+        if (tortoise.in_same_recent_state_as(hare, max_feedback_lookback, hare_steps < 10)) {
+            break;
         }
 
         // Tortoise advances half as quickly.
@@ -77,23 +90,32 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
         }
     }
 
-    sim = std::move(hare.sim);
-
     if (hare_steps == reps) {
         // No loop found.
+        sim = std::move(hare.sim);
         return result;
     }
 
-    // Move the loop steps out of the hare and into a loop node.
-    ReferenceSampleTree loop_contents;
+    // Advance until the remaining iterations are a multiple of the period.
+    assert(result.suffix_children.size() == hare_steps);
     uint64_t period = hare_steps - tortoise_steps;
     size_t period_steps_left = (reps - hare_steps) / period;
-    for (size_t k = tortoise_steps; k < hare_steps; k++) {
+    while ((reps - hare_steps) % period) {
+        result.suffix_children.push_back(hare.do_loop_with_no_folding(loop, 1));
+        hare_steps += 1;
+    }
+    assert(hare_steps + period_steps_left * period == reps);
+    assert(hare_steps >= period);
+    sim = std::move(hare.sim);
+
+    // Move the periodic measurements out of the hare's tail, into a loop node.
+    ReferenceSampleTree loop_contents;
+    for (size_t k = hare_steps - period; k < hare_steps; k++) {
         loop_contents.suffix_children.push_back(std::move(result.suffix_children[k]));
     }
-    result.suffix_children.resize(tortoise_steps);
+    result.suffix_children.resize(hare_steps - period);
 
-    // Add any remaining measurement data into the sim's measurement record.
+    // Add skipped iterations' measurement data into the sim's measurement record.
     loop_contents.repetitions = 1;
     sim.measurement_record.discard_results_past_max_lookback();
     for (size_t k = 0; k < period_steps_left && sim.measurement_record.storage.size() < sim.measurement_record.max_lookback * 2; k++) {
@@ -103,13 +125,37 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
 
     // Add the loop node to the output data.
     loop_contents.repetitions = period_steps_left + 1;
+    loop_contents.try_factorize(2);
+    loop_contents.try_factorize(3);
+    loop_contents.try_factorize(5);
     result.suffix_children.push_back(std::move(loop_contents));
-    hare_steps += period * period_steps_left;
-
-    // Process any iterations remaining in the loop.
-    result.suffix_children.push_back(do_loop_with_no_folding(loop, reps - hare_steps));
 
     return result;
+}
+
+template <size_t W>
+bool CompressedReferenceSampleHelper<W>::in_same_recent_state_as(
+    const CompressedReferenceSampleHelper<W> &other,
+    uint64_t max_record_lookback,
+    bool allow_false_negative) const {
+    const auto &s1 = sim.measurement_record.storage;
+    const auto &s2 = other.sim.measurement_record.storage;
+
+    // Check that recent measurements gave identical results.
+    if (s1.size() < max_record_lookback || s2.size() < max_record_lookback) {
+        return false;
+    }
+    for (size_t k = 0; k < max_record_lookback; k++) {
+        if (s1[s1.size() - k - 1] != s2[s2.size() - k - 1]) {
+            return false;
+        }
+    }
+
+    // Check that quantum states are identical.
+    if (allow_false_negative) {
+        return sim.inv_state == other.sim.inv_state;
+    }
+    return sim.canonical_stabilizers() == other.sim.canonical_stabilizers();
 }
 
 }  // namespace stim

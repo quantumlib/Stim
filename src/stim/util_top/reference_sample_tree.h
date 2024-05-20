@@ -33,6 +33,8 @@ struct ReferenceSampleTree {
     /// Writes the contents of the tree into the given output vector.
     void decompress_into(std::vector<bool> &output) const;
 
+    void try_factorize(size_t period_factor);
+
    private:
     void flatten_and_simplify_into(std::vector<ReferenceSampleTree> &out) const;
 };
@@ -60,6 +62,11 @@ struct CompressedReferenceSampleHelper {
     ReferenceSampleTree do_loop_with_tortoise_hare_folding(
         const Circuit &loop,
         uint64_t reps);
+
+    bool in_same_recent_state_as(
+        const CompressedReferenceSampleHelper<W> &other,
+        uint64_t max_record_lookback,
+        bool allow_false_negative) const;
 };
 
 }  // namespace stim

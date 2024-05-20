@@ -6,6 +6,17 @@
 
 using namespace stim;
 
+void expect_tree_matches_normal_reference_sample_of(const ReferenceSampleTree &tree, const Circuit &circuit) {
+    std::vector<bool> decompressed;
+    tree.decompress_into(decompressed);
+    simd_bits<MAX_BITWORD_WIDTH> actual(decompressed.size());
+    for (size_t k = 0; k < decompressed.size(); k++) {
+        actual[k] = decompressed[k];
+    }
+    auto expected = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
+    EXPECT_EQ(actual, expected);
+}
+
 TEST(ReferenceSampleTree, equality) {
     ReferenceSampleTree empty1{
         .prefix_bits={},
@@ -120,6 +131,7 @@ TEST(ReferenceSampleTree, simple_circuit) {
         M 0
     )CIRCUIT");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
     ASSERT_EQ(ref.str(), "1*('01')");
 }
 
@@ -132,7 +144,8 @@ TEST(ReferenceSampleTree, simple_loop) {
         }
     )CIRCUIT");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
-    ASSERT_EQ(ref.str(), "1*('01'+24*('1001')+1*('10'))");
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
+    ASSERT_EQ(ref.str(), "25*('0110')");
 }
 
 TEST(ReferenceSampleTree, period4_loop) {
@@ -148,10 +161,26 @@ TEST(ReferenceSampleTree, period4_loop) {
         M 0
         X 2
         M 2 2 2 2 2
+        MPAD 1 0 1 0 1 1
     )CIRCUIT");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
     ASSERT_EQ(ref.size(), circuit.count_measurements());
-    ASSERT_EQ(ref.str(), "1*('01111110101100'+11*('1000111110101100')+1*('100011111010000000'))");
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
+    ASSERT_EQ(ref.str(), "1*('01111110101100100011111010'+11*('1100100011111010')+1*('000000101011'))");
+}
+
+TEST(ReferenceSampleTree, feedback) {
+    Circuit circuit(R"CIRCUIT(
+        MPAD 0 0 1 0
+        REPEAT 200 {
+            CX rec[-4] 1
+            M 1
+        }
+    )CIRCUIT");
+    auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
+    ASSERT_EQ(ref.size(), circuit.count_measurements());
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
+    ASSERT_EQ(ref.str(), "1*('0010'+2*('0')+4*('1')+1*('01011001000111')+12*('101011001000111'))");
 }
 
 TEST(ReferenceSampleTree, nested_loops) {
@@ -170,23 +199,15 @@ TEST(ReferenceSampleTree, nested_loops) {
         }
     )CIRCUIT");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
-    ASSERT_EQ(ref.str(), "1*('01'+49*('1001')+1*('10')+200*('0')+1*('10')+49*('0110')+1*('01')+200*('1')+1*('10')+49*('0110')+1*('01')+200*('1')+24*('01'+49*('1001')+1*('10')+200*('0')+1*('01')+49*('1001')+1*('10')+200*('0')+1*('10')+49*('0110')+1*('01')+200*('1')+1*('10')+49*('0110')+1*('01')+200*('1'))+1*('01')+49*('1001')+1*('10')+200*('0'))");
-
-    std::vector<bool> ref_uncompressed;
-    ref.decompress_into(ref_uncompressed);
-    simd_bits<MAX_BITWORD_WIDTH> ref_flat(ref_uncompressed.size());
-    for (size_t k = 0; k < ref_uncompressed.size(); k++) {
-        ref_flat[k] = ref_uncompressed[k];
-    }
-    auto ref2 = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
-    ASSERT_EQ(ref_flat, ref2);
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
+    ASSERT_EQ(ref.str(), "1*(''+50*('0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')+24*(''+50*('0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')))");
 }
 
 TEST(ReferenceSampleTree, surface_code) {
     CircuitGenParameters params(10000, 5, "rotated_memory_x");
     auto circuit = generate_surface_code_circuit(params).circuit;
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
-    ASSERT_EQ(ref.str(), "1*('000000000000000000000000000000000000000000000000'+4999*('000000000000000000000000000000000000000000000000')+1*('0000000000000000000000000'))");
+    ASSERT_EQ(ref.str(), "1*(''+10000*('000000000000000000000000')+1*('0000000000000000000000000'))");
 }
 
 TEST(ReferenceSampleTree, surface_code_with_pauli) {
@@ -194,7 +215,7 @@ TEST(ReferenceSampleTree, surface_code_with_pauli) {
     auto circuit = generate_surface_code_circuit(params).circuit;
     circuit.blocks[0].append_from_text("X 10 11 12 13");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
-    ASSERT_EQ(ref.str(), "1*('0000000000000000'+4999*('0110000000110000')+1*('000000000'))");
+    ASSERT_EQ(ref.str(), "1*(''+2*('00000000')+4999*('0110000000110000')+1*('000000000'))");
 }
 
 TEST(ReferenceSampleTree, surface_code_with_pauli_vs_normal_reference_sample) {
