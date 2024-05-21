@@ -15,8 +15,37 @@ BENCHMARK(reference_sample_tree_surface_code_d31_r1000000000) {
         auto result = ReferenceSampleTree::from_circuit_reference_sample(circuit);
         total += result.empty();
     })
-        .goal_millis(25)
-        .show_rate("Samples", circuit.count_measurements());
+        .goal_millis(25);
+    if (total) {
+        std::cerr << "data dependence";
+    }
+}
+
+BENCHMARK(reference_sample_tree_nested_circuit) {
+    Circuit circuit(R"CIRCUIT(
+        M 0
+        REPEAT 100000 {
+            REPEAT 100000 {
+                REPEAT 100000 {
+                    X 0
+                    M 0
+                }
+                X 0
+                M 0
+            }
+            X 0
+            M 0
+        }
+        X 0
+        M 0
+    )CIRCUIT");
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
+    auto total = 0;
+    benchmark_go([&]() {
+        auto result = ReferenceSampleTree::from_circuit_reference_sample(circuit);
+        total += result.empty();
+    })
+        .goal_micros(230);
     if (total) {
         std::cerr << "data dependence";
     }

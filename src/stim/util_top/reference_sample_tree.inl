@@ -40,29 +40,10 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_no_folding(
     return result;
 }
 
-static uint64_t max_feedback_lookback_in_loop(const Circuit &loop) {
-    uint64_t furthest_lookback = 0;
-    for (const auto &inst : loop.operations) {
-        if (inst.gate_type == GateType::REPEAT) {
-            furthest_lookback = std::max(furthest_lookback, max_feedback_lookback_in_loop(inst.repeat_block_body(loop)));
-        } else {
-            auto f = GATE_DATA[inst.gate_type].flags;
-            if ((f & GateFlags::GATE_CAN_TARGET_BITS) && (f & GateFlags::GATE_TARGETS_PAIRS)) {
-                // Feedback-capable operation. Check for any measurement record targets.
-                for (auto t : inst.targets) {
-                    if (t.is_measurement_record_target()) {
-                        furthest_lookback = std::max(furthest_lookback, (uint64_t)-t.rec_offset());
-                    }
-                }
-            }
-        }
-    }
-    return furthest_lookback;
-}
-
 template <size_t W>
 ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_hare_folding(const Circuit &loop, uint64_t reps) {
     if (reps < 10) {
+        // Probably not worth the overhead of tortoise-and-hare. Just run it raw.
         return do_loop_with_no_folding(loop, reps);
     }
 
@@ -96,7 +77,7 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
         return result;
     }
 
-    // Advance until the remaining iterations are a multiple of the period.
+    // Run more loop iterations until the remaining iterations are a multiple of the found period.
     assert(result.suffix_children.size() == hare_steps);
     uint64_t period = hare_steps - tortoise_steps;
     size_t period_steps_left = (reps - hare_steps) / period;

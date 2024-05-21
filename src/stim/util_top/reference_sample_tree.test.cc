@@ -183,6 +183,46 @@ TEST(ReferenceSampleTree, feedback) {
     ASSERT_EQ(ref.str(), "1*('0010'+2*('0')+4*('1')+1*('01011001000111')+12*('101011001000111'))");
 }
 
+TEST(max_feedback_lookback_in_loop, simple) {
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit()), 0);
+
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            REPEAT 100 {
+                M 0
+                X 0
+                M 0
+            }
+            REPEAT 200 {
+                M 0
+                DETECTOR rec[-1]
+            }
+            X 1
+            CX 1 0
+        }
+    )CIRCUIT")), 0);
+
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+        CX rec[-1] 0
+    )CIRCUIT")), 1);
+
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+        CZ 0 rec[-2]
+    )CIRCUIT")), 2);
+
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+        CZ 0 rec[-2]
+        CY 0 rec[-3]
+    )CIRCUIT")), 3);
+
+    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+        CZ 0 rec[-2]
+        REPEAT 100 {
+            CX rec[-5] 0
+        }
+    )CIRCUIT")), 5);
+}
+
 TEST(ReferenceSampleTree, nested_loops) {
     Circuit circuit(R"CIRCUIT(
         REPEAT 100 {

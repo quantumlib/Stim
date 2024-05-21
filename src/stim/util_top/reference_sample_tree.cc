@@ -22,6 +22,7 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
         return;
     }
 
+    // Flatten children.
     std::vector<ReferenceSampleTree> flattened;
     if (!prefix_bits.empty()) {
         flattened.push_back(ReferenceSampleTree{
@@ -35,47 +36,74 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
     }
 
     // Fuse children.
-    auto &f = flattened;
-    for (size_t k = 0; k < f.size(); k++) {
+    std::vector<ReferenceSampleTree> fused;
+    if (!flattened.empty()) {
+        fused.push_back(std::move(flattened[0]));
+    }
+    for (size_t k = 1; k < flattened.size(); k++) {
+        auto &dst = fused.back();
+        auto &src = flattened[k];
+
         // Combine children with identical contents by adding their rep counts.
-        while (k + 1 < f.size() && f[k].prefix_bits == f[k + 1].prefix_bits && f[k].suffix_children == f[k + 1].suffix_children) {
-            f[k].repetitions += f[k + 1].repetitions;
-            f.erase(f.begin() + k + 1);
-        }
+        if (dst.prefix_bits == src.prefix_bits && dst.suffix_children == src.suffix_children) {
+            dst.repetitions += src.repetitions;
 
         // Fuse children with unrepeated contents if they can be fused.
-        while (k + 1 < f.size() && f[k].repetitions == 1 && f[k].suffix_children.empty() && f[k + 1].repetitions == 1) {
-            f[k].suffix_children = std::move(f[k + 1].suffix_children);
-            f[k].prefix_bits.insert(f[k].prefix_bits.end(), f[k + 1].prefix_bits.begin(), f[k + 1].prefix_bits.end());
-            f.erase(f.begin() + k + 1);
+        } else if (src.repetitions == 1 && dst.repetitions == 1 && dst.suffix_children.empty()) {
+            dst.suffix_children = std::move(src.suffix_children);
+            dst.prefix_bits.insert(dst.prefix_bits.end(), src.prefix_bits.begin(), src.prefix_bits.end());
+
+        } else {
+            fused.push_back(std::move(src));
         }
     }
 
     if (repetitions == 1) {
         // Un-nest all the children.
-        for (auto &e : flattened) {
+        for (auto &e : fused) {
             out.push_back(e);
         }
-    } else if (flattened.size() == 1) {
+    } else if (fused.size() == 1) {
         // Merge with single child.
-        flattened[0].repetitions *= repetitions;
-        out.push_back(std::move(flattened[0]));
-    } else if (flattened.empty()) {
+        fused[0].repetitions *= repetitions;
+        out.push_back(std::move(fused[0]));
+    } else if (fused.empty()) {
         // Nothing to report.
-    } else if (flattened[0].suffix_children.empty() && flattened[0].repetitions == 1) {
+    } else if (fused[0].suffix_children.empty() && fused[0].repetitions == 1) {
         // Take payload from first child.
-        auto result = std::move(flattened[0]);
-        flattened.erase(flattened.begin());
+        ReferenceSampleTree result = std::move(fused[0]);
+        fused.erase(fused.begin());
         result.repetitions = repetitions;
-        result.suffix_children = std::move(flattened);
+        result.suffix_children = std::move(fused);
         out.push_back(std::move(result));
     } else {
         out.push_back(ReferenceSampleTree{
             .prefix_bits={},
-            .suffix_children=std::move(flattened),
+            .suffix_children=std::move(fused),
             .repetitions=repetitions,
         });
     }
+}
+
+/// Finds how far back feedback operations ever look, within the loop.
+uint64_t stim::max_feedback_lookback_in_loop(const Circuit &loop) {
+    uint64_t furthest_lookback = 0;
+    for (const auto &inst : loop.operations) {
+        if (inst.gate_type == GateType::REPEAT) {
+            furthest_lookback = std::max(furthest_lookback, max_feedback_lookback_in_loop(inst.repeat_block_body(loop)));
+        } else {
+            auto f = GATE_DATA[inst.gate_type].flags;
+            if ((f & GateFlags::GATE_CAN_TARGET_BITS) && (f & GateFlags::GATE_TARGETS_PAIRS)) {
+                // Feedback-capable operation. Check for any measurement record targets.
+                for (auto t : inst.targets) {
+                    if (t.is_measurement_record_target()) {
+                        furthest_lookback = std::max(furthest_lookback, (uint64_t)-t.rec_offset());
+                    }
+                }
+            }
+        }
+    }
+    return furthest_lookback;
 }
 
 void ReferenceSampleTree::try_factorize(size_t period_factor) {
