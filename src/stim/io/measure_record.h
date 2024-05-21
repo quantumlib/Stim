@@ -47,8 +47,14 @@ struct MeasureRecord {
     /// Args:
     ///     lookback: How far back the measurement is. lookback=1 is the latest measurement, 2 the second latest, etc.
     bool lookback(size_t lookback) const;
+    /// Batch record.
+    void record_results(const std::vector<bool> &results);
     /// Appends a measurement to the record.
     void record_result(bool result);
+    /// Clear the record.
+    void clear();
+    /// Truncates the record to only include bits within the lookback limit.
+    void discard_results_past_max_lookback();
 };
 
 }  // namespace stim

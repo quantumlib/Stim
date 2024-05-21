@@ -18,4 +18,5 @@ src/stim/stabilizers/tableau.perf.cc
 src/stim/stabilizers/tableau_iter.perf.cc
 src/stim/util_bot/error_decomp.perf.cc
 src/stim/util_bot/probability_util.perf.cc
+src/stim/util_top/reference_sample_tree.perf.cc
 src/stim/util_top/stabilizers_to_tableau.perf.cc
