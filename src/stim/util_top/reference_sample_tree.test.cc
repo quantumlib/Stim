@@ -264,14 +264,5 @@ TEST(ReferenceSampleTree, surface_code_with_pauli_vs_normal_reference_sample) {
     circuit.blocks[0].append_from_text("X 10 11 12 13");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
     ASSERT_EQ(ref.size(), circuit.count_measurements());
-
-    std::vector<bool> ref_uncompressed;
-    ref.decompress_into(ref_uncompressed);
-    simd_bits<MAX_BITWORD_WIDTH> ref_flat(ref_uncompressed.size());
-    for (size_t k = 0; k < ref_uncompressed.size(); k++) {
-        ref_flat[k] = ref_uncompressed[k];
-    }
-
-    auto ref2 = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
-    ASSERT_EQ(ref_flat, ref2);
+    expect_tree_matches_normal_reference_sample_of(ref, circuit);
 }
