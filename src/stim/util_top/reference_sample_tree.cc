@@ -130,7 +130,7 @@ ReferenceSampleTree ReferenceSampleTree::simplified() const {
     if (flat.empty()) {
         return ReferenceSampleTree();
     } else if (flat.size() == 1) {
-        return flat[0];
+        return std::move(flat[0]);
     }
 
     ReferenceSampleTree result;

@@ -72,7 +72,7 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
     }
 
     if (hare_steps == reps) {
-        // No loop found.
+        // No periodic state found before reaching the end of the loop.
         sim = std::move(hare.sim);
         return result;
     }
