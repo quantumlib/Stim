@@ -17,6 +17,19 @@ class Layer {
     }
 
     /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        let total = 0;
+        for (let [target_id, op] of this.id_ops.entries()) {
+            if (op.id_targets[0] === target_id) {
+                total += op.countMeasurements();
+            }
+        }
+        return total;
+    }
+
+    /**
      * @return {!boolean}
      */
     empty() {

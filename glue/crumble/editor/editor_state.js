@@ -128,7 +128,7 @@ class EditorState {
      * @param {!Circuit} newCircuit
      */
     preview(newCircuit) {
-        this.rev.startedWorkingOnCommit();
+        this.rev.startedWorkingOnCommit(newCircuit.toStimCircuit());
         this.obs_val_draw_state.set(this.toSnapshot(newCircuit));
     }
 
@@ -297,7 +297,7 @@ class EditorState {
                     for (let q of op.id_targets) {
                         inferredBases.set(q, opBasis);
                     }
-                } else if (op.gate.name.startsWith('MPP:') && op.gate.tableau_map === undefined && op.id_targets.length === op.gate.name.length - 1) {
+                } else if (op.gate.name.startsWith('MPP:') && op.gate.tableau_map === undefined && op.id_targets.length === op.gate.name.length - 4) {
                     // MPP special case.
                     let bases = op.gate.name.substring(4);
                     for (let k = 0; k < op.id_targets.length; k++) {
@@ -499,6 +499,25 @@ class EditorState {
         } else {
             this._writeVariableQubitGateToFocus(preview, gate, gate_args);
         }
+    }
+
+    writeMarkerToDetector(preview, marker_index) {
+        let newCircuit = this.copyOfCurCircuit().withCoordsIncluded(this.focusedSet.values());
+        let d = newCircuit.collectDetectors().length;
+        for (let k = 0; k < newCircuit.layers.length; k++) {
+            let layer = newCircuit.layers[k];
+            for (let k2 = 0; k2 < layer.markers.length; k2++) {
+                let op = /** @type {!Operation} */ layer.markers[k2];
+                if (op.args[0] === marker_index && ['MARKX', 'MARKY', 'MARKZ'].indexOf(op.gate.name) !== -1) {
+                    layer.markers[k2] = new Operation(
+                        GATE_MAP.get('DETECTOR'),
+                        new Float32Array([d]),
+                        op.id_targets,
+                    );
+                }
+            }
+        }
+        this.commit_or_preview(newCircuit, preview);
     }
 }
 

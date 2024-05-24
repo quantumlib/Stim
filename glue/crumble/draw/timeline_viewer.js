@@ -18,7 +18,12 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
     dx = 0;
     wx = x_pitch;
     wy = 5;
-    if (mi === 0) {
+    if (mi < 0) {
+        dx = -10.5 - ~mi % 4 * 5;
+        dy = 10.5 - Math.floor(~mi / 4) % 4 * 5;
+        wx = 3;
+        wy = 3;
+    } else if (mi === 0) {
         dy = 10;
     } else if (mi === 1) {
         dy = 5;
@@ -28,8 +33,9 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
         dy = -5;
     }
     for (let t = min_t; t <= max_t; t++) {
-        let p = propagatedMarkers.atLayer(t);
-        for (let [q, b] of p.bases.entries()) {
+        let p1 = propagatedMarkers.atLayer(t + 0.5);
+        let p0 = propagatedMarkers.atLayer(t);
+        for (let [q, b] of p1.bases.entries()) {
             let [x, y] = qubitTimeCoordFunc(q, t);
             if (x === undefined || y === undefined) {
                 continue;
@@ -45,7 +51,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
             }
             ctx.fillRect(x - dx, y - dy, wx, wy);
         }
-        for (let q of p.errors) {
+        for (let q of p0.errors) {
             let [x, y] = qubitTimeCoordFunc(q, t - 0.5);
             if (x === undefined || y === undefined) {
                 continue;
@@ -55,7 +61,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
             ctx.fillStyle = 'black'
             ctx.fillRect(x - dx, y - dy, wx, wy);
         }
-        for (let {q1, q2, color} of p.crossings) {
+        for (let {q1, q2, color} of p0.crossings) {
             let [x1, y1] = qubitTimeCoordFunc(q1, t);
             let [x2, y2] = qubitTimeCoordFunc(q2, t);
             if (color === 'X') {
@@ -77,11 +83,11 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
 /**
  * @param {!CanvasRenderingContext2D} ctx
  * @param {!StateSnapshot} snap
- * @param {!Array<!PropagatedPauliFrames>} propagatedMarkerLayers
+ * @param {!Map<!int, !PropagatedPauliFrames>} propagatedMarkerLayers
  * @param {!function(!int): ![!number, !number]} timesliceQubitCoordsFunc
  */
 function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc) {
-    let w = ctx.canvas.width / 2;
+    let w = Math.floor(ctx.canvas.width / 2);
 
     let qubits = snap.timelineQubits();
     qubits.sort((a, b) => {
@@ -112,10 +118,10 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             cur_x += rad * 0.25;
             cur_run++;
         }
-        base_y2xy.set(`${x},${y}`, [cur_x, cur_y]);
+        base_y2xy.set(`${x},${y}`, [Math.round(cur_x) + 0.5, Math.round(cur_y) + 0.5]);
     }
 
-    let x_pitch = TIMELINE_PITCH + rad*max_run*0.25;
+    let x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);
     let coordTransform_t = ([x, y, t]) => {
         let key = `${x},${y}`;
         if (!base_y2xy.has(key)) {
@@ -135,9 +141,9 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
     ctx.save();
     try {
         ctx.clearRect(w, 0, w, ctx.canvas.height);
-        for (let mi = 0; mi < propagatedMarkerLayers.length; mi++) {
-            if (mi < 4) {
-                drawTimelineMarkers(ctx, snap, qubitTimeCoords, propagatedMarkerLayers[mi], mi, min_t, max_t, x_pitch);
+        for (let [mi, p] of propagatedMarkerLayers.entries()) {
+            if (mi >= 0 && mi < 4) {
+                drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch);
             }
         }
         ctx.globalAlpha *= 0.5;
@@ -176,6 +182,12 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             }
             for (let op of layer.iter_gates_and_markers()) {
                 op.id_draw(qubitsCoordsFuncForLayer, ctx);
+            }
+        }
+
+        for (let [mi, p] of propagatedMarkerLayers.entries()) {
+            if (mi < 0) {
+                drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch);
             }
         }
 

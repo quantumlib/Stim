@@ -190,6 +190,7 @@ class Circuit {
             replaceAll(' DAG ', '_DAG ').
             replaceAll('C ZYX', 'C_ZYX').split('\n');
         let layers = [new Layer()];
+        let num_detectors = 0;
         let i2q = new Map();
         let used_positions = new Set();
 
@@ -233,6 +234,7 @@ class Circuit {
             }
         };
 
+        let measurement_locs = [];
         let processLine = line => {
             let args = [];
             let targets = [];
@@ -257,6 +259,9 @@ class Circuit {
             if (name === '') {
                 return;
             }
+            if (args.length > 0 && ['M', 'MX', 'MY', 'MZ', 'MR', 'MRX', 'MRY', 'MRZ', 'MPP', 'MPAD'].indexOf(name) !== -1) {
+                args = [];
+            }
             let alias = GATE_ALIAS_MAP.get(name);
             if (alias !== undefined) {
                 if (alias.ignore) {
@@ -274,14 +279,36 @@ class Circuit {
                 let combinedTargets = splitUncombinedTargets(targets);
                 let layer = layers[layers.length - 1]
                 for (let combo of combinedTargets) {
+                    let op = simplifiedMPP(new Float32Array(args), combo);
                     try {
-                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                        layer.put(op, false);
                     } catch (_) {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
-                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                        layer.put(op, false);
                     }
+                    measurement_locs.push({layer: layers.length - 1, targets: op.id_targets});
                 }
+                return;
+            } else if (name === 'DETECTOR') {
+                for (let target of targets) {
+                    if (!target.startsWith("rec[-") || ! target.endsWith("]")) {
+                        console.warn("Ignoring bad detector " + line);
+                        return;
+                    }
+                    let index = measurement_locs.length + Number.parseInt(target.substring(4, target.length - 1));
+                    if (index < 0 || index >= measurement_locs.length) {
+                        console.warn("Ignoring bad detector " + line);
+                        return;
+                    }
+                    let loc = measurement_locs[index];
+                    layers[loc.layer].markers.push(
+                        new Operation(GATE_MAP.get('DETECTOR'),
+                            new Float32Array([num_detectors]),
+                            new Uint32Array([loc.targets[0]]),
+                        ));
+                }
+                num_detectors += 1;
                 return;
             } else if (name === 'SPP' || name === 'SPP_DAG') {
                 let dag = name === 'SPP_DAG';
@@ -314,26 +341,35 @@ class Circuit {
                 return;
             }
 
-            let ignored = false;
+            let has_feedback = false;
             for (let targ of targets) {
                 if (targ.startsWith("rec[")) {
                     if (name === "CX" || name === "CY" || name === "CZ" || name === "ZCX" || name === "ZCY") {
-                        ignored = true;
-                        break;
+                        has_feedback = true;
                     }
-                }
-                if (typeof parseInt(targ) !== 'number') {
+                } else if (typeof parseInt(targ) !== 'number') {
                     throw new Error(line);
                 }
             }
-            if (ignored) {
-                console.warn("IGNORED", name);
-                return;
+            if (has_feedback) {
+                let clean_targets = [];
+                for (let k = 0; k < targets.length; k += 2) {
+                    if (targets[k].startsWith("rec[") || targets[k + 1].startsWith("rec[")) {
+                        console.warn("IGNORED", name, targets[k], targets[k + 1]);
+                    } else {
+                        clean_targets.push(targets[k]);
+                        clean_targets.push(targets[k + 1]);
+                    }
+                }
+                targets = clean_targets;
+                if (targets.length === 0) {
+                    return;
+                }
             }
 
             let gate = GATE_MAP.get(name);
             if (gate === undefined) {
-                console.warn("Unrecognized gate name in " + line);
+                console.warn("Ignoring unrecognized instruction: " + line);
                 return;
             }
             let a = new Float32Array(args);
@@ -351,12 +387,16 @@ class Circuit {
                         sub_targets.reverse();
                     }
                     let qs = new Uint32Array(sub_targets);
+                    let op = new Operation(gate, a, qs);
                     try {
-                        layer.put(new Operation(gate, a, qs), false);
+                        layer.put(op, false);
                     } catch (_) {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
-                        layer.put(new Operation(gate, a, qs), false);
+                        layer.put(op, false);
+                    }
+                    if (op.countMeasurements() > 0) {
+                        measurement_locs.push({layer: layers.length - 1, targets: op.id_targets});
                     }
                 }
             }
@@ -507,6 +547,53 @@ class Circuit {
     }
 
     /**
+     * @returns {!Array.<!Array.<!int>>}
+     */
+    collectDetectors() {
+        let detectors = [];
+        let m2d = new Map();
+        for (let k = 0; k < this.layers.length; k++) {
+            let layer = this.layers[k];
+            for (let [target_id, op] of layer.id_ops.entries()) {
+                if (op.id_targets[0] === target_id) {
+                    if (op.countMeasurements() > 0) {
+                        m2d.set(`${k}:${target_id}`, m2d.size);
+                    }
+                }
+            }
+        }
+        for (let k = 0; k < this.layers.length; k++) {
+            let layer = this.layers[k];
+            for (let op of layer.markers) {
+                if (op.gate.name === 'DETECTOR') {
+                    let d = Math.round(op.args[0]);
+                    while (detectors.length <= d) {
+                        detectors.push([]);
+                    }
+                    let key = `${k}:${op.id_targets[0]}`;
+                    if (m2d.has(key)) {
+                        detectors[d].push(m2d.get(key) - m2d.size);
+                    }
+                }
+            }
+        }
+        let seen = new Set();
+        let keptDetectors = [];
+        for (let ds of detectors) {
+            if (ds.length > 0) {
+                ds.sort((a, b) => b - a);
+                let key = ds.join(':');
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    keptDetectors.push(ds);
+                }
+            }
+        }
+        keptDetectors.sort((a, b) => a[0] - b[0]);
+        return keptDetectors;
+    }
+
+    /**
      * @returns {!string}
      */
     toStimCircuit() {
@@ -518,6 +605,11 @@ class Circuit {
                 }
             }
         }
+
+        let remainingDetectors = this.collectDetectors();
+        remainingDetectors.reverse();
+        let seenMeasurements = 0;
+        let totalMeasurements = this.countMeasurements();
 
         let packedQubitCoords = [];
         for (let q of usedQubits) {
@@ -574,11 +666,15 @@ class Circuit {
                 let targetGroups = [];
 
                 let gateName = nameWithArgs.split('(')[0];
+                if (gateName === 'DETECTOR') {
+                    continue;
+                }
 
                 let gate = GATE_MAP.get(gateName);
                 if (gate === undefined && (gateName === 'MPP' || gateName === 'SPP' || gateName === 'SPP_DAG')) {
                     let line = [gateName + ' '];
                     for (let op of group) {
+                        seenMeasurements += op.countMeasurements();
                         let bases = op.gate.name.substring(gateName.length + 1);
                         for (let k = 0; k < op.id_targets.length; k++) {
                             line.push(bases[k] + old2new.get(op.id_targets[k]));
@@ -592,11 +688,13 @@ class Circuit {
                     if (gate !== undefined && gate.can_fuse) {
                         let flatTargetGroups = [];
                         for (let op of group) {
+                            seenMeasurements += op.countMeasurements();
                             flatTargetGroups.push(...op.id_targets)
                         }
                         targetGroups.push(flatTargetGroups);
                     } else {
                         for (let op of group) {
+                            seenMeasurements += op.countMeasurements();
                             targetGroups.push([...op.id_targets])
                         }
                     }
@@ -610,6 +708,20 @@ class Circuit {
                     }
                 }
             }
+            while (remainingDetectors.length > 0) {
+                let candidate = remainingDetectors[remainingDetectors.length - 1];
+                let offset = totalMeasurements - seenMeasurements;
+                if (candidate[0] + offset >= 0) {
+                    break;
+                }
+                remainingDetectors.pop();
+                let line = ['DETECTOR'];
+                for (let d of candidate) {
+                    line.push(`rec[${d + offset}]`)
+                }
+                out.push(line.join(' '));
+            }
+
             out.push(`TICK`);
         }
         while (out.length > 0 && out[out.length - 1] === 'TICK') {
@@ -617,6 +729,17 @@ class Circuit {
         }
 
         return out.join('\n');
+    }
+
+    /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        let total = 0;
+        for (let layer of this.layers) {
+            total += layer.countMeasurements();
+        }
+        return total;
     }
 
     /**

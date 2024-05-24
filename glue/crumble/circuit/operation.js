@@ -41,6 +41,22 @@ class Operation {
     }
 
     /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        if (this.gate.name === 'M' || this.gate.name === 'MX' || this.gate.name === 'MY' || this.gate.name === 'MR' || this.gate.name === 'MRX' || this.gate.name === 'MRY') {
+            return this.id_targets.length;
+        }
+        if (this.gate.name === 'MXX' || this.gate.name === 'MYY' || this.gate.name === 'MZZ') {
+            return this.id_targets.length / 2;
+        }
+        if (this.gate.name.startsWith('MPP:')) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
      * @param {!string} before
      * @returns {!string}
      */

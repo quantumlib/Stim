@@ -47,6 +47,34 @@ S 1 2
     `.trim());
 });
 
+test("circuit.fromStimCircuit_strip_measurement_noise", () => {
+    let c1 = Circuit.fromStimCircuit(`
+        M(0.1) 0
+    `);
+    assertThat(c1.toStimCircuit()).isEqualTo(`
+QUBIT_COORDS(0, 0) 0
+M 0
+    `.trim());
+});
+
+test("circuit.fromStimCircuit_detector", () => {
+    let c = Circuit.fromStimCircuit(`
+        R 0
+        M 0
+        DETECTOR rec[-1]
+        R 0
+    `);
+    assertThat(c.toStimCircuit()).isEqualTo(`
+QUBIT_COORDS(0, 0) 0
+R 0
+TICK
+M 0
+TICK
+R 0
+DETECTOR rec[-1]
+    `.trim());
+})
+
 test("circuit.fromStimCircuit_mpp", () => {
     let c1 = Circuit.fromStimCircuit(`
         QUBIT_COORDS(1, 2) 0

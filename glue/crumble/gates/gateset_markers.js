@@ -8,7 +8,12 @@ import {beginPathPolygon} from '../draw/draw_util.js';
  */
 function marker_placement(mi) {
     let dx, dy, wx, wy;
-    if (mi === 0) {
+    if (mi < 0) {
+        dx = 10 - ~mi % 4 * 5;
+        dy = 10 - Math.floor(~mi / 4) % 4 * 5;
+        wx = 3;
+        wy = 3;
+    } else if (mi === 0) {
         dx = rad;
         dy = rad + 5;
         wx = rad * 2;
@@ -45,6 +50,7 @@ function *iter_gates_markers() {
         true,
         undefined,
         () => {},
+        () => {},
         (op, coordFunc, ctx) => {
             let transformedCoords = []
             for (let t of op.id_targets) {
@@ -59,11 +65,23 @@ function *iter_gates_markers() {
         },
     );
     yield new Gate(
+        'DETECTOR',
+        undefined,
+        false,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        (op, coordFunc, ctx) => {
+        },
+    );
+    yield new Gate(
         'MARKX',
         1,
         true,
         true,
         undefined,
+        () => {},
         () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -99,6 +117,7 @@ function *iter_gates_markers() {
         true,
         undefined,
         () => {},
+        () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             if (x1 === undefined || y1 === undefined) {
@@ -133,6 +152,7 @@ function *iter_gates_markers() {
         true,
         undefined,
         () => {},
+        () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             if (x1 === undefined || y1 === undefined) {
@@ -166,6 +186,7 @@ function *iter_gates_markers() {
         false,
         true,
         undefined,
+        () => {},
         () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

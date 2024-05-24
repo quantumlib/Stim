@@ -78,7 +78,6 @@ function make_gate_alias_map() {
 
     // Annotations.
     result.set("MPAD", {ignore: true});
-    result.set("DETECTOR", {ignore: true});
     result.set("OBSERVABLE_INCLUDE", {ignore: true});
     result.set("SHIFT_COORDS", {ignore: true});
 

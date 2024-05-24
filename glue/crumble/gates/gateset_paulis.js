@@ -12,6 +12,7 @@ function *iter_gates_paulis() {
             ['Z', 'Z'],
         ]),
         () => {},
+        () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'white';
@@ -33,6 +34,7 @@ function *iter_gates_paulis() {
             ['X', 'X'],
             ['Z', 'Z'],
         ]),
+        () => {},
         () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -56,6 +58,7 @@ function *iter_gates_paulis() {
             ['Z', 'Z'],
         ]),
         () => {},
+        () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'white';
@@ -77,6 +80,7 @@ function *iter_gates_paulis() {
             ['X', 'X'],
             ['Z', 'Z'],
         ]),
+        () => {},
         () => {},
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

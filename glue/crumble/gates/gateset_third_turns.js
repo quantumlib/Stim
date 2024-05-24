@@ -12,6 +12,7 @@ function *iter_gates_third_turns() {
             ['Z', 'X'],
         ]),
         (frame, targets) => frame.do_cycle_xyz(targets),
+        (frame, targets) => frame.do_cycle_zyx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'teal';
@@ -35,6 +36,7 @@ function *iter_gates_third_turns() {
             ['Z', 'Y'],
         ]),
         (frame, targets) => frame.do_cycle_zyx(targets),
+        (frame, targets) => frame.do_cycle_xyz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'teal';

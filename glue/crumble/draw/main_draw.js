@@ -67,7 +67,7 @@ function drawCrossMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
  */
 function drawMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
     let {dx, dy, wx, wy} = marker_placement(mi);
-    let basesQubitMap = propagatedMarkers.atLayer(snap.curLayer).bases;
+    let basesQubitMap = propagatedMarkers.atLayer(snap.curLayer + 0.5).bases;
 
     // Convert qubit indices to draw coordinates.
     let basisCoords = [];
@@ -76,7 +76,7 @@ function drawMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
     }
 
     // Draw a polygon for the marker set.
-    if (basisCoords.length > 0) {
+    if (mi >= 0 && basisCoords.length > 0) {
         if (basisCoords.every(e => e[0] === 'X')) {
             ctx.fillStyle = 'red';
         } else if (basisCoords.every(e => e[0] === 'Y')) {
@@ -198,9 +198,13 @@ function draw(ctx, snap) {
         let y = circuit.qubitCoordData[2 * q + 1];
         return c2dCoordTransform(x, y);
     };
-    let propagatedMarkerLayers = /** @type {!Array<!PropagatedPauliFrames>} */ [];
+    let propagatedMarkerLayers = /** @type {!Map<!int, !PropagatedPauliFrames>} */ new Map();
     for (let mi = 0; mi < numPropagatedLayers; mi++) {
-        propagatedMarkerLayers.push(PropagatedPauliFrames.fromCircuit(circuit, mi));
+        propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi));
+    }
+    let dets = circuit.collectDetectors();
+    for (let mi = 0; mi < dets.length; mi++) {
+        propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi]));
     }
 
     let usedQubitCoordSet = new Set();
@@ -258,8 +262,8 @@ function draw(ctx, snap) {
             }
         });
 
-        for (let mi = 0; mi < propagatedMarkerLayers.length; mi++) {
-            drawCrossMarkers(ctx, snap, qubitDrawCoords, propagatedMarkerLayers[mi], mi);
+        for (let [mi, p] of propagatedMarkerLayers.entries()) {
+            drawCrossMarkers(ctx, snap, qubitDrawCoords, p, mi);
         }
 
         for (let op of circuit.layers[snap.curLayer].iter_gates_and_markers()) {
@@ -286,8 +290,8 @@ function draw(ctx, snap) {
             }
         });
 
-        for (let mi = 0; mi < propagatedMarkerLayers.length; mi++) {
-            drawMarkers(ctx, snap, qubitDrawCoords, propagatedMarkerLayers[mi], mi);
+        for (let [mi, p] of propagatedMarkerLayers.entries()) {
+            drawMarkers(ctx, snap, qubitDrawCoords, p, mi);
         }
 
         if (focusX !== undefined) {
@@ -324,30 +328,41 @@ function draw(ctx, snap) {
         });
     });
 
+    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords);
+
     // Scrubber.
     ctx.save();
     try {
         ctx.strokeStyle = 'black';
+        ctx.translate(ctx.canvas.width / 2, 0);
         for (let k = 0; k < circuit.layers.length; k++) {
-            let has_errors = !propagatedMarkerLayers.every(p => p.atLayer(k).errors.size === 0);
-            if (k === snap.curLayer) {
-                ctx.fillStyle = 'red';
-                ctx.fillRect(0, k*5, 10, 4);
-            } else if (has_errors) {
-                ctx.fillStyle = 'magenta';
-                ctx.fillRect(-2, k*5-2, 10+4, 4+4);
-                ctx.fillStyle = 'black';
-                ctx.fillRect(0, k*5, 10, 4);
+            if (circuit.layers[k].id_ops.size > 0) {
+                ctx.strokeStyle = 'black';
             } else {
+                ctx.strokeStyle = '#EEE';
+            }
+            ctx.strokeRect(k*8 + 0.5, 0.5, 7, 20);
+            if (k === snap.curLayer) {
                 ctx.fillStyle = 'black';
-                ctx.fillRect(0, k*5, 10, 4);
+            } else if (circuit.layers[k].countMeasurements() > 0) {
+                ctx.fillStyle = '#DDD';
+            } else {
+                ctx.fillStyle = 'white';
+            }
+            ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
+        }
+        for (let k = 0; k < circuit.layers.length; k++) {
+            let has_errors = ![...propagatedMarkerLayers.values()].every(p => p.atLayer(k).errors.size === 0);
+            if (has_errors) {
+                ctx.strokeStyle = 'magenta';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(k*8 + 0.5 - 1, 0.5 - 1, 7 + 2, 20 + 2);
+                ctx.lineWidth = 1;
             }
         }
     } finally {
         ctx.restore();
     }
-
-    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords);
 }
 
 export {xyToPos, draw, setDefensiveDrawEnabled, OFFSET_X, OFFSET_Y}

@@ -38,7 +38,7 @@ btnExport.addEventListener('click', _ev => {
 });
 btnImport.addEventListener('click', _ev => {
     let text = txtStimCircuit.value;
-    let circuit = Circuit.fromStimCircuit(text.replaceAll('\n#!pragma ', '\n'));
+    let circuit = Circuit.fromStimCircuit(text.replaceAll('#!pragma ', ''));
     editorState.commit(circuit);
 });
 
@@ -124,24 +124,30 @@ editorState.canvas.addEventListener('mousemove', ev => {
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    if (editorState.mouseDownX - OFFSET_X < 10 && editorState.curMouseX - OFFSET_X < 10 && ev.buttons === 1) {
-        editorState.changeCurLayerTo(Math.floor(ev.offsetY / 5));
-        ev.preventDefault();
+    let w = editorState.canvas.width / 2;
+    if (isInScrubber && ev.buttons === 1) {
+        editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
     }
 
     editorState.force_redraw();
 });
 
+let isInScrubber = false;
 editorState.canvas.addEventListener('mousedown', ev => {
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
     editorState.mouseDownX = ev.offsetX + OFFSET_X;
     editorState.mouseDownY = ev.offsetY + OFFSET_Y;
-    if (editorState.mouseDownX - OFFSET_X < 10 && ev.buttons === 1) {
-        editorState.changeCurLayerTo(Math.floor(ev.offsetY / 5));
+
+    // Scrubber.
+    let w = editorState.canvas.width / 2;
+    if (ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1) {
+        isInScrubber = true;
+        editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
     }
+
     editorState.force_redraw();
 });
 
@@ -152,6 +158,9 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
     editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
+    if (ev.buttons === 1) {
+        isInScrubber = false;
+    }
 });
 
 /**
@@ -205,6 +214,7 @@ function makeChordHandlers() {
         res.set(`${key}+x`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKX').withDefaultArgument(val)));
         res.set(`${key}+y`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKY').withDefaultArgument(val)));
         res.set(`${key}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKZ').withDefaultArgument(val)));
+        res.set(`${key}+d`, preview => editorState.writeMarkerToDetector(preview, val));
     }
 
     res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));
@@ -369,11 +379,11 @@ const CHORD_HANDLERS = makeChordHandlers();
 function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
     if (ev.type === 'keydown') {
-        if (ev.key === 'q') {
+        if (ev.key === 'q' || ev.key === 'Q') {
             editorState.changeCurLayerTo(editorState.curLayer - 1);
             return;
         }
-        if (ev.key === 'e') {
+        if (ev.key === 'e' || ev.key === 'E') {
             editorState.changeCurLayerTo(editorState.curLayer + 1);
             return;
         }

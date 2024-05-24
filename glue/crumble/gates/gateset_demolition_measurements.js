@@ -13,6 +13,7 @@ function *iter_gates_demolition_measurements() {
             ['Z', 'I'],
         ]),
         (frame, targets) => frame.do_demolition_measure('Z', targets),
+        (frame, targets) => frame.do_demolition_measure('Z', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'gray';
@@ -36,6 +37,7 @@ function *iter_gates_demolition_measurements() {
             ['Z', 'ERR:I'],
         ]),
         (frame, targets) => frame.do_demolition_measure('Y', targets),
+        (frame, targets) => frame.do_demolition_measure('Y', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'gray';
@@ -58,6 +60,7 @@ function *iter_gates_demolition_measurements() {
             ['Y', 'ERR:I'],
             ['Z', 'ERR:I'],
         ]),
+        (frame, targets) => frame.do_demolition_measure('X', targets),
         (frame, targets) => frame.do_demolition_measure('X', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

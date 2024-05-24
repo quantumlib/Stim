@@ -58,9 +58,6 @@ function initUrlCircuitSync(revision) {
 
     const historyPusher = new HistoryPusher();
     const loadCircuitFromUrl = () => {
-        // Leave a sign that the URL shouldn't be overwritten if we don't understand it.
-        historyPusher.currentStateIsMemorableButUnknown();
-
         try {
             // Extract the circuit parameter.
             let params = getHashParameters();
@@ -72,10 +69,6 @@ function initUrlCircuitSync(revision) {
                     params.set("circuit", txtDefault.value);
                 }
             }
-
-            // We only want to change the browser URL if we end up with a circuit state
-            // that's different from the one from the initial URL.
-            historyPusher.currentStateIsMemorableAndEqualTo(params.get("circuit"));
 
             // Repack the circuit data, so we can tell if there are round trip changes.
             let circuit = Circuit.fromStimCircuit(params.get("circuit"));
