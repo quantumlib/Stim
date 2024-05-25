@@ -7,6 +7,7 @@ import {initUrlCircuitSync} from "./editor/sync_url_to_state.js";
 import {draw} from "./draw/main_draw.js";
 import {drawToolbox} from "./keyboard/toolbox.js";
 import {Operation} from "./circuit/operation.js";
+import {make_mpp_gate} from './gates/gateset_mpp.js';
 
 const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
 const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
@@ -142,8 +143,8 @@ editorState.canvas.addEventListener('mousedown', ev => {
 
     // Scrubber.
     let w = editorState.canvas.width / 2;
-    if (ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1) {
-        isInScrubber = true;
+    isInScrubber = ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1;
+    if (isInScrubber) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
     }
@@ -227,6 +228,9 @@ function makeChordHandlers() {
     res.set('p+x+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 1, 0.5]));
     res.set('p+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 1, 0.5]));
     res.set('p+x+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 1, 0.5]));
+    res.set('m+p+x', preview => editorState.writeGateToFocus(preview, make_mpp_gate("X".repeat(editorState.focusedSet.size)), []));
+    res.set('m+p+y', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Y".repeat(editorState.focusedSet.size)), []));
+    res.set('m+p+z', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Z".repeat(editorState.focusedSet.size)), []));
 
     /**
      * @param {!Array<!string>} chords

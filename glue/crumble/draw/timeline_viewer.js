@@ -1,5 +1,6 @@
 import {rad} from "./config.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
+import {OFFSET_Y} from './main_draw.js';
 
 let TIMELINE_PITCH = 32;
 
@@ -192,19 +193,19 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         }
 
         // Draw links to timeslice viewer.
-        ctx.globalAlpha = 0.25;
-        ctx.setLineDash([1, 1]);
-        let max_x = 0;
-        for (let q of qubits) {
-            max_x = Math.max(max_x, timesliceQubitCoordsFunc(q)[0]);
-        }
+        ctx.globalAlpha = 0.5;
         for (let q of qubits) {
             let [x0, y0] = qubitTimeCoords(q, min_t - 1);
-            let [_, y1] = timesliceQubitCoordsFunc(q);
-            ctx.beginPath();
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(max_x + 0.25, y1);
-            ctx.stroke();
+            let [x1, y1] = timesliceQubitCoordsFunc(q);
+            if (snap.curMouseX > ctx.canvas.width / 2 && snap.curMouseY >= y0 + OFFSET_Y - TIMELINE_PITCH * 0.55 && snap.curMouseY <= y0 + TIMELINE_PITCH * 0.55 + OFFSET_Y) {
+                ctx.beginPath();
+                ctx.moveTo(x0, y0);
+                ctx.lineTo(x1, y1);
+                ctx.stroke();
+                ctx.fillStyle = 'black';
+                ctx.fillRect(x1 - 20, y1 - 20, 40, 40);
+                ctx.fillRect(ctx.canvas.width / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.width / 2, TIMELINE_PITCH * 2 / 3);
+            }
         }
     } finally {
         ctx.restore();

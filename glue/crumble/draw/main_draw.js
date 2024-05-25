@@ -336,21 +336,58 @@ function draw(ctx, snap) {
         ctx.strokeStyle = 'black';
         ctx.translate(ctx.canvas.width / 2, 0);
         for (let k = 0; k < circuit.layers.length; k++) {
-            if (circuit.layers[k].id_ops.size > 0) {
+            let hasPolygons = false;
+            let hasXMarker = false;
+            let hasYMarker = false;
+            let hasZMarker = false;
+            for (let op of circuit.layers[k].markers) {
+                hasPolygons |= op.gate.name === "POLYGON";
+                hasXMarker |= op.gate.name === "MARKX";
+                hasYMarker |= op.gate.name === "MARKY";
+                hasZMarker |= op.gate.name === "MARKZ";
+            }
+            let hasOps = circuit.layers[k].id_ops.size > 0;
+            if (hasOps || hasPolygons) {
                 ctx.strokeStyle = 'black';
             } else {
                 ctx.strokeStyle = '#EEE';
             }
             ctx.strokeRect(k*8 + 0.5, 0.5, 7, 20);
-            if (k === snap.curLayer) {
-                ctx.fillStyle = 'black';
-            } else if (circuit.layers[k].countMeasurements() > 0) {
+            if (circuit.layers[k].countMeasurements() > 0) {
                 ctx.fillStyle = '#DDD';
+                ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
+            } else if (hasPolygons) {
+                ctx.fillStyle = '#FBB';
+                ctx.fillRect(k * 8 + 0.5, 0, 7, 7);
+                ctx.fillStyle = '#BFB';
+                ctx.fillRect(k * 8 + 0.5, 7, 7, 7);
+                ctx.fillStyle = '#BBF';
+                ctx.fillRect(k * 8 + 0.5, 14, 7, 6);
             } else {
                 ctx.fillStyle = 'white';
+                ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
             }
-            ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
+            if (hasXMarker) {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(k * 8 + 0.5 + 2, 14, 3, 3);
+            }
+            if (hasYMarker) {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(k * 8 + 0.5 + 2, 8, 3, 3);
+            }
+            if (hasZMarker) {
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(k * 8 + 0.5 + 2, 2, 3, 3);
+            }
         }
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.moveTo(snap.curLayer * 8 + 0.5 + 4, 16);
+        ctx.lineTo(snap.curLayer * 8 + 0.5 - 2, 28);
+        ctx.lineTo(snap.curLayer * 8 + 0.5 + 10, 28);
+        ctx.closePath();
+        ctx.fill();
+
         for (let k = 0; k < circuit.layers.length; k++) {
             let has_errors = ![...propagatedMarkerLayers.values()].every(p => p.atLayer(k).errors.size === 0);
             if (has_errors) {
