@@ -30,6 +30,98 @@ class Layer {
     }
 
     /**
+     * @returns {!boolean}
+     */
+    hasDissipativeOperations() {
+        let dissipative_gate_names = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.gate.name.startsWith('MPP:') || dissipative_gate_names.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hasSingleQubitCliffords() {
+        let dissipative_gate_names = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.id_targets.length === 1 && dissipative_gate_names.indexOf(op.gate.name) === -1 && op.countMeasurements() === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @returns {!boolean}
+     */
+    hasResetOperations() {
+        let gateNames = [
+            'MR',
+            'MRX',
+            'MRY',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (gateNames.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @returns {!boolean}
+     */
+    hasMeasurementOperations() {
+        let gateNames = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.gate.name.startsWith('MPP:') || gateNames.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @return {!boolean}
      */
     empty() {

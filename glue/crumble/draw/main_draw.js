@@ -340,44 +340,56 @@ function draw(ctx, snap) {
             let hasXMarker = false;
             let hasYMarker = false;
             let hasZMarker = false;
+            let hasResetOperations = circuit.layers[k].hasResetOperations();
+            let hasMeasurements = circuit.layers[k].hasMeasurementOperations();
+            let hasMultiQubitGate = false;
+            let hasSingleQubitClifford = circuit.layers[k].hasSingleQubitCliffords();
             for (let op of circuit.layers[k].markers) {
                 hasPolygons |= op.gate.name === "POLYGON";
                 hasXMarker |= op.gate.name === "MARKX";
                 hasYMarker |= op.gate.name === "MARKY";
                 hasZMarker |= op.gate.name === "MARKZ";
             }
-            let hasOps = circuit.layers[k].id_ops.size > 0;
-            if (hasOps || hasPolygons) {
-                ctx.strokeStyle = 'black';
-            } else {
-                ctx.strokeStyle = '#EEE';
+            for (let op of circuit.layers[k].id_ops.values()) {
+                hasMultiQubitGate |= op.id_targets.length > 1;
             }
-            ctx.strokeRect(k*8 + 0.5, 0.5, 7, 20);
-            if (circuit.layers[k].countMeasurements() > 0) {
-                ctx.fillStyle = '#DDD';
-                ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(k * 8, 0, 8, 20);
+            if (hasSingleQubitClifford) {
+                ctx.fillStyle = '#FF0';
+                ctx.fillRect(k * 8, 0, 8, 20);
             } else if (hasPolygons) {
                 ctx.fillStyle = '#FBB';
-                ctx.fillRect(k * 8 + 0.5, 0, 7, 7);
+                ctx.fillRect(k * 8, 0, 8, 7);
                 ctx.fillStyle = '#BFB';
-                ctx.fillRect(k * 8 + 0.5, 7, 7, 7);
+                ctx.fillRect(k * 8, 7, 8, 7);
                 ctx.fillStyle = '#BBF';
-                ctx.fillRect(k * 8 + 0.5, 14, 7, 6);
-            } else {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(k * 8 + 0.5, 0, 7, 20);
+                ctx.fillRect(k * 8, 14, 8, 6);
+            }
+            if (hasMeasurements) {
+                ctx.fillStyle = '#DDD';
+                ctx.fillRect(k * 8, 0, 8, 20);
+            } else if (hasResetOperations) {
+                ctx.fillStyle = '#DDD';
+                ctx.fillRect(k * 8, 0, 4, 20);
             }
             if (hasXMarker) {
                 ctx.fillStyle = 'red';
-                ctx.fillRect(k * 8 + 0.5 + 2, 14, 3, 3);
+                ctx.fillRect(k * 8 + 3, 14, 3, 3);
             }
             if (hasYMarker) {
                 ctx.fillStyle = 'green';
-                ctx.fillRect(k * 8 + 0.5 + 2, 8, 3, 3);
+                ctx.fillRect(k * 8 + 3, 9, 3, 3);
             }
             if (hasZMarker) {
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(k * 8 + 0.5 + 2, 2, 3, 3);
+                ctx.fillRect(k * 8 + 3, 3, 3, 3);
+            }
+            if (hasMultiQubitGate) {
+                ctx.strokeStyle = 'black';
+                ctx.moveTo(k * 8 + 0.5 + 4, 6);
+                ctx.lineTo(k * 8 + 0.5 + 4, 15);
+                ctx.stroke();
             }
         }
         ctx.fillStyle = 'black';
@@ -390,11 +402,18 @@ function draw(ctx, snap) {
 
         for (let k = 0; k < circuit.layers.length; k++) {
             let has_errors = ![...propagatedMarkerLayers.values()].every(p => p.atLayer(k).errors.size === 0);
+            let hasOps = circuit.layers[k].id_ops.size > 0 || circuit.layers[k].markers.length > 0;
             if (has_errors) {
                 ctx.strokeStyle = 'magenta';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(k*8 + 0.5 - 1, 0.5 - 1, 7 + 2, 20 + 2);
                 ctx.lineWidth = 1;
+            } else if (hasOps) {
+                ctx.strokeStyle = '#000';
+                ctx.strokeRect(k*8 + 0.5, 0.5, 8, 20);
+            } else {
+                ctx.strokeStyle = '#EEE';
+                ctx.strokeRect(k*8 + 0.5, 0.5, 8, 20);
             }
         }
     } finally {
