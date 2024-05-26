@@ -179,6 +179,7 @@ class Circuit {
             replaceAll('_', ' ').
             replaceAll('Q(', 'QUBIT_COORDS(').
             replaceAll('DT', 'DETECTOR').
+            replaceAll('OI', 'OBSERVABLE_INCLUDE').
             replaceAll(' COORDS', '_COORDS').
             replaceAll(' ERROR', '_ERROR').
             replaceAll('C XYZ', 'C_XYZ').
@@ -290,25 +291,27 @@ class Circuit {
                     measurement_locs.push({layer: layers.length - 1, targets: op.id_targets});
                 }
                 return;
-            } else if (name === 'DETECTOR') {
+            } else if (name === 'DETECTOR' || name === 'OBSERVABLE_INCLUDE') {
+                let isDet = name === 'DETECTOR';
+                let argIndex = isDet ? num_detectors : args.length > 0 ? Math.round(args[0]) : 0;
                 for (let target of targets) {
                     if (!target.startsWith("rec[-") || ! target.endsWith("]")) {
-                        console.warn("Ignoring bad detector " + line);
+                        console.warn("Ignoring instruction due to non-record target: " + line);
                         return;
                     }
                     let index = measurement_locs.length + Number.parseInt(target.substring(4, target.length - 1));
                     if (index < 0 || index >= measurement_locs.length) {
-                        console.warn("Ignoring bad detector " + line);
+                        console.warn("Ignoring instruction due to out of range record target: " + line);
                         return;
                     }
                     let loc = measurement_locs[index];
                     layers[loc.layer].markers.push(
-                        new Operation(GATE_MAP.get('DETECTOR'),
-                            new Float32Array([num_detectors]),
+                        new Operation(GATE_MAP.get(name),
+                            new Float32Array([argIndex]),
                             new Uint32Array([loc.targets[0]]),
                         ));
                 }
-                num_detectors += 1;
+                num_detectors += isDet;
                 return;
             } else if (name === 'SPP' || name === 'SPP_DAG') {
                 let dag = name === 'SPP_DAG';
@@ -547,10 +550,11 @@ class Circuit {
     }
 
     /**
-     * @returns {!Array.<!Array.<!int>>}
+     * @returns {!{dets: !Array<!Array<!int>>, obs: !Map<!int, !Array.<!int>>}}
      */
-    collectDetectors() {
+    collectDetectorsAndObservables() {
         let detectors = [];
+        let observables = new Map();
         let m2d = new Map();
         for (let k = 0; k < this.layers.length; k++) {
             let layer = this.layers[k];
@@ -570,9 +574,21 @@ class Circuit {
                     while (detectors.length <= d) {
                         detectors.push([]);
                     }
+                    let entries = detectors[d];
                     let key = `${k}:${op.id_targets[0]}`;
                     if (m2d.has(key)) {
-                        detectors[d].push(m2d.get(key) - m2d.size);
+                        entries.push(m2d.get(key) - m2d.size);
+                    }
+                } else if (op.gate.name === 'OBSERVABLE_INCLUDE') {
+                    let d = Math.round(op.args[0]);
+                    let entries = observables.get(d);
+                    if (entries === undefined) {
+                        entries = []
+                        observables.set(d, entries);
+                    }
+                    let key = `${k}:${op.id_targets[0]}`;
+                    if (m2d.has(key)) {
+                        entries.push(m2d.get(key) - m2d.size);
                     }
                 }
             }
@@ -589,8 +605,11 @@ class Circuit {
                 }
             }
         }
+        for (let vs of observables.values()) {
+            vs.sort((a, b) => b - a);
+        }
         keptDetectors.sort((a, b) => a[0] - b[0]);
-        return keptDetectors;
+        return {dets: keptDetectors, obs: observables};
     }
 
     /**
@@ -606,7 +625,7 @@ class Circuit {
             }
         }
 
-        let remainingDetectors = this.collectDetectors();
+        let {dets: remainingDetectors, obs: remainingObservables} = this.collectDetectorsAndObservables();
         remainingDetectors.reverse();
         let seenMeasurements = 0;
         let totalMeasurements = this.countMeasurements();
@@ -666,7 +685,7 @@ class Circuit {
                 let targetGroups = [];
 
                 let gateName = nameWithArgs.split('(')[0];
-                if (gateName === 'DETECTOR') {
+                if (gateName === 'DETECTOR' || gateName === 'OBSERVABLE_INCLUDE') {
                     continue;
                 }
 
@@ -708,6 +727,8 @@ class Circuit {
                     }
                 }
             }
+
+            // Output DETECTOR lines immediately after the last measurement layer they use.
             while (remainingDetectors.length > 0) {
                 let candidate = remainingDetectors[remainingDetectors.length - 1];
                 let offset = totalMeasurements - seenMeasurements;
@@ -716,6 +737,20 @@ class Circuit {
                 }
                 remainingDetectors.pop();
                 let line = ['DETECTOR'];
+                for (let d of candidate) {
+                    line.push(`rec[${d + offset}]`)
+                }
+                out.push(line.join(' '));
+            }
+
+            // Output OBSERVABLE_INCLUDE lines immediately after the last measurement layer they use.
+            for (let [obsIndex, candidate] of [...remainingObservables.entries()]) {
+                let offset = totalMeasurements - seenMeasurements;
+                if (candidate[0] + offset >= 0) {
+                    continue;
+                }
+                remainingObservables.delete(obsIndex);
+                let line = [`OBSERVABLE_INCLUDE(${obsIndex})`];
                 for (let d of candidate) {
                     line.push(`rec[${d + offset}]`)
                 }

@@ -501,17 +501,25 @@ class EditorState {
         }
     }
 
+    writeMarkerToObservable(preview, marker_index) {
+        this._writeMarkerToDetOrObs(preview, marker_index, false);
+    }
+
     writeMarkerToDetector(preview, marker_index) {
+        this._writeMarkerToDetOrObs(preview, marker_index, true);
+    }
+
+    _writeMarkerToDetOrObs(preview, marker_index, isDet) {
         let newCircuit = this.copyOfCurCircuit().withCoordsIncluded(this.focusedSet.values());
-        let d = newCircuit.collectDetectors().length;
+        let argIndex = isDet ? newCircuit.collectDetectorsAndObservables().dets.length : marker_index;
         for (let k = 0; k < newCircuit.layers.length; k++) {
             let layer = newCircuit.layers[k];
             for (let k2 = 0; k2 < layer.markers.length; k2++) {
                 let op = /** @type {!Operation} */ layer.markers[k2];
                 if (op.args[0] === marker_index && ['MARKX', 'MARKY', 'MARKZ'].indexOf(op.gate.name) !== -1) {
                     layer.markers[k2] = new Operation(
-                        GATE_MAP.get('DETECTOR'),
-                        new Float32Array([d]),
+                        GATE_MAP.get(isDet ? 'DETECTOR' : 'OBSERVABLE_INCLUDE'),
+                        new Float32Array([argIndex]),
                         op.id_targets,
                     );
                 }

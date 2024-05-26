@@ -61,7 +61,25 @@ test("circuit.fromStimCircuit_detector", () => {
     let c = Circuit.fromStimCircuit(`
         R 0
         M 0
+        R 0
         DETECTOR rec[-1]
+    `);
+    assertThat(c.toStimCircuit()).isEqualTo(`
+QUBIT_COORDS(0, 0) 0
+R 0
+TICK
+M 0
+DETECTOR rec[-1]
+TICK
+R 0
+    `.trim());
+})
+
+test("circuit.fromStimCircuit_observable", () => {
+    let c = Circuit.fromStimCircuit(`
+        R 0
+        M 0
+        OBSERVABLE_INCLUDE(3) rec[-1]
         R 0
     `);
     assertThat(c.toStimCircuit()).isEqualTo(`
@@ -69,9 +87,9 @@ QUBIT_COORDS(0, 0) 0
 R 0
 TICK
 M 0
+OBSERVABLE_INCLUDE(3) rec[-1]
 TICK
 R 0
-DETECTOR rec[-1]
     `.trim());
 })
 

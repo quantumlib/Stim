@@ -33,7 +33,7 @@ test("pauli_frame.to_from_dicts", () => {
 test("pauli_frame.do_gate_vs_old_frame_updates", () => {
     let gates = [...GATE_MAP.values(), make_mpp_gate("XYY"), make_spp_gate("XYY")];
     for (let g of gates) {
-        if (g.name === 'DETECTOR') {
+        if (g.name === 'DETECTOR' || g.name === 'OBSERVABLE_INCLUDE') {
             continue;
         }
         let before, after, returned;

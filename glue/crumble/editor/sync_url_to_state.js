@@ -24,6 +24,8 @@ import {Circuit} from "../circuit/circuit.js";
 function urlWithCircuitHash(text) {
     text = text.
         replaceAll('QUBIT_COORDS', 'Q').
+        replaceAll('DETECTOR', 'DT').
+        replaceAll('OBSERVABLE_INCLUDE', 'OI').
         replaceAll(', ', ',').
         replaceAll(') ', ')').
         replaceAll(' ', '_').

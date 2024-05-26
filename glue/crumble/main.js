@@ -216,6 +216,7 @@ function makeChordHandlers() {
         res.set(`${key}+y`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKY').withDefaultArgument(val)));
         res.set(`${key}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKZ').withDefaultArgument(val)));
         res.set(`${key}+d`, preview => editorState.writeMarkerToDetector(preview, val));
+        res.set(`${key}+o`, preview => editorState.writeMarkerToObservable(preview, val));
     }
 
     res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));

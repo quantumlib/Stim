@@ -202,9 +202,12 @@ function draw(ctx, snap) {
     for (let mi = 0; mi < numPropagatedLayers; mi++) {
         propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi));
     }
-    let dets = circuit.collectDetectors();
+    let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables();
     for (let mi = 0; mi < dets.length; mi++) {
         propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi]));
+    }
+    for (let mi of obs.keys()) {
+        propagatedMarkerLayers.set(~mi ^ (1 << 30), PropagatedPauliFrames.fromMeasurements(circuit, obs.get(mi)));
     }
 
     let usedQubitCoordSet = new Set();

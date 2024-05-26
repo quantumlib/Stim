@@ -8,7 +8,14 @@ import {beginPathPolygon} from '../draw/draw_util.js';
  */
 function marker_placement(mi) {
     let dx, dy, wx, wy;
-    if (mi < 0) {
+    if (mi < (-1 << 28)) {
+        // Observables.
+        dx = 10 - ~mi % 3 * 5 + 3;
+        dy = 10 - Math.floor(~mi / 4) % 3 * 5 + 3;
+        wx = 5;
+        wy = 5;
+    } else if (mi < 0) {
+        // Detectors.
         dx = 10 - ~mi % 4 * 5;
         dy = 10 - Math.floor(~mi / 4) % 4 * 5;
         wx = 3;
@@ -66,6 +73,17 @@ function *iter_gates_markers() {
     );
     yield new Gate(
         'DETECTOR',
+        undefined,
+        false,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        (op, coordFunc, ctx) => {
+        },
+    );
+    yield new Gate(
+        'OBSERVABLE_INCLUDE',
         undefined,
         false,
         true,
