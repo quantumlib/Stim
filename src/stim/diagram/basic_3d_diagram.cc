@@ -35,6 +35,15 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
         nullptr,
     });
 
+    auto purple_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"purple"},
+        {1, 0, 1, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+
     auto buf_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
         {"buf_scattered_lines"},
         line_data,
@@ -48,6 +57,11 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
     auto buf_blue_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
         {"buf_blue_scattered_lines"},
         blue_line_data,
+    });
+
+    auto buf_purple_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"buf_blue_scattered_lines"},
+        purple_line_data,
     });
 
     auto gate_data = make_gate_primitives();
@@ -103,7 +117,7 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
 
     if (!buf_blue_scattered_lines->vertices.empty()) {
         scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_red_scattered_lines"},
+            {"node_blue_scattered_lines"},
             std::shared_ptr<GltfMesh>(new GltfMesh{
                 {"mesh_scattered_lines"},
                 {
@@ -113,6 +127,25 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
                         buf_blue_scattered_lines,
                         nullptr,
                         blue_material,
+                    }),
+                },
+            }),
+            {0, 0, 0},
+        }));
+    }
+
+    if (!buf_purple_scattered_lines->vertices.empty()) {
+        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
+            {"node_purple_scattered_lines"},
+            std::shared_ptr<GltfMesh>(new GltfMesh{
+                {"mesh_scattered_lines"},
+                {
+                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                        {"primitive_purple_scattered_lines"},
+                        GL_LINES,
+                        buf_purple_scattered_lines,
+                        nullptr,
+                        purple_material,
                     }),
                 },
             }),

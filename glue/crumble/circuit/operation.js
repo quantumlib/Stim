@@ -41,6 +41,13 @@ class Operation {
     }
 
     /**
+     * @returns {!string}
+     */
+    toString() {
+        return `${this.gate.name}(${[...this.args].join(', ')}) ${[...this.id_targets].join(' ')}`;
+    }
+
+    /**
      * @returns {!int}
      */
     countMeasurements() {

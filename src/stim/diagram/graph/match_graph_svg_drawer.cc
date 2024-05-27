@@ -27,6 +27,9 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     for (const auto &e : diagram.blue_line_data) {
         used_coords.push_back(project(e));
     }
+    for (const auto &e : diagram.purple_line_data) {
+        used_coords.push_back(project(e));
+    }
     for (const auto &e : diagram.elements) {
         used_coords.push_back(project(e.center));
     }
@@ -68,6 +71,7 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     write_lines(diagram.line_data, "black");
     write_lines(diagram.red_line_data, "red");
     write_lines(diagram.blue_line_data, "blue");
+    write_lines(diagram.purple_line_data, "purple");
     for (const auto &e : diagram.elements) {
         auto c = project(e.center);
         c += off;

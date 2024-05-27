@@ -202,7 +202,7 @@ function draw(ctx, snap) {
     for (let mi = 0; mi < numPropagatedLayers; mi++) {
         propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi));
     }
-    let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables();
+    let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables(false);
     for (let mi = 0; mi < dets.length; mi++) {
         propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi]));
     }
@@ -390,6 +390,7 @@ function draw(ctx, snap) {
             }
             if (hasMultiQubitGate) {
                 ctx.strokeStyle = 'black';
+                ctx.beginPath();
                 ctx.moveTo(k * 8 + 0.5 + 4, 6);
                 ctx.lineTo(k * 8 + 0.5 + 4, 15);
                 ctx.stroke();

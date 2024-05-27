@@ -1,9 +1,62 @@
 import {Operation} from "./operation.js"
+import {GATE_MAP} from "../gates/gateset.js";
+import {groupBy} from "../base/seq.js";
 
 class Layer {
     constructor() {
         this.id_ops = /** @type {!Map<!int, !Operation>} */ new Map();
         this.markers /** @type {!Array<!Operation>} */ = [];
+    }
+
+    /**
+     * @returns {!string}
+     */
+    toString() {
+        let result = 'Layer {\n';
+        result += "    id_ops {\n";
+        for (let [key, val] of this.id_ops.entries()) {
+            result += `        ${key}: ${val}\n`
+        }
+        result += '    }\n';
+        result += "    markers {\n";
+        for (let val of this.markers) {
+            result += `        ${val}\n`
+        }
+        result += '    }\n';
+        result += '}';
+        return result;
+    }
+
+    /**
+     * @returns {Map<!string, !Array<!Operation>>}
+     */
+    opsGroupedByNameWithArgs() {
+        let opsByName = groupBy(this.iter_gates_and_markers(), op => {
+            let key = op.gate.name;
+            if (key.startsWith('MPP:') && !GATE_MAP.has(key)) {
+                key = 'MPP';
+            }
+            if (key.startsWith('SPP:') && !GATE_MAP.has(key)) {
+                key = 'SPP';
+            }
+            if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
+                key = 'SPP_DAG';
+            }
+            if (op.args.length > 0) {
+                key += '(' + [...op.args].join(',') + ')';
+            }
+            return key;
+        });
+        let namesWithArgs = [...opsByName.keys()];
+        namesWithArgs.sort((a, b) => {
+            let ma = a.startsWith('MARK') || a.startsWith('POLY');
+            let mb = b.startsWith('MARK') || b.startsWith('POLY');
+            if (ma !== mb) {
+                return ma < mb ? -1 : +1;
+            }
+            return a < b ? -1 : a > b ? +1 : 0;
+        });
+        return new Map(namesWithArgs.map(e => [e, opsByName.get(e)]));
     }
 
     /**

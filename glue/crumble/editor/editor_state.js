@@ -511,7 +511,7 @@ class EditorState {
 
     _writeMarkerToDetOrObs(preview, marker_index, isDet) {
         let newCircuit = this.copyOfCurCircuit().withCoordsIncluded(this.focusedSet.values());
-        let argIndex = isDet ? newCircuit.collectDetectorsAndObservables().dets.length : marker_index;
+        let argIndex = isDet ? newCircuit.collectDetectorsAndObservables(false).dets.length : marker_index;
         for (let k = 0; k < newCircuit.layers.length; k++) {
             let layer = newCircuit.layers[k];
             for (let k2 = 0; k2 < layer.markers.length; k2++) {

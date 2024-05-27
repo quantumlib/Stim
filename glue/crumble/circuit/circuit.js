@@ -5,27 +5,6 @@ import {make_mpp_gate, make_spp_gate} from '../gates/gateset_mpp.js';
 import {describe} from "../base/describe.js";
 
 /**
- * @param {!Iterator<TItem>}items
- * @param {!function(item: TItem): TKey} func
- * @returns {!Map<TKey, !Array<TItem>>}
- * @template TItem
- * @template TKey
- */
-function groupBy(items, func) {
-    let result = new Map();
-    for (let item of items) {
-        let key = func(item);
-        let group = result.get(key);
-        if (group === undefined) {
-            result.set(key, [item]);
-        } else {
-            group.push(item);
-        }
-    }
-    return result;
-}
-
-/**
  * @param {!string} targetText
  * @returns {!Array.<!string>}
  */
@@ -358,7 +337,7 @@ class Circuit {
                 let clean_targets = [];
                 for (let k = 0; k < targets.length; k += 2) {
                     if (targets[k].startsWith("rec[") || targets[k + 1].startsWith("rec[")) {
-                        console.warn("IGNORED", name, targets[k], targets[k + 1]);
+                        console.warn("Feedback isn't supported yet. Ignoring", name, targets[k], targets[k + 1]);
                     } else {
                         clean_targets.push(targets[k]);
                         clean_targets.push(targets[k + 1]);
@@ -550,18 +529,30 @@ class Circuit {
     }
 
     /**
+     * @param {!boolean} orderForToStimCircuit
      * @returns {!{dets: !Array<!Array<!int>>, obs: !Map<!int, !Array.<!int>>}}
      */
-    collectDetectorsAndObservables() {
+    collectDetectorsAndObservables(orderForToStimCircuit) {
         let detectors = [];
         let observables = new Map();
         let m2d = new Map();
         for (let k = 0; k < this.layers.length; k++) {
             let layer = this.layers[k];
-            for (let [target_id, op] of layer.id_ops.entries()) {
-                if (op.id_targets[0] === target_id) {
-                    if (op.countMeasurements() > 0) {
-                        m2d.set(`${k}:${target_id}`, m2d.size);
+            if (orderForToStimCircuit) {
+                for (let group of layer.opsGroupedByNameWithArgs().values()) {
+                    for (let op of group) {
+                        if (op.countMeasurements() > 0) {
+                            let target_id = op.id_targets[0];
+                            m2d.set(`${k}:${target_id}`, m2d.size);
+                        }
+                    }
+                }
+            } else {
+                for (let [target_id, op] of layer.id_ops.entries()) {
+                    if (op.id_targets[0] === target_id) {
+                        if (op.countMeasurements() > 0) {
+                            m2d.set(`${k}:${target_id}`, m2d.size);
+                        }
                     }
                 }
             }
@@ -625,7 +616,7 @@ class Circuit {
             }
         }
 
-        let {dets: remainingDetectors, obs: remainingObservables} = this.collectDetectorsAndObservables();
+        let {dets: remainingDetectors, obs: remainingObservables} = this.collectDetectorsAndObservables(true);
         remainingDetectors.reverse();
         let seenMeasurements = 0;
         let totalMeasurements = this.countMeasurements();
@@ -654,34 +645,9 @@ class Circuit {
         }
 
         for (let layer of this.layers) {
-            let opsByName = groupBy(layer.iter_gates_and_markers(), op => {
-                let key = op.gate.name;
-                if (key.startsWith('MPP:') && !GATE_MAP.has(key)) {
-                    key = 'MPP';
-                }
-                if (key.startsWith('SPP:') && !GATE_MAP.has(key)) {
-                    key = 'SPP';
-                }
-                if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
-                    key = 'SPP_DAG';
-                }
-                if (op.args.length > 0) {
-                    key += '(' + [...op.args].join(',') + ')';
-                }
-                return key;
-            });
-            let namesWithArgs = [...opsByName.keys()];
-            namesWithArgs.sort((a, b) => {
-                let ma = a.startsWith('MARK') || a.startsWith('POLY');
-                let mb = b.startsWith('MARK') || b.startsWith('POLY');
-                if (ma !== mb) {
-                    return ma < mb ? -1 : +1;
-                }
-                return a < b ? -1 : a > b ? +1 : 0;
-            });
+            let opsByName = layer.opsGroupedByNameWithArgs();
 
-            for (let nameWithArgs of namesWithArgs) {
-                let group = opsByName.get(nameWithArgs);
+            for (let [nameWithArgs, group] of opsByName.entries()) {
                 let targetGroups = [];
 
                 let gateName = nameWithArgs.split('(')[0];

@@ -130,3 +130,33 @@ test("editor_state.writeGateToFocus", () => {
         POLYGON(1,1,0,0.5) 0 1
     `));
 });
+
+test('editor_state.edit_measurement_near_observables', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        QUBIT_COORDS(2, 0) 2
+        RX 1
+        TICK
+        MX 2
+        TICK
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+    `));
+    state.changeFocus([[1, 0]]);
+    state.changeCurLayerTo(1);
+    state.writeGateToFocus(false, GATE_MAP.get('M'));
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        QUBIT_COORDS(2, 0) 2
+        RX 1
+        TICK
+        M 1
+        MX 2
+        TICK
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+    `));
+});

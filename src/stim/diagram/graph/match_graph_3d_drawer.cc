@@ -118,8 +118,13 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
             }
             c /= det_coords.size();
             for (const auto &e : det_coords) {
-                out.blue_line_data.push_back(c);
-                out.blue_line_data.push_back(e);
+                if (has_observables) {
+                    out.blue_line_data.push_back(c);
+                    out.blue_line_data.push_back(e);
+                } else {
+                    out.purple_line_data.push_back(c);
+                    out.purple_line_data.push_back(e);
+                }
             }
         }
     };
