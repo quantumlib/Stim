@@ -62,11 +62,25 @@ function drawCrossMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
  * @param {!CanvasRenderingContext2D} ctx
  * @param {!StateSnapshot} snap
  * @param {!function(q: !int): ![!number, !number]} qubitCoordsFunc
+ * @param {!Map<!int, !PropagatedPauliFrames>} propagatedMarkerLayers
+ */
+function drawMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkerLayers) {
+    let obsCount = new Map();
+    let detCount = new Map();
+    for (let [mi, p] of propagatedMarkerLayers.entries()) {
+        drawSingleMarker(ctx, snap, qubitCoordsFunc, p, mi, obsCount, detCount);
+    }
+}
+
+/**
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {!StateSnapshot} snap
+ * @param {!function(q: !int): ![!number, !number]} qubitCoordsFunc
  * @param {!PropagatedPauliFrames} propagatedMarkers
  * @param {!int} mi
+ * @param {!Map} hitCount
  */
-function drawMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
-    let {dx, dy, wx, wy} = marker_placement(mi);
+function drawSingleMarker(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi, hitCount) {
     let basesQubitMap = propagatedMarkers.atLayer(snap.curLayer + 0.5).bases;
 
     // Convert qubit indices to draw coordinates.
@@ -113,33 +127,41 @@ function drawMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
         ctx.globalAlpha *= 0.25;
         ctx.fill();
         ctx.globalAlpha *= 4;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.lineWidth = 1;
+        if (coords.length > 1) {
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
     }
 
-    if (mi < 4) {
-        // Draw individual qubit markers.
-        for (let [b, [x, y]] of basisCoords) {
-            if (b === 'X') {
-                ctx.fillStyle = 'red'
-            } else if (b === 'Y') {
-                ctx.fillStyle = 'green'
-            } else if (b === 'Z') {
-                ctx.fillStyle = 'blue'
-            } else {
-                throw new Error('Not a pauli: ' + b);
-            }
-            ctx.fillRect(x - dx, y - dy, wx, wy);
+    // Draw individual qubit markers.
+    for (let [b, [x, y]] of basisCoords) {
+        let {dx, dy, wx, wy} = marker_placement(mi, `${x}:${y}`, hitCount);
+        if (b === 'X') {
+            ctx.fillStyle = 'red'
+        } else if (b === 'Y') {
+            ctx.fillStyle = 'green'
+        } else if (b === 'Z') {
+            ctx.fillStyle = 'blue'
+        } else {
+            throw new Error('Not a pauli: ' + b);
         }
+        ctx.fillRect(x - dx, y - dy, wx, wy);
     }
 
     // Show error highlights.
     let errorsQubitSet = propagatedMarkers.atLayer(snap.curLayer).errors;
     for (let q of errorsQubitSet) {
         let [x, y] = qubitCoordsFunc(q);
-        ctx.fillStyle = 'magenta'
-        ctx.fillRect(x - dx - 8, y - dy - 8, wx + 16, wy + 16);
+        let {dx, dy, wx, wy} = marker_placement(mi, `${x}:${y}`, hitCount);
+        if (mi < 0) {
+            ctx.lineWidth = 2;
+        } else {
+            ctx.lineWidth = 8;
+        }
+        ctx.strokeStyle = 'magenta'
+        ctx.strokeRect(x - dx, y - dy, wx, wy);
+        ctx.lineWidth = 1;
         ctx.fillStyle = 'black'
         ctx.fillRect(x - dx, y - dy, wx, wy);
     }
@@ -242,23 +264,41 @@ function draw(ctx, snap) {
 
         // Draw the grid of qubits.
         defensiveDraw(ctx, () => {
-            let allQubits = circuit.allQubits();
+            for (let qx = 0; qx < 100; qx += 0.5) {
+                let [x, _] = c2dCoordTransform(qx, 0);
+                let s = `${qx}`;
+                ctx.fillStyle = 'black';
+                ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
+            }
+            for (let qy = 0; qy < 100; qy += 0.5) {
+                let [_, y] = c2dCoordTransform(0, qy);
+                let s = `${qy}`;
+                ctx.fillStyle = 'black';
+                ctx.fillText(s, 18 - ctx.measureText(s).width, y);
+            }
+
             ctx.strokeStyle = 'black';
             for (let qx = 0; qx < 100; qx += 0.5) {
+                let [x, _] = c2dCoordTransform(qx, 0);
+                let s = `${qx}`;
+                ctx.fillStyle = 'black';
+                ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
                 for (let qy = qx % 1; qy < 100; qy += 1) {
                     let [x, y] = c2dCoordTransform(qx, qy);
                     if (qx % 1 === 0.5) {
-                        ctx.fillStyle = 'pink';
+                        ctx.fillStyle = 'white';
                     } else {
                         ctx.fillStyle = 'white';
                     }
                     let isUnused = !usedQubitCoordSet.has(`${qx},${qy}`);
                     if (isUnused) {
                         ctx.globalAlpha *= 0.25;
+                        ctx.globalAlpha *= 0.25;
                     }
                     ctx.fillRect(x - rad, y - rad, 2*rad, 2*rad);
                     ctx.strokeRect(x - rad, y - rad, 2*rad, 2*rad);
                     if (isUnused) {
+                        ctx.globalAlpha *= 4;
                         ctx.globalAlpha *= 4;
                     }
                 }
@@ -293,9 +333,7 @@ function draw(ctx, snap) {
             }
         });
 
-        for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            drawMarkers(ctx, snap, qubitDrawCoords, p, mi);
-        }
+        drawMarkers(ctx, snap, qubitDrawCoords, propagatedMarkerLayers);
 
         if (focusX !== undefined) {
             ctx.save();
@@ -333,11 +371,11 @@ function draw(ctx, snap) {
 
     drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords);
 
-    // Scrubber.
+    // Draw scrubber.
     ctx.save();
     try {
         ctx.strokeStyle = 'black';
-        ctx.translate(ctx.canvas.width / 2, 0);
+        ctx.translate(Math.floor(ctx.canvas.width / 2), 0);
         for (let k = 0; k < circuit.layers.length; k++) {
             let hasPolygons = false;
             let hasXMarker = false;

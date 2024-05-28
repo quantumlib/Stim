@@ -1,6 +1,7 @@
 import {rad} from "./config.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {OFFSET_Y} from './main_draw.js';
+import {marker_placement} from '../gates/gateset_markers.js';
 
 let TIMELINE_PITCH = 32;
 
@@ -13,30 +14,34 @@ let TIMELINE_PITCH = 32;
  * @param {!int} min_t
  * @param {!int} max_t
  * @param {!number} x_pitch
+ * @param {!Map} hitCounts
  */
-function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi, min_t, max_t, x_pitch) {
-    let dx, dy, wx, wy;
-    dx = 0;
-    wx = x_pitch;
-    wy = 5;
-    if (mi < 0) {
-        dx = -10.5 - ~mi % 4 * 5;
-        dy = 10.5 - Math.floor(~mi / 4) % 4 * 5;
-        wx = 3;
-        wy = 3;
-    } else if (mi === 0) {
-        dy = 10;
-    } else if (mi === 1) {
-        dy = 5;
-    } else if (mi === 2) {
-        dy = 0;
-    } else if (mi === 3) {
-        dy = -5;
-    }
+function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi, min_t, max_t, x_pitch, hitCounts) {
     for (let t = min_t; t <= max_t; t++) {
+        if (!hitCounts.has(t)) {
+            hitCounts.set(t, new Map());
+        }
+        let hitCount = hitCounts.get(t);
         let p1 = propagatedMarkers.atLayer(t + 0.5);
         let p0 = propagatedMarkers.atLayer(t);
         for (let [q, b] of p1.bases.entries()) {
+            let {dx, dy, wx, wy} = marker_placement(mi, q, hitCount);
+            if (mi >= 0 && mi < 4) {
+                dx = 0;
+                wx = x_pitch;
+                wy = 5;
+                if (mi === 0) {
+                    dy = 10;
+                } else if (mi === 1) {
+                    dy = 5;
+                } else if (mi === 2) {
+                    dy = 0;
+                } else if (mi === 3) {
+                    dy = -5;
+                }
+            } else {
+                dx -= x_pitch / 2;
+            }
             let [x, y] = qubitTimeCoordFunc(q, t);
             if (x === undefined || y === undefined) {
                 continue;
@@ -53,13 +58,18 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
             ctx.fillRect(x - dx, y - dy, wx, wy);
         }
         for (let q of p0.errors) {
+            let {dx, dy, wx, wy} = marker_placement(mi, q, hitCount);
+            dx -= x_pitch / 2;
+
             let [x, y] = qubitTimeCoordFunc(q, t - 0.5);
             if (x === undefined || y === undefined) {
                 continue;
             }
-            ctx.fillStyle = 'magenta'
-            ctx.fillRect(x - dx - 8, y - dy - 8, wx + 16, wy + 16);
-            ctx.fillStyle = 'black'
+            ctx.strokeStyle = 'magenta';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(x - dx, y - dy, wx, wy);
+            ctx.lineWidth = 1;
+            ctx.fillStyle = 'black';
             ctx.fillRect(x - dx, y - dy, wx, wy);
         }
         for (let {q1, q2, color} of p0.crossings) {
@@ -142,10 +152,9 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
     ctx.save();
     try {
         ctx.clearRect(w, 0, w, ctx.canvas.height);
+        let hitCounts = new Map();
         for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            if (mi >= 0 && mi < 4) {
-                drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch);
-            }
+            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch, hitCounts);
         }
         ctx.globalAlpha *= 0.5;
         ctx.fillStyle = 'black';
@@ -183,12 +192,6 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             }
             for (let op of layer.iter_gates_and_markers()) {
                 op.id_draw(qubitsCoordsFuncForLayer, ctx);
-            }
-        }
-
-        for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            if (mi < 0) {
-                drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch);
             }
         }
 

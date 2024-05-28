@@ -219,16 +219,17 @@ function makeChordHandlers() {
         res.set(`${key}+o`, preview => editorState.writeMarkerToObservable(preview, val));
     }
 
-    res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));
-    res.set('alt+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, 0.5]));
-    res.set('shift+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, 0.5]));
-    res.set('p+x', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));
-    res.set('p+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, 0.5]));
-    res.set('p+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, 0.5]));
-    res.set('p+x+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 0, 0.5]));
-    res.set('p+x+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 1, 0.5]));
-    res.set('p+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 1, 0.5]));
-    res.set('p+x+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 1, 0.5]));
+    let defaultPolygonAlpha = 0.25;
+    res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, defaultPolygonAlpha]));
+    res.set('alt+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, defaultPolygonAlpha]));
+    res.set('shift+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, defaultPolygonAlpha]));
+    res.set('p+x', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, defaultPolygonAlpha]));
+    res.set('p+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, defaultPolygonAlpha]));
+    res.set('p+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, defaultPolygonAlpha]));
+    res.set('p+x+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 0, defaultPolygonAlpha]));
+    res.set('p+x+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 1, defaultPolygonAlpha]));
+    res.set('p+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 1, defaultPolygonAlpha]));
+    res.set('p+x+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 1, defaultPolygonAlpha]));
     res.set('m+p+x', preview => editorState.writeGateToFocus(preview, make_mpp_gate("X".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+y', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Y".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+z', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Z".repeat(editorState.focusedSet.size)), []));
@@ -390,6 +391,16 @@ function handleKeyboardEvent(ev) {
         }
         if (ev.key === 'e' || ev.key === 'E') {
             editorState.changeCurLayerTo(editorState.curLayer + 1);
+            return;
+        }
+        if (ev.key === 'Home') {
+            editorState.changeCurLayerTo(0);
+            ev.preventDefault();
+            return;
+        }
+        if (ev.key === 'End') {
+            editorState.changeCurLayerTo(editorState.copyOfCurCircuit().layers.length - 1);
+            ev.preventDefault();
             return;
         }
     }
