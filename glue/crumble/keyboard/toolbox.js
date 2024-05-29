@@ -6,8 +6,8 @@ let DIAM = 28;
 let PITCH = DIAM + 4;
 let PAD = 10.5;
 
-let COLUMNS = ['H', 'S', 'R', 'M', 'C', 'W', 'SC', 'MC', 'P', '1', '2', '3', '4'];
-let DEF_ROW = [1,    2,   2,   2,  1,   2,   2,    2,    -1, -1, -1, -1, -1];
+let COLUMNS = ['H', 'S', 'R', 'M', 'MR', 'C', 'W', 'SC', 'MC', 'P', '1-9'];
+let DEF_ROW = [1,    2,   2,   2,  2,     1,   2,   2,    2,    -1, -1, -1];
 
 /**
  * @param {!ChordEvent} ev
@@ -68,18 +68,21 @@ function make_pos_to_gate_dict() {
         ['3,0', GATE_MAP.get("MX")],
         ['3,1', GATE_MAP.get("MY")],
         ['3,2', GATE_MAP.get("M")],
-        ['4,0', GATE_MAP.get("CX")],
-        ['4,1', GATE_MAP.get("CY")],
-        ['4,2', GATE_MAP.get("CZ")],
-        ['5,0', GATE_MAP.get("CXSWAP")],
-        ['5,1', GATE_MAP.get("SWAP")],
-        ['5,2', GATE_MAP.get("CZSWAP")],
-        ['6,0', GATE_MAP.get("SQRT_XX")],
-        ['6,1', GATE_MAP.get("SQRT_YY")],
-        ['6,2', GATE_MAP.get("SQRT_ZZ")],
-        ['7,0', GATE_MAP.get("MXX")],
-        ['7,1', GATE_MAP.get("MYY")],
-        ['7,2', GATE_MAP.get("MZZ")],
+        ['4,0', GATE_MAP.get("MRX")],
+        ['4,1', GATE_MAP.get("MRY")],
+        ['4,2', GATE_MAP.get("MRZ")],
+        ['5,0', GATE_MAP.get("CX")],
+        ['5,1', GATE_MAP.get("CY")],
+        ['5,2', GATE_MAP.get("CZ")],
+        ['6,0', GATE_MAP.get("CXSWAP")],
+        ['6,1', GATE_MAP.get("SWAP")],
+        ['6,2', GATE_MAP.get("CZSWAP")],
+        ['7,0', GATE_MAP.get("SQRT_XX")],
+        ['7,1', GATE_MAP.get("SQRT_YY")],
+        ['7,2', GATE_MAP.get("SQRT_ZZ")],
+        ['8,0', GATE_MAP.get("MXX")],
+        ['8,1', GATE_MAP.get("MYY")],
+        ['8,2', GATE_MAP.get("MZZ")],
     ]);
     let x = 9;
     for (let k = 0; k < 4; k++) {
@@ -142,32 +145,76 @@ function drawToolbox(ev) {
 
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
-    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'C_X', 'CXSWAP', '√XX', 'M_XX', 'red', 'X1', 'X1', 'X2', 'X3', 'X4'];
-    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'C_Y', 'SWAP',   '√YY', 'M_YY',  'green',  'Y1', 'Y1', 'Y2', 'Y3', 'Y4'];
-    let zGates = ['H_XY', 'S',   'R',   'M',   'C_Z', 'CZSWAP', '√ZZ', 'M_ZZ', 'blue', 'Z1', 'Z1', 'Z2', 'Z3', 'Z4'];
+    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'MR_X', 'C_X', 'CXSWAP', '√XX', 'M_XX', 'PX', 'X1'];
+    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'MR_Y', 'C_Y', 'SWAP',   '√YY', 'M_YY',  'PY',  'Y1'];
+    let zGates = ['H_XY', 'S',   'R',   'M',   'MR',   'C_Z', 'CZSWAP', '√ZZ', 'M_ZZ', 'PZ', 'Z1'];
     let gates = [xGates, yGates, zGates];
     for (let k = 0; k < COLUMNS.length; k++) {
         for (let p = 0; p < 3; p++) {
             ctx.fillRect(PAD + PITCH * k, PAD + PITCH * p, DIAM, DIAM);
-            ctx.strokeRect(PAD + PITCH * k, PAD + PITCH * p, DIAM, DIAM);
         }
     }
-    ctx.fillStyle = 'black';
     for (let k = 0; k < COLUMNS.length; k++) {
         for (let p = 0; p < 3; p++) {
             let text = gates[p][k];
             let cx = PAD + PITCH * k + DIAM / 2;
             let cy = PAD + PITCH * p + DIAM / 2;
+            if (text.startsWith('P')) {
+                ctx.beginPath();
+                ctx.moveTo(cx + PITCH * 0.25, cy + PITCH * 0.25);
+                ctx.lineTo(cx, cy - PITCH * 0.25);
+                ctx.lineTo(cx - PITCH * 0.25, cy + PITCH * 0.25);
+                ctx.closePath();
+                ctx.globalAlpha *= 0.25;
+                ctx.fillStyle = text === 'PX' ? 'red' : text === 'PY' ? 'green' : 'blue';
+                ctx.fill();
+                ctx.globalAlpha *= 4;
+                continue;
+            }
+            if (text.endsWith('1')) {
+                ctx.beginPath();
+                ctx.moveTo(cx + PITCH * 0.15, cy - PITCH * 0.25);
+                ctx.lineTo(cx, cy + PITCH * 0.1);
+                ctx.lineTo(cx - PITCH * 0.15, cy - PITCH * 0.25);
+                ctx.closePath();
+                let color = text === 'X1' ? 'red' : text === 'Y1' ? 'green' : 'blue';
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + DIAM * 0.5, cy);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+                continue;
+            }
+
+            ctx.fillStyle = 'black';
             if (text.indexOf('_') !== -1) {
                 let [main, sub] = text.split('_');
-                ctx.font = '16pt monospace';
-                ctx.textAlign = 'right';
+                let k = 16;
+                let w1 = 0;
+                let w2 = 0;
+                while (k > 4) {
+                    ctx.font = `${k}pt monospace`;
+                    w1 = ctx.measureText(main).width;
+                    ctx.font = `${k * 0.6}pt monospace`;
+                    w2 = ctx.measureText(sub).width;
+                    if (w1 + w2 <= 26) {
+                        break;
+                    }
+                    k -= 1;
+                }
+                cx -= (w1 + w2) / 2;
+                ctx.font = `${k}pt monospace`;
+                ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(main, cx, cy);
-                ctx.font = sub.length === 1 ? '12pt monospace' : '8pt monospace';
+                ctx.font = `${k * 0.6}pt monospace`;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
-                ctx.fillText(sub, cx, cy);
+                ctx.fillText(sub, cx + w1, cy);
             } else {
                 let k = 16;
                 while (k > 4) {
@@ -181,6 +228,12 @@ function drawToolbox(ev) {
                 ctx.textBaseline = 'middle';
                 ctx.fillText(text, cx, cy);
             }
+        }
+    }
+    ctx.strokeStyle = 'black';
+    for (let k = 0; k < COLUMNS.length; k++) {
+        for (let p = 0; p < 3; p++) {
+            ctx.strokeRect(PAD + PITCH * k, PAD + PITCH * p, DIAM, DIAM);
         }
     }
 
