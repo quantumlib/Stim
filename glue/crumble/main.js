@@ -240,6 +240,30 @@ function makeChordHandlers() {
     res.set('m+p+x', preview => editorState.writeGateToFocus(preview, make_mpp_gate("X".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+y', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Y".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+z', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Z".repeat(editorState.focusedSet.size)), []));
+    res.set('f', preview => {
+        let newCircuit = editorState.copyOfCurCircuit();
+        let layer = newCircuit.layers[editorState.curLayer];
+        let flipped_op_first_targets = new Set();
+        for (let q of editorState.focusedSet.keys()) {
+            let op = layer.id_ops.get(newCircuit.coordToQubitMap().get(q));
+            if (op !== undefined && ['CX', 'XCZ', 'CY', 'XCY', 'YCX', 'YCZ', 'CXSWAP', 'SWAPCX'].indexOf(op.gate.name) !== -1) {
+                flipped_op_first_targets.add(op.id_targets[0]);
+            }
+        }
+        for (let q of flipped_op_first_targets) {
+            layer.id_ops.get(q).id_targets.reverse();
+        }
+        editorState.commit_or_preview(newCircuit, preview);
+    });
+    res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview));
+    res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview));
+    res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview));
+    res.set('shift+^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview));
+    res.set('>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview));
+    res.set('<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview));
+    res.set('v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview));
+    res.set('^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview));
+    res.set('.', preview => editorState.applyCoordinateTransform((x, y) => [x + 0.5, y + 0.5], preview));
 
     /**
      * @param {!Array<!string>} chords
@@ -292,7 +316,7 @@ function makeChordHandlers() {
     addGateChords(['c+w+z'], "CZSWAP", undefined);
     addGateChords(['c+w'], "CZSWAP", undefined);
 
-    addGateChords(['f'], "C_XYZ", "C_ZYX");
+    addGateChords(['c+t'], "C_XYZ", "C_ZYX");
     addGateChords(['c+s+x'], "SQRT_XX", "SQRT_XX_DAG");
     addGateChords(['c+s+y'], "SQRT_YY", "SQRT_YY_DAG");
     addGateChords(['c+s+z'], "SQRT_ZZ", "SQRT_ZZ_DAG");

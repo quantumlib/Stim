@@ -119,10 +119,16 @@ button (now labelled "Hide Import/Export") again.
 - `ctrl+c`: Copy selection to clipboard (or entire layer if nothing selected).
 - `ctrl+v`: Past clipboard contents at current selection (or entire layer if nothing selected).
 - `ctrl+x`: Cut selection to clipboard (or entire layer if nothing selected).
-- `t`: Rotate circuit 45 degrees clockwise.
-- `shift+t`: Rotate circuit 45 degrees counter-clockwise.
+- `f`: Flip qubit order of selected operations (e.g. flip the control-to-target direction of a CNOT).
 - `home`: Jump to the first layer of the circuit.
 - `end`: Jump to the last layer of the circuit.
+- `t`: Rotate circuit 45 degrees clockwise.
+- `shift+t`: Rotate circuit 45 degrees counter-clockwise.
+- `v`: Translate circuit down one step.
+- `^`: Translate circuit up one step.
+- `>`: Translate circuit right one step.
+- `<`: Translate circuit left one step.
+- `.`: Translate circuit down and right by a half step.
 
 **Single Qubit Gates**
 
@@ -143,10 +149,11 @@ Note: use `shift` to get the inverse of a gate.
 - `m+r+x`: Overwrite selection with `MRX` gate
 - `m+r+y`: Overwrite selection with `MRY` gate
 - `m+r`: Overwrite selection with `MR` gate
-- `f`: Overwrite selection with `C_XYZ` gate
+- `c+t`: Overwrite selection with `C_XYZ` gate
 - `j+x`: Overwrite selection with **j**ust a Pauli `X` gate
 - `j+y`: Overwrite selection with **j**ust a Pauli `Y` gate
 - `j+z`: Overwrite selection with **j**ust a Pauli `Z` gate
+- `shift+c+t`: Overwrite selection with `C_ZYX` gate
 
 **Two Qubit Gates**
 
