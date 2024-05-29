@@ -255,6 +255,22 @@ function makeChordHandlers() {
         }
         editorState.commit_or_preview(newCircuit, preview);
     });
+    res.set('shift+f', preview => {
+        let newCircuit = editorState.copyOfCurCircuit();
+        let end = editorState.curLayer;
+        while (end < newCircuit.layers.length && !newCircuit.layers[end].empty()) {
+            end += 1;
+        }
+        let layers = [];
+        for (let k = editorState.curLayer; k < end; k++) {
+            layers.push(newCircuit.layers[k]);
+        }
+        layers.reverse();
+        for (let k = editorState.curLayer; k < end; k++) {
+            newCircuit.layers[k] = layers[k - editorState.curLayer];
+        }
+        editorState.commit_or_preview(newCircuit, preview);
+    });
     res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview));
     res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview));
     res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview));
