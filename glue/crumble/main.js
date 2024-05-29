@@ -185,7 +185,14 @@ function makeChordHandlers() {
     res.set('ctrl+v', pasteFromClipboard);
     res.set('ctrl+x', async preview => {
         await copyToClipboard();
-        editorState.deleteAtFocus(preview);
+        if (editorState.focusedSet.size === 0) {
+            let c = editorState.copyOfCurCircuit();
+            c.layers[editorState.curLayer].id_ops.clear();
+            c.layers[editorState.curLayer].markers.length = 0;
+            editorState.commit_or_preview(c, preview);
+        } else {
+            editorState.deleteAtFocus(preview);
+        }
     });
     res.set('l', preview => {
         if (!preview) {
@@ -270,6 +277,9 @@ function makeChordHandlers() {
     addGateChords(['c+x'], "CX", "CX");
     addGateChords(['c+y'], "CY", "CY");
     addGateChords(['c+z'], "CZ", "CZ");
+    addGateChords(['j+x'], "X", "X");
+    addGateChords(['j+y'], "Y", "Y");
+    addGateChords(['j+z'], "Z", "Z");
     addGateChords(['c+x+y'], "XCY", "XCY");
     addGateChords(['alt+c+x'], "XCX", "XCX");
     addGateChords(['alt+c+y'], "YCY", "YCY");
@@ -385,12 +395,14 @@ const CHORD_HANDLERS = makeChordHandlers();
 function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
     if (ev.type === 'keydown') {
-        if (ev.key === 'q' || ev.key === 'Q') {
-            editorState.changeCurLayerTo(editorState.curLayer - 1);
+        if (ev.key.toLowerCase() === 'q') {
+            let d = ev.shiftKey ? 10 : 1;
+            editorState.changeCurLayerTo(editorState.curLayer - d);
             return;
         }
-        if (ev.key === 'e' || ev.key === 'E') {
-            editorState.changeCurLayerTo(editorState.curLayer + 1);
+        if (ev.key.toLowerCase() === 'e') {
+            let d = ev.shiftKey ? 10 : 1;
+            editorState.changeCurLayerTo(editorState.curLayer + d);
             return;
         }
         if (ev.key === 'Home') {

@@ -103,6 +103,10 @@ button (now labelled "Hide Import/Export") again.
 
 **Editing**
 
+- `e`: Move to next layer.
+- `q`: Move to previous layer.
+- `shift+e`: Move forward 10 layers.
+- `shift+q`: Move backward 10 layers.
 - `escape`: Unselect. Set current selection to the empty set.
 - `delete`: Delete gates at current selection.
 - `backspace`: Delete gates at current selection.
@@ -112,11 +116,13 @@ button (now labelled "Hide Import/Export") again.
 - `ctrl+z`: Undo
 - `ctrl+y`: Redo
 - `ctrl+shift+z`: Redo
-- `ctrl+c`: Copy selection to clipboard.
-- `ctrl+v`: Past clipboard contents at current selection.
-- `ctrl+x`: Cut selection to clipboard.
+- `ctrl+c`: Copy selection to clipboard (or entire layer if nothing selected).
+- `ctrl+v`: Past clipboard contents at current selection (or entire layer if nothing selected).
+- `ctrl+x`: Cut selection to clipboard (or entire layer if nothing selected).
 - `t`: Rotate circuit 45 degrees clockwise.
 - `shift+t`: Rotate circuit 45 degrees counter-clockwise.
+- `home`: Jump to the first layer of the circuit.
+- `end`: Jump to the last layer of the circuit.
 
 **Single Qubit Gates**
 
@@ -138,6 +144,9 @@ Note: use `shift` to get the inverse of a gate.
 - `m+r+y`: Overwrite selection with `MRY` gate
 - `m+r`: Overwrite selection with `MR` gate
 - `f`: Overwrite selection with `C_XYZ` gate
+- `j+x`: Overwrite selection with **j**ust a Pauli `X` gate
+- `j+y`: Overwrite selection with **j**ust a Pauli `Y` gate
+- `j+z`: Overwrite selection with **j**ust a Pauli `Z` gate
 
 **Two Qubit Gates**
 
@@ -165,6 +174,12 @@ Note: use `shift` to get the inverse of a gate.
 - `c+m+y`: Overwrite selection with `MYY` gate targeting mouse
 - `c+m+z`: Overwrite selection with `MZZ` gate targeting mouse
 
+**Multi Qubit Gates**
+
+- `m+p+x`: Overwrite selection with a single `MPP` gate targeting the tensor product of X on each selected qubit.
+- `m+p+y`: Overwrite selection with a single `MPP` gate targeting the tensor product of Y on each selected qubit.
+- `m+p+z`: Overwrite selection with a single `MPP` gate targeting the tensor product of Z on each selected qubit.
+
 **Keyboard Buttons as Gate Adjectives**
 
 Roughly speaking, the "keyboard language" for gates used by Crumble has the following "adjectives":
@@ -179,6 +194,7 @@ Roughly speaking, the "keyboard language" for gates used by Crumble has the foll
 - `r` means "reset"
 - `w` means "swap"
 - `alt` means "no not that one, a different one"
+- `j` means "just"
 
 Here are some examples:
 
