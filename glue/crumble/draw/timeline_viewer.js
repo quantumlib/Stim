@@ -17,7 +17,7 @@ let TIMELINE_PITCH = 32;
  * @param {!Map} hitCounts
  */
 function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi, min_t, max_t, x_pitch, hitCounts) {
-    for (let t = min_t; t <= max_t; t++) {
+    for (let t = min_t - 1; t <= max_t; t++) {
         if (!hitCounts.has(t)) {
             hitCounts.set(t, new Map());
         }

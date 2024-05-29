@@ -383,6 +383,7 @@ function draw(ctx, snap) {
             let hasZMarker = false;
             let hasResetOperations = circuit.layers[k].hasResetOperations();
             let hasMeasurements = circuit.layers[k].hasMeasurementOperations();
+            let hasTwoQubitGate = false;
             let hasMultiQubitGate = false;
             let hasSingleQubitClifford = circuit.layers[k].hasSingleQubitCliffords();
             for (let op of circuit.layers[k].markers) {
@@ -392,7 +393,8 @@ function draw(ctx, snap) {
                 hasZMarker |= op.gate.name === "MARKZ";
             }
             for (let op of circuit.layers[k].id_ops.values()) {
-                hasMultiQubitGate |= op.id_targets.length > 1;
+                hasTwoQubitGate |= op.id_targets.length === 2;
+                hasMultiQubitGate |= op.id_targets.length > 2;
             }
             ctx.fillStyle = 'white';
             ctx.fillRect(k * 8, 0, 8, 20);
@@ -427,6 +429,16 @@ function draw(ctx, snap) {
                 ctx.fillRect(k * 8 + 3, 3, 3, 3);
             }
             if (hasMultiQubitGate) {
+                ctx.strokeStyle = 'black';
+                ctx.beginPath();
+                let x = k * 8 + 0.5;
+                for (let dx of [3, 5]) {
+                    ctx.moveTo(x + dx, 6);
+                    ctx.lineTo(x + dx, 15);
+                }
+                ctx.stroke();
+            }
+            if (hasTwoQubitGate) {
                 ctx.strokeStyle = 'black';
                 ctx.beginPath();
                 ctx.moveTo(k * 8 + 0.5 + 4, 6);
