@@ -96,8 +96,9 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
  * @param {!StateSnapshot} snap
  * @param {!Map<!int, !PropagatedPauliFrames>} propagatedMarkerLayers
  * @param {!function(!int): ![!number, !number]} timesliceQubitCoordsFunc
+ * @param {!int} numLayers
  */
-function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc) {
+function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers) {
     let w = Math.floor(ctx.canvas.width / 2);
 
     let qubits = snap.timelineQubits();
@@ -133,32 +134,45 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
     }
 
     let x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);
+    let num_cols_half = Math.floor(ctx.canvas.width / 4 / x_pitch);
+    let min_t_free = snap.curLayer - num_cols_half + 1;
+    let min_t_clamp = Math.max(0, Math.min(min_t_free, numLayers - num_cols_half*2 + 1));
+    let max_t = Math.min(min_t_clamp + num_cols_half*2 + 2, numLayers);
+    let t2t = t => {
+        let dt = t - snap.curLayer;
+        dt -= min_t_clamp - min_t_free;
+        return dt*x_pitch;
+    }
     let coordTransform_t = ([x, y, t]) => {
         let key = `${x},${y}`;
         if (!base_y2xy.has(key)) {
             return [undefined, undefined];
         }
         let [xb, yb] = base_y2xy.get(key);
-        return [xb + (t - snap.curLayer)*x_pitch, yb];
+        return [xb + t2t(t), yb];
     };
     let qubitTimeCoords = (q, t) => {
         let [x, y] = timesliceQubitCoordsFunc(q);
         return coordTransform_t([x, y, t]);
     }
-    let num_cols_half = Math.floor(ctx.canvas.width / 4 / x_pitch);
-    let min_t = Math.max(0, snap.curLayer - num_cols_half + 1);
-    let max_t = snap.curLayer + num_cols_half + 2;
 
     ctx.save();
     try {
         ctx.clearRect(w, 0, w, ctx.canvas.height);
+
+        // Draw colored indicators showing Pauli propagation.
         let hitCounts = new Map();
         for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t, max_t, x_pitch, hitCounts);
+            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts);
         }
+
+        // Draw highlight of current layer.
         ctx.globalAlpha *= 0.5;
         ctx.fillStyle = 'black';
-        ctx.fillRect(w*1.5 - rad*1.3, 0, x_pitch, ctx.canvas.height);
+        {
+            let x1 = t2t(snap.curLayer) + w * 1.5 - x_pitch / 2;
+            ctx.fillRect(x1, 0, x_pitch, ctx.canvas.height);
+        }
         ctx.globalAlpha *= 2;
 
         ctx.strokeStyle = 'black';
@@ -166,7 +180,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
         // Draw wire lines.
         for (let q of qubits) {
-            let [x0, y0] = qubitTimeCoords(q, min_t - 1);
+            let [x0, y0] = qubitTimeCoords(q, min_t_clamp - 1);
             let [x1, y1] = qubitTimeCoords(q, max_t + 1);
             ctx.beginPath();
             ctx.moveTo(x0, y0);
@@ -174,17 +188,18 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             ctx.stroke();
         }
 
-        // Draw labels.
+        // Draw wire labels.
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         for (let q of qubits) {
-            let [x, y] = qubitTimeCoords(q, min_t - 1);
+            let [x, y] = qubitTimeCoords(q, min_t_clamp - 1);
             let qx = snap.circuit.qubitCoordData[q * 2];
             let qy = snap.circuit.qubitCoordData[q * 2 + 1];
             ctx.fillText(`${qx},${qy}:`, x, y);
         }
 
-        for (let time = min_t; time <= max_t; time++) {
+        // Draw layers of gates.
+        for (let time = min_t_clamp; time <= max_t; time++) {
             let qubitsCoordsFuncForLayer = q => qubitTimeCoords(q, time);
             let layer = snap.circuit.layers[time];
             if (layer === undefined) {
@@ -198,7 +213,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         // Draw links to timeslice viewer.
         ctx.globalAlpha = 0.5;
         for (let q of qubits) {
-            let [x0, y0] = qubitTimeCoords(q, min_t - 1);
+            let [x0, y0] = qubitTimeCoords(q, min_t_clamp - 1);
             let [x1, y1] = timesliceQubitCoordsFunc(q);
             if (snap.curMouseX > ctx.canvas.width / 2 && snap.curMouseY >= y0 + OFFSET_Y - TIMELINE_PITCH * 0.55 && snap.curMouseY <= y0 + TIMELINE_PITCH * 0.55 + OFFSET_Y) {
                 ctx.beginPath();

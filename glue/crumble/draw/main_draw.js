@@ -369,7 +369,7 @@ function draw(ctx, snap) {
         });
     });
 
-    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords);
+    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
 
     // Draw scrubber.
     ctx.save();

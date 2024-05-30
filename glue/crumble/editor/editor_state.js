@@ -215,11 +215,12 @@ class EditorState {
     /**
      * @param {!function(!number, !number): ![!number, !number]} coordTransform
      * @param {!boolean} preview
+     * @param {!boolean} moveFocus
      */
-    applyCoordinateTransform(coordTransform, preview) {
+    applyCoordinateTransform(coordTransform, preview, moveFocus) {
         let c = this.copyOfCurCircuit();
         c = c.afterCoordTransform(coordTransform);
-        if (!preview) {
+        if (!preview && moveFocus) {
             let trans = m => {
                 let new_m = new Map();
                 for (let [x, y] of m.values()) {
@@ -244,7 +245,7 @@ class EditorState {
         this.applyCoordinateTransform((x, y) => {
             [x, y] = t1(x, y);
             return t2(x, y);
-        }, preview);
+        }, preview, true);
     }
 
     /**

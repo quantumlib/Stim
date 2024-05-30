@@ -27,6 +27,8 @@ const txtStimCircuit = /** @type {!HTMLTextAreaElement} */ document.getElementBy
 const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnTimelineFocus');
 const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
 const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
+const btnShowExamples = /** @type {!HTMLButtonElement} */ document.getElementById('btnShowExamples');
+const divExamples = /** @type{!HTMLDivElement} */ document.getElementById('examples-div');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
 txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
@@ -75,6 +77,16 @@ btnTimelineFocus.addEventListener('click', _ev => {
 btnClearSelectedMarkers.addEventListener('click', _ev => {
     editorState.unmarkFocusInferBasis(false);
     editorState.force_redraw();
+});
+
+btnShowExamples.addEventListener('click', _ev => {
+    if (divExamples.style.display === 'none') {
+        divExamples.style.display = 'block';
+        btnShowExamples.textContent = "Hide Example Circuits";
+    } else {
+        divExamples.style.display = 'none';
+        btnShowExamples.textContent = "Show Example Circuits";
+    }
 });
 
 btnClearTimelineFocus.addEventListener('click', _ev => {
@@ -244,18 +256,42 @@ function makeChordHandlers() {
         let newCircuit = editorState.copyOfCurCircuit();
         let layer = newCircuit.layers[editorState.curLayer];
         let flipped_op_first_targets = new Set();
+        let pairs = [
+            ['CX', 'reverse'],
+            ['CY', 'reverse'],
+            ['XCY', 'reverse'],
+            ['CXSWAP', 'reverse'],
+            ['XCZ', 'reverse'],
+            ['XCY', 'reverse'],
+            ['YCX', 'reverse'],
+            ['SWAPCX', 'reverse'],
+            ['RX', 'MX'],
+            ['R', 'M'],
+            ['RY', 'MY'],
+        ];
+        let rev = new Map();
+        for (let p of pairs) {
+            rev.set(p[0], p[1]);
+            rev.set(p[1], p[0]);
+        }
         for (let q of editorState.focusedSet.keys()) {
             let op = layer.id_ops.get(newCircuit.coordToQubitMap().get(q));
-            if (op !== undefined && ['CX', 'XCZ', 'CY', 'XCY', 'YCX', 'YCZ', 'CXSWAP', 'SWAPCX'].indexOf(op.gate.name) !== -1) {
+            if (op !== undefined && rev.has(op.gate.name)) {
                 flipped_op_first_targets.add(op.id_targets[0]);
             }
         }
         for (let q of flipped_op_first_targets) {
-            layer.id_ops.get(q).id_targets.reverse();
+            let op = layer.id_ops.get(q);
+            let other = rev.get(op.gate.name);
+            if (other === 'reverse') {
+                layer.id_ops.get(q).id_targets.reverse();
+            } else {
+                op.gate = GATE_MAP.get(other);
+            }
         }
         editorState.commit_or_preview(newCircuit, preview);
     });
-    res.set('shift+f', preview => {
+    res.set('g', preview => {
         let newCircuit = editorState.copyOfCurCircuit();
         let end = editorState.curLayer;
         while (end < newCircuit.layers.length && !newCircuit.layers[end].empty()) {
@@ -271,15 +307,15 @@ function makeChordHandlers() {
         }
         editorState.commit_or_preview(newCircuit, preview);
     });
-    res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview));
-    res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview));
-    res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview));
-    res.set('shift+^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview));
-    res.set('>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview));
-    res.set('<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview));
-    res.set('v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview));
-    res.set('^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview));
-    res.set('.', preview => editorState.applyCoordinateTransform((x, y) => [x + 0.5, y + 0.5], preview));
+    res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview, false));
+    res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview, false));
+    res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));
+    res.set('shift+^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview, false));
+    res.set('>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview, false));
+    res.set('<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview, false));
+    res.set('v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));
+    res.set('^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview, false));
+    res.set('.', preview => editorState.applyCoordinateTransform((x, y) => [x + 0.5, y + 0.5], preview, false));
 
     /**
      * @param {!Array<!string>} chords
@@ -436,12 +472,12 @@ function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
     if (ev.type === 'keydown') {
         if (ev.key.toLowerCase() === 'q') {
-            let d = ev.shiftKey ? 10 : 1;
+            let d = ev.shiftKey ? 5 : 1;
             editorState.changeCurLayerTo(editorState.curLayer - d);
             return;
         }
         if (ev.key.toLowerCase() === 'e') {
-            let d = ev.shiftKey ? 10 : 1;
+            let d = ev.shiftKey ? 5 : 1;
             editorState.changeCurLayerTo(editorState.curLayer + d);
             return;
         }
@@ -514,3 +550,17 @@ window.addEventListener('focus', () => {
 window.addEventListener('blur', () => {
     editorState.chorder.handleFocusChanged();
 });
+
+// Intercept clicks on the example circuit links, and load them without actually reloading the page, to preserve undo history.
+for (let anchor of document.getElementById('examples-div').querySelectorAll('a')) {
+    anchor.onclick = ev => {
+        // Don't stop the user from e.g. opening the example in a new tab using ctrl+click.
+        if (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.button !== 0) {
+            return undefined;
+        }
+        let circuitText = anchor.href.split('#circuit=')[1];
+
+        editorState.rev.commit(circuitText);
+        return false;
+    };
+}

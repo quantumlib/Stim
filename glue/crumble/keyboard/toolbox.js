@@ -161,12 +161,34 @@ function drawToolbox(ev) {
             let cy = PAD + PITCH * p + DIAM / 2;
             if (text.startsWith('P')) {
                 ctx.beginPath();
-                ctx.moveTo(cx + PITCH * 0.25, cy + PITCH * 0.25);
-                ctx.lineTo(cx, cy - PITCH * 0.25);
-                ctx.lineTo(cx - PITCH * 0.25, cy + PITCH * 0.25);
+                let numPoints = 3;
+                if (text === 'PX') {
+                    numPoints = 4;
+                    ctx.fillStyle = 'red';
+                } else if (text === 'PY') {
+                    numPoints = 5;
+                    ctx.fillStyle = 'green';
+                    cy += 1;
+                } else if (text === 'PZ') {
+                    numPoints = 3;
+                    ctx.fillStyle = 'blue';
+                    cy += 2;
+                }
+                let pts = [];
+                for (let k = 0; k < numPoints; k++) {
+                    let t = 2 * Math.PI / numPoints * (k + 0.5);
+                    pts.push([
+                        Math.round(cx + 0.3 * DIAM * Math.sin(t)),
+                        Math.round(cy + 0.3 * DIAM * Math.cos(t)),
+                    ]);
+                }
+                ctx.moveTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+                for (let pt of pts) {
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+
                 ctx.closePath();
                 ctx.globalAlpha *= 0.25;
-                ctx.fillStyle = text === 'PX' ? 'red' : text === 'PY' ? 'green' : 'blue';
                 ctx.fill();
                 ctx.globalAlpha *= 4;
                 continue;

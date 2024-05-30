@@ -105,8 +105,8 @@ button (now labelled "Hide Import/Export") again.
 
 - `e`: Move to next layer.
 - `q`: Move to previous layer.
-- `shift+e`: Move forward 10 layers.
-- `shift+q`: Move backward 10 layers.
+- `shift+e`: Move forward 5 layers.
+- `shift+q`: Move backward 5 layers.
 - `escape`: Unselect. Set current selection to the empty set.
 - `delete`: Delete gates at current selection.
 - `backspace`: Delete gates at current selection.
@@ -119,8 +119,8 @@ button (now labelled "Hide Import/Export") again.
 - `ctrl+c`: Copy selection to clipboard (or entire layer if nothing selected).
 - `ctrl+v`: Past clipboard contents at current selection (or entire layer if nothing selected).
 - `ctrl+x`: Cut selection to clipboard (or entire layer if nothing selected).
-- `f`: Flip qubit order of selected operations (e.g. flip the control-to-target direction of a CNOT).
-- `shift+f`: Flip order of all circuit layers, starting from the current layer until the next empty layer.
+- `f`: Reverse direction of selected two qubit gates (e.g. exchange the controls and targets of a CNOT).
+- `g`: Reverse order of circuit layers, from the current layer to the next empty layer.
 - `home`: Jump to the first layer of the circuit.
 - `end`: Jump to the last layer of the circuit.
 - `t`: Rotate circuit 45 degrees clockwise.
