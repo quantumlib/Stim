@@ -130,7 +130,7 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
     };
 
     for (const auto &c : coords) {
-        out.elements.push_back({"Z_CONTROL", c});
+        out.elements.push_back({"DETECTOR", c});
     }
 
     dem.iter_flatten_error_instructions([&](const DemInstruction &op) {

@@ -530,11 +530,10 @@ class Circuit {
 
     /**
      * @param {!boolean} orderForToStimCircuit
-     * @returns {!{dets: !Array<!Array<!int>>, obs: !Map<!int, !Array.<!int>>}}
+     * @returns {!{dets: !Array<!{mids: !Array<!int>, qids: !Array<!int>}>, obs: !Map<!int, !Array.<!int>>}}
      */
     collectDetectorsAndObservables(orderForToStimCircuit) {
-        let detectors = [];
-        let observables = new Map();
+        // Index measurements.
         let m2d = new Map();
         for (let k = 0; k < this.layers.length; k++) {
             let layer = this.layers[k];
@@ -543,7 +542,7 @@ class Circuit {
                     for (let op of group) {
                         if (op.countMeasurements() > 0) {
                             let target_id = op.id_targets[0];
-                            m2d.set(`${k}:${target_id}`, m2d.size);
+                            m2d.set(`${k}:${target_id}`, {mid: m2d.size, qids: op.id_targets});
                         }
                     }
                 }
@@ -551,24 +550,29 @@ class Circuit {
                 for (let [target_id, op] of layer.id_ops.entries()) {
                     if (op.id_targets[0] === target_id) {
                         if (op.countMeasurements() > 0) {
-                            m2d.set(`${k}:${target_id}`, m2d.size);
+                            m2d.set(`${k}:${target_id}`, {mid: m2d.size, qids: op.id_targets});
                         }
                     }
                 }
             }
         }
+
+        let detectors = [];
+        let observables = new Map();
         for (let k = 0; k < this.layers.length; k++) {
             let layer = this.layers[k];
             for (let op of layer.markers) {
                 if (op.gate.name === 'DETECTOR') {
                     let d = Math.round(op.args[0]);
                     while (detectors.length <= d) {
-                        detectors.push([]);
+                        detectors.push({mids: [], qids: []});
                     }
-                    let entries = detectors[d];
+                    let det_entry = detectors[d];
                     let key = `${k}:${op.id_targets[0]}`;
-                    if (m2d.has(key)) {
-                        entries.push(m2d.get(key) - m2d.size);
+                    let v = m2d.get(key);
+                    if (v !== undefined) {
+                        det_entry.mids.push(v.mid - m2d.size);
+                        det_entry.qids.push(...v.qids);
                     }
                 } else if (op.gate.name === 'OBSERVABLE_INCLUDE') {
                     let d = Math.round(op.args[0]);
@@ -579,7 +583,7 @@ class Circuit {
                     }
                     let key = `${k}:${op.id_targets[0]}`;
                     if (m2d.has(key)) {
-                        entries.push(m2d.get(key) - m2d.size);
+                        entries.push(m2d.get(key).mid - m2d.size);
                     }
                 }
             }
@@ -587,9 +591,9 @@ class Circuit {
         let seen = new Set();
         let keptDetectors = [];
         for (let ds of detectors) {
-            if (ds.length > 0) {
-                ds.sort((a, b) => b - a);
-                let key = ds.join(':');
+            if (ds.mids.length > 0) {
+                ds.mids.sort((a, b) => b - a);
+                let key = ds.mids.join(':');
                 if (!seen.has(key)) {
                     seen.add(key);
                     keptDetectors.push(ds);
@@ -599,7 +603,7 @@ class Circuit {
         for (let vs of observables.values()) {
             vs.sort((a, b) => b - a);
         }
-        keptDetectors.sort((a, b) => a[0] - b[0]);
+        keptDetectors.sort((a, b) => a.mids[0] - b.mids[0]);
         return {dets: keptDetectors, obs: observables};
     }
 
@@ -643,6 +647,8 @@ class Circuit {
             old2new.set(old_q, q);
             out.push(`QUBIT_COORDS(${x}, ${y}) ${q}`);
         }
+        let detectorLayer = 0;
+        let usedDetectorCoords = new Set();
 
         for (let layer of this.layers) {
             let opsByName = layer.opsGroupedByNameWithArgs();
@@ -695,19 +701,55 @@ class Circuit {
             }
 
             // Output DETECTOR lines immediately after the last measurement layer they use.
+            let nextDetectorLayer = detectorLayer;
             while (remainingDetectors.length > 0) {
                 let candidate = remainingDetectors[remainingDetectors.length - 1];
                 let offset = totalMeasurements - seenMeasurements;
-                if (candidate[0] + offset >= 0) {
+                if (candidate.mids[0] + offset >= 0) {
                     break;
                 }
                 remainingDetectors.pop();
-                let line = ['DETECTOR'];
-                for (let d of candidate) {
+                let cxs = [];
+                let cys = [];
+                let sx = 0;
+                let sy = 0;
+                for (let q of candidate.qids) {
+                    let cx = this.qubitCoordData[2 * q];
+                    let cy = this.qubitCoordData[2 * q + 1];
+                    sx += cx;
+                    sy += cy;
+                    cxs.push(cx);
+                    cys.push(cy);
+                }
+                if (candidate.qids.length > 0) {
+                    sx /= candidate.qids.length;
+                    sy /= candidate.qids.length;
+                    sx = Math.round(sx * 2) / 2;
+                    sy = Math.round(sy * 2) / 2;
+                }
+                cxs.push(sx);
+                cys.push(sy);
+                let name;
+                let dt = detectorLayer;
+                for (let k = 0; ; k++) {
+                    if (k >= cxs.length) {
+                        k = 0;
+                        dt += 1;
+                    }
+                    name = `DETECTOR(${cxs[k]}, ${cys[k]}, ${dt})`;
+                    if (!usedDetectorCoords.has(name)) {
+                        break;
+                    }
+                }
+                usedDetectorCoords.add(name);
+                let line = [name];
+                for (let d of candidate.mids) {
                     line.push(`rec[${d + offset}]`)
                 }
                 out.push(line.join(' '));
+                nextDetectorLayer = Math.max(nextDetectorLayer, dt + 1);
             }
+            detectorLayer = nextDetectorLayer;
 
             // Output OBSERVABLE_INCLUDE lines immediately after the last measurement layer they use.
             for (let [obsIndex, candidate] of [...remainingObservables.entries()]) {

@@ -226,7 +226,7 @@ function draw(ctx, snap) {
     }
     let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables(false);
     for (let mi = 0; mi < dets.length; mi++) {
-        propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi]));
+        propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi].mids));
     }
     for (let mi of obs.keys()) {
         propagatedMarkerLayers.set(~mi ^ (1 << 30), PropagatedPauliFrames.fromMeasurements(circuit, obs.get(mi)));
