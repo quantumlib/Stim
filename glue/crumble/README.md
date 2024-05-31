@@ -90,19 +90,24 @@ button (now labelled "Hide Import/Export") again.
 <a name="keyboard-commands"></a>
 ## Keyboard Controls
 
-**Markings**
+**Pauli Propagation**
 
-- `[XYZ]+[0-9]`: Place Pauli propagation markers at current selection.
-    The X, Y, or Z determines the basis of the marker.
-    The 1, 2, 3, or etc determines which of the tracked Pauli products is affected by the marker.
-    For example, `X+2` will place X type markers that multiply an X dependence into Pauli product #2.
-    The XYZ can be omitted, in which case the basis will be inferred based on the selected gates (for example, an RX gate implies X basis).
 - `spacebar`: Clear all Pauli propagation markers at current selection.
-- `P`: Add a background polygon with corners at the current selection.
-    The color of the polygon is affected by modifier keys: X, Y, Z, alt, shift.
+- `#`: Puts a Pauli propagation marker at the current selection for the indexed Pauli product.
+    `#` can be any of 1, 2, 3, etc and determines which of the tracked Pauli products the marker goes into.
+    For example, `2` will place a marker that multiplies a Pauli term into tracked Pauli product #2.
+    The basis of the marker is inferred from context (e.g. if an `RX` gate is selected, it will be an `X` marker).
+- `x+#`: Put an X-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `y+#`: Put a Y-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `z+#`: Put a Z-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `d+#`: Converts the indexed Pauli product into a circuit `DETECTOR` declaration.
+- `o+#`: Converts the indexed Pauli product into a circuit `OBSERVABLE_INCLUDE` declaration.
+- `j+#`: Picks a `DETECTOR` or `OBSERVABLE_INCLUDE` declaration touching the current selection and converts it into a tracked Pauli product.
 
 **Editing**
 
+- `p`: Add a background polygon with corners at the current selection.
+    The color of the polygon is affected by modifier keys: X, Y, Z, alt, shift.
 - `e`: Move to next layer.
 - `q`: Move to previous layer.
 - `shift+e`: Move forward 5 layers.
@@ -202,7 +207,6 @@ Roughly speaking, the "keyboard language" for gates used by Crumble has the foll
 - `r` means "reset"
 - `w` means "swap"
 - `alt` means "no not that one, a different one"
-- `j` means "just"
 
 Here are some examples:
 

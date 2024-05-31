@@ -3,6 +3,7 @@ import {EditorState} from "./editor_state.js";
 import {GATE_MAP} from "../gates/gateset.js";
 import {Circuit} from "../circuit/circuit.js";
 import {pitch} from "../draw/config.js";
+import {Operation} from '../circuit/operation.js';
 
 test("editor_state.changeFocus", () => {
     let state = new EditorState(undefined);
@@ -131,6 +132,53 @@ test("editor_state.writeGateToFocus", () => {
     `));
 });
 
+test('editor_state.writeMarkerToDetector', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        #!pragma MARKZ(0) 0
+        TICK
+        M 0
+        #!pragma MARKZ(0) 0
+    `));
+    assertThat(state.copyOfCurCircuit().layers[0].markers.length).isNotEqualTo(0);
+    state.writeMarkerToDetector(false, 0);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        TICK
+        M 0
+        DETECTOR(0, 0, 0) rec[-1]
+    `));
+});
+
+test('editor_state.moveDetOrObsAtFocusIntoMarker', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        TICK
+        TICK
+        TICK
+        M 0
+        DETECTOR(0, 0, 0) rec[-1]
+    `));
+    state.changeCurLayerTo(2);
+    state.changeFocus([[0, 0]], false, false);
+    state.moveDetOrObsAtFocusIntoMarker(false, 2);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        #!pragma MARKZ(2) 0
+        TICK
+        TICK
+        TICK
+        M 0
+        #!pragma MARKZ(2) 0
+    `));
+});
+
 test('editor_state.edit_measurement_near_observables', () => {
     let state = new EditorState(undefined);
     state.commit(Circuit.fromStimCircuit(`
@@ -144,7 +192,7 @@ test('editor_state.edit_measurement_near_observables', () => {
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
     `));
-    state.changeFocus([[1, 0]]);
+    state.changeFocus([[1, 0]], false, false);
     state.changeCurLayerTo(1);
     state.writeGateToFocus(false, GATE_MAP.get('M'));
     assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`

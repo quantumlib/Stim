@@ -49,6 +49,7 @@ class ChordEvent {
 }
 
 const MODIFIER_KEYS = new Set(["alt", "shift", "control", "meta"]);
+const ACTION_KEYS = new Set(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\\', '`']);
 
 class Chorder {
     constructor() {
@@ -115,8 +116,12 @@ class Chorder {
             this._queueEvent(true);
         } else if (ev.type === 'keyup') {
             if (!MODIFIER_KEYS.has(key)) {
+                console.log("UP", key, this.curPressed.size > 0 && !ACTION_KEYS.has(key))
                 this.curPressed.delete(key);
-                this._queueEvent(this.curPressed.size > 0);
+                this._queueEvent(this.curPressed.size > 0 && !ACTION_KEYS.has(key));
+                if (ACTION_KEYS.has(key)) {
+                    this.curChord.delete(key);
+                }
                 if (this.curPressed.size === 0) {
                     this.curModifiers.clear();
                     this.curChord.clear();

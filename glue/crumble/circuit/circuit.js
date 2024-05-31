@@ -155,6 +155,8 @@ class Circuit {
      */
     static fromStimCircuit(stimCircuit) {
         let lines = stimCircuit.replaceAll(';', '\n').
+            replaceAll('#!pragma MARK', 'MARK').
+            replaceAll('#!pragma POLYGON', 'POLYGON').
             replaceAll('_', ' ').
             replaceAll('Q(', 'QUBIT_COORDS(').
             replaceAll('DT', 'DETECTOR').

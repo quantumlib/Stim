@@ -8,6 +8,10 @@ import {xyToPos} from "../draw/main_draw.js";
 import {StateSnapshot} from "../draw/state_snapshot.js";
 import {Operation} from "../circuit/operation.js";
 import {GATE_MAP} from "../gates/gateset.js";
+import {
+    PropagatedPauliFrameLayer,
+    PropagatedPauliFrames
+} from '../circuit/propagated_pauli_frames.js';
 
 /**
  * @param {!int} steps
@@ -511,7 +515,7 @@ class EditorState {
     }
 
     _writeMarkerToDetOrObs(preview, marker_index, isDet) {
-        let newCircuit = this.copyOfCurCircuit().withCoordsIncluded(this.focusedSet.values());
+        let newCircuit = this.copyOfCurCircuit();
         let argIndex = isDet ? newCircuit.collectDetectorsAndObservables(false).dets.length : marker_index;
         for (let k = 0; k < newCircuit.layers.length; k++) {
             let layer = newCircuit.layers[k];
@@ -525,6 +529,73 @@ class EditorState {
                     );
                 }
             }
+        }
+        this.commit_or_preview(newCircuit, preview);
+    }
+
+    moveDetOrObsAtFocusIntoMarker(preview, marker_index) {
+        let circuit = this.copyOfCurCircuit();
+
+        let focusSetQids = new Set();
+        let c2q = circuit.coordToQubitMap();
+        for (let s of this.focusedSet.keys()) {
+            focusSetQids.add(c2q.get(s));
+        }
+
+        let find_overlapping_region = () => {
+            let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables(false);
+            for (let det_id = 0; det_id < dets.length; det_id++) {
+                let prop = PropagatedPauliFrames.fromMeasurements(circuit, dets[det_id].mids);
+                if (prop.atLayer(this.curLayer + 0.5).touchesQidSet(focusSetQids)) {
+                    return [prop, new Operation(GATE_MAP.get('DETECTOR'), new Float32Array([det_id]), new Uint32Array([]))];
+                }
+            }
+            for (let [obs_id, obs_val] of obs.entries()) {
+                let prop = PropagatedPauliFrames.fromMeasurements(circuit, obs_val);
+                if (prop.atLayer(this.curLayer + 0.5).touchesQidSet(focusSetQids)) {
+                    return [prop, new Operation(GATE_MAP.get('OBSERVABLE_INCLUDE'), new Float32Array([obs_id]), new Uint32Array([]))];
+                }
+            }
+            return undefined;
+        }
+        let overlap = find_overlapping_region();
+        if (overlap === undefined) {
+            return;
+        }
+        let [prop, rep_op] = overlap;
+
+        let newCircuit = this.copyOfCurCircuit();
+        for (let k = 0; k < newCircuit.layers.length; k++) {
+            let before = k === 0 ? new PropagatedPauliFrameLayer(new Map(), new Set(), []) : prop.atLayer(k - 0.5);
+            let after = prop.atLayer(k + 0.5);
+            let layer = newCircuit.layers[k];
+            for (let q of new Set([...before.bases.keys(), ...after.bases.keys()])) {
+                let b1 = before.bases.get(q);
+                let b2 = after.bases.get(q);
+                if (b1 === b2) {
+                    continue;
+                }
+                let op = layer.id_ops.get(q);
+                if (op === undefined || op.countMeasurements() > 0 || op.gate.name === 'R' || op.gate.name === 'RX' || op.gate.name === 'RY') {
+                    let transition;
+                    if (b1 === undefined) {
+                        transition = b2;
+                    } else if (b2 === undefined) {
+                        transition = b1;
+                    } else {
+                        let s = new Set(['X', 'Y', 'Z']);
+                        s.remove(b1);
+                        s.remove(b2);
+                        transition = [...s][0];
+                    }
+                    layer.markers.push(new Operation(
+                        GATE_MAP.get(`MARK${transition}`),
+                        new Float32Array([marker_index]),
+                        new Uint32Array([q]),
+                    ))
+                }
+            }
+            layer.markers = layer.markers.filter(op => op.gate.name !== rep_op.gate.name || op.args[0] !== rep_op.args[0]);
         }
         this.commit_or_preview(newCircuit, preview);
     }

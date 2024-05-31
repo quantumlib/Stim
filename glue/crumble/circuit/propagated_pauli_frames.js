@@ -1,6 +1,8 @@
 import {PauliFrame} from './pauli_frame.js';
 import {equate} from '../base/equate.js';
 import {Layer} from './layer.js';
+import {Operation} from './operation.js';
+import {GATE_MAP} from '../gates/gateset.js';
 
 class PropagatedPauliFrameLayer {
     /**
@@ -12,6 +14,24 @@ class PropagatedPauliFrameLayer {
         this.bases = bases;
         this.errors = errors;
         this.crossings = crossings;
+    }
+
+    /**
+     * @param {!Set<!int>} qids
+     * @returns {!boolean}
+     */
+    touchesQidSet(qids) {
+        for (let q of this.bases.keys()) {
+            if (qids.has(q)) {
+                return true;
+            }
+        }
+        for (let q of this.errors.keys()) {
+            if (qids.has(q)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -89,6 +109,7 @@ class PropagatedPauliFrames {
 
     /**
      * @param {!int} layer
+     * @returns {!PropagatedPauliFrameLayer}
      */
     atLayer(layer) {
         let result = this.id_layers.get(layer);

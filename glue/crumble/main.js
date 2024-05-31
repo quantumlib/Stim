@@ -8,6 +8,7 @@ import {draw} from "./draw/main_draw.js";
 import {drawToolbox} from "./keyboard/toolbox.js";
 import {Operation} from "./circuit/operation.js";
 import {make_mpp_gate} from './gates/gateset_mpp.js';
+import {PropagatedPauliFrames} from './circuit/propagated_pauli_frames.js';
 
 const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
 const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
@@ -41,7 +42,7 @@ btnExport.addEventListener('click', _ev => {
 });
 btnImport.addEventListener('click', _ev => {
     let text = txtStimCircuit.value;
-    let circuit = Circuit.fromStimCircuit(text.replaceAll('#!pragma ', ''));
+    let circuit = Circuit.fromStimCircuit(text);
     editorState.commit(circuit);
 });
 
@@ -236,6 +237,7 @@ function makeChordHandlers() {
         res.set(`${key}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKZ').withDefaultArgument(val)));
         res.set(`${key}+d`, preview => editorState.writeMarkerToDetector(preview, val));
         res.set(`${key}+o`, preview => editorState.writeMarkerToObservable(preview, val));
+        res.set(`${key}+j`, preview => editorState.moveDetOrObsAtFocusIntoMarker(preview, val));
     }
 
     let defaultPolygonAlpha = 0.25;
