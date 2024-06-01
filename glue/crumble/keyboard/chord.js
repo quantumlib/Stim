@@ -116,7 +116,6 @@ class Chorder {
             this._queueEvent(true);
         } else if (ev.type === 'keyup') {
             if (!MODIFIER_KEYS.has(key)) {
-                console.log("UP", key, this.curPressed.size > 0 && !ACTION_KEYS.has(key))
                 this.curPressed.delete(key);
                 this._queueEvent(this.curPressed.size > 0 && !ACTION_KEYS.has(key));
                 if (ACTION_KEYS.has(key)) {

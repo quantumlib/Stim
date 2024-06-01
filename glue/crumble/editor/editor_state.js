@@ -584,8 +584,8 @@ class EditorState {
                         transition = b1;
                     } else {
                         let s = new Set(['X', 'Y', 'Z']);
-                        s.remove(b1);
-                        s.remove(b2);
+                        s.delete(b1);
+                        s.delete(b2);
                         transition = [...s][0];
                     }
                     layer.markers.push(new Operation(

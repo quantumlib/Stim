@@ -153,7 +153,7 @@ test('editor_state.writeMarkerToDetector', () => {
     `));
 });
 
-test('editor_state.moveDetOrObsAtFocusIntoMarker', () => {
+test('editor_state.moveDetOrObsAtFocusIntoMarker_det', () => {
     let state = new EditorState(undefined);
     state.commit(Circuit.fromStimCircuit(`
         QUBIT_COORDS(0, 0) 0
@@ -163,6 +163,32 @@ test('editor_state.moveDetOrObsAtFocusIntoMarker', () => {
         TICK
         M 0
         DETECTOR(0, 0, 0) rec[-1]
+    `));
+    state.changeCurLayerTo(2);
+    state.changeFocus([[0, 0]], false, false);
+    state.moveDetOrObsAtFocusIntoMarker(false, 2);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        #!pragma MARKZ(2) 0
+        TICK
+        TICK
+        TICK
+        M 0
+        #!pragma MARKZ(2) 0
+    `));
+});
+
+test('editor_state.moveDetOrObsAtFocusIntoMarker_obs', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 0) 0
+        R 0
+        TICK
+        TICK
+        TICK
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
     `));
     state.changeCurLayerTo(2);
     state.changeFocus([[0, 0]], false, false);
