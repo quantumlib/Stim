@@ -1,12 +1,9 @@
-import {pitch, rad} from "./config.js"
+import {pitch, rad, OFFSET_X, OFFSET_Y} from "./config.js"
 import {marker_placement} from "../gates/gateset_markers.js";
 import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {beginPathPolygon} from './draw_util.js';
-
-const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
-const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
 
 /**
  * @param {!number|undefined} x

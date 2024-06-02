@@ -517,19 +517,43 @@ class EditorState {
     _writeMarkerToDetOrObs(preview, marker_index, isDet) {
         let newCircuit = this.copyOfCurCircuit();
         let argIndex = isDet ? newCircuit.collectDetectorsAndObservables(false).dets.length : marker_index;
+        let prop = PropagatedPauliFrames.fromCircuit(newCircuit, marker_index);
+
         for (let k = 0; k < newCircuit.layers.length; k++) {
+            let before = k === 0 ? new PropagatedPauliFrameLayer(new Map(), new Set(), []) : prop.atLayer(k - 0.5);
+            let after = prop.atLayer(k + 0.5);
             let layer = newCircuit.layers[k];
-            for (let k2 = 0; k2 < layer.markers.length; k2++) {
-                let op = /** @type {!Operation} */ layer.markers[k2];
-                if (op.args[0] === marker_index && ['MARKX', 'MARKY', 'MARKZ'].indexOf(op.gate.name) !== -1) {
-                    layer.markers[k2] = new Operation(
+            for (let q of new Set([...before.bases.keys(), ...after.bases.keys()])) {
+                let b1 = before.bases.get(q);
+                let b2 = after.bases.get(q);
+                let op = layer.id_ops.get(q);
+                let name = op !== undefined ? op.gate.name : undefined;
+                let transition = undefined;
+                if (name === 'MR' || name === 'MRX' || name === 'MRY') {
+                    transition = b1;
+                } else if (op !== undefined && op.countMeasurements() > 0) {
+                    if (b1 === undefined) {
+                        transition = b2;
+                    } else if (b2 === undefined) {
+                        transition = b1;
+                    } else if (b1 !== b2) {
+                        let s = new Set(['X', 'Y', 'Z']);
+                        s.delete(b1);
+                        s.delete(b2);
+                        transition = [...s][0];
+                    }
+                }
+                if (transition !== undefined) {
+                    layer.markers.push(new Operation(
                         GATE_MAP.get(isDet ? 'DETECTOR' : 'OBSERVABLE_INCLUDE'),
                         new Float32Array([argIndex]),
                         op.id_targets,
-                    );
+                    ));
                 }
             }
+            layer.markers = layer.markers.filter(op => !op.gate.name.startsWith('MARK') || op.args[0] !== marker_index);
         }
+
         this.commit_or_preview(newCircuit, preview);
     }
 
@@ -572,22 +596,24 @@ class EditorState {
             for (let q of new Set([...before.bases.keys(), ...after.bases.keys()])) {
                 let b1 = before.bases.get(q);
                 let b2 = after.bases.get(q);
-                if (b1 === b2) {
-                    continue;
-                }
                 let op = layer.id_ops.get(q);
-                if (op === undefined || op.countMeasurements() > 0 || op.gate.name === 'R' || op.gate.name === 'RX' || op.gate.name === 'RY') {
-                    let transition;
+                let name = op !== undefined ? op.gate.name : undefined;
+                let transition = undefined;
+                if (name === 'MR' || name === 'MRX' || name === 'MRY' || name === 'R' || name === 'RX' || name === 'RY') {
+                    transition = b2;
+                } else if (op !== undefined && op.countMeasurements() > 0) {
                     if (b1 === undefined) {
                         transition = b2;
                     } else if (b2 === undefined) {
                         transition = b1;
-                    } else {
+                    } else if (b1 !== b2) {
                         let s = new Set(['X', 'Y', 'Z']);
                         s.delete(b1);
                         s.delete(b2);
                         transition = [...s][0];
                     }
+                }
+                if (transition !== undefined) {
                     layer.markers.push(new Operation(
                         GATE_MAP.get(`MARK${transition}`),
                         new Float32Array([marker_index]),

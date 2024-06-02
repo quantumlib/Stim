@@ -1,6 +1,5 @@
-import {rad} from "./config.js";
+import {OFFSET_Y, rad} from "./config.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
-import {OFFSET_Y} from './main_draw.js';
 import {marker_placement} from '../gates/gateset_markers.js';
 
 let TIMELINE_PITCH = 32;
