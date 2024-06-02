@@ -50,6 +50,9 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     svg_out << ">\n";
 
     auto write_lines = [&](const std::vector<Coord<3>> &line_data, const char *color) {
+        if (line_data.empty()) {
+            return;
+        }
         svg_out << "<path d=\"";
         for (size_t k = 0; k < line_data.size(); k++) {
             if (k) {
