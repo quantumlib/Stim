@@ -46,7 +46,7 @@ function drawCrossMarkers(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi) {
             } else if (color === 'Z') {
                 ctx.strokeStyle = 'blue';
             } else {
-                ctx.strokeStyle = 'magenta'
+                ctx.strokeStyle = 'purple'
             }
             ctx.lineWidth = 8;
             stroke_connector_to(ctx, x1, y1, x2, y2);
@@ -459,11 +459,8 @@ function draw(ctx, snap) {
                 ctx.lineWidth = 4;
                 ctx.strokeRect(k*8 + 0.5 - 1, 0.5 - 1, 7 + 2, 20 + 2);
                 ctx.lineWidth = 1;
-            } else if (hasOps) {
-                ctx.strokeStyle = '#000';
-                ctx.strokeRect(k*8 + 0.5, 0.5, 8, 20);
             } else {
-                ctx.strokeStyle = '#EEE';
+                ctx.strokeStyle = '#000';
                 ctx.strokeRect(k*8 + 0.5, 0.5, 8, 20);
             }
         }

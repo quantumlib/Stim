@@ -253,6 +253,68 @@ test('editor_state.writeMarkerToDetector_mr', () => {
     `));
 });
 
+test('editor_state.writeMarkerToDetector_mxx', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 1) 0
+        QUBIT_COORDS(1, 2) 1
+        QUBIT_COORDS(2, 1) 2
+        QUBIT_COORDS(2, 2) 3
+        R 0 1 2 3
+        #!pragma MARKZ(0) 0 1 2 3
+        TICK
+        MXX 0 2 1 3
+        #!pragma MARKX(0) 0 2 3 1
+        TICK
+        MYY 3 2 1 0
+        #!pragma MARKY(0) 1 0 3 2
+    `));
+    state.writeMarkerToDetector(false, 0);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 1) 0
+        QUBIT_COORDS(1, 2) 1
+        QUBIT_COORDS(2, 1) 2
+        QUBIT_COORDS(2, 2) 3
+        R 0 1 2 3
+        TICK
+        MXX 0 2 1 3
+        TICK
+        MYY 3 2 1 0
+        DETECTOR(1, 2, 0) rec[-1] rec[-2] rec[-3] rec[-4]
+    `));
+});
+
+test('editor_state.writeMarkerToObservable_mxx', () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 1) 0
+        QUBIT_COORDS(1, 2) 1
+        QUBIT_COORDS(2, 1) 2
+        QUBIT_COORDS(2, 2) 3
+        R 0 1 2 3
+        #!pragma MARKZ(0) 0 1 2 3
+        TICK
+        MXX 0 2 1 3
+        #!pragma MARKX(0) 0 2 3 1
+        TICK
+        MYY 3 2 1 0
+        #!pragma MARKY(0) 1 0 3 2
+    `));
+    state.writeMarkerToObservable(false, 0);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(1, 1) 0
+        QUBIT_COORDS(1, 2) 1
+        QUBIT_COORDS(2, 1) 2
+        QUBIT_COORDS(2, 2) 3
+        R 0 1 2 3
+        TICK
+        MXX 0 2 1 3
+        TICK
+        MYY 3 2 1 0
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2] rec[-3] rec[-4]
+    `));
+});
+
 test('editor_state.edit_measurement_near_observables', () => {
     let state = new EditorState(undefined);
     state.commit(Circuit.fromStimCircuit(`

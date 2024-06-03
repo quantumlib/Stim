@@ -594,6 +594,7 @@ class Circuit {
         let keptDetectors = [];
         for (let ds of detectors) {
             if (ds.mids.length > 0) {
+                ds.mids = [...new Set(ds.mids)];
                 ds.mids.sort((a, b) => b - a);
                 let key = ds.mids.join(':');
                 if (!seen.has(key)) {
@@ -602,8 +603,10 @@ class Circuit {
                 }
             }
         }
-        for (let vs of observables.values()) {
+        for (let [k, vs] of observables.entries()) {
+            vs = [...new Set(vs)]
             vs.sort((a, b) => b - a);
+            observables.set(k, vs);
         }
         keptDetectors.sort((a, b) => a.mids[0] - b.mids[0]);
         return {dets: keptDetectors, obs: observables};

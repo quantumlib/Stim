@@ -184,7 +184,7 @@ class PropagatedPauliFrames {
 
     /**
      * @param {!Circuit} circuit
-     * @param {!Array.<!int>} measurements
+     * @param {!Array<!int>} measurements
      * @returns {!PropagatedPauliFrames}
      */
     static fromMeasurements(circuit, measurements) {

@@ -35,6 +35,9 @@ function make_gate_map() {
     for (let gate of iter_gates()) {
         result.set(gate.name, gate);
     }
+    result.set('MZ', result.get('M'))
+    result.set('RZ', result.get('R'))
+    result.set('MRZ', result.get('MR'))
     return result;
 }
 

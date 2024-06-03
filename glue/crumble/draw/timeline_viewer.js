@@ -81,7 +81,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
             } else if (color === 'Z') {
                 ctx.strokeStyle = 'blue';
             } else {
-                ctx.strokeStyle = 'magenta'
+                ctx.strokeStyle = 'purple'
             }
             ctx.lineWidth = 8;
             stroke_connector_to(ctx, x1, y1, x2, y2);
