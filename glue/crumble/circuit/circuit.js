@@ -66,9 +66,10 @@ function splitUncombinedTargets(targets) {
 /**
  * @param {!Float32Array} args
  * @param {!Array.<!string>} combinedTargets
+ * @param {!boolean} convertIntoOtherGates
  * @returns {!Operation}
  */
-function simplifiedMPP(args, combinedTargets) {
+function simplifiedMPP(args, combinedTargets, convertIntoOtherGates) {
     let bases = '';
     let qubits = [];
     for (let t of combinedTargets) {
@@ -87,7 +88,10 @@ function simplifiedMPP(args, combinedTargets) {
         }
     }
 
-    let gate = GATE_MAP.get('M' + bases);
+    let gate = undefined;
+    if (convertIntoOtherGates) {
+        gate = GATE_MAP.get('M' + bases);
+    }
     if (gate === undefined) {
         gate = GATE_MAP.get('MPP:' + bases);
     }

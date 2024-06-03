@@ -238,6 +238,7 @@ function makeChordHandlers() {
         res.set(`${key}+d`, preview => editorState.writeMarkerToDetector(preview, val));
         res.set(`${key}+o`, preview => editorState.writeMarkerToObservable(preview, val));
         res.set(`${key}+j`, preview => editorState.moveDetOrObsAtFocusIntoMarker(preview, val));
+        res.set(`${key}+k`, preview => editorState.addDissipativeOverlapToMarkers(preview, val));
     }
 
     let defaultPolygonAlpha = 0.25;
@@ -254,61 +255,8 @@ function makeChordHandlers() {
     res.set('m+p+x', preview => editorState.writeGateToFocus(preview, make_mpp_gate("X".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+y', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Y".repeat(editorState.focusedSet.size)), []));
     res.set('m+p+z', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Z".repeat(editorState.focusedSet.size)), []));
-    res.set('f', preview => {
-        let newCircuit = editorState.copyOfCurCircuit();
-        let layer = newCircuit.layers[editorState.curLayer];
-        let flipped_op_first_targets = new Set();
-        let pairs = [
-            ['CX', 'reverse'],
-            ['CY', 'reverse'],
-            ['XCY', 'reverse'],
-            ['CXSWAP', 'reverse'],
-            ['XCZ', 'reverse'],
-            ['XCY', 'reverse'],
-            ['YCX', 'reverse'],
-            ['SWAPCX', 'reverse'],
-            ['RX', 'MX'],
-            ['R', 'M'],
-            ['RY', 'MY'],
-        ];
-        let rev = new Map();
-        for (let p of pairs) {
-            rev.set(p[0], p[1]);
-            rev.set(p[1], p[0]);
-        }
-        for (let q of editorState.focusedSet.keys()) {
-            let op = layer.id_ops.get(newCircuit.coordToQubitMap().get(q));
-            if (op !== undefined && rev.has(op.gate.name)) {
-                flipped_op_first_targets.add(op.id_targets[0]);
-            }
-        }
-        for (let q of flipped_op_first_targets) {
-            let op = layer.id_ops.get(q);
-            let other = rev.get(op.gate.name);
-            if (other === 'reverse') {
-                layer.id_ops.get(q).id_targets.reverse();
-            } else {
-                op.gate = GATE_MAP.get(other);
-            }
-        }
-        editorState.commit_or_preview(newCircuit, preview);
-    });
-    res.set('g', preview => {
-        let newCircuit = editorState.copyOfCurCircuit();
-        let end = editorState.curLayer;
-        while (end < newCircuit.layers.length && !newCircuit.layers[end].empty()) {
-            end += 1;
-        }
-        let layers = [];
-        for (let k = editorState.curLayer; k < end; k++) {
-            layers.push(newCircuit.layers[k]);
-        }
-        layers.reverse();
-        for (let k = editorState.curLayer; k < end; k++) {
-            newCircuit.layers[k] = layers[k - editorState.curLayer];
-        }
-        editorState.commit_or_preview(newCircuit, preview);
-    });
+    res.set('f', preview => editorState.flipTwoQubitGateOrderAtFocus(preview));
+    res.set('g', preview => editorState.reverseLayerOrderFromFocusToEmptyLayer(preview));
     res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview, false));
     res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview, false));
     res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));

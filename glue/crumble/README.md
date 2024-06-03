@@ -103,6 +103,7 @@ button (now labelled "Hide Import/Export") again.
 - `d+#`: Converts the indexed Pauli product into a circuit `DETECTOR` declaration.
 - `o+#`: Converts the indexed Pauli product into a circuit `OBSERVABLE_INCLUDE` declaration.
 - `j+#`: Picks a `DETECTOR` or `OBSERVABLE_INCLUDE` declaration touching the current selection and converts it into a tracked Pauli product.
+- `k+#`: Add a marker to any dissipative gate that the indexed Pauli product overlaps in the current layer.
 
 **Editing**
 

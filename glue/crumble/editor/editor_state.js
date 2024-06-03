@@ -49,6 +49,63 @@ class EditorState {
         this.obs_val_draw_state = /** @type {!ObservableValue<StateSnapshot>} */ new ObservableValue(this.toSnapshot(undefined));
     }
 
+    flipTwoQubitGateOrderAtFocus(preview) {
+        let newCircuit = this.copyOfCurCircuit();
+        let layer = newCircuit.layers[this.curLayer];
+        let flipped_op_first_targets = new Set();
+        let pairs = [
+            ['CX', 'reverse'],
+            ['CY', 'reverse'],
+            ['XCY', 'reverse'],
+            ['CXSWAP', 'reverse'],
+            ['XCZ', 'reverse'],
+            ['XCY', 'reverse'],
+            ['YCX', 'reverse'],
+            ['SWAPCX', 'reverse'],
+            ['RX', 'MX'],
+            ['R', 'M'],
+            ['RY', 'MY'],
+        ];
+        let rev = new Map();
+        for (let p of pairs) {
+            rev.set(p[0], p[1]);
+            rev.set(p[1], p[0]);
+        }
+        for (let q of this.focusedSet.keys()) {
+            let op = layer.id_ops.get(newCircuit.coordToQubitMap().get(q));
+            if (op !== undefined && rev.has(op.gate.name)) {
+                flipped_op_first_targets.add(op.id_targets[0]);
+            }
+        }
+        for (let q of flipped_op_first_targets) {
+            let op = layer.id_ops.get(q);
+            let other = rev.get(op.gate.name);
+            if (other === 'reverse') {
+                layer.id_ops.get(q).id_targets.reverse();
+            } else {
+                op.gate = GATE_MAP.get(other);
+            }
+        }
+        this.commit_or_preview(newCircuit, preview);
+    }
+
+    reverseLayerOrderFromFocusToEmptyLayer(preview) {
+        let newCircuit = this.copyOfCurCircuit();
+        let end = this.curLayer;
+        while (end < newCircuit.layers.length && !newCircuit.layers[end].empty()) {
+            end += 1;
+        }
+        let layers = [];
+        for (let k = this.curLayer; k < end; k++) {
+            layers.push(newCircuit.layers[k]);
+        }
+        layers.reverse();
+        for (let k = this.curLayer; k < end; k++) {
+            newCircuit.layers[k] = layers[k - this.curLayer];
+        }
+        this.commit_or_preview(newCircuit, preview);
+    }
+
     /**
      * @return {!Circuit}
      */
@@ -552,6 +609,44 @@ class EditorState {
                 }
             }
             layer.markers = layer.markers.filter(op => !op.gate.name.startsWith('MARK') || op.args[0] !== marker_index);
+        }
+
+        this.commit_or_preview(newCircuit, preview);
+    }
+
+    addDissipativeOverlapToMarkers(preview, marker_index) {
+        let newCircuit = this.copyOfCurCircuit();
+        let prop = PropagatedPauliFrames.fromCircuit(newCircuit, marker_index);
+
+        let k = this.curLayer;
+        let before = k === 0 ? new PropagatedPauliFrameLayer(new Map(), new Set(), []) : prop.atLayer(k - 0.5);
+        let after = prop.atLayer(k + 0.5);
+        let layer = newCircuit.layers[k];
+        for (let q of new Set([...before.bases.keys(), ...after.bases.keys()])) {
+            let b1 = before.bases.get(q);
+            let b2 = after.bases.get(q);
+            let op = layer.id_ops.get(q);
+            if (op === undefined) {
+                continue;
+            }
+            let name = op.gate.name;
+            let basis = undefined;
+            if (name === 'R' || name === 'M' || name === 'MR') {
+                basis = 'Z'
+            } else if (name === 'RX' || name === 'MX' || name === 'MRX') {
+                basis = 'X'
+            } else if (name === 'RY' || name === 'MY' || name === 'MRY') {
+                basis = 'Y'
+            } else {
+                continue;
+            }
+            if (b1 !== undefined || b2 !== undefined) {
+                layer.markers.push(new Operation(
+                    GATE_MAP.get(`MARK${basis}`),
+                    new Float32Array([marker_index]),
+                    new Uint32Array([q]),
+                ));
+            }
         }
 
         this.commit_or_preview(newCircuit, preview);
