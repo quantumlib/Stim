@@ -1,8 +1,6 @@
 import {PauliFrame} from './pauli_frame.js';
 import {equate} from '../base/equate.js';
 import {Layer} from './layer.js';
-import {Operation} from './operation.js';
-import {GATE_MAP} from '../gates/gateset.js';
 
 class PropagatedPauliFrameLayer {
     /**
@@ -188,9 +186,46 @@ class PropagatedPauliFrames {
      * @returns {!PropagatedPauliFrames}
      */
     static fromMeasurements(circuit, measurements) {
-        let result = new PropagatedPauliFrames(new Map());
-        let frame = new PauliFrame(1, circuit.allQubits().size);
+        return PropagatedPauliFrames.batchFromMeasurements(circuit, [measurements])[0];
+    }
+
+    /**
+     * @param {!Circuit} circuit
+     * @param {!Array<!Array<!int>>} batchMeasurements
+     * @returns {!Array<!PropagatedPauliFrames>}
+     */
+    static batchFromMeasurements(circuit, batchMeasurements) {
+        let result = [];
+        for (let k = 0; k < batchMeasurements.length; k += 32) {
+            let batch = [];
+            for (let j = k; j < k + 32 && j < batchMeasurements.length; j++) {
+                batch.push(batchMeasurements[j]);
+            }
+            result.push(...PropagatedPauliFrames.batch32FromMeasurements(circuit, batch));
+        }
+        return result;
+    }
+
+    /**
+     * @param {!Circuit} circuit
+     * @param {!Array<!Array<!int>>} batchMeasurements
+     * @returns {!Array<!PropagatedPauliFrames>}
+     */
+    static batch32FromMeasurements(circuit, batchMeasurements) {
+        let results = [];
+        for (let k = 0; k < batchMeasurements.length; k++) {
+            results.push(new PropagatedPauliFrames(new Map()));
+        }
+
+        let frame = new PauliFrame(batchMeasurements.length, circuit.allQubits().size);
         let measurementsBack = 0;
+        let events = [];
+        for (let k = 0; k < batchMeasurements.length; k++) {
+            for (let k2 = 0; k2 < batchMeasurements[k].length; k2++) {
+                events.push([k, batchMeasurements[k][k2]]);
+            }
+        }
+        events.sort((a, b) => a[1] - b[1]);
 
         for (let k = circuit.layers.length - 1; k >= -1; k--) {
             let layer = k >= 0 ? circuit.layers[k] : new Layer();
@@ -199,61 +234,77 @@ class PropagatedPauliFrames {
 
             for (let id of targets) {
                 let op = layer.id_ops.get(id);
-                if (op.id_targets[0] === id) {
-                    let m = op.countMeasurements();
-                    frame.undo_gate(op.gate, [...op.id_targets]);
-                    measurementsBack -= m;
-                    if (m > 0 && measurements.indexOf(measurementsBack) !== -1) {
-                        for (let t_id = 0; t_id < op.id_targets.length; t_id++) {
-                            let t = op.id_targets[t_id];
-                            let basis;
-                            if (op.gate.name === 'MX' || op.gate.name === 'MRX' || op.gate.name === 'MXX') {
-                                basis = 'X';
-                            } else if (op.gate.name === 'MY' || op.gate.name === 'MRY' || op.gate.name === 'MYY') {
-                                basis = 'Y';
-                            } else if (op.gate.name === 'M' || op.gate.name === 'MR' || op.gate.name === 'MZZ') {
-                                basis = 'Z';
-                            } else if (op.gate.name === 'MPAD') {
-                                continue;
-                            } else if (op.gate.name.startsWith('MPP:')) {
-                                basis = op.gate.name[t_id + 4];
-                            } else {
-                                throw new Error('Unhandled measurement gate: ' + op.gate.name);
-                            }
-                            if (basis === 'X') {
-                                frame.xs[t] ^= 1;
-                            } else if (basis === 'Y') {
-                                frame.xs[t] ^= 1;
-                                frame.zs[t] ^= 1;
-                            } else if (basis === 'Z') {
-                                frame.zs[t] ^= 1;
-                            } else {
-                                throw new Error('Unhandled measurement gate: ' + op.gate.name);
-                            }
+                if (op.id_targets[0] !== id) {
+                    continue;
+                }
+                frame.undo_gate(op.gate, [...op.id_targets]);
+                for (let nm = op.countMeasurements(); nm > 0; nm -= 1) {
+                    measurementsBack -= 1;
+                    let target_mask = 0;
+                    while (events.length > 0 && events[events.length - 1][1] === measurementsBack) {
+                        let ev = events[events.length - 1];
+                        events.pop();
+                        target_mask ^= 1 << ev[0];
+                    }
+                    if (target_mask === 0) {
+                        continue;
+                    }
+                    for (let t_id = 0; t_id < op.id_targets.length; t_id++) {
+                        let t = op.id_targets[t_id];
+                        let basis;
+                        if (op.gate.name === 'MX' || op.gate.name === 'MRX' || op.gate.name === 'MXX') {
+                            basis = 'X';
+                        } else if (op.gate.name === 'MY' || op.gate.name === 'MRY' || op.gate.name === 'MYY') {
+                            basis = 'Y';
+                        } else if (op.gate.name === 'M' || op.gate.name === 'MR' || op.gate.name === 'MZZ') {
+                            basis = 'Z';
+                        } else if (op.gate.name === 'MPAD') {
+                            continue;
+                        } else if (op.gate.name.startsWith('MPP:')) {
+                            basis = op.gate.name[t_id + 4];
+                        } else {
+                            throw new Error('Unhandled measurement gate: ' + op.gate.name);
+                        }
+                        if (basis === 'X') {
+                            frame.xs[t] ^= target_mask;
+                        } else if (basis === 'Y') {
+                            frame.xs[t] ^= target_mask;
+                            frame.zs[t] ^= target_mask;
+                        } else if (basis === 'Z') {
+                            frame.zs[t] ^= target_mask;
+                        } else {
+                            throw new Error('Unhandled measurement gate: ' + op.gate.name);
                         }
                     }
                 }
             }
 
-            let bases = new Map();
-            let errors = new Set();
+            for (let t = 0; t < batchMeasurements.length; t++) {
+                let m = 1 << t;
+                let bases = new Map();
+                let errors = new Set();
+                for (let q = 0; q < frame.xs.length; q++) {
+                    let x = (frame.xs[q] & m) !== 0;
+                    let z = (frame.zs[q] & m) !== 0;
+                    if (x | z) {
+                        bases.set(q, '_XZY'[x + 2 * z]);
+                    }
+                    if (frame.flags[q] & m) {
+                        errors.add(q);
+                    }
+                }
+                if (bases.size > 0) {
+                    results[t].id_layers.set(k - 0.5, new PropagatedPauliFrameLayer(bases, new Set(), []));
+                }
+                 if (errors.size > 0) {
+                    results[t].id_layers.set(k, new PropagatedPauliFrameLayer(new Map(), errors, []));
+                }
+            }
             for (let q = 0; q < frame.xs.length; q++) {
-                if (frame.xs[q] || frame.zs[q]) {
-                    bases.set(q, '_XZY'[frame.xs[q] + 2*frame.zs[q]]);
-                }
-                if (frame.flags[q]) {
-                    frame.flags[q] = 0;
-                    errors.add(q);
-                }
-            }
-            if (bases.size > 0) {
-                result.id_layers.set(k - 0.5, new PropagatedPauliFrameLayer(bases, new Set(), []));
-            }
-             if (errors.size > 0) {
-                result.id_layers.set(k, new PropagatedPauliFrameLayer(new Map(), errors, []));
+                frame.flags[q] = 0;
             }
        }
-        return result;
+        return results;
     }
 }
 

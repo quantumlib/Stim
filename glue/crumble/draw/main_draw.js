@@ -124,11 +124,9 @@ function drawSingleMarker(ctx, snap, qubitCoordsFunc, propagatedMarkers, mi, hit
         ctx.globalAlpha *= 0.25;
         ctx.fill();
         ctx.globalAlpha *= 4;
-        if (coords.length > 1) {
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.lineWidth = 1;
-        }
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineWidth = 1;
     }
 
     // Draw individual qubit markers.
@@ -222,18 +220,37 @@ function draw(ctx, snap) {
         propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi));
     }
     let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables(false);
+    let batch_input = [];
     for (let mi = 0; mi < dets.length; mi++) {
-        propagatedMarkerLayers.set(~mi, PropagatedPauliFrames.fromMeasurements(circuit, dets[mi].mids));
+        batch_input.push(dets[mi].mids);
     }
     for (let mi of obs.keys()) {
-        propagatedMarkerLayers.set(~mi ^ (1 << 30), PropagatedPauliFrames.fromMeasurements(circuit, obs.get(mi)));
+        batch_input.push(obs.get(mi));
+    }
+    let batch_output = PropagatedPauliFrames.batchFromMeasurements(circuit, batch_input);
+    let batch_index = 0;
+    for (let mi = 0; mi < dets.length; mi++) {
+        propagatedMarkerLayers.set(~mi, batch_output[batch_index++]);
+    }
+    for (let mi of obs.keys()) {
+        propagatedMarkerLayers.set(~mi ^ (1 << 30), batch_output[batch_index++]);
     }
 
+    let operatedOnQubits = new Set();
+    for (let layer of circuit.layers) {
+        for (let t of layer.id_ops.keys()) {
+            operatedOnQubits.add(t);
+        }
+    }
     let usedQubitCoordSet = new Set();
+    let operatedOnQubitSet = new Set();
     for (let q of circuit.allQubits()) {
         let qx = circuit.qubitCoordData[q * 2];
         let qy = circuit.qubitCoordData[q * 2 + 1];
         usedQubitCoordSet.add(`${qx},${qy}`);
+        if (operatedOnQubits.has(q)) {
+            operatedOnQubitSet.add(`${qx},${qy}`);
+        }
     }
 
     defensiveDraw(ctx, () => {
@@ -282,20 +299,21 @@ function draw(ctx, snap) {
                 ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
                 for (let qy = qx % 1; qy < 100; qy += 1) {
                     let [x, y] = c2dCoordTransform(qx, qy);
-                    if (qx % 1 === 0.5) {
-                        ctx.fillStyle = 'white';
-                    } else {
-                        ctx.fillStyle = 'white';
-                    }
+                    ctx.fillStyle = 'white';
                     let isUnused = !usedQubitCoordSet.has(`${qx},${qy}`);
+                    let isVeryUnused = !operatedOnQubitSet.has(`${qx},${qy}`);
                     if (isUnused) {
                         ctx.globalAlpha *= 0.25;
+                    }
+                    if (isVeryUnused) {
                         ctx.globalAlpha *= 0.25;
                     }
                     ctx.fillRect(x - rad, y - rad, 2*rad, 2*rad);
                     ctx.strokeRect(x - rad, y - rad, 2*rad, 2*rad);
                     if (isUnused) {
                         ctx.globalAlpha *= 4;
+                    }
+                    if (isVeryUnused) {
                         ctx.globalAlpha *= 4;
                     }
                 }
