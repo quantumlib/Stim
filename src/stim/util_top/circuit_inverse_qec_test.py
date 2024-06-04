@@ -1,3 +1,4 @@
+import pytest
 import stim
 
 
@@ -151,3 +152,14 @@ def test_measurement_ordering_3():
     assert circuit.has_all_flows(flows, unsigned=True)
     new_circuit, new_flows = circuit.time_reversed_for_flows(flows)
     assert new_circuit.has_all_flows(new_flows, unsigned=True)
+
+
+def test_feedback():
+    c = stim.Circuit("""
+        R 1
+        M 1
+        CX rec[-1] 0
+    """)
+    with pytest.raises(ValueError):
+        c.time_reversed_for_flows([stim.Flow("Z0 -> Z0")])
+        # TODO: once feedback is supported verify the inv flow is correct

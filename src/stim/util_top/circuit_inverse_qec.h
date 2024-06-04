@@ -37,6 +37,7 @@ struct CircuitFlowReverser {
     void do_m2r_instruction(const CircuitInstruction &inst);
     void do_measuring_instruction(const CircuitInstruction &inst);
     void do_simple_instruction(const CircuitInstruction &inst);
+    void do_feedback_capable_instruction(const CircuitInstruction &inst);
     void flush_detectors_and_observables();
 
     void do_instruction(const CircuitInstruction &inst);
