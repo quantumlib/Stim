@@ -90,19 +90,29 @@ button (now labelled "Hide Import/Export") again.
 <a name="keyboard-commands"></a>
 ## Keyboard Controls
 
-**Markings**
+**Pauli Propagation**
 
-- `[XYZ]+[0-9]`: Place Pauli propagation markers at current selection.
-    The X, Y, or Z determines the basis of the marker.
-    The 1, 2, 3, or etc determines which of the tracked Pauli products is affected by the marker.
-    For example, `X+2` will place X type markers that multiply an X dependence into Pauli product #2.
-    The XYZ can be omitted, in which case the basis will be inferred based on the selected gates (for example, an RX gate implies X basis).
 - `spacebar`: Clear all Pauli propagation markers at current selection.
-- `P`: Add a background polygon with corners at the current selection.
-    The color of the polygon is affected by modifier keys: X, Y, Z, alt, shift.
+- `#`: Puts a Pauli propagation marker at the current selection for the indexed Pauli product.
+    `#` can be any of 1, 2, 3, etc and determines which of the tracked Pauli products the marker goes into.
+    For example, `2` will place a marker that multiplies a Pauli term into tracked Pauli product #2.
+    The basis of the marker is inferred from context (e.g. if an `RX` gate is selected, it will be an `X` marker).
+- `x+#`: Put an X-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `y+#`: Put a Y-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `z+#`: Put a Z-type Pauli propagation marker at the current selection for the indexed Pauli product.
+- `d+#`: Converts the indexed Pauli product into a circuit `DETECTOR` declaration.
+- `o+#`: Converts the indexed Pauli product into a circuit `OBSERVABLE_INCLUDE` declaration.
+- `j+#`: Picks a `DETECTOR` or `OBSERVABLE_INCLUDE` declaration touching the current selection and converts it into a tracked Pauli product.
+- `k+#`: Add a marker to any dissipative gate that the indexed Pauli product overlaps in the current layer.
 
 **Editing**
 
+- `p`: Add a background polygon with corners at the current selection.
+    The color of the polygon is affected by modifier keys: X, Y, Z, alt, shift.
+- `e`: Move to next layer.
+- `q`: Move to previous layer.
+- `shift+e`: Move forward 5 layers.
+- `shift+q`: Move backward 5 layers.
 - `escape`: Unselect. Set current selection to the empty set.
 - `delete`: Delete gates at current selection.
 - `backspace`: Delete gates at current selection.
@@ -112,11 +122,20 @@ button (now labelled "Hide Import/Export") again.
 - `ctrl+z`: Undo
 - `ctrl+y`: Redo
 - `ctrl+shift+z`: Redo
-- `ctrl+c`: Copy selection to clipboard.
-- `ctrl+v`: Past clipboard contents at current selection.
-- `ctrl+x`: Cut selection to clipboard.
+- `ctrl+c`: Copy selection to clipboard (or entire layer if nothing selected).
+- `ctrl+v`: Past clipboard contents at current selection (or entire layer if nothing selected).
+- `ctrl+x`: Cut selection to clipboard (or entire layer if nothing selected).
+- `f`: Reverse direction of selected two qubit gates (e.g. exchange the controls and targets of a CNOT).
+- `g`: Reverse order of circuit layers, from the current layer to the next empty layer.
+- `home`: Jump to the first layer of the circuit.
+- `end`: Jump to the last layer of the circuit.
 - `t`: Rotate circuit 45 degrees clockwise.
 - `shift+t`: Rotate circuit 45 degrees counter-clockwise.
+- `v`: Translate circuit down one step.
+- `^`: Translate circuit up one step.
+- `>`: Translate circuit right one step.
+- `<`: Translate circuit left one step.
+- `.`: Translate circuit down and right by a half step.
 
 **Single Qubit Gates**
 
@@ -137,7 +156,11 @@ Note: use `shift` to get the inverse of a gate.
 - `m+r+x`: Overwrite selection with `MRX` gate
 - `m+r+y`: Overwrite selection with `MRY` gate
 - `m+r`: Overwrite selection with `MR` gate
-- `f`: Overwrite selection with `C_XYZ` gate
+- `c+t`: Overwrite selection with `C_XYZ` gate
+- `j+x`: Overwrite selection with **j**ust a Pauli `X` gate
+- `j+y`: Overwrite selection with **j**ust a Pauli `Y` gate
+- `j+z`: Overwrite selection with **j**ust a Pauli `Z` gate
+- `shift+c+t`: Overwrite selection with `C_ZYX` gate
 
 **Two Qubit Gates**
 
@@ -164,6 +187,12 @@ Note: use `shift` to get the inverse of a gate.
 - `c+m+x`: Overwrite selection with `MXX` gate targeting mouse
 - `c+m+y`: Overwrite selection with `MYY` gate targeting mouse
 - `c+m+z`: Overwrite selection with `MZZ` gate targeting mouse
+
+**Multi Qubit Gates**
+
+- `m+p+x`: Overwrite selection with a single `MPP` gate targeting the tensor product of X on each selected qubit.
+- `m+p+y`: Overwrite selection with a single `MPP` gate targeting the tensor product of Y on each selected qubit.
+- `m+p+z`: Overwrite selection with a single `MPP` gate targeting the tensor product of Z on each selected qubit.
 
 **Keyboard Buttons as Gate Adjectives**
 

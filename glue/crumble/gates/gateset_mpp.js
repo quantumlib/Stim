@@ -14,6 +14,7 @@ function make_mpp_gate(bases) {
         false,
         undefined,
         (frame, targets) => frame.do_mpp(bases, targets),
+        (frame, targets) => frame.do_mpp(bases, targets),
         (op, coordFunc, ctx) => {
             let prev_x = undefined;
             let prev_y = undefined;
@@ -59,6 +60,7 @@ function make_spp_gate(bases, dag) {
         true,
         false,
         undefined,
+        (frame, targets) => frame.do_spp(bases, targets),
         (frame, targets) => frame.do_spp(bases, targets),
         (op, coordFunc, ctx) => {
             let prev_x = undefined;

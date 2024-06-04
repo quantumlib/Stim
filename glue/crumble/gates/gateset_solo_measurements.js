@@ -13,6 +13,7 @@ function *iter_gates_solo_measurements() {
             ['Z', 'Z'],
         ]),
         (frame, targets) => frame.do_measure('Z', targets),
+        (frame, targets) => frame.do_measure('Z', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'gray';
@@ -37,6 +38,7 @@ function *iter_gates_solo_measurements() {
             ['Z', 'ERR:Z'],
         ]),
         (frame, targets) => frame.do_measure('X', targets),
+        (frame, targets) => frame.do_measure('X', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'gray';
@@ -60,6 +62,7 @@ function *iter_gates_solo_measurements() {
             ['Y', 'Y'],
             ['Z', 'ERR:Z'],
         ]),
+        (frame, targets) => frame.do_measure('Y', targets),
         (frame, targets) => frame.do_measure('Y', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

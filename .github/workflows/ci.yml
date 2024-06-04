@@ -325,7 +325,7 @@ jobs:
       - run: diff <(dev/gen_known_gates_for_js.sh) glue/crumble/test/generated_gate_name_list.test.js
       - run: python doc/stim.pyi
       - run: npm install -g rollup@3.21.2 uglify-js@3.17.4
-      - run: diff <(dev/regen_crumble_to_cpp_string_write_to_stdout.sh) src/stim/diagram/crumble_data.cc
+      - run: diff <(dev/compile_crumble_into_cpp_string_file.sh) src/stim/diagram/crumble_data.cc
       - run: pip install -e glue/sample
       - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
   test_generated_file_lists_are_fresh:

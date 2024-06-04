@@ -33,13 +33,18 @@ test("pauli_frame.to_from_dicts", () => {
 test("pauli_frame.do_gate_vs_old_frame_updates", () => {
     let gates = [...GATE_MAP.values(), make_mpp_gate("XYY"), make_spp_gate("XYY")];
     for (let g of gates) {
-        let before, after;
+        if (g.name === 'DETECTOR' || g.name === 'OBSERVABLE_INCLUDE') {
+            continue;
+        }
+        let before, after, returned;
         if (g.num_qubits === 1) {
             before = new PauliFrame(4, g.num_qubits);
             before.xs[0] = 0b0011;
             before.zs[0] = 0b0101;
             after = before.copy();
             after.do_gate(g, [0]);
+            returned = after.copy();
+            returned.undo_gate(g, [0]);
         } else {
             before = new PauliFrame(16, g.num_qubits);
             before.xs[0] = 0b0000000011111111;
@@ -52,6 +57,11 @@ test("pauli_frame.do_gate_vs_old_frame_updates", () => {
             }
             after = before.copy();
             after.do_gate(g, targets);
+            returned = after.copy();
+            returned.undo_gate(g, targets);
+        }
+        if (!returned.flags[0]) {
+            assertThat(returned).withInfo({'gate': g.name}).isEqualTo(before);
         }
 
         let before_strings = before.to_strings();

@@ -311,7 +311,14 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "matchgraph-html" || type == "match-graph-svg-html" || type == "match-graph-html" ||
         type == "match-graph-3d" || type == "matchgraph-3d" || type == "match-graph-3d-html" ||
         type == "matchgraph-3d-html") {
-        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+        DetectorErrorModel dem;
+        try {
+            // By default, try to decompose the errors.
+            dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, false, false);
+        } catch (const std::invalid_argument &) {
+            // If any decomposition fails, don't decompose at all.
+            dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 1, false, false);
+        }
         return dem_diagram(dem, type);
     } else {
         std::stringstream ss;

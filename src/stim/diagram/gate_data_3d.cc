@@ -342,6 +342,58 @@ std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_z_control_mesh() {
     return {"Z_CONTROL", mesh};
 }
 
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_detector_mesh() {
+    auto circle = make_circle_loop(8, CONTROL_RADIUS, true);
+    auto circle2 = make_circle_loop(8, CONTROL_RADIUS, true);
+    auto circle3 = make_circle_loop(8, CONTROL_RADIUS, true);
+    for (auto &e : circle2->vertices) {
+        std::swap(e.xyz[1], e.xyz[2]);
+        std::swap(e.xyz[0], e.xyz[1]);
+    }
+    for (auto &e : circle3->vertices) {
+        std::swap(e.xyz[0], e.xyz[1]);
+        std::swap(e.xyz[1], e.xyz[2]);
+    }
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto disc_interior = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior"},
+        GL_TRIANGLE_FAN,
+        circle,
+        nullptr,
+        black_material,
+    });
+    auto disc_interior2 = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior_2"},
+        GL_TRIANGLE_FAN,
+        circle2,
+        nullptr,
+        black_material,
+    });
+    auto disc_interior3 = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior_3"},
+        GL_TRIANGLE_FAN,
+        circle3,
+        nullptr,
+        black_material,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_DETECTOR"},
+        {
+            disc_interior,
+            disc_interior2,
+            disc_interior3,
+        },
+    });
+    return {"DETECTOR", mesh};
+}
+
 std::map<std::string_view, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_primitives() {
     bool actually_square = true;
     auto cube = make_cube_triangle_list(actually_square);
@@ -464,5 +516,6 @@ std::map<std::string_view, std::shared_ptr<GltfMesh>> stim_draw_internal::make_g
         make_z_control_mesh(),
         make_xswap_control_mesh(),
         make_zswap_control_mesh(),
+        make_detector_mesh(),
     };
 }
