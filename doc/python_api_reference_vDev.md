@@ -3797,7 +3797,7 @@ def body_copy(
 @property
 def name(
     self,
-) -> object:
+) -> str:
     """Returns the name "REPEAT".
 
     This is a duck-typing convenience method. It exists so that code that doesn't
