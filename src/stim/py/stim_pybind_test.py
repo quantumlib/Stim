@@ -24,7 +24,6 @@ import types
 import stim
 import re
 
-
 def test_version():
     assert re.match(r"^\d\.\d+", stim.__version__)
 

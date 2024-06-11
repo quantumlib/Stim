@@ -4304,25 +4304,6 @@ def __repr__(
 # stim.CompiledDetectorSampler.sample
 
 # (in class stim.CompiledDetectorSampler)
-@overload
-def sample(
-    self,
-    shots: int,
-    *,
-    prepend_observables: bool = False,
-    append_observables: bool = False,
-    bit_packed: bool = False,
-) -> np.ndarray:
-    pass
-@overload
-def sample(
-    self,
-    shots: int,
-    *,
-    separate_observables: Literal[True],
-    bit_packed: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
-    pass
 def sample(
     self,
     shots: int,
@@ -4331,6 +4312,8 @@ def sample(
     append_observables: bool = False,
     separate_observables: bool = False,
     bit_packed: bool = False,
+    dets_out: Optional[np.ndarray] = None,
+    obs_out: Optional[np.ndarray] = None,
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """Returns a numpy array containing a batch of detector samples from the circuit.
 
@@ -4349,6 +4332,12 @@ def sample(
             with the detectors and are placed at the end of the results.
         bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
             a bool_ numpy array with 1 bit per byte. Uses little endian packing.
+        dets_out: Defaults to None. Specifies a pre-allocated numpy array to write
+            the detection event data into. This array must have the correct shape
+            and dtype.
+        obs_out: Defaults to None. Specifies a pre-allocated numpy array to write
+            the observable flip data into. This array must have the correct shape
+            and dtype.
 
     Returns:
         A numpy array or tuple of numpy arrays containing the samples.
