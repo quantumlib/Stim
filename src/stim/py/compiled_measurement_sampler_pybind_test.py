@@ -19,9 +19,10 @@ import stim
 
 
 def test_compiled_measurement_sampler_sample():
-    c = stim.Circuit()
-    c.append_operation("X", [1])
-    c.append_operation("M", [0, 1, 2, 3])
+    c = stim.Circuit("""
+        X 1
+        M 0 1 2 3
+    """)
     np.testing.assert_array_equal(
         c.compile_sampler().sample(5),
         np.array([

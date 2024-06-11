@@ -39,7 +39,9 @@ struct CompiledDetectorSampler {
         bool prepend_observables,
         bool append_observables,
         bool separate_observables,
-        bool bit_packed);
+        bool bit_packed,
+        pybind11::object dets_out,
+        pybind11::object obs_out);
     void sample_write(
         size_t num_samples,
         pybind11::object filepath_obj,
