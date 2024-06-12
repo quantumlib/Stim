@@ -121,21 +121,21 @@ def test_fit_slope():
 
 def test_fit_binomial_shrink_towards_half():
     with pytest.raises(ValueError, match='max_likelihood_factor'):
-        fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 / 2, max_likelihood_factor=0.1)
+        fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 // 2, max_likelihood_factor=0.1)
 
-    fit = fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 / 2, max_likelihood_factor=1e3)
+    fit = fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 // 2, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
         (fit.low, fit.best, fit.high),
         (0.494122, 0.5, 0.505878),
         rtol=1e-4,
     )
-    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 / 2, max_likelihood_factor=1e3)
+    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 // 2, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
         (fit.low, fit.best, fit.high),
         (0.481422, 0.5, 0.518578),
         rtol=1e-4,
     )
-    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 / 2, max_likelihood_factor=1e2)
+    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 // 2, max_likelihood_factor=1e2)
     np.testing.assert_allclose(
         (fit.low, fit.best, fit.high),
         (0.48483, 0.5, 0.51517),

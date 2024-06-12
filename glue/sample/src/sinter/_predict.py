@@ -53,7 +53,7 @@ def predict_on_disk(
     postselect_detectors_with_non_zero_4th_coord: bool = False,
     discards_out_path: Optional[Union[str, pathlib.Path]] = None,
     discards_out_format: Optional[str] = None,
-    custom_decoders: Dict[str, 'sinter.Decoder'] = None,
+    custom_decoders: Optional[Dict[str, Decoder]] = None,
 ) -> None:
     """Performs decoding and postselection on disk.
 
@@ -221,7 +221,7 @@ def predict_observables(
     dets: np.ndarray,
     decoder: str,
     bit_pack_result: bool = False,
-    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+    custom_decoders: Optional[Dict[str, Decoder]] = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 
@@ -291,7 +291,7 @@ def predict_observables_bit_packed(
     dem: stim.DetectorErrorModel,
     dets_bit_packed: np.ndarray,
     decoder: str,
-    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+    custom_decoders: Optional[Dict[str, Decoder]] = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 

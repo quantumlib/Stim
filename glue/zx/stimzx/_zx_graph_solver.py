@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List, Any, Union
+from typing import Any, cast, Dict, Hashable, Iterator, List, Tuple, Union
 import stim
 import networkx as nx
 
@@ -41,6 +41,10 @@ ZX_TYPES = {
     "in": ZxType("in"),
     "out": ZxType("out"),
 }
+
+
+def _iter_nodes(g: Union[nx.Graph, nx.MultiGraph]) -> Iterator[Tuple[Hashable, ZxType]]:
+  return cast(Iterator[Tuple[Hashable, ZxType]], iter(g.nodes('value')))
 
 
 def text_diagram_to_zx_graph(text_diagram: str) -> nx.MultiGraph:
@@ -100,9 +104,9 @@ def _reduced_zx_graph(graph: Union[nx.Graph, nx.MultiGraph]) -> nx.Graph:
         if n1 == n2:
             continue
         odd_parity_edges ^= {frozenset([n1, n2])}
-    for n, value in graph.nodes('value'):
+    for n, value in _iter_nodes(graph):
         reduced_graph.add_node(n, value=value)
-    for n1, n2 in odd_parity_edges:
+    for n1, n2 in odd_parity_edges:  # pytype: disable=bad-unpacking
         reduced_graph.add_edge(n1, n2)
     return reduced_graph
 
@@ -135,7 +139,7 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
         sim.cnot(qubit_ids[(n1, n2)], qubit_ids[(n2, n1)])
 
     # Interpret each internal node as a family of post-selected parity measurements.
-    for n, node_type in graph.nodes('value'):
+    for n, node_type in _iter_nodes(graph):
         if node_type.kind in 'XZ':
             # Surround X type node with Hadamards so it can be handled as if it were Z type.
             if node_type.kind == 'X':
@@ -166,8 +170,8 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
             _pseudo_postselect(sim, qubit_ids[(n2, n)])
 
     # Find output qubits.
-    in_nodes = sorted(n for n, value in graph.nodes('value') if value.kind == 'in')
-    out_nodes = sorted(n for n, value in graph.nodes('value') if value.kind == 'out')
+    in_nodes = sorted(n for n, value in _iter_nodes(graph) if value.kind == 'in')
+    out_nodes = sorted(n for n, value in _iter_nodes(graph) if value.kind == 'out')
     ext_nodes = in_nodes + out_nodes
     out_qubits = []
     for out in ext_nodes:

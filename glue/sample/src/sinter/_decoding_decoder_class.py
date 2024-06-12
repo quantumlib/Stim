@@ -1,4 +1,6 @@
 import abc
+from typing import Tuple, Union
+
 import pathlib
 
 import numpy as np
