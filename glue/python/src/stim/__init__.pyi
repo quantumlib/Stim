@@ -1936,6 +1936,14 @@ class Circuit:
 
         Returns:
             reference_sample: reference sample sampled from the given circuit.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...    X 1
+            ...    M 0 1
+            ... ''').reference_sample()
+            array([False, True])
         """
     def search_for_undetectable_logical_errors(
         self,
@@ -10902,15 +10910,18 @@ class TableauSimulator:
             >>> import numpy as np
             >>> s = stim.TableauSimulator()
             >>> s.x(2)
-            >>> list(s.state_vector(endian='little'))
-            [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+            >>> s.state_vector(endian='little')
+            array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                  dtype=complex64)
 
-            >>> list(s.state_vector(endian='big'))
-            [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+            >>> s.state_vector(endian='big')
+            array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                  dtype=complex64)
 
             >>> s.sqrt_x(1, 2)
-            >>> list(s.state_vector())
-            [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
+            >>> s.state_vector()
+            array([0.5+0.j , 0. +0.j , 0. -0.5j, 0. +0.j , 0. +0.5j, 0. +0.j ,
+                   0.5+0.j , 0. +0.j ], dtype=complex64)
         """
     def swap(
         self,

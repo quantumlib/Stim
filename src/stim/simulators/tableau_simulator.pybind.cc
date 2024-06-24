@@ -323,7 +323,6 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
                       dtype=complex64)
 
-
                 >>> s.state_vector(endian='big')
                 array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
                       dtype=complex64)
