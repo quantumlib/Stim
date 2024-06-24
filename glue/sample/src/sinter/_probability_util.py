@@ -64,8 +64,8 @@ def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarra
         result[p_clipped == 1] = -np.inf
 
     # Multiply p**hits and (1-p)**misses onto the total, in log space.
-    result[p_clipped != 0] += np.log(p_clipped[p_clipped != 0]) * hits
-    result[p_clipped != 1] += np.log1p(-p_clipped[p_clipped != 1]) * misses
+    result[p_clipped != 0] += np.log(p_clipped[p_clipped != 0]) * float(hits)
+    result[p_clipped != 1] += np.log1p(-p_clipped[p_clipped != 1]) * float(misses)
 
     # Multiply (n choose hits) onto the total, in log space.
     log_n_choose_hits = log_factorial(n) - log_factorial(misses) - log_factorial(hits)

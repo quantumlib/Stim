@@ -1814,3 +1814,68 @@ def test_detecting_regions_mzz():
             1: stim.PauliString("__Z"),
         },
     }
+
+
+def test_insert():
+    c = stim.Circuit()
+    with pytest.raises(ValueError, match='type'):
+        c.insert(0, object())
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(1, stim.CircuitInstruction("H", [1]))
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(-1, stim.CircuitInstruction("H", [1]))
+    c.insert(0, stim.CircuitInstruction("H", [1]))
+    assert c == stim.Circuit("""
+        H 1
+    """)
+
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(2, stim.CircuitInstruction("S", [2]))
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(-2, stim.CircuitInstruction("S", [2]))
+    c.insert(0, stim.CircuitInstruction("S", [2, 3]))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 1
+    """)
+
+    c.insert(-1, stim.Circuit("H 5\nM 2"))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        M 2
+        H 1
+    """)
+
+    c.insert(2, stim.Circuit("""
+        REPEAT 100 {
+            M 3
+        }
+    """))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        REPEAT 100 {
+            M 3
+        }
+        M 2
+        H 1
+    """)
+
+    c.insert(2, stim.Circuit("""
+        REPEAT 100 {
+            M 3
+        }
+    """)[0])
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        REPEAT 100 {
+            M 3
+        }
+        REPEAT 100 {
+            M 3
+        }
+        M 2
+        H 1
+    """)

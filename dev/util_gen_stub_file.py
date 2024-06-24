@@ -94,6 +94,12 @@ class DescribedObject:
 
 
 def splay_signature(sig: str) -> List[str]:
+    # Maintain backwards compatibility with python 3.6
+    sig = sig.replace('list[', 'List[')
+    sig = sig.replace('dict[', 'Dict[')
+    sig = sig.replace('tuple[', 'Tuple[')
+    sig = sig.replace('set[', 'Set[')
+
     assert sig.startswith('def')
     out = []
 

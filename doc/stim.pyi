@@ -1600,6 +1600,57 @@ class Circuit:
             True, there is technically still a 2^-256 chance the circuit doesn't have
             the flow. This is lower than the chance of a cosmic ray flipping the result.
         """
+    def insert(
+        self,
+        index: int,
+        operation: Union[stim.CircuitInstruction, stim.Circuit],
+    ) -> None:
+        """Inserts an operation at the given index, pushing existing operations forward.
+
+        Note that, unlike when appending operations or parsing stim circuit files,
+        inserted operations aren't automatically fused into the preceding operation.
+        This is to avoid creating complicated situations where it's difficult to reason
+        about how the indices of operations change in response to insertions.
+
+        Args:
+            index: The index to insert at.
+
+                Must satisfy -len(circuit) <= index < len(circuit). Negative indices
+                are made non-negative by adding len(circuit) to them, so they refer to
+                indices relative to the end of the circuit instead of the start.
+
+                Instructions before the index are not shifted. Instructions that
+                were at or after the index are shifted forwards.
+            operation: The object to insert. This can be a single
+                stim.CircuitInstruction or an entire stim.Circuit.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.Circuit('''
+            ...     H 0
+            ...     S 1
+            ...     X 2
+            ... ''')
+            >>> c.insert(1, stim.CircuitInstruction("Y", [3, 4, 5]))
+            >>> c
+            stim.Circuit('''
+                H 0
+                Y 3 4 5
+                S 1
+                X 2
+            ''')
+            >>> c.insert(-1, stim.Circuit("S 999\nCX 0 1\nCZ 2 3"))
+            >>> c
+            stim.Circuit('''
+                H 0
+                Y 3 4 5
+                S 1
+                S 999
+                CX 0 1
+                CZ 2 3
+                X 2
+            ''')
+        """
     def inverse(
         self,
     ) -> stim.Circuit:

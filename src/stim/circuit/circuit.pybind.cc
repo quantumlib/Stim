@@ -178,6 +178,39 @@ std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization
     return stim::likeliest_error_sat_problem(dem, quantization, format);
 }
 
+void circuit_insert(
+    Circuit &self,
+    pybind11::ssize_t &index,
+    pybind11::object &operation) {
+
+    if (index < 0) {
+        index += self.operations.size();
+    }
+    if (index < 0 || index > self.operations.size()) {
+        std::stringstream ss;
+        ss << "Index is out of range. Need -len(circuit) <= index <= len(circuit).";
+        ss << "\n    index=" << index;
+        ss << "\n    len(circuit)=" << self.operations.size();
+        throw std::invalid_argument(ss.str());
+    }
+    if (pybind11::isinstance<PyCircuitInstruction>(operation)) {
+        const PyCircuitInstruction &v = pybind11::cast<const PyCircuitInstruction &>(operation);
+        self.safe_insert(index, v.as_operation_ref());
+    } else if (pybind11::isinstance<CircuitRepeatBlock>(operation)) {
+        const CircuitRepeatBlock &v = pybind11::cast<const CircuitRepeatBlock &>(operation);
+        self.safe_insert_repeat_block(index, v.repeat_count, v.body);
+    } else if (pybind11::isinstance<Circuit>(operation)) {
+        const Circuit &v = pybind11::cast<const Circuit &>(operation);
+        self.safe_insert(index, v);
+    } else {
+        std::stringstream ss;
+        ss << "Don't know how to insert an object of type ";
+        ss << pybind11::str(pybind11::module_::import("builtins").attr("type")(operation));
+        ss << "\nExpected a stim.CircuitInstruction, stim.CircuitRepeatBlock, or stim.Circuit.";
+        throw std::invalid_argument(ss.str());
+    }
+}
+
 void circuit_append(
     Circuit &self,
     const pybind11::object &obj,
@@ -1083,6 +1116,61 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             )DOC")
                          .data());
     }
+
+    c.def(
+        "insert",
+        &circuit_insert,
+        pybind11::arg("index"),
+        pybind11::arg("operation"),
+        clean_doc_string(R"DOC(
+            Inserts an operation at the given index, pushing existing operations forward.
+            @signature def insert(self, index: int, operation: Union[stim.CircuitInstruction, stim.Circuit]) -> None:
+
+            Note that, unlike when appending operations or parsing stim circuit files,
+            inserted operations aren't automatically fused into the preceding operation.
+            This is to avoid creating complicated situations where it's difficult to reason
+            about how the indices of operations change in response to insertions.
+
+            Args:
+                index: The index to insert at.
+
+                    Must satisfy -len(circuit) <= index < len(circuit). Negative indices
+                    are made non-negative by adding len(circuit) to them, so they refer to
+                    indices relative to the end of the circuit instead of the start.
+
+                    Instructions before the index are not shifted. Instructions that
+                    were at or after the index are shifted forwards.
+                operation: The object to insert. This can be a single
+                    stim.CircuitInstruction or an entire stim.Circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...     H 0
+                ...     S 1
+                ...     X 2
+                ... ''')
+                >>> c.insert(1, stim.CircuitInstruction("Y", [3, 4, 5]))
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    Y 3 4 5
+                    S 1
+                    X 2
+                ''')
+                >>> c.insert(-1, stim.Circuit("S 999\nCX 0 1\nCZ 2 3"))
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    Y 3 4 5
+                    S 1
+                    S 999
+                    CX 0 1
+                    CZ 2 3
+                    X 2
+                ''')
+        )DOC")
+             .data());
 
     c.def(
         "append_from_stim_program_text",
