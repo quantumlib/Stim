@@ -177,7 +177,7 @@ CX 2 1
             .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
-The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
+The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.
 
 Parens Arguments:
 

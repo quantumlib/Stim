@@ -7,7 +7,16 @@ import numpy as np
 
 if TYPE_CHECKING:
     import sinter
-    from scipy.stats._stats_mstats_common import LinregressResult
+
+    # Go on a magical journey looking for scipy's linear regression type.
+    try:
+        from scipy.stats._stats_py import LinregressResult
+    except ImportError:
+        try:
+            from scipy.stats._stats_mstats_common import LinregressResult
+        except ImportError:
+            from scipy.stats import linregress
+            LinregressResult = type(linregress([0, 1], [0, 1]))
 
 
 def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarray:
@@ -64,8 +73,8 @@ def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarra
         result[p_clipped == 1] = -np.inf
 
     # Multiply p**hits and (1-p)**misses onto the total, in log space.
-    result[p_clipped != 0] += np.log(p_clipped[p_clipped != 0]) * hits
-    result[p_clipped != 1] += np.log1p(-p_clipped[p_clipped != 1]) * misses
+    result[p_clipped != 0] += np.log(p_clipped[p_clipped != 0]) * float(hits)
+    result[p_clipped != 1] += np.log1p(-p_clipped[p_clipped != 1]) * float(misses)
 
     # Multiply (n choose hits) onto the total, in log space.
     log_n_choose_hits = log_factorial(n) - log_factorial(misses) - log_factorial(hits)
@@ -150,7 +159,10 @@ def least_squares_cost(*, xs: np.ndarray, ys: np.ndarray, intercept: float, slop
 def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: float, required_y: float) -> 'LinregressResult':
     # Local import to reduce initial cost of importing sinter.
     from scipy.optimize import leastsq
-    from scipy.stats._stats_mstats_common import LinregressResult
+    from scipy.stats import linregress
+
+    # HACK: get scipy's linear regression result type
+    LinregressResult = type(linregress([0, 1], [0, 1]))
 
     xs2 = xs - required_x
     ys2 = ys - required_y
@@ -169,7 +181,11 @@ def least_squares_with_slope(*, xs: np.ndarray, ys: np.ndarray, required_slope: 
 
     # Local import to reduce initial cost of importing sinter.
     from scipy.optimize import leastsq
-    from scipy.stats._stats_mstats_common import LinregressResult
+
+    # HACK: get scipy's linear regression result type
+    from scipy.stats import linregress
+    LinregressResult = type(linregress([0, 1], [0, 1]))
+
     (best_intercept,), _ = leastsq(func=err, x0=0.0)
     return LinregressResult(required_slope, best_intercept, None, None, None, intercept_stderr=False)
 
