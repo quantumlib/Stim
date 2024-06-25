@@ -186,7 +186,7 @@ void circuit_insert(
     if (index < 0) {
         index += self.operations.size();
     }
-    if (index < 0 || index > self.operations.size()) {
+    if (index < 0 || (uint64_t)index > self.operations.size()) {
         std::stringstream ss;
         ss << "Index is out of range. Need -len(circuit) <= index <= len(circuit).";
         ss << "\n    index=" << index;
@@ -727,7 +727,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...    X 1
                 ...    M 0 1
                 ... ''').reference_sample()
-                array([False, True])
+                array([False,  True])
         )DOC")
             .data());
 

@@ -1943,7 +1943,7 @@ class Circuit:
             ...    X 1
             ...    M 0 1
             ... ''').reference_sample()
-            array([False, True])
+            array([False,  True])
         """
     def search_for_undetectable_logical_errors(
         self,
