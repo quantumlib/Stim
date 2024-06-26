@@ -24,6 +24,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -39,6 +40,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -58,6 +60,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -79,6 +82,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -112,6 +116,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -138,6 +143,7 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: The sampler that sampled the data for the data point.\n'
                              '    decoder: The decoder that decoded the data for the data point.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
@@ -159,6 +165,7 @@ def parse_args(args: List[str]) -> Any:
                              '    stats: The list of sinter.TaskStats object in the group.\n'
                              '    metadata: (From one arbitrary data point in the group.) The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    sampler: (From one arbitrary data point in the group.) The sampler that sampled the data for the data point.\n'
                              '    decoder: (From one arbitrary data point in the group.) The decoder that decoded the data for the data point.\n'
                              '    strong_id: (From one arbitrary data point in the group.) The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: (From one arbitrary data point in the group.) The sinter.TaskStats object for the data point.\n'
@@ -266,32 +273,32 @@ def parse_args(args: List[str]) -> Any:
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
     a.x_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.x_func}',
+        f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',
         mode='eval'))
     if a.y_func is not None:
         a.y_func = eval(compile(
-            f'lambda *, stat, decoder, metadata, m, strong_id: {a.y_func}',
+            f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.y_func}',
             filename='x_func:command_line_arg',
             mode='eval'))
     a.group_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.group_func}',
+        f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.group_func}',
         filename='group_func:command_line_arg',
         mode='eval'))
     a.filter_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.filter_func}',
+        f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.filter_func}',
         filename='filter_func:command_line_arg',
         mode='eval'))
     a.failure_units_per_shot_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_units_per_shot_func}',
+        f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.failure_units_per_shot_func}',
         filename='failure_units_per_shot_func:command_line_arg',
         mode='eval'))
     a.failure_values_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_values_func}',
+        f'lambda *, stat, sampler, decoder, metadata, m, strong_id: {a.failure_values_func}',
         filename='failure_values_func:command_line_arg',
         mode='eval'))
     a.plot_args_func = eval(compile(
-        f'lambda *, index, key, stats, stat, decoder, metadata, m, strong_id: {a.plot_args_func}',
+        f'lambda *, index, key, stats, stat, sampler, decoder, metadata, m, strong_id: {a.plot_args_func}',
         filename='plot_args_func:command_line_arg',
         mode='eval'))
     return a
@@ -456,6 +463,10 @@ def _common_json_properties(stats: List['sinter.TaskStats']) -> Dict[str, Any]:
                 v = stat.json_metadata.get(k)
                 if v is None or isinstance(v, (float, str, int)):
                     vals[k].add(v)
+    if 'sampler' not in vals:
+        vals['sampler'] = set()
+        for stat in stats:
+            vals['sampler'].add(stat.sampler)
     if 'decoder' not in vals:
         vals['decoder'] = set()
         for stat in stats:
@@ -712,36 +723,42 @@ def main_plot(*, command_line_args: List[str]):
         samples=total,
         group_func=lambda stat: args.group_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         x_func=lambda stat: args.x_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         y_func=None if args.y_func is None else lambda stat: args.y_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         filter_func=lambda stat: args.filter_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         failure_units_per_shot_func=lambda stat: args.failure_units_per_shot_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
             strong_id=stat.strong_id),
         failure_values_func=lambda stat: args.failure_values_func(
             stat=stat,
+            sampler=stat.sampler,
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             m=_FieldToMetadataWrapper(stat.json_metadata),
@@ -751,6 +768,7 @@ def main_plot(*, command_line_args: List[str]):
             key=group_key,
             stats=stats,
             stat=stats[0],
+            sampler=stats[0].sampler,
             decoder=stats[0].decoder,
             metadata=stats[0].json_metadata,
             m=_FieldToMetadataWrapper(stats[0].json_metadata),

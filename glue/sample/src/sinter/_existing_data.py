@@ -5,7 +5,7 @@ from typing import Any, Dict, List, TYPE_CHECKING
 
 from sinter._task_stats import TaskStats
 from sinter._task import Task
-from sinter._decoding import AnonTaskStats
+from sinter._sampling_and_decoding import AnonTaskStats
 
 if TYPE_CHECKING:
     import sinter
@@ -38,6 +38,8 @@ class ExistingData:
 
     @staticmethod
     def from_file(path_or_file: Any) -> 'ExistingData':
+        # Do not expect 'sampler' field in CSV files.
+        # This is for backwards compatibility.
         expected_fields = {
             "shots",
             "discards",
@@ -81,6 +83,7 @@ class ExistingData:
                 custom_counts=custom_counts,
                 seconds=float(row['seconds']),
                 strong_id=row['strong_id'],
+                sampler=row.get('sampler', 'stim'),
                 decoder=row['decoder'],
                 json_metadata=json.loads(row['json_metadata']),
             ))
@@ -122,8 +125,8 @@ def stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
         >>> stats = sinter.stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', sampler='stim', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', sampler='stim', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
     result = ExistingData()
     for p in paths_or_files:
@@ -163,8 +166,8 @@ def read_stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
         >>> stats = sinter.read_stats_from_csv_files(in_memory_file)
         >>> for stat in stats:
         ...     print(repr(stat))
-        sinter.TaskStats(strong_id='9c31908e2b', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
-        sinter.TaskStats(strong_id='deadbeef08', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
+        sinter.TaskStats(strong_id='9c31908e2b', sampler='stim', decoder='pymatching', json_metadata={'d': 9}, shots=4000, errors=66, seconds=0.25)
+        sinter.TaskStats(strong_id='deadbeef08', sampler='stim', decoder='pymatching', json_metadata={'d': 7}, shots=1000, errors=250, seconds=0.125)
     """
     result = ExistingData()
     for p in paths_or_files:

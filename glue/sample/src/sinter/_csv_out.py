@@ -19,6 +19,7 @@ def csv_line(*,
              errors: Any,
              discards: Any,
              seconds: Any,
+             sampler: Any,
              decoder: Any,
              strong_id: Any,
              json_metadata: Any,
@@ -50,6 +51,7 @@ def csv_line(*,
     errors = escape_csv(errors, 10)
     discards = escape_csv(discards, 10)
     seconds = escape_csv(seconds, 8)
+    sampler = escape_csv(sampler, None)
     decoder = escape_csv(decoder, None)
     strong_id = escape_csv(strong_id, None)
     json_metadata = escape_csv(json_metadata, None)
@@ -57,6 +59,7 @@ def csv_line(*,
             f'{errors},'
             f'{discards},'
             f'{seconds},'
+            f'{sampler},'
             f'{decoder},'
             f'{strong_id},'
             f'{json_metadata},'
@@ -68,6 +71,7 @@ CSV_HEADER = csv_line(shots='shots',
                       discards='discards',
                       seconds='seconds',
                       strong_id='strong_id',
+                      sampler='sampler',
                       decoder='decoder',
                       json_metadata='json_metadata',
                       custom_counts='custom_counts',

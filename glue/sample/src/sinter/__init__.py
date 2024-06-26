@@ -18,6 +18,9 @@ from sinter._csv_out import (
 from sinter._decoding_all_built_in_decoders import (
     BUILT_IN_DECODERS,
 )
+from sinter._sampling_all_built_in_samplers import (
+    BUILT_IN_SAMPLERS,
+)
 from sinter._existing_data import (
     read_stats_from_csv_files,
     stats_from_csv_files,
@@ -53,4 +56,9 @@ from sinter._predict import (
 from sinter._decoding_decoder_class import (
     CompiledDecoder,
     Decoder,
+)
+
+from sinter._sampling_sampler_class import (
+    CompiledSampler,
+    Sampler,
 )

@@ -21,6 +21,9 @@ class Task:
     Attributes:
         circuit: The annotated noisy circuit to sample detection event data
             and logical observable data form.
+        sampler: The sampler to use to sample detectors from the circuit.
+            This can be set to None if it will be specified later (e.g. by 
+            the call to `collect`).
         decoder: The decoder to use to predict the logical observable data
             from the detection event data. This can be set to None if it
             will be specified later (e.g. by the call to `collect`).
@@ -67,6 +70,7 @@ class Task:
         self,
         *,
         circuit: Optional['stim.Circuit'] = None,
+        sampler: Optional[str] = None,
         decoder: Optional[str] = None,
         detector_error_model: Optional['stim.DetectorErrorModel'] = None,
         postselection_mask: Optional[np.ndarray] = None,
@@ -81,6 +85,9 @@ class Task:
         Args:
             circuit: The annotated noisy circuit to sample detection event data
                 and logical observable data form.
+            sampler: The sampler to use to sample detectors from the circuit.
+                This can be set to None if it will be specified later (e.g. by
+                the call to `collect`).
             decoder: The decoder to use to predict the logical observable data
                 from the detection event data. This can be set to None if it
                 will be specified later (e.g. by the call to `collect`).
@@ -156,6 +163,7 @@ class Task:
                     raise ValueError(f"postselected_observables_mask.dtype={postselected_observables_mask.dtype!r} != np.uint8")
         self.circuit_path = None if circuit_path is None else pathlib.Path(circuit_path)
         self.circuit = circuit
+        self.sampler = sampler
         self.decoder = decoder
         self.detector_error_model = detector_error_model
         self.postselection_mask = postselection_mask
@@ -178,6 +186,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_value()
@@ -185,6 +194,8 @@ class Task:
         """
         if self.circuit is None:
             raise ValueError("Can't compute strong_id until `circuit` is set.")
+        if self.sampler is None:
+            raise ValueError("Can't compute strong_id until `sampler` is set.")
         if self.decoder is None:
             raise ValueError("Can't compute strong_id until `decoder` is set.")
         if self.detector_error_model is None:
@@ -201,6 +212,10 @@ class Task:
         }
         if self.postselected_observables_mask is not None:
             result['postselected_observables_mask'] = [int(e) for e in self.postselected_observables_mask]
+        # Do not include the sampler if it is the default value "stim".
+        # This is for backwards compatibility.
+        if self.sampler != "stim":
+            result["sampler"] = self.sampler
         return result
 
     def strong_id_text(self) -> str:
@@ -216,6 +231,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_text()
@@ -235,6 +251,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit('H 0'),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id_bytes()
@@ -251,6 +268,7 @@ class Task:
         This value is affected by:
             - The exact circuit.
             - The exact detector error model.
+            - The sampler.
             - The decoder.
             - The json metadata.
             - The postselection mask.
@@ -261,6 +279,7 @@ class Task:
             >>> task = sinter.Task(
             ...     circuit=stim.Circuit(),
             ...     detector_error_model=stim.DetectorErrorModel(),
+            ...     sampler='stim',
             ...     decoder='pymatching',
             ... )
             >>> task.strong_id()
@@ -274,6 +293,8 @@ class Task:
         terms = []
         if self.circuit is not None:
             terms.append(f'circuit={self.circuit!r}')
+        if self.sampler is not None:
+            terms.append(f"sampler={self.sampler!r}")
         if self.decoder is not None:
             terms.append(f'decoder={self.decoder!r}')
         if self.detector_error_model is not None:
@@ -302,6 +323,7 @@ class Task:
         return (
             self.circuit_path == other.circuit_path and
             self.circuit == other.circuit and
+            self.sampler == other.sampler and
             self.decoder == other.decoder and
             self.detector_error_model == other.detector_error_model and
             np.array_equal(self.postselection_mask, other.postselection_mask) and
