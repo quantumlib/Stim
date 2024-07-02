@@ -215,7 +215,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: bazelbuild/setup-bazelisk@v1
+    - uses: bazel-contrib/setup-bazel@0.8.5
+      bazelisk-cache: true
+      disk-cache: ${{ github.workflow }}
+      repository-cache: true
+      bazelisk-version: 1.x
     - run: bazel build :all
     - run: bazel test :stim_test
   build_clang:
@@ -310,7 +314,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: bazel-contrib/setup-bazel@0.8.5
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+        bazelisk-version: 1.x
       - uses: actions/setup-node@v1
         with:
           node-version: 16.x
@@ -342,7 +350,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: bazel-contrib/setup-bazel@0.8.5
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+        bazelisk-version: 1.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install pytest
@@ -353,7 +365,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: bazel-contrib/setup-bazel@0.8.5
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+        bazelisk-version: 1.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/cirq
@@ -365,7 +381,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: bazel-contrib/setup-bazel@0.8.5
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+        bazelisk-version: 1.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/sample
@@ -378,7 +398,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: bazel-contrib/setup-bazel@0.8.5
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+        bazelisk-version: 1.x
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/zx
