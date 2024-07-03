@@ -2236,9 +2236,8 @@ def insert(
 ) -> None:
     """Inserts an operation at the given index, pushing existing operations forward.
 
-    Note that, unlike when appending operations or parsing stim circuit files,
-    inserted operations aren't automatically fused into the preceding operation.
-    This is to avoid creating complicated situations where it's difficult to reason
+    Beware that inserted operations are automatically fused with the preceding
+    and following operations, if possible. This can make it complex to reason
     about how the indices of operations change in response to insertions.
 
     Args:
@@ -2249,7 +2248,7 @@ def insert(
             indices relative to the end of the circuit instead of the start.
 
             Instructions before the index are not shifted. Instructions that
-            were at or after the index are shifted forwards.
+            were at or after the index are shifted forwards as needed.
         operation: The object to insert. This can be a single
             stim.CircuitInstruction or an entire stim.Circuit.
 
@@ -2273,8 +2272,7 @@ def insert(
         stim.Circuit('''
             H 0
             Y 3 4 5
-            S 1
-            S 999
+            S 1 999
             CX 0 1
             CZ 2 3
             X 2

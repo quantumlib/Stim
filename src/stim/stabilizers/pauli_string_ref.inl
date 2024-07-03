@@ -173,6 +173,39 @@ void PauliStringRef<W>::do_circuit(const Circuit &circuit) {
 }
 
 template <size_t W>
+void PauliStringRef<W>::undo_reset_xyz(const CircuitInstruction &inst) {
+    bool x_dep, z_dep;
+    if (inst.gate_type == GateType::R || inst.gate_type == GateType::MR) {
+        x_dep = true;
+        z_dep = false;
+    } else if (inst.gate_type == GateType::RX || inst.gate_type == GateType::MRX) {
+        x_dep = false;
+        z_dep = true;
+    } else if (inst.gate_type == GateType::RY || inst.gate_type == GateType::MRY) {
+        x_dep = true;
+        z_dep = true;
+    } else {
+        throw std::invalid_argument("Unrecognized measurement type: " + inst.str());
+    }
+    for (const auto &t : inst.targets) {
+        assert(t.is_qubit_target());
+        auto q = t.qubit_value();
+        if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
+            std::stringstream ss;
+            ss << "The pauli observable '" << *this;
+            ss << "' doesn't have a well specified value before '" << inst;
+            ss << "' because it anticommutes with the reset.";
+            throw std::invalid_argument(ss.str());
+        }
+    }
+    for (const auto &t : inst.targets) {
+        auto q = t.qubit_value();
+        xs[q] = false;
+        zs[q] = false;
+    }
+}
+
+template <size_t W>
 void PauliStringRef<W>::check_avoids_measurement(const CircuitInstruction &inst) {
     bool x_dep, z_dep;
     if (inst.gate_type == GateType::M) {
@@ -193,7 +226,7 @@ void PauliStringRef<W>::check_avoids_measurement(const CircuitInstruction &inst)
         if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
             std::stringstream ss;
             ss << "The pauli observable '" << *this;
-            ss << "' doesn't have a well specified value after '" << inst;
+            ss << "' doesn't have a well specified value across '" << inst;
             ss << "' because it anticommutes with the measurement.";
             throw std::invalid_argument(ss.str());
         }
@@ -238,7 +271,7 @@ void PauliStringRef<W>::check_avoids_MPP(const CircuitInstruction &inst) {
         if (anticommutes) {
             std::stringstream ss;
             ss << "The pauli observable '" << *this;
-            ss << "' doesn't have a well specified value after '" << inst;
+            ss << "' doesn't have a well specified value across '" << inst;
             ss << "' because it anticommutes with the measurement.";
             throw std::invalid_argument(ss.str());
         }
@@ -552,7 +585,7 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::MR:
         case GateType::MRX:
         case GateType::MRY:
-            check_avoids_reset(inst);
+            undo_reset_xyz(inst);
             break;
 
         case GateType::M:

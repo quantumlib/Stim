@@ -280,6 +280,7 @@ struct Circuit {
     std::string describe_instruction_location(size_t instruction_offset) const;
 
     void try_fuse_last_two_ops();
+    void try_fuse_after(size_t index);
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
