@@ -159,6 +159,7 @@ struct PauliStringRef {
     void check_avoids_MPP(const CircuitInstruction &inst);
     void check_avoids_reset(const CircuitInstruction &inst);
     void check_avoids_measurement(const CircuitInstruction &inst);
+    void undo_reset_xyz(const CircuitInstruction &inst);
 
     void do_single_cx(const CircuitInstruction &inst, uint32_t c, uint32_t t);
     void do_single_cy(const CircuitInstruction &inst, uint32_t c, uint32_t t);

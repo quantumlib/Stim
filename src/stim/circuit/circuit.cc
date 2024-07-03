@@ -225,13 +225,21 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
 }
 
 void Circuit::try_fuse_last_two_ops() {
-    auto &ops = operations;
-    size_t n = ops.size();
-    if (n > 1 && ops[n - 2].can_fuse(ops[n - 1])) {
-        fuse_data(ops[n - 2].targets, ops[n - 1].targets, target_buf);
-        ops.pop_back();
+    if (operations.size() >= 2) {
+        try_fuse_after(operations.size() - 2);
     }
 }
+
+void Circuit::try_fuse_after(size_t index) {
+    if (index + 1 >= operations.size()) {
+        return;
+    }
+    if (operations[index].can_fuse(operations[index + 1])) {
+        fuse_data(operations[index].targets, operations[index + 1].targets, target_buf);
+        operations.erase(operations.begin() + index + 1);
+    }
+}
+
 template <typename SOURCE>
 void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION read_condition) {
     auto &ops = circuit.operations;
@@ -358,6 +366,12 @@ void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {
     copy.args = arg_buf.take_copy(copy.args);
     copy.targets = target_buf.take_copy(copy.targets);
     operations.insert(operations.begin() + index, copy);
+
+    // Fuse at boundaries.
+    try_fuse_after(index);
+    if (index > 0) {
+        try_fuse_after(index - 1);
+    }
 }
 
 void Circuit::safe_insert(size_t index, const Circuit &circuit) {
@@ -379,6 +393,14 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
         } else {
             operations[k].targets = target_buf.take_copy(operations[k].targets);
             operations[k].args = arg_buf.take_copy(operations[k].args);
+        }
+    }
+
+    // Fuse at boundaries.
+    if (!circuit.operations.empty()) {
+        try_fuse_after(index + circuit.operations.size() - 1);
+        if (index > 0) {
+            try_fuse_after(index - 1);
         }
     }
 }
