@@ -50,3 +50,10 @@ def test_hashable():
     c = stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])
     assert hash(a) == hash(c)
     assert len({a, b, c}) == 2
+
+
+def test_num_measurements():
+    assert stim.CircuitInstruction("X", [1, 2, 3]).num_measurements == 0
+    assert stim.CircuitInstruction("MXX", [1, 2]).num_measurements == 1
+    assert stim.CircuitInstruction("M", [1, 2]).num_measurements == 2
+    assert stim.CircuitInstruction("MPAD", [0, 1, 0]).num_measurements == 3

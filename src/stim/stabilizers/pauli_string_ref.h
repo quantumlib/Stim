@@ -60,6 +60,7 @@ struct PauliStringRef {
     bool operator==(const PauliStringRef<W> &other) const;
     /// Inequality.
     bool operator!=(const PauliStringRef<W> &other) const;
+    bool operator<(const PauliStringRef<W> &other) const;
 
     /// Overwrite assignment.
     PauliStringRef<W> &operator=(const PauliStringRef<W> &other);

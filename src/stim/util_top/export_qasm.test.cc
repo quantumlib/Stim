@@ -196,7 +196,7 @@ TEST(export_qasm, export_open_qasm_mpad) {
     ASSERT_EQ(out.str(), R"QASM(OPENQASM 3.0;
 include "stdgates.inc";
 
-qreg q[2];
+qreg q[1];
 creg rec[4];
 
 h q[0];

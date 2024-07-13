@@ -41,6 +41,7 @@
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
 #include "stim/util_top/count_determined_measurements.h"
+#include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/export_crumble_url.h"
 #include "stim/util_top/export_qasm.h"
 #include "stim/util_top/export_quirk_url.h"
@@ -2820,6 +2821,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like P -> 1 means the circuit measures P.
             A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flow: The flow to check for.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2855,6 +2858,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                 >>> stim.Circuit('''
                 ...     RY 0
+                ... ''').has_flow(stim.Flow(
+                ...     output=stim.PauliString("Y"),
+                ... ))
+                True
+
+                >>> stim.Circuit('''
+                ...     RY 0
+                ...     X_ERROR(0.1) 0
                 ... ''').has_flow(stim.Flow(
                 ...     output=stim.PauliString("Y"),
                 ... ))
@@ -2941,6 +2952,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             because, behind the scenes, the circuit can be iterated once instead of once
             per flow.
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flows: An iterable of `stim.Flow` instances representing the flows to check.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2981,6 +2994,61 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 positive, and a 0% chance of a false negative. So, when the method returns
                 True, there is technically still a 2^-256 chance the circuit doesn't have
                 the flow. This is lower than the chance of a cosmic ray flipping the result.
+        )DOC")
+            .data());
+
+    c.def(
+        "flow_generators",
+        &circuit_flow_generators<MAX_BITWORD_WIDTH>,
+        clean_doc_string(R"DOC(
+            @signature def flow_generators(self) -> List[stim.Flow]:
+            Returns a list of flows that generate all of the circuit's flows.
+
+            Every stabilizer flow that the circuit implements is a product of some
+            subset of the returned generators. Every returned flow will be a flow
+            of the circuit.
+
+            Returns:
+                A list of flow generators for the circuit.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit("H 0").flow_generators()
+                [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+                >>> stim.Circuit("M 0").flow_generators()
+                [stim.Flow("1 -> Z xor rec[0]"), stim.Flow("Z -> rec[0]")]
+
+                >>> stim.Circuit("RX 0").flow_generators()
+                [stim.Flow("1 -> X")]
+
+                >>> for flow in stim.Circuit("MXX 0 1").flow_generators():
+                ...     print(flow)
+                1 -> XX xor rec[0]
+                _X -> _X
+                X_ -> _X xor rec[0]
+                ZZ -> ZZ
+
+                >>> for flow in stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=2,
+                ...     distance=3,
+                ...     after_clifford_depolarization=1e-3,
+                ... ).flow_generators():
+                ...     print(flow)
+                1 -> rec[0]
+                1 -> rec[1]
+                1 -> rec[2]
+                1 -> rec[3]
+                1 -> rec[4]
+                1 -> rec[5]
+                1 -> rec[6]
+                1 -> ____Z
+                1 -> ___Z_
+                1 -> __Z__
+                1 -> _Z___
+                1 -> Z____
         )DOC")
             .data());
 

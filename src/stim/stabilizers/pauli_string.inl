@@ -46,6 +46,51 @@ PauliString<W>::PauliString(const PauliStringRef<W> &other)
 }
 
 template <size_t W>
+PauliString<W>::PauliString(const PauliString<W> &other)
+    : num_qubits(other.num_qubits), sign((bool)other.sign), xs(other.xs), zs(other.zs) {
+}
+
+template <size_t W>
+PauliString<W>::PauliString(PauliString<W> &&other) noexcept
+    : num_qubits(other.num_qubits), sign((bool)other.sign), xs(std::move(other.xs)), zs(std::move(other.zs)) {
+    other.num_qubits = 0;
+    other.sign = false;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(const PauliStringRef<W> &other) {
+    xs = other.xs;
+    zs = other.zs;
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    return *this;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(const PauliString<W> &other) {
+    xs = other.xs;
+    zs = other.zs;
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    return *this;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(PauliString<W> &&other) {
+    if (&other == this) {
+        return *this;
+    }
+    xs = std::move(other.xs);
+    zs = std::move(other.zs);
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    other.num_qubits = 0;
+    other.sign = false;
+    return *this;
+}
+
+
+template <size_t W>
 const PauliStringRef<W> PauliString<W>::ref() const {
     size_t nw = (num_qubits + W - 1) / W;
     return PauliStringRef<W>(
@@ -65,13 +110,6 @@ PauliStringRef<W> PauliString<W>::ref() {
 template <size_t W>
 std::string PauliString<W>::str() const {
     return ref().str();
-}
-
-template <size_t W>
-PauliString<W> &PauliString<W>::operator=(const PauliStringRef<W> &other) noexcept {
-    (*this).~PauliString();
-    new (this) PauliString(other);
-    return *this;
 }
 
 template <size_t W>
@@ -142,6 +180,16 @@ bool PauliString<W>::operator!=(const PauliStringRef<W> &other) const {
 template <size_t W>
 bool PauliString<W>::operator!=(const PauliString<W> &other) const {
     return ref() != other.ref();
+}
+
+template <size_t W>
+bool PauliString<W>::operator<(const PauliString<W> &other) const {
+    return ref() < other.ref();
+}
+
+template <size_t W>
+bool PauliString<W>::operator<(const PauliStringRef<W> &other) const {
+    return ref() < other;
 }
 
 template <size_t W>

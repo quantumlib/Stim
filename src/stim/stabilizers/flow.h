@@ -32,6 +32,7 @@ struct Flow {
     std::vector<int32_t> measurements;
 
     static Flow<W> from_str(std::string_view text);
+    bool operator<(const Flow<W> &other) const;
     bool operator==(const Flow<W> &other) const;
     bool operator!=(const Flow<W> &other) const;
     std::string str() const;

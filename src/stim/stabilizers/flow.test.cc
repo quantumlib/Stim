@@ -1,24 +1,9 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/stabilizers/flow.h"
 
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -43,6 +28,13 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str(""),
             .output = PauliString<W>::from_str(""),
             .measurements = {},
+        }));
+    ASSERT_EQ(
+        Flow<W>::from_str("1 -> -rec[0]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str(""),
+            .output = PauliString<W>::from_str("-"),
+            .measurements = {0},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("i -> -i"),
@@ -150,4 +142,14 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, str_and_from_str, {
     ASSERT_EQ(
         Flow<W>::from_str("-1 -> -X xor rec[-1] xor rec[-3]"),
         (Flow<W>{PauliString<W>::from_str("-"), PauliString<W>::from_str("-X"), {-1, -3}}));
+})
+
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, ordering, {
+    ASSERT_FALSE(Flow<W>::from_str("1 -> 1") < Flow<W>::from_str("1 -> 1"));
+    ASSERT_FALSE(Flow<W>::from_str("X -> 1") < Flow<W>::from_str("1 -> 1"));
+    ASSERT_FALSE(Flow<W>::from_str("1 -> X") < Flow<W>::from_str("1 -> 1"));
+    ASSERT_FALSE(Flow<W>::from_str("1 -> rec[-1]") < Flow<W>::from_str("1 -> 1"));
+    ASSERT_TRUE(Flow<W>::from_str("1 -> 1") < Flow<W>::from_str("X -> 1"));
+    ASSERT_TRUE(Flow<W>::from_str("1 -> 1") < Flow<W>::from_str("1 -> X"));
+    ASSERT_TRUE(Flow<W>::from_str("1 -> 1") < Flow<W>::from_str("1 -> rec[-1]"));
 })

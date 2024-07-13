@@ -16,6 +16,7 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/mem/simd_util.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
@@ -82,6 +83,25 @@ bool PauliStringRef<W>::operator==(const PauliStringRef<W> &other) const {
 template <size_t W>
 bool PauliStringRef<W>::operator!=(const PauliStringRef<W> &other) const {
     return !(*this == other);
+}
+
+template <size_t W>
+bool PauliStringRef<W>::operator<(const PauliStringRef<W> &other) const {
+    size_t n = std::min(num_qubits, other.num_qubits);
+    for (size_t q = 0; q < n; q++) {
+        uint8_t p1 = (xs[q] ^ zs[q]) + zs[q] * 2;
+        uint8_t p2 = (other.xs[q] ^ other.zs[q]) + other.zs[q] * 2;
+        if (p1 != p2) {
+            return p1 < p2;
+        }
+    }
+    if (num_qubits != other.num_qubits) {
+        return num_qubits < other.num_qubits;
+    }
+    if (sign != other.sign) {
+        return sign < other.sign;
+    }
+    return false;
 }
 
 template <size_t W>
@@ -429,6 +449,14 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
             check_avoids_MPP(inst);
             break;
 
+
+        case GateType::SPP:
+        case GateType::SPP_DAG:
+            decompose_spp_or_spp_dag_operation(inst, num_qubits, false, [&](CircuitInstruction sub_inst) {
+                do_instruction(sub_inst);
+            });
+            break;
+
         case GateType::X_ERROR:
         case GateType::Y_ERROR:
         case GateType::Z_ERROR:
@@ -568,6 +596,17 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::YCZ:
             do_YCZ<true>(inst);
             break;
+
+        case GateType::SPP:
+        case GateType::SPP_DAG: {
+            std::vector<GateTarget> buf_targets;
+            buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
+            std::reverse(buf_targets.begin(), buf_targets.end());
+            decompose_spp_or_spp_dag_operation(CircuitInstruction{inst.gate_type, {}, buf_targets}, num_qubits, false, [&](CircuitInstruction sub_inst) {
+                undo_instruction(sub_inst);
+            });
+            break;
+        }
 
         case GateType::DETECTOR:
         case GateType::OBSERVABLE_INCLUDE:

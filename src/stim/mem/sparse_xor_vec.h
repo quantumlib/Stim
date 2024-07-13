@@ -120,6 +120,25 @@ struct SparseXorVec;
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const SparseXorVec<T> &v);
 
+template <typename T>
+inline void xor_item_into_sorted_vec(const T &item, std::vector<T> &sorted_items) {
+    // Just do a linear scan to find the insertion point, instead of a binary search.
+    // This is faster at small sizes, and complexity is linear anyways due to the shifting of later items.
+    for (size_t k = 0; k < sorted_items.size(); k++) {
+        const auto &v = sorted_items[k];
+        if (v < item) {
+            continue;
+        } else if (v == item) {
+            sorted_items.erase(sorted_items.begin() + k);
+            return;
+        } else {
+            sorted_items.insert(sorted_items.begin() + k, item);
+            return;
+        }
+    }
+    sorted_items.push_back(item);
+}
+
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
@@ -161,21 +180,7 @@ struct SparseXorVec {
     }
 
     void xor_item(const T &item) {
-        // Just do a linear scan to find the insertion point, instead of a binary search.
-        // This is faster at small sizes, and complexity is linear anyways due to the shifting of later items.
-        for (size_t k = 0; k < sorted_items.size(); k++) {
-            const auto &v = sorted_items[k];
-            if (v < item) {
-                continue;
-            } else if (v == item) {
-                sorted_items.erase(sorted_items.begin() + k);
-                return;
-            } else {
-                sorted_items.insert(sorted_items.begin() + k, item);
-                return;
-            }
-        }
-        sorted_items.push_back(item);
+        xor_item_into_sorted_vec(item, sorted_items);
     }
 
     SparseXorVec &operator^=(const SparseXorVec<T> &other) {

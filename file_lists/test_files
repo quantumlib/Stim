@@ -79,6 +79,7 @@ src/stim/util_bot/probability_util.test.cc
 src/stim/util_bot/str_util.test.cc
 src/stim/util_bot/test_util.test.cc
 src/stim/util_bot/twiddle.test.cc
+src/stim/util_top/circuit_flow_generators.test.cc
 src/stim/util_top/circuit_inverse_qec.test.cc
 src/stim/util_top/circuit_inverse_unitary.test.cc
 src/stim/util_top/circuit_to_detecting_regions.test.cc
