@@ -38,7 +38,7 @@ static GateTarget measurement_index_to_target(int32_t m, uint64_t num_measuremen
 }
 
 template <size_t W>
-bool _sample_if_circuit_has_stabilizer_flow(
+bool _sample_if_noiseless_circuit_has_stabilizer_flow(
     size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, const Flow<W> &flow) {
     uint32_t num_qubits = (uint32_t)circuit.count_qubits();
     uint64_t num_measurements = circuit.count_measurements();
@@ -76,9 +76,10 @@ bool _sample_if_circuit_has_stabilizer_flow(
 template <size_t W>
 std::vector<bool> sample_if_circuit_has_stabilizer_flows(
     size_t num_samples, std::mt19937_64 &rng, const Circuit &circuit, std::span<const Flow<W>> flows) {
+    const auto &noiseless = circuit.aliased_noiseless_circuit();
     std::vector<bool> result;
     for (const auto &flow : flows) {
-        result.push_back(_sample_if_circuit_has_stabilizer_flow(num_samples, rng, circuit, flow));
+        result.push_back(_sample_if_noiseless_circuit_has_stabilizer_flow(num_samples, rng, noiseless, flow));
     }
     return result;
 }

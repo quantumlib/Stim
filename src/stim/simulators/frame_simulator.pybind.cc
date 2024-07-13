@@ -138,7 +138,8 @@ pybind11::object sliced_table_to_numpy(
             auto data = table.read_across_majors_at_minor_index(0, num_major_exact, *minor_index);
             return simd_bits_to_numpy(data, num_major_exact, bit_packed);
         } else {
-            return simd_bit_table_to_numpy(table, num_major_exact, num_minor_exact, bit_packed, false, pybind11::none());
+            return simd_bit_table_to_numpy(
+                table, num_major_exact, num_minor_exact, bit_packed, false, pybind11::none());
         }
     }
 }

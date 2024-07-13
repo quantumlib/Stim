@@ -162,6 +162,31 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "num_measurements",
+        [](const PyCircuitInstruction &self) -> uint64_t {
+            return self.as_operation_ref().count_measurement_results();
+        },
+        clean_doc_string(R"DOC(
+            Returns the number of bits produced when running this instruction.
+
+            Examples:
+                >>> import stim
+                >>> stim.CircuitInstruction('H', [0]).num_measurements
+                0
+                >>> stim.CircuitInstruction('M', [0]).num_measurements
+                1
+                >>> stim.CircuitInstruction('M', [2, 3, 5, 7, 11]).num_measurements
+                5
+                >>> stim.CircuitInstruction('MXX', [0, 1, 4, 5, 11, 13]).num_measurements
+                3
+                >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
+                2
+                >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+                1
+        )DOC")
+            .data());
+
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.CircuitInstruction`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.CircuitInstruction`s are different.");
     c.def(

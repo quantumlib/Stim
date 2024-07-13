@@ -26,7 +26,7 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_no_folding(
         for (const auto &inst : loop.operations) {
             if (inst.gate_type == GateType::REPEAT) {
                 uint64_t repeats = inst.repeat_block_rep_count();
-                const auto& block = inst.repeat_block_body(loop);
+                const auto &block = inst.repeat_block_body(loop);
                 flush_recorded_into_result();
                 result.suffix_children.push_back(do_loop_with_tortoise_hare_folding(block, repeats));
                 start_size = sim.measurement_record.storage.size();
@@ -41,7 +41,8 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_no_folding(
 }
 
 template <size_t W>
-ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_hare_folding(const Circuit &loop, uint64_t reps) {
+ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_hare_folding(
+    const Circuit &loop, uint64_t reps) {
     if (reps < 10) {
         // Probably not worth the overhead of tortoise-and-hare. Just run it raw.
         return do_loop_with_no_folding(loop, reps);
@@ -99,7 +100,9 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
     // Add skipped iterations' measurement data into the sim's measurement record.
     loop_contents.repetitions = 1;
     sim.measurement_record.discard_results_past_max_lookback();
-    for (size_t k = 0; k < period_steps_left && sim.measurement_record.storage.size() < sim.measurement_record.max_lookback * 2; k++) {
+    for (size_t k = 0;
+         k < period_steps_left && sim.measurement_record.storage.size() < sim.measurement_record.max_lookback * 2;
+         k++) {
         loop_contents.decompress_into(sim.measurement_record.storage);
     }
     sim.measurement_record.discard_results_past_max_lookback();
@@ -116,9 +119,7 @@ ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_tortoise_ha
 
 template <size_t W>
 bool CompressedReferenceSampleHelper<W>::in_same_recent_state_as(
-    const CompressedReferenceSampleHelper<W> &other,
-    uint64_t max_record_lookback,
-    bool allow_false_negative) const {
+    const CompressedReferenceSampleHelper<W> &other, uint64_t max_record_lookback, bool allow_false_negative) const {
     const auto &s1 = sim.measurement_record.storage;
     const auto &s2 = other.sim.measurement_record.storage;
 

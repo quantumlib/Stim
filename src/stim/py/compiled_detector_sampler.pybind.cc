@@ -32,7 +32,13 @@ CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
-    size_t num_shots, bool prepend_observables, bool append_observables, bool separate_observables, bool bit_packed, pybind11::object dets_out, pybind11::object obs_out) {
+    size_t num_shots,
+    bool prepend_observables,
+    bool append_observables,
+    bool separate_observables,
+    bool bit_packed,
+    pybind11::object dets_out,
+    pybind11::object obs_out) {
     if (separate_observables && (append_observables || prepend_observables)) {
         throw std::invalid_argument(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
@@ -50,7 +56,8 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
 
     pybind11::object py_obs_data = pybind11::none();
     if (separate_observables || !obs_out.is_none()) {
-        py_obs_data = simd_bit_table_to_numpy(obs_data, circuit_stats.num_observables, num_shots, bit_packed, true, obs_out);
+        py_obs_data =
+            simd_bit_table_to_numpy(obs_data, circuit_stats.num_observables, num_shots, bit_packed, true, obs_out);
     }
 
     pybind11::object py_det_data = pybind11::none();
@@ -67,7 +74,8 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
         }
         py_det_data = simd_bit_table_to_numpy(concat_data, num_concat, num_shots, bit_packed, true, dets_out);
     } else {
-        py_det_data = simd_bit_table_to_numpy(det_data, circuit_stats.num_detectors, num_shots, bit_packed, true, dets_out);
+        py_det_data =
+            simd_bit_table_to_numpy(det_data, circuit_stats.num_detectors, num_shots, bit_packed, true, dets_out);
     }
 
     if (separate_observables) {

@@ -60,21 +60,15 @@ struct CompressedReferenceSampleHelper {
     ///
     /// Loops containing within the body of this loop (or circuit body) may
     /// still be compressed. Only the top-level loop is not folded.
-    ReferenceSampleTree do_loop_with_no_folding(
-        const Circuit &loop,
-        uint64_t reps);
+    ReferenceSampleTree do_loop_with_no_folding(const Circuit &loop, uint64_t reps);
 
     /// Runs tortoise-and-hare analysis of the loop while simulating its
     /// reference sample, in order to attempt to return a compressed
     /// representation.
-    ReferenceSampleTree do_loop_with_tortoise_hare_folding(
-        const Circuit &loop,
-        uint64_t reps);
+    ReferenceSampleTree do_loop_with_tortoise_hare_folding(const Circuit &loop, uint64_t reps);
 
     bool in_same_recent_state_as(
-        const CompressedReferenceSampleHelper<W> &other,
-        uint64_t max_record_lookback,
-        bool allow_false_negative) const;
+        const CompressedReferenceSampleHelper<W> &other, uint64_t max_record_lookback, bool allow_false_negative) const;
 };
 
 uint64_t max_feedback_lookback_in_loop(const Circuit &loop);

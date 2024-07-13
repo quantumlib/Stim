@@ -9,7 +9,7 @@ bool ReferenceSampleTree::empty() const {
     if (!prefix_bits.empty()) {
         return false;
     }
-    for (const auto &child: suffix_children) {
+    for (const auto &child : suffix_children) {
         if (!child.empty()) {
             return false;
         }
@@ -48,7 +48,7 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
         if (dst.prefix_bits == src.prefix_bits && dst.suffix_children == src.suffix_children) {
             dst.repetitions += src.repetitions;
 
-        // Fuse children with unrepeated contents if they can be fused.
+            // Fuse children with unrepeated contents if they can be fused.
         } else if (src.repetitions == 1 && dst.repetitions == 1 && dst.suffix_children.empty()) {
             dst.suffix_children = std::move(src.suffix_children);
             dst.prefix_bits.insert(dst.prefix_bits.end(), src.prefix_bits.begin(), src.prefix_bits.end());
@@ -78,9 +78,9 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
         out.push_back(std::move(result));
     } else {
         out.push_back(ReferenceSampleTree{
-            .prefix_bits={},
-            .suffix_children=std::move(fused),
-            .repetitions=repetitions,
+            .prefix_bits = {},
+            .suffix_children = std::move(fused),
+            .repetitions = repetitions,
         });
     }
 }
@@ -90,7 +90,8 @@ uint64_t stim::max_feedback_lookback_in_loop(const Circuit &loop) {
     uint64_t furthest_lookback = 0;
     for (const auto &inst : loop.operations) {
         if (inst.gate_type == GateType::REPEAT) {
-            furthest_lookback = std::max(furthest_lookback, max_feedback_lookback_in_loop(inst.repeat_block_body(loop)));
+            furthest_lookback =
+                std::max(furthest_lookback, max_feedback_lookback_in_loop(inst.repeat_block_body(loop)));
         } else {
             auto f = GATE_DATA[inst.gate_type].flags;
             if ((f & GateFlags::GATE_CAN_TARGET_BITS) && (f & GateFlags::GATE_TARGETS_PAIRS)) {
@@ -136,10 +137,10 @@ ReferenceSampleTree ReferenceSampleTree::simplified() const {
     ReferenceSampleTree result;
     result.repetitions = 1;
 
-     // Take payload from first child.
+    // Take payload from first child.
     if (flat[0].repetitions == 1 && flat[0].suffix_children.empty()) {
-         result = std::move(flat[0]);
-         flat.erase(flat.begin());
+        result = std::move(flat[0]);
+        flat.erase(flat.begin());
     }
 
     result.suffix_children = std::move(flat);
@@ -148,7 +149,7 @@ ReferenceSampleTree ReferenceSampleTree::simplified() const {
 
 size_t ReferenceSampleTree::size() const {
     size_t result = prefix_bits.size();
-    for (const auto &child: suffix_children) {
+    for (const auto &child : suffix_children) {
         result += child.size();
     }
     return result * repetitions;
@@ -157,7 +158,7 @@ size_t ReferenceSampleTree::size() const {
 void ReferenceSampleTree::decompress_into(std::vector<bool> &output) const {
     for (uint64_t k = 0; k < repetitions; k++) {
         output.insert(output.end(), prefix_bits.begin(), prefix_bits.end());
-        for (const auto &child: suffix_children) {
+        for (const auto &child : suffix_children) {
             child.decompress_into(output);
         }
     }
@@ -166,12 +167,8 @@ void ReferenceSampleTree::decompress_into(std::vector<bool> &output) const {
 ReferenceSampleTree ReferenceSampleTree::from_circuit_reference_sample(const Circuit &circuit) {
     auto stats = circuit.compute_stats();
     std::mt19937_64 irrelevant_rng{0};
-    CompressedReferenceSampleHelper<MAX_BITWORD_WIDTH> helper(
-        TableauSimulator<MAX_BITWORD_WIDTH>(
-            std::move(irrelevant_rng),
-            stats.num_qubits,
-            +1,
-            MeasureRecord(stats.max_lookback)));
+    CompressedReferenceSampleHelper<MAX_BITWORD_WIDTH> helper(TableauSimulator<MAX_BITWORD_WIDTH>(
+        std::move(irrelevant_rng), stats.num_qubits, +1, MeasureRecord(stats.max_lookback)));
     return helper.do_loop_with_tortoise_hare_folding(circuit, 1).simplified();
 }
 
@@ -182,8 +179,7 @@ std::string ReferenceSampleTree::str() const {
 }
 
 bool ReferenceSampleTree::operator==(const ReferenceSampleTree &other) const {
-    return repetitions == other.repetitions &&
-           prefix_bits == other.prefix_bits &&
+    return repetitions == other.repetitions && prefix_bits == other.prefix_bits &&
            suffix_children == other.suffix_children;
 }
 bool ReferenceSampleTree::operator!=(const ReferenceSampleTree &other) const {

@@ -62,8 +62,10 @@ void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) co
     for (auto t : targets) {
         auto v = t.data & TARGET_VALUE_MASK;
         // Qubit counting.
-        if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-            out.num_qubits = std::max(out.num_qubits, v + 1);
+        if (gate_type != GateType::MPAD) {
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+                out.num_qubits = std::max(out.num_qubits, v + 1);
+            }
         }
         // Lookback counting.
         if (t.data & TARGET_RECORD_BIT) {
