@@ -37,11 +37,11 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/flow.h"
+#include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
 #include "stim/util_top/count_determined_measurements.h"
-#include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/export_crumble_url.h"
 #include "stim/util_top/export_qasm.h"
 #include "stim/util_top/export_quirk_url.h"
@@ -179,11 +179,7 @@ std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization
     return stim::likeliest_error_sat_problem(dem, quantization, format);
 }
 
-void circuit_insert(
-    Circuit &self,
-    pybind11::ssize_t &index,
-    pybind11::object &operation) {
-
+void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &operation) {
     if (index < 0) {
         index += self.operations.size();
     }
@@ -1177,7 +1173,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     X 2
                 ''')
         )DOC")
-             .data());
+            .data());
 
     c.def(
         "append_from_stim_program_text",

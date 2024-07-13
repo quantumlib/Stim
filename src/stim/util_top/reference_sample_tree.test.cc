@@ -19,72 +19,83 @@ void expect_tree_matches_normal_reference_sample_of(const ReferenceSampleTree &t
 
 TEST(ReferenceSampleTree, equality) {
     ReferenceSampleTree empty1{
-        .prefix_bits={},
-        .suffix_children={},
-        .repetitions=0,
+        .prefix_bits = {},
+        .suffix_children = {},
+        .repetitions = 0,
     };
     ReferenceSampleTree empty2;
     ASSERT_EQ(empty1, empty2);
 
     ASSERT_FALSE(empty1 != empty2);
-    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits={},.suffix_children{},.repetitions=1}));
-    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits={0},.suffix_children{},.repetitions=0}));
-    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits={},.suffix_children{{}},.repetitions=0}));
+    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits = {}, .suffix_children{}, .repetitions = 1}));
+    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits = {0}, .suffix_children{}, .repetitions = 0}));
+    ASSERT_NE(empty1, (ReferenceSampleTree{.prefix_bits = {}, .suffix_children{{}}, .repetitions = 0}));
 }
 
 TEST(ReferenceSampleTree, str) {
-    ASSERT_EQ((ReferenceSampleTree{
-        .prefix_bits={},
-        .suffix_children={},
-        .repetitions=0,
-    }.str()), "0*('')");
+    ASSERT_EQ(
+        (ReferenceSampleTree{
+            .prefix_bits = {},
+            .suffix_children = {},
+            .repetitions = 0,
+        }
+             .str()),
+        "0*('')");
 
-    ASSERT_EQ((ReferenceSampleTree{
-        .prefix_bits={1, 1, 0, 1},
-        .suffix_children={},
-        .repetitions=0,
-    }.str()), "0*('1101')");
+    ASSERT_EQ(
+        (ReferenceSampleTree{
+            .prefix_bits = {1, 1, 0, 1},
+            .suffix_children = {},
+            .repetitions = 0,
+        }
+             .str()),
+        "0*('1101')");
 
-    ASSERT_EQ((ReferenceSampleTree{
-        .prefix_bits={1, 1, 0, 1},
-        .suffix_children={},
-        .repetitions=2,
-    }.str()), "2*('1101')");
+    ASSERT_EQ(
+        (ReferenceSampleTree{
+            .prefix_bits = {1, 1, 0, 1},
+            .suffix_children = {},
+            .repetitions = 2,
+        }
+             .str()),
+        "2*('1101')");
 
-    ASSERT_EQ((ReferenceSampleTree{
-        .prefix_bits={1, 1, 0, 1},
-        .suffix_children={
-            ReferenceSampleTree{
-                .prefix_bits={1},
-                .suffix_children={},
-                .repetitions=5,
-            }
-        },
-        .repetitions=2,
-    }.str()), "2*('1101'+5*('1'))");
+    ASSERT_EQ(
+        (ReferenceSampleTree{
+            .prefix_bits = {1, 1, 0, 1},
+            .suffix_children = {ReferenceSampleTree{
+                .prefix_bits = {1},
+                .suffix_children = {},
+                .repetitions = 5,
+            }},
+            .repetitions = 2,
+        }
+             .str()),
+        "2*('1101'+5*('1'))");
 }
 
 TEST(ReferenceSampleTree, simplified) {
     ReferenceSampleTree raw{
-        .prefix_bits={},
-        .suffix_children={
-            ReferenceSampleTree{
-                .prefix_bits={},
-                .suffix_children={},
-                .repetitions=1,
+        .prefix_bits = {},
+        .suffix_children =
+            {
+                ReferenceSampleTree{
+                    .prefix_bits = {},
+                    .suffix_children = {},
+                    .repetitions = 1,
+                },
+                ReferenceSampleTree{
+                    .prefix_bits = {1, 0, 1},
+                    .suffix_children = {{}},
+                    .repetitions = 0,
+                },
+                ReferenceSampleTree{
+                    .prefix_bits = {1, 1, 1},
+                    .suffix_children = {},
+                    .repetitions = 2,
+                },
             },
-            ReferenceSampleTree{
-                .prefix_bits={1, 0, 1},
-                .suffix_children={{}},
-                .repetitions=0,
-            },
-            ReferenceSampleTree{
-                .prefix_bits={1, 1, 1},
-                .suffix_children={},
-                .repetitions=2,
-            },
-        },
-        .repetitions=3,
+        .repetitions = 3,
     };
     ASSERT_EQ(raw.simplified().str(), "6*('111')");
 }
@@ -92,36 +103,38 @@ TEST(ReferenceSampleTree, simplified) {
 TEST(ReferenceSampleTree, decompress_into) {
     std::vector<bool> result;
     ReferenceSampleTree{
-        .prefix_bits={1, 1, 0, 1},
-        .suffix_children={
-            ReferenceSampleTree{
-                .prefix_bits={1},
-                .suffix_children={},
-                .repetitions=5,
-            }
-        },
-        .repetitions=2,
-    }.decompress_into(result);
+        .prefix_bits = {1, 1, 0, 1},
+        .suffix_children = {ReferenceSampleTree{
+            .prefix_bits = {1},
+            .suffix_children = {},
+            .repetitions = 5,
+        }},
+        .repetitions = 2,
+    }
+        .decompress_into(result);
     ASSERT_EQ(result, (std::vector<bool>{1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}));
 
     result.clear();
     ReferenceSampleTree{
-        .prefix_bits={1, 1, 0, 1},
-        .suffix_children={
-            ReferenceSampleTree{
-                .prefix_bits={1, 0, 1},
-                .suffix_children={},
-                .repetitions=8,
+        .prefix_bits = {1, 1, 0, 1},
+        .suffix_children =
+            {
+                ReferenceSampleTree{
+                    .prefix_bits = {1, 0, 1},
+                    .suffix_children = {},
+                    .repetitions = 8,
+                },
+                ReferenceSampleTree{
+                    .prefix_bits = {0, 0},
+                    .suffix_children = {},
+                    .repetitions = 1,
+                },
             },
-            ReferenceSampleTree{
-                .prefix_bits={0, 0},
-                .suffix_children={},
-                .repetitions=1,
-            },
-        },
-        .repetitions=1,
-    }.decompress_into(result);
-    ASSERT_EQ(result, (std::vector<bool>{1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0}));
+        .repetitions = 1,
+    }
+        .decompress_into(result);
+    ASSERT_EQ(result, (std::vector<bool>{1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+                                         1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0}));
 }
 
 TEST(ReferenceSampleTree, simple_circuit) {
@@ -186,7 +199,8 @@ TEST(ReferenceSampleTree, feedback) {
 TEST(max_feedback_lookback_in_loop, simple) {
     ASSERT_EQ(max_feedback_lookback_in_loop(Circuit()), 0);
 
-    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
         REPEAT 100 {
             REPEAT 100 {
                 M 0
@@ -200,27 +214,36 @@ TEST(max_feedback_lookback_in_loop, simple) {
             X 1
             CX 1 0
         }
-    )CIRCUIT")), 0);
+    )CIRCUIT")),
+        0);
 
-    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
         CX rec[-1] 0
-    )CIRCUIT")), 1);
+    )CIRCUIT")),
+        1);
 
-    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
         CZ 0 rec[-2]
-    )CIRCUIT")), 2);
+    )CIRCUIT")),
+        2);
 
-    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
         CZ 0 rec[-2]
         CY 0 rec[-3]
-    )CIRCUIT")), 3);
+    )CIRCUIT")),
+        3);
 
-    ASSERT_EQ(max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        max_feedback_lookback_in_loop(Circuit(R"CIRCUIT(
         CZ 0 rec[-2]
         REPEAT 100 {
             CX rec[-5] 0
         }
-    )CIRCUIT")), 5);
+    )CIRCUIT")),
+        5);
 }
 
 TEST(ReferenceSampleTree, nested_loops) {
@@ -240,7 +263,10 @@ TEST(ReferenceSampleTree, nested_loops) {
     )CIRCUIT");
     auto ref = ReferenceSampleTree::from_circuit_reference_sample(circuit);
     expect_tree_matches_normal_reference_sample_of(ref, circuit);
-    ASSERT_EQ(ref.str(), "1*(''+50*('0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')+24*(''+50*('0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')))");
+    ASSERT_EQ(
+        ref.str(),
+        "1*(''+50*('0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')+24*(''+50*('"
+        "0110')+200*('0')+50*('1001')+200*('1')+50*('1001')+200*('1')+50*('0110')+200*('0')))");
 }
 
 TEST(ReferenceSampleTree, surface_code) {

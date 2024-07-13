@@ -18,8 +18,10 @@ using namespace stim;
 using namespace stim_pybind;
 
 static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in, pybind11::object out_buffer) {
-
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major_in,
+    size_t num_minor_in,
+    pybind11::object out_buffer) {
     size_t num_major_bytes_in = (num_major_in + 7) / 8;
 
     if (out_buffer.is_none()) {
@@ -61,8 +63,10 @@ static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
 }
 
 static pybind11::object transposed_simd_bit_table_to_numpy_bool8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in, pybind11::object out_buffer) {
-
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major_in,
+    size_t num_minor_in,
+    pybind11::object out_buffer) {
     if (out_buffer.is_none()) {
         auto numpy = pybind11::module::import("numpy");
         out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_minor_in, num_major_in), numpy.attr("bool_"));
@@ -99,7 +103,6 @@ static pybind11::object transposed_simd_bit_table_to_numpy_bool8(
 
 static pybind11::object simd_bit_table_to_numpy_uint8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, pybind11::object out_buffer) {
-
     size_t num_minor_bytes = (num_minor + 7) / 8;
     if (out_buffer.is_none()) {
         auto numpy = pybind11::module::import("numpy");
@@ -144,7 +147,6 @@ static pybind11::object simd_bit_table_to_numpy_uint8(
 
 static pybind11::object simd_bit_table_to_numpy_bool8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, pybind11::object out_buffer) {
-
     if (out_buffer.is_none()) {
         auto numpy = pybind11::module::import("numpy");
         out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_major, num_minor), numpy.attr("bool_"));
@@ -179,7 +181,12 @@ static pybind11::object simd_bit_table_to_numpy_bool8(
 }
 
 pybind11::object stim_pybind::simd_bit_table_to_numpy(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, bool bit_pack_result, bool transposed, pybind11::object out_buffer) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major,
+    size_t num_minor,
+    bool bit_pack_result,
+    bool transposed,
+    pybind11::object out_buffer) {
     if (transposed) {
         if (bit_pack_result) {
             return transposed_simd_bit_table_to_numpy_uint8(table, num_major, num_minor, out_buffer);

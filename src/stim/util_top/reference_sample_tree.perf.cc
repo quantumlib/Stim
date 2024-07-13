@@ -14,8 +14,7 @@ BENCHMARK(reference_sample_tree_surface_code_d31_r1000000000) {
     benchmark_go([&]() {
         auto result = ReferenceSampleTree::from_circuit_reference_sample(circuit);
         total += result.empty();
-    })
-        .goal_millis(25);
+    }).goal_millis(25);
     if (total) {
         std::cerr << "data dependence";
     }
@@ -44,8 +43,7 @@ BENCHMARK(reference_sample_tree_nested_circuit) {
     benchmark_go([&]() {
         auto result = ReferenceSampleTree::from_circuit_reference_sample(circuit);
         total += result.empty();
-    })
-        .goal_micros(230);
+    }).goal_micros(230);
     if (total) {
         std::cerr << "data dependence";
     }

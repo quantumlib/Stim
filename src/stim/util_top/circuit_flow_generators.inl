@@ -3,14 +3,14 @@
 namespace stim {
 
 template <size_t W>
-CircuitFlowGeneratorSolver<W>::CircuitFlowGeneratorSolver(CircuitStats stats) :
-    table(),
-    num_qubits(stats.num_qubits),
-    num_measurements(stats.num_measurements),
-    num_measurements_in_past(stats.num_measurements),
-    measurements_only_table(),
-    buf_for_rows_with(),
-    buf_for_xor_merge() {
+CircuitFlowGeneratorSolver<W>::CircuitFlowGeneratorSolver(CircuitStats stats)
+    : table(),
+      num_qubits(stats.num_qubits),
+      num_measurements(stats.num_measurements),
+      num_measurements_in_past(stats.num_measurements),
+      measurements_only_table(),
+      buf_for_rows_with(),
+      buf_for_xor_merge() {
     if (num_measurements_in_past > INT32_MAX) {
         throw std::invalid_argument("Circuit is too large. Max flow measurement index is " + std::to_string(INT32_MAX));
     }
@@ -19,9 +19,9 @@ CircuitFlowGeneratorSolver<W>::CircuitFlowGeneratorSolver(CircuitStats stats) :
 template <size_t W>
 Flow<W> &CircuitFlowGeneratorSolver<W>::add_row() {
     table.push_back(Flow<W>{
-        .input=PauliString<W>(num_qubits),
-        .output=PauliString<W>(num_qubits),
-        .measurements={},
+        .input = PauliString<W>(num_qubits),
+        .output = PauliString<W>(num_qubits),
+        .measurements = {},
     });
     return table.back();
 }
@@ -153,7 +153,8 @@ void CircuitFlowGeneratorSolver<W>::mult_row_into(size_t src_row, size_t dst_row
 
     // Xor-merge-sort the measurement indices.
     buf_for_xor_merge.resize(std::max(buf_for_xor_merge.size(), dst.measurements.size() + src.measurements.size() + 1));
-    const int32_t *end = xor_merge_sort(SpanRef<const int32_t>(dst.measurements), SpanRef<const int32_t>(src.measurements), buf_for_xor_merge.data());
+    const int32_t *end = xor_merge_sort(
+        SpanRef<const int32_t>(dst.measurements), SpanRef<const int32_t>(src.measurements), buf_for_xor_merge.data());
     size_t n = end - buf_for_xor_merge.data();
     dst.measurements.resize(n);
     if (n > 0) {
@@ -346,9 +347,9 @@ void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
             buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
             std::reverse(buf_targets.begin(), buf_targets.end());
             decompose_mpp_operation(
-                CircuitInstruction{inst.gate_type, {}, buf_targets},
-                num_qubits,
-                [&](CircuitInstruction sub_inst) { undo_instruction(sub_inst); });
+                CircuitInstruction{inst.gate_type, {}, buf_targets}, num_qubits, [&](CircuitInstruction sub_inst) {
+                    undo_instruction(sub_inst);
+                });
             break;
 
         default:
@@ -404,10 +405,26 @@ template <size_t W>
 void CircuitFlowGeneratorSolver<W>::canonicalize_over_qubits() {
     size_t num_eliminated = 0;
     for (size_t q = 0; q < num_qubits; q++) {
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.input.xs[q]; }), num_eliminated);
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.input.zs[q]; }), num_eliminated);
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.output.xs[q]; }), num_eliminated);
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.output.zs[q]; }), num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.input.xs[q];
+            }),
+            num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.input.zs[q];
+            }),
+            num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.output.xs[q];
+            }),
+            num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.output.zs[q];
+            }),
+            num_eliminated);
     }
 
     for (size_t r = 0; r < table.size(); r++) {
@@ -428,17 +445,36 @@ void CircuitFlowGeneratorSolver<W>::final_canonicalize_into_table() {
 
     size_t num_eliminated = 0;
     for (size_t q = 0; q < num_qubits; q++) {
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.input.xs[q]; }), num_eliminated);
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.input.zs[q]; }), num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.input.xs[q];
+            }),
+            num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.input.zs[q];
+            }),
+            num_eliminated);
     }
     for (size_t q = 0; q < num_qubits; q++) {
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.output.xs[q]; }), num_eliminated);
-        elimination_step(rows_with([&](const Flow<W> &flow) { return flow.output.zs[q]; }), num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.output.xs[q];
+            }),
+            num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return flow.output.zs[q];
+            }),
+            num_eliminated);
     }
     for (size_t m = 0; m < num_measurements; m++) {
-        elimination_step(rows_with([&](const Flow<W> &flow) {
-            return std::find(flow.measurements.begin(), flow.measurements.end(), (int32_t)m) != flow.measurements.end();
-        }), num_eliminated);
+        elimination_step(
+            rows_with([&](const Flow<W> &flow) {
+                return std::find(flow.measurements.begin(), flow.measurements.end(), (int32_t)m) !=
+                       flow.measurements.end();
+            }),
+            num_eliminated);
     }
     for (auto &row : table) {
         row.output.sign ^= row.input.sign;
@@ -469,9 +505,11 @@ std::vector<Flow<W>> circuit_flow_generators(const Circuit &circuit) {
         z.output.zs[q] = 1;
         z.input.zs[q] = 1;
     }
-    circuit.for_each_operation_reverse([&](CircuitInstruction inst) { solver.undo_instruction(inst); });
+    circuit.for_each_operation_reverse([&](CircuitInstruction inst) {
+        solver.undo_instruction(inst);
+    });
     solver.final_canonicalize_into_table();
     return solver.table;
 }
 
-}
+}  // namespace stim

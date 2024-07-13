@@ -89,7 +89,6 @@ PauliString<W> &PauliString<W>::operator=(PauliString<W> &&other) {
     return *this;
 }
 
-
 template <size_t W>
 const PauliStringRef<W> PauliString<W>::ref() const {
     size_t nw = (num_qubits + W - 1) / W;

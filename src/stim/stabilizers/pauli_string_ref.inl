@@ -449,7 +449,6 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
             check_avoids_MPP(inst);
             break;
 
-
         case GateType::SPP:
         case GateType::SPP_DAG:
             decompose_spp_or_spp_dag_operation(inst, num_qubits, false, [&](CircuitInstruction sub_inst) {
@@ -602,9 +601,13 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
             std::vector<GateTarget> buf_targets;
             buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
             std::reverse(buf_targets.begin(), buf_targets.end());
-            decompose_spp_or_spp_dag_operation(CircuitInstruction{inst.gate_type, {}, buf_targets}, num_qubits, false, [&](CircuitInstruction sub_inst) {
-                undo_instruction(sub_inst);
-            });
+            decompose_spp_or_spp_dag_operation(
+                CircuitInstruction{inst.gate_type, {}, buf_targets},
+                num_qubits,
+                false,
+                [&](CircuitInstruction sub_inst) {
+                    undo_instruction(sub_inst);
+                });
             break;
         }
 

@@ -2,9 +2,9 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/mem/simd_word.test.h"
+#include "stim/util_top/circuit_to_detecting_regions.h"
 
 using namespace stim;
 

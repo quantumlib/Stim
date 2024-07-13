@@ -2,23 +2,22 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/util_top/has_flow.h"
 #include "stim/circuit/circuit.test.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/util_top/circuit_inverse_qec.h"
+#include "stim/util_top/has_flow.h"
 
 using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
         )CIRCUIT")),
-        (std::vector<Flow<W>>{
-        }));
+        (std::vector<Flow<W>>{}));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             X 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -26,8 +25,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> -Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             H 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -35,8 +34,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> X"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             M 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -44,8 +43,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> rec[0]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             M 0 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -54,8 +53,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> rec[1]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             MXX 2 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -67,8 +66,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z_Z -> Z_Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             MYY 3 1 2 3
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -82,8 +81,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z___ -> Z___"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             MZZ 3 1 2 3
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -97,8 +96,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z___ -> Z___"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             ISWAP 3 1 2 3
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -112,8 +111,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z___ -> Z___"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             S 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -121,8 +120,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             S_DAG 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -130,8 +129,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             SPP Z0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -139,8 +138,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             SQRT_X 0
             S 0
         )CIRCUIT")),
@@ -148,8 +147,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("X -> Y"),
             Flow<W>::from_str("Z -> X"),
         }));
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             SPP X0 Z0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -157,8 +156,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> X"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             SPP X0*X1
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -168,8 +167,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z_ -> -YX"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             SPP_DAG Z0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -177,8 +176,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             M 0
             CX rec[-1] 0
         )CIRCUIT")),
@@ -187,16 +186,16 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> rec[0]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             R 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
             Flow<W>::from_str("1 -> Z"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             MR 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -204,8 +203,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> rec[0]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             M 0
             XCZ 0 rec[-1]
         )CIRCUIT")),
@@ -214,8 +213,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z -> rec[0]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             MPAD 0 1 1 0
         )CIRCUIT")),
         (std::vector<Flow<W>>{
@@ -225,8 +224,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("1 -> -rec[2]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             M 0
             CY rec[-1] 1
         )CIRCUIT")),
@@ -237,8 +236,8 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("Z_ -> rec[0]"),
         }));
 
-    EXPECT_EQ(circuit_flow_generators<W>(
-        Circuit(R"CIRCUIT(
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
             HERALDED_ERASE(0.04) 1
             HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 1
             TICK
@@ -254,7 +253,6 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("XXX -> _ZY xor rec[2]"),
             Flow<W>::from_str("Z_X -> _ZX xor rec[3]"),
         }));
-
 })
 
 TEST_EACH_WORD_SIZE_W(circuit_flow_generators, all_operations, {
