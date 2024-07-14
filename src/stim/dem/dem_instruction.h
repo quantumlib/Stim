@@ -10,6 +10,9 @@
 
 namespace stim {
 
+constexpr uint64_t MAX_OBS = 0xFFFFFFFF;
+constexpr uint64_t MAX_DET = (uint64_t{1} << 62) - 1;
+
 enum class DemInstructionType : uint8_t {
     DEM_ERROR,
     DEM_SHIFT_DETECTORS,

@@ -282,6 +282,9 @@ struct Gate {
 
     std::vector<std::vector<std::complex<float>>> unitary() const;
 
+    bool is_symmetric() const;
+    GateType hadamard_conjugated(bool ignoring_sign) const;
+
     /// Converts a single qubit unitary gate into an euler-angles rotation.
     ///
     /// Returns:
