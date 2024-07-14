@@ -2001,8 +2001,8 @@ class Circuit:
         Examples:
             >>> import stim
             >>> stim.Circuit('''
-            ...    X 1
-            ...    M 0 1
+            ...     X 1
+            ...     M 0 1
             ... ''').reference_sample()
             array([False,  True])
         """
@@ -2717,6 +2717,26 @@ class Circuit:
         """
 class CircuitErrorLocation:
     """Describes the location of an error mechanism from a stim circuit.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit.generated(
+        ...     "repetition_code:memory",
+        ...     distance=5,
+        ...     rounds=5,
+        ...     before_round_data_depolarization=1e-3,
+        ... )
+        >>> logical_error = circuit.shortest_graphlike_error()
+        >>> error_location = logical_error[0].circuit_error_locations[0]
+        >>> print(error_location)
+        CircuitErrorLocation {
+            flipped_pauli_product: X0
+            Circuit location stack trace:
+                (after 1 TICKs)
+                at instruction #3 (DEPOLARIZE1) in the circuit
+                at target #1 of the instruction
+                resolving to DEPOLARIZE1(0.001) 0
+        }
     """
     def __init__(
         self,
@@ -2728,20 +2748,88 @@ class CircuitErrorLocation:
         stack_frames: List[stim.CircuitErrorLocationStackFrame],
     ) -> None:
         """Creates a stim.CircuitErrorLocation.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.CircuitErrorLocation(
+            ...     tick_offset=1,
+            ...     flipped_pauli_product=(
+            ...         stim.GateTargetWithCoords(
+            ...             gate_target=stim.target_x(0),
+            ...             coords=[],
+            ...         ),
+            ...     ),
+            ...     flipped_measurement=stim.FlippedMeasurement(
+            ...         record_index=None,
+            ...         observable=(),
+            ...     ),
+            ...     instruction_targets=stim.CircuitTargetsInsideInstruction(
+            ...         gate='DEPOLARIZE1',
+            ...         args=[0.001],
+            ...         target_range_start=0,
+            ...         target_range_end=1,
+            ...         targets_in_range=(stim.GateTargetWithCoords(
+            ...             gate_target=0,
+            ...             coords=[],
+            ...         ),)
+            ...     ),
+            ...     stack_frames=(
+            ...         stim.CircuitErrorLocationStackFrame(
+            ...             instruction_offset=2,
+            ...             iteration_index=0,
+            ...             instruction_repetitions_arg=0,
+            ...         ),
+            ...     ),
+            ... )
+            >>> print(err)
+            CircuitErrorLocation {
+                flipped_pauli_product: X0
+                Circuit location stack trace:
+                    (after 1 TICKs)
+                    at instruction #3 (DEPOLARIZE1) in the circuit
+                    at target #1 of the instruction
+                    resolving to DEPOLARIZE1(0.001) 0
+            }
         """
     @property
     def flipped_measurement(
         self,
     ) -> Optional[stim.FlippedMeasurement]:
         """The measurement that was flipped by the error mechanism.
+
         If the error isn't a measurement error, this will be None.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0
+            ...     M(0.125) 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].circuit_error_locations[0].flipped_measurement
+            stim.FlippedMeasurement(
+                record_index=0,
+                observable=(stim.GateTargetWithCoords(stim.target_z(0), []),),
+            )
         """
     @property
     def flipped_pauli_product(
         self,
     ) -> List[stim.GateTargetWithCoords]:
         """The Pauli errors that the error mechanism applied to qubits.
+
         When the error is a measurement error, this will be an empty list.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0
+            ...     Y_ERROR(0.125) 0
+            ...     M 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].circuit_error_locations[0].flipped_pauli_product
+            [stim.GateTargetWithCoords(stim.target_y(0), [])]
         """
     @property
     def instruction_targets(
@@ -2755,15 +2843,48 @@ class CircuitErrorLocation:
     def stack_frames(
         self,
     ) -> List[stim.CircuitErrorLocationStackFrame]:
-        """Where in the circuit's execution does the error mechanism occur,
-        accounting for things like nested loops that iterate multiple times.
+        """Describes where in the circuit's execution the error happened.
+
+        Multiple frames are needed because the error may occur within a loop,
+        or a loop nested inside a loop, or etc.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0
+            ...     TICK
+            ...     Y_ERROR(0.125) 0
+            ...     M 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].circuit_error_locations[0].stack_frames
+            [stim.CircuitErrorLocationStackFrame(
+                instruction_offset=2,
+                iteration_index=0,
+                instruction_repetitions_arg=0,
+            )]
         """
     @property
     def tick_offset(
         self,
     ) -> int:
-        """The number of TICKs that executed before the error mechanism being discussed,
-        including TICKs that occurred multiple times during loops.
+        """The number of TICKs that executed before the error happened.
+
+        This counts TICKs occurring multiple times during loops.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0
+            ...     TICK
+            ...     TICK
+            ...     TICK
+            ...     Y_ERROR(0.125) 0
+            ...     M 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].circuit_error_locations[0].tick_offset
+            3
         """
 class CircuitErrorLocationStackFrame:
     """Describes the location of an instruction being executed within a
@@ -4098,6 +4219,18 @@ class DemRepeatBlock:
         self,
     ) -> stim.DetectorErrorModel:
         """Returns a copy of the block's body, as a stim.DetectorErrorModel.
+
+        Examples:
+            >>> import stim
+            >>> body = stim.DetectorErrorModel('''
+            ...     error(0.125) D0 D1
+            ...     shift_detectors 1
+            ... ''')
+            >>> repeat_block = stim.DemRepeatBlock(100, body)
+            >>> repeat_block.body_copy() == body
+            True
+            >>> repeat_block.body_copy() is repeat_block.body_copy()
+            False
         """
     @property
     def repeat_count(
@@ -4137,6 +4270,26 @@ class DemTarget:
     ) -> bool:
         """Determines if two `stim.DemTarget`s are identical.
         """
+    def __init__(
+        self,
+        arg: object,
+        /,
+    ) -> None:
+        """Creates a stim.DemTarget from the given object.
+
+        Args:
+            arg: A string to parse as a stim.DemTarget, or some other object to
+                convert into a stim.DemTarget.
+
+        Examples:
+            >>> import stim
+            >>> stim.DemTarget("D5") == stim.target_relative_detector_id(5)
+            True
+            >>> stim.DemTarget("L2") == stim.target_logical_observable_id(2)
+            True
+            >>> stim.DemTarget("^") == stim.target_separator()
+            True
+        """
     def __ne__(
         self,
         arg0: stim.DemTarget,
@@ -4160,6 +4313,15 @@ class DemTarget:
 
         In a detector error model file, observable targets are prefixed by `L`. For
         example, in `error(0.25) D0 L1` the `L1` is an observable target.
+
+        Examples:
+            >>> import stim
+            >>> stim.DemTarget("L2").is_logical_observable_id()
+            True
+            >>> stim.DemTarget("D3").is_logical_observable_id()
+            False
+            >>> stim.DemTarget("^").is_logical_observable_id()
+            False
         """
     def is_relative_detector_id(
         self,
@@ -4168,6 +4330,15 @@ class DemTarget:
 
         In a detector error model file, detectors are prefixed by `D`. For
         example, in `error(0.25) D0 L1` the `D0` is a relative detector target.
+
+        Examples:
+            >>> import stim
+            >>> stim.DemTarget("L2").is_relative_detector_id()
+            False
+            >>> stim.DemTarget("D3").is_relative_detector_id()
+            True
+            >>> stim.DemTarget("^").is_relative_detector_id()
+            False
         """
     def is_separator(
         self,
@@ -4176,6 +4347,15 @@ class DemTarget:
 
         Separates separate the components of a suggested decompositions within an error.
         For example, the `^` in `error(0.25) D1 D2 ^ D3 D4` is the separator.
+
+        Examples:
+            >>> import stim
+            >>> stim.DemTarget("L2").is_separator()
+            False
+            >>> stim.DemTarget("D3").is_separator()
+            False
+            >>> stim.DemTarget("^").is_separator()
+            True
         """
     @staticmethod
     def logical_observable_id(
@@ -4248,11 +4428,10 @@ class DemTarget:
         """Returns the target's integer value.
 
         Example:
-
             >>> import stim
-            >>> stim.target_relative_detector_id(5).val
+            >>> stim.DemTarget("D5").val
             5
-            >>> stim.target_logical_observable_id(6).val
+            >>> stim.DemTarget("L6").val
             6
         """
 class DemTargetWithCoords:
@@ -5806,11 +5985,21 @@ class FlippedMeasurement:
     """
     def __init__(
         self,
-        *,
-        record_index: int,
-        observable: object,
-    ) -> None:
+        measurement_record_index: Optional[int],
+        measured_observable: Iterable[stim.GateTargetWithCoords],
+    ):
         """Creates a stim.FlippedMeasurement.
+
+        Examples:
+            >>> import stim
+            >>> print(stim.FlippedMeasurement(
+            ...     record_index=5,
+            ...     observable=[],
+            ... ))
+            stim.FlippedMeasurement(
+                record_index=5,
+                observable=(),
+            )
         """
     @property
     def observable(
@@ -6128,6 +6317,60 @@ class GateData:
             >>> stim.gate_data('TICK').generalized_inverse
             stim.gate_data('TICK')
         """
+    def hadamard_conjugated(
+        self,
+        *,
+        unsigned: bool = False,
+    ) -> Optional[stim.GateData]:
+        """Returns a stim gate equivalent to this gate conjugated by Hadamard gates.
+
+        The Hadamard conjugate can be thought of as the XZ dual of the gate; the gate
+        you get by exchanging the X and Z bases. For example, a SQRT_X will become a
+        SQRT_Z and a CX gate will switch directions into an XCZ.
+
+        If stim doesn't define a gate equivalent to conjugating this gate by Hadamards,
+        the value `None` is returned.
+
+        Args:
+            unsigned: Defaults to False. When False, the returned gate must be *exactly*
+                the Hadamard conjugation of this gate. When True, the returned gate must
+                have the same flows but the sign of the flows can be different (i.e.
+                the returned gate must be the Hadamard conjugate up to Pauli gate
+                differences).
+
+        Returns:
+            A stim.GateData instance of the Hadamard conjugate, if it exists in stim.
+
+            None, if stim doesn't define a gate equal to the Hadamard conjugate.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('X').hadamard_conjugated()
+            stim.gate_data('Z')
+            >>> stim.gate_data('CX').hadamard_conjugated()
+            stim.gate_data('XCZ')
+            >>> stim.gate_data('RY').hadamard_conjugated() is None
+            True
+            >>> stim.gate_data('RY').hadamard_conjugated(unsigned=True)
+            stim.gate_data('RY')
+            >>> stim.gate_data('ISWAP').hadamard_conjugated(unsigned=True) is None
+            True
+            >>> stim.gate_data('SWAP').hadamard_conjugated()
+            stim.gate_data('SWAP')
+            >>> stim.gate_data('CXSWAP').hadamard_conjugated()
+            stim.gate_data('SWAPCX')
+            >>> stim.gate_data('MXX').hadamard_conjugated()
+            stim.gate_data('MZZ')
+            >>> stim.gate_data('DEPOLARIZE1').hadamard_conjugated()
+            stim.gate_data('DEPOLARIZE1')
+            >>> stim.gate_data('X_ERROR').hadamard_conjugated()
+            stim.gate_data('Z_ERROR')
+            >>> stim.gate_data('H_XY').hadamard_conjugated(unsigned=True)
+            stim.gate_data('H_YZ')
+            >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
+            stim.gate_data('DETECTOR')
+        """
     @property
     def inverse(
         self,
@@ -6277,6 +6520,55 @@ class GateData:
             False
         """
     @property
+    def is_symmetric_gate(
+        self,
+    ) -> bool:
+        """Returns whether or not the gate is the same when its targets are swapped.
+
+        A two qubit gate is symmetric if it doesn't matter if you swap its targets. It
+        is unaffected when conjugated by the SWAP gate.
+
+        Single qubit gates are vacuously symmetric. A multi-qubit gate is symmetric if
+        swapping any two of its targets has no effect.
+
+        Note that this method is for symmetry *without broadcasting*. For example, SWAP
+        is symmetric even though SWAP 1 2 3 4 isn't equal to SWAP 1 3 2 4.
+
+        Returns:
+            True if the gate is symmetric.
+            False if the gate isn't symmetric.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.gate_data('CX').is_symmetric_gate
+            False
+            >>> stim.gate_data('CZ').is_symmetric_gate
+            True
+            >>> stim.gate_data('ISWAP').is_symmetric_gate
+            True
+            >>> stim.gate_data('CXSWAP').is_symmetric_gate
+            False
+            >>> stim.gate_data('MXX').is_symmetric_gate
+            True
+            >>> stim.gate_data('DEPOLARIZE2').is_symmetric_gate
+            True
+            >>> stim.gate_data('PAULI_CHANNEL_2').is_symmetric_gate
+            False
+            >>> stim.gate_data('H').is_symmetric_gate
+            True
+            >>> stim.gate_data('R').is_symmetric_gate
+            True
+            >>> stim.gate_data('X_ERROR').is_symmetric_gate
+            True
+            >>> stim.gate_data('CORRELATED_ERROR').is_symmetric_gate
+            False
+            >>> stim.gate_data('MPP').is_symmetric_gate
+            False
+            >>> stim.gate_data('DETECTOR').is_symmetric_gate
+            False
+        """
+    @property
     def is_two_qubit_gate(
         self,
     ) -> bool:
@@ -6286,6 +6578,10 @@ class GateData:
 
         Variable-qubit gates like CORRELATED_ERROR and MPP are not
         considered two qubit gates.
+
+        Returns:
+            True if the gate is a two qubit gate.
+            False if the gate isn't a two qubit gate.
 
         Examples:
             >>> import stim
@@ -6852,7 +7148,6 @@ class GateTargetWithCoords:
     """
     def __init__(
         self,
-        *,
         gate_target: object,
         coords: List[float],
     ) -> None:

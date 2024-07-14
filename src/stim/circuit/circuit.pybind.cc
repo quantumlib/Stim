@@ -721,8 +721,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Examples:
                 >>> import stim
                 >>> stim.Circuit('''
-                ...    X 1
-                ...    M 0 1
+                ...     X 1
+                ...     M 0 1
                 ... ''').reference_sample()
                 array([False,  True])
         )DOC")
