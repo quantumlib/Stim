@@ -213,12 +213,18 @@ DiagramHelper stim_pybind::circuit_diagram(
     const Circuit &circuit,
     std::string_view type,
     const pybind11::object &tick,
+    const pybind11::object &rows,
     const pybind11::object &filter_coords_obj) {
     std::vector<CoordFilter> filter_coords;
     try {
         filter_coords = item_to_filter_multi(filter_coords_obj);
     } catch (const std::exception &_) {
         throw std::invalid_argument("filter_coords wasn't an Iterable[stim.DemTarget | Iterable[float]].");
+    }
+
+    size_t num_rows = 0;
+    if (!rows.is_none()) {
+        num_rows = pybind11::cast<size_t>(rows);
     }
 
     uint64_t tick_min;
@@ -262,7 +268,7 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords);
+            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords, num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -270,7 +276,7 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "detslice-svg" || type == "detslice" || type == "detslice-html" || type == "detslice-svg-html" ||
         type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out, num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -284,7 +290,8 @@ DiagramHelper stim_pybind::circuit_diagram(
             tick_min,
             num_ticks,
             DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
-            filter_coords);
+            filter_coords,
+            num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
