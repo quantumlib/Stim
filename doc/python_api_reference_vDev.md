@@ -186,6 +186,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.__init__`](#stim.FlipSimulator.__init__)
     - [`stim.FlipSimulator.batch_size`](#stim.FlipSimulator.batch_size)
     - [`stim.FlipSimulator.broadcast_pauli_errors`](#stim.FlipSimulator.broadcast_pauli_errors)
+    - [`stim.FlipSimulator.copy`](#stim.FlipSimulator.copy)
     - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
     - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
     - [`stim.FlipSimulator.get_measurement_flips`](#stim.FlipSimulator.get_measurement_flips)
@@ -195,6 +196,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.num_observables`](#stim.FlipSimulator.num_observables)
     - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
     - [`stim.FlipSimulator.peek_pauli_flips`](#stim.FlipSimulator.peek_pauli_flips)
+    - [`stim.FlipSimulator.reset`](#stim.FlipSimulator.reset)
     - [`stim.FlipSimulator.set_pauli_flip`](#stim.FlipSimulator.set_pauli_flip)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
@@ -1680,11 +1682,19 @@ def diagram(
 
             Passing `range(A, B)` for a time slice will show the
             operations between tick A and tick B.
-        filter_coords: A set of acceptable coordinate prefixes, or
-            desired stim.DemTargets. For detector slice diagrams, only
-            detectors match one of the filters are included. If no filter
-            is specified, all detectors are included (but no observables).
-            To include an observable, add it as one of the filters.
+        rows: In diagrams that have multiple separate pieces, such as timeslice
+            diagrams and detslice diagrams, this controls how many rows of
+            pieces there will be. If not specified, a number of rows that creates
+            a roughly square layout will be chosen.
+        filter_coords: A list of things to include in the diagram. Different
+            effects depending on the diagram.
+
+            For detslice diagrams, the filter defaults to showing all detectors
+            and no observables. When specified, each list entry can be a collection
+            of floats (detectors whose coordinates start with the same numbers will
+            be included), a stim.DemTarget (specifying a detector or observable
+            to include), a string like "D5" or "L0" specifying a detector or
+            observable to include.
 
     Returns:
         An object whose `__str__` method returns the diagram, so that
@@ -5304,7 +5314,24 @@ def __str__(
 def args_copy(
     self,
 ) -> List[float]:
-    """Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).
+    """Returns a copy of the list of numbers parameterizing the instruction.
+
+    For example, this would be coordinates of a detector instruction or the
+    probability of an error instruction. The result is a copy, meaning that
+    editing it won't change the instruction's targets or future copies.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.DetectorErrorModel('''
+        ...     error(0.125) D0
+        ... ''')[0]
+        >>> instruction.args_copy()
+        [0.125]
+
+        >>> instruction.args_copy() == instruction.args_copy()
+        True
+        >>> instruction.args_copy() is instruction.args_copy()
+        False
     """
 ```
 
@@ -5318,8 +5345,21 @@ def targets_copy(
 ) -> List[Union[int, stim.DemTarget]]:
     """Returns a copy of the instruction's targets.
 
-    (Making a copy is enforced to make it clear that editing the result won't change
-    the instruction's targets.)
+    The result is a copy, meaning that editing it won't change the instruction's
+    targets or future copies.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.DetectorErrorModel('''
+        ...     error(0.125) D0 L2
+        ... ''')[0]
+        >>> instruction.targets_copy()
+        [stim.DemTarget('D0'), stim.DemTarget('L2')]
+
+        >>> instruction.targets_copy() == instruction.targets_copy()
+        True
+        >>> instruction.targets_copy() is instruction.targets_copy()
+        False
     """
 ```
 
@@ -7177,6 +7217,83 @@ def broadcast_pauli_errors(
     """
 ```
 
+<a name="stim.FlipSimulator.copy"></a>
+```python
+# stim.FlipSimulator.copy
+
+# (in class stim.FlipSimulator)
+def copy(
+    self,
+    *,
+    copy_rng: bool = False,
+    seed: Optional[int] = None,
+) -> stim.FlipSimulator:
+    """Returns a simulator with the same internal state, except perhaps its prng.
+
+    Args:
+        copy_rng: Defaults to False. When False, the copy's pseudo random number
+            generator is reinitialized with a random seed instead of being a copy
+            of the original simulator's pseudo random number generator. This
+            causes the copy and the original to sample independent randomness,
+            instead of identical randomness, for future random operations. When set
+            to true, the copy will have the exact same pseudo random number
+            generator state as the original, and so will produce identical results
+            if told to do the same noisy operations. This argument is incompatible
+            with the `seed` argument.
+
+        seed: PARTIALLY determines simulation results by deterministically seeding
+            the random number generator.
+
+            Must be None or an integer in range(2**64).
+
+            Defaults to None. When None, the prng state is either copied from the
+            original simulator or reseeded from system entropy, depending on the
+            copy_rng argument.
+
+            When set to an integer, making the exact same series calls on the exact
+            same machine with the exact same version of Stim will produce the exact
+            same simulation results.
+
+            CAUTION: simulation results *WILL NOT* be consistent between versions of
+            Stim. This restriction is present to make it possible to have future
+            optimizations to the random sampling, and is enforced by introducing
+            intentional differences in the seeding strategy from version to version.
+
+            CAUTION: simulation results *MAY NOT* be consistent across machines that
+            differ in the width of supported SIMD instructions. For example, using
+            the same seed on a machine that supports AVX instructions and one that
+            only supports SSE instructions may produce different simulation results.
+
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
+
+    Returns:
+        The copy of the simulator.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+
+        >>> s1 = stim.FlipSimulator(batch_size=256)
+        >>> s1.set_pauli_flip('X', qubit_index=2, instance_index=3)
+        >>> s2 = s1.copy()
+        >>> s2 is s1
+        False
+        >>> s2.peek_pauli_flips() == s1.peek_pauli_flips()
+        True
+
+        >>> s1 = stim.FlipSimulator(batch_size=256)
+        >>> s2 = s1.copy(copy_rng=True)
+        >>> s1.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+        >>> s2.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+        >>> np.array_equal(s1.get_measurement_flips(), s2.get_measurement_flips())
+        True
+    """
+```
+
 <a name="stim.FlipSimulator.do"></a>
 ```python
 # stim.FlipSimulator.do
@@ -7610,6 +7727,38 @@ def peek_pauli_flips(
         >>> flips: stim.PauliString = sim.peek_pauli_flips(instance_index=0)
         >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
         ['+', 'Z', '_']
+    """
+```
+
+<a name="stim.FlipSimulator.reset"></a>
+```python
+# stim.FlipSimulator.reset
+
+# (in class stim.FlipSimulator)
+def reset(
+    self,
+) -> None:
+    """Resets the simulator's state, so it can be reused for another simulation.
+
+    This empties the measurement flip history, empties the detector flip history,
+    and zeroes the observable flip state. It also resets all qubits to |0>. If
+    stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
+    it randomizes all pauli flips to be I or Z with equal probability.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.do(stim.Circuit("M(0.1) 9"))
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (1, 256)
+
+        >>> sim.reset()
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (0, 256)
     """
 ```
 
@@ -9533,6 +9682,13 @@ def __len__(
     self,
 ) -> int:
     """Returns the length the pauli string; the number of qubits it operates on.
+
+    Examples:
+        >>> import stim
+        >>> len(stim.PauliString("XY_ZZ"))
+        5
+        >>> len(stim.PauliString("X0*Z99"))
+        100
     """
 ```
 
@@ -10663,6 +10819,12 @@ def __len__(
     self,
 ) -> int:
     """Returns the number of qubits operated on by the tableau.
+
+    Examples:
+        >>> import stim
+        >>> t = stim.Tableau.from_named_gate("CNOT")
+        >>> len(t)
+        2
     """
 ```
 

@@ -826,6 +826,13 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         },
         clean_doc_string(R"DOC(
             Returns the length the pauli string; the number of qubits it operates on.
+
+            Examples:
+                >>> import stim
+                >>> len(stim.PauliString("XY_ZZ"))
+                5
+                >>> len(stim.PauliString("X0*Z99"))
+                100
         )DOC")
             .data());
 

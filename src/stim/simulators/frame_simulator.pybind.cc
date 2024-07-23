@@ -870,4 +870,118 @@ void stim_pybind::pybind_frame_simulator_methods(
 
         )DOC")
             .data());
+
+    c.def(
+        "copy",
+        [](const FrameSimulator<MAX_BITWORD_WIDTH> &self, bool copy_rng, pybind11::object &seed) {
+            if (copy_rng && !seed.is_none()) {
+                throw std::invalid_argument("seed and copy_rng are incompatible");
+            }
+
+            FrameSimulator<MAX_BITWORD_WIDTH> copy = self;
+            if (!copy_rng || !seed.is_none()) {
+                copy.rng = make_py_seeded_rng(seed);
+            }
+            return copy;
+        },
+        pybind11::kw_only(),
+        pybind11::arg("copy_rng") = false,
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def copy(self, *, copy_rng: bool = False, seed: Optional[int] = None) -> stim.FlipSimulator:
+            Returns a simulator with the same internal state, except perhaps its prng.
+
+            Args:
+                copy_rng: Defaults to False. When False, the copy's pseudo random number
+                    generator is reinitialized with a random seed instead of being a copy
+                    of the original simulator's pseudo random number generator. This
+                    causes the copy and the original to sample independent randomness,
+                    instead of identical randomness, for future random operations. When set
+                    to true, the copy will have the exact same pseudo random number
+                    generator state as the original, and so will produce identical results
+                    if told to do the same noisy operations. This argument is incompatible
+                    with the `seed` argument.
+
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng state is either copied from the
+                    original simulator or reseeded from system entropy, depending on the
+                    copy_rng argument.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                    circuit is executed. For example, reordering whether a reset on one
+                    qubit happens before or after a reset on another qubit can result in
+                    different measurement results being observed starting from the same
+                    seed.
+
+            Returns:
+                The copy of the simulator.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+
+                >>> s1 = stim.FlipSimulator(batch_size=256)
+                >>> s1.set_pauli_flip('X', qubit_index=2, instance_index=3)
+                >>> s2 = s1.copy()
+                >>> s2 is s1
+                False
+                >>> s2.peek_pauli_flips() == s1.peek_pauli_flips()
+                True
+
+                >>> s1 = stim.FlipSimulator(batch_size=256)
+                >>> s2 = s1.copy(copy_rng=True)
+                >>> s1.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+                >>> s2.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+                >>> np.array_equal(s1.get_measurement_flips(), s2.get_measurement_flips())
+                True
+        )DOC")
+            .data());
+
+    c.def(
+        "reset",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) {
+            self.reset_all();
+        },
+        clean_doc_string(R"DOC(
+            Resets the simulator's state, so it can be reused for another simulation.
+
+            This empties the measurement flip history, empties the detector flip history,
+            and zeroes the observable flip state. It also resets all qubits to |0>. If
+            stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
+            it randomizes all pauli flips to be I or Z with equal probability.
+
+            Examples:
+                >>> import stim
+                >>> sim = stim.FlipSimulator(batch_size=256)
+                >>> sim.do(stim.Circuit("M(0.1) 9"))
+                >>> sim.num_qubits
+                10
+                >>> sim.get_measurement_flips().shape
+                (1, 256)
+
+                >>> sim.reset()
+                >>> sim.num_qubits
+                10
+                >>> sim.get_measurement_flips().shape
+                (0, 256)
+        )DOC")
+            .data());
 }
