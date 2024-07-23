@@ -373,16 +373,27 @@
 <rect x="1194.38" y="1284.89" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1210.38" y="1300.89">H</text>
 <g id="tick_borders">
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="215.764" y="-425.529">Tick 5</text>
 <rect id="tick_border:0:0_0:5" x="0" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_0:5" x="0" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:2_0:5" x="0" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:0_1:5" x="474.682" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_1:5" x="474.682" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:2_1:5" x="474.682" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:0_2:5" x="949.364" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_2:5" x="949.364" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:2_2:5" x="949.364" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:0_3:5" x="1424.05" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_3:5" x="1424.05" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="215.764" y="-900.211">Tick 6</text>
+<rect id="tick_border:1:0_1:6" x="474.682" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="215.764" y="-1374.89">Tick 7</text>
+<rect id="tick_border:2:0_2:7" x="949.364" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="215.764" y="-1849.57">Tick 8</text>
+<rect id="tick_border:3:0_3:8" x="1424.05" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="690.446" y="-425.529">Tick 9</text>
+<rect id="tick_border:4:1_0:9" x="0" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="690.446" y="-900.211">Tick 10</text>
+<rect id="tick_border:5:1_1:10" x="474.682" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="690.446" y="-1374.89">Tick 11</text>
+<rect id="tick_border:6:1_2:11" x="949.364" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="690.446" y="-1849.57">Tick 12</text>
+<rect id="tick_border:7:1_3:12" x="1424.05" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="1165.13" y="-425.529">Tick 13</text>
+<rect id="tick_border:8:2_0:13" x="0" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="1165.13" y="-900.211">Tick 14</text>
+<rect id="tick_border:9:2_1:14" x="474.682" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="1165.13" y="-1374.89">Tick 15</text>
+<rect id="tick_border:10:2_2:15" x="949.364" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>
 </g>
 </svg>

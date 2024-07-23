@@ -3267,6 +3267,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("type") = "timeline-text",
         pybind11::kw_only(),
         pybind11::arg("tick") = pybind11::none(),
+        pybind11::arg("rows") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
             @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
@@ -3343,11 +3344,19 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                     Passing `range(A, B)` for a time slice will show the
                     operations between tick A and tick B.
-                filter_coords: A set of acceptable coordinate prefixes, or
-                    desired stim.DemTargets. For detector slice diagrams, only
-                    detectors match one of the filters are included. If no filter
-                    is specified, all detectors are included (but no observables).
-                    To include an observable, add it as one of the filters.
+                rows: In diagrams that have multiple separate pieces, such as timeslice
+                    diagrams and detslice diagrams, this controls how many rows of
+                    pieces there will be. If not specified, a number of rows that creates
+                    a roughly square layout will be chosen.
+                filter_coords: A list of things to include in the diagram. Different
+                    effects depending on the diagram.
+
+                    For detslice diagrams, the filter defaults to showing all detectors
+                    and no observables. When specified, each list entry can be a collection
+                    of floats (detectors whose coordinates start with the same numbers will
+                    be included), a stim.DemTarget (specifying a detector or observable
+                    to include), a string like "D5" or "L0" specifying a detector or
+                    observable to include.
 
             Returns:
                 An object whose `__str__` method returns the diagram, so that

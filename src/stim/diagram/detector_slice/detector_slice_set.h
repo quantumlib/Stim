@@ -65,7 +65,7 @@ struct DetectorSliceSet {
     std::string str() const;
 
     void write_text_diagram_to(std::ostream &out) const;
-    void write_svg_diagram_to(std::ostream &out) const;
+    void write_svg_diagram_to(std::ostream &out, size_t num_rows = 0) const;
     void write_svg_contents_to(
         std::ostream &out,
         const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,

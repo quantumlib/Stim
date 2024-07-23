@@ -741,8 +741,7 @@ void _start_two_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    SpanRef<const GateTarget> terms,
-    std::vector<Coord<2>> &pts_workspace) {
+    SpanRef<const GateTarget> terms) {
     auto a = coords(tick, terms[0].qubit_value());
     auto b = coords(tick, terms[1].qubit_value());
     auto dif = b - a;
@@ -774,7 +773,6 @@ void _start_one_body_svg_path(
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
     SpanRef<const GateTarget> terms,
-    std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     auto c = coords(tick, terms[0].qubit_value());
     out << "<circle";
@@ -793,20 +791,25 @@ void _start_slice_shape_command(
     if (terms.size() > 2) {
         _start_many_body_svg_path(out, coords, tick, terms, pts_workspace);
     } else if (terms.size() == 2) {
-        _start_two_body_svg_path(out, coords, tick, terms, pts_workspace);
+        _start_two_body_svg_path(out, coords, tick, terms);
     } else if (terms.size() == 1) {
-        _start_one_body_svg_path(out, coords, tick, terms, pts_workspace, scale);
+        _start_one_body_svg_path(out, coords, tick, terms, scale);
     }
 }
 
-void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
-    size_t num_cols = (uint64_t)ceil(sqrt((double)num_ticks));
-    size_t num_rows = num_ticks / num_cols;
-    while (num_cols * num_rows < num_ticks) {
-        num_rows++;
-    }
-    while (num_cols * num_rows >= num_ticks + num_rows) {
-        num_cols--;
+void DetectorSliceSet::write_svg_diagram_to(std::ostream &out, size_t num_rows) const {
+    size_t num_cols;
+    if (num_rows == 0) {
+        num_cols = (uint64_t)ceil(sqrt((double)num_ticks));
+        num_rows = num_ticks / num_cols;
+        while (num_cols * num_rows < num_ticks) {
+            num_rows++;
+        }
+        while (num_cols * num_rows >= num_ticks + num_rows) {
+            num_cols--;
+        }
+    } else {
+        num_cols = (num_ticks + num_rows - 1) / num_rows;
     }
 
     auto coordsys = FlattenedCoords::from(*this, 32);
