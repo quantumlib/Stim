@@ -42,9 +42,13 @@
 <rect x="508.8" y="240" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="524.8" y="256" fill="white">M</text>
 <g id="tick_borders">
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-282">Tick 0</text>
 <rect id="tick_border:0:0_0:0" x="0" y="0" width="288" height="160" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_0:0" x="0" y="176" width="288" height="160" stroke="black" fill="none"/>
-<rect id="tick_border:0:0_1:0" x="316.8" y="0" width="288" height="160" stroke="black" fill="none"/>
-<rect id="tick_border:0:1_1:0" x="316.8" y="176" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-598.8">Tick 1</text>
+<rect id="tick_border:1:0_1:1" x="316.8" y="0" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="256" y="-282">Tick 2</text>
+<rect id="tick_border:2:1_0:2" x="0" y="176" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="256" y="-598.8">Tick 3</text>
+<rect id="tick_border:3:1_1:3" x="316.8" y="176" width="288" height="160" stroke="black" fill="none"/>
 </g>
 </svg>
