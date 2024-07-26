@@ -25,7 +25,6 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/io/measure_record.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
@@ -97,7 +96,7 @@ struct TableauSimulator {
     /// Runs all of the operations in the given circuit.
     ///
     /// Automatically expands the tableau simulator's state, if needed.
-    void expand_do_circuit(const Circuit &circuit, uint64_t reps = 1);
+    void safe_do_circuit(const Circuit &circuit, uint64_t reps = 1);
     void do_operation_ensure_size(const CircuitInstruction &operation);
 
     void apply_tableau(const Tableau<W> &tableau, const std::vector<size_t> &targets);
@@ -135,6 +134,7 @@ struct TableauSimulator {
     void do_ISWAP(const CircuitInstruction &inst);
     void do_ISWAP_DAG(const CircuitInstruction &inst);
     void do_CXSWAP(const CircuitInstruction &inst);
+    void do_CZSWAP(const CircuitInstruction &inst);
     void do_SWAPCX(const CircuitInstruction &inst);
     void do_XCX(const CircuitInstruction &inst);
     void do_XCY(const CircuitInstruction &inst);
@@ -154,6 +154,8 @@ struct TableauSimulator {
     void do_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_ELSE_CORRELATED_ERROR(const CircuitInstruction &inst);
     void do_MPP(const CircuitInstruction &inst);
+    void do_SPP(const CircuitInstruction &inst);
+    void do_SPP_DAG(const CircuitInstruction &inst);
     void do_MXX(const CircuitInstruction &inst);
     void do_MYY(const CircuitInstruction &inst);
     void do_MZZ(const CircuitInstruction &inst);

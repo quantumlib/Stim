@@ -30,12 +30,12 @@
 #include "command_repl.h"
 #include "command_sample.h"
 #include "command_sample_dem.h"
-#include "stim/arg_parse.h"
-#include "stim/circuit/gate_data.h"
-#include "stim/circuit/stabilizer_flow.h"
 #include "stim/cmd/command_analyze_errors.h"
+#include "stim/gates/gates.h"
 #include "stim/io/stim_data_formats.h"
+#include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 
@@ -69,11 +69,16 @@ std::string stim::clean_doc_string(const char *c, bool allow_too_long) {
             }
             line_length++;
         }
+        const char *start_of_line = result.c_str() + result.size() - line_length - 1;
+        if (strstr(start_of_line, "\"\"\"") != nullptr) {
+            std::stringstream ss;
+            ss << "Docstring line contains \"\"\" (please use ''' instead):\n" << start_of_line << "\n";
+            throw std::invalid_argument(ss.str());
+        }
         if (!allow_too_long && line_length > 80) {
-            const char *start_of_line = result.c_str() + result.size() - line_length - 1;
             if (memcmp(start_of_line, "@signature", strlen("@signature")) != 0 &&
                 memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&
-                memcmp(start_of_line, "https://", strlen("https://")) != 0) {
+                strstr(start_of_line, "https://") == nullptr) {
                 std::stringstream ss;
                 ss << "Docstring line has length " << line_length << " > 80:\n"
                    << start_of_line << std::string(80, '^') << "\n";
@@ -108,12 +113,13 @@ std::vector<SubCommandHelp> make_sub_command_help() {
     return result;
 }
 
-std::string upper(const std::string &val) {
-    std::string copy = val;
-    for (char &c : copy) {
-        c = toupper(c);
+std::string to_upper_case(std::string_view val) {
+    std::string result;
+    result.reserve(val.size());
+    for (char c : val) {
+        result.push_back(toupper(c));
     }
-    return copy;
+    return result;
 }
 
 struct Acc {
@@ -165,7 +171,7 @@ void print_fixed_width_float(Acc &out, float f, char u) {
     }
 }
 
-void print_example(Acc &out, const char *name, const Gate &gate) {
+void print_example(Acc &out, std::string_view name, const Gate &gate) {
     out << "\nExample:\n";
     out.change_indent(+4);
     for (size_t k = 0; k < 3; k++) {
@@ -197,32 +203,59 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         if (gate.name[0] == 'C' || gate.name[0] == 'Z') {
             out << gate.name << " rec[-1] 111\n";
         }
-        if (gate.name[gate.name_len - 1] == 'Z') {
+        if (gate.name.back() == 'Z') {
             out << gate.name << " 111 rec[-1]\n";
         }
     }
     out.change_indent(-4);
 }
 
+std::vector<GateTarget> stim::gate_decomposition_help_targets_for_gate_type(GateType g) {
+    if (g == GateType::MPP) {
+        return {
+            GateTarget::x(0),
+            GateTarget::combiner(),
+            GateTarget::y(1),
+            GateTarget::combiner(),
+            GateTarget::z(2),
+            GateTarget::x(3),
+            GateTarget::combiner(),
+            GateTarget::x(4),
+        };
+    } else if (g == GateType::SPP || g == GateType::SPP_DAG) {
+        return {
+            GateTarget::x(0),
+            GateTarget::combiner(),
+            GateTarget::y(1),
+            GateTarget::combiner(),
+            GateTarget::z(2),
+        };
+    } else if (g == GateType::DETECTOR || g == GateType::OBSERVABLE_INCLUDE) {
+        return {GateTarget::rec(-1)};
+    } else if (g == GateType::TICK || g == GateType::SHIFT_COORDS) {
+        return {};
+    } else if (g == GateType::E || g == GateType::ELSE_CORRELATED_ERROR) {
+        return {GateTarget::x(0)};
+    } else if (GATE_DATA[g].flags & GATE_TARGETS_PAIRS) {
+        return {GateTarget::qubit(0), GateTarget::qubit(1)};
+    } else {
+        return {GateTarget::qubit(0)};
+    }
+}
+
 void print_decomposition(Acc &out, const Gate &gate) {
-    const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
+    const char *decomposition = gate.h_s_cx_m_r_decomposition;
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
-        if (gate.id == GateType::MPP) {
-            undecomposed << "MPP X0*Y1*Z2 X3*X4";
-        } else {
-            undecomposed << gate.name << " 0";
-            if (gate.flags & GATE_TARGETS_PAIRS) {
-                undecomposed << " 1";
-            }
-        }
+        auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
+        undecomposed << CircuitInstruction{gate.id, {}, decomp_targets};
 
         out << "Decomposition (into H, S, CX, M, R):\n";
         out.change_indent(+4);
         out << "# The following circuit is equivalent (up to global phase) to `";
         out << undecomposed.str() << "`";
         out << decomposition;
-        if (Circuit(decomposition) == Circuit(undecomposed.str().data())) {
+        if (Circuit(decomposition) == Circuit(undecomposed.str())) {
             out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
         }
         out.change_indent(-4);
@@ -234,8 +267,11 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (flows.empty()) {
         return;
     }
-    if (gate.id == GateType::MPP) {
-        out << "Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):\n";
+    auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
+    if (decomp_targets.size() > 2) {
+        out << "Stabilizer Generators (for `";
+        out << CircuitInstruction{gate.id, {}, decomp_targets};
+        out << "`):\n";
     } else {
         out << "Stabilizer Generators:\n";
     }
@@ -258,47 +294,13 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         return;
     }
 
-    out << "Bloch Rotation:\n";
+    out << "Bloch Rotation (axis angle):\n";
     out.change_indent(+4);
-    auto matrix = gate.unitary();
-    auto a = matrix[0][0];
-    auto b = matrix[0][1];
-    auto c = matrix[1][0];
-    auto d = matrix[1][1];
-    auto i = std::complex<float>{0, 1};
-    auto x = b + c;
-    auto y = b * i + c * -i;
-    auto z = a - d;
-    auto s = a + d;
-    s *= -i;
-    std::complex<double> p = 1;
-    if (s.imag() != 0) {
-        p = s;
-    }
-    if (x.imag() != 0) {
-        p = x;
-    }
-    if (y.imag() != 0) {
-        p = y;
-    }
-    if (z.imag() != 0) {
-        p = z;
-    }
-    p /= sqrt(p.imag() * p.imag() + p.real() * p.real());
-    p *= 2;
-    x /= p;
-    y /= p;
-    z /= p;
-    s /= p;
-    assert(x.imag() == 0);
-    assert(y.imag() == 0);
-    assert(z.imag() == 0);
-    assert(s.imag() == 0);
-    auto rx = x.real();
-    auto ry = y.real();
-    auto rz = z.real();
-    auto rs = s.real();
-    auto angle = (int)round(acosf(rs) * 360 / 3.14159265359);
+    auto axis_angle = gate.to_axis_angle();
+    auto rx = axis_angle[0];
+    auto ry = axis_angle[1];
+    auto rz = axis_angle[2];
+    auto angle = (int)round(axis_angle[3] * 180 / 3.14159265359);
     if (angle > 180) {
         angle -= 360;
     }
@@ -313,8 +315,31 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         out << "+-"[rx < 0] << 'Z';
     }
     out << "\n";
-    out << "Angle: " << angle << " degrees\n";
+    out << "Angle: " << angle << "°\n";
+
     out.change_indent(-4);
+    out << "Bloch Rotation (Euler angles):\n";
+    out.change_indent(+4);
+    auto euler_angles = gate.to_euler_angles();
+    auto theta_deg = (int)round(euler_angles[0] * 180 / 3.14159265359) % 360;
+    auto phi_deg = (int)round(euler_angles[1] * 180 / 3.14159265359) % 360;
+    auto lambda_deg = (int)round(euler_angles[2] * 180 / 3.14159265359) % 360;
+    out << "  theta = " << theta_deg << "°\n";
+    out << "    phi = " << phi_deg << "°\n";
+    out << " lambda = " << lambda_deg << "°\n";
+    out << "unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)\n";
+    out << "unitary = RotZ(" << phi_deg << "°) * RotY(" << theta_deg << "°) * RotZ(" << lambda_deg << "°)\n";
+    out << "unitary = ";
+    std::array<const char *, 4> y_rots{"I", "SQRT_Y", "Y", "SQRT_Y_DAG"};
+    std::array<const char *, 4> z_rots{"I", "S", "Z", "S_DAG"};
+    out << z_rots[(phi_deg / 90) & 3];
+    out << " * ";
+    out << y_rots[(theta_deg / 90) & 3];
+    out << " * ";
+    out << z_rots[(lambda_deg / 90) & 3];
+
+    out.change_indent(-4);
+    out << "\n";
 }
 
 void print_unitary_matrix(Acc &out, const Gate &gate) {
@@ -383,7 +408,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         out << "### The '" << alt_gate.name << "' Instruction\n";
     }
     for (const auto &entry : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (entry.expected_name_len > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
+        if (entry.expected_name.size() > 0 && entry.id == alt_gate.id && entry.expected_name != alt_gate.name) {
             out << "\nAlternate name: ";
             if (anchor) {
                 out << "<a name=\"" << entry.expected_name << "\"></a>";
@@ -391,10 +416,9 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
             out << "`" << entry.expected_name << "`\n";
         }
     }
-    auto data = gate.extra_data_func();
-    out << data.help;
-    if (std::string(data.help).find("xample:\n") == std::string::npos &&
-        std::string(data.help).find("xamples:\n") == std::string::npos) {
+    out << gate.help;
+    if (std::string(gate.help).find("xample:\n") == std::string::npos &&
+        std::string(gate.help).find("xamples:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
     print_stabilizer_generators(out, gate);
@@ -457,7 +481,7 @@ std::map<std::string, std::string> generate_format_help_markdown() {
     result[std::string("FORMATS")] = all.str();
 
     for (const auto &kv : format_name_to_enum_map()) {
-        result[upper(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
+        result[to_upper_case(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
     }
 
     all.str("");
@@ -505,7 +529,7 @@ std::map<std::string, std::string> generate_command_help_topics() {
     auto sub_command_data = make_sub_command_help();
 
     for (const auto &subcommand : sub_command_data) {
-        result[upper(subcommand.subcommand_name)] = subcommand.str_help();
+        result[to_upper_case(subcommand.subcommand_name)] = subcommand.str_help();
     }
 
     {
@@ -555,16 +579,16 @@ Use `stim help [topic]` for help on specific topics. Available topics include:
 std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
-            result[e.expected_name] = generate_per_gate_help_markdown(GATE_DATA.items[e.id], 0, false);
+        if (!e.expected_name.empty()) {
+            result[std::string(e.expected_name)] = generate_per_gate_help_markdown(GATE_DATA[e.id], 0, false);
         }
     }
 
     std::map<std::string, std::set<std::string>> categories;
     for (const auto &e : GATE_DATA.hashed_name_to_gate_type_table) {
-        if (e.expected_name_len > 0) {
+        if (!e.expected_name.empty()) {
             const auto &rep = GATE_DATA.at(e.expected_name);
-            categories[std::string(rep.extra_data_func().category)].insert(e.expected_name);
+            categories[std::string(rep.category)].insert(std::string(e.expected_name));
         }
     }
 
@@ -607,7 +631,7 @@ std::string stim::help_for(std::string help_key) {
     auto m2 = generate_format_help_markdown();
     auto m3 = generate_command_help_topics();
 
-    auto key = upper(help_key);
+    auto key = to_upper_case(help_key);
     auto p = m1.find(key);
     if (p == m1.end()) {
         p = m2.find(key);

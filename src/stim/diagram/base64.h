@@ -22,7 +22,7 @@
 
 namespace stim_draw_internal {
 
-void write_data_as_base64_to(const char *data, size_t n, std::ostream &out);
+void write_data_as_base64_to(std::string_view data, std::ostream &out);
 
 }  // namespace stim_draw_internal
 

@@ -39,6 +39,16 @@ DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back
         cur_state = prev_state;
     }
     std::sort(out.instructions.begin(), out.instructions.end());
+
+    // Because of the search truncation, the same step may have been taken twice at different states.
+    for (size_t k = 0; k < out.instructions.size() - 1; k++) {
+        if (out.instructions[k].target_data == out.instructions[k + 1].target_data) {
+            out.instructions.erase(out.instructions.begin() + k);
+            out.instructions.erase(out.instructions.begin() + k);
+            k -= 1;
+        }
+    }
+
     return out;
 }
 

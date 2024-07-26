@@ -15,16 +15,16 @@
 #include "stim/cmd/command_repl.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 
 int stim::command_repl(int argc, const char **argv) {
     check_for_unknown_arguments({}, {"--repl"}, "repl", argc, argv);
     auto rng = externally_seeded_rng();
-    TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true, rng);
+    TableauSimulator<MAX_BITWORD_WIDTH>::sample_stream(stdin, stdout, SampleFormat::SAMPLE_FORMAT_01, true, rng);
     return EXIT_SUCCESS;
 }
 

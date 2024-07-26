@@ -169,8 +169,9 @@ TEST(circuit, from_text) {
         expected);
 }
 
-TEST(circuit, parse_combiners) {
+TEST(circuit, parse_mpp) {
     ASSERT_THROW({ Circuit("H *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP 0"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP *"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1 *"); }, std::invalid_argument);
@@ -179,6 +180,9 @@ TEST(circuit, parse_combiners) {
     ASSERT_THROW({ Circuit("MPP X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(1.1) X1**Y2"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1*rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP sweep[0]"); }, std::invalid_argument);
     auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.operations[0].args.size(), 0);
@@ -197,6 +201,54 @@ TEST(circuit, parse_combiners) {
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations[0].args.size(), 1);
     ASSERT_EQ(c.operations[0].args[0], 0.125);
+
+    c = Circuit("MPP X1*X1");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 3);
+}
+
+TEST(circuit, parse_spp) {
+    ASSERT_THROW({ Circuit("SPP 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP rec[-1]*X0"); }, std::invalid_argument);
+
+    Circuit c;
+
+    c = Circuit("SPP");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP X0 X1*Y2*Z3");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP X1 Z2");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
+}
+
+TEST(circuit, parse_spp_dag) {
+    ASSERT_THROW({ Circuit("SPP_DAG 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("SPP_DAG rec[-1]*X0"); }, std::invalid_argument);
+
+    Circuit c;
+
+    c = Circuit("SPP_DAG");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP_DAG X0 X1*Y2*Z3");
+    ASSERT_EQ(c.operations.size(), 1);
+
+    c = Circuit("SPP_DAG X1 Z2");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(
+        c.operations[0].targets,
+        ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
 TEST(circuit, parse_sweep_bits) {
@@ -1557,9 +1609,9 @@ TEST(circuit, inverse) {
             .inverse(true),
         Circuit(R"CIRCUIT(
             MPP(0.125) Y6*Z5 Y4*Y3*Y2 X1*X0
-            MR 20 19
-            MRY 18 17
-            MRX 16 15
+            M 20 19
+            MY 18 17
+            MX 16 15
             MR(0.125) 14 13
             MRY(0.125) 12 11
             MRX(0.125) 10 9
@@ -1619,6 +1671,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         ISWAP_DAG 4 5
         SWAP 6 7
         SWAPCX 8 9
+        CZSWAP 10 11
         SQRT_XX 0 1
         SQRT_XX_DAG 2 3
         SQRT_YY 4 5
@@ -1650,8 +1703,13 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 6
         TICK
 
-        # Collapsing Gates
+        # Pauli Product Gates
         MPP X0*Y1*Z2 Z0*Z1
+        SPP X0*Y1*Z2 X3
+        SPP_DAG X0*Y1*Z2 X2
+        TICK
+
+        # Collapsing Gates
         MRX 0
         MRY 1
         MRZ 2
@@ -1687,14 +1745,166 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         OBSERVABLE_INCLUDE(0) rec[-1]
         MPAD 0 1 0
         TICK
+
+        # Inverted measurements.
+        MRX !0
+        MY !1
+        MZZ !2 3
+        MYY !4 !5
+        MPP X6*!Y7*Z8
+        TICK
+
+        # Feedback
+        CX rec[-1] 0
+        CY sweep[0] 1
+        CZ 2 rec[-1]
     )CIRCUIT");
 }
 
 TEST(circuit, generate_test_circuit_with_all_operations) {
     auto c = generate_test_circuit_with_all_operations();
-    std::set<GateType> seen{NOT_A_GATE};
+    std::set<GateType> seen{GateType::NOT_A_GATE};
     for (const auto &instruction : c.operations) {
         seen.insert(instruction.gate_type);
     }
     ASSERT_EQ(seen.size(), NUM_DEFINED_GATES);
+}
+
+TEST(circuit, insert_circuit) {
+    Circuit c(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c.operations.size(), 5);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        X 3
+        S 2 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+}
+
+TEST(circuit, insert_instruction) {
+    Circuit c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("H 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("S 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 1 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        X 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        X 1
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        X 1
+    )CIRCUIT"));
 }

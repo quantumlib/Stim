@@ -16,6 +16,7 @@ import pathlib
 import tempfile
 
 import numpy as np
+import pytest
 import stim
 
 
@@ -145,6 +146,10 @@ def test_compiled_detector_sampler_sample():
         with open(path, 'rb') as f:
             assert f.read() == b'\x03' * 5
 
+        c.compile_detector_sampler().sample_write(5, filepath=pathlib.Path(path), format='b8')
+        with open(path, 'rb') as f:
+            assert f.read() == b'\x03' * 5
+
         c.compile_detector_sampler().sample_write(5, filepath=path, format='01', prepend_observables=True)
         with open(path, 'r') as f:
             assert f.readlines() == ['1000110\n'] * 5
@@ -182,6 +187,19 @@ def test_write_obs_file():
         with open(d / 'obs') as f:
             assert f.read() == '1\n' * 100
 
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        r.sample_write(
+            shots=100,
+            filepath=d / 'det',
+            format='dets',
+            obs_out_filepath=d / 'obs',
+            obs_out_format='hits',
+        )
+        with open(d / 'det') as f:
+            assert f.read() == 'shot D3\n' * 100
+        with open(d / 'obs') as f:
+            assert f.read() == '1\n' * 100
 
 def test_detector_sampler_actually_fills_array():
     circuit = stim.Circuit('''
@@ -192,3 +210,105 @@ def test_detector_sampler_actually_fills_array():
     sampler = circuit.compile_detector_sampler()
     detector_data = sampler.sample(shots=10000)
     assert np.all(detector_data)
+
+
+def test_manual_output_buffer():
+    circuit = stim.Circuit('''
+        X_ERROR(1) 0
+        M 0
+        DETECTOR
+        DETECTOR
+        DETECTOR rec[-1]
+        DETECTOR rec[-1]
+
+        DETECTOR rec[-1]
+        DETECTOR
+        DETECTOR
+        DETECTOR rec[-1]
+
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    ''')
+    sampler = circuit.compile_detector_sampler()
+
+    with pytest.raises(ValueError):
+        sampler.sample(shots=17, dets_out=np.zeros(shape=(17, 8), dtype=np.bool_))
+    with pytest.raises(ValueError):
+        sampler.sample(shots=17, dets_out=np.zeros(shape=(17, 10), dtype=np.bool_))
+    with pytest.raises(ValueError):
+        sampler.sample(shots=17, dets_out=np.zeros(shape=(18, 9), dtype=np.bool_))
+    with pytest.raises(ValueError):
+        sampler.sample(shots=17, dets_out=np.zeros(shape=(16, 9), dtype=np.bool_))
+    with pytest.raises(ValueError):
+        sampler.sample(shots=17, dets_out=np.zeros(shape=(17, 9), dtype=np.uint8))
+
+    buf = np.zeros(shape=(17, 9), dtype=np.bool_)
+    ret = sampler.sample(shots=17, dets_out=buf)
+    assert ret is buf
+    assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1]] * 17)
+
+    buf = np.zeros(shape=(17, 2), dtype=np.uint8)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        bit_packed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[0b10011100, 0b1]] * 17)
+
+    buf = np.zeros(shape=(2, 17), dtype=np.uint8).transpose()
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        bit_packed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[0b10011100, 0b1]] * 17)
+
+    buf = np.zeros(shape=(17, 9), dtype=np.bool_)
+    buf2 = np.zeros(shape=(17, 1), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1]] * 17)
+    assert np.array_equal(buf2, [[1]] * 17)
+
+    buf = np.zeros(shape=(17, 9), dtype=np.bool_)
+    buf2 = np.zeros(shape=(17, 1), dtype=np.bool_)
+    ret, ret2 = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        separate_observables=True,
+    )
+    assert ret is buf
+    assert ret2 is buf2
+    assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1]] * 17)
+    assert np.array_equal(buf2, [[1]] * 17)
+
+    buf = np.zeros(shape=(17, 10), dtype=np.bool_)
+    buf2 = np.zeros(shape=(17, 1), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        append_observables=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1, 1]] * 17)
+    assert np.array_equal(buf2, [[1]] * 17)
+
+    buf = np.zeros(shape=(10, 17), dtype=np.bool_).transpose()
+    buf2 = np.zeros(shape=(17, 1), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        append_observables=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1, 1]] * 17)
+    assert np.array_equal(buf2, [[1]] * 17)

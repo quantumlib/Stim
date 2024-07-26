@@ -22,11 +22,12 @@
 
 namespace stim_pybind {
 
-enum DiagramType {
+enum class DiagramType {
     DIAGRAM_TYPE_GLTF,
     DIAGRAM_TYPE_SVG,
     DIAGRAM_TYPE_TEXT,
     DIAGRAM_TYPE_HTML,
+    DIAGRAM_TYPE_SVG_HTML,
 };
 
 struct DiagramHelper {
@@ -36,11 +37,12 @@ struct DiagramHelper {
 
 pybind11::class_<DiagramHelper> pybind_diagram(pybind11::module &m);
 void pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c);
-DiagramHelper dem_diagram(const stim::DetectorErrorModel &dem, const std::string &type);
+DiagramHelper dem_diagram(const stim::DetectorErrorModel &dem, std::string_view type);
 DiagramHelper circuit_diagram(
     const stim::Circuit &circuit,
-    const std::string &type,
+    std::string_view type,
     const pybind11::object &tick,
+    const pybind11::object &rows,
     const pybind11::object &filter_coords_obj);
 
 }  // namespace stim_pybind

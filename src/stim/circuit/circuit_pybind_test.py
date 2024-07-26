@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import pathlib
-import re
 import tempfile
 from typing import cast
 
@@ -828,6 +828,46 @@ def test_search_for_undetectable_logical_errors_msgs():
         )
 
 
+def test_shortest_error_sat_problem_unrecognized_format():
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.4) 0
+        M 0
+        DETECTOR rec[-1] rec[-2]
+    """)
+    with pytest.raises(ValueError, match='Unsupported format'):
+      sat_str = c.shortest_error_sat_problem(format='unsupported format name')
+
+
+def test_shortest_error_sat_problem():
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.4) 0
+        M 0
+        DETECTOR rec[-1] rec[-2]
+    """)
+    sat_str = c.shortest_error_sat_problem()
+    assert sat_str == 'p wcnf 2 4 5\n1 -1 0\n1 -2 0\n5 -1 0\n5 2 0\n'
+
+
+def test_likeliest_error_sat_problem():
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.4) 0
+        M 0
+        DETECTOR rec[-1] rec[-2]
+    """)
+    sat_str = c.likeliest_error_sat_problem(quantization=100)
+    print(sat_str)
+    assert sat_str == 'p wcnf 2 4 401\n18 -1 0\n100 -2 0\n401 -1 0\n401 2 0\n'
+
+
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""
         TICK
@@ -1097,6 +1137,10 @@ q2: ------
         assert c.diagram("time+detector-slice-svg", tick=range(1, 3, 2)) is not None
     with pytest.raises(ValueError, match="stop"):
         assert c.diagram("time+detector-slice-svg", tick=range(3, 3)) is not None
+    assert "iframe" in str(c.diagram(type="match-graph-svg-html"))
+    assert "iframe" in str(c.diagram(type="detslice-svg-html"))
+    assert "iframe" in str(c.diagram(type="timeslice-svg-html"))
+    assert "iframe" in str(c.diagram(type="timeline-svg-html"))
 
 
 def test_circuit_inverse():
@@ -1573,3 +1617,265 @@ def test_detslice_filter_coords_flexibility():
     assert str(d1) == str(d3)
     assert str(d1) == str(d4)
     assert str(d1) == str(d5)
+
+
+def test_has_flow_ry():
+    c = stim.Circuit("""
+        RY 0
+    """)
+    assert c.has_flow(stim.Flow("1 -> Y"))
+    assert not c.has_flow(stim.Flow("1 -> -Y"))
+    assert not c.has_flow(stim.Flow("1 -> X"))
+    assert c.has_flow(stim.Flow("1 -> Y"), unsigned=True)
+    assert not c.has_flow(stim.Flow("1 -> X"), unsigned=True)
+    assert c.has_flow(stim.Flow("1 -> -Y"), unsigned=True)
+
+
+def test_has_flow_cxs():
+    c = stim.Circuit("""
+        CX 0 1
+        S 0
+    """)
+
+    assert c.has_flow(stim.Flow("X_ -> YX"))
+    assert c.has_flow(stim.Flow("Y_ -> -XX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -XX"))
+
+    assert c.has_flow(stim.Flow("X_ -> YX"), unsigned=True)
+    assert c.has_flow(stim.Flow("Y_ -> -XX"), unsigned=True)
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert not c.has_flow(stim.Flow("X_ -> -XX"), unsigned=True)
+
+
+def test_has_flow_cxm():
+    c = stim.Circuit("""
+        CX 0 1
+        M 1
+    """)
+    assert c.has_flow(stim.Flow("1 -> _Z xor rec[0]"))
+    assert c.has_flow(stim.Flow("ZZ -> rec[0]"))
+    assert c.has_flow(stim.Flow("ZZ -> _Z"))
+    assert c.has_flow(stim.Flow("XX -> X_"))
+    assert c.has_flow(stim.Flow("1 -> _Z xor rec[0]"), unsigned=True)
+    assert c.has_flow(stim.Flow("ZZ -> rec[0]"), unsigned=True)
+    assert c.has_flow(stim.Flow("ZZ -> _Z"), unsigned=True)
+    assert c.has_flow(stim.Flow("XX -> X_"), unsigned=True)
+
+
+def test_has_flow_lattice_surgery():
+    c = stim.Circuit("""
+        # Lattice surgery CNOT with feedback.
+        RX 2
+        MZZ 2 0
+        MXX 2 1
+        MZ 2
+        CX rec[-1] 1 rec[-3] 1
+        CZ rec[-2] 0
+
+        S 0
+    """)
+    assert c.has_flow(stim.Flow("X_ -> YX"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -YX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert c.has_flow(stim.Flow("X_ -> -YX"), unsigned=True)
+
+
+def test_has_flow_lattice_surgery_without_feedback():
+    c = stim.Circuit("""
+        # Lattice surgery CNOT without feedback.
+        RX 2
+        MZZ 2 0
+        MXX 2 1
+        MZ 2
+
+        S 0
+    """)
+    assert c.has_flow(stim.Flow("X_ -> YX xor rec[1]"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ xor rec[0] xor rec[2]"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert c.has_all_flows([])
+    assert c.has_all_flows([
+        stim.Flow("X_ -> YX xor rec[1]"),
+        stim.Flow("Z_ -> Z_"),
+    ])
+    assert not c.has_all_flows([
+        stim.Flow("X_ -> YX xor rec[1]"),
+        stim.Flow("Z_ -> Z_"),
+        stim.Flow("X_ -> XX"),
+    ])
+
+    assert not c.has_flow(stim.Flow("X_ -> XX"))
+    assert not c.has_flow(stim.Flow("X_ -> -YX"))
+    assert not c.has_flow(stim.Flow("X_ -> XX"), unsigned=True)
+    assert c.has_flow(stim.Flow("X_ -> -YX xor rec[1]"), unsigned=True)
+
+
+def test_has_flow_shorthands():
+    c = stim.Circuit("""
+        MZ 99
+        MXX 1 99
+        MZZ 0 99
+        MX 99
+    """)
+
+    assert c.has_flow(stim.Flow("X_ -> XX xor rec[1] xor rec[3]"))
+    assert c.has_flow(stim.Flow("Z_ -> Z_"))
+    assert c.has_flow(stim.Flow("_X -> _X"))
+    assert c.has_flow(stim.Flow("_Z -> ZZ xor rec[0] xor rec[2]"))
+
+    assert c.has_flow(stim.Flow("X_ -> XX xor rec[1] xor rec[3]"))
+    assert not c.has_flow(stim.Flow("Z_ -> -Z_"))
+    assert not c.has_flow(stim.Flow("-Z_ -> Z_"))
+    assert not c.has_flow(stim.Flow("Z_ -> X_"))
+    assert c.has_flow(stim.Flow("iX_ -> iXX xor rec[1] xor rec[3]"))
+    assert not c.has_flow(stim.Flow("-iX_ -> iXX xor rec[1] xor rec[3]"))
+    assert c.has_flow(stim.Flow("-iX_ -> -iXX xor rec[1] xor rec[3]"))
+    with pytest.raises(ValueError, match="Anti-Hermitian"):
+        stim.Flow("iX_ -> XX")
+
+
+def test_decomposed():
+    assert stim.Circuit("""
+        ISWAP 0 1 2 1
+        TICK
+        MPP X1*Z2*Y3
+    """).decomposed() == stim.Circuit("""
+        H 0
+        CX 0 1 1 0
+        H 1
+        S 1 0
+        H 2
+        CX 2 1 1 2
+        H 1
+        S 1 2
+        TICK
+        H 1 3
+        S 3
+        H 3
+        S 3 3
+        CX 2 1 3 1
+        M 1
+        CX 2 1 3 1
+        H 3
+        S 3
+        H 3
+        S 3 3
+        H 1
+    """)
+
+
+def test_detecting_regions():
+    assert stim.Circuit('''
+        R 0
+        TICK
+        H 0
+        TICK
+        CX 0 1
+        TICK
+        MX 0 1
+        DETECTOR rec[-1] rec[-2]
+    ''').detecting_regions() == {stim.DemTarget.relative_detector_id(0): {
+        0: stim.PauliString("Z_"),
+        1: stim.PauliString("X_"),
+        2: stim.PauliString("XX"),
+    }}
+
+
+def test_detecting_region_filters():
+    c = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    assert len(c.detecting_regions(targets=["D"])) == c.num_detectors
+    assert len(c.detecting_regions(targets=["L"])) == c.num_observables
+    assert len(c.detecting_regions()) == c.num_observables + c.num_detectors
+    assert len(c.detecting_regions(targets=["D0"])) == 1
+    assert len(c.detecting_regions(targets=["D0", "L0"])) == 2
+    assert len(c.detecting_regions(targets=[stim.target_relative_detector_id(0), "D0"])) == 1
+
+
+def test_detecting_regions_mzz():
+    c = stim.Circuit("""
+        TICK
+        MZZ 0 1 1 2
+        TICK
+        M 2
+        DETECTOR rec[-1]
+    """)
+    assert c.detecting_regions() == {
+        stim.target_relative_detector_id(0): {
+            0: stim.PauliString("__Z"),
+            1: stim.PauliString("__Z"),
+        },
+    }
+
+
+def test_insert():
+    c = stim.Circuit()
+    with pytest.raises(ValueError, match='type'):
+        c.insert(0, object())
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(1, stim.CircuitInstruction("H", [1]))
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(-1, stim.CircuitInstruction("H", [1]))
+    c.insert(0, stim.CircuitInstruction("H", [1]))
+    assert c == stim.Circuit("""
+        H 1
+    """)
+
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(2, stim.CircuitInstruction("S", [2]))
+    with pytest.raises(ValueError, match='index <'):
+        c.insert(-2, stim.CircuitInstruction("S", [2]))
+    c.insert(0, stim.CircuitInstruction("S", [2, 3]))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 1
+    """)
+
+    c.insert(-1, stim.Circuit("H 5\nM 2"))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        M 2
+        H 1
+    """)
+
+    c.insert(2, stim.Circuit("""
+        REPEAT 100 {
+            M 3
+        }
+    """))
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        REPEAT 100 {
+            M 3
+        }
+        M 2
+        H 1
+    """)
+
+    c.insert(2, stim.Circuit("""
+        REPEAT 100 {
+            M 3
+        }
+    """)[0])
+    assert c == stim.Circuit("""
+        S 2 3
+        H 5
+        REPEAT 100 {
+            M 3
+        }
+        REPEAT 100 {
+            M 3
+        }
+        M 2
+        H 1
+    """)

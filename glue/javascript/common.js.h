@@ -3,7 +3,7 @@
 
 #include <emscripten/val.h>
 
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 template <typename T>
 emscripten::val vec_to_js_array(const std::vector<T> &items) {

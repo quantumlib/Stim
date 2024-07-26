@@ -2,6 +2,7 @@
 
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -18,7 +19,7 @@ size_t DiagramTimelineAsciiDrawer::q2y(size_t q) const {
 }
 
 void DiagramTimelineAsciiDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
     std::stringstream ss;
     ss << gate;
     ss << "^";
@@ -43,7 +44,7 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
 
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    const auto &gate_data = GATE_DATA[op.gate_type];
     auto ends = two_qubit_gate_pieces(op.gate_type);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         do_feedback(ends.second, target2, target1);
@@ -133,7 +134,7 @@ void DiagramTimelineAsciiDrawer::do_tick() {
 void DiagramTimelineAsciiDrawer::do_single_qubit_gate_instance(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
     const auto &target = op.targets[0];
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    const auto &gate_data = GATE_DATA[op.gate_type];
 
     std::stringstream ss;
     ss << gate_data.name;
@@ -269,7 +270,7 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const Re
             continue;
         }
         std::stringstream ss;
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         ss << gate_data.name;
         if (t.is_x_target()) {
             ss << "[X]";
@@ -340,10 +341,6 @@ void DiagramTimelineAsciiDrawer::do_end_repeat(const CircuitTimelineLoopData &lo
     tick_start_moment = cur_moment;
 }
 
-void DiagramTimelineAsciiDrawer::do_mpp(const ResolvedTimelineOperation &op) {
-    do_multi_qubit_gate_with_pauli_targets(op);
-}
-
 void DiagramTimelineAsciiDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -361,7 +358,7 @@ void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation
     const auto &target = op.targets[0];
 
     std::stringstream ss;
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    const auto &gate_data = GATE_DATA[op.gate_type];
     ss << gate_data.name;
     write_coords(ss, op.args);
     diagram.add_entry(AsciiDiagramEntry{
@@ -438,8 +435,8 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
-    if (op.gate_type == GateType::MPP) {
-        do_mpp(op);
+    if (op.gate_type == GateType::MPP || op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_multi_qubit_gate_with_pauli_targets(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
@@ -452,7 +449,7 @@ void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOpe
         do_else_correlated_error(op);
     } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);

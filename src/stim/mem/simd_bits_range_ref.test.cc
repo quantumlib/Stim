@@ -18,7 +18,7 @@
 
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -354,6 +354,20 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, popcnt, {
     ASSERT_EQ(ref.popcnt(), 66);
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, countr_zero, {
+    simd_bits<W> data(1024);
+    simd_bits_range_ref<W> ref(data);
+    ASSERT_EQ(ref.countr_zero(), SIZE_MAX);
+    data[1000] = 1;
+    ASSERT_EQ(ref.countr_zero(), 1000);
+    data[101] = 1;
+    ASSERT_EQ(ref.countr_zero(), 101);
+    data[260] = 1;
+    ASSERT_EQ(ref.countr_zero(), 101);
+    data[0] = 1;
+    ASSERT_EQ(ref.countr_zero(), 0);
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, intersects, {
     simd_bits<W> data(1024);
     simd_bits<W> other(512);
@@ -386,4 +400,28 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, prefix_ref, {
     ASSERT_FALSE(data[0]);
     prefix[0] = true;
     ASSERT_TRUE(data[0]);
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, as_u64, {
+    simd_bits<W> data(1024);
+    simd_bits_range_ref<W> ref(data);
+    ASSERT_EQ(data.as_u64(), 0);
+    ASSERT_EQ(ref.as_u64(), 0);
+
+    ref[63] = 1;
+    ASSERT_EQ(data.as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(ref.as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(0, 0).as_u64(), 0);
+    ASSERT_EQ(data.word_range_ref(0, 1).as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(0, 2).as_u64(), uint64_t{1} << 63);
+    ASSERT_EQ(data.word_range_ref(1, 1).as_u64(), 0);
+    ASSERT_EQ(data.word_range_ref(1, 2).as_u64(), 0);
+
+    ref[64] = 1;
+    ASSERT_THROW({ data.as_u64(); }, std::invalid_argument);
+    ASSERT_THROW({ data.word_range_ref(0, 2).as_u64(); }, std::invalid_argument);
+    ASSERT_THROW({ ref.as_u64(); }, std::invalid_argument);
+    if (data.num_simd_words > 2) {
+        ASSERT_EQ(data.word_range_ref(2, 1).as_u64(), 0);
+    }
 })

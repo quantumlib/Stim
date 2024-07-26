@@ -23,15 +23,16 @@ using namespace stim_pybind;
 
 RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *mode) {
     try {
-        auto path = pybind11::cast<std::string>(obj);
-        return RaiiFile(path.data(), mode);
+        std::string_view path = pybind11::cast<std::string_view>(obj);
+        return RaiiFile(path, mode);
     } catch (pybind11::cast_error &ex) {
     }
 
     auto py_path = pybind11::module::import("pathlib").attr("Path");
     if (pybind11::isinstance(obj, py_path)) {
-        auto path = pybind11::cast<std::string>(pybind11::str(obj));
-        return RaiiFile(path.data(), mode);
+        pybind11::object str_obj = pybind11::str(obj);
+        std::string_view path = pybind11::cast<std::string_view>(str_obj);
+        return RaiiFile(path, mode);
     }
 
     return RaiiFile(nullptr);
@@ -69,12 +70,12 @@ pybind11::object dem_sampler_py_sample(
 
     pybind11::object err_out = pybind11::none();
     if (return_errors) {
-        err_out = transposed_simd_bit_table_to_numpy(self.err_buffer, self.num_errors, shots, bit_packed);
+        err_out = simd_bit_table_to_numpy(self.err_buffer, self.num_errors, shots, bit_packed, true, pybind11::none());
     }
     pybind11::object det_out =
-        transposed_simd_bit_table_to_numpy(self.det_buffer, self.num_detectors, shots, bit_packed);
+        simd_bit_table_to_numpy(self.det_buffer, self.num_detectors, shots, bit_packed, true, pybind11::none());
     pybind11::object obs_out =
-        transposed_simd_bit_table_to_numpy(self.obs_buffer, self.num_observables, shots, bit_packed);
+        simd_bit_table_to_numpy(self.obs_buffer, self.num_observables, shots, bit_packed, true, pybind11::none());
     return pybind11::make_tuple(det_out, obs_out, err_out);
 }
 
@@ -274,13 +275,13 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
         [](DemSampler<MAX_BITWORD_WIDTH> &self,
            size_t shots,
            pybind11::object &det_out_file,
-           const std::string &det_out_format,
+           std::string_view det_out_format,
            pybind11::object &obs_out_file,
-           const std::string &obs_out_format,
+           std::string_view obs_out_format,
            pybind11::object &err_out_file,
-           const std::string &err_out_format,
+           std::string_view err_out_format,
            pybind11::object &replay_err_in_file,
-           const std::string &replay_err_in_format) {
+           std::string_view replay_err_in_format) {
             RaiiFile fd = optional_py_path_to_raii_file(det_out_file, "wb");
             RaiiFile fo = optional_py_path_to_raii_file(obs_out_file, "wb");
             RaiiFile feo = optional_py_path_to_raii_file(err_out_file, "wb");

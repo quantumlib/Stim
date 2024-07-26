@@ -17,13 +17,12 @@
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(DemSampler, basic_sizing, {
-    std::mt19937_64 irrelevant_rng(0);
-    DemSampler<W> sampler(DetectorErrorModel(R"DEM()DEM"), irrelevant_rng, 700);
+    DemSampler<W> sampler(DetectorErrorModel(R"DEM()DEM"), std::mt19937_64(0), 700);
     ASSERT_EQ(sampler.det_buffer.num_major_bits_padded(), 0);
     ASSERT_EQ(sampler.obs_buffer.num_major_bits_padded(), 0);
     ASSERT_GE(sampler.det_buffer.num_minor_bits_padded(), 700);
@@ -37,7 +36,7 @@ TEST_EACH_WORD_SIZE_W(DemSampler, basic_sizing, {
             logical_observable L2000
             detector D1000
          )DEM"),
-        irrelevant_rng,
+        std::mt19937_64(0),
         200);
     ASSERT_GE(sampler.det_buffer.num_major_bits_padded(), 1000);
     ASSERT_GE(sampler.obs_buffer.num_major_bits_padded(), 2000);

@@ -28,8 +28,8 @@
 #include <vector>
 
 #include "stim/circuit/circuit_instruction.h"
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/span_ref.h"
 
@@ -78,7 +78,7 @@ struct Circuit {
     /// Parse constructor. Creates a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
     /// Note: operations are automatically fused.
-    Circuit(const char *text);
+    explicit Circuit(std::string_view text);
     /// Parses a circuit from a file containing operations.
     ///
     /// Note: operations are automatically fused.
@@ -97,7 +97,7 @@ struct Circuit {
     /// Grows the circuit using operations from a string.
     ///
     /// Note: operations are automatically fused.
-    void append_from_text(const char *text);
+    void append_from_text(std::string_view text);
 
     Circuit operator+(const Circuit &other) const;
     Circuit operator*(uint64_t repetitions) const;
@@ -105,18 +105,27 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(const CircuitInstruction &operation);
+    void safe_append(const CircuitInstruction &operation, bool block_fusion = false);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
+    void safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_u(
-        const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
+        std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args);
+    void safe_append(
+        GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool block_fusion = false);
     /// Safely copies a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, const Circuit &body);
     /// Safely moves a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, Circuit &&body);
+
+    void safe_insert(size_t index, const CircuitInstruction &instruction);
+    void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block);
+    void safe_insert(size_t index, const Circuit &circuit);
+
+    /// Appends the given gate, but with targets reversed.
+    void safe_append_reversed_targets(
+        GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -271,6 +280,7 @@ struct Circuit {
     std::string describe_instruction_location(size_t instruction_offset) const;
 
     void try_fuse_last_two_ops();
+    void try_fuse_after(size_t index);
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
@@ -345,7 +355,7 @@ double read_normal_double(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-void read_parens_arguments(int &c, const char *name, SOURCE read_char, MonotonicBuffer<double> &out) {
+void read_parens_arguments(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<double> &out) {
     if (c != '(') {
         return;
     }
@@ -371,7 +381,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
 std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
-void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation);
+void print_circuit(std::ostream &out, const Circuit &c, size_t indentation);
 
 }  // namespace stim
 

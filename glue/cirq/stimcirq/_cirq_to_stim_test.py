@@ -339,6 +339,31 @@ def test_on_loop():
     result = stimcirq.StimSampler().run(c)
     assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}
 
+
+def test_multi_moment_circuit_operation():
+    q0 = cirq.LineQubit(0)
+    cc = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.Moment(cirq.H(q0)),
+                cirq.Moment(cirq.H(q0)),
+                cirq.Moment(cirq.H(q0)),
+                cirq.Moment(cirq.H(q0)),
+            )
+        )
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(cc) == stim.Circuit("""
+        H 0
+        TICK
+        H 0
+        TICK
+        H 0
+        TICK
+        H 0
+        TICK
+    """)
+
+
 def test_on_tagged_loop():
     a, b = cirq.LineQubit.range(2)
     c = cirq.Circuit(

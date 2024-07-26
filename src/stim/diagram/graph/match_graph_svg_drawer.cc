@@ -27,6 +27,9 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     for (const auto &e : diagram.blue_line_data) {
         used_coords.push_back(project(e));
     }
+    for (const auto &e : diagram.purple_line_data) {
+        used_coords.push_back(project(e));
+    }
     for (const auto &e : diagram.elements) {
         used_coords.push_back(project(e.center));
     }
@@ -47,6 +50,9 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     svg_out << ">\n";
 
     auto write_lines = [&](const std::vector<Coord<3>> &line_data, const char *color) {
+        if (line_data.empty()) {
+            return;
+        }
         svg_out << "<path d=\"";
         for (size_t k = 0; k < line_data.size(); k++) {
             if (k) {
@@ -68,6 +74,7 @@ void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
     write_lines(diagram.line_data, "black");
     write_lines(diagram.red_line_data, "red");
     write_lines(diagram.blue_line_data, "blue");
+    write_lines(diagram.purple_line_data, "purple");
     for (const auto &e : diagram.elements) {
         auto c = project(e.center);
         c += off;

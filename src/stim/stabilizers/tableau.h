@@ -227,6 +227,8 @@ struct Tableau {
     PauliString<W> inverse_y_output(size_t input_index, bool skip_sign = false) const;
     /// Faster version of tableau.inverse().zs[input_index].
     PauliString<W> inverse_z_output(size_t input_index, bool skip_sign = false) const;
+
+    std::vector<PauliString<W>> stabilizers(bool canonical) const;
 };
 
 template <size_t W>

@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "stim/mem/monotonic_buffer.h"
-#include "stim/str_util.h"
 
 namespace stim {
 
@@ -58,6 +57,23 @@ inline T *xor_merge_sort(SpanRef<const T> sorted_in1, SpanRef<const T> sorted_in
         *out++ = *p2++;
     }
     return out;
+}
+
+template <typename T>
+inline SpanRef<T> inplace_xor_sort(SpanRef<T> items) {
+    std::sort(items.begin(), items.end());
+    size_t new_size = 0;
+    for (size_t k = 0; k < items.size(); k++) {
+        if (new_size > 0 && items[k] == items[new_size - 1]) {
+            new_size--;
+        } else {
+            if (k != new_size) {
+                std::swap(items[new_size], items[k]);
+            }
+            new_size++;
+        }
+    }
+    return items.sub(0, new_size);
 }
 
 template <typename T>
@@ -104,6 +120,25 @@ struct SparseXorVec;
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const SparseXorVec<T> &v);
 
+template <typename T>
+inline void xor_item_into_sorted_vec(const T &item, std::vector<T> &sorted_items) {
+    // Just do a linear scan to find the insertion point, instead of a binary search.
+    // This is faster at small sizes, and complexity is linear anyways due to the shifting of later items.
+    for (size_t k = 0; k < sorted_items.size(); k++) {
+        const auto &v = sorted_items[k];
+        if (v < item) {
+            continue;
+        } else if (v == item) {
+            sorted_items.erase(sorted_items.begin() + k);
+            return;
+        } else {
+            sorted_items.insert(sorted_items.begin() + k, item);
+            return;
+        }
+    }
+    sorted_items.push_back(item);
+}
+
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
@@ -145,24 +180,7 @@ struct SparseXorVec {
     }
 
     void xor_item(const T &item) {
-        // Just do a linear scan to find the insertion point, instead of a binary search.
-        // This is faster at small sizes, and complexity is linear anyways due to the shifting of later items.
-        auto it = sorted_items.begin();
-        while (true) {
-            if (it == sorted_items.end()) {
-                sorted_items.push_back(item);
-                break;
-            }
-            if (!(*it < item)) {
-                if (*it == item) {
-                    sorted_items.erase(it);
-                } else {
-                    sorted_items.insert(it, item);
-                }
-                break;
-            }
-            it++;
-        }
+        xor_item_into_sorted_vec(item, sorted_items);
     }
 
     SparseXorVec &operator^=(const SparseXorVec<T> &other) {
@@ -235,7 +253,17 @@ struct SparseXorVec {
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const SparseXorVec<T> &v) {
-    out << "SparseXorVec{" << comma_sep(v) << "}";
+    bool first = false;
+    out << "SparseXorVec{";
+    for (const auto &item : v) {
+        if (!first) {
+            first = true;
+        } else {
+            out << ", ";
+        }
+        out << item;
+    }
+    out << "}";
     return out;
 }
 

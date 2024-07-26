@@ -45,15 +45,15 @@ struct CompiledMeasurementsToDetectionEventsConverter {
         bool bit_pack_result_old_compat,
         bool bit_pack_result);
     void convert_file(
-        const std::string &measurements_filepath,
-        const std::string &measurements_format,
+        std::string_view measurements_filepath,
+        std::string_view measurements_format,
         const char *sweep_bits_filepath,
-        const std::string &sweep_bits_format,
-        const std::string &detection_events_filepath,
-        const std::string &detection_events_format,
+        std::string_view sweep_bits_format,
+        std::string_view detection_events_filepath,
+        std::string_view detection_events_format,
         bool append_observables,
         const char *obs_out_filepath,
-        const std::string &obs_out_format);
+        std::string_view obs_out_format);
 
     std::string repr() const;
 };

@@ -150,29 +150,6 @@ def test_peek_pauli_flips():
     assert 250 < v4[0] < 450
 
 
-def test_surface_code():
-    circuit = stim.Circuit.generated(
-        "surface_code:rotated_memory_x",
-        distance=3,
-        rounds=5,
-        before_round_data_depolarization=1e-2,
-        before_measure_flip_probability=1e-2,
-        after_reset_flip_probability=1e-2,
-        after_clifford_depolarization=1e-2,
-    )
-
-    # Find the index of the final MR layer.
-    mr_layer = len(circuit) - 1
-    while circuit[mr_layer].name != 'MR':
-        mr_layer -= 1
-    circuit_before_mr = circuit[:mr_layer]
-
-    sim = stim.FlipSimulator(batch_size=256, disable_stabilizer_randomization=True)
-    sim.do(circuit_before_mr)
-    for b in sim.peek_pauli_flips():
-        print(list(b))
-
-
 def test_set_pauli_flip():
     sim = stim.FlipSimulator(
         batch_size=2,
@@ -214,15 +191,15 @@ def test_set_pauli_flip():
         stim.PauliString('XZ_'),
     ]
 
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(-1, qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(4, qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip('R', qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip('XY', qubit_index=0, instance_index=0)
-    with pytest.raises(ValueError, match='Expected pauli'):
+    with pytest.raises(ValueError, match='pauli'):
         sim.set_pauli_flip(object(), qubit_index=0, instance_index=0)
 
     with pytest.raises(IndexError, match='instance_index'):
@@ -238,3 +215,201 @@ def test_set_pauli_flip():
         stim.PauliString('____X'),
         stim.PauliString('XZ___'),
     ]
+
+def test_broadcast_pauli_errors():
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        num_qubits=3,
+        disable_stabilizer_randomization=True,
+    )
+    sim.broadcast_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+X_X"),
+        stim.PauliString("+__X")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='Z',
+        mask=np.asarray([
+            [True, True],
+            [True, False],
+            [False, False]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+YZX"),
+        stim.PauliString("+Z_X")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='Y',
+        mask=np.asarray([
+            [True, False],
+            [False, True],
+            [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='I',
+        mask=np.asarray([
+            [True, True],
+            [False, True],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+
+    # do it again with ints
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        num_qubits=3,
+        disable_stabilizer_randomization=True,
+    )
+    sim.broadcast_pauli_errors(
+        pauli=1,
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+X_X"),
+        stim.PauliString("+__X")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli=3,
+        mask=np.asarray([
+            [True, True],
+            [True, False],
+            [False, False]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+YZX"),
+        stim.PauliString("+Z_X")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli=2,
+        mask=np.asarray([
+            [True, False],
+            [False, True],
+            [False, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli=0,
+        mask=np.asarray([
+            [True, True],
+            [False, True],
+            [True, True]]
+        ),
+    )
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+_ZX"),
+        stim.PauliString("+ZYZ")
+    ]
+
+    with pytest.raises(ValueError, match='pauli'):
+        sim.broadcast_pauli_errors(
+            pauli='whoops',
+            mask=np.asarray([
+                [True, True],
+                [False, True],
+                [True, True]]
+            ),
+        )
+    with pytest.raises(ValueError, match='pauli'):
+        sim.broadcast_pauli_errors(
+            pauli=4,
+            mask=np.asarray([
+                [True, True],
+                [False, True],
+                [True, True]]
+            ),
+        )
+    with pytest.raises(ValueError, match='batch_size'):
+        sim.broadcast_pauli_errors(
+            pauli='X',
+            mask=np.asarray([
+                [True, True,True],
+                [False, True, True],
+                [True, True, True]]
+            ),
+        )
+    with pytest.raises(ValueError, match='batch_size'):
+        sim.broadcast_pauli_errors(
+            pauli='X',
+            mask=np.asarray([
+                [True],
+                [False],
+                [True]]
+            ),
+        )
+    sim = stim.FlipSimulator(
+        batch_size=2,
+        num_qubits=3,
+        disable_stabilizer_randomization=True,
+    )
+    sim.broadcast_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            [True, True],
+            [True, True]]
+        ),
+    ) # automatically expands the qubit basis
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+X_XX"),
+        stim.PauliString("+__XX")
+    ]
+    sim.broadcast_pauli_errors(
+        pauli='X',
+        mask=np.asarray([
+            [True, False],
+            [False, False],
+            ]
+        ),
+    )  # tolerates fewer qubits in mask than in simulator
+    peek = sim.peek_pauli_flips()
+    assert peek == [
+        stim.PauliString("+__XX"),
+        stim.PauliString("+__XX")
+    ]
+
+
+def test_repro_heralded_pauli_channel_1_bug():
+    circuit = stim.Circuit("""
+        R 0 1
+        HERALDED_PAULI_CHANNEL_1(0.2, 0.2, 0, 0) 1
+        M 0
+    """)
+    result = circuit.compile_sampler().sample(1024)
+    assert np.sum(result[:, 0]) > 0
+    assert np.sum(result[:, 1]) == 0

@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/stabilizers/pauli_string.h"
-
 #include <cassert>
 #include <cstring>
 #include <string>
 
 #include "stim/mem/simd_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 
@@ -37,13 +36,57 @@ PauliString<W>::PauliString(size_t num_qubits) : num_qubits(num_qubits), sign(fa
 }
 
 template <size_t W>
-PauliString<W>::PauliString(const std::string &text) : num_qubits(0), sign(false), xs(0), zs(0) {
-    *this = std::move(PauliString<W>::from_str(text.c_str()));
+PauliString<W>::PauliString(std::string_view text) : num_qubits(0), sign(false), xs(0), zs(0) {
+    *this = std::move(PauliString<W>::from_str(text));
 }
 
 template <size_t W>
 PauliString<W>::PauliString(const PauliStringRef<W> &other)
     : num_qubits(other.num_qubits), sign((bool)other.sign), xs(other.xs), zs(other.zs) {
+}
+
+template <size_t W>
+PauliString<W>::PauliString(const PauliString<W> &other)
+    : num_qubits(other.num_qubits), sign((bool)other.sign), xs(other.xs), zs(other.zs) {
+}
+
+template <size_t W>
+PauliString<W>::PauliString(PauliString<W> &&other) noexcept
+    : num_qubits(other.num_qubits), sign((bool)other.sign), xs(std::move(other.xs)), zs(std::move(other.zs)) {
+    other.num_qubits = 0;
+    other.sign = false;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(const PauliStringRef<W> &other) {
+    xs = other.xs;
+    zs = other.zs;
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    return *this;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(const PauliString<W> &other) {
+    xs = other.xs;
+    zs = other.zs;
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    return *this;
+}
+
+template <size_t W>
+PauliString<W> &PauliString<W>::operator=(PauliString<W> &&other) {
+    if (&other == this) {
+        return *this;
+    }
+    xs = std::move(other.xs);
+    zs = std::move(other.zs);
+    num_qubits = other.num_qubits;
+    sign = other.sign;
+    other.num_qubits = 0;
+    other.sign = false;
+    return *this;
 }
 
 template <size_t W>
@@ -66,13 +109,6 @@ PauliStringRef<W> PauliString<W>::ref() {
 template <size_t W>
 std::string PauliString<W>::str() const {
     return ref().str();
-}
-
-template <size_t W>
-PauliString<W> &PauliString<W>::operator=(const PauliStringRef<W> &other) noexcept {
-    (*this).~PauliString();
-    new (this) PauliString(other);
-    return *this;
 }
 
 template <size_t W>
@@ -105,12 +141,13 @@ PauliString<W> PauliString<W>::from_func(bool sign, size_t num_qubits, const std
 }
 
 template <size_t W>
-PauliString<W> PauliString<W>::from_str(const char *text) {
-    auto sign = text[0] == '-';
-    if (text[0] == '+' || text[0] == '-') {
-        text++;
+PauliString<W> PauliString<W>::from_str(std::string_view text) {
+    bool is_negated = text.starts_with('-');
+    bool is_prefixed = text.starts_with('+');
+    if (is_prefixed || is_negated) {
+        text = text.substr(1);
     }
-    return PauliString::from_func(sign, strlen(text), [&](size_t i) {
+    return PauliString::from_func(is_negated, text.size(), [&](size_t i) {
         return text[i];
     });
 }
@@ -145,6 +182,16 @@ bool PauliString<W>::operator!=(const PauliString<W> &other) const {
 }
 
 template <size_t W>
+bool PauliString<W>::operator<(const PauliString<W> &other) const {
+    return ref() < other.ref();
+}
+
+template <size_t W>
+bool PauliString<W>::operator<(const PauliStringRef<W> &other) const {
+    return ref() < other;
+}
+
+template <size_t W>
 void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor) {
     assert(resize_pad_factor >= 1);
     if (min_num_qubits <= num_qubits) {
@@ -163,6 +210,42 @@ void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_
     xs = std::move(new_xs);
     zs = std::move(new_zs);
     num_qubits = min_num_qubits;
+}
+
+template <size_t W>
+void PauliString<W>::mul_pauli_term(GateTarget t, bool *imag, bool right_mul) {
+    auto q = t.qubit_value();
+    ensure_num_qubits(q + 1, 1.25);
+    bool x2 = (bool)(t.data & TARGET_PAULI_X_BIT);
+    bool z2 = (bool)(t.data & TARGET_PAULI_Z_BIT);
+    if (!(x2 | z2)) {
+        throw std::invalid_argument("Not a pauli target: " + t.str());
+    }
+
+    bit_ref x1 = xs[q];
+    bit_ref z1 = zs[q];
+    bool old_x1 = x1;
+    bool old_z1 = z1;
+    x1 ^= x2;
+    z1 ^= z2;
+
+    // At each bit position: accumulate anti-commutation (+i or -i) counts.
+    bool x1z2 = x1 & z2;
+    bool anti_commutes = (x2 & z1) ^ x1z2;
+    sign ^= (*imag ^ old_x1 ^ old_z1 ^ x1z2) & anti_commutes;
+    sign ^= (bool)(t.data & TARGET_INVERTED_BIT);
+    *imag ^= anti_commutes;
+    sign ^= right_mul && anti_commutes;
+}
+
+template <size_t W>
+void PauliString<W>::left_mul_pauli(GateTarget t, bool *imag) {
+    mul_pauli_term(t, imag, false);
+}
+
+template <size_t W>
+void PauliString<W>::right_mul_pauli(GateTarget t, bool *imag) {
+    mul_pauli_term(t, imag, true);
 }
 
 template <size_t W>

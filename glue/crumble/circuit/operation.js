@@ -41,6 +41,29 @@ class Operation {
     }
 
     /**
+     * @returns {!string}
+     */
+    toString() {
+        return `${this.gate.name}(${[...this.args].join(', ')}) ${[...this.id_targets].join(' ')}`;
+    }
+
+    /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        if (this.gate.name === 'M' || this.gate.name === 'MX' || this.gate.name === 'MY' || this.gate.name === 'MR' || this.gate.name === 'MRX' || this.gate.name === 'MRY') {
+            return this.id_targets.length;
+        }
+        if (this.gate.name === 'MXX' || this.gate.name === 'MYY' || this.gate.name === 'MZZ') {
+            return this.id_targets.length / 2;
+        }
+        if (this.gate.name.startsWith('MPP:')) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
      * @param {!string} before
      * @returns {!string}
      */
@@ -48,10 +71,16 @@ class Operation {
         let m = this.gate.tableau_map;
         if (m === undefined) {
             if (this.gate.name.startsWith('M')) {
+                let bases;
+                if (this.gate.name.startsWith('MPP:')) {
+                    bases = this.gate.name.substring(4);
+                } else {
+                    bases = this.gate.name.substring(1);
+                }
                 let differences = 0;
                 for (let k = 0; k < before.length; k++) {
                     let a = 'XYZ'.indexOf(before[k]);
-                    let b = 'XYZ'.indexOf(this.gate.name[k + 1]);
+                    let b = 'XYZ'.indexOf(bases[k]);
                     if (a >= 0 && b >= 0 && a !== b) {
                         differences++;
                     }
@@ -59,8 +88,30 @@ class Operation {
                 if (differences % 2 !== 0) {
                     return 'ERR:' + before;
                 }
+                return before;
+            } else if (this.gate.name.startsWith('SPP:') || this.gate.name.startsWith('SPP_DAG:')) {
+                let dag = this.gate.name.startsWith('SPP_DAG:');
+                let bases = this.gate.name.substring(dag ? 8 : 4);
+                let differences = 0;
+                let flipped = '';
+                for (let k = 0; k < before.length; k++) {
+                    let a = 'IXYZ'.indexOf(before[k]);
+                    let b = 'IXYZ'.indexOf(bases[k]);
+                    if (a > 0 && b > 0 && a !== b) {
+                        differences++;
+                    }
+                    flipped += 'IXYZ'[a ^ b]
+                }
+                if (differences % 2 !== 0) {
+                    return flipped;
+                }
+                return before;
+            } else if (this.gate.name === 'POLYGON') {
+                // Do nothing.
+                return before;
+            } else {
+                throw new Error(this.gate.name);
             }
-            return before;
         }
         if (before.length !== this.gate.num_qubits) {
             throw new Error(`before.length !== this.gate.num_qubits`);

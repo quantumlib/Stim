@@ -6,7 +6,7 @@
 
 namespace stim {
 
-enum SampleFormat {
+enum class SampleFormat {
     SAMPLE_FORMAT_01,
     SAMPLE_FORMAT_B8,
     SAMPLE_FORMAT_PTB64,
@@ -23,7 +23,7 @@ struct FileFormatData {
     const char *help_python_parse;
 };
 
-const std::map<std::string, FileFormatData> &format_name_to_enum_map();
+const std::map<std::string_view, FileFormatData> &format_name_to_enum_map();
 
 }  // namespace stim
 

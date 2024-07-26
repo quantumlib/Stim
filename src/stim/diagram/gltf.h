@@ -1,6 +1,7 @@
 #ifndef _STIM_DRAW_3D_GLTF_H
 #define _STIM_DRAW_3D_GLTF_H
 
+#include <functional>
 #include <iostream>
 
 #include "base64.h"
@@ -74,12 +75,13 @@ struct GltfBuffer {
     JsonObj to_json_buffer() const {
         std::stringstream ss;
         ss << "data:application/octet-stream;base64,";
-        size_t n = vertices.size() * sizeof(Coord<DIM>);
-        write_data_as_base64_to((const char *)(const void *)vertices.data(), n, ss);
+        size_t vertex_data_size = vertices.size() * sizeof(Coord<DIM>);
+        std::string_view vertex_data{(const char *)(const void *)vertices.data(), vertex_data_size};
+        write_data_as_base64_to(vertex_data, ss);
         return std::map<std::string, JsonObj>{
             {"name", id.name},
             {"uri", ss.str()},
-            {"byteLength", n},
+            {"byteLength", vertex_data_size},
         };
     }
 
@@ -199,7 +201,7 @@ struct GltfScene {
     JsonObj to_json();
 };
 
-void write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream &out);
+void write_html_viewer_for_gltf_data(std::string_view gltf_data, std::ostream &out);
 
 }  // namespace stim_draw_internal
 

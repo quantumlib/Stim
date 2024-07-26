@@ -14,7 +14,7 @@
 
 #include "stim/mem/simd_bit_table.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

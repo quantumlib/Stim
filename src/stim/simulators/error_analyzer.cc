@@ -19,8 +19,8 @@
 #include <sstream>
 
 #include "stim/circuit/gate_decomposition.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/util_bot/error_decomp.h"
 
 using namespace stim;
 
@@ -80,6 +80,10 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::MPP:
             undo_MPP(inst);
             break;
+        case GateType::SPP:
+        case GateType::SPP_DAG:
+            undo_SPP(inst);
+            break;
         case GateType::MPAD:
             undo_MPAD(inst);
             break;
@@ -119,15 +123,6 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::CZ:
             undo_ZCZ(inst);
             break;
-        case GateType::H:
-            undo_H_XZ(inst);
-            break;
-        case GateType::H_XY:
-            undo_H_XY(inst);
-            break;
-        case GateType::H_YZ:
-            undo_H_YZ(inst);
-            break;
         case GateType::DEPOLARIZE1:
             undo_DEPOLARIZE1(inst);
             break;
@@ -156,14 +151,8 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
-            undo_I(inst);
-            break;
         case GateType::X:
-            undo_I(inst);
-            break;
         case GateType::Y:
-            undo_I(inst);
-            break;
         case GateType::Z:
             undo_I(inst);
             break;
@@ -173,39 +162,30 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
         case GateType::C_ZYX:
             undo_C_ZYX(inst);
             break;
+        case GateType::H_YZ:
         case GateType::SQRT_X:
-            undo_H_YZ(inst);
-            break;
         case GateType::SQRT_X_DAG:
             undo_H_YZ(inst);
             break;
         case GateType::SQRT_Y:
-            undo_H_XZ(inst);
-            break;
         case GateType::SQRT_Y_DAG:
+        case GateType::H:
             undo_H_XZ(inst);
             break;
         case GateType::S:
-            undo_H_XY(inst);
-            break;
         case GateType::S_DAG:
+        case GateType::H_XY:
             undo_H_XY(inst);
             break;
         case GateType::SQRT_XX:
-            undo_SQRT_XX(inst);
-            break;
         case GateType::SQRT_XX_DAG:
             undo_SQRT_XX(inst);
             break;
         case GateType::SQRT_YY:
-            undo_SQRT_YY(inst);
-            break;
         case GateType::SQRT_YY_DAG:
             undo_SQRT_YY(inst);
             break;
         case GateType::SQRT_ZZ:
-            undo_SQRT_ZZ(inst);
-            break;
         case GateType::SQRT_ZZ_DAG:
             undo_SQRT_ZZ(inst);
             break;
@@ -213,20 +193,21 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_SWAP(inst);
             break;
         case GateType::ISWAP:
-            undo_ISWAP(inst);
-            break;
         case GateType::ISWAP_DAG:
             undo_ISWAP(inst);
             break;
         case GateType::CXSWAP:
             undo_CXSWAP(inst);
             break;
+        case GateType::CZSWAP:
+            undo_CZSWAP(inst);
+            break;
         case GateType::SWAPCX:
             undo_SWAPCX(inst);
             break;
         default:
             throw std::invalid_argument(
-                "Not implemented by ErrorAnalyzer::undo_gate: " + std::string(GATE_DATA.items[inst.gate_type].name));
+                "Not implemented by ErrorAnalyzer::undo_gate: " + std::string(GATE_DATA[inst.gate_type].name));
     }
 }
 
@@ -371,6 +352,9 @@ void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat)
 void ErrorAnalyzer::undo_MPAD(const CircuitInstruction &inst) {
     for (size_t k = inst.targets.size(); k-- > 0;) {
         tracker.num_measurements_in_past--;
+
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        xor_sorted_measurement_error(d.range(), inst);
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
@@ -483,12 +467,10 @@ void ErrorAnalyzer::check_for_gauge(
         error_msg << "\n\n";
         error_msg << "The backward-propagating error sensitivity for " << t << " was:";
         auto sensitivity = current_error_sensitivity_for(t);
-        for (size_t q = 0; q < sensitivity.num_qubits; q++) {
+        sensitivity.ref().for_each_active_pauli([&](size_t q) {
             uint8_t p = sensitivity.xs[q] + sensitivity.zs[q] * 2;
-            if (p) {
-                error_msg_qubit_with_coords(q, p);
-            }
-        }
+            error_msg_qubit_with_coords(q, p);
+        });
     }
 
     throw std::invalid_argument(error_msg.str());
@@ -503,10 +485,10 @@ PauliString<MAX_BITWORD_WIDTH> ErrorAnalyzer::current_error_sensitivity_for(DemT
     return result;
 }
 
-void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &dat) {
+void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &inst) {
     // Measurement error.
-    if (!dat.args.empty() && dat.args[0] > 0) {
-        add_error(dat.args[0], targets);
+    if (!inst.args.empty() && inst.args[0] > 0) {
+        add_error(inst.args[0], targets);
     }
 }
 
@@ -608,6 +590,9 @@ void ErrorAnalyzer::undo_ISWAP(const CircuitInstruction &dat) {
 }
 void ErrorAnalyzer::undo_CXSWAP(const CircuitInstruction &dat) {
     tracker.undo_CXSWAP(dat);
+}
+void ErrorAnalyzer::undo_CZSWAP(const CircuitInstruction &dat) {
+    tracker.undo_CZSWAP(dat);
 }
 void ErrorAnalyzer::undo_SWAPCX(const CircuitInstruction &dat) {
     tracker.undo_SWAPCX(dat);
@@ -831,7 +816,7 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
 
 void ErrorAnalyzer::undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &dat) {
     if (accumulate_errors) {
-        throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR" + dat.str());
+        throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR: " + dat.str());
     }
 }
 
@@ -929,23 +914,23 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
     for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
         const auto &e = *p;
         switch (e.type) {
-            case DEM_SHIFT_DETECTORS:
+            case DemInstructionType::DEM_SHIFT_DETECTORS:
                 base_detector_id += e.target_data[0].data;
                 out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
                 break;
-            case DEM_ERROR:
+            case DemInstructionType::DEM_ERROR:
                 for (auto &t : e.target_data) {
                     seen.insert(t);
                 }
                 conv_append(e);
                 break;
-            case DEM_DETECTOR:
-            case DEM_LOGICAL_OBSERVABLE:
+            case DemInstructionType::DEM_DETECTOR:
+            case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
                 if (!e.arg_data.empty() || seen.find(e.target_data[0]) == seen.end()) {
                     conv_append(e);
                 }
                 break;
-            case DEM_REPEAT_BLOCK: {
+            case DemInstructionType::DEM_REPEAT_BLOCK: {
                 uint64_t repetitions = e.repeat_block_rep_count();
                 if (repetitions) {
                     uint64_t old_base_detector_id = base_detector_id;
@@ -1124,10 +1109,12 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             uint64_t lower_level_shifts = body.total_detector_shift();
             DemTarget remaining_shift = {detectors_per_period - lower_level_shifts};
             if (remaining_shift.data > 0) {
-                if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
+                if (body.instructions.empty() ||
+                    body.instructions.front().type != DemInstructionType::DEM_SHIFT_DETECTORS) {
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
                     body.instructions.insert(
-                        body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
+                        body.instructions.begin(),
+                        DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
@@ -1158,7 +1145,7 @@ void ErrorAnalyzer::decompose_helper_add_error_combinations(
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {
-        detector_counts[k] = popcnt64(detector_masks[k]);
+        detector_counts[k] = std::popcount(detector_masks[k]);
     }
 
     // Find single-detector errors (and empty errors).
@@ -1539,7 +1526,7 @@ void ErrorAnalyzer::add_error_combinations(
                         } catch (const std::out_of_range &ex) {
                             std::stringstream message;
                             message
-                                << "An error case in a composite error exceeded that max supported number of symptoms "
+                                << "An error case in a composite error exceeded the max supported number of symptoms "
                                    "(<=15). ";
                             message << "\nThe " << std::to_string(s)
                                     << " basis error cases (e.g. X, Z) used to form the combined ";
@@ -1604,22 +1591,34 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
     decompose_mpp_operation(
         CircuitInstruction{GateType::MPP, target_data.args, reversed_targets},
         tracker.xs.size(),
-        [&](const CircuitInstruction &h_xz,
-            const CircuitInstruction &h_yz,
-            const CircuitInstruction &cnot,
-            const CircuitInstruction &meas) {
-            undo_H_XZ(h_xz);
-            undo_H_YZ(h_yz);
-            undo_ZCX(cnot);
-            reversed_measure_targets.clear();
-            for (size_t k = meas.targets.size(); k--;) {
-                reversed_measure_targets.push_back(meas.targets[k]);
+        [&](const CircuitInstruction &inst) {
+            if (inst.gate_type == GateType::M) {
+                reversed_measure_targets.clear();
+                for (size_t k = inst.targets.size(); k--;) {
+                    reversed_measure_targets.push_back(inst.targets[k]);
+                }
+                undo_MZ_with_context(
+                    CircuitInstruction{GateType::M, inst.args, reversed_measure_targets},
+                    "a Pauli product measurement (MPP)");
+            } else {
+                undo_gate(inst);
             }
-            undo_MZ_with_context(
-                {GateType::M, meas.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
-            undo_ZCX(cnot);
-            undo_H_YZ(h_yz);
-            undo_H_XZ(h_xz);
+        });
+}
+
+void ErrorAnalyzer::undo_SPP(const CircuitInstruction &target_data) {
+    size_t n = target_data.targets.size();
+    std::vector<GateTarget> reversed_targets(n);
+    std::vector<GateTarget> reversed_measure_targets;
+    for (size_t k = 0; k < n; k++) {
+        reversed_targets[k] = target_data.targets[n - k - 1];
+    }
+    decompose_spp_or_spp_dag_operation(
+        CircuitInstruction{GateType::SPP, target_data.args, reversed_targets},
+        tracker.xs.size(),
+        false,
+        [&](const CircuitInstruction &inst) {
+            undo_gate(inst);
         });
 }
 
@@ -1676,7 +1675,7 @@ void ErrorAnalyzer::undo_MXX(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
@@ -1690,7 +1689,7 @@ void ErrorAnalyzer::undo_MYY(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
@@ -1704,7 +1703,7 @@ void ErrorAnalyzer::undo_MZZ(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
+    decompose_pair_instruction_into_disjoint_segments(
         {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });

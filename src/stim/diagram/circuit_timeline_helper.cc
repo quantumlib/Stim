@@ -45,13 +45,21 @@ void CircuitTimelineHelper::do_atomic_operation(
 }
 
 void CircuitTimelineHelper::do_operation_with_target_combiners(const CircuitInstruction &op) {
+    bool paired = GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS;
     size_t start = 0;
     while (start < op.targets.size()) {
         size_t end = start + 1;
         while (end < op.targets.size() && op.targets[end].is_combiner()) {
             end += 2;
         }
-        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
+        if (paired) {
+            end++;
+            while (end < op.targets.size() && op.targets[end].is_combiner()) {
+                end += 2;
+            }
+        }
+
+        if (GATE_DATA[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
             do_record_measure_result(op.targets[start].qubit_value());
         }
         do_atomic_operation(op.gate_type, op.args, {&op.targets[start], &op.targets[end]});
@@ -66,7 +74,7 @@ void CircuitTimelineHelper::do_multi_qubit_atomic_operation(const CircuitInstruc
 void CircuitTimelineHelper::do_two_qubit_gate(const CircuitInstruction &op) {
     for (size_t k = 0; k < op.targets.size(); k += 2) {
         const GateTarget *p = &op.targets[k];
-        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
+        if (GATE_DATA[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
             do_record_measure_result(p[0].qubit_value());
         }
         do_atomic_operation(op.gate_type, op.args, {p, p + 2});
@@ -75,7 +83,7 @@ void CircuitTimelineHelper::do_two_qubit_gate(const CircuitInstruction &op) {
 
 void CircuitTimelineHelper::do_single_qubit_gate(const CircuitInstruction &op) {
     for (const auto &t : op.targets) {
-        if (GATE_DATA.items[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
+        if (GATE_DATA[op.gate_type].flags & GATE_PRODUCES_RESULTS) {
             do_record_measure_result(t.qubit_value());
         }
         do_atomic_operation(op.gate_type, op.args, {&t});
@@ -96,7 +104,7 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
             if (!v.empty() && v.size() <= coords.size()) {
                 SpanRef<const double> prefix = {coords.ptr_start, coords.ptr_start + v.size()};
                 if (prefix == v) {
-                    return GateTarget::qubit(q);
+                    return GateTarget::qubit((uint32_t)q);
                 }
             }
         }
@@ -183,8 +191,6 @@ void CircuitTimelineHelper::do_record_measure_result(uint32_t target_qubit) {
 void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const CircuitInstruction &op) {
     if (op.gate_type == GateType::REPEAT) {
         do_repeat_block(circuit, op);
-    } else if (op.gate_type == GateType::MPP) {
-        do_operation_with_target_combiners(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
@@ -198,7 +204,9 @@ void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const Circ
     } else if (op.gate_type == GateType::TICK) {
         do_atomic_operation(op.gate_type, {}, {});
         num_ticks_seen += 1;
-    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_COMBINERS) {
+        do_operation_with_target_combiners(op);
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate(op);
     } else {
         do_single_qubit_gate(op);

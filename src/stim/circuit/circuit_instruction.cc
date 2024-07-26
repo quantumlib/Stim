@@ -14,11 +14,10 @@
 
 #include "stim/circuit/circuit_instruction.h"
 
-#include <utility>
-
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
+#include "stim/gates/gates.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
@@ -43,7 +42,7 @@ CircuitStats CircuitInstruction::compute_stats(const Circuit *host) const {
 }
 
 void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) const {
-    if (gate_type == REPEAT) {
+    if (gate_type == GateType::REPEAT) {
         if (host == nullptr) {
             throw std::invalid_argument("gate_type == REPEAT && host == nullptr");
         }
@@ -63,8 +62,10 @@ void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) co
     for (auto t : targets) {
         auto v = t.data & TARGET_VALUE_MASK;
         // Qubit counting.
-        if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-            out.num_qubits = std::max(out.num_qubits, v + 1);
+        if (gate_type != GateType::MPAD) {
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+                out.num_qubits = std::max(out.num_qubits, v + 1);
+            }
         }
         // Lookback counting.
         if (t.data & TARGET_RECORD_BIT) {
@@ -110,26 +111,42 @@ CircuitInstruction::CircuitInstruction(
 }
 
 void CircuitInstruction::validate() const {
-    const Gate &gate = GATE_DATA.items[gate_type];
+    const Gate &gate = GATE_DATA[gate_type];
 
     if (gate.flags == GateFlags::NO_GATE_FLAG) {
         throw std::invalid_argument("Unrecognized gate_type. Associated flag is NO_GATE_FLAG.");
     }
 
     if (gate.flags & GATE_TARGETS_PAIRS) {
-        if (targets.size() & 1) {
-            throw std::invalid_argument(
-                "Two qubit gate " + std::string(gate.name) +
-                " requires an even number of targets but was given "
-                "(" +
-                comma_sep(args).str() + ").");
-        }
-        for (size_t k = 0; k < targets.size(); k += 2) {
-            if (targets[k] == targets[k + 1]) {
+        if (gate.flags & GATE_TARGETS_PAULI_STRING) {
+            size_t term_count = targets.size();
+            for (auto t : targets) {
+                if (t.is_combiner()) {
+                    term_count -= 2;
+                }
+            }
+            if (term_count & 1) {
                 throw std::invalid_argument(
-                    "The two qubit gate " + std::string(gate.name) +
-                    " was applied to a target pair with the same target (" + targets[k].target_str() +
-                    ") twice. Gates can't interact targets with themselves.");
+                    "The gate " + std::string(gate.name) +
+                    " requires an even number of products to target, but was given "
+                    "(" +
+                    comma_sep(args).str() + ").");
+            }
+        } else {
+            if (targets.size() & 1) {
+                throw std::invalid_argument(
+                    "Two qubit gate " + std::string(gate.name) +
+                    " requires an even number of targets but was given "
+                    "(" +
+                    comma_sep(args).str() + ").");
+            }
+            for (size_t k = 0; k < targets.size(); k += 2) {
+                if (targets[k] == targets[k + 1]) {
+                    throw std::invalid_argument(
+                        "The two qubit gate " + std::string(gate.name) +
+                        " was applied to a target pair with the same target (" + targets[k].target_str() +
+                        ") twice. Gates can't interact targets with themselves.");
+                }
             }
         }
     }
@@ -217,10 +234,21 @@ void CircuitInstruction::validate() const {
             }
         }
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        for (GateTarget q : targets) {
-            if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
-                throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
+        if (gate.flags & GATE_CAN_TARGET_BITS) {
+            for (GateTarget q : targets) {
+                if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER | TARGET_SWEEP_BIT |
+                                TARGET_RECORD_BIT))) {
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) +
+                        " only takes Pauli targets or bit targets ('X2', 'Y3', 'Z5', 'rec[-1]', 'sweep[0]', etc).");
+                }
+            }
+        } else {
+            for (GateTarget q : targets) {
+                if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
+                }
             }
         }
     } else {
@@ -248,7 +276,7 @@ void CircuitInstruction::validate() const {
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {
-    auto flags = GATE_DATA.items[gate_type].flags;
+    auto flags = GATE_DATA[gate_type].flags;
     if (!(flags & GATE_PRODUCES_RESULTS)) {
         return 0;
     }
@@ -266,7 +294,7 @@ uint64_t CircuitInstruction::count_measurement_results() const {
 }
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
-    auto flags = GATE_DATA.items[gate_type].flags;
+    auto flags = GATE_DATA[gate_type].flags;
     return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE);
 }
 

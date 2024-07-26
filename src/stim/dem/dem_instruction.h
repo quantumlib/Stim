@@ -10,7 +10,10 @@
 
 namespace stim {
 
-enum DemInstructionType : uint8_t {
+constexpr uint64_t MAX_OBS = 0xFFFFFFFF;
+constexpr uint64_t MAX_DET = (uint64_t{1} << 62) - 1;
+
+enum class DemInstructionType : uint8_t {
     DEM_ERROR,
     DEM_SHIFT_DETECTORS,
     DEM_DETECTOR,
@@ -37,6 +40,8 @@ struct DemTarget {
     bool operator!=(const DemTarget &other) const;
     bool operator<(const DemTarget &other) const;
     std::string str() const;
+
+    static DemTarget from_text(std::string_view text);
 };
 
 struct DetectorErrorModel;

@@ -18,7 +18,6 @@
 #define _STIM_SIMULATORS_SPARSE_REV_FRAME_TRACKER_H
 
 #include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data_table.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -38,9 +37,17 @@ struct SparseUnsignedRevFrameTracker {
     uint64_t num_measurements_in_past;
     /// Number of detectors that have not yet been processed.
     uint64_t num_detectors_in_past;
+    /// If false, anticommuting dets and obs are stored .
+    /// If true, an exception is raised if anticommutation is detected.
+    bool fail_on_anticommute;
+    /// Where anticommuting dets and obs are stored.
+    std::set<std::pair<DemTarget, GateTarget>> anticommutations;
 
     SparseUnsignedRevFrameTracker(
-        uint64_t num_qubits, uint64_t num_measurements_in_past, uint64_t num_detectors_in_past);
+        uint64_t num_qubits,
+        uint64_t num_measurements_in_past,
+        uint64_t num_detectors_in_past,
+        bool fail_on_anticommute = true);
 
     template <size_t W>
     PauliString<W> current_error_sensitivity_for(DemTarget target) const {
@@ -52,11 +59,16 @@ struct SparseUnsignedRevFrameTracker {
         return result;
     }
 
-    void undo_gate(const CircuitInstruction &data);
+    void undo_gate(const CircuitInstruction &inst);
     void undo_gate(const CircuitInstruction &op, const Circuit &parent);
 
-    void handle_xor_gauge(SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2);
-    void handle_gauge(SpanRef<const DemTarget> sorted);
+    void handle_xor_gauge(
+        SpanRef<const DemTarget> sorted1,
+        SpanRef<const DemTarget> sorted2,
+        const CircuitInstruction &inst,
+        GateTarget location);
+    void handle_gauge(SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location);
+    void fail_due_to_anticommutation(const CircuitInstruction &inst);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);
     void undo_ZCX_single(GateTarget c, GateTarget t);
     void undo_ZCY_single(GateTarget c, GateTarget t);
@@ -64,10 +76,10 @@ struct SparseUnsignedRevFrameTracker {
     void undo_circuit(const Circuit &circuit);
     void undo_loop(const Circuit &loop, uint64_t repetitions);
     void undo_loop_by_unrolling(const Circuit &loop, uint64_t repetitions);
-    void clear_qubits(const CircuitInstruction &dat);
-    void handle_x_gauges(const CircuitInstruction &dat);
-    void handle_y_gauges(const CircuitInstruction &dat);
-    void handle_z_gauges(const CircuitInstruction &dat);
+    void clear_qubits(const CircuitInstruction &inst);
+    void handle_x_gauges(const CircuitInstruction &inst);
+    void handle_y_gauges(const CircuitInstruction &inst);
+    void handle_z_gauges(const CircuitInstruction &inst);
 
     void undo_DETECTOR(const CircuitInstruction &inst);
     void undo_OBSERVABLE_INCLUDE(const CircuitInstruction &inst);
@@ -78,6 +90,7 @@ struct SparseUnsignedRevFrameTracker {
     void undo_MY(const CircuitInstruction &inst);
     void undo_MZ(const CircuitInstruction &inst);
     void undo_MPP(const CircuitInstruction &inst);
+    void undo_SPP(const CircuitInstruction &inst);
     void undo_MXX(const CircuitInstruction &inst);
     void undo_MYY(const CircuitInstruction &inst);
     void undo_MZZ(const CircuitInstruction &inst);
@@ -106,6 +119,7 @@ struct SparseUnsignedRevFrameTracker {
     void undo_SWAP(const CircuitInstruction &inst);
     void undo_ISWAP(const CircuitInstruction &inst);
     void undo_CXSWAP(const CircuitInstruction &inst);
+    void undo_CZSWAP(const CircuitInstruction &inst);
     void undo_SWAPCX(const CircuitInstruction &inst);
 
     template <size_t W>
@@ -160,9 +174,9 @@ struct SparseUnsignedRevFrameTracker {
     std::string str() const;
 
    private:
-    void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
+    void undo_MXX_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MYY_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MZZ_disjoint_segment(const CircuitInstruction &inst);
 };
 std::ostream &operator<<(std::ostream &out, const SparseUnsignedRevFrameTracker &tracker);
 

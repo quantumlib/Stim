@@ -22,12 +22,12 @@
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_diagram_is_identical_to_saved_file(const Circuit &circuit, const std::string &key) {
+void expect_diagram_is_identical_to_saved_file(const Circuit &circuit, std::string_view key) {
     auto diagram = DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit);
     std::stringstream actual_ss;
     diagram.to_gltf_scene().to_json().write(actual_ss);

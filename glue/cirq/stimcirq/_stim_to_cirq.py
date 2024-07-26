@@ -16,6 +16,7 @@ import cirq
 import stim
 
 from ._cx_swap_gate import CXSwapGate
+from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
@@ -29,7 +30,7 @@ def _stim_targets_to_dense_pauli_string(
     obs = cirq.MutableDensePauliString("I" * len(targets))
     for k, target in enumerate(targets):
         if target.is_inverted_result_target:
-            obs.coefficient *= -1
+            obs *= -1
         if target.is_x_target:
             obs.pauli_mask[k] = 1
         elif target.is_y_target:
@@ -231,6 +232,26 @@ class CircuitTranslationTracker:
             key = str(self.get_next_measure_id())
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
 
+    def process_spp_dag(self, instruction: stim.CircuitInstruction) -> None:
+        self.process_spp(instruction, dag=True)
+
+    def process_spp(self, instruction: stim.CircuitInstruction, dag: bool = False) -> None:
+        targets: List[stim.GateTarget] = instruction.targets_copy()
+        start = 0
+        while start < len(targets):
+            next_start = start + 1
+            while next_start < len(targets) and targets[next_start].is_combiner:
+                next_start += 2
+            group = targets[start:next_start:2]
+            start = next_start
+
+            obs = _stim_targets_to_dense_pauli_string(group)
+            qubits = [cirq.LineQubit(t.value) for t in group]
+            self.append_operation(cirq.PauliStringPhasorGate(
+                obs,
+                exponent_neg=-0.5 if dag else 0.5,
+            ).on(*qubits))
+
     def process_m_pair(self, instruction: stim.CircuitInstruction, basis: str) -> None:
         args = instruction.gate_args_copy()
         if args and args[0]:
@@ -424,6 +445,7 @@ class CircuitTranslationTracker:
                     measure=False, reset=True, basis='X', invert_measure=False, key=''
                 )
             ),
+            "CZSWAP": gate(CZSwapGate()),
             "CXSWAP": gate(CXSwapGate(inverted=False)),
             "SWAPCX": gate(CXSwapGate(inverted=True)),
             "RY": gate(
@@ -497,6 +519,8 @@ class CircuitTranslationTracker:
             "E": CircuitTranslationTracker.process_correlated_error,
             "CORRELATED_ERROR": CircuitTranslationTracker.process_correlated_error,
             "MPP": CircuitTranslationTracker.process_mpp,
+            "SPP": CircuitTranslationTracker.process_spp,
+            "SPP_DAG": CircuitTranslationTracker.process_spp_dag,
             "MXX": CircuitTranslationTracker.process_mxx,
             "MYY": CircuitTranslationTracker.process_myy,
             "MZZ": CircuitTranslationTracker.process_mzz,

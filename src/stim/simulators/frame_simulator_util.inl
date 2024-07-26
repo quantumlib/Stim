@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/frame_simulator_util.h"
-
-#include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/force_streaming.h"
+#include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/frame_simulator_util.h"
 
 namespace stim {
 
 template <size_t W>
 std::pair<simd_bit_table<W>, simd_bit_table<W>> sample_batch_detection_events(
     const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng) {
-    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, std::move(rng));
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots, std::move(rng));
     sim.reset_all();
     sim.do_circuit(circuit);
-    rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
+    rng = std::move(
+        sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 
     return std::pair<simd_bit_table<W>, simd_bit_table<W>>{
         std::move(sim.det_record.storage),
@@ -148,12 +149,14 @@ void rerun_frame_sim_in_memory_and_write_dets_to_disk(
     if (prepend_observables || append_observables) {
         if (prepend_observables) {
             assert(!append_observables);
-            out_concat_buf.overwrite_major_range_with(circuit_stats.num_observables, det_data, 0, circuit_stats.num_detectors);
+            out_concat_buf.overwrite_major_range_with(
+                circuit_stats.num_observables, det_data, 0, circuit_stats.num_detectors);
             out_concat_buf.overwrite_major_range_with(0, obs_data, 0, circuit_stats.num_observables);
         } else {
             assert(append_observables);
             out_concat_buf.overwrite_major_range_with(0, det_data, 0, circuit_stats.num_detectors);
-            out_concat_buf.overwrite_major_range_with(circuit_stats.num_detectors, obs_data, 0, circuit_stats.num_observables);
+            out_concat_buf.overwrite_major_range_with(
+                circuit_stats.num_detectors, obs_data, 0, circuit_stats.num_observables);
         }
 
         char c1 = append_observables ? 'D' : 'L';
@@ -291,11 +294,13 @@ simd_bit_table<W> sample_batch_measurements(
     size_t num_samples,
     std::mt19937_64 &rng,
     bool transposed) {
-    FrameSimulator<W> sim(circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, std::move(rng));
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_MEASUREMENTS_TO_MEMORY, num_samples, std::move(rng));
     sim.reset_all();
     sim.do_circuit(circuit);
     simd_bit_table<W> result = std::move(sim.m_record.storage);
-    rng = std::move(sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
+    rng = std::move(
+        sim.rng);  // Update input rng as if it was used directly, by moving the updated state out of the simulator.
 
     if (reference_sample.not_zero()) {
         result = transposed_vs_ref(num_samples, result, reference_sample);

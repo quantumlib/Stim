@@ -66,6 +66,9 @@ def test_from_str():
     assert p[0] == 1
     assert p.sign == -1j
 
+    assert stim.PauliString("X5*Y10") == stim.PauliString("_____X____Y")
+    assert stim.PauliString("X5*Y5") == stim.PauliString("iZ5")
+
 
 def test_equality():
     assert not (stim.PauliString(4) == None)
@@ -448,7 +451,7 @@ def test_init_list():
         _ = stim.PauliString([-1])
     with pytest.raises(ValueError, match="pauli"):
         _ = stim.PauliString([4])
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         _ = stim.PauliString([2**500])
 
 
@@ -833,3 +836,122 @@ def test_before_after():
     assert after.before(stim.Circuit("C_XYZ 1 4 6")) == before
     assert after.before(stim.Circuit("C_XYZ 1 4 6")[0]) == before
     assert after.before(stim.Tableau.from_named_gate("C_XYZ"), targets=[1, 4, 6]) == before
+
+
+def test_iter_small():
+    assert list(stim.PauliString.iter_all(0)) == [stim.PauliString(0)]
+    assert list(stim.PauliString.iter_all(1)) == [
+        stim.PauliString("_"),
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=-1)) == [
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=0)) == [
+        stim.PauliString("_"),
+    ]
+    assert list(stim.PauliString.iter_all(1, max_weight=1)) == [
+        stim.PauliString("_"),
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(1, min_weight=1, max_weight=1)) == [
+        stim.PauliString("X"),
+        stim.PauliString("Y"),
+        stim.PauliString("Z"),
+    ]
+    assert list(stim.PauliString.iter_all(2, min_weight=1, max_weight=1, allowed_paulis="XY")) == [
+        stim.PauliString("X_"),
+        stim.PauliString("Y_"),
+        stim.PauliString("_X"),
+        stim.PauliString("_Y"),
+    ]
+
+    with pytest.raises(ValueError, match="characters other than"):
+        stim.PauliString.iter_all(2, allowed_paulis="A")
+
+
+def test_iter_reusable():
+    v = stim.PauliString.iter_all(2)
+    vs1 = list(v)
+    vs2 = list(v)
+    assert vs1 == vs2
+    assert len(vs1) == 4**2
+
+
+def test_backwards_compatibility_init():
+    assert stim.PauliString() == stim.PauliString("+")
+    assert stim.PauliString(5) == stim.PauliString("+_____")
+    assert stim.PauliString([1, 2, 3]) == stim.PauliString("+XYZ")
+    assert stim.PauliString("XYZ") == stim.PauliString("+XYZ")
+    assert stim.PauliString(stim.PauliString("XYZ")) == stim.PauliString("+XYZ")
+    assert stim.PauliString("X" for _ in range(4)) == stim.PauliString("+XXXX")
+
+    # These keywords have been removed from the documentation and the .pyi, but
+    # their functionality needs to be maintained for backwards compatibility.
+    # noinspection PyArgumentList
+    assert stim.PauliString(num_qubits=5) == stim.PauliString("+_____")
+    # noinspection PyArgumentList
+    assert stim.PauliString(pauli_indices=[1, 2, 3]) == stim.PauliString("+XYZ")
+    # noinspection PyArgumentList
+    assert stim.PauliString(text="XYZ") == stim.PauliString("+XYZ")
+    # noinspection PyArgumentList
+    assert stim.PauliString(other=stim.PauliString("XYZ")) == stim.PauliString("+XYZ")
+
+
+def test_pauli_indices():
+    assert stim.PauliString().pauli_indices() == []
+    assert stim.PauliString().pauli_indices("X") == []
+    assert stim.PauliString().pauli_indices("I") == []
+    assert stim.PauliString(5).pauli_indices() == []
+    assert stim.PauliString(5).pauli_indices("X") == []
+    assert stim.PauliString(5).pauli_indices("I") == [0, 1, 2, 3, 4]
+    assert stim.PauliString("X1000").pauli_indices() == [1000]
+    assert stim.PauliString("Y1000").pauli_indices() == [1000]
+    assert stim.PauliString("Z1000").pauli_indices() == [1000]
+    assert stim.PauliString("X1000").pauli_indices("YZ") == []
+    assert stim.PauliString("Y1000").pauli_indices("XZ") == []
+    assert stim.PauliString("Z1000").pauli_indices("XY") == []
+    assert stim.PauliString("X1000").pauli_indices("X") == [1000]
+    assert stim.PauliString("Y1000").pauli_indices("Y") == [1000]
+    assert stim.PauliString("Z1000").pauli_indices("Z") == [1000]
+
+    assert stim.PauliString("_XYZ").pauli_indices("x") == [1]
+    assert stim.PauliString("_XYZ").pauli_indices("X") == [1]
+    assert stim.PauliString("_XYZ").pauli_indices("y") == [2]
+    assert stim.PauliString("_XYZ").pauli_indices("Y") == [2]
+    assert stim.PauliString("_XYZ").pauli_indices("z") == [3]
+    assert stim.PauliString("_XYZ").pauli_indices("Z") == [3]
+    assert stim.PauliString("_XYZ").pauli_indices("I") == [0]
+    assert stim.PauliString("_XYZ").pauli_indices("_") == [0]
+    with pytest.raises(ValueError, match="Invalid character"):
+        assert stim.PauliString("_XYZ").pauli_indices("k")
+
+
+def test_before_reset():
+    assert stim.PauliString("Z").before(stim.Circuit("R 0")) == stim.PauliString("_")
+    assert stim.PauliString("Z").before(stim.Circuit("MR 0")) == stim.PauliString("_")
+    assert stim.PauliString("Z").before(stim.Circuit("M 0")) == stim.PauliString("Z")
+
+    assert stim.PauliString("X").before(stim.Circuit("RX 0")) == stim.PauliString("_")
+    assert stim.PauliString("X").before(stim.Circuit("MRX 0")) == stim.PauliString("_")
+    assert stim.PauliString("X").before(stim.Circuit("MX 0")) == stim.PauliString("X")
+
+    assert stim.PauliString("Y").before(stim.Circuit("RY 0")) == stim.PauliString("_")
+    assert stim.PauliString("Y").before(stim.Circuit("MRY 0")) == stim.PauliString("_")
+    assert stim.PauliString("Y").before(stim.Circuit("MY 0")) == stim.PauliString("Y")
+
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("RX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("RY 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MRX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MRY 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MY 0"))

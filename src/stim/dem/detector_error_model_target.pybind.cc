@@ -16,6 +16,7 @@
 
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -27,6 +28,42 @@ pybind11::class_<ExposedDemTarget> stim_pybind::pybind_detector_error_model_targ
 
 void stim_pybind::pybind_detector_error_model_target_methods(
     pybind11::module &m, pybind11::class_<ExposedDemTarget> &c) {
+
+    c.def(
+        pybind11::init([](const pybind11::object &arg) -> ExposedDemTarget {
+            if (pybind11::isinstance<ExposedDemTarget>(arg)) {
+                return pybind11::cast<ExposedDemTarget>(arg);
+            }
+            if (pybind11::isinstance<pybind11::str>(arg)) {
+                std::string_view contents = pybind11::cast<std::string_view>(arg);
+                return DemTarget::from_text(contents);
+            }
+
+            std::stringstream ss;
+            ss << "Don't know how to convert this into a stim.DemTarget: ";
+            ss << pybind11::repr(arg);
+            throw pybind11::type_error(ss.str());
+        }),
+        pybind11::arg("arg"),
+        pybind11::pos_only(),
+        clean_doc_string(R"DOC(
+            Creates a stim.DemTarget from the given object.
+
+            Args:
+                arg: A string to parse as a stim.DemTarget, or some other object to
+                    convert into a stim.DemTarget.
+
+            Examples:
+                >>> import stim
+                >>> stim.DemTarget("D5") == stim.target_relative_detector_id(5)
+                True
+                >>> stim.DemTarget("L2") == stim.target_logical_observable_id(2)
+                True
+                >>> stim.DemTarget("^") == stim.target_separator()
+                True
+        )DOC")
+            .data());
+
     m.def(
         "target_relative_detector_id",
         &ExposedDemTarget::relative_detector_id,
@@ -52,6 +89,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
                 ''')
         )DOC")
             .data());
+
     m.def(
         "target_logical_observable_id",
         &ExposedDemTarget::observable_id,
@@ -188,6 +226,15 @@ void stim_pybind::pybind_detector_error_model_target_methods(
 
             In a detector error model file, detectors are prefixed by `D`. For
             example, in `error(0.25) D0 L1` the `D0` is a relative detector target.
+
+            Examples:
+                >>> import stim
+                >>> stim.DemTarget("L2").is_relative_detector_id()
+                False
+                >>> stim.DemTarget("D3").is_relative_detector_id()
+                True
+                >>> stim.DemTarget("^").is_relative_detector_id()
+                False
         )DOC")
             .data());
 
@@ -199,6 +246,15 @@ void stim_pybind::pybind_detector_error_model_target_methods(
 
             In a detector error model file, observable targets are prefixed by `L`. For
             example, in `error(0.25) D0 L1` the `L1` is an observable target.
+
+            Examples:
+                >>> import stim
+                >>> stim.DemTarget("L2").is_logical_observable_id()
+                True
+                >>> stim.DemTarget("D3").is_logical_observable_id()
+                False
+                >>> stim.DemTarget("^").is_logical_observable_id()
+                False
         )DOC")
             .data());
 
@@ -209,11 +265,10 @@ void stim_pybind::pybind_detector_error_model_target_methods(
             Returns the target's integer value.
 
             Example:
-
                 >>> import stim
-                >>> stim.target_relative_detector_id(5).val
+                >>> stim.DemTarget("D5").val
                 5
-                >>> stim.target_logical_observable_id(6).val
+                >>> stim.DemTarget("L6").val
                 6
         )DOC")
             .data());
@@ -226,6 +281,15 @@ void stim_pybind::pybind_detector_error_model_target_methods(
 
             Separates separate the components of a suggested decompositions within an error.
             For example, the `^` in `error(0.25) D1 D2 ^ D3 D4` is the separator.
+
+            Examples:
+                >>> import stim
+                >>> stim.DemTarget("L2").is_separator()
+                False
+                >>> stim.DemTarget("D3").is_separator()
+                False
+                >>> stim.DemTarget("^").is_separator()
+                True
         )DOC")
             .data());
 
@@ -237,11 +301,11 @@ void stim_pybind::pybind_detector_error_model_target_methods(
 std::string ExposedDemTarget::repr() const {
     std::stringstream out;
     if (is_relative_detector_id()) {
-        out << "stim.target_relative_detector_id(" << raw_id() << ")";
+        out << "stim.DemTarget('D" << raw_id() << "')";
     } else if (is_separator()) {
         out << "stim.target_separator()";
     } else {
-        out << "stim.target_logical_observable_id(" << raw_id() << ")";
+        out << "stim.DemTarget('L" << raw_id() << "')";
     }
     return out.str();
 }

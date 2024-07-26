@@ -17,12 +17,12 @@
 #include <stdexcept>
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 
@@ -46,15 +46,15 @@ void process_num_flags(int argc, const char **argv, DataDetails *details_out) {
     details_out->include_observables = details_out->num_observables > 0;
 }
 
-void process_dem(const char *dem_path, DataDetails *details_out) {
-    if (dem_path == nullptr) {
+static void process_dem(const char *dem_path_c_str, DataDetails *details_out) {
+    if (dem_path_c_str == nullptr) {
         return;
     }
 
-    FILE *dem_file = fopen(dem_path, "rb");
+    FILE *dem_file = fopen(dem_path_c_str, "rb");
     if (dem_file == nullptr) {
         std::stringstream msg;
-        msg << "Failed to open '" << dem_path << "'";
+        msg << "Failed to open '" << dem_path_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
     auto dem = DetectorErrorModel::from_file(dem_file);
@@ -65,17 +65,17 @@ void process_dem(const char *dem_path, DataDetails *details_out) {
     details_out->include_observables = details_out->num_observables > 0;
 }
 
-void process_circuit(const char *circuit_path, const char *types, DataDetails *details_out) {
-    if (circuit_path == nullptr) {
+static void process_circuit(const char *circuit_path_c_str, const char *types, DataDetails *details_out) {
+    if (circuit_path_c_str == nullptr) {
         return;
     }
     if (types == nullptr) {
         throw std::invalid_argument("--types required when passing circuit");
     }
-    FILE *circuit_file = fopen(circuit_path, "rb");
+    FILE *circuit_file = fopen(circuit_path_c_str, "rb");
     if (circuit_file == nullptr) {
         std::stringstream msg;
-        msg << "Failed to open '" << circuit_path << "'";
+        msg << "Failed to open '" << circuit_path_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
     auto circuit = Circuit::from_file(circuit_file);
@@ -151,10 +151,10 @@ int stim::command_convert(int argc, const char **argv) {
 
     // Finally see if we can infer from a given circuit file and
     // list of value types.
-    const char *circuit_path = find_argument("--circuit", argc, argv);
+    const char *circuit_path_c_str = find_argument("--circuit", argc, argv);
     const char *types = find_argument("--types", argc, argv);
     try {
-        process_circuit(circuit_path, types, &details);
+        process_circuit(circuit_path_c_str, types, &details);
     } catch (std::exception &e) {
         std::cerr << "\033[31m" << e.what() << std::endl;
         return EXIT_FAILURE;
@@ -164,7 +164,7 @@ int stim::command_convert(int argc, const char **argv) {
     // convert arbitrary bits.
     if (!details.include_measurements && !details.include_detectors && !details.include_observables) {
         // dets outputs explicit value types, which we don't know if we get here.
-        if (out_format.id == SAMPLE_FORMAT_DETS) {
+        if (out_format.id == SampleFormat::SAMPLE_FORMAT_DETS) {
             std::cerr
                 << "\033[31mNot enough information given to parse input file to write to dets. Please given a circuit "
                    "with --types, a DEM file, or explicit number of each desired type\n";

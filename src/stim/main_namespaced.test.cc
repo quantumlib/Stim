@@ -19,11 +19,11 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
-std::string stim::run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content) {
+std::string stim::run_captured_stim_main(std::vector<const char *> flags, std::string_view std_in_content) {
     // Setup input.
     RaiiTempNamedFile raii_temp_file(std_in_content);
     flags.push_back("--in");
@@ -57,7 +57,7 @@ std::string stim::run_captured_stim_main(std::vector<const char *> flags) {
     return out;
 }
 
-std::string stim::trim(std::string text) {
+std::string_view stim::trim(std::string_view text) {
     size_t s = 0;
     size_t e = text.size();
     while (s < e && std::isspace(text[s])) {
@@ -81,8 +81,7 @@ TEST(main, help_modes) {
     ASSERT_TRUE(matches(run_captured_stim_main({"help"}), ".*Available stim commands.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({}), ".+stderr.+No mode.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl"}), ".+stderr.+More than one mode.+"));
-    ASSERT_TRUE(
-        matches(run_captured_stim_main({"--sample", "--repl", "--detect"}), ".+stderr.+More than one mode.+"));
+    ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl", "--detect"}), ".+stderr.+More than one mode.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "dhnsahddjoidsa"}), ".*Unrecognized.*"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "H"}), ".+Hadamard.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "sample"}), ".*Samples measurements from a circuit.+"));

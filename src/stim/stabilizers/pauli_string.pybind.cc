@@ -18,24 +18,13 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/stabilizers/pauli_string_iter.h"
 #include "stim/stabilizers/tableau.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
-PyPauliString::PyPauliString(const PauliStringRef<MAX_BITWORD_WIDTH> val, bool imag) : value(val), imag(imag) {
-}
-
-PyPauliString::PyPauliString(PauliString<MAX_BITWORD_WIDTH> &&val, bool imag) : value(std::move(val)), imag(imag) {
-}
-
-PyPauliString PyPauliString::operator+(const PyPauliString &rhs) const {
-    PyPauliString copy = *this;
-    copy += rhs;
-    return copy;
-}
-
-pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) const {
+pybind11::object flex_pauli_string_to_unitary_matrix(const stim::FlexPauliString &ps, std::string_view endian) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -44,7 +33,7 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
     } else {
         throw std::invalid_argument("endian not in ['little', 'big']");
     }
-    size_t q = value.num_qubits;
+    size_t q = ps.value.num_qubits;
     if (q >= 32) {
         throw std::invalid_argument("Too many qubits.");
     }
@@ -56,25 +45,25 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
         x <<= 1;
         z <<= 1;
         if (little_endian) {
-            x |= value.xs[q - k - 1];
-            z |= value.zs[q - k - 1];
+            x |= ps.value.xs[q - k - 1];
+            z |= ps.value.zs[q - k - 1];
         } else {
-            x |= value.xs[k];
-            z |= value.zs[k];
+            x |= ps.value.xs[k];
+            z |= ps.value.zs[k];
         }
     }
     uint8_t start_phase = 0;
-    start_phase += popcnt64(x & z);
-    if (imag) {
+    start_phase += std::popcount(x & z);
+    if (ps.imag) {
         start_phase += 1;
     }
-    if (value.sign) {
+    if (ps.value.sign) {
         start_phase += 2;
     }
     for (size_t col = 0; col < n; col++) {
         size_t row = col ^ x;
         uint8_t phase = start_phase;
-        if (popcnt64(col & z) & 1) {
+        if (std::popcount(col & z) & 1) {
             phase += 2;
         }
         std::complex<float> v{1, 0};
@@ -96,123 +85,30 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
     return pybind11::array_t<std::complex<float>>({sn, sn}, {sn * itemsize, itemsize}, buffer, free_when_done);
 }
 
-PyPauliString &PyPauliString::operator+=(const PyPauliString &rhs) {
-    if (&rhs == this) {
-        *this *= 2;
-        return *this;
-    }
-
-    size_t n = value.num_qubits;
-    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits, 1.1);
-    for (size_t k = 0; k < rhs.value.num_qubits; k++) {
-        value.xs[k + n] = rhs.value.xs[k];
-        value.zs[k + n] = rhs.value.zs[k];
-    }
-    *this *= rhs.get_phase();
-    return *this;
-}
-
-PyPauliString PyPauliString::operator*(std::complex<float> scale) const {
-    PyPauliString copy = *this;
-    copy *= scale;
-    return copy;
-}
-
-PyPauliString PyPauliString::operator/(const std::complex<float> &scale) const {
-    PyPauliString copy = *this;
-    copy /= scale;
-    return copy;
-}
-
-PyPauliString PyPauliString::operator*(const pybind11::object &rhs) const {
-    PyPauliString copy = *this;
-    copy *= rhs;
-    return copy;
-}
-
-PyPauliString PyPauliString::operator*(size_t power) const {
-    PyPauliString copy = *this;
-    copy *= power;
-    return copy;
-}
-
-PyPauliString &PyPauliString::operator*=(size_t power) {
-    switch (power & 3) {
-        case 0:
-            imag = false;
-            value.sign = false;
-            break;
-        case 1:
-            break;
-        case 2:
-            value.sign = imag;
-            imag = false;
-            break;
-        case 3:
-            value.sign ^= imag;
-            break;
-    }
-
-    value = PauliString<MAX_BITWORD_WIDTH>::from_func(value.sign, value.num_qubits * power, [&](size_t k) {
-        return "_XZY"[value.xs[k % value.num_qubits] + 2 * value.zs[k % value.num_qubits]];
-    });
-    return *this;
-}
-
-PyPauliString &PyPauliString::operator*=(const pybind11::object &rhs) {
-    if (pybind11::isinstance<PyPauliString>(rhs)) {
-        return *this *= pybind11::cast<PyPauliString>(rhs);
+FlexPauliString &flex_pauli_string_obj_imul(FlexPauliString &lhs, const pybind11::object &rhs) {
+    if (pybind11::isinstance<FlexPauliString>(rhs)) {
+        return lhs *= pybind11::cast<FlexPauliString>(rhs);
     } else if (rhs.equal(pybind11::cast(std::complex<float>{+1, 0}))) {
-        return *this;
+        return lhs;
     } else if (rhs.equal(pybind11::cast(std::complex<float>{-1, 0}))) {
-        return *this *= std::complex<float>{-1, 0};
+        return lhs *= std::complex<float>{-1, 0};
     } else if (rhs.equal(pybind11::cast(std::complex<float>{0, 1}))) {
-        return *this *= std::complex<float>{0, 1};
+        return lhs *= std::complex<float>{0, 1};
     } else if (rhs.equal(pybind11::cast(std::complex<float>{0, -1}))) {
-        return *this *= std::complex<float>{0, -1};
+        return lhs *= std::complex<float>{0, -1};
     } else if (pybind11::isinstance<pybind11::int_>(rhs)) {
         pybind11::ssize_t k = pybind11::int_(rhs);
         if (k >= 0) {
-            return *this *= (pybind11::size_t)k;
+            return lhs *= (pybind11::size_t)k;
         }
     }
     throw std::out_of_range("need isinstance(rhs, (stim.PauliString, int)) or rhs in (1, -1, 1j, -1j)");
 }
 
-PyPauliString &PyPauliString::operator/=(const std::complex<float> &rhs) {
-    if (rhs == std::complex<float>{+1, 0}) {
-        return *this;
-    } else if (rhs == std::complex<float>{-1, 0}) {
-        return *this *= std::complex<float>{-1, 0};
-    } else if (rhs == std::complex<float>{0, 1}) {
-        return *this *= std::complex<float>{0, -1};
-    } else if (rhs == std::complex<float>{0, -1}) {
-        return *this *= std::complex<float>{0, +1};
-    }
-    throw std::invalid_argument("divisor not in (1, -1, 1j, -1j)");
-}
-
-PyPauliString &PyPauliString::operator*=(std::complex<float> scale) {
-    if (scale == std::complex<float>(-1)) {
-        value.sign ^= true;
-    } else if (scale == std::complex<float>(0, 1)) {
-        value.sign ^= imag;
-        imag ^= true;
-    } else if (scale == std::complex<float>(0, -1)) {
-        imag ^= true;
-        value.sign ^= imag;
-    } else if (scale != std::complex<float>(1)) {
-        throw std::invalid_argument("phase factor not in [1, -1, 1, 1j]");
-    }
-    return *this;
-}
-
-bool PyPauliString::operator==(const PyPauliString &other) const {
-    return value == other.value && imag == other.imag;
-}
-
-bool PyPauliString::operator!=(const PyPauliString &other) const {
-    return !(*this == other);
+FlexPauliString flex_pauli_string_obj_mul(const FlexPauliString &lhs, const pybind11::object &rhs) {
+    FlexPauliString copy = lhs;
+    flex_pauli_string_obj_imul(copy, rhs);
+    return copy;
 }
 
 size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) {
@@ -267,68 +163,8 @@ size_t numpy_pair_to_size(
     return n2;
 }
 
-std::complex<float> PyPauliString::get_phase() const {
-    std::complex<float> result{value.sign ? -1.0f : +1.0f};
-    if (imag) {
-        result *= std::complex<float>{0, 1};
-    }
-    return result;
-}
-
-PyPauliString PyPauliString::operator*(const PyPauliString &rhs) const {
-    PyPauliString copy = *this;
-    copy *= rhs;
-    return copy;
-}
-
-PyPauliString &PyPauliString::operator*=(const PyPauliString &rhs) {
-    value.ensure_num_qubits(rhs.value.num_qubits, 1.1);
-    if (rhs.value.num_qubits < value.num_qubits) {
-        PyPauliString copy = rhs;
-        copy.value.ensure_num_qubits(value.num_qubits, 1.0);
-        *this *= copy;
-        return *this;
-    }
-
-    uint8_t log_i = value.ref().inplace_right_mul_returning_log_i_scalar(rhs.value.ref());
-    if (log_i & 2) {
-        value.sign ^= true;
-    }
-    if (log_i & 1) {
-        *this *= std::complex<float>{0, 1};
-    }
-    if (rhs.imag) {
-        *this *= std::complex<float>{0, 1};
-    }
-    return *this;
-}
-
-std::string PyPauliString::str() const {
-    auto sub = value.str();
-    if (imag) {
-        sub = sub.substr(0, 1) + "i" + sub.substr(1);
-    }
-    return sub;
-}
-PyPauliString PyPauliString::from_text(const char *text) {
-    std::complex<float> factor{1, 0};
-    int offset = 0;
-    if (text[0] == 'i') {
-        factor = {0, 1};
-        offset = 1;
-    } else if (text[0] == '-' && text[1] == 'i') {
-        factor = {0, -1};
-        offset = 2;
-    } else if (text[0] == '+' && text[1] == 'i') {
-        factor = {0, 1};
-        offset = 2;
-    }
-    PyPauliString value{PauliString<MAX_BITWORD_WIDTH>::from_str(text + offset), false};
-    value *= factor;
-    return value;
-}
-PyPauliString PyPauliString::from_unitary_matrix(
-    const pybind11::object &matrix, const std::string &endian, bool ignore_sign) {
+FlexPauliString flex_pauli_string_from_unitary_matrix(
+    const pybind11::object &matrix, std::string_view endian, bool ignore_sign) {
     bool little_endian;
     if (endian == "little") {
         little_endian = true;
@@ -432,7 +268,7 @@ PyPauliString PyPauliString::from_unitary_matrix(
     }
     for (size_t k = 0; k < n; k++) {
         uint8_t expected_phase = phases[0];
-        if (popcnt64(k & z) & 1) {
+        if (std::popcount(k & z) & 1) {
             expected_phase += 2;
         }
         if ((expected_phase & 3) != phases[k]) {
@@ -441,8 +277,9 @@ PyPauliString PyPauliString::from_unitary_matrix(
         }
     }
 
-    uint8_t leftover_phase = phases[0] + popcnt64(x & z);
-    PyPauliString result(PauliString<MAX_BITWORD_WIDTH>(q), (leftover_phase & 1) != 0);
+    uint8_t leftover_phase = phases[0] + std::popcount(x & z);
+    FlexPauliString result(q);
+    result.imag = (leftover_phase & 1) != 0;
     result.value.sign = (leftover_phase & 2) != 0;
     auto &rx = result.value.xs.u64[0];
     auto &rz = result.value.zs.u64[0];
@@ -466,8 +303,8 @@ PyPauliString PyPauliString::from_unitary_matrix(
     return result;
 }
 
-pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::module &m) {
-    return pybind11::class_<PyPauliString>(
+pybind11::class_<FlexPauliString> stim_pybind::pybind_pauli_string(pybind11::module &m) {
+    return pybind11::class_<FlexPauliString>(
         m,
         "PauliString",
         clean_doc_string(R"DOC(
@@ -486,115 +323,143 @@ pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::modul
             .data());
 }
 
-void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<PyPauliString> &c) {
+void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<FlexPauliString> &c) {
     c.def(
-        pybind11::init([](size_t num_qubits) {
-            PyPauliString result{PauliString<MAX_BITWORD_WIDTH>(num_qubits), false};
-            return result;
-        }),
-        pybind11::arg("num_qubits"),
-        clean_doc_string(R"DOC(
-            Creates an identity Pauli string over the given number of qubits.
+        pybind11::init(
+            [](const pybind11::object &arg,
+               const pybind11::object &num_qubits,
+               const pybind11::object &text,
+               const pybind11::object &other,
+               const pybind11::object &pauli_indices) -> FlexPauliString {
+                size_t count = 0;
+                count += !arg.is_none();
+                count += !num_qubits.is_none();
+                count += !text.is_none();
+                count += !other.is_none();
+                count += !pauli_indices.is_none();
+                if (count > 1) {
+                    throw std::invalid_argument("Multiple arguments specified.");
+                }
+                if (count == 0) {
+                    return FlexPauliString(0);
+                }
 
-            Examples:
-                >>> import stim
-                >>> p = stim.PauliString(5)
-                >>> print(p)
-                +_____
+                const auto &num_qubits_or = pybind11::isinstance<pybind11::int_>(arg) ? arg : num_qubits;
+                if (!num_qubits_or.is_none()) {
+                    return FlexPauliString(pybind11::cast<size_t>(num_qubits_or));
+                }
 
-            Args:
-                num_qubits: The number of qubits the Pauli string acts on.
-        )DOC")
-            .data());
+                pybind11::object text_or = pybind11::isinstance<pybind11::str>(arg) ? arg : text;
+                if (!text_or.is_none()) {
+                    return FlexPauliString::from_text(pybind11::cast<std::string_view>(text_or));
+                }
 
-    c.def(
-        pybind11::init(&PyPauliString::from_text),
-        pybind11::arg("text"),
-        clean_doc_string(R"DOC(
-            Creates a stim.PauliString from a text string.
+                pybind11::object other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
+                if (!other_or.is_none()) {
+                    return pybind11::cast<FlexPauliString>(other_or);
+                }
 
-            The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
-            The rest of the string should be characters from '_IXYZ' where
-            '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means
-            Pauli Z.
-
-            Examples:
-                >>> import stim
-                >>> print(stim.PauliString("YZ"))
-                +YZ
-                >>> print(stim.PauliString("+IXYZ"))
-                +_XYZ
-                >>> print(stim.PauliString("-___X_"))
-                -___X_
-                >>> print(stim.PauliString("iX"))
-                +iX
-
-            Args:
-                text: A text description of the Pauli string's contents, such as "+XXX" or
-                    "-_YX" or "-iZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZY".
-
-            Returns:
-                The created stim.PauliString.
-        )DOC")
-            .data());
-
-    c.def(
-        pybind11::init([](const PyPauliString &other) {
-            PyPauliString copy = other;
-            return copy;
-        }),
-        pybind11::arg("copy"),
-        clean_doc_string(R"DOC(
-            Creates a copy of a stim.PauliString.
-
-            Examples:
-                >>> import stim
-                >>> a = stim.PauliString("YZ")
-                >>> b = stim.PauliString(a)
-                >>> b is a
-                False
-                >>> b == a
-                True
-
-            Args:
-                copy: The pauli string to make a copy of.
-        )DOC")
-            .data());
-
-    c.def(
-        pybind11::init([](const std::vector<pybind11::ssize_t> &pauli_indices) {
-            return PyPauliString(
-                PauliString<MAX_BITWORD_WIDTH>::from_func(
-                    false,
-                    pauli_indices.size(),
-                    [&](size_t i) {
-                        pybind11::ssize_t p = pauli_indices[i];
-                        if (p < 0 || p > 3) {
-                            throw std::invalid_argument(
-                                "Expected a pauli index (0->I, 1->X, 2->Y, 3->Z) but got " + std::to_string(p));
+                pybind11::object pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
+                if (!pauli_indices_or.is_none()) {
+                    std::vector<uint8_t> ps;
+                    for (const pybind11::handle &h : pauli_indices_or) {
+                        int64_t v = -1;
+                        if (pybind11::isinstance<pybind11::int_>(h)) {
+                            try {
+                                v = pybind11::cast<int64_t>(h);
+                            } catch (const pybind11::cast_error &) {
+                            }
+                        } else if (pybind11::isinstance<pybind11::str>(h)) {
+                            std::string_view s = pybind11::cast<std::string_view>(h);
+                            if (s == "I" || s == "_") {
+                                v = 0;
+                            } else if (s == "X" || s == "x") {
+                                v = 1;
+                            } else if (s == "Y" || s == "y") {
+                                v = 2;
+                            } else if (s == "Z" || s == "z") {
+                                v = 3;
+                            }
                         }
-                        return "_XYZ"[p];
-                    }),
-                false);
-        }),
-        pybind11::arg("pauli_indices"),
-        clean_doc_string(R"DOC(
-            Creates a stim.PauliString from a list of integer pauli indices.
+                        if (v >= 0 && v < 4) {
+                            ps.push_back((uint8_t)v);
+                        } else {
+                            throw std::invalid_argument(
+                                "Don't know how to convert " + pybind11::cast<std::string>(pybind11::repr(h)) +
+                                " into a pauli.\n"
+                                "Expected something from {0, 1, 2, 3, 'I', 'X', 'Y', 'Z', '_'}.");
+                        }
+                    }
+                    FlexPauliString result(ps.size());
+                    for (size_t k = 0; k < ps.size(); k++) {
+                        uint8_t p = ps[k];
+                        p ^= p >> 1;
+                        result.value.xs[k] = p & 1;
+                        result.value.zs[k] = p & 2;
+                    }
+                    return result;
+                }
 
-            The indexing scheme that is used is:
-                0 -> I
-                1 -> X
-                2 -> Y
-                3 -> Z
+                throw std::invalid_argument(
+                    "Don't know how to initialize a stim.PauliString from " +
+                    pybind11::cast<std::string>(pybind11::repr(arg)));
+            }),
+        pybind11::arg("arg") = pybind11::none(),
+        pybind11::pos_only(),
+        // These are no longer needed, and hidden from documentation, but are included to guarantee backwards
+        // compatibility.
+        pybind11::arg("num_qubits") = pybind11::none(),
+        pybind11::arg("text") = pybind11::none(),
+        pybind11::arg("other") = pybind11::none(),
+        pybind11::arg("pauli_indices") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def __init__(self, arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None, /) -> None:
+            Initializes a stim.PauliString from the given argument.
+
+            When given a string, the string is parsed as a pauli string. The string can
+            optionally start with a sign ('+', '-', 'i', '+i', or '-i'). The rest of the
+            string should be either a dense pauli string or a sparse pauli string. A dense
+            pauli string is made up of characters from '_IXYZ' where '_' and 'I' mean
+            identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z. A sparse
+            pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
+            'Y', or 'Z'.
+
+            Arguments:
+                arg [position-only]: This can be a variety of types, including:
+                    None (default): initializes an empty Pauli string.
+                    int: initializes an identity Pauli string of the given length.
+                    str: initializes by parsing the given text.
+                    stim.PauliString: initializes a copy of the given Pauli string.
+                    Iterable: initializes by interpreting each item as a Pauli.
+                        Each item can be a single-qubit Pauli string (like "X"),
+                        or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
             Examples:
                 >>> import stim
-                >>> stim.PauliString([0, 1, 2, 3, 0, 3])
-                stim.PauliString("+_XYZ_Z")
 
-            Args:
-                pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating
-                    paulis.
+                >>> stim.PauliString("-XYZ")
+                stim.PauliString("-XYZ")
+
+                >>> stim.PauliString()
+                stim.PauliString("+")
+
+                >>> stim.PauliString(5)
+                stim.PauliString("+_____")
+
+                >>> stim.PauliString(stim.PauliString("XX"))
+                stim.PauliString("+XX")
+
+                >>> stim.PauliString([0, 1, 3, 2])
+                stim.PauliString("+_XZY")
+
+                >>> stim.PauliString("X" for _ in range(4))
+                stim.PauliString("+XXXX")
+
+                >>> stim.PauliString("-X2*Y6")
+                stim.PauliString("-__X___Y")
+
+                >>> stim.PauliString("X6*Y6")
+                stim.PauliString("+i______Z")
         )DOC")
             .data());
 
@@ -602,7 +467,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         "random",
         [](size_t num_qubits, bool allow_imaginary) {
             auto rng = make_py_seeded_rng(pybind11::none());
-            return PyPauliString(
+            return FlexPauliString(
                 PauliString<MAX_BITWORD_WIDTH>::random(num_qubits, rng), allow_imaginary ? (rng() & 1) : false);
         },
         pybind11::arg("num_qubits"),
@@ -638,7 +503,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "to_tableau",
-        [](const PyPauliString &self) {
+        [](const FlexPauliString &self) {
             return Tableau<MAX_BITWORD_WIDTH>::from_pauli_string(self.value);
         },
         clean_doc_string(R"DOC(
@@ -686,7 +551,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "to_unitary_matrix",
-        &PyPauliString::to_unitary_matrix,
+        &flex_pauli_string_to_unitary_matrix,
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
@@ -716,13 +581,13 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def_static(
         "from_unitary_matrix",
-        &PyPauliString::from_unitary_matrix,
+        &flex_pauli_string_from_unitary_matrix,
         pybind11::arg("matrix"),
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[Union[int, float, complex]]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
             Args:
@@ -772,8 +637,105 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             .data());
 
     c.def(
+        "pauli_indices",
+        [](const FlexPauliString &self, std::string_view include) {
+            std::vector<uint64_t> result;
+            size_t n64 = self.value.xs.num_u64_padded();
+            bool keep_i = false;
+            bool keep_x = false;
+            bool keep_y = false;
+            bool keep_z = false;
+            for (char c : include) {
+                switch (c) {
+                    case '_':
+                    case 'I':
+                        keep_i = true;
+                        break;
+                    case 'x':
+                    case 'X':
+                        keep_x = true;
+                        break;
+                    case 'y':
+                    case 'Y':
+                        keep_y = true;
+                        break;
+                    case 'z':
+                    case 'Z':
+                        keep_z = true;
+                        break;
+                    default:
+                        throw std::invalid_argument("Invalid character in include string: " + std::string(1, c));
+                }
+            }
+            for (size_t k = 0; k < n64; k++) {
+                uint64_t x = self.value.xs.u64[k];
+                uint64_t z = self.value.zs.u64[k];
+                uint64_t u = 0;
+                if (keep_i) {
+                    u |= ~x & ~z;
+                }
+                if (keep_x) {
+                    u |= x & ~z;
+                }
+                if (keep_y) {
+                    u |= x & z;
+                }
+                if (keep_z) {
+                    u |= ~x & z;
+                }
+                while (u) {
+                    uint8_t v = std::countr_zero(u);
+                    uint64_t q = k * 64 + v;
+                    if (q >= self.value.num_qubits) {
+                        return result;
+                    }
+                    result.push_back(q);
+                    u &= u - 1;
+                }
+            }
+            return result;
+        },
+        pybind11::arg("included_paulis") = "XYZ",
+        clean_doc_string(R"DOC(
+            @signature def pauli_indices(self, included_paulis: str = "XYZ") -> List[int]:
+            Returns the indices of non-identity Paulis, or of specified Paulis.
+
+            Args:
+                include: A string containing the Pauli types to include.
+                    X type Pauli indices are included if "X" or "x" is in the string.
+                    Y type Pauli indices are included if "Y" or "y" is in the string.
+                    Z type Pauli indices are included if "Z" or "z" is in the string.
+                    I type Pauli indices are included if "I" or "_" is in the string.
+                    An exception is thrown if other characters are in the string.
+
+            Returns:
+                A list containing the ascending indices of matching Pauli terms.
+
+            Examples:
+                >>> import stim
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices()
+                [5, 9, 14]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("XZ")
+                [5, 14]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("X")
+                [5]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("Y")
+                [9]
+
+                >>> stim.PauliString("_____X___Y____Z___").pauli_indices("IY")
+                [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
+
+                >>> stim.PauliString("-X103*Y100").pauli_indices()
+                [100, 103]
+        )DOC")
+            .data());
+
+    c.def(
         "commutes",
-        [](const PyPauliString &self, const PyPauliString &other) {
+        [](const FlexPauliString &self, const FlexPauliString &other) {
             return self.value.ref().commutes(other.value.ref());
         },
         pybind11::arg("other"),
@@ -809,19 +771,19 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         )DOC")
             .data());
 
-    c.def("__str__", &PyPauliString::str, "Returns a text description.");
+    c.def("__str__", &FlexPauliString::str, "Returns a text description.");
 
     c.def(
         "__repr__",
-        [](const PyPauliString &self) {
+        [](const FlexPauliString &self) {
             return "stim.PauliString(\"" + self.str() + "\")";
         },
         "Returns valid python code evaluating to an equivalent `stim.PauliString`.");
 
     c.def_property(
         "sign",
-        &PyPauliString::get_phase,
-        [](PyPauliString &self, std::complex<float> new_sign) {
+        &FlexPauliString::get_phase,
+        [](FlexPauliString &self, std::complex<float> new_sign) {
             if (new_sign == std::complex<float>(1)) {
                 self.value.sign = false;
                 self.imag = false;
@@ -859,17 +821,24 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__len__",
-        [](const PyPauliString &self) {
+        [](const FlexPauliString &self) {
             return self.value.num_qubits;
         },
         clean_doc_string(R"DOC(
             Returns the length the pauli string; the number of qubits it operates on.
+
+            Examples:
+                >>> import stim
+                >>> len(stim.PauliString("XY_ZZ"))
+                5
+                >>> len(stim.PauliString("X0*Z99"))
+                100
         )DOC")
             .data());
 
     c.def_property_readonly(
         "weight",
-        [](const PyPauliString &self) {
+        [](const FlexPauliString &self) {
             return self.value.ref().weight();
         },
         clean_doc_string(R"DOC(
@@ -890,7 +859,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "extended_product",
-        [](const PyPauliString &self, const PyPauliString &other) {
+        [](const FlexPauliString &self, const FlexPauliString &other) {
             return std::make_tuple(std::complex<float>(1, 0), self * other);
         },
         pybind11::arg("other"),
@@ -953,7 +922,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             .data());
 
     c.def(
-        pybind11::self * pybind11::object(),
+        "__mul__",
+        &flex_pauli_string_obj_mul,
         pybind11::arg("rhs"),
         clean_doc_string(R"DOC(
             Right-multiplies the Pauli string.
@@ -1008,11 +978,11 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__rmul__",
-        [](const PyPauliString &self, const pybind11::object &lhs) {
-            if (pybind11::isinstance<PyPauliString>(lhs)) {
-                return pybind11::cast<PyPauliString>(lhs) * self;
+        [](const FlexPauliString &self, const pybind11::object &lhs) {
+            if (pybind11::isinstance<FlexPauliString>(lhs)) {
+                return pybind11::cast<FlexPauliString>(lhs) * self;
             }
-            return self * lhs;
+            return flex_pauli_string_obj_mul(self, lhs);
         },
         pybind11::arg("lhs"),
         clean_doc_string(R"DOC(
@@ -1066,7 +1036,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             .data());
 
     c.def(
-        pybind11::self *= pybind11::object(),
+        "__imul__",
+        &flex_pauli_string_obj_imul,
         pybind11::arg("rhs"),
         clean_doc_string(R"DOC(
             Inplace right-multiplies the Pauli string.
@@ -1113,7 +1084,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__itruediv__",
-        &PyPauliString::operator/=,
+        &FlexPauliString::operator/=,
         pybind11::is_operator(),
         pybind11::arg("rhs"),
         clean_doc_string(R"DOC(
@@ -1140,7 +1111,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__truediv__",
-        &PyPauliString::operator/,
+        &FlexPauliString::operator/,
         pybind11::is_operator(),
         pybind11::arg("rhs"),
         clean_doc_string(R"DOC(
@@ -1165,8 +1136,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__neg__",
-        [](const PyPauliString &self) {
-            PyPauliString result = self;
+        [](const FlexPauliString &self) {
+            FlexPauliString result = self;
             result.value.sign ^= 1;
             return result;
         },
@@ -1186,8 +1157,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "copy",
-        [](const PyPauliString &self) {
-            PyPauliString copy = self;
+        [](const FlexPauliString &self) {
+            FlexPauliString copy = self;
             return copy;
         },
         clean_doc_string(R"DOC(
@@ -1208,7 +1179,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "to_numpy",
-        [](const PyPauliString &self, bool bit_packed) {
+        [](const FlexPauliString &self, bool bit_packed) {
             return pybind11::make_tuple(
                 simd_bits_to_numpy(self.value.xs, self.value.num_qubits, bit_packed),
                 simd_bits_to_numpy(self.value.zs, self.value.num_qubits, bit_packed));
@@ -1272,12 +1243,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const pybind11::object &xs,
            const pybind11::object &zs,
            const pybind11::object &sign,
-           const pybind11::object &num_qubits) -> PyPauliString {
+           const pybind11::object &num_qubits) -> FlexPauliString {
             size_t n = numpy_pair_to_size(xs, zs, num_qubits);
-            PyPauliString result{PauliString<MAX_BITWORD_WIDTH>(n)};
+            FlexPauliString result(n);
             memcpy_bits_from_numpy_to_simd(n, xs, result.value.xs);
             memcpy_bits_from_numpy_to_simd(n, zs, result.value.zs);
-            result *= sign;
+            flex_pauli_string_obj_imul(result, sign);
             return result;
         },
         pybind11::kw_only(),
@@ -1334,8 +1305,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__pos__",
-        [](const PyPauliString &self) {
-            PyPauliString copy = self;
+        [](const FlexPauliString &self) {
+            FlexPauliString copy = self;
             return copy;
         },
         clean_doc_string(R"DOC(
@@ -1354,7 +1325,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__setitem__",
-        [](PyPauliString &self, pybind11::ssize_t index, const pybind11::object &arg_new_pauli) {
+        [](FlexPauliString &self, pybind11::ssize_t index, const pybind11::object &arg_new_pauli) {
             if (index < 0) {
                 index += self.value.num_qubits;
             }
@@ -1424,9 +1395,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "after",
-        [](const PyPauliString &self,
+        [](const FlexPauliString &self,
            const pybind11::object &operation,
-           const pybind11::object &targets) -> PyPauliString {
+           const pybind11::object &targets) -> FlexPauliString {
             PauliString<MAX_BITWORD_WIDTH> result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
@@ -1452,7 +1423,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 throw std::invalid_argument(
                     "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
             }
-            return PyPauliString(result, self.imag);
+            return FlexPauliString(result, self.imag);
         },
         pybind11::arg("operation"),
         pybind11::arg("targets") = pybind11::none(),
@@ -1494,9 +1465,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "before",
-        [](const PyPauliString &self,
+        [](const FlexPauliString &self,
            const pybind11::object &operation,
-           const pybind11::object &targets) -> PyPauliString {
+           const pybind11::object &targets) -> FlexPauliString {
             PauliString<MAX_BITWORD_WIDTH> result(0);
             if (pybind11::isinstance<Circuit>(operation)) {
                 if (!targets.is_none()) {
@@ -1522,14 +1493,14 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 throw std::invalid_argument(
                     "Don't know how to apply " + pybind11::cast<std::string>(pybind11::repr(operation)));
             }
-            return PyPauliString(result, self.imag);
+            return FlexPauliString(result, self.imag);
         },
         pybind11::arg("operation"),
         pybind11::arg("targets") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @overload def after(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
-            @overload def after(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
-            @signature def after(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
+            @overload def before(self, operation: Union[stim.Circuit, stim.CircuitInstruction]) -> stim.PauliString:
+            @overload def before(self, operation: stim.Tableau, targets: Iterable[int]) -> stim.PauliString:
+            @signature def before(self, operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction], targets: Optional[Iterable[int]] = None) -> stim.PauliString:
             Returns the result of conjugating the Pauli string by an operation.
 
             Args:
@@ -1564,10 +1535,10 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def(
         "__getitem__",
-        [](const PyPauliString &self, const pybind11::object &index_or_slice) -> pybind11::object {
+        [](const FlexPauliString &self, const pybind11::object &index_or_slice) -> pybind11::object {
             pybind11::ssize_t start, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.value.num_qubits, &start, &step, &slice_length)) {
-                return pybind11::cast(PyPauliString(self.value.py_get_slice(start, step, slice_length)));
+                return pybind11::cast(FlexPauliString(self.value.py_get_slice(start, step, slice_length)));
             } else {
                 return pybind11::cast(self.value.py_get_item(start));
             }
@@ -1606,10 +1577,104 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             .data());
 
     c.def(pybind11::pickle(
-        [](const PyPauliString &self) -> pybind11::str {
+        [](const FlexPauliString &self) -> pybind11::str {
             return self.str();
         },
         [](const pybind11::str &d) {
-            return PyPauliString::from_text(pybind11::cast<std::string>(d).data());
+            return FlexPauliString::from_text(pybind11::cast<std::string_view>(d));
         }));
+
+    c.def_static(
+        "iter_all",
+        [](size_t num_qubits,
+           size_t min_weight,
+           const pybind11::object &max_weight_obj,
+           std::string_view allowed_paulis) -> PauliStringIterator<MAX_BITWORD_WIDTH> {
+            bool allow_x = false;
+            bool allow_y = false;
+            bool allow_z = false;
+            for (char c : allowed_paulis) {
+                switch (c) {
+                    case 'X':
+                        allow_x = true;
+                        break;
+                    case 'Y':
+                        allow_y = true;
+                        break;
+                    case 'Z':
+                        allow_z = true;
+                        break;
+                    default:
+                        throw std::invalid_argument(
+                            "allowed_paulis='" + std::string(allowed_paulis) +
+                            "' had characters other than 'X', 'Y', and 'Z'.");
+                }
+            }
+            size_t max_weight = num_qubits;
+            if (!max_weight_obj.is_none()) {
+                int64_t v = pybind11::cast<int64_t>(max_weight_obj);
+                if (v < 0) {
+                    min_weight = 1;
+                    max_weight = 0;
+                } else {
+                    max_weight = (size_t)v;
+                }
+            }
+            return PauliStringIterator<MAX_BITWORD_WIDTH>(
+                num_qubits, min_weight, max_weight, allow_x, allow_y, allow_z);
+        },
+        pybind11::arg("num_qubits"),
+        pybind11::kw_only(),
+        pybind11::arg("min_weight") = 0,
+        pybind11::arg("max_weight") = pybind11::none(),
+        pybind11::arg("allowed_paulis") = "XYZ",
+        clean_doc_string(R"DOC(
+            Returns an iterator that iterates over all matching pauli strings.
+
+            Args:
+                num_qubits: The desired number of qubits in the pauli strings.
+                min_weight: Defaults to 0. The minimum number of non-identity terms that
+                    must be present in each yielded pauli string.
+                max_weight: Defaults to None (unused). The maximum number of non-identity
+                    terms that must be present in each yielded pauli string.
+                allowed_paulis: Defaults to "XYZ". Set this to a string containing the
+                    non-identity paulis that are allowed to appear in each yielded pauli
+                    string. This argument must be a string made up of only "X", "Y", and
+                    "Z" characters. A non-identity Pauli is allowed if it appears in the
+                    string, and not allowed if it doesn't. Identity Paulis are always
+                    allowed.
+
+            Returns:
+                An Iterable[stim.PauliString] that yields the requested pauli strings.
+
+            Examples:
+                >>> import stim
+                >>> pauli_string_iterator = stim.PauliString.iter_all(
+                ...     num_qubits=3,
+                ...     min_weight=1,
+                ...     max_weight=2,
+                ...     allowed_paulis="XZ",
+                ... )
+                >>> for p in pauli_string_iterator:
+                ...     print(p)
+                +X__
+                +Z__
+                +_X_
+                +_Z_
+                +__X
+                +__Z
+                +XX_
+                +XZ_
+                +ZX_
+                +ZZ_
+                +X_X
+                +X_Z
+                +Z_X
+                +Z_Z
+                +_XX
+                +_XZ
+                +_ZX
+                +_ZZ
+        )DOC")
+            .data());
 }

@@ -26,6 +26,7 @@
     - [CXSWAP](#CXSWAP)
     - [CY](#CY)
     - [CZ](#CZ)
+    - [CZSWAP](#CZSWAP)
     - [ISWAP](#ISWAP)
     - [ISWAP_DAG](#ISWAP_DAG)
     - [SQRT_XX](#SQRT_XX)
@@ -36,6 +37,7 @@
     - [SQRT_ZZ_DAG](#SQRT_ZZ_DAG)
     - [SWAP](#SWAP)
     - [SWAPCX](#SWAPCX)
+    - [SWAPCZ](#SWAPCZ)
     - [XCX](#XCX)
     - [XCY](#XCY)
     - [XCZ](#XCZ)
@@ -60,7 +62,6 @@
     - [Z_ERROR](#Z_ERROR)
 - Collapsing Gates
     - [M](#M)
-    - [MPP](#MPP)
     - [MR](#MR)
     - [MRX](#MRX)
     - [MRY](#MRY)
@@ -76,6 +77,10 @@
     - [MXX](#MXX)
     - [MYY](#MYY)
     - [MZZ](#MZZ)
+- Generalized Pauli Product Gates
+    - [MPP](#MPP)
+    - [SPP](#SPP)
+    - [SPP_DAG](#SPP_DAG)
 - Control Flow
     - [REPEAT](#REPEAT)
 - Annotations
@@ -113,11 +118,20 @@ Stabilizer Generators:
     X -> X
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
-    Axis: 
-    Angle: 0 degrees
+    Axis: +X
+    Angle: 0°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(0°)
+    unitary = I * I * I
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -154,11 +168,20 @@ Stabilizer Generators:
     X -> X
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(180°)
+    unitary = I * Y * Z
+
 Unitary Matrix:
 
     [    , +1  ]
@@ -197,11 +220,20 @@ Stabilizer Generators:
     X -> -X
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(0°)
+    unitary = I * Y * I
+
 Unitary Matrix:
 
     [    ,   -i]
@@ -243,11 +275,20 @@ Stabilizer Generators:
     X -> -X
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(180°)
+    unitary = I * I * Z
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -286,11 +327,20 @@ Stabilizer Generators:
     X -> Y
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y+Z
-    Angle: 120 degrees
+    Angle: 120°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(90°)
+    unitary = I * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1-i, -1-i]
@@ -329,11 +379,20 @@ Stabilizer Generators:
     X -> Z
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y+Z
-    Angle: -120 degrees
+    Angle: -120°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(180°)
+    unitary = S * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1+i, +1+i]
@@ -373,11 +432,20 @@ Stabilizer Generators:
     X -> Z
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(180°)
+    unitary = I * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1  , +1  ]
@@ -415,11 +483,20 @@ Stabilizer Generators:
     X -> Y
     Z -> -Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X+Y
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(90°)
+    unitary = I * Y * S
+
 Unitary Matrix:
 
     [    , +1-i]
@@ -459,11 +536,20 @@ Stabilizer Generators:
     X -> -X
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y+Z
-    Angle: 180 degrees
+    Angle: 180°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(90°)
+    unitary = S * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1  ,   -i]
@@ -506,11 +592,20 @@ Stabilizer Generators:
     X -> Y
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(90°)
+    unitary = I * I * S
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -549,11 +644,20 @@ Stabilizer Generators:
     X -> X
     Z -> -Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = -90°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(-90°) * RotY(90°) * RotZ(90°)
+    unitary = S_DAG * SQRT_Y * S
+
 Unitary Matrix:
 
     [+1+i, +1-i]
@@ -592,11 +696,20 @@ Stabilizer Generators:
     X -> X
     Z -> Y
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +X
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(-90°)
+    unitary = S * SQRT_Y * S_DAG
+
 Unitary Matrix:
 
     [+1-i, +1+i]
@@ -635,11 +748,20 @@ Stabilizer Generators:
     X -> -Z
     Z -> X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: 90 degrees
+    Angle: 90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(0°)
+    unitary = I * SQRT_Y * I
+
 Unitary Matrix:
 
     [+1+i, -1-i]
@@ -678,11 +800,20 @@ Stabilizer Generators:
     X -> Z
     Z -> -X
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Y
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 180°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(180°) * RotY(90°) * RotZ(180°)
+    unitary = Z * SQRT_Y * Z
+
 Unitary Matrix:
 
     [+1-i, +1-i]
@@ -723,11 +854,20 @@ Stabilizer Generators:
     X -> -Y
     Z -> Z
     
-Bloch Rotation:
+Bloch Rotation (axis angle):
 
     Axis: +Z
-    Angle: -90 degrees
+    Angle: -90°
     
+Bloch Rotation (Euler angles):
+
+      theta = 0°
+        phi = 0°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(0°) * RotZ(-90°)
+    unitary = I * I * S_DAG
+
 Unitary Matrix:
 
     [+1  ,     ]
@@ -965,6 +1105,51 @@ Decomposition (into H, S, CX, M, R):
     # The following circuit is equivalent (up to global phase) to `CZ 0 1`
     H 1
     CNOT 0 1
+    H 1
+    
+
+<a name="CZSWAP"></a>
+### The 'CZSWAP' Gate
+
+Alternate name: <a name="SWAPCZ"></a>`SWAPCZ`
+
+A combination CZ-and-SWAP gate.
+This gate is kak-equivalent to the iswap gate.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Example:
+
+    CZSWAP 5 6
+    CZSWAP 42 43
+    CZSWAP 5 6 42 43
+    
+Stabilizer Generators:
+
+    X_ -> ZX
+    Z_ -> _Z
+    _X -> XZ
+    _Z -> Z_
+    
+Unitary Matrix (little endian):
+
+    [+1  ,     ,     ,     ]
+    [    ,     , +1  ,     ]
+    [    , +1  ,     ,     ]
+    [    ,     ,     , -1  ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `CZSWAP 0 1`
+    H 0
+    CX 0 1
+    CX 1 0
     H 1
     
 
@@ -2253,62 +2438,6 @@ Decomposition (into H, S, CX, M, R):
     # (The decomposition is trivial because this gate is in the target gate set.)
     
 
-<a name="MPP"></a>
-### The 'MPP' Instruction
-
-Measure Pauli products.
-
-Parens Arguments:
-
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
-
-Targets:
-
-    A series of Pauli products to measure.
-
-    Each Pauli product is a series of Pauli targets (`[XYZ]#`) separated by combiners (`*`).
-    Products can be negated by prefixing a Pauli target in the product with an inverter (`!`)
-
-Examples:
-
-    # Measure the two-body +X1*Y2 observable.
-    MPP X1*Y2
-
-    # Measure the one-body -Z5 observable.
-    MPP !Z5
-
-    # Measure the two-body +X1*Y2 observable and also the three-body -Z3*Z4*Z5 observable.
-    MPP X1*Y2 !Z3*Z4*Z5
-
-    # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
-    MPP(0.001) Z1*Z2 X1*X2
-
-Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):
-
-    XYZ__ -> rec[-2]
-    ___XX -> rec[-1]
-    X____ -> X____
-    _Y___ -> _Y___
-    __Z__ -> __Z__
-    ___X_ -> ___X_
-    ____X -> ____X
-    ZZ___ -> ZZ___
-    _XX__ -> _XX__
-    ___ZZ -> ___ZZ
-    
-Decomposition (into H, S, CX, M, R):
-
-    # The following circuit is equivalent (up to global phase) to `MPP X0*Y1*Z2 X3*X4`
-    S 1 1 1
-    H 0 1 3 4
-    CX 2 0 1 0 4 3
-    M 0 3
-    CX 2 0 1 0 4 3
-    H 0 1 3 4
-    S 1
-    
-
 <a name="MR"></a>
 ### The 'MR' Instruction
 
@@ -2613,7 +2742,7 @@ Examples:
     # Reset qubit 5 into the |+> state.
     RX 5
 
-    # Result multiple qubits into the |+> state.
+    # Reset multiple qubits into the |+> state.
     RX 2 3 5
 Stabilizer Generators:
 
@@ -2622,7 +2751,6 @@ Stabilizer Generators:
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `RX 0`
-    H 0
     R 0
     H 0
     
@@ -2646,7 +2774,7 @@ Examples:
     # Reset qubit 5 into the |i> state.
     RY 5
 
-    # Result multiple qubits into the |i> state.
+    # Reset multiple qubits into the |i> state.
     RY 2 3 5
 Stabilizer Generators:
 
@@ -2655,10 +2783,6 @@ Stabilizer Generators:
 Decomposition (into H, S, CX, M, R):
 
     # The following circuit is equivalent (up to global phase) to `RY 0`
-    S 0
-    S 0
-    S 0
-    H 0
     R 0
     H 0
     S 0
@@ -2850,6 +2974,206 @@ Decomposition (into H, S, CX, M, R):
     CX 0 1
     
 
+## Generalized Pauli Product Gates
+
+<a name="MPP"></a>
+### The 'MPP' Instruction
+
+Measures general pauli product operators, like X1*Y2*Z3.
+
+Parens Arguments:
+
+    An optional failure probability.
+    If no argument is given, all measurements are perfect.
+    If one argument is given, it's the chance of reporting measurement results incorrectly.
+
+Targets:
+
+    A series of Pauli products to measure.
+
+    Each Pauli product is a series of Pauli targets (like `X1`, `Y2`, or `Z3`) separated by
+    combiners (`*`). Each Pauli term can be inverted (like `!Y2` instead of `Y2`). A negated
+    product will record the opposite measurement result.
+
+    Note that, although you can write down instructions that measure anti-Hermitian products,
+    like `MPP X1*Z1`, doing this will cause exceptions when you simulate or analyze the
+    circuit since measuring an anti-Hermitian operator doesn't have well defined semantics.
+
+    Using overly-complicated Hermitian products, like saying `MPP X1*Y1*Y2*Z2` instead of
+    `MPP !Z1*X2`, is technically allowed. But probably not a great idea since tools consuming
+    the circuit may have assumed that each qubit would appear at most once in each product.
+
+Examples:
+
+    # Measure the two-body +X1*Y2 observable.
+    MPP X1*Y2
+
+    # Measure the one-body -Z5 observable.
+    MPP !Z5
+
+    # Measure the two-body +X1*Y2 observable and also the three-body -Z3*Z4*Z5 observable.
+    MPP X1*Y2 !Z3*Z4*Z5
+
+    # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
+    MPP(0.001) Z1*Z2 X1*X2
+
+Stabilizer Generators (for `MPP X0*Y1*Z2 X3*X4`):
+
+    XYZ__ -> rec[-2]
+    ___XX -> rec[-1]
+    X____ -> X____
+    _Y___ -> _Y___
+    __Z__ -> __Z__
+    ___X_ -> ___X_
+    ____X -> ____X
+    ZZ___ -> ZZ___
+    _XX__ -> _XX__
+    ___ZZ -> ___ZZ
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `MPP X0*Y1*Z2 X3*X4`
+    S 1 1 1
+    H 0 1 3 4
+    CX 2 0 1 0 4 3
+    M 0 3
+    CX 2 0 1 0 4 3
+    H 0 1 3 4
+    S 1
+    
+
+<a name="SPP"></a>
+### The 'SPP' Instruction
+
+The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    A series of Pauli products to phase.
+
+    Each Pauli product is a series of Pauli targets (like `X1`, `Y2`, or `Z3`) separated by
+    combiners (`*`). Each Pauli term can be inverted (like `!Y2` instead of `Y2`), to negate
+    the product.
+
+    Note that, although you can write down instructions that phase anti-Hermitian products,
+    like `SPP X1*Z1`, doing this will cause exceptions when you simulate or analyze the
+    circuit since phasing an anti-Hermitian operator doesn't have well defined semantics.
+
+    Using overly-complicated Hermitian products, like saying `SPP X1*Y1*Y2*Z2` instead of
+    `SPP !Z1*X2`, is technically allowed. But probably not a great idea since tools consuming
+    the circuit may have assumed that each qubit would appear at most once in each product.
+
+Examples:
+
+    # Perform an S gate on qubit 1.
+    SPP Z1
+
+    # Perform a SQRT_X gate on qubit 1.
+    SPP X1
+
+    # Perform a SQRT_X_DAG gate on qubit 1.
+    SPP !X1
+
+    # Perform a SQRT_XX gate between qubit 1 and qubit 2.
+    SPP X1*X2
+
+    # Perform a SQRT_YY gate between qubit 1 and 2, and a SQRT_ZZ_DAG between qubit 3 and 4.
+    SPP Y1*Y2 !Z1*Z2
+
+    # Phase the -1 eigenspace of -X1*Y2*Z3 by i.
+    SPP !X1*Y2*Z3
+
+Stabilizer Generators (for `SPP X0*Y1*Z2`):
+
+    X__ -> X__
+    Z__ -> -YYZ
+    _X_ -> -XZZ
+    _Z_ -> XXZ
+    __X -> XYY
+    __Z -> __Z
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `SPP X0*Y1*Z2`
+    CX 2 1
+    CX 1 0
+    S 1
+    S 1
+    H 1
+    CX 1 0
+    CX 2 1
+    
+
+<a name="SPP_DAG"></a>
+### The 'SPP_DAG' Instruction
+
+The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    A series of Pauli products to phase.
+
+    Each Pauli product is a series of Pauli targets (like `X1`, `Y2`, or `Z3`) separated by
+    combiners (`*`). Each Pauli term can be inverted (like `!Y2` instead of `Y2`), to negate
+    the product.
+
+    Note that, although you can write down instructions that phase anti-Hermitian products,
+    like `SPP X1*Z1`, doing this will cause exceptions when you simulate or analyze the
+    circuit since phasing an anti-Hermitian operator doesn't have well defined semantics.
+
+    Using overly-complicated Hermitian products, like saying `SPP X1*Y1*Y2*Z2` instead of
+    `SPP !Z1*X2`, is technically allowed. But probably not a great idea since tools consuming
+    the circuit may have assumed that each qubit would appear at most once in each product.
+
+Examples:
+
+    # Perform an S_DAG gate on qubit 1.
+    SPP_DAG Z1
+
+    # Perform a SQRT_X_DAG gate on qubit 1.
+    SPP_DAG X1
+
+    # Perform a SQRT_X gate on qubit 1.
+    SPP_DAG !X1
+
+    # Perform a SQRT_XX_DAG gate between qubit 1 and qubit 2.
+    SPP_DAG X1*X2
+
+    # Perform a SQRT_YY_DAG gate between qubit 1 and 2, and a SQRT_ZZ between qubit 3 and 4.
+    SPP_DAG Y1*Y2 !Z1*Z2
+
+    # Phase the -1 eigenspace of -X1*Y2*Z3 by -i.
+    SPP_DAG !X1*Y2*Z3
+
+Stabilizer Generators (for `SPP_DAG X0*Y1*Z2`):
+
+    X__ -> X__
+    Z__ -> YYZ
+    _X_ -> XZZ
+    _Z_ -> -XXZ
+    __X -> -XYY
+    __Z -> __Z
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `SPP_DAG X0*Y1*Z2`
+    CX 2 1
+    CX 1 0
+    H 1
+    S 1
+    S 1
+    CX 1 0
+    CX 2 1
+    
+
 ## Control Flow
 
 <a name="REPEAT"></a>
@@ -2965,6 +3289,12 @@ Pads the measurement record with the listed measurement results.
 This can be useful for ensuring measurements are aligned to word boundaries, or that the
 number of measurement bits produced per circuit layer is always the same even if the number
 of measured qubits varies.
+
+Parens Arguments:
+
+    If no parens argument is given, the padding bits are recorded perfectly.
+    If one parens argument is given, the padding bits are recorded noisily.
+    The argument is the probability of recording the wrong result.
 
 Targets:
 

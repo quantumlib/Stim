@@ -2,8 +2,8 @@
 
 using namespace stim_draw_internal;
 
-std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
-    std::map<std::string, SvgGateData> result;
+std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
+    std::map<std::string_view, SvgGateData> result;
 
     result.insert({"X", {1, "X", "", "", "white", "black", 0, 10, 0}});
     result.insert({"Y", {1, "Y", "", "", "white", "black", 0, 10, 0}});
@@ -48,6 +48,14 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"MPP[X]", {1, "MPP", "X", "", "black", "white", 0, 10, 0}});
     result.insert({"MPP[Y]", {1, "MPP", "Y", "", "black", "white", 0, 10, 0}});
     result.insert({"MPP[Z]", {1, "MPP", "Z", "", "black", "white", 0, 10, 0}});
+
+    result.insert({"SPP[X]", {1, "SPP", "X", "", "black", "white", 0, 10, 0}});
+    result.insert({"SPP[Y]", {1, "SPP", "Y", "", "black", "white", 0, 10, 0}});
+    result.insert({"SPP[Z]", {1, "SPP", "Z", "", "black", "white", 0, 10, 0}});
+
+    result.insert({"SPP_DAG[X]", {1, "SPP†", "X", "", "black", "white", 0, 10, 0}});
+    result.insert({"SPP_DAG[Y]", {1, "SPP†", "Y", "", "black", "white", 0, 10, 0}});
+    result.insert({"SPP_DAG[Z]", {1, "SPP†", "Z", "", "black", "white", 0, 10, 0}});
 
     result.insert({"SQRT_XX", {1, "√XX", "", "", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_YY", {1, "√YY", "", "", "white", "black", 0, 10, 0}});

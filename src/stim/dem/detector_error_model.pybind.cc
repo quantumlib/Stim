@@ -40,21 +40,21 @@ std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &sel
 }
 
 std::vector<double> python_arg_to_instruction_arguments(const pybind11::object &arg) {
-    if (arg.is(pybind11::none())) {
+    if (arg.is_none()) {
         return {};
     }
     try {
         return {pybind11::cast<double>(arg)};
-    } catch (const pybind11::cast_error &ex) {
+    } catch (const pybind11::cast_error &) {
     }
     try {
         return pybind11::cast<std::vector<double>>(arg);
-    } catch (const pybind11::cast_error &ex) {
+    } catch (const pybind11::cast_error &) {
     }
     throw std::invalid_argument("parens_arguments must be None, a double, or a list of doubles.");
 }
 
-DemInstructionType non_block_instruction_name_to_enum(const std::string &name) {
+static DemInstructionType non_block_instruction_name_to_enum(std::string_view name) {
     std::string low;
     for (char c : name) {
         low.push_back(tolower(c));
@@ -68,7 +68,7 @@ DemInstructionType non_block_instruction_name_to_enum(const std::string &name) {
     } else if (low == "logical_observable") {
         return DemInstructionType::DEM_LOGICAL_OBSERVABLE;
     }
-    throw std::invalid_argument("Not a non-block detector error model instruction name: " + name);
+    throw std::invalid_argument("Not a non-block detector error model instruction name: " + std::string(name));
 }
 
 pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_model(pybind11::module &m) {
@@ -349,9 +349,8 @@ void stim_pybind::pybind_detector_error_model_methods(
             }
 
             auto &op = self.instructions[index];
-            if (op.type == DEM_REPEAT_BLOCK) {
-                return pybind11::cast(
-                    ExposedDemRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
+            if (op.type == DemInstructionType::DEM_REPEAT_BLOCK) {
+                return pybind11::cast(ExposedDemRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
             }
             ExposedDemInstruction result;
             result.targets.insert(result.targets.begin(), op.target_data.begin(), op.target_data.end());
@@ -404,7 +403,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         [](const DetectorErrorModel &self, const pybind11::object &obj, double atol) -> bool {
             try {
                 return self.approx_equals(pybind11::cast<DetectorErrorModel>(obj), atol);
-            } catch (const pybind11::cast_error &ex) {
+            } catch (const pybind11::cast_error &) {
                 return false;
             }
         },
@@ -478,9 +477,9 @@ void stim_pybind::pybind_detector_error_model_methods(
             }
 
             if (is_name) {
-                auto name = pybind11::cast<std::string>(instruction);
-                auto type = non_block_instruction_name_to_enum(name);
-                auto conv_args = python_arg_to_instruction_arguments(parens_arguments);
+                std::string_view name = pybind11::cast<std::string_view>(instruction);
+                DemInstructionType type = non_block_instruction_name_to_enum(name);
+                std::vector<double> conv_args = python_arg_to_instruction_arguments(parens_arguments);
                 std::vector<DemTarget> conv_targets;
                 for (const auto &e : targets) {
                     try {
@@ -489,9 +488,14 @@ void stim_pybind::pybind_detector_error_model_methods(
                         } else {
                             conv_targets.push_back(DemTarget{pybind11::cast<ExposedDemTarget>(e).data});
                         }
-                    } catch (pybind11::cast_error &ex) {
-                        auto str = pybind11::cast<std::string>(pybind11::str(e));
-                        throw std::invalid_argument("Bad target '" + str + "' for instruction '" + name + "'.");
+                    } catch (pybind11::cast_error &) {
+                        std::stringstream ss;
+                        ss << "Bad target '";
+                        ss << pybind11::repr(e);
+                        ss << "' for instruction '";
+                        ss << name;
+                        ss << "'.";
+                        throw std::invalid_argument(ss.str());
                     }
                 }
 
@@ -762,7 +766,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             return self.str();
         },
         [](const pybind11::str &text) -> DetectorErrorModel {
-            return DetectorErrorModel(pybind11::cast<std::string>(text).data());
+            return DetectorErrorModel(pybind11::cast<std::string_view>(text));
         }));
 
     c.def(
@@ -860,28 +864,30 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def_static(
         "from_file",
         [](pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
-                RaiiFile f(path.data(), "rb");
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string_view path = pybind11::cast<std::string_view>(obj);
+                RaiiFile f(path, "rb");
                 return DetectorErrorModel::from_file(f.f);
-            } catch (pybind11::cast_error &ex) {
             }
 
             auto py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
-                auto path = pybind11::cast<std::string>(pybind11::str(obj));
-                RaiiFile f(path.data(), "rb");
+                auto obj_str = pybind11::str(obj);
+                std::string_view path = pybind11::cast<std::string_view>(obj_str);
+                RaiiFile f(path, "rb");
                 return DetectorErrorModel::from_file(f.f);
             }
 
             auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
             if (pybind11::isinstance(obj, py_text_io_base)) {
                 auto contents = obj.attr("read")();
-                return DetectorErrorModel(pybind11::cast<std::string>(pybind11::str(contents)).data());
+                return DetectorErrorModel(pybind11::cast<std::string_view>(contents));
             }
 
-            throw std::invalid_argument(
-                "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to read from ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -927,20 +933,19 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "to_file",
         [](const DetectorErrorModel &self, pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string path = pybind11::cast<std::string>(obj);
                 std::ofstream out(path, std::ofstream::out);
                 if (!out.is_open()) {
                     throw std::invalid_argument("Failed to open " + path);
                 }
                 out << self << '\n';
                 return;
-            } catch (pybind11::cast_error &ex) {
             }
 
             auto py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
-                auto path = pybind11::cast<std::string>(pybind11::str(obj));
+                std::string path = pybind11::cast<std::string>(pybind11::str(obj));
                 std::ofstream out(path, std::ofstream::out);
                 if (!out.is_open()) {
                     throw std::invalid_argument("Failed to open " + path);
@@ -956,8 +961,10 @@ void stim_pybind::pybind_detector_error_model_methods(
                 return;
             }
 
-            throw std::invalid_argument(
-                "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to write to ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -1137,9 +1144,6 @@ void stim_pybind::pybind_detector_error_model_methods(
         &dem_diagram,
         pybind11::arg("type"),
         clean_doc_string(R"DOC(
-            @overload def diagram(self, type: 'Literal["matchgraph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["matchgraph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["matchgraph-3d-html"]') -> 'stim._DiagramHelper':
             @signature def diagram(self, type: str) -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
@@ -1149,6 +1153,8 @@ void stim_pybind::pybind_detector_error_model_methods(
                         detector error model. Red lines are errors crossing a
                         logical observable. Blue lines are undecomposed hyper
                         errors.
+                    "matchgraph-svg-html": Same as matchgraph-svg but with the
+                        SVG wrapped in a resizable HTML iframe.
                     "matchgraph-3d": A 3d model of the decoding graph of the
                         detector error model. Red lines are errors crossing a
                         logical observable. Blue lines are undecomposed hyper
@@ -1180,12 +1186,12 @@ void stim_pybind::pybind_detector_error_model_methods(
                 >>> dem = circuit.detector_error_model(decompose_errors=True)
 
                 >>> with tempfile.TemporaryDirectory() as d:
-                ...     diagram = circuit.diagram(type="match-graph-svg")
+                ...     diagram = circuit.diagram("match-graph-svg")
                 ...     with open(f"{d}/dem_image.svg", "w") as f:
                 ...         print(diagram, file=f)
 
                 >>> with tempfile.TemporaryDirectory() as d:
-                ...     diagram = circuit.diagram(type="match-graph-3d")
+                ...     diagram = circuit.diagram("match-graph-3d")
                 ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
                 ...         print(diagram, file=f)
         )DOC")

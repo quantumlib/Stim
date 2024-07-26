@@ -18,7 +18,7 @@
 
 #include "stim/circuit/circuit.test.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -686,4 +686,62 @@ TEST(SparseUnsignedRevFrameTracker, runs_on_general_circuit) {
     s.undo_circuit(circuit);
     ASSERT_EQ(s.num_measurements_in_past, 0);
     ASSERT_EQ(s.num_detectors_in_past, 0);
+}
+
+TEST(SparseUnsignedRevFrameTracker, tracks_anticommutation) {
+    Circuit circuit(R"CIRCUIT(
+        R 0 1 2
+        H 0
+        CX 0 1 0 2
+        MX 0 1 2
+        DETECTOR rec[-1]
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        DETECTOR rec[-2] rec[-3]
+        OBSERVABLE_INCLUDE(2) rec[-3]
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2] rec[-3]
+    )CIRCUIT");
+
+    SparseUnsignedRevFrameTracker rev(
+        circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), false);
+    rev.undo_circuit(circuit);
+    ASSERT_EQ(
+        rev.anticommutations,
+        (std::set<std::pair<DemTarget, GateTarget>>{
+            {DemTarget::relative_detector_id(0), GateTarget::x(2)},
+            {DemTarget::relative_detector_id(2), GateTarget::x(2)},
+            {DemTarget::observable_id(2), GateTarget::x(1)},
+            {DemTarget::observable_id(2), GateTarget::x(2)}}));
+
+    SparseUnsignedRevFrameTracker rev2(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors());
+    ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
+}
+
+TEST(SparseUnsignedRevFrameTracker, MZZ) {
+    Circuit circuit(R"CIRCUIT(
+        MZZ 0 1 1 2
+        M 2
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    SparseUnsignedRevFrameTracker rev(
+        circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), false);
+    rev.undo_circuit(circuit);
+    ASSERT_TRUE(rev.xs[0].empty());
+    ASSERT_TRUE(rev.xs[1].empty());
+    ASSERT_TRUE(rev.xs[2].empty());
+    ASSERT_TRUE(rev.zs[0].empty());
+    ASSERT_TRUE(rev.zs[1].empty());
+    ASSERT_EQ(rev.zs[2].sorted_items, (std::vector<DemTarget>{DemTarget::relative_detector_id(0)}));
+}
+
+TEST(SparseUnsignedRevFrameTracker, fail_anticommute) {
+    Circuit circuit(R"CIRCUIT(
+        RX 0 1 2
+        M 2
+        DETECTOR rec[-1]
+    )CIRCUIT");
+
+    SparseUnsignedRevFrameTracker rev(
+        circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), true);
+    ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
 }

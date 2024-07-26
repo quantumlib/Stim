@@ -1,6 +1,7 @@
-__version__ = '1.13.dev0'
+__version__ = '1.14.dev0'
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
+from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
@@ -20,5 +21,6 @@ JSON_RESOLVERS_DICT = {
     "SweepPauli": SweepPauli,
     "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
     "CXSwapGate": CXSwapGate,
+    "CZSwapGate": CZSwapGate,
 }
 JSON_RESOLVER = JSON_RESOLVERS_DICT.get

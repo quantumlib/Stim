@@ -19,6 +19,7 @@
 #if __AVX2__
 
 #include <array>
+#include <bit>
 #include <immintrin.h>
 #include <iostream>
 #include <sstream>
@@ -37,7 +38,6 @@ struct bitword<256> {
 
     union {
         __m256i val;
-        uint64_t u64[4];
         uint8_t u8[32];
     };
 
@@ -51,6 +51,8 @@ struct bitword<256> {
     inline bitword<256>() : val(__m256i{}) {
     }
     inline bitword<256>(__m256i val) : val(val) {
+    }
+    inline bitword<256>(std::array<uint64_t, 4> val) : val{_mm256_set_epi64x(val[3], val[2], val[1], val[0])} {
     }
     inline bitword<256>(uint64_t val) : val{_mm256_set_epi64x(0, 0, 0, val)} {
     }
@@ -75,7 +77,7 @@ struct bitword<256> {
         return {_mm256_set1_epi64x(pattern)};
     }
 
-    std::array<uint64_t, 4> to_u64_array() const {
+    inline std::array<uint64_t, 4> to_u64_array() const {
         return std::array<uint64_t, 4>{
             (uint64_t)_mm256_extract_epi64(val, 0),
             (uint64_t)_mm256_extract_epi64(val, 1),
@@ -83,12 +85,13 @@ struct bitword<256> {
             (uint64_t)_mm256_extract_epi64(val, 3),
         };
     }
+
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
         return (bool)(words[0] | words[1] | words[2] | words[3]);
     }
     inline operator int() const {  // NOLINT(hicpp-explicit-conversions)
-        return (int64_t) * this;
+        return (int64_t)*this;
     }
     inline operator uint64_t() const {  // NOLINT(hicpp-explicit-conversions)
         auto words = to_u64_array();
@@ -139,8 +142,8 @@ struct bitword<256> {
     }
 
     inline uint16_t popcount() const {
-        return stim::popcnt64(u64[0]) + stim::popcnt64(u64[1]) + stim::popcnt64(u64[2]) +
-               (uint16_t)stim::popcnt64(u64[3]);
+        auto v = to_u64_array();
+        return std::popcount(v[0]) + std::popcount(v[1]) + std::popcount(v[2]) + (uint16_t)std::popcount(v[3]);
     }
 
     inline bitword<256> shifted(int offset) const {

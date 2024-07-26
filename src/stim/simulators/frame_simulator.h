@@ -26,7 +26,7 @@
 
 namespace stim {
 
-enum FrameSimulatorMode {
+enum class FrameSimulatorMode {
     STORE_MEASUREMENTS_TO_MEMORY,  // all measurements stored, detections not stored
     STREAM_MEASUREMENTS_TO_DISK,   // measurements stored up to lookback, detections not stored
     STORE_DETECTIONS_TO_MEMORY,    // measurements stored up to lookback, all detections stored
@@ -120,8 +120,11 @@ struct FrameSimulator {
     void do_SWAP(const CircuitInstruction &inst);
     void do_ISWAP(const CircuitInstruction &inst);
     void do_CXSWAP(const CircuitInstruction &inst);
+    void do_CZSWAP(const CircuitInstruction &inst);
     void do_SWAPCX(const CircuitInstruction &inst);
     void do_MPP(const CircuitInstruction &inst);
+    void do_SPP(const CircuitInstruction &inst);
+    void do_SPP_DAG(const CircuitInstruction &inst);
     void do_MXX(const CircuitInstruction &inst);
     void do_MYY(const CircuitInstruction &inst);
     void do_MZZ(const CircuitInstruction &inst);

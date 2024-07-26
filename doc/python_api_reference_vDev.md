@@ -27,15 +27,22 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.compile_sampler`](#stim.Circuit.compile_sampler)
     - [`stim.Circuit.copy`](#stim.Circuit.copy)
     - [`stim.Circuit.count_determined_measurements`](#stim.Circuit.count_determined_measurements)
+    - [`stim.Circuit.decomposed`](#stim.Circuit.decomposed)
+    - [`stim.Circuit.detecting_regions`](#stim.Circuit.detecting_regions)
     - [`stim.Circuit.detector_error_model`](#stim.Circuit.detector_error_model)
     - [`stim.Circuit.diagram`](#stim.Circuit.diagram)
     - [`stim.Circuit.explain_detector_error_model_errors`](#stim.Circuit.explain_detector_error_model_errors)
     - [`stim.Circuit.flattened`](#stim.Circuit.flattened)
+    - [`stim.Circuit.flow_generators`](#stim.Circuit.flow_generators)
     - [`stim.Circuit.from_file`](#stim.Circuit.from_file)
     - [`stim.Circuit.generated`](#stim.Circuit.generated)
     - [`stim.Circuit.get_detector_coordinates`](#stim.Circuit.get_detector_coordinates)
     - [`stim.Circuit.get_final_qubit_coordinates`](#stim.Circuit.get_final_qubit_coordinates)
+    - [`stim.Circuit.has_all_flows`](#stim.Circuit.has_all_flows)
+    - [`stim.Circuit.has_flow`](#stim.Circuit.has_flow)
+    - [`stim.Circuit.insert`](#stim.Circuit.insert)
     - [`stim.Circuit.inverse`](#stim.Circuit.inverse)
+    - [`stim.Circuit.likeliest_error_sat_problem`](#stim.Circuit.likeliest_error_sat_problem)
     - [`stim.Circuit.num_detectors`](#stim.Circuit.num_detectors)
     - [`stim.Circuit.num_measurements`](#stim.Circuit.num_measurements)
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
@@ -44,8 +51,14 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
+    - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
+    - [`stim.Circuit.time_reversed_for_flows`](#stim.Circuit.time_reversed_for_flows)
+    - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
+    - [`stim.Circuit.to_qasm`](#stim.Circuit.to_qasm)
+    - [`stim.Circuit.to_quirk_url`](#stim.Circuit.to_quirk_url)
+    - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
@@ -68,6 +81,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitInstruction.__str__`](#stim.CircuitInstruction.__str__)
     - [`stim.CircuitInstruction.gate_args_copy`](#stim.CircuitInstruction.gate_args_copy)
     - [`stim.CircuitInstruction.name`](#stim.CircuitInstruction.name)
+    - [`stim.CircuitInstruction.num_measurements`](#stim.CircuitInstruction.num_measurements)
     - [`stim.CircuitInstruction.targets_copy`](#stim.CircuitInstruction.targets_copy)
 - [`stim.CircuitRepeatBlock`](#stim.CircuitRepeatBlock)
     - [`stim.CircuitRepeatBlock.__eq__`](#stim.CircuitRepeatBlock.__eq__)
@@ -121,6 +135,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemRepeatBlock.type`](#stim.DemRepeatBlock.type)
 - [`stim.DemTarget`](#stim.DemTarget)
     - [`stim.DemTarget.__eq__`](#stim.DemTarget.__eq__)
+    - [`stim.DemTarget.__init__`](#stim.DemTarget.__init__)
     - [`stim.DemTarget.__ne__`](#stim.DemTarget.__ne__)
     - [`stim.DemTarget.__repr__`](#stim.DemTarget.__repr__)
     - [`stim.DemTarget.__str__`](#stim.DemTarget.__str__)
@@ -170,6 +185,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.FlipSimulator`](#stim.FlipSimulator)
     - [`stim.FlipSimulator.__init__`](#stim.FlipSimulator.__init__)
     - [`stim.FlipSimulator.batch_size`](#stim.FlipSimulator.batch_size)
+    - [`stim.FlipSimulator.broadcast_pauli_errors`](#stim.FlipSimulator.broadcast_pauli_errors)
+    - [`stim.FlipSimulator.copy`](#stim.FlipSimulator.copy)
     - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
     - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
     - [`stim.FlipSimulator.get_measurement_flips`](#stim.FlipSimulator.get_measurement_flips)
@@ -179,11 +196,21 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.num_observables`](#stim.FlipSimulator.num_observables)
     - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
     - [`stim.FlipSimulator.peek_pauli_flips`](#stim.FlipSimulator.peek_pauli_flips)
+    - [`stim.FlipSimulator.reset`](#stim.FlipSimulator.reset)
     - [`stim.FlipSimulator.set_pauli_flip`](#stim.FlipSimulator.set_pauli_flip)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
     - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
+- [`stim.Flow`](#stim.Flow)
+    - [`stim.Flow.__eq__`](#stim.Flow.__eq__)
+    - [`stim.Flow.__init__`](#stim.Flow.__init__)
+    - [`stim.Flow.__ne__`](#stim.Flow.__ne__)
+    - [`stim.Flow.__repr__`](#stim.Flow.__repr__)
+    - [`stim.Flow.__str__`](#stim.Flow.__str__)
+    - [`stim.Flow.input_copy`](#stim.Flow.input_copy)
+    - [`stim.Flow.measurements_copy`](#stim.Flow.measurements_copy)
+    - [`stim.Flow.output_copy`](#stim.Flow.output_copy)
 - [`stim.GateData`](#stim.GateData)
     - [`stim.GateData.__eq__`](#stim.GateData.__eq__)
     - [`stim.GateData.__init__`](#stim.GateData.__init__)
@@ -191,9 +218,14 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.GateData.__repr__`](#stim.GateData.__repr__)
     - [`stim.GateData.__str__`](#stim.GateData.__str__)
     - [`stim.GateData.aliases`](#stim.GateData.aliases)
+    - [`stim.GateData.flows`](#stim.GateData.flows)
+    - [`stim.GateData.generalized_inverse`](#stim.GateData.generalized_inverse)
+    - [`stim.GateData.hadamard_conjugated`](#stim.GateData.hadamard_conjugated)
+    - [`stim.GateData.inverse`](#stim.GateData.inverse)
     - [`stim.GateData.is_noisy_gate`](#stim.GateData.is_noisy_gate)
     - [`stim.GateData.is_reset`](#stim.GateData.is_reset)
     - [`stim.GateData.is_single_qubit_gate`](#stim.GateData.is_single_qubit_gate)
+    - [`stim.GateData.is_symmetric_gate`](#stim.GateData.is_symmetric_gate)
     - [`stim.GateData.is_two_qubit_gate`](#stim.GateData.is_two_qubit_gate)
     - [`stim.GateData.is_unitary`](#stim.GateData.is_unitary)
     - [`stim.GateData.name`](#stim.GateData.name)
@@ -247,12 +279,17 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
     - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
     - [`stim.PauliString.from_unitary_matrix`](#stim.PauliString.from_unitary_matrix)
+    - [`stim.PauliString.iter_all`](#stim.PauliString.iter_all)
+    - [`stim.PauliString.pauli_indices`](#stim.PauliString.pauli_indices)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
     - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
     - [`stim.PauliString.weight`](#stim.PauliString.weight)
+- [`stim.PauliStringIterator`](#stim.PauliStringIterator)
+    - [`stim.PauliStringIterator.__iter__`](#stim.PauliStringIterator.__iter__)
+    - [`stim.PauliStringIterator.__next__`](#stim.PauliStringIterator.__next__)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -288,6 +325,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.to_circuit`](#stim.Tableau.to_circuit)
     - [`stim.Tableau.to_numpy`](#stim.Tableau.to_numpy)
     - [`stim.Tableau.to_pauli_string`](#stim.Tableau.to_pauli_string)
+    - [`stim.Tableau.to_stabilizers`](#stim.Tableau.to_stabilizers)
     - [`stim.Tableau.to_state_vector`](#stim.Tableau.to_state_vector)
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
@@ -374,9 +412,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.gate_data`](#stim.gate_data)
 - [`stim.main`](#stim.main)
 - [`stim.read_shot_data_file`](#stim.read_shot_data_file)
+- [`stim.target_combined_paulis`](#stim.target_combined_paulis)
 - [`stim.target_combiner`](#stim.target_combiner)
 - [`stim.target_inv`](#stim.target_inv)
 - [`stim.target_logical_observable_id`](#stim.target_logical_observable_id)
+- [`stim.target_pauli`](#stim.target_pauli)
 - [`stim.target_rec`](#stim.target_rec)
 - [`stim.target_relative_detector_id`](#stim.target_relative_detector_id)
 - [`stim.target_separator`](#stim.target_separator)
@@ -1248,6 +1288,213 @@ def count_determined_measurements(
     """
 ```
 
+<a name="stim.Circuit.decomposed"></a>
+```python
+# stim.Circuit.decomposed
+
+# (in class stim.Circuit)
+def decomposed(
+    self,
+) -> stim.Circuit:
+    """Recreates the circuit using (mostly) the {H,S,CX,M,R} gate set.
+
+    The intent of this method is to simplify the circuit to use fewer gate types,
+    so it's easier for other tools to consume. Currently, this method performs the
+    following simplifications:
+
+    - Single qubit cliffords are decomposed into {H,S}.
+    - Multi-qubit cliffords are decomposed into {H,S,CX}.
+    - Single qubit dissipative gates are decomposed into {H,S,M,R}.
+    - Multi-qubit dissipative gates are decomposed into {H,S,CX,M,R}.
+
+    Currently, the following types of gate *aren't* simplified, but they may be
+    in the future:
+
+    - Noise instructions (like X_ERROR, DEPOLARIZE2, and E).
+    - Annotations (like TICK, DETECTOR, and SHIFT_COORDS).
+    - The MPAD instruction.
+    - Repeat blocks are not flattened.
+
+    Returns:
+        A `stim.Circuit` whose function is equivalent to the original circuit,
+        but with most gates decomposed into the {H,S,CX,M,R} gate set.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit('''
+        ...     SWAP 0 1
+        ... ''').decomposed()
+        stim.Circuit('''
+            CX 0 1 1 0 0 1
+        ''')
+
+        >>> stim.Circuit('''
+        ...     ISWAP 0 1 2 1
+        ...     TICK
+        ...     MPP !X1*Y2*Z3
+        ... ''').decomposed()
+        stim.Circuit('''
+            H 0
+            CX 0 1 1 0
+            H 1
+            S 1 0
+            H 2
+            CX 2 1 1 2
+            H 1
+            S 1 2
+            TICK
+            H 1 2
+            S 2
+            H 2
+            S 2 2
+            CX 2 1 3 1
+            M !1
+            CX 2 1 3 1
+            H 2
+            S 2
+            H 2
+            S 2 2
+            H 1
+        ''')
+    """
+```
+
+<a name="stim.Circuit.detecting_regions"></a>
+```python
+# stim.Circuit.detecting_regions
+
+# (in class stim.Circuit)
+def detecting_regions(
+    self,
+    *,
+    targets: Optional[Iterable[stim.DemTarget | str | Iterable[float]]] = None,
+    ticks: Optional[Iterable[int]] = None,
+) -> Dict[stim.DemTarget, Dict[int, stim.PauliString]]:
+    """Records where detectors and observables are sensitive to errors over time.
+
+    The result of this method is a nested dictionary, mapping detectors/observables
+    and ticks to Pauli sensitivities for that detector/observable at that time.
+
+    For example, if observable 2 has Z-type sensitivity on qubits 5 and 6 during
+    tick 3, then `result[stim.target_logical_observable_id(2)][3]` will be equal to
+    `stim.PauliString("Z5*Z6")`.
+
+    If you want sensitivities from more places in the circuit, besides just at the
+    TICK instructions, you can work around this by making a version of the circuit
+    with more TICKs.
+
+    Args:
+        targets: Defaults to everything (None).
+
+            When specified, this should be an iterable of filters where items
+            matching any one filter are included.
+
+            A variety of filters are supported:
+                stim.DemTarget: Includes the targeted detector or observable.
+                Iterable[float]: Coordinate prefix match. Includes detectors whose
+                    coordinate data begins with the same floats.
+                "D": Includes all detectors.
+                "L": Includes all observables.
+                "D#" (e.g. "D5"): Includes the detector with the specified index.
+                "L#" (e.g. "L5"): Includes the observable with the specified index.
+
+        ticks: Defaults to everything (None).
+            When specified, this should be a list of integers corresponding to
+            the tick indices to report sensitivities for.
+
+        ignore_anticommutation_errors: Defaults to False.
+            When set to False, invalid detecting regions that anticommute with a
+            reset will cause the method to raise an exception. When set to True,
+            the offending component will simply be silently dropped. This can
+            result in broken detectors having apparently enormous detecting
+            regions.
+
+    Returns:
+        Nested dictionaries keyed first by a `stim.DemTarget` identifying the
+        detector or observable, then by the index of the tick, leading to a
+        PauliString with that target's error sensitivity at that tick.
+
+        Note you can use `stim.PauliString.pauli_indices` to quickly get to the
+        non-identity terms in the sensitivity.
+
+    Examples:
+        >>> import stim
+
+        >>> detecting_regions = stim.Circuit('''
+        ...     R 0
+        ...     TICK
+        ...     H 0
+        ...     TICK
+        ...     CX 0 1
+        ...     TICK
+        ...     MX 0 1
+        ...     DETECTOR rec[-1] rec[-2]
+        ... ''').detecting_regions()
+        >>> for target, tick_regions in detecting_regions.items():
+        ...     print("target", target)
+        ...     for tick, sensitivity in tick_regions.items():
+        ...         print("    tick", tick, "=", sensitivity)
+        target D0
+            tick 0 = +Z_
+            tick 1 = +X_
+            tick 2 = +XX
+
+        >>> circuit = stim.Circuit.generated(
+        ...     "surface_code:rotated_memory_x",
+        ...     rounds=5,
+        ...     distance=4,
+        ... )
+
+        >>> detecting_regions = circuit.detecting_regions(
+        ...     targets=["L0", (2, 4), stim.DemTarget.relative_detector_id(5)],
+        ...     ticks=range(5, 15),
+        ... )
+        >>> for target, tick_regions in detecting_regions.items():
+        ...     print("target", target)
+        ...     for tick, sensitivity in tick_regions.items():
+        ...         print("    tick", tick, "=", sensitivity)
+        target D1
+            tick 5 = +____________________X______________________
+            tick 6 = +____________________Z______________________
+        target D5
+            tick 5 = +______X____________________________________
+            tick 6 = +______Z____________________________________
+        target D14
+            tick 5 = +__________X_X______XXX_____________________
+            tick 6 = +__________X_X______XZX_____________________
+            tick 7 = +__________X_X______XZX_____________________
+            tick 8 = +__________X_X______XXX_____________________
+            tick 9 = +__________XXX_____XXX______________________
+            tick 10 = +__________XXX_______X______________________
+            tick 11 = +__________X_________X______________________
+            tick 12 = +____________________X______________________
+            tick 13 = +____________________Z______________________
+        target D29
+            tick 7 = +____________________Z______________________
+            tick 8 = +____________________X______________________
+            tick 9 = +____________________XX_____________________
+            tick 10 = +___________________XXX_______X_____________
+            tick 11 = +____________X______XXXX______X_____________
+            tick 12 = +__________X_X______XXX_____________________
+            tick 13 = +__________X_X______XZX_____________________
+            tick 14 = +__________X_X______XZX_____________________
+        target D44
+            tick 14 = +____________________Z______________________
+        target L0
+            tick 5 = +_X________X________X________X______________
+            tick 6 = +_X________X________X________X______________
+            tick 7 = +_X________X________X________X______________
+            tick 8 = +_X________X________X________X______________
+            tick 9 = +_X________X_______XX________X______________
+            tick 10 = +_X________X________X________X______________
+            tick 11 = +_X________XX_______X________XX_____________
+            tick 12 = +_X________X________X________X______________
+            tick 13 = +_X________X________X________X______________
+            tick 14 = +_X________X________X________X______________
+    """
+```
+
 <a name="stim.Circuit.detector_error_model"></a>
 ```python
 # stim.Circuit.detector_error_model
@@ -1302,7 +1549,7 @@ def detector_error_model(
             error mechanisms). When set to true, the probabilities of the disjoint
             cases are instead assumed to be independent probabilities. For example,
             a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
-            `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an
+            `X_ERROR(0.1)` followed by a `Y_ERROR(0.2)`. This assumption is an
             approximation, but it is a good approximation for small probabilities.
 
             This argument can also be set to a probability between 0 and 1, setting
@@ -1355,86 +1602,6 @@ def detector_error_model(
 # stim.Circuit.diagram
 
 # (in class stim.Circuit)
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-text"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-svg"]',
-    *,
-    tick: Union[None, int, range] = None,
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeline-3d", "timeline-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-svg"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-text"]',
-    *,
-    tick: int,
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["detslice-with-ops-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["timeslice-svg"]',
-    *,
-    tick: Union[int, range],
-    filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["interactive", "interactive-html"]',
-) -> 'stim._DiagramHelper':
-    pass
 def diagram(
     self,
     type: str = 'timeline-text',
@@ -1455,6 +1622,11 @@ def diagram(
                 the circuit over time. Includes annotations showing the
                 measurement record index that each measurement writes
                 to, and the measurements used by detectors.
+            "timeline-svg-html": A resizable SVG image viewer of the
+                operations applied by the circuit over time. Includes
+                annotations showing the measurement record index that
+                each measurement writes to, and the measurements used
+                by detectors.
             "timeline-3d": A 3d model, in GLTF format, of the operations
                 applied by the circuit over time.
             "timeline-3d-html": Same 3d model as 'timeline-3d' but
@@ -1473,8 +1645,12 @@ def diagram(
                 usual diagram of a surface code.
 
                 Uses the Pauli color convention XYZ=RGB.
+            "detslice-svg-html": Same as detslice-svg but the SVG image
+                is inside a resizable HTML iframe.
             "matchgraph-svg": An SVG image of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
+            "matchgraph-svg-html": Same as matchgraph-svg but the SVG image
+                is inside a resizable HTML iframe.
             "matchgraph-3d": An 3D model of the match graph extracted
                 from the circuit by stim.Circuit.detector_error_model.
             "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
@@ -1483,10 +1659,14 @@ def diagram(
             "timeslice-svg": An SVG image of the operations applied
                 between two TICK instructions in the circuit, with the
                 operations laid out in 2d.
+            "timeslice-svg-html": Same as timeslice-svg but the SVG image
+                is inside a resizable HTML iframe.
             "detslice-with-ops-svg": A combination of timeslice-svg
                 and detslice-svg, with the operations overlaid
                 over the detector slices taken from the TICK after the
                 operations were applied.
+            "detslice-with-ops-svg-html": Same as detslice-with-ops-svg
+                but the SVG image is inside a resizable HTML iframe.
             "interactive" or "interactive-html": An HTML web page
                 containing Crumble (an interactive editor for 2D
                 stabilizer circuits) initialized with the given circuit
@@ -1502,11 +1682,19 @@ def diagram(
 
             Passing `range(A, B)` for a time slice will show the
             operations between tick A and tick B.
-        filter_coords: A set of acceptable coordinate prefixes, or
-            desired stim.DemTargets. For detector slice diagrams, only
-            detectors match one of the filters are included. If no filter
-            is specified, all detectors are included (but no observables).
-            To include an observable, add it as one of the filters.
+        rows: In diagrams that have multiple separate pieces, such as timeslice
+            diagrams and detslice diagrams, this controls how many rows of
+            pieces there will be. If not specified, a number of rows that creates
+            a roughly square layout will be chosen.
+        filter_coords: A list of things to include in the diagram. Different
+            effects depending on the diagram.
+
+            For detslice diagrams, the filter defaults to showing all detectors
+            and no observables. When specified, each list entry can be a collection
+            of floats (detectors whose coordinates start with the same numbers will
+            be included), a stim.DemTarget (specifying a detector or observable
+            to include), a string like "D5" or "L0" specifying a detector or
+            observable to include.
 
     Returns:
         An object whose `__str__` method returns the diagram, so that
@@ -1649,6 +1837,64 @@ def flattened(
             DETECTOR(0, 4) rec[-2]
             DETECTOR(1, 4) rec[-1]
         ''')
+    """
+```
+
+<a name="stim.Circuit.flow_generators"></a>
+```python
+# stim.Circuit.flow_generators
+
+# (in class stim.Circuit)
+def flow_generators(
+    self,
+) -> List[stim.Flow]:
+    """Returns a list of flows that generate all of the circuit's flows.
+
+    Every stabilizer flow that the circuit implements is a product of some
+    subset of the returned generators. Every returned flow will be a flow
+    of the circuit.
+
+    Returns:
+        A list of flow generators for the circuit.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit("H 0").flow_generators()
+        [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+        >>> stim.Circuit("M 0").flow_generators()
+        [stim.Flow("1 -> Z xor rec[0]"), stim.Flow("Z -> rec[0]")]
+
+        >>> stim.Circuit("RX 0").flow_generators()
+        [stim.Flow("1 -> X")]
+
+        >>> for flow in stim.Circuit("MXX 0 1").flow_generators():
+        ...     print(flow)
+        1 -> XX xor rec[0]
+        _X -> _X
+        X_ -> _X xor rec[0]
+        ZZ -> ZZ
+
+        >>> for flow in stim.Circuit.generated(
+        ...     "repetition_code:memory",
+        ...     rounds=2,
+        ...     distance=3,
+        ...     after_clifford_depolarization=1e-3,
+        ... ).flow_generators():
+        ...     print(flow)
+        1 -> rec[0]
+        1 -> rec[1]
+        1 -> rec[2]
+        1 -> rec[3]
+        1 -> rec[4]
+        1 -> rec[5]
+        1 -> rec[6]
+        1 -> ____Z
+        1 -> ___Z_
+        1 -> __Z__
+        1 -> _Z___
+        1 -> Z____
     """
 ```
 
@@ -1874,6 +2120,251 @@ def get_final_qubit_coordinates(
     """
 ```
 
+<a name="stim.Circuit.has_all_flows"></a>
+```python
+# stim.Circuit.has_all_flows
+
+# (in class stim.Circuit)
+def has_all_flows(
+    self,
+    flows: Iterable[stim.Flow],
+    *,
+    unsigned: bool = False,
+) -> bool:
+    """Determines if the circuit has all the given stabilizer flow or not.
+
+    This is a faster version of `all(c.has_flow(f) for f in flows)`. It's faster
+    because, behind the scenes, the circuit can be iterated once instead of once
+    per flow.
+
+    This method ignores any noise in the circuit.
+
+    Args:
+        flows: An iterable of `stim.Flow` instances representing the flows to check.
+        unsigned: Defaults to False. When False, the flows must be correct including
+            the sign of the Pauli strings. When True, only the Pauli terms need to
+            be correct; the signs are permitted to be inverted. In effect, this
+            requires the circuit to be correct up to Pauli gates.
+
+    Returns:
+        True if the circuit has the given flow; False otherwise.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ])
+        False
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> -Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ])
+        True
+
+        >>> stim.Circuit('H 0').has_all_flows([
+        ...     stim.Flow('X -> Z'),
+        ...     stim.Flow('Y -> Y'),
+        ...     stim.Flow('Z -> X'),
+        ... ], unsigned=True)
+        True
+
+    Caveats:
+        Currently, the unsigned=False version of this method is implemented by
+        performing 256 randomized tests. Each test has a 50% chance of a false
+        positive, and a 0% chance of a false negative. So, when the method returns
+        True, there is technically still a 2^-256 chance the circuit doesn't have
+        the flow. This is lower than the chance of a cosmic ray flipping the result.
+    """
+```
+
+<a name="stim.Circuit.has_flow"></a>
+```python
+# stim.Circuit.has_flow
+
+# (in class stim.Circuit)
+def has_flow(
+    self,
+    flow: stim.Flow,
+    *,
+    unsigned: bool = False,
+) -> bool:
+    """Determines if the circuit has the given stabilizer flow or not.
+
+    A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
+    P at the start of the circuit to the instantaneous stabilizer Q at the end of
+    the circuit. The flow may be mediated by certain measurements. For example,
+    a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
+    the CNOT flows implemented by the circuit involve these measurements.
+
+    A flow like P -> Q means the circuit transforms P into Q.
+    A flow like 1 -> P means the circuit prepares P.
+    A flow like P -> 1 means the circuit measures P.
+    A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
+
+    This method ignores any noise in the circuit.
+
+    Args:
+        flow: The flow to check for.
+        unsigned: Defaults to False. When False, the flows must be correct including
+            the sign of the Pauli strings. When True, only the Pauli terms need to
+            be correct; the signs are permitted to be inverted. In effect, this
+            requires the circuit to be correct up to Pauli gates.
+
+    Returns:
+        True if the circuit has the given flow; False otherwise.
+
+    Examples:
+        >>> import stim
+
+        >>> m = stim.Circuit('M 0')
+        >>> m.has_flow(stim.Flow('Z -> Z'))
+        True
+        >>> m.has_flow(stim.Flow('X -> X'))
+        False
+        >>> m.has_flow(stim.Flow('Z -> I'))
+        False
+        >>> m.has_flow(stim.Flow('Z -> I xor rec[-1]'))
+        True
+        >>> m.has_flow(stim.Flow('Z -> rec[-1]'))
+        True
+
+        >>> cx58 = stim.Circuit('CX 5 8')
+        >>> cx58.has_flow(stim.Flow('X5 -> X5*X8'))
+        True
+        >>> cx58.has_flow(stim.Flow('X_ -> XX'))
+        False
+        >>> cx58.has_flow(stim.Flow('_____X___ -> _____X__X'))
+        True
+
+        >>> stim.Circuit('''
+        ...     RY 0
+        ... ''').has_flow(stim.Flow(
+        ...     output=stim.PauliString("Y"),
+        ... ))
+        True
+
+        >>> stim.Circuit('''
+        ...     RY 0
+        ...     X_ERROR(0.1) 0
+        ... ''').has_flow(stim.Flow(
+        ...     output=stim.PauliString("Y"),
+        ... ))
+        True
+
+        >>> stim.Circuit('''
+        ...     RY 0
+        ... ''').has_flow(stim.Flow(
+        ...     output=stim.PauliString("X"),
+        ... ))
+        False
+
+        >>> stim.Circuit('''
+        ...     CX 0 1
+        ... ''').has_flow(stim.Flow(
+        ...     input=stim.PauliString("+X_"),
+        ...     output=stim.PauliString("+XX"),
+        ... ))
+        True
+
+        >>> stim.Circuit('''
+        ...     # Lattice surgery CNOT
+        ...     R 1
+        ...     MXX 0 1
+        ...     MZZ 1 2
+        ...     MX 1
+        ... ''').has_flow(stim.Flow(
+        ...     input=stim.PauliString("+X_X"),
+        ...     output=stim.PauliString("+__X"),
+        ...     measurements=[0, 2],
+        ... ))
+        True
+
+        >>> stim.Circuit('''
+        ...     H 0
+        ... ''').has_flow(
+        ...     stim.Flow("Y -> Y"),
+        ...     unsigned=True,
+        ... )
+        True
+
+        >>> stim.Circuit('''
+        ...     H 0
+        ... ''').has_flow(
+        ...     stim.Flow("Y -> Y"),
+        ...     unsigned=False,
+        ... )
+        False
+
+    Caveats:
+        Currently, the unsigned=False version of this method is implemented by
+        performing 256 randomized tests. Each test has a 50% chance of a false
+        positive, and a 0% chance of a false negative. So, when the method returns
+        True, there is technically still a 2^-256 chance the circuit doesn't have
+        the flow. This is lower than the chance of a cosmic ray flipping the result.
+    """
+```
+
+<a name="stim.Circuit.insert"></a>
+```python
+# stim.Circuit.insert
+
+# (in class stim.Circuit)
+def insert(
+    self,
+    index: int,
+    operation: Union[stim.CircuitInstruction, stim.Circuit],
+) -> None:
+    """Inserts an operation at the given index, pushing existing operations forward.
+
+    Beware that inserted operations are automatically fused with the preceding
+    and following operations, if possible. This can make it complex to reason
+    about how the indices of operations change in response to insertions.
+
+    Args:
+        index: The index to insert at.
+
+            Must satisfy -len(circuit) <= index < len(circuit). Negative indices
+            are made non-negative by adding len(circuit) to them, so they refer to
+            indices relative to the end of the circuit instead of the start.
+
+            Instructions before the index are not shifted. Instructions that
+            were at or after the index are shifted forwards as needed.
+        operation: The object to insert. This can be a single
+            stim.CircuitInstruction or an entire stim.Circuit.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit('''
+        ...     H 0
+        ...     S 1
+        ...     X 2
+        ... ''')
+        >>> c.insert(1, stim.CircuitInstruction("Y", [3, 4, 5]))
+        >>> c
+        stim.Circuit('''
+            H 0
+            Y 3 4 5
+            S 1
+            X 2
+        ''')
+        >>> c.insert(-1, stim.Circuit("S 999\nCX 0 1\nCZ 2 3"))
+        >>> c
+        stim.Circuit('''
+            H 0
+            Y 3 4 5
+            S 1 999
+            CX 0 1
+            CZ 2 3
+            X 2
+        ''')
+    """
+```
+
 <a name="stim.Circuit.inverse"></a>
 ```python
 # stim.Circuit.inverse
@@ -1929,6 +2420,92 @@ def inverse(
             }
             H 1 0
         ''')
+    """
+```
+
+<a name="stim.Circuit.likeliest_error_sat_problem"></a>
+```python
+# stim.Circuit.likeliest_error_sat_problem
+
+# (in class stim.Circuit)
+def likeliest_error_sat_problem(
+    self,
+    *,
+    quantization: int = 100,
+    format: str = 'WDIMACS',
+) -> str:
+    """Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the highest likelihood set of error mechanisms that combine to
+    flip any logical observable while producing no detection events).
+
+    If there are any errors with probability p > 0.5, they are inverted so
+    that the resulting weight ends up being positive. If there are errors
+    with weight close or equal to 0.5, they can end up with 0 weight meaning
+    that they can be included or not in the solution with no affect on the
+    likelihood.
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    One quick way to get started is to install pysat by running this BASH
+    terminal command:
+
+        pip install python-sat
+
+    Afterwards, you can run the included maxSAT solver "RC2" with this
+    Python code:
+
+        from pysat.examples.rc2 import RC2
+        from pysat.formula import WCNF
+
+        wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
+
+        with RC2(wcnf) as rc2:
+        print(rc2.compute())
+        print(rc2.cost)
+
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
+
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
+
+    Args:
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+            described here: http://www.maxhs.org/docs/wdimacs.html
+        quantization: Defaults to 10. Error probabilities are converted to log-odds
+            and scaled/rounded to be positive integers at most this large. Setting
+            this argument to a larger number results in more accurate quantization
+            such that the returned error set should have a likelihood closer to the
+            true most likely solution. This comes at the cost of making some maxSAT
+            solvers slower.
+
+    Returns:
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...   X_ERROR(0.1) 0
+        ...   M 0
+        ...   OBSERVABLE_INCLUDE(0) rec[-1]
+        ...   X_ERROR(0.4) 0
+        ...   M 0
+        ...   DETECTOR rec[-1] rec[-2]
+        ... ''')
+        >>> print(circuit.likeliest_error_sat_problem(
+        ...   quantization=1000
+        ... ), end='')
+        p wcnf 2 4 4001
+        185 -1 0
+        1000 -2 0
+        4001 -1 0
+        4001 2 0
     """
 ```
 
@@ -2134,6 +2711,14 @@ def reference_sample(
 
     Returns:
         reference_sample: reference sample sampled from the given circuit.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     X 1
+        ...     M 0 1
+        ... ''').reference_sample()
+        array([False,  True])
     """
 ```
 
@@ -2237,6 +2822,80 @@ def search_for_undetectable_logical_errors(
     """
 ```
 
+<a name="stim.Circuit.shortest_error_sat_problem"></a>
+```python
+# stim.Circuit.shortest_error_sat_problem
+
+# (in class stim.Circuit)
+def shortest_error_sat_problem(
+    self,
+    *,
+    format: str = 'WDIMACS',
+) -> str:
+    """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
+
+    The output is a string describing the maxSAT problem in WDIMACS format
+    (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
+    problem is the fault distance of the circuit (the minimum number of error
+    mechanisms that combine to flip any logical observable while producing no
+    detection events). This method ignores the probabilities of the error
+    mechanisms since it only cares about minimizing the number of errors
+    triggered.
+
+    There are many tools that can solve maxSAT problems in WDIMACS format.
+    One quick way to get started is to install pysat by running this BASH
+    terminal command:
+
+        pip install python-sat
+
+    Afterwards, you can run the included maxSAT solver "RC2" with this
+    Python code:
+
+        from pysat.examples.rc2 import RC2
+        from pysat.formula import WCNF
+
+        wcnf = WCNF(from_string="p wcnf 1 2 3\n3 -1 0\n3 1 0\n")
+
+        with RC2(wcnf) as rc2:
+        print(rc2.compute())
+        print(rc2.cost)
+
+    Much faster solvers are available online. For example, you can download
+    one of the entries in the 2023 maxSAT competition (see
+    https://maxsat-evaluations.github.io/2023) and run it on your problem by
+    running these BASH terminal commands:
+
+        wget https://maxsat-evaluations.github.io/2023/mse23-solver-src/exact/CASHWMaxSAT-CorePlus.zip
+        unzip CASHWMaxSAT-CorePlus.zip
+        ./CASHWMaxSAT-CorePlus/bin/cashwmaxsatcoreplus -bm -m your_problem.wcnf
+
+    Args:
+        format: Defaults to "WDIMACS", corresponding to WDIMACS format which is
+            described here: http://www.maxhs.org/docs/wdimacs.html
+
+    Returns:
+        A string corresponding to the contents of a maxSAT problem file in the
+        requested format.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...   X_ERROR(0.1) 0
+        ...   M 0
+        ...   OBSERVABLE_INCLUDE(0) rec[-1]
+        ...   X_ERROR(0.4) 0
+        ...   M 0
+        ...   DETECTOR rec[-1] rec[-2]
+        ... ''')
+        >>> print(circuit.shortest_error_sat_problem(), end='')
+        p wcnf 2 4 5
+        1 -1 0
+        1 -2 0
+        5 -1 0
+        5 2 0
+    """
+```
+
 <a name="stim.Circuit.shortest_graphlike_error"></a>
 ```python
 # stim.Circuit.shortest_graphlike_error
@@ -2314,6 +2973,246 @@ def shortest_graphlike_error(
     """
 ```
 
+<a name="stim.Circuit.time_reversed_for_flows"></a>
+```python
+# stim.Circuit.time_reversed_for_flows
+
+# (in class stim.Circuit)
+def time_reversed_for_flows(
+    self,
+    flows: Iterable[stim.Flow],
+    *,
+    dont_turn_measurements_into_resets: bool = False,
+) -> Tuple[stim.Circuit, List[stim.Flow]]:
+    """Time-reverses the circuit while preserving error correction structure.
+
+    This method returns a circuit that has the same internal detecting regions
+    as the given circuit, as well as the same internal-to-external flows given
+    in the `flows` argument, except they are all time-reversed. For example, if
+    you pass a fault tolerant preparation circuit into this method (1 -> Z), the
+    result will be a fault tolerant *measurement* circuit (Z -> 1). Or, if you
+    pass a fault tolerant C_XYZ circuit into this method (X->Y, Y->Z, and Z->X),
+    the result will be a fault tolerant C_ZYX circuit (X->Z, Y->X, and Z->Y).
+
+    Note that this method doesn't guarantee that it will preserve the *sign* of the
+    detecting regions or stabilizer flows. For example, inverting a memory circuit
+    that preserves a logical observable (X->X and Z->Z) may produce a
+    memory circuit that always bit flips the logical observable (X->X and Z->-Z) or
+    that dynamically adjusts the logical observable in response to measurements
+    (like "X -> X xor rec[-1]" and "Z -> Z xor rec[-2]").
+
+    This method will turn time-reversed resets into measurements, and attempts to
+    turn time-reversed measurements into resets. A measurement will time-reverse
+    into a reset if some annotated detectors, annotated observables, or given flows
+    have detecting regions with sensitivity just before the measurement but none
+    have detecting regions with sensitivity after the measurement.
+
+    In some cases this method will have to introduce new operations. In particular,
+    when a measurement-reset operation has a noisy result, time-reversing this
+    measurement noise produces reset noise. But the measure-reset operations don't
+    have built-in reset noise, so the reset noise is specified by adding an X_ERROR
+    or Z_ERROR noise instruction after the time-reversed measure-reset operation.
+
+    Args:
+        flows: Flows you care about, that reach past the start/end of the given
+            circuit. The result will contain an inverted flow for each of these
+            given flows. You need this information because it reveals the
+            measurements needed to produce the inverted flows that you care
+            about.
+
+            An exception will be raised if the circuit doesn't have all these
+            flows. The inverted circuit will have the inverses of these flows
+            (ignoring sign).
+        dont_turn_measurements_into_resets: Defaults to False. When set to
+            True, measurements will time-reverse into measurements even if
+            nothing is sensitive to the measured qubit after the measurement
+            completes. This guarantees the output circuit has *all* flows
+            that the input circuit has (up to sign and feedback), even ones
+            that aren't annotated.
+
+    Returns:
+        An (inverted_circuit, inverted_flows) tuple.
+
+        inverted_circuit is the qec inverse of the given circuit.
+
+        inverted_flows is a list of flows, matching up by index with the flows
+        given as arguments to the method. The input, output, and sign fields
+        of these flows are boring. The useful field is measurement_indices,
+        because it's difficult to predict which measurements are needed for
+        the inverted flow due to effects such as implicitly-included resets
+        inverting into explicitly-included measurements.
+
+    Caveats:
+        Currently, this method doesn't compute the sign of the inverted flows.
+        It unconditionally sets the sign to False.
+
+    Examples:
+        >>> import stim
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     R 0
+        ...     H 0
+        ...     S 0
+        ...     MY 0
+        ...     DETECTOR rec[-1]
+        ... ''').time_reversed_for_flows([])
+        >>> inv_circuit
+        stim.Circuit('''
+            RY 0
+            S_DAG 0
+            H 0
+            M 0
+            DETECTOR rec[-1]
+        ''')
+        >>> inv_flows
+        []
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     M 0
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("Z -> rec[-1]"),
+        ... ])
+        >>> inv_circuit
+        stim.Circuit('''
+            R 0
+        ''')
+        >>> inv_flows
+        [stim.Flow("1 -> Z")]
+        >>> inv_circuit.has_all_flows(inv_flows, unsigned=True)
+        True
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     R 0
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("1 -> Z"),
+        ... ])
+        >>> inv_circuit
+        stim.Circuit('''
+            M 0
+        ''')
+        >>> inv_flows
+        [stim.Flow("Z -> rec[-1]")]
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     M 0
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("1 -> Z xor rec[-1]"),
+        ... ])
+        >>> inv_circuit
+        stim.Circuit('''
+            M 0
+        ''')
+        >>> inv_flows
+        [stim.Flow("Z -> rec[-1]")]
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     M 0
+        ... ''').time_reversed_for_flows(
+        ...     flows=[stim.Flow("Z -> rec[-1]")],
+        ...     dont_turn_measurements_into_resets=True,
+        ... )
+        >>> inv_circuit
+        stim.Circuit('''
+            M 0
+        ''')
+        >>> inv_flows
+        [stim.Flow("1 -> Z xor rec[-1]")]
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     MR(0.125) 0
+        ... ''').time_reversed_for_flows([])
+        >>> inv_circuit
+        stim.Circuit('''
+            MR 0
+            X_ERROR(0.125) 0
+        ''')
+        >>> inv_flows
+        []
+
+        >>> inv_circuit, inv_flows = stim.Circuit('''
+        ...     MXX 0 1
+        ...     H 0
+        ... ''').time_reversed_for_flows([
+        ...     stim.Flow("ZZ -> YY xor rec[-1]"),
+        ...     stim.Flow("ZZ -> XZ"),
+        ... ])
+        >>> inv_circuit
+        stim.Circuit('''
+            H 0
+            MXX 0 1
+        ''')
+        >>> inv_flows
+        [stim.Flow("YY -> ZZ xor rec[-1]"), stim.Flow("XZ -> ZZ")]
+
+        >>> stim.Circuit.generated(
+        ...     "surface_code:rotated_memory_x",
+        ...     distance=2,
+        ...     rounds=1,
+        ... ).time_reversed_for_flows([])[0]
+        stim.Circuit('''
+            QUBIT_COORDS(1, 1) 1
+            QUBIT_COORDS(2, 0) 2
+            QUBIT_COORDS(3, 1) 3
+            QUBIT_COORDS(1, 3) 6
+            QUBIT_COORDS(2, 2) 7
+            QUBIT_COORDS(3, 3) 8
+            QUBIT_COORDS(2, 4) 12
+            RX 8 6 3 1
+            MR 12 7 2
+            TICK
+            H 12 2
+            TICK
+            CX 1 7 12 6
+            TICK
+            CX 6 7 12 8
+            TICK
+            CX 3 7 2 1
+            TICK
+            CX 8 7 2 3
+            TICK
+            H 12 2
+            TICK
+            M 12 7 2
+            DETECTOR(2, 0, 1) rec[-1]
+            DETECTOR(2, 4, 1) rec[-3]
+            MX 8 6 3 1
+            DETECTOR(2, 0, 0) rec[-5] rec[-2] rec[-1]
+            DETECTOR(2, 4, 0) rec[-7] rec[-4] rec[-3]
+            OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
+        ''')
+    """
+```
+
+<a name="stim.Circuit.to_crumble_url"></a>
+```python
+# stim.Circuit.to_crumble_url
+
+# (in class stim.Circuit)
+def to_crumble_url(
+    self,
+) -> str:
+    """Returns a URL that opens up crumble and loads this circuit into it.
+
+    Crumble is a tool for editing stabilizer circuits, and visualizing their
+    stabilizer flows. Its source code is in the `glue/crumble` directory of
+    the stim code repository on github. A prebuilt version is made available
+    at https://algassert.com/crumble, which is what the URL returned by this
+    method will point to.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_crumble_url()
+        'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+    """
+```
+
 <a name="stim.Circuit.to_file"></a>
 ```python
 # stim.Circuit.to_file
@@ -2352,6 +3251,165 @@ def to_file(
         ...         contents = f.read()
         >>> contents
         'H 5\nX 0\n'
+    """
+```
+
+<a name="stim.Circuit.to_qasm"></a>
+```python
+# stim.Circuit.to_qasm
+
+# (in class stim.Circuit)
+def to_qasm(
+    self,
+    *,
+    open_qasm_version: int,
+    skip_dets_and_obs: bool = False,
+) -> str:
+    """Creates an equivalent OpenQASM implementation of the circuit.
+
+    Args:
+        open_qasm_version: The version of OpenQASM to target.
+            This should be set to 2 or to 3.
+
+            Differences between the versions are:
+                - Support for operations on classical bits operations (only version
+                    3). This means DETECTOR and OBSERVABLE_INCLUDE only work with
+                    version 3.
+                - Support for feedback operations (only version 3).
+                - Support for subroutines (only version 3). Without subroutines,
+                    non-standard dissipative gates like MR and RX need to decompose
+                    inline every single time they're used.
+                - Minor name changes (e.g. creg -> bit, qelib1.inc -> stdgates.inc).
+        skip_dets_and_obs: Defaults to False. When set to False, the output will
+            include a `dets` register and an `obs` register (assuming the circuit
+            has detectors and observables). These registers will be computed as part
+            of running the circuit. This requires performing a simulation of the
+            circuit, in order to correctly account for the expected value of
+            measurements.
+
+            When set to True, the `dets` and `obs` registers are not included in the
+            output, and no simulation of the circuit is performed.
+
+    Returns:
+        The OpenQASM code as a string.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...     R 0 1
+        ...     X 1
+        ...     H 0
+        ...     CX 0 1
+        ...     M 0 1
+        ...     DETECTOR rec[-1] rec[-2]
+        ... ''');
+        >>> qasm = circuit.to_qasm(open_qasm_version=3);
+        >>> print(qasm.strip().replace('\n\n', '\n'))
+        OPENQASM 3.0;
+        include "stdgates.inc";
+        qreg q[2];
+        creg rec[2];
+        creg dets[1];
+        reset q[0];
+        reset q[1];
+        x q[1];
+        h q[0];
+        cx q[0], q[1];
+        measure q[0] -> rec[0];
+        measure q[1] -> rec[1];
+        dets[0] = rec[1] ^ rec[0] ^ 1;
+    """
+```
+
+<a name="stim.Circuit.to_quirk_url"></a>
+```python
+# stim.Circuit.to_quirk_url
+
+# (in class stim.Circuit)
+def to_quirk_url(
+    self,
+) -> str:
+    """Returns a URL that opens up quirk and loads this circuit into it.
+
+    Quirk is an open source drag and drop circuit editor with support for up to 16
+    qubits. Its source code is available at https://github.com/strilanc/quirk
+    and a prebuilt version is available at https://algassert.com/quirk, which is
+    what the URL returned by this method will point to.
+
+    Quirk doesn't support features like noise, feedback, or detectors. This method
+    will simply drop any unsupported operations from the circuit when producing
+    the URL.
+
+    Returns:
+        A URL that can be opened in a web browser.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     S 1
+        ... ''').to_quirk_url()
+        'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
+    """
+```
+
+<a name="stim.Circuit.to_tableau"></a>
+```python
+# stim.Circuit.to_tableau
+
+# (in class stim.Circuit)
+def to_tableau(
+    self,
+    *,
+    ignore_noise: bool = False,
+    ignore_measurement: bool = False,
+    ignore_reset: bool = False,
+) -> stim.Tableau:
+    """Converts the circuit into an equivalent stabilizer tableau.
+
+    Args:
+        ignore_noise: Defaults to False. When False, any noise operations in the
+            circuit will cause the conversion to fail with an exception. When True,
+            noise operations are skipped over as if they weren't even present in the
+            circuit.
+        ignore_measurement: Defaults to False. When False, any measurement
+            operations in the circuit will cause the conversion to fail with an
+            exception. When True, measurement operations are skipped over as if they
+            weren't even present in the circuit.
+        ignore_reset: Defaults to False. When False, any reset operations in the
+            circuit will cause the conversion to fail with an exception. When True,
+            reset operations are skipped over as if they weren't even present in the
+            circuit.
+
+    Returns:
+        A tableau equivalent to the circuit (up to global phase).
+
+    Raises:
+        ValueError:
+            The circuit contains noise operations but ignore_noise=False.
+            OR
+            The circuit contains measurement operations but
+            ignore_measurement=False.
+            OR
+            The circuit contains reset operations but ignore_reset=False.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ... ''').to_tableau()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
     """
 ```
 
@@ -2457,6 +3515,26 @@ def without_noise(
 # (at top-level in the stim module)
 class CircuitErrorLocation:
     """Describes the location of an error mechanism from a stim circuit.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit.generated(
+        ...     "repetition_code:memory",
+        ...     distance=5,
+        ...     rounds=5,
+        ...     before_round_data_depolarization=1e-3,
+        ... )
+        >>> logical_error = circuit.shortest_graphlike_error()
+        >>> error_location = logical_error[0].circuit_error_locations[0]
+        >>> print(error_location)
+        CircuitErrorLocation {
+            flipped_pauli_product: X0
+            Circuit location stack trace:
+                (after 1 TICKs)
+                at instruction #3 (DEPOLARIZE1) in the circuit
+                at target #1 of the instruction
+                resolving to DEPOLARIZE1(0.001) 0
+        }
     """
 ```
 
@@ -2475,6 +3553,48 @@ def __init__(
     stack_frames: List[stim.CircuitErrorLocationStackFrame],
 ) -> None:
     """Creates a stim.CircuitErrorLocation.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.CircuitErrorLocation(
+        ...     tick_offset=1,
+        ...     flipped_pauli_product=(
+        ...         stim.GateTargetWithCoords(
+        ...             gate_target=stim.target_x(0),
+        ...             coords=[],
+        ...         ),
+        ...     ),
+        ...     flipped_measurement=stim.FlippedMeasurement(
+        ...         record_index=None,
+        ...         observable=(),
+        ...     ),
+        ...     instruction_targets=stim.CircuitTargetsInsideInstruction(
+        ...         gate='DEPOLARIZE1',
+        ...         args=[0.001],
+        ...         target_range_start=0,
+        ...         target_range_end=1,
+        ...         targets_in_range=(stim.GateTargetWithCoords(
+        ...             gate_target=0,
+        ...             coords=[],
+        ...         ),)
+        ...     ),
+        ...     stack_frames=(
+        ...         stim.CircuitErrorLocationStackFrame(
+        ...             instruction_offset=2,
+        ...             iteration_index=0,
+        ...             instruction_repetitions_arg=0,
+        ...         ),
+        ...     ),
+        ... )
+        >>> print(err)
+        CircuitErrorLocation {
+            flipped_pauli_product: X0
+            Circuit location stack trace:
+                (after 1 TICKs)
+                at instruction #3 (DEPOLARIZE1) in the circuit
+                at target #1 of the instruction
+                resolving to DEPOLARIZE1(0.001) 0
+        }
     """
 ```
 
@@ -2488,7 +3608,21 @@ def flipped_measurement(
     self,
 ) -> Optional[stim.FlippedMeasurement]:
     """The measurement that was flipped by the error mechanism.
+
     If the error isn't a measurement error, this will be None.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     M(0.125) 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].flipped_measurement
+        stim.FlippedMeasurement(
+            record_index=0,
+            observable=(stim.GateTargetWithCoords(stim.target_z(0), []),),
+        )
     """
 ```
 
@@ -2502,7 +3636,19 @@ def flipped_pauli_product(
     self,
 ) -> List[stim.GateTargetWithCoords]:
     """The Pauli errors that the error mechanism applied to qubits.
+
     When the error is a measurement error, this will be an empty list.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     Y_ERROR(0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].flipped_pauli_product
+        [stim.GateTargetWithCoords(stim.target_y(0), [])]
     """
 ```
 
@@ -2530,8 +3676,26 @@ def instruction_targets(
 def stack_frames(
     self,
 ) -> List[stim.CircuitErrorLocationStackFrame]:
-    """Where in the circuit's execution does the error mechanism occur,
-    accounting for things like nested loops that iterate multiple times.
+    """Describes where in the circuit's execution the error happened.
+
+    Multiple frames are needed because the error may occur within a loop,
+    or a loop nested inside a loop, or etc.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     TICK
+        ...     Y_ERROR(0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].stack_frames
+        [stim.CircuitErrorLocationStackFrame(
+            instruction_offset=2,
+            iteration_index=0,
+            instruction_repetitions_arg=0,
+        )]
     """
 ```
 
@@ -2544,8 +3708,23 @@ def stack_frames(
 def tick_offset(
     self,
 ) -> int:
-    """The number of TICKs that executed before the error mechanism being discussed,
-    including TICKs that occurred multiple times during loops.
+    """The number of TICKs that executed before the error happened.
+
+    This counts TICKs occurring multiple times during loops.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     TICK
+        ...     TICK
+        ...     TICK
+        ...     Y_ERROR(0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].tick_offset
+        3
     """
 ```
 
@@ -2754,6 +3933,34 @@ def name(
     """
 ```
 
+<a name="stim.CircuitInstruction.num_measurements"></a>
+```python
+# stim.CircuitInstruction.num_measurements
+
+# (in class stim.CircuitInstruction)
+@property
+def num_measurements(
+    self,
+) -> int:
+    """Returns the number of bits produced when running this instruction.
+
+    Examples:
+        >>> import stim
+        >>> stim.CircuitInstruction('H', [0]).num_measurements
+        0
+        >>> stim.CircuitInstruction('M', [0]).num_measurements
+        1
+        >>> stim.CircuitInstruction('M', [2, 3, 5, 7, 11]).num_measurements
+        5
+        >>> stim.CircuitInstruction('MXX', [0, 1, 4, 5, 11, 13]).num_measurements
+        3
+        >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
+        2
+        >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+        1
+    """
+```
+
 <a name="stim.CircuitInstruction.targets_copy"></a>
 ```python
 # stim.CircuitInstruction.targets_copy
@@ -2889,7 +4096,7 @@ def body_copy(
 @property
 def name(
     self,
-) -> object:
+) -> str:
     """Returns the name "REPEAT".
 
     This is a duck-typing convenience method. It exists so that code that doesn't
@@ -3396,25 +4603,6 @@ def __repr__(
 # stim.CompiledDetectorSampler.sample
 
 # (in class stim.CompiledDetectorSampler)
-@overload
-def sample(
-    self,
-    shots: int,
-    *,
-    prepend_observables: bool = False,
-    append_observables: bool = False,
-    bit_packed: bool = False,
-) -> np.ndarray:
-    pass
-@overload
-def sample(
-    self,
-    shots: int,
-    *,
-    separate_observables: Literal[True],
-    bit_packed: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
-    pass
 def sample(
     self,
     shots: int,
@@ -3423,6 +4611,8 @@ def sample(
     append_observables: bool = False,
     separate_observables: bool = False,
     bit_packed: bool = False,
+    dets_out: Optional[np.ndarray] = None,
+    obs_out: Optional[np.ndarray] = None,
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """Returns a numpy array containing a batch of detector samples from the circuit.
 
@@ -3441,6 +4631,12 @@ def sample(
             with the detectors and are placed at the end of the results.
         bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
             a bool_ numpy array with 1 bit per byte. Uses little endian packing.
+        dets_out: Defaults to None. Specifies a pre-allocated numpy array to write
+            the detection event data into. This array must have the correct shape
+            and dtype.
+        obs_out: Defaults to None. Specifies a pre-allocated numpy array to write
+            the observable flip data into. This array must have the correct shape
+            and dtype.
 
     Returns:
         A numpy array or tuple of numpy arrays containing the samples.
@@ -3500,12 +4696,12 @@ def sample_write(
     self,
     shots: int,
     *,
-    filepath: str,
-    format: str = '01',
+    filepath: Union[str, pathlib.Path],
+    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
+    obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
     prepend_observables: bool = False,
     append_observables: bool = False,
-    obs_out_filepath: str = None,
-    obs_out_format: str = '01',
 ) -> None:
     """Samples detection events from the circuit and writes them to a file.
 
@@ -4118,7 +5314,24 @@ def __str__(
 def args_copy(
     self,
 ) -> List[float]:
-    """Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).
+    """Returns a copy of the list of numbers parameterizing the instruction.
+
+    For example, this would be coordinates of a detector instruction or the
+    probability of an error instruction. The result is a copy, meaning that
+    editing it won't change the instruction's targets or future copies.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.DetectorErrorModel('''
+        ...     error(0.125) D0
+        ... ''')[0]
+        >>> instruction.args_copy()
+        [0.125]
+
+        >>> instruction.args_copy() == instruction.args_copy()
+        True
+        >>> instruction.args_copy() is instruction.args_copy()
+        False
     """
 ```
 
@@ -4132,8 +5345,21 @@ def targets_copy(
 ) -> List[Union[int, stim.DemTarget]]:
     """Returns a copy of the instruction's targets.
 
-    (Making a copy is enforced to make it clear that editing the result won't change
-    the instruction's targets.)
+    The result is a copy, meaning that editing it won't change the instruction's
+    targets or future copies.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.DetectorErrorModel('''
+        ...     error(0.125) D0 L2
+        ... ''')[0]
+        >>> instruction.targets_copy()
+        [stim.DemTarget('D0'), stim.DemTarget('L2')]
+
+        >>> instruction.targets_copy() == instruction.targets_copy()
+        True
+        >>> instruction.targets_copy() is instruction.targets_copy()
+        False
     """
 ```
 
@@ -4248,6 +5474,18 @@ def body_copy(
     self,
 ) -> stim.DetectorErrorModel:
     """Returns a copy of the block's body, as a stim.DetectorErrorModel.
+
+    Examples:
+        >>> import stim
+        >>> body = stim.DetectorErrorModel('''
+        ...     error(0.125) D0 D1
+        ...     shift_detectors 1
+        ... ''')
+        >>> repeat_block = stim.DemRepeatBlock(100, body)
+        >>> repeat_block.body_copy() == body
+        True
+        >>> repeat_block.body_copy() is repeat_block.body_copy()
+        False
     """
 ```
 
@@ -4317,6 +5555,33 @@ def __eq__(
     """
 ```
 
+<a name="stim.DemTarget.__init__"></a>
+```python
+# stim.DemTarget.__init__
+
+# (in class stim.DemTarget)
+def __init__(
+    self,
+    arg: object,
+    /,
+) -> None:
+    """Creates a stim.DemTarget from the given object.
+
+    Args:
+        arg: A string to parse as a stim.DemTarget, or some other object to
+            convert into a stim.DemTarget.
+
+    Examples:
+        >>> import stim
+        >>> stim.DemTarget("D5") == stim.target_relative_detector_id(5)
+        True
+        >>> stim.DemTarget("L2") == stim.target_logical_observable_id(2)
+        True
+        >>> stim.DemTarget("^") == stim.target_separator()
+        True
+    """
+```
+
 <a name="stim.DemTarget.__ne__"></a>
 ```python
 # stim.DemTarget.__ne__
@@ -4366,6 +5631,15 @@ def is_logical_observable_id(
 
     In a detector error model file, observable targets are prefixed by `L`. For
     example, in `error(0.25) D0 L1` the `L1` is an observable target.
+
+    Examples:
+        >>> import stim
+        >>> stim.DemTarget("L2").is_logical_observable_id()
+        True
+        >>> stim.DemTarget("D3").is_logical_observable_id()
+        False
+        >>> stim.DemTarget("^").is_logical_observable_id()
+        False
     """
 ```
 
@@ -4381,6 +5655,15 @@ def is_relative_detector_id(
 
     In a detector error model file, detectors are prefixed by `D`. For
     example, in `error(0.25) D0 L1` the `D0` is a relative detector target.
+
+    Examples:
+        >>> import stim
+        >>> stim.DemTarget("L2").is_relative_detector_id()
+        False
+        >>> stim.DemTarget("D3").is_relative_detector_id()
+        True
+        >>> stim.DemTarget("^").is_relative_detector_id()
+        False
     """
 ```
 
@@ -4396,6 +5679,15 @@ def is_separator(
 
     Separates separate the components of a suggested decompositions within an error.
     For example, the `^` in `error(0.25) D1 D2 ^ D3 D4` is the separator.
+
+    Examples:
+        >>> import stim
+        >>> stim.DemTarget("L2").is_separator()
+        False
+        >>> stim.DemTarget("D3").is_separator()
+        False
+        >>> stim.DemTarget("^").is_separator()
+        True
     """
 ```
 
@@ -4496,11 +5788,10 @@ def val(
     """Returns the target's integer value.
 
     Example:
-
         >>> import stim
-        >>> stim.target_relative_detector_id(5).val
+        >>> stim.DemTarget("D5").val
         5
-        >>> stim.target_logical_observable_id(6).val
+        >>> stim.DemTarget("L6").val
         6
     """
 ```
@@ -5215,24 +6506,6 @@ def copy(
 # stim.DetectorErrorModel.diagram
 
 # (in class stim.DetectorErrorModel)
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-svg"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d"]',
-) -> 'stim._DiagramHelper':
-    pass
-@overload
-def diagram(
-    self,
-    type: 'Literal["matchgraph-3d-html"]',
-) -> 'stim._DiagramHelper':
-    pass
 def diagram(
     self,
     type: str,
@@ -5245,6 +6518,8 @@ def diagram(
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
                 errors.
+            "matchgraph-svg-html": Same as matchgraph-svg but with the
+                SVG wrapped in a resizable HTML iframe.
             "matchgraph-3d": A 3d model of the decoding graph of the
                 detector error model. Red lines are errors crossing a
                 logical observable. Blue lines are undecomposed hyper
@@ -5276,12 +6551,12 @@ def diagram(
         >>> dem = circuit.detector_error_model(decompose_errors=True)
 
         >>> with tempfile.TemporaryDirectory() as d:
-        ...     diagram = circuit.diagram(type="match-graph-svg")
+        ...     diagram = circuit.diagram("match-graph-svg")
         ...     with open(f"{d}/dem_image.svg", "w") as f:
         ...         print(diagram, file=f)
 
         >>> with tempfile.TemporaryDirectory() as d:
-        ...     diagram = circuit.diagram(type="match-graph-3d")
+        ...     diagram = circuit.diagram("match-graph-3d")
         ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
         ...         print(diagram, file=f)
     """
@@ -5887,6 +7162,138 @@ def batch_size(
     """
 ```
 
+<a name="stim.FlipSimulator.broadcast_pauli_errors"></a>
+```python
+# stim.FlipSimulator.broadcast_pauli_errors
+
+# (in class stim.FlipSimulator)
+def broadcast_pauli_errors(
+    self,
+    *,
+    pauli: Union[str, int],
+    mask: np.ndarray,
+) -> None:
+    """Applies a pauli error to all qubits in all instances, filtered by a mask.
+
+    Args:
+        pauli: The pauli, specified as an integer or string.
+            Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+            Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+        mask: A 2d numpy array specifying where to apply errors. The first axis
+            is qubits, the second axis is simulation instances. The first axis
+            can have a length less than the current number of qubits (or more,
+            which adds qubits to the simulation). The length of the second axis
+            must match the simulator's `batch_size`. The array must satisfy
+
+                mask.dtype == np.bool_
+                len(mask.shape) == 2
+                mask.shape[1] == flip_sim.batch_size
+
+            The error is only applied to qubit q in instance k when
+
+                mask[q, k] == True.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+        >>> sim = stim.FlipSimulator(
+        ...     batch_size=2,
+        ...     num_qubits=3,
+        ...     disable_stabilizer_randomization=True,
+        ... )
+        >>> sim.broadcast_pauli_errors(
+        ...     pauli='X',
+        ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
+        ... )
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+
+        >>> sim.broadcast_pauli_errors(
+        ...     pauli='Z',
+        ...     mask=np.asarray([[False, True],[False, False],[True, True]]),
+        ... )
+        >>> sim.peek_pauli_flips()
+        [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
+    """
+```
+
+<a name="stim.FlipSimulator.copy"></a>
+```python
+# stim.FlipSimulator.copy
+
+# (in class stim.FlipSimulator)
+def copy(
+    self,
+    *,
+    copy_rng: bool = False,
+    seed: Optional[int] = None,
+) -> stim.FlipSimulator:
+    """Returns a simulator with the same internal state, except perhaps its prng.
+
+    Args:
+        copy_rng: Defaults to False. When False, the copy's pseudo random number
+            generator is reinitialized with a random seed instead of being a copy
+            of the original simulator's pseudo random number generator. This
+            causes the copy and the original to sample independent randomness,
+            instead of identical randomness, for future random operations. When set
+            to true, the copy will have the exact same pseudo random number
+            generator state as the original, and so will produce identical results
+            if told to do the same noisy operations. This argument is incompatible
+            with the `seed` argument.
+
+        seed: PARTIALLY determines simulation results by deterministically seeding
+            the random number generator.
+
+            Must be None or an integer in range(2**64).
+
+            Defaults to None. When None, the prng state is either copied from the
+            original simulator or reseeded from system entropy, depending on the
+            copy_rng argument.
+
+            When set to an integer, making the exact same series calls on the exact
+            same machine with the exact same version of Stim will produce the exact
+            same simulation results.
+
+            CAUTION: simulation results *WILL NOT* be consistent between versions of
+            Stim. This restriction is present to make it possible to have future
+            optimizations to the random sampling, and is enforced by introducing
+            intentional differences in the seeding strategy from version to version.
+
+            CAUTION: simulation results *MAY NOT* be consistent across machines that
+            differ in the width of supported SIMD instructions. For example, using
+            the same seed on a machine that supports AVX instructions and one that
+            only supports SSE instructions may produce different simulation results.
+
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
+
+    Returns:
+        The copy of the simulator.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+
+        >>> s1 = stim.FlipSimulator(batch_size=256)
+        >>> s1.set_pauli_flip('X', qubit_index=2, instance_index=3)
+        >>> s2 = s1.copy()
+        >>> s2 is s1
+        False
+        >>> s2.peek_pauli_flips() == s1.peek_pauli_flips()
+        True
+
+        >>> s1 = stim.FlipSimulator(batch_size=256)
+        >>> s2 = s1.copy(copy_rng=True)
+        >>> s1.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+        >>> s2.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+        >>> np.array_equal(s1.get_measurement_flips(), s2.get_measurement_flips())
+        True
+    """
+```
+
 <a name="stim.FlipSimulator.do"></a>
 ```python
 # stim.FlipSimulator.do
@@ -6323,6 +7730,38 @@ def peek_pauli_flips(
     """
 ```
 
+<a name="stim.FlipSimulator.reset"></a>
+```python
+# stim.FlipSimulator.reset
+
+# (in class stim.FlipSimulator)
+def reset(
+    self,
+) -> None:
+    """Resets the simulator's state, so it can be reused for another simulation.
+
+    This empties the measurement flip history, empties the detector flip history,
+    and zeroes the observable flip state. It also resets all qubits to |0>. If
+    stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
+    it randomizes all pauli flips to be I or Z with equal probability.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.do(stim.Circuit("M(0.1) 9"))
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (1, 256)
+
+        >>> sim.reset()
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (0, 256)
+    """
+```
+
 <a name="stim.FlipSimulator.set_pauli_flip"></a>
 ```python
 # stim.FlipSimulator.set_pauli_flip
@@ -6379,11 +7818,21 @@ class FlippedMeasurement:
 # (in class stim.FlippedMeasurement)
 def __init__(
     self,
-    *,
-    record_index: int,
-    observable: object,
-) -> None:
+    measurement_record_index: Optional[int],
+    measured_observable: Iterable[stim.GateTargetWithCoords],
+):
     """Creates a stim.FlippedMeasurement.
+
+    Examples:
+        >>> import stim
+        >>> print(stim.FlippedMeasurement(
+        ...     record_index=5,
+        ...     observable=[],
+        ... ))
+        stim.FlippedMeasurement(
+            record_index=5,
+            observable=(),
+        )
     """
 ```
 
@@ -6414,6 +7863,219 @@ def record_index(
     """The measurement record index of the flipped measurement.
     For example, the fifth measurement in a circuit has a measurement
     record index of 4.
+    """
+```
+
+<a name="stim.Flow"></a>
+```python
+# stim.Flow
+
+# (at top-level in the stim module)
+class Flow:
+    """A stabilizer flow (e.g. "XI -> XX xor rec[-1]").
+
+    Stabilizer circuits implement, and can be defined by, how they turn input
+    stabilizers into output stabilizers mediated by measurements. These
+    relationships are called stabilizer flows, and `stim.Flow` is a representation
+    of such a flow. For example, a `stim.Flow` can be given to
+    `stim.Circuit.has_flow` to verify that a circuit implements the flow.
+
+    A circuit has a stabilizer flow P -> Q if it maps the instantaneous stabilizer
+    P at the start of the circuit to the instantaneous stabilizer Q at the end of
+    the circuit. The flow may be mediated by certain measurements. For example,
+    a lattice surgery CNOT involves an MXX measurement and an MZZ measurement, and
+    the CNOT flows implemented by the circuit involve these measurements.
+
+    A flow like P -> Q means the circuit transforms P into Q.
+    A flow like 1 -> P means the circuit prepares P.
+    A flow like P -> 1 means the circuit measures P.
+    A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
+
+    References:
+        Stim's gate documentation includes the stabilizer flows of each gate.
+
+        Appendix A of https://arxiv.org/abs/2302.02192 describes how flows are
+        defined and provides a circuit construction for experimentally verifying
+        their presence.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit("CNOT 2 4")
+
+        >>> c.has_flow(stim.Flow("__X__ -> __X_X"))
+        True
+
+        >>> c.has_flow(stim.Flow("X2*X4 -> X2"))
+        True
+
+        >>> c.has_flow(stim.Flow("Z4 -> Z4"))
+        False
+    """
+```
+
+<a name="stim.Flow.__eq__"></a>
+```python
+# stim.Flow.__eq__
+
+# (in class stim.Flow)
+def __eq__(
+    self,
+    arg0: stim.Flow,
+) -> bool:
+    """Determines if two flows have identical contents.
+    """
+```
+
+<a name="stim.Flow.__init__"></a>
+```python
+# stim.Flow.__init__
+
+# (in class stim.Flow)
+def __init__(
+    self,
+    arg: Union[None, str, stim.Flow] = None,
+    /,
+    *,
+    input: Optional[stim.PauliString] = None,
+    output: Optional[stim.PauliString] = None,
+    measurements: Optional[Iterable[Union[int, GateTarget]]] = None,
+) -> None:
+    """Initializes a stim.Flow.
+
+    When given a string, the string is parsed as flow shorthand. For example,
+    the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
+    "X_", output pauli string "ZZ", and measurement indices [-1].
+
+    Arguments:
+        arg [position-only]: Defaults to None. Must be specified by itself if used.
+            str: Initializes a flow by parsing the given shorthand text.
+            stim.Flow: Initializes a copy of the given flow.
+            None (default): Initializes an empty flow.
+        input: Defaults to None. Can be set to a stim.PauliString to directly
+            specify the flow's input stabilizer.
+        output: Defaults to None. Can be set to a stim.PauliString to directly
+            specify the flow's output stabilizer.
+        measurements: Can be set to a list of integers or gate targets like
+            `stim.target_rec(-1)`, to specify the measurements that mediate the
+            flow. Negative and positive measurement indices are allowed. Indexes
+            follow the python convention where -1 is the last measurement in a
+            circuit and 0 is the first measurement in a circuit.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Flow("X2 -> -Y2*Z4 xor rec[-1]")
+        stim.Flow("__X -> -__Y_Z xor rec[-1]")
+
+        >>> stim.Flow("Z -> 1 xor rec[-1]")
+        stim.Flow("Z -> rec[-1]")
+
+        >>> stim.Flow(
+        ...     input=stim.PauliString("XX"),
+        ...     output=stim.PauliString("_X"),
+        ...     measurements=[],
+        ... )
+        stim.Flow("XX -> _X")
+    """
+```
+
+<a name="stim.Flow.__ne__"></a>
+```python
+# stim.Flow.__ne__
+
+# (in class stim.Flow)
+def __ne__(
+    self,
+    arg0: stim.Flow,
+) -> bool:
+    """Determines if two flows have non-identical contents.
+    """
+```
+
+<a name="stim.Flow.__repr__"></a>
+```python
+# stim.Flow.__repr__
+
+# (in class stim.Flow)
+def __repr__(
+    self,
+) -> str:
+    """Returns valid python code evaluating to an equivalent `stim.Flow`.
+    """
+```
+
+<a name="stim.Flow.__str__"></a>
+```python
+# stim.Flow.__str__
+
+# (in class stim.Flow)
+def __str__(
+    self,
+) -> str:
+    """Returns a shorthand description of the flow.
+    """
+```
+
+<a name="stim.Flow.input_copy"></a>
+```python
+# stim.Flow.input_copy
+
+# (in class stim.Flow)
+def input_copy(
+    self,
+) -> stim.PauliString:
+    """Returns a copy of the flow's input stabilizer.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(input=stim.PauliString('XX'))
+        >>> f.input_copy()
+        stim.PauliString("+XX")
+
+        >>> f.input_copy() is f.input_copy()
+        False
+    """
+```
+
+<a name="stim.Flow.measurements_copy"></a>
+```python
+# stim.Flow.measurements_copy
+
+# (in class stim.Flow)
+def measurements_copy(
+    self,
+) -> List[int]:
+    """Returns a copy of the flow's measurement indices.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(measurements=[-1, 2])
+        >>> f.measurements_copy()
+        [-1, 2]
+
+        >>> f.measurements_copy() is f.measurements_copy()
+        False
+    """
+```
+
+<a name="stim.Flow.output_copy"></a>
+```python
+# stim.Flow.output_copy
+
+# (in class stim.Flow)
+def output_copy(
+    self,
+) -> stim.PauliString:
+    """Returns a copy of the flow's output stabilizer.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(output=stim.PauliString('XX'))
+        >>> f.output_copy()
+        stim.PauliString("+XX")
+
+        >>> f.output_copy() is f.output_copy()
+        False
     """
 ```
 
@@ -6531,6 +8193,210 @@ def aliases(
         ['H', 'H_XZ']
         >>> stim.gate_data('cnot').aliases
         ['CNOT', 'CX', 'ZCX']
+    """
+```
+
+<a name="stim.GateData.flows"></a>
+```python
+# stim.GateData.flows
+
+# (in class stim.GateData)
+@property
+def flows(
+    self,
+) -> Optional[List[stim.Flow]]:
+    """Returns stabilizer flow generators for the gate, or else None.
+
+    A stabilizer flow describes an input-output relationship that the gate
+    satisfies, where an input pauli string is transformed into an output
+    pauli string mediated by certain measurement results.
+
+    Caution: this method returns None for variable-target-count gates like MPP.
+    Not because MPP has no stabilizer flows, but because its stabilizer flows
+    depend on how many qubits it targets and what basis it targets them in.
+
+    Returns:
+        A list of stim.Flow instances representing the generators.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').flows
+        [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+        >>> for e in stim.gate_data('ISWAP').flows:
+        ...     print(e)
+        X_ -> ZY
+        Z_ -> _Z
+        _X -> YZ
+        _Z -> Z_
+
+        >>> for e in stim.gate_data('MXX').flows:
+        ...     print(e)
+        X_ -> X_
+        _X -> _X
+        ZZ -> ZZ
+        XX -> rec[-1]
+    """
+```
+
+<a name="stim.GateData.generalized_inverse"></a>
+```python
+# stim.GateData.generalized_inverse
+
+# (in class stim.GateData)
+@property
+def generalized_inverse(
+    self,
+) -> stim.GateData:
+    """The closest-thing-to-an-inverse for the gate, if forced to pick something.
+
+    The generalized inverse of a unitary gate U is its actual inverse U^-1.
+
+    The generalized inverse of a reset or measurement gate U is a gate V such that,
+    for every stabilizer flow that U has, V has the time reverse of that flow (up
+    to Pauli feedback, with potentially more flows). For example, the time-reverse
+    of R is MR because R has the single flow 1 -> Z and MR has the time reversed
+    flow Z -> rec[-1].
+
+    The generalized inverse of noise like X_ERROR is just the same noise.
+
+    The generalized inverse of an annotation like TICK is just the same annotation.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').generalized_inverse
+        stim.gate_data('H')
+
+        >>> stim.gate_data('CXSWAP').generalized_inverse
+        stim.gate_data('SWAPCX')
+
+        >>> stim.gate_data('X_ERROR').generalized_inverse
+        stim.gate_data('X_ERROR')
+
+        >>> stim.gate_data('MX').generalized_inverse
+        stim.gate_data('MX')
+
+        >>> stim.gate_data('MRY').generalized_inverse
+        stim.gate_data('MRY')
+
+        >>> stim.gate_data('R').generalized_inverse
+        stim.gate_data('M')
+
+        >>> stim.gate_data('DETECTOR').generalized_inverse
+        stim.gate_data('DETECTOR')
+
+        >>> stim.gate_data('TICK').generalized_inverse
+        stim.gate_data('TICK')
+    """
+```
+
+<a name="stim.GateData.hadamard_conjugated"></a>
+```python
+# stim.GateData.hadamard_conjugated
+
+# (in class stim.GateData)
+def hadamard_conjugated(
+    self,
+    *,
+    unsigned: bool = False,
+) -> Optional[stim.GateData]:
+    """Returns a stim gate equivalent to this gate conjugated by Hadamard gates.
+
+    The Hadamard conjugate can be thought of as the XZ dual of the gate; the gate
+    you get by exchanging the X and Z bases. For example, a SQRT_X will become a
+    SQRT_Z and a CX gate will switch directions into an XCZ.
+
+    If stim doesn't define a gate equivalent to conjugating this gate by Hadamards,
+    the value `None` is returned.
+
+    Args:
+        unsigned: Defaults to False. When False, the returned gate must be *exactly*
+            the Hadamard conjugation of this gate. When True, the returned gate must
+            have the same flows but the sign of the flows can be different (i.e.
+            the returned gate must be the Hadamard conjugate up to Pauli gate
+            differences).
+
+    Returns:
+        A stim.GateData instance of the Hadamard conjugate, if it exists in stim.
+
+        None, if stim doesn't define a gate equal to the Hadamard conjugate.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('X').hadamard_conjugated()
+        stim.gate_data('Z')
+        >>> stim.gate_data('CX').hadamard_conjugated()
+        stim.gate_data('XCZ')
+        >>> stim.gate_data('RY').hadamard_conjugated() is None
+        True
+        >>> stim.gate_data('RY').hadamard_conjugated(unsigned=True)
+        stim.gate_data('RY')
+        >>> stim.gate_data('ISWAP').hadamard_conjugated(unsigned=True) is None
+        True
+        >>> stim.gate_data('SWAP').hadamard_conjugated()
+        stim.gate_data('SWAP')
+        >>> stim.gate_data('CXSWAP').hadamard_conjugated()
+        stim.gate_data('SWAPCX')
+        >>> stim.gate_data('MXX').hadamard_conjugated()
+        stim.gate_data('MZZ')
+        >>> stim.gate_data('DEPOLARIZE1').hadamard_conjugated()
+        stim.gate_data('DEPOLARIZE1')
+        >>> stim.gate_data('X_ERROR').hadamard_conjugated()
+        stim.gate_data('Z_ERROR')
+        >>> stim.gate_data('H_XY').hadamard_conjugated(unsigned=True)
+        stim.gate_data('H_YZ')
+        >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
+        stim.gate_data('DETECTOR')
+    """
+```
+
+<a name="stim.GateData.inverse"></a>
+```python
+# stim.GateData.inverse
+
+# (in class stim.GateData)
+@property
+def inverse(
+    self,
+) -> Optional[stim.GateData]:
+    """The inverse of the gate, or None if it has no inverse.
+
+    The inverse V of a gate U must have the property that V undoes the effects of U
+    and that U undoes the effects of V. In particular, the circuit
+
+        U 0 1
+        V 0 1
+
+    should be equivalent to doing nothing at all.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('H').inverse
+        stim.gate_data('H')
+
+        >>> stim.gate_data('CX').inverse
+        stim.gate_data('CX')
+
+        >>> stim.gate_data('S').inverse
+        stim.gate_data('S_DAG')
+
+        >>> stim.gate_data('CXSWAP').inverse
+        stim.gate_data('SWAPCX')
+
+        >>> stim.gate_data('X_ERROR').inverse is None
+        True
+        >>> stim.gate_data('M').inverse is None
+        True
+        >>> stim.gate_data('R').inverse is None
+        True
+        >>> stim.gate_data('DETECTOR').inverse is None
+        True
+        >>> stim.gate_data('TICK').inverse is None
+        True
     """
 ```
 
@@ -6663,6 +8529,62 @@ def is_single_qubit_gate(
     """
 ```
 
+<a name="stim.GateData.is_symmetric_gate"></a>
+```python
+# stim.GateData.is_symmetric_gate
+
+# (in class stim.GateData)
+@property
+def is_symmetric_gate(
+    self,
+) -> bool:
+    """Returns whether or not the gate is the same when its targets are swapped.
+
+    A two qubit gate is symmetric if it doesn't matter if you swap its targets. It
+    is unaffected when conjugated by the SWAP gate.
+
+    Single qubit gates are vacuously symmetric. A multi-qubit gate is symmetric if
+    swapping any two of its targets has no effect.
+
+    Note that this method is for symmetry *without broadcasting*. For example, SWAP
+    is symmetric even though SWAP 1 2 3 4 isn't equal to SWAP 1 3 2 4.
+
+    Returns:
+        True if the gate is symmetric.
+        False if the gate isn't symmetric.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.gate_data('CX').is_symmetric_gate
+        False
+        >>> stim.gate_data('CZ').is_symmetric_gate
+        True
+        >>> stim.gate_data('ISWAP').is_symmetric_gate
+        True
+        >>> stim.gate_data('CXSWAP').is_symmetric_gate
+        False
+        >>> stim.gate_data('MXX').is_symmetric_gate
+        True
+        >>> stim.gate_data('DEPOLARIZE2').is_symmetric_gate
+        True
+        >>> stim.gate_data('PAULI_CHANNEL_2').is_symmetric_gate
+        False
+        >>> stim.gate_data('H').is_symmetric_gate
+        True
+        >>> stim.gate_data('R').is_symmetric_gate
+        True
+        >>> stim.gate_data('X_ERROR').is_symmetric_gate
+        True
+        >>> stim.gate_data('CORRELATED_ERROR').is_symmetric_gate
+        False
+        >>> stim.gate_data('MPP').is_symmetric_gate
+        False
+        >>> stim.gate_data('DETECTOR').is_symmetric_gate
+        False
+    """
+```
+
 <a name="stim.GateData.is_two_qubit_gate"></a>
 ```python
 # stim.GateData.is_two_qubit_gate
@@ -6678,6 +8600,10 @@ def is_two_qubit_gate(
 
     Variable-qubit gates like CORRELATED_ERROR and MPP are not
     considered two qubit gates.
+
+    Returns:
+        True if the gate is a two qubit gate.
+        False if the gate isn't a two qubit gate.
 
     Examples:
         >>> import stim
@@ -7426,7 +9352,6 @@ class GateTargetWithCoords:
 # (in class stim.GateTargetWithCoords)
 def __init__(
     self,
-    *,
     gate_target: object,
     coords: List[float],
 ) -> None:
@@ -7664,90 +9589,57 @@ def __imul__(
 # stim.PauliString.__init__
 
 # (in class stim.PauliString)
-@staticmethod
 def __init__(
-    *args,
-    **kwargs,
-):
-    """Overloaded function.
+    self,
+    arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+    /,
+) -> None:
+    """Initializes a stim.PauliString from the given argument.
 
-    1. __init__(self: stim.PauliString, num_qubits: int) -> None
+    When given a string, the string is parsed as a pauli string. The string can
+    optionally start with a sign ('+', '-', 'i', '+i', or '-i'). The rest of the
+    string should be either a dense pauli string or a sparse pauli string. A dense
+    pauli string is made up of characters from '_IXYZ' where '_' and 'I' mean
+    identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z. A sparse
+    pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
+    'Y', or 'Z'.
 
-    Creates an identity Pauli string over the given number of qubits.
-
-    Examples:
-        >>> import stim
-        >>> p = stim.PauliString(5)
-        >>> print(p)
-        +_____
-
-    Args:
-        num_qubits: The number of qubits the Pauli string acts on.
-
-
-    2. __init__(self: stim.PauliString, text: str) -> None
-
-    Creates a stim.PauliString from a text string.
-
-    The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
-    The rest of the string should be characters from '_IXYZ' where
-    '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means
-    Pauli Z.
+    Arguments:
+        arg [position-only]: This can be a variety of types, including:
+            None (default): initializes an empty Pauli string.
+            int: initializes an identity Pauli string of the given length.
+            str: initializes by parsing the given text.
+            stim.PauliString: initializes a copy of the given Pauli string.
+            Iterable: initializes by interpreting each item as a Pauli.
+                Each item can be a single-qubit Pauli string (like "X"),
+                or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
     Examples:
         >>> import stim
-        >>> print(stim.PauliString("YZ"))
-        +YZ
-        >>> print(stim.PauliString("+IXYZ"))
-        +_XYZ
-        >>> print(stim.PauliString("-___X_"))
-        -___X_
-        >>> print(stim.PauliString("iX"))
-        +iX
 
-    Args:
-        text: A text description of the Pauli string's contents, such as "+XXX" or
-            "-_YX" or "-iZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZY".
+        >>> stim.PauliString("-XYZ")
+        stim.PauliString("-XYZ")
 
-    Returns:
-        The created stim.PauliString.
+        >>> stim.PauliString()
+        stim.PauliString("+")
 
+        >>> stim.PauliString(5)
+        stim.PauliString("+_____")
 
-    3. __init__(self: stim.PauliString, copy: stim.PauliString) -> None
+        >>> stim.PauliString(stim.PauliString("XX"))
+        stim.PauliString("+XX")
 
-    Creates a copy of a stim.PauliString.
+        >>> stim.PauliString([0, 1, 3, 2])
+        stim.PauliString("+_XZY")
 
-    Examples:
-        >>> import stim
-        >>> a = stim.PauliString("YZ")
-        >>> b = stim.PauliString(a)
-        >>> b is a
-        False
-        >>> b == a
-        True
+        >>> stim.PauliString("X" for _ in range(4))
+        stim.PauliString("+XXXX")
 
-    Args:
-        copy: The pauli string to make a copy of.
+        >>> stim.PauliString("-X2*Y6")
+        stim.PauliString("-__X___Y")
 
-
-    4. __init__(self: stim.PauliString, pauli_indices: List[int]) -> None
-
-    Creates a stim.PauliString from a list of integer pauli indices.
-
-    The indexing scheme that is used is:
-        0 -> I
-        1 -> X
-        2 -> Y
-        3 -> Z
-
-    Examples:
-        >>> import stim
-        >>> stim.PauliString([0, 1, 2, 3, 0, 3])
-        stim.PauliString("+_XYZ_Z")
-
-    Args:
-        pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating
-            paulis.
+        >>> stim.PauliString("X6*Y6")
+        stim.PauliString("+i______Z")
     """
 ```
 
@@ -7790,6 +9682,13 @@ def __len__(
     self,
 ) -> int:
     """Returns the length the pauli string; the number of qubits it operates on.
+
+    Examples:
+        >>> import stim
+        >>> len(stim.PauliString("XY_ZZ"))
+        5
+        >>> len(stim.PauliString("X0*Z99"))
+        100
     """
 ```
 
@@ -8117,19 +10016,19 @@ def after(
 
 # (in class stim.PauliString)
 @overload
-def after(
+def before(
     self,
     operation: Union[stim.Circuit, stim.CircuitInstruction],
 ) -> stim.PauliString:
     pass
 @overload
-def after(
+def before(
     self,
     operation: stim.Tableau,
     targets: Iterable[int],
 ) -> stim.PauliString:
     pass
-def after(
+def before(
     self,
     operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
     targets: Optional[Iterable[int]] = None,
@@ -8293,7 +10192,7 @@ def from_numpy(
 # (in class stim.PauliString)
 @staticmethod
 def from_unitary_matrix(
-    matrix: Iterable[Iterable[float]],
+    matrix: Iterable[Iterable[Union[int, float, complex]]],
     *,
     endian: str = 'little',
     unsigned: bool = False,
@@ -8343,6 +10242,112 @@ def from_unitary_matrix(
         ...     [0, 0, -1, 0],
         ... ], endian='little')
         stim.PauliString("+XZ")
+    """
+```
+
+<a name="stim.PauliString.iter_all"></a>
+```python
+# stim.PauliString.iter_all
+
+# (in class stim.PauliString)
+@staticmethod
+def iter_all(
+    num_qubits: int,
+    *,
+    min_weight: int = 0,
+    max_weight: object = None,
+    allowed_paulis: str = 'XYZ',
+) -> stim.PauliStringIterator:
+    """Returns an iterator that iterates over all matching pauli strings.
+
+    Args:
+        num_qubits: The desired number of qubits in the pauli strings.
+        min_weight: Defaults to 0. The minimum number of non-identity terms that
+            must be present in each yielded pauli string.
+        max_weight: Defaults to None (unused). The maximum number of non-identity
+            terms that must be present in each yielded pauli string.
+        allowed_paulis: Defaults to "XYZ". Set this to a string containing the
+            non-identity paulis that are allowed to appear in each yielded pauli
+            string. This argument must be a string made up of only "X", "Y", and
+            "Z" characters. A non-identity Pauli is allowed if it appears in the
+            string, and not allowed if it doesn't. Identity Paulis are always
+            allowed.
+
+    Returns:
+        An Iterable[stim.PauliString] that yields the requested pauli strings.
+
+    Examples:
+        >>> import stim
+        >>> pauli_string_iterator = stim.PauliString.iter_all(
+        ...     num_qubits=3,
+        ...     min_weight=1,
+        ...     max_weight=2,
+        ...     allowed_paulis="XZ",
+        ... )
+        >>> for p in pauli_string_iterator:
+        ...     print(p)
+        +X__
+        +Z__
+        +_X_
+        +_Z_
+        +__X
+        +__Z
+        +XX_
+        +XZ_
+        +ZX_
+        +ZZ_
+        +X_X
+        +X_Z
+        +Z_X
+        +Z_Z
+        +_XX
+        +_XZ
+        +_ZX
+        +_ZZ
+    """
+```
+
+<a name="stim.PauliString.pauli_indices"></a>
+```python
+# stim.PauliString.pauli_indices
+
+# (in class stim.PauliString)
+def pauli_indices(
+    self,
+    included_paulis: str = "XYZ",
+) -> List[int]:
+    """Returns the indices of non-identity Paulis, or of specified Paulis.
+
+    Args:
+        include: A string containing the Pauli types to include.
+            X type Pauli indices are included if "X" or "x" is in the string.
+            Y type Pauli indices are included if "Y" or "y" is in the string.
+            Z type Pauli indices are included if "Z" or "z" is in the string.
+            I type Pauli indices are included if "I" or "_" is in the string.
+            An exception is thrown if other characters are in the string.
+
+    Returns:
+        A list containing the ascending indices of matching Pauli terms.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices()
+        [5, 9, 14]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("XZ")
+        [5, 14]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("X")
+        [5]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("Y")
+        [9]
+
+        >>> stim.PauliString("_____X___Y____Z___").pauli_indices("IY")
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
+
+        >>> stim.PauliString("-X103*Y100").pauli_indices()
+        [100, 103]
     """
 ```
 
@@ -8577,6 +10582,59 @@ def weight(
     """
 ```
 
+<a name="stim.PauliStringIterator"></a>
+```python
+# stim.PauliStringIterator
+
+# (at top-level in the stim module)
+class PauliStringIterator:
+    """Iterates over all pauli strings matching specified patterns.
+
+    Examples:
+        >>> import stim
+        >>> pauli_string_iterator = stim.PauliString.iter_all(
+        ...     2,
+        ...     min_weight=1,
+        ...     max_weight=1,
+        ...     allowed_paulis="XZ",
+        ... )
+        >>> for p in pauli_string_iterator:
+        ...     print(p)
+        +X_
+        +Z_
+        +_X
+        +_Z
+    """
+```
+
+<a name="stim.PauliStringIterator.__iter__"></a>
+```python
+# stim.PauliStringIterator.__iter__
+
+# (in class stim.PauliStringIterator)
+def __iter__(
+    self,
+) -> stim.PauliStringIterator:
+    """Returns an independent copy of the pauli string iterator.
+
+    Since for-loops and loop-comprehensions call `iter` on things they
+    iterate, this effectively allows the iterator to be iterated
+    multiple times.
+    """
+```
+
+<a name="stim.PauliStringIterator.__next__"></a>
+```python
+# stim.PauliStringIterator.__next__
+
+# (in class stim.PauliStringIterator)
+def __next__(
+    self,
+) -> stim.PauliString:
+    """Returns the next iterated pauli string.
+    """
+```
+
 <a name="stim.Tableau"></a>
 ```python
 # stim.Tableau
@@ -8761,6 +10819,12 @@ def __len__(
     self,
 ) -> int:
     """Returns the number of qubits operated on by the tableau.
+
+    Examples:
+        >>> import stim
+        >>> t = stim.Tableau.from_named_gate("CNOT")
+        >>> len(t)
+        2
     """
 ```
 
@@ -9067,8 +11131,13 @@ def from_named_gate(
 def from_numpy(
     self,
     *,
-    bit_packed: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    x2x: np.ndarray,
+    x2z: np.ndarray,
+    z2x: np.ndarray,
+    z2z: np.ndarray,
+    x_signs: Optional[np.ndarray] = None,
+    z_signs: Optional[np.ndarray] = None,
+) -> stim.Tableau:
     """Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
 
     The x2x, x2z, z2x, z2z arrays are the four quadrants of the table defined in
@@ -9120,7 +11189,7 @@ def from_numpy(
         ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool_),
         ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool_),
         ... )
-        >>> print(repr(tableau))
+        >>> tableau
         stim.Tableau.from_conjugated_generators(
             xs=[
                 stim.PauliString("+XX"),
@@ -9134,7 +11203,7 @@ def from_numpy(
         >>> tableau == stim.Tableau.from_named_gate("CNOT")
         True
 
-        >>> tableau = stim.Tableau.from_numpy(
+        >>> stim.Tableau.from_numpy(
         ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
         ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
         ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
@@ -9142,7 +11211,6 @@ def from_numpy(
         ...     x_signs=np.array([7], dtype=np.uint8),
         ...     z_signs=np.array([9], dtype=np.uint8),
         ... )
-        >>> print(repr(tableau))
         stim.Tableau.from_conjugated_generators(
             xs=[
                 stim.PauliString("-Y_ZY"),
@@ -9840,8 +11908,7 @@ def then(
 # (in class stim.Tableau)
 def to_circuit(
     self,
-    *,
-    method: str = 'elimination',
+    method: 'Literal["elimination", "graph_state"]' = 'elimination',
 ) -> stim.Circuit:
     """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -9855,7 +11922,47 @@ def to_circuit(
                 Circuit qubit count: n
                 Circuit operation count: O(n^2)
                 Circuit depth: O(n^2)
+            "graph_state": Prepares the tableau's state using a graph state circuit.
+                Gate set: RX, CZ, H, S, X, Y, Z
+                Circuit qubit count: n
+                Circuit operation count: O(n^2)
 
+                The circuit will be made up of three layers:
+                    1. An RX layer initializing all qubits.
+                    2. A CZ layer coupling the qubits.
+                        (Each CZ is an edge in the graph state.)
+                    3. A single qubit rotation layer.
+
+                Note: "graph_state" treats the tableau as a state instead of as a
+                Clifford operation. It will preserve the set of stabilizers, but
+                not the exact choice of generators.
+            "mpp_state": Prepares the tableau's state using MPP and feedback.
+                Gate set: MPP, CX rec, CY rec, CZ rec
+                Circuit qubit count: n
+                Circuit operation count: O(n^2)
+
+                The circuit will be made up of two layers:
+                    1. An MPP layer measuring each of the tableau's stabilizers.
+                    2. A feedback layer using the measurement results to control
+                        whether or not to apply each of the tableau's destabilizers
+                        in order to get the correct sign for each stabilizer.
+
+                Note: "mpp_state" treats the tableau as a state instead of as a
+                Clifford operation. It will preserve the set of stabilizers, but
+                not the exact choice of generators.
+            "mpp_state_unsigned": Prepares the tableau's state up to sign using MPP.
+                Gate set: MPP
+                Circuit qubit count: n
+                Circuit operation count: O(n^2)
+
+                The circuit will contain a series of MPP measurements measuring each
+                of the tableau's stabilizers. The stabilizers are measured in the
+                order used by the tableau (i.e. tableau.z_output(k) is the k'th
+                stabilizer measured).
+
+                Note: "mpp_state_unsigned" treats the tableau as a state instead of
+                as a Clifford operation. It will preserve the set of stabilizers,
+                but not the exact choice of generators.
     Returns:
         The synthesized circuit.
 
@@ -9863,35 +11970,65 @@ def to_circuit(
         >>> import stim
         >>> tableau = stim.Tableau.from_conjugated_generators(
         ...     xs=[
-        ...         stim.PauliString("-_YZ"),
-        ...         stim.PauliString("-YY_"),
-        ...         stim.PauliString("-XZX"),
+        ...         stim.PauliString("+YZ__"),
+        ...         stim.PauliString("-Y_XY"),
+        ...         stim.PauliString("+___Y"),
+        ...         stim.PauliString("+YZX_"),
         ...     ],
         ...     zs=[
-        ...         stim.PauliString("+Y_Y"),
-        ...         stim.PauliString("-_XY"),
-        ...         stim.PauliString("-Y__"),
+        ...         stim.PauliString("+XZYY"),
+        ...         stim.PauliString("-XYX_"),
+        ...         stim.PauliString("-ZXXZ"),
+        ...         stim.PauliString("+XXZ_"),
         ...     ],
         ... )
-        >>> tableau.to_circuit(method="elimination")
+
+        >>> tableau.to_circuit()
         stim.Circuit('''
-            CX 2 0 0 2 2 0
             S 0
-            H 0
-            S 0
+            H 0 1 3
+            CX 0 1 0 2 0 3
+            S 1 3
+            H 1 3
+            CX 1 0 3 0 3 1 1 3 3 1
             H 1
-            CX 0 1 0 2
-            H 1 2
-            CX 1 0 2 0 2 1 1 2 2 1
-            H 1
-            S 1 2
-            H 2
-            CX 2 1
-            S 2
-            H 0 1 2
+            S 1
+            CX 1 3
+            H 2 3
+            CX 2 1 3 1 3 2 2 3 3 2
+            H 3
+            CX 2 3
+            S 3
+            H 3 0 1 2
             S 0 0 1 1 2 2
             H 0 1 2
-            S 1 1 2 2
+            S 3 3
+        ''')
+
+        >>> tableau.to_circuit("graph_state")
+        stim.Circuit('''
+            RX 0 1 2 3
+            TICK
+            CZ 0 3 1 2 1 3
+            TICK
+            X 0 1
+            Z 2
+            S 2 3
+            H 3
+            S 3
+        ''')
+
+        >>> tableau.to_circuit("mpp_state_unsigned")
+        stim.Circuit('''
+            MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+        ''')
+
+        >>> tableau.to_circuit("mpp_state")
+        stim.Circuit('''
+            MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+            CX rec[-3] 2 rec[-1] 2
+            CY rec[-4] 0 rec[-3] 0 rec[-3] 3 rec[-2] 3 rec[-1] 0
+            CZ rec[-4] 1 rec[-1] 1
         ''')
     """
 ```
@@ -10099,6 +12236,62 @@ def to_pauli_string(
         | __ __ __ XZ
         >>> print(t.to_pauli_string())
         +ZY_X
+    """
+```
+
+<a name="stim.Tableau.to_stabilizers"></a>
+```python
+# stim.Tableau.to_stabilizers
+
+# (in class stim.Tableau)
+def to_stabilizers(
+    self,
+    *,
+    canonicalize: bool = False,
+) -> List[stim.PauliString]:
+    """Returns the stabilizer generators of the tableau, optionally canonicalized.
+
+    The stabilizer generators of the tableau are its Z outputs. Canonicalizing
+    standardizes the generators, so that states that are equal will produce the
+    same generators. For example, [ZI, IZ], [ZI, ZZ], amd [ZZ, ZI] describe equal
+    states and all canonicalize to [ZI, IZ].
+
+    The canonical form is computed as follows:
+
+        1. Get a list of stabilizers using `tableau.z_output(k)` for each k.
+        2. Perform Gaussian elimination. pivoting on standard generators.
+            2a) Pivot on g=X0 first, then Z0, X1, Z1, X2, Z2, etc.
+            2b) Find a stabilizer that uses the generator g. If there are none,
+                go to the next g.
+            2c) Multiply that stabilizer into all other stabilizers that use the
+                generator g.
+            2d) Swap that stabilizer with the stabilizer at position `r` then
+                increment `r`. `r` starts at 0.
+
+    Args:
+        canonicalize: Defaults to False. When False, the tableau's Z outputs
+            are returned unchanged. When True, the Z outputs are rewritten
+            into a standard form. Two stabilizer states have the same standard
+            form if and only if they describe equivalent quantum states.
+
+    Returns:
+        A List[stim.PauliString] of the tableau's stabilizer generators.
+
+    Examples:
+        >>> import stim
+        >>> t = stim.Tableau.from_named_gate("CNOT")
+
+        >>> raw_stabilizers = t.to_stabilizers()
+        >>> for e in raw_stabilizers:
+        ...     print(repr(e))
+        stim.PauliString("+Z_")
+        stim.PauliString("+ZZ")
+
+        >>> canonical_stabilizers = t.to_stabilizers(canonicalize=True)
+        >>> for e in canonical_stabilizers:
+        ...     print(repr(e))
+        stim.PauliString("+Z_")
+        stim.PauliString("+_Z")
     """
 ```
 
@@ -12285,15 +14478,18 @@ def state_vector(
         >>> import numpy as np
         >>> s = stim.TableauSimulator()
         >>> s.x(2)
-        >>> list(s.state_vector(endian='little'))
-        [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+        >>> s.state_vector(endian='little')
+        array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+              dtype=complex64)
 
-        >>> list(s.state_vector(endian='big'))
-        [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+        >>> s.state_vector(endian='big')
+        array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+              dtype=complex64)
 
         >>> s.sqrt_x(1, 2)
-        >>> list(s.state_vector())
-        [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
+        >>> s.state_vector()
+        array([0.5+0.j , 0. +0.j , 0. -0.5j, 0. +0.j , 0. +0.5j, 0. +0.j ,
+               0.5+0.j , 0. +0.j ], dtype=complex64)
     """
 ```
 
@@ -12805,6 +15001,40 @@ def read_shot_data_file(
     """
 ```
 
+<a name="stim.target_combined_paulis"></a>
+```python
+# stim.target_combined_paulis
+
+# (at top-level in the stim module)
+def target_combined_paulis(
+    paulis: Union[stim.PauliString, List[stim.GateTarget]],
+    invert: bool = False,
+) -> stim.GateTarget:
+    """Returns a list of targets encoding a pauli product for instructions like MPP.
+
+    Args:
+        paulis: The paulis to encode into the targets. This can be a
+            `stim.PauliString` or a list of pauli targets from `stim.target_x`,
+            `stim.target_pauli`, etc.
+        invert: Defaults to False. If True, the product is inverted (like "!X2*Y3").
+            Note that this is in addition to any inversions specified by the
+            `paulis` argument.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     *stim.target_combined_paulis(stim.PauliString("-XYZ")),
+        ...     *stim.target_combined_paulis([stim.target_x(2), stim.target_y(5)]),
+        ...     *stim.target_combined_paulis([stim.target_z(9)], invert=True),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP !X0*Y1*Z2 X2*Y5 !Z9
+        ''')
+    """
+```
+
 <a name="stim.target_combiner"></a>
 ```python
 # stim.target_combiner
@@ -12885,6 +15115,52 @@ def target_logical_observable_id(
         >>> print(repr(m))
         stim.DetectorErrorModel('''
             error(0.25) L13
+        ''')
+    """
+```
+
+<a name="stim.target_pauli"></a>
+```python
+# stim.target_pauli
+
+# (at top-level in the stim module)
+def target_pauli(
+    qubit_index: int,
+    pauli: Union[str, int],
+    invert: bool = False,
+) -> stim.GateTarget:
+    """Returns a pauli target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        qubit_index: The qubit that the Pauli applies to.
+        pauli: The pauli gate to use. This can either be a string identifying the
+            pauli by name ("x", "X", "y", "Y", "z", or "Z") or an integer following
+            the convention (1=X, 2=Y, 3=Z). Setting this argument to "I" or to
+            0 will return a qubit target instead of a pauli target.
+        invert: Defaults to False. If True, the target is inverted (like "!X10"),
+            indicating that, for example, measurement results should be inverted).
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_pauli(2, "X"),
+        ...     stim.target_combiner(),
+        ...     stim.target_pauli(3, "y", invert=True),
+        ...     stim.target_pauli(5, 3),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3 Z5
+        ''')
+
+        >>> circuit.append("M", [
+        ...     stim.target_pauli(7, "I"),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3 Z5
+            M 7
         ''')
     """
 ```

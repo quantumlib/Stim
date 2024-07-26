@@ -923,3 +923,83 @@ def test_signs():
         _ = t.y_sign(2)
     with pytest.raises(ValueError, match="target"):
         _ = t.z_sign(2)
+
+
+def test_to_stabilizers():
+    t = stim.Tableau.from_stabilizers([
+        stim.PauliString("XXXX"),
+        stim.PauliString("YYYY"),
+        stim.PauliString("YYZZ"),
+        stim.PauliString("XXZZ"),
+    ])
+    assert t.to_stabilizers() == [
+        stim.PauliString("XXXX"),
+        stim.PauliString("YYYY"),
+        stim.PauliString("YYZZ"),
+        stim.PauliString("XXZZ"),
+    ]
+    assert t.to_stabilizers(canonicalize=True) == [
+        stim.PauliString("-XX__"),
+        stim.PauliString("-ZZ__"),
+        stim.PauliString("-__XX"),
+        stim.PauliString("-__ZZ"),
+    ]
+
+
+def test_to_circuit_graph_state_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    c = t.to_circuit("graph_state")
+    c = stim.Circuit(str(c).replace('RX', 'H'))
+    original = t.to_stabilizers(canonicalize=True)
+    reconstructed = c.to_tableau().to_stabilizers(canonicalize=True)
+    assert original == reconstructed
+
+
+def test_to_circuit_mpp_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    original = t.to_stabilizers(canonicalize=True)
+    sim = stim.TableauSimulator()
+    sim.do_circuit(t.to_circuit("mpp_state"))
+    reconstructed = sim.canonical_stabilizers()
+    assert original == reconstructed
+
+
+def test_to_circuit_mpp_unsigned_preserves_stabilizers():
+    t = stim.Tableau.random(10)
+    original = t.to_stabilizers(canonicalize=True)
+    sim = stim.TableauSimulator()
+    sim.do_circuit(t.to_circuit("mpp_state_unsigned"))
+    reconstructed = sim.canonical_stabilizers()
+    for e in original:
+        e.sign = +1
+    for e in reconstructed:
+        e.sign = +1
+    assert original == reconstructed
+
+
+def test_from_stabilizers_error_messages():
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X"),
+        ])
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X" + "_"*500),
+        ])
+    with pytest.raises(ValueError, match="contradict"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z_"),
+            stim.PauliString("-_Z"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("ZZ"),
+        ])
+    with pytest.raises(ValueError, match="redundant"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("-Z_"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("-__Z"),
+            stim.PauliString("_Z_"),
+            stim.PauliString("Z_Z"),
+        ])

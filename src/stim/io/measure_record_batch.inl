@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-#include "stim/io/measure_record_batch.h"
-
 #include <algorithm>
 
+#include "stim/io/measure_record_batch.h"
 #include "stim/io/measure_record_batch_writer.h"
-#include "stim/probability_util.h"
+#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 
 template <size_t W>
 MeasureRecordBatch<W>::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
-    : num_shots(num_shots), max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
+    : num_shots(num_shots),
+      max_lookback(max_lookback),
+      unwritten(0),
+      stored(0),
+      written(0),
+      shot_mask(num_shots),
+      storage(1, num_shots) {
     for (size_t k = 0; k < num_shots; k++) {
         shot_mask[k] = true;
     }
@@ -163,4 +168,4 @@ void MeasureRecordBatch<W>::destructive_resize(size_t new_num_shots, size_t new_
     }
 }
 
-}
+}  // namespace stim

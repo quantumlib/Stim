@@ -44,7 +44,7 @@ struct MeasureRecordBatchWriter {
     ///     bits: The measurement results. The bit at offset k is the bit for the writer at offset k.
     template <size_t W>
     void batch_write_bit(simd_bits_range_ref<W> bits) {
-        if (output_format == SAMPLE_FORMAT_PTB64) {
+        if (output_format == SampleFormat::SAMPLE_FORMAT_PTB64) {
             uint8_t *p = bits.u8;
             for (auto &writer : writers) {
                 uint8_t *n = p + 8;
@@ -71,7 +71,7 @@ struct MeasureRecordBatchWriter {
     ///         results is required to be a multiple of 64 for performance reasons.
     template <size_t W>
     void batch_write_bytes(const simd_bit_table<W> &table, size_t num_major_u64) {
-        if (output_format == SAMPLE_FORMAT_PTB64) {
+        if (output_format == SampleFormat::SAMPLE_FORMAT_PTB64) {
             for (size_t k = 0; k < writers.size(); k++) {
                 for (size_t w = 0; w < num_major_u64; w++) {
                     uint8_t *p = table.data.u8 + (k * 8) + table.num_minor_u8_padded() * w;

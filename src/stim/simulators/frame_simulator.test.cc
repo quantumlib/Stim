@@ -20,7 +20,7 @@
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -301,11 +301,11 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, sample_batch_measurements_writing_results_
     }
 
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
     ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 5, tmp, SampleFormat::SAMPLE_FORMAT_B8, rng);
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 2);
@@ -313,7 +313,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, sample_batch_measurements_writing_results_
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 64, tmp, SAMPLE_FORMAT_PTB64, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 64, tmp, SampleFormat::SAMPLE_FORMAT_PTB64, rng);
     rewind(tmp);
     for (size_t k = 0; k < 8; k++) {
         ASSERT_EQ(getc(tmp), 0);
@@ -346,7 +346,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, big_circuit_measurements, {
     }
 
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -357,7 +357,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, big_circuit_measurements, {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 750, tmp, SampleFormat::SAMPLE_FORMAT_B8, rng);
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -380,17 +380,17 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, run_length_measurement_formats, {
     auto ref = TableauSimulator<W>::reference_sample_circuit(circuit);
 
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SampleFormat::SAMPLE_FORMAT_HITS, rng);
     ASSERT_EQ(rewind_read_close(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
 
     tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SampleFormat::SAMPLE_FORMAT_DETS, rng);
     ASSERT_EQ(
         rewind_read_close(tmp),
         "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n");
 
     tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, rng);
+    sample_batch_measurements_writing_results_to_disk(circuit, ref, 3, tmp, SampleFormat::SAMPLE_FORMAT_R8, rng);
     rewind(tmp);
     for (size_t k = 0; k < 3; k++) {
         ASSERT_EQ(getc(tmp), 100);
@@ -828,7 +828,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, record_gets_trimmed, {
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
     FrameSimulator<W> sim(
         c.compute_stats(), FrameSimulatorMode::STREAM_MEASUREMENTS_TO_DISK, 768, INDEPENDENT_TEST_RNG());
-    MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
+    MeasureRecordBatchWriter b(tmpfile(), 768, SampleFormat::SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.do_MZ(c.operations[0]);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<W>(0));
@@ -849,7 +849,7 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_huge_case, {
         simd_bits<W>(0),
         256,
         tmp,
-        SAMPLE_FORMAT_B8,
+        SampleFormat::SAMPLE_FORMAT_B8,
         rng);
     rewind(tmp);
     for (size_t k = 0; k < 256 * 100000 * 4 / 8; k++) {
@@ -868,7 +868,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_single_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -889,7 +890,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, block_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -914,7 +916,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -933,7 +936,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_many_shots, {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 2049, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 2049, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     ASSERT_EQ(result.size(), 2049 * 4);
@@ -956,7 +960,8 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, stream_results_triple_shot, {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    sample_batch_measurements_writing_results_to_disk(circuit, simd_bits<W>(0), 3, tmp, SAMPLE_FORMAT_01, rng);
+    sample_batch_measurements_writing_results_to_disk(
+        circuit, simd_bits<W>(0), 3, tmp, SampleFormat::SAMPLE_FORMAT_01, rng);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -1585,6 +1590,72 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_pauli_channel_1_statistics, {
         HERALDED_PAULI_CHANNEL_1(0.05, 0.10, 0.15, 0.25) 0
         MXX 0 1
         MZZ 0 1
+        DETECTOR rec[-1] rec[-4]
+        DETECTOR rec[-2] rec[-5]
+        DETECTOR rec[-3]
+    )CIRCUIT");
+    size_t n;
+    std::array<size_t, 8> bins{};
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    for (n = 0; n < 1024 * 256; n += 1024) {
+        sim.reset_all();
+        sim.do_circuit(circuit);
+        auto sample = sim.det_record.storage.transposed();
+        for (size_t k = 0; k < 1024; k++) {
+            bins[sample[k].u8[0]]++;
+        }
+    }
+    EXPECT_NEAR(bins[0] / (double)n, 0.45, 0.05);
+    EXPECT_EQ(bins[1], 0);
+    EXPECT_EQ(bins[2], 0);
+    EXPECT_EQ(bins[3], 0);
+    EXPECT_NEAR(bins[4] / (double)n, 0.05, 0.04);
+    EXPECT_NEAR(bins[5] / (double)n, 0.10, 0.04);
+    EXPECT_NEAR(bins[6] / (double)n, 0.25, 0.04);
+    EXPECT_NEAR(bins[7] / (double)n, 0.15, 0.04);
+})
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_erase_statistics_offset_by_2, {
+    auto circuit = Circuit(R"CIRCUIT(
+        MXX 2 3
+        MZZ 2 3
+        HERALDED_ERASE(0.1) 2
+        MXX 2 3
+        MZZ 2 3
+        DETECTOR rec[-1] rec[-4]
+        DETECTOR rec[-2] rec[-5]
+        DETECTOR rec[-3]
+    )CIRCUIT");
+    size_t n;
+    std::array<size_t, 8> bins{};
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    for (n = 0; n < 1024 * 256; n += 1024) {
+        sim.reset_all();
+        sim.do_circuit(circuit);
+        auto sample = sim.det_record.storage.transposed();
+        for (size_t k = 0; k < 1024; k++) {
+            bins[sample[k].u8[0]]++;
+        }
+    }
+    EXPECT_NEAR(bins[0] / (double)n, 0.9, 0.05);
+    EXPECT_EQ(bins[1], 0);
+    EXPECT_EQ(bins[2], 0);
+    EXPECT_EQ(bins[3], 0);
+    EXPECT_NEAR(bins[4] / (double)n, 0.025, 0.02);
+    EXPECT_NEAR(bins[5] / (double)n, 0.025, 0.02);
+    EXPECT_NEAR(bins[6] / (double)n, 0.025, 0.02);
+    EXPECT_NEAR(bins[7] / (double)n, 0.025, 0.02);
+})
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_pauli_channel_1_statistics_offset_by_2, {
+    auto circuit = Circuit(R"CIRCUIT(
+        MXX 2 3
+        MZZ 2 3
+        HERALDED_PAULI_CHANNEL_1(0.05, 0.10, 0.15, 0.25) 2
+        MXX 2 3
+        MZZ 2 3
         DETECTOR rec[-1] rec[-4]
         DETECTOR rec[-2] rec[-5]
         DETECTOR rec[-3]

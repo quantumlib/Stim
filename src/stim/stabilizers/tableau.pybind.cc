@@ -14,14 +14,16 @@
 
 #include "stim/stabilizers/tableau.pybind.h"
 
+#include "flex_pauli_string.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_iter.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
+#include "stim/util_top/stabilizers_vs_amplitudes.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -205,7 +207,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "iter_all",
-        [](size_t num_qubits, bool unsigned_only) {
+        [](size_t num_qubits, bool unsigned_only) -> TableauIterator<MAX_BITWORD_WIDTH> {
             return TableauIterator<MAX_BITWORD_WIDTH>(num_qubits, !unsigned_only);
         },
         pybind11::arg("num_qubits"),
@@ -242,7 +244,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_unitary_matrix",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -318,10 +320,10 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             auto n = self.num_qubits;
 
             return pybind11::make_tuple(
-                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed, false, pybind11::none()),
                 simd_bits_to_numpy(self.xs.signs, n, bit_packed),
                 simd_bits_to_numpy(self.zs.signs, n, bit_packed));
         },
@@ -536,7 +538,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("x_signs") = pybind11::none(),
         pybind11::arg("z_signs") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def from_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+            @signature def from_numpy(self, *, x2x: np.ndarray, x2z: np.ndarray, z2x: np.ndarray, z2z: np.ndarray, x_signs: Optional[np.ndarray] = None, z_signs: Optional[np.ndarray] = None) -> stim.Tableau:
 
             Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
 
@@ -589,7 +591,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool_),
                 ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool_),
                 ... )
-                >>> print(repr(tableau))
+                >>> tableau
                 stim.Tableau.from_conjugated_generators(
                     xs=[
                         stim.PauliString("+XX"),
@@ -603,7 +605,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 >>> tableau == stim.Tableau.from_named_gate("CNOT")
                 True
 
-                >>> tableau = stim.Tableau.from_numpy(
+                >>> stim.Tableau.from_numpy(
                 ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
                 ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
                 ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
@@ -611,7 +613,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 ...     x_signs=np.array([7], dtype=np.uint8),
                 ...     z_signs=np.array([9], dtype=np.uint8),
                 ... )
-                >>> print(repr(tableau))
                 stim.Tableau.from_conjugated_generators(
                     xs=[
                         stim.PauliString("-Y_ZY"),
@@ -632,7 +633,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "to_pauli_string",
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
-            return PyPauliString(self.to_pauli_string());
+            return FlexPauliString(self.to_pauli_string());
         },
         clean_doc_string(R"DOC(
             Return a Pauli string equivalent to the tableau.
@@ -666,13 +667,12 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_circuit",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &method) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view method) {
             return tableau_to_circuit(self, method);
         },
-        pybind11::kw_only(),
         pybind11::arg("method") = "elimination",
         clean_doc_string(R"DOC(
-            @signature def to_circuit(self, *, method: str = 'elimination') -> stim.Circuit:
+            @signature def to_circuit(self, method: 'Literal["elimination", "graph_state"]' = 'elimination') -> stim.Circuit:
             Synthesizes a circuit that implements the tableau's Clifford operation.
 
             The circuits returned by this method are not guaranteed to be stable
@@ -685,7 +685,47 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                         Circuit qubit count: n
                         Circuit operation count: O(n^2)
                         Circuit depth: O(n^2)
+                    "graph_state": Prepares the tableau's state using a graph state circuit.
+                        Gate set: RX, CZ, H, S, X, Y, Z
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
 
+                        The circuit will be made up of three layers:
+                            1. An RX layer initializing all qubits.
+                            2. A CZ layer coupling the qubits.
+                                (Each CZ is an edge in the graph state.)
+                            3. A single qubit rotation layer.
+
+                        Note: "graph_state" treats the tableau as a state instead of as a
+                        Clifford operation. It will preserve the set of stabilizers, but
+                        not the exact choice of generators.
+                    "mpp_state": Prepares the tableau's state using MPP and feedback.
+                        Gate set: MPP, CX rec, CY rec, CZ rec
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
+
+                        The circuit will be made up of two layers:
+                            1. An MPP layer measuring each of the tableau's stabilizers.
+                            2. A feedback layer using the measurement results to control
+                                whether or not to apply each of the tableau's destabilizers
+                                in order to get the correct sign for each stabilizer.
+
+                        Note: "mpp_state" treats the tableau as a state instead of as a
+                        Clifford operation. It will preserve the set of stabilizers, but
+                        not the exact choice of generators.
+                    "mpp_state_unsigned": Prepares the tableau's state up to sign using MPP.
+                        Gate set: MPP
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
+
+                        The circuit will contain a series of MPP measurements measuring each
+                        of the tableau's stabilizers. The stabilizers are measured in the
+                        order used by the tableau (i.e. tableau.z_output(k) is the k'th
+                        stabilizer measured).
+
+                        Note: "mpp_state_unsigned" treats the tableau as a state instead of
+                        as a Clifford operation. It will preserve the set of stabilizers,
+                        but not the exact choice of generators.
             Returns:
                 The synthesized circuit.
 
@@ -693,35 +733,65 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 >>> import stim
                 >>> tableau = stim.Tableau.from_conjugated_generators(
                 ...     xs=[
-                ...         stim.PauliString("-_YZ"),
-                ...         stim.PauliString("-YY_"),
-                ...         stim.PauliString("-XZX"),
+                ...         stim.PauliString("+YZ__"),
+                ...         stim.PauliString("-Y_XY"),
+                ...         stim.PauliString("+___Y"),
+                ...         stim.PauliString("+YZX_"),
                 ...     ],
                 ...     zs=[
-                ...         stim.PauliString("+Y_Y"),
-                ...         stim.PauliString("-_XY"),
-                ...         stim.PauliString("-Y__"),
+                ...         stim.PauliString("+XZYY"),
+                ...         stim.PauliString("-XYX_"),
+                ...         stim.PauliString("-ZXXZ"),
+                ...         stim.PauliString("+XXZ_"),
                 ...     ],
                 ... )
-                >>> tableau.to_circuit(method="elimination")
+
+                >>> tableau.to_circuit()
                 stim.Circuit('''
-                    CX 2 0 0 2 2 0
                     S 0
-                    H 0
-                    S 0
+                    H 0 1 3
+                    CX 0 1 0 2 0 3
+                    S 1 3
+                    H 1 3
+                    CX 1 0 3 0 3 1 1 3 3 1
                     H 1
-                    CX 0 1 0 2
-                    H 1 2
-                    CX 1 0 2 0 2 1 1 2 2 1
-                    H 1
-                    S 1 2
-                    H 2
-                    CX 2 1
-                    S 2
-                    H 0 1 2
+                    S 1
+                    CX 1 3
+                    H 2 3
+                    CX 2 1 3 1 3 2 2 3 3 2
+                    H 3
+                    CX 2 3
+                    S 3
+                    H 3 0 1 2
                     S 0 0 1 1 2 2
                     H 0 1 2
-                    S 1 1 2 2
+                    S 3 3
+                ''')
+
+                >>> tableau.to_circuit("graph_state")
+                stim.Circuit('''
+                    RX 0 1 2 3
+                    TICK
+                    CZ 0 3 1 2 1 3
+                    TICK
+                    X 0 1
+                    Z 2
+                    S 2 3
+                    H 3
+                    S 3
+                ''')
+
+                >>> tableau.to_circuit("mpp_state_unsigned")
+                stim.Circuit('''
+                    MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+                ''')
+
+                >>> tableau.to_circuit("mpp_state")
+                stim.Circuit('''
+                    MPP X0*Z1*Y2*Y3 !X0*Y1*X2 !Z0*X1*X2*Z3 X0*X1*Z2
+                    CX rec[-3] 2 rec[-1] 2
+                    CY rec[-4] 0 rec[-3] 0 rec[-3] 3 rec[-2] 3 rec[-1] 0
+                    CZ rec[-4] 1 rec[-1] 1
                 ''')
         )DOC")
             .data());
@@ -768,7 +838,16 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             return self.num_qubits;
         },
-        "Returns the number of qubits operated on by the tableau.");
+        clean_doc_string(R"DOC(
+            Returns the number of qubits operated on by the tableau.
+
+            Examples:
+                >>> import stim
+                >>> t = stim.Tableau.from_named_gate("CNOT")
+                >>> len(t)
+                2
+        )DOC")
+            .data());
 
     c.def("__str__", &Tableau<MAX_BITWORD_WIDTH>::str, "Returns a text description.");
 
@@ -1030,7 +1109,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.xs[target]);
+            return FlexPauliString(self.xs[target]);
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1139,7 +1218,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.y_output(target));
+            return FlexPauliString(self.y_output(target));
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1168,7 +1247,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-            return PyPauliString(self.zs[target]);
+            return FlexPauliString(self.zs[target]);
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1428,7 +1507,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_x_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_x_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_x_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1467,7 +1546,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_y_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_y_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_y_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1506,7 +1585,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         "inverse_z_output",
         [](const Tableau<MAX_BITWORD_WIDTH> &self, size_t input_index, bool skip_sign) {
-            return PyPauliString(self.inverse_z_output(input_index, skip_sign));
+            return FlexPauliString(self.inverse_z_output(input_index, skip_sign));
         },
         pybind11::arg("input_index"),
         pybind11::kw_only(),
@@ -1566,7 +1645,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_conjugated_generators",
-        [](const std::vector<PyPauliString> &xs, const std::vector<PyPauliString> &zs) {
+        [](const std::vector<FlexPauliString> &xs, const std::vector<FlexPauliString> &zs) {
             size_t n = xs.size();
             if (n != zs.size()) {
                 throw std::invalid_argument("len(xs) != len(zs)");
@@ -1640,7 +1719,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_unitary_matrix",
-        [](const pybind11::object &matrix, const std::string &endian) {
+        [](const pybind11::object &matrix, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -1795,8 +1874,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "__call__",
-        [](const Tableau<MAX_BITWORD_WIDTH> &self, const PyPauliString &pauli_string) {
-            PyPauliString result{self(pauli_string.value)};
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, const FlexPauliString &pauli_string) {
+            FlexPauliString result{self(pauli_string.value)};
             if (pauli_string.imag) {
                 result *= std::complex<float>(0, 1);
             }
@@ -1884,26 +1963,26 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(pybind11::pickle(
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             pybind11::dict d;
-            std::vector<PyPauliString> xs;
-            std::vector<PyPauliString> zs;
+            std::vector<FlexPauliString> xs;
+            std::vector<FlexPauliString> zs;
             for (size_t q = 0; q < self.num_qubits; q++) {
-                xs.push_back(PyPauliString(self.xs[q]));
+                xs.push_back(FlexPauliString(self.xs[q]));
             }
             for (size_t q = 0; q < self.num_qubits; q++) {
-                zs.push_back(PyPauliString(self.zs[q]));
+                zs.push_back(FlexPauliString(self.zs[q]));
             }
             d["xs"] = xs;
             d["zs"] = zs;
             return d;
         },
         [](const pybind11::dict &d) {
-            std::vector<PyPauliString> xs;
-            std::vector<PyPauliString> zs;
+            std::vector<FlexPauliString> xs;
+            std::vector<FlexPauliString> zs;
             for (const auto &e : d["xs"]) {
-                xs.push_back(pybind11::cast<PyPauliString>(e));
+                xs.push_back(pybind11::cast<FlexPauliString>(e));
             }
             for (const auto &e : d["zs"]) {
-                zs.push_back(pybind11::cast<PyPauliString>(e));
+                zs.push_back(pybind11::cast<FlexPauliString>(e));
             }
 
             size_t n = xs.size();
@@ -1936,7 +2015,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
             std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
-                const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
+                const FlexPauliString &p = pybind11::cast<FlexPauliString>(stabilizer);
                 if (p.imag) {
                     throw std::invalid_argument("Stabilizers can't have imaginary sign.");
                 }
@@ -2031,7 +2110,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_state_vector",
-        [](pybind11::object &state_vector, const std::string &endian) {
+        [](pybind11::object &state_vector, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2047,7 +2126,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             }
 
             return circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false);
+                stabilizer_state_vector_to_circuit(v, little_endian), false, false, false);
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
@@ -2113,7 +2192,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_state_vector",
-        [](const Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2191,6 +2270,66 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
                 >>> (h + h).to_state_vector(endian='little')
                 array([0.5+0.j, 0.5+0.j, 0.5+0.j, 0.5+0.j], dtype=complex64)
+        )DOC")
+            .data());
+
+    c.def(
+        "to_stabilizers",
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, bool canonical) {
+            auto stabilizers = self.stabilizers(canonical);
+            std::vector<FlexPauliString> result;
+            result.reserve(stabilizers.size());
+            for (auto &s : stabilizers) {
+                result.emplace_back(std::move(s), false);
+            }
+            return result;
+        },
+        pybind11::kw_only(),
+        pybind11::arg("canonicalize") = false,
+        clean_doc_string(R"DOC(
+            Returns the stabilizer generators of the tableau, optionally canonicalized.
+
+            The stabilizer generators of the tableau are its Z outputs. Canonicalizing
+            standardizes the generators, so that states that are equal will produce the
+            same generators. For example, [ZI, IZ], [ZI, ZZ], amd [ZZ, ZI] describe equal
+            states and all canonicalize to [ZI, IZ].
+
+            The canonical form is computed as follows:
+
+                1. Get a list of stabilizers using `tableau.z_output(k)` for each k.
+                2. Perform Gaussian elimination. pivoting on standard generators.
+                    2a) Pivot on g=X0 first, then Z0, X1, Z1, X2, Z2, etc.
+                    2b) Find a stabilizer that uses the generator g. If there are none,
+                        go to the next g.
+                    2c) Multiply that stabilizer into all other stabilizers that use the
+                        generator g.
+                    2d) Swap that stabilizer with the stabilizer at position `r` then
+                        increment `r`. `r` starts at 0.
+
+            Args:
+                canonicalize: Defaults to False. When False, the tableau's Z outputs
+                    are returned unchanged. When True, the Z outputs are rewritten
+                    into a standard form. Two stabilizer states have the same standard
+                    form if and only if they describe equivalent quantum states.
+
+            Returns:
+                A List[stim.PauliString] of the tableau's stabilizer generators.
+
+            Examples:
+                >>> import stim
+                >>> t = stim.Tableau.from_named_gate("CNOT")
+
+                >>> raw_stabilizers = t.to_stabilizers()
+                >>> for e in raw_stabilizers:
+                ...     print(repr(e))
+                stim.PauliString("+Z_")
+                stim.PauliString("+ZZ")
+
+                >>> canonical_stabilizers = t.to_stabilizers(canonicalize=True)
+                >>> for e in canonical_stabilizers:
+                ...     print(repr(e))
+                stim.PauliString("+Z_")
+                stim.PauliString("+_Z")
         )DOC")
             .data());
 }

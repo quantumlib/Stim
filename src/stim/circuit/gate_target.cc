@@ -14,9 +14,26 @@
 
 #include "stim/circuit/gate_target.h"
 
-#include "stim/circuit/circuit.h"
-
 using namespace stim;
+
+GateTarget GateTarget::pauli_xz(uint32_t qubit, bool x, bool z, bool inverted) {
+    if (qubit != (qubit & TARGET_VALUE_MASK)) {
+        throw std::invalid_argument("qubit target larger than " + std::to_string(TARGET_VALUE_MASK));
+    }
+    return {qubit | (TARGET_INVERTED_BIT * inverted) | (TARGET_PAULI_X_BIT * x) | (TARGET_PAULI_Z_BIT * z)};
+}
+
+GateTarget GateTarget::from_target_str(std::string_view text) {
+    int c = text[0];
+    size_t k = 1;
+    auto t = read_single_gate_target(c, [&]() {
+        return k < text.size() ? text[k++] : EOF;
+    });
+    if (c != EOF) {
+        throw std::invalid_argument("Unparsed text at end of " + std::string(text));
+    }
+    return t;
+}
 
 GateTarget GateTarget::x(uint32_t qubit, bool inverted) {
     if (qubit != (qubit & TARGET_VALUE_MASK)) {
@@ -85,6 +102,9 @@ bool GateTarget::is_inverted_result_target() const {
 bool GateTarget::is_measurement_record_target() const {
     return data & TARGET_RECORD_BIT;
 }
+bool GateTarget::is_pauli_target() const {
+    return data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
+}
 bool GateTarget::has_qubit_value() const {
     return !(data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER));
 }
@@ -96,6 +116,9 @@ bool GateTarget::is_combiner() const {
 }
 bool GateTarget::is_sweep_bit_target() const {
     return data & TARGET_SWEEP_BIT;
+}
+bool GateTarget::is_classical_bit_target() const {
+    return data & (TARGET_SWEEP_BIT | TARGET_RECORD_BIT);
 }
 bool GateTarget::operator==(const GateTarget &other) const {
     return data == other.data;

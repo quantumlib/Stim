@@ -151,7 +151,7 @@ def parse_args(args: List[str]) -> Any:
                         )
     parser.add_argument('--plot_args_func',
                         type=str,
-                        default='''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}''',
+                        default='''{'marker': 'ov*sp^<>8P+xXhHDd|'[index % 18]}''',
                         help='A python expression used to customize the look of curves.\n'
                              'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
@@ -220,7 +220,11 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--ymin',
                         default=None,
                         type=float,
-                        help='Sets the minimum value of the y axis (max always 1).')
+                        help='Forces the minimum value of the y axis.')
+    parser.add_argument('--ymax',
+                        default=None,
+                        type=float,
+                        help='Forces the maximum value of the y axis.')
     parser.add_argument('--title',
                         default=None,
                         type=str,
@@ -474,6 +478,7 @@ def _plot_helper(
     xaxis: str,
     yaxis: Optional[str],
     min_y: Optional[float],
+    max_y: Optional[float],
     max_x: Optional[float],
     min_x: Optional[float],
     title: Optional[str],
@@ -536,7 +541,7 @@ def _plot_helper(
 
     x_scale_name: Optional[str] = None
     for ax in [ax_err, ax_dis, ax_cus]:
-        x_scale_name = x_scale_name or _set_axis_scale_label_ticks(
+        v = _set_axis_scale_label_ticks(
             ax=ax,
             y_not_x=False,
             axis_label=xaxis,
@@ -548,6 +553,7 @@ def _plot_helper(
             plotted_stats=plotted_stats,
             v_func=x_func,
         )
+        x_scale_name = x_scale_name or v
 
     y_scale_name: Optional[str] = None
     if ax_err is not None:
@@ -556,7 +562,7 @@ def _plot_helper(
             y_not_x=True,
             axis_label=f"Logical Error Rate (per {failure_unit})" if yaxis is None else yaxis,
             default_scale='log',
-            forced_max_v=1 if min_y is None or 1 > min_y else None,
+            forced_max_v=max_y if max_y is not None else 1 if min_y is None or 1 > min_y else None,
             default_min_v=1e-4,
             default_max_v=1,
             forced_min_v=min_y,
@@ -611,6 +617,8 @@ def _plot_helper(
             default_max_v=1,
             plotted_stats=plotted_stats,
             v_func=y_func,
+            forced_min_v=min_y,
+            forced_max_v=max_y,
         )
         plot_custom(
             ax=ax_cus,
@@ -753,6 +761,7 @@ def main_plot(*, command_line_args: List[str]):
         yaxis=args.yaxis,
         fig_size=args.fig_size,
         min_y=args.ymin,
+        max_y=args.ymax,
         max_x=args.xmax,
         min_x=args.xmin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,

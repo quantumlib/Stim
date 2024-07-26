@@ -14,9 +14,9 @@
 
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 
-#include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -47,7 +47,7 @@ std::string ExposedDemInstruction::repr() const {
         } else {
             out << ", ";
         }
-        if (type == DEM_SHIFT_DETECTORS) {
+        if (type == DemInstructionType::DEM_SHIFT_DETECTORS) {
             out << e.data;
         } else if (e.is_relative_detector_id()) {
             out << "stim.target_relative_detector_id(" << e.raw_id() << ")";
@@ -69,7 +69,7 @@ bool ExposedDemInstruction::operator!=(const ExposedDemInstruction &other) const
 }
 std::vector<pybind11::object> ExposedDemInstruction::targets_copy() const {
     std::vector<pybind11::object> result;
-    if (type == DEM_SHIFT_DETECTORS) {
+    if (type == DemInstructionType::DEM_SHIFT_DETECTORS) {
         for (const auto &e : targets) {
             result.push_back(pybind11::cast(e.data));
         }
@@ -118,17 +118,17 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 DemInstructionType conv_type;
                 std::vector<DemTarget> conv_targets;
                 if (lower == "error") {
-                    conv_type = DEM_ERROR;
+                    conv_type = DemInstructionType::DEM_ERROR;
                 } else if (lower == "shift_detectors") {
-                    conv_type = DEM_SHIFT_DETECTORS;
+                    conv_type = DemInstructionType::DEM_SHIFT_DETECTORS;
                 } else if (lower == "detector") {
-                    conv_type = DEM_DETECTOR;
+                    conv_type = DemInstructionType::DEM_DETECTOR;
                 } else if (lower == "logical_observable") {
-                    conv_type = DEM_LOGICAL_OBSERVABLE;
+                    conv_type = DemInstructionType::DEM_LOGICAL_OBSERVABLE;
                 } else {
                     throw std::invalid_argument("Unrecognized instruction name '" + lower + "'.");
                 }
-                if (conv_type == DEM_SHIFT_DETECTORS) {
+                if (conv_type == DemInstructionType::DEM_SHIFT_DETECTORS) {
                     for (const auto &e : targets) {
                         try {
                             conv_targets.push_back(DemTarget{pybind11::cast<uint64_t>(e)});
@@ -182,7 +182,29 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     c.def(
         "args_copy",
         &ExposedDemInstruction::args_copy,
-        "Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).");
+        clean_doc_string(R"DOC(
+            @signature def args_copy(self) -> List[float]:
+            Returns a copy of the list of numbers parameterizing the instruction.
+
+            For example, this would be coordinates of a detector instruction or the
+            probability of an error instruction. The result is a copy, meaning that
+            editing it won't change the instruction's targets or future copies.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.DetectorErrorModel('''
+                ...     error(0.125) D0
+                ... ''')[0]
+                >>> instruction.args_copy()
+                [0.125]
+
+                >>> instruction.args_copy() == instruction.args_copy()
+                True
+                >>> instruction.args_copy() is instruction.args_copy()
+                False
+        )DOC")
+            .data());
+
     c.def(
         "targets_copy",
         &ExposedDemInstruction::targets_copy,
@@ -190,8 +212,21 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
             @signature def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
             Returns a copy of the instruction's targets.
 
-            (Making a copy is enforced to make it clear that editing the result won't change
-            the instruction's targets.)
+            The result is a copy, meaning that editing it won't change the instruction's
+            targets or future copies.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.DetectorErrorModel('''
+                ...     error(0.125) D0 L2
+                ... ''')[0]
+                >>> instruction.targets_copy()
+                [stim.DemTarget('D0'), stim.DemTarget('L2')]
+
+                >>> instruction.targets_copy() == instruction.targets_copy()
+                True
+                >>> instruction.targets_copy() is instruction.targets_copy()
+                False
         )DOC")
             .data());
     c.def_property_readonly(

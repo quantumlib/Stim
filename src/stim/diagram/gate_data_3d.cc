@@ -8,7 +8,7 @@ using namespace stim_draw_internal;
 constexpr float CONTROL_RADIUS = 0.4f;
 
 std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_cube(
-    const std::string &name, size_t tex_tile_x, size_t tex_tile_y, bool actually_just_square) {
+    std::string_view name, size_t tex_tile_x, size_t tex_tile_y, bool actually_just_square) {
     constexpr size_t diam = 16;
     float d = (float)1.0 / diam;
     float dx = d * tex_tile_x;
@@ -19,7 +19,7 @@ std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_
     Coord<2> v11{dx + d, dy + d};
     if (actually_just_square) {
         return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>(
-            {{name},
+            {{std::string(name)},
              {
                  v10,
                  v00,
@@ -37,7 +37,7 @@ std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_
     }
 
     return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>(
-        {{name},
+        {{std::string(name)},
          {
              v00, v01, v10, v01, v11, v10, v00, v00, v00, v00, v00, v00, v10, v00, v11, v00, v01, v11,
              v01, v11, v00, v00, v11, v10, v00, v00, v00, v00, v00, v00, v11, v10, v01, v01, v10, v00,
@@ -45,18 +45,18 @@ std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_
 }
 
 std::shared_ptr<GltfPrimitive> cube_gate(
-    const std::string &gate_canonical_name,
+    std::string_view gate_canonical_name,
     size_t tex_tile_x,
     size_t tex_tile_y,
     std::shared_ptr<GltfBuffer<3>> cube_position_buffer,
     std::shared_ptr<GltfMaterial> material,
     bool actually_just_square) {
     return std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-        {"primitive_gate_" + gate_canonical_name},
+        {"primitive_gate_" + std::string(gate_canonical_name)},
         GL_TRIANGLES,
         cube_position_buffer,
         texture_coords_for_showing_on_spacelike_faces_of_cube(
-            "tex_coords_gate_" + gate_canonical_name, tex_tile_x, tex_tile_y, actually_just_square),
+            "tex_coords_gate_" + std::string(gate_canonical_name), tex_tile_x, tex_tile_y, actually_just_square),
         material,
     });
 }
@@ -126,7 +126,7 @@ std::shared_ptr<GltfBuffer<3>> make_circle_loop(size_t n, float r, bool repeat_b
     });
 }
 
-std::pair<std::string, std::shared_ptr<GltfMesh>> make_x_control_mesh() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_x_control_mesh() {
     auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
         {"control_x_line_cross"},
         {{0, -CONTROL_RADIUS, 0}, {0, +CONTROL_RADIUS, 0}, {0, 0, -CONTROL_RADIUS}, {0, 0, +CONTROL_RADIUS}},
@@ -177,7 +177,7 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_x_control_mesh() {
     return {"X_CONTROL", mesh};
 }
 
-std::pair<std::string, std::shared_ptr<GltfMesh>> make_xswap_control_mesh() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_xswap_control_mesh() {
     float h = CONTROL_RADIUS * sqrtf(2) * 0.8f;
     auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
         {"control_xswap_line_cross"},
@@ -229,7 +229,7 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_xswap_control_mesh() {
     return {"XSWAP", mesh};
 }
 
-std::pair<std::string, std::shared_ptr<GltfMesh>> make_zswap_control_mesh() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_zswap_control_mesh() {
     float h = CONTROL_RADIUS * sqrtf(2) * 0.8f;
     auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
         {"control_zswap_line_cross"},
@@ -274,7 +274,7 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_zswap_control_mesh() {
     return {"ZSWAP", mesh};
 }
 
-std::pair<std::string, std::shared_ptr<GltfMesh>> make_y_control_mesh() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_y_control_mesh() {
     auto gray_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
         {"gray"},
         {0.5, 0.5, 0.5, 1},
@@ -316,7 +316,7 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_y_control_mesh() {
     return {"Y_CONTROL", mesh};
 }
 
-std::pair<std::string, std::shared_ptr<GltfMesh>> make_z_control_mesh() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_z_control_mesh() {
     auto circle = make_circle_loop(16, CONTROL_RADIUS, true);
     auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
         {"black"},
@@ -342,7 +342,59 @@ std::pair<std::string, std::shared_ptr<GltfMesh>> make_z_control_mesh() {
     return {"Z_CONTROL", mesh};
 }
 
-std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_primitives() {
+std::pair<std::string_view, std::shared_ptr<GltfMesh>> make_detector_mesh() {
+    auto circle = make_circle_loop(8, CONTROL_RADIUS, true);
+    auto circle2 = make_circle_loop(8, CONTROL_RADIUS, true);
+    auto circle3 = make_circle_loop(8, CONTROL_RADIUS, true);
+    for (auto &e : circle2->vertices) {
+        std::swap(e.xyz[1], e.xyz[2]);
+        std::swap(e.xyz[0], e.xyz[1]);
+    }
+    for (auto &e : circle3->vertices) {
+        std::swap(e.xyz[0], e.xyz[1]);
+        std::swap(e.xyz[1], e.xyz[2]);
+    }
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto disc_interior = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior"},
+        GL_TRIANGLE_FAN,
+        circle,
+        nullptr,
+        black_material,
+    });
+    auto disc_interior2 = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior_2"},
+        GL_TRIANGLE_FAN,
+        circle2,
+        nullptr,
+        black_material,
+    });
+    auto disc_interior3 = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"detector_primitive_circle_interior_3"},
+        GL_TRIANGLE_FAN,
+        circle3,
+        nullptr,
+        black_material,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_DETECTOR"},
+        {
+            disc_interior,
+            disc_interior2,
+            disc_interior3,
+        },
+    });
+    return {"DETECTOR", mesh};
+}
+
+std::map<std::string_view, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_primitives() {
     bool actually_square = true;
     auto cube = make_cube_triangle_list(actually_square);
     auto image = std::shared_ptr<GltfImage>(new GltfImage{
@@ -370,11 +422,11 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         texture,
     });
 
-    auto f = [&](const char *s, size_t x, size_t y) -> std::pair<std::string, std::shared_ptr<GltfMesh>> {
+    auto f = [&](std::string_view s, size_t x, size_t y) -> std::pair<std::string_view, std::shared_ptr<GltfMesh>> {
         return {s, GltfMesh::from_singleton_primitive(cube_gate(s, x, y, cube, material, actually_square))};
     };
 
-    return std::map<std::string, std::shared_ptr<GltfMesh>>{
+    return std::map<std::string_view, std::shared_ptr<GltfMesh>>{
         f("X", 0, 6),
         f("Y", 0, 7),
         f("Z", 0, 8),
@@ -452,10 +504,18 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("HERALDED_ERASE", 14, 9),
         f("HERALDED_PAULI_CHANNEL_1", 15, 9),
 
+        f("SPP:X", 0, 10),
+        f("SPP:Y", 1, 10),
+        f("SPP:Z", 2, 10),
+        f("SPP_DAG:X", 3, 10),
+        f("SPP_DAG:Y", 4, 10),
+        f("SPP_DAG:Z", 5, 10),
+
         make_x_control_mesh(),
         make_y_control_mesh(),
         make_z_control_mesh(),
         make_xswap_control_mesh(),
         make_zswap_control_mesh(),
+        make_detector_mesh(),
     };
 }

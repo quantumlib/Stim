@@ -14,10 +14,10 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.pybind.h"
+#include "stim/gates/gates.h"
 #include "stim/py/base.pybind.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -74,7 +74,7 @@ PyCircuitInstruction::operator CircuitInstruction() const {
     return as_operation_ref();
 }
 std::string PyCircuitInstruction::name() const {
-    return GATE_DATA.items[gate_type].name;
+    return std::string(GATE_DATA[gate_type].name);
 }
 std::vector<uint32_t> PyCircuitInstruction::raw_targets() const {
     std::vector<uint32_t> result;
@@ -159,6 +159,31 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
             For noisy gates this typically a list of probabilities.
             For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable
             index.
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_measurements",
+        [](const PyCircuitInstruction &self) -> uint64_t {
+            return self.as_operation_ref().count_measurement_results();
+        },
+        clean_doc_string(R"DOC(
+            Returns the number of bits produced when running this instruction.
+
+            Examples:
+                >>> import stim
+                >>> stim.CircuitInstruction('H', [0]).num_measurements
+                0
+                >>> stim.CircuitInstruction('M', [0]).num_measurements
+                1
+                >>> stim.CircuitInstruction('M', [2, 3, 5, 7, 11]).num_measurements
+                5
+                >>> stim.CircuitInstruction('MXX', [0, 1, 4, 5, 11, 13]).num_measurements
+                3
+                >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
+                2
+                >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+                1
         )DOC")
             .data());
 

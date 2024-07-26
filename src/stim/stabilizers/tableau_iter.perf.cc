@@ -14,7 +14,7 @@
 
 #include "stim/stabilizers/tableau_iter.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 
@@ -27,7 +27,7 @@ BENCHMARK(tableau_iter_unsigned_3q) {
         }
     })
         .goal_millis(200)
-        .show_rate("TableausPerSecond", 1451520);
+        .show_rate("Tableaus", 1451520);
     if (c == 0) {
         std::cerr << "use the output\n";
     }
@@ -42,7 +42,7 @@ BENCHMARK(tableau_iter_all_3q) {
         }
     })
         .goal_millis(420)
-        .show_rate("TableausPerSecond", 92897280);
+        .show_rate("Tableaus", 92897280);
     if (c == 0) {
         std::cerr << "use the output\n";
     }

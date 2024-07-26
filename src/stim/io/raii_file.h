@@ -16,17 +16,21 @@
 #define _STIM_IO_RAII_FILE
 
 #include <cstdio>
+#include <string_view>
 
 namespace stim {
 
 struct RaiiFile {
     FILE* f;
     bool responsible_for_closing;
-    RaiiFile(const char* path, const char* mode);
+    RaiiFile(const char* optional_path, const char* mode);
+    RaiiFile(std::string_view optional_path, const char* mode);
     RaiiFile(FILE* claim_ownership);
     RaiiFile(const RaiiFile& other) = delete;
     RaiiFile(RaiiFile&& other) noexcept;
     ~RaiiFile();
+    void open(std::string_view optional_path, const char* mode);
+    void open(const char* optional_path, const char* mode);
     void done();
 };
 

@@ -15,6 +15,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['ZI', 'YX'],
         ]),
         (frame, targets) => frame.do_sqrt_xx(targets),
+        (frame, targets) => frame.do_sqrt_xx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -44,6 +45,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['XI', 'XI'],
             ['ZI', 'YX'],
         ]),
+        (frame, targets) => frame.do_sqrt_xx(targets),
         (frame, targets) => frame.do_sqrt_xx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -76,6 +78,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['ZI', 'XY'],
         ]),
         (frame, targets) => frame.do_sqrt_yy(targets),
+        (frame, targets) => frame.do_sqrt_yy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -105,6 +108,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['XI', 'ZY'],
             ['ZI', 'XY'],
         ]),
+        (frame, targets) => frame.do_sqrt_yy(targets),
         (frame, targets) => frame.do_sqrt_yy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -137,6 +141,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['ZI', 'ZI'],
         ]),
         (frame, targets) => frame.do_sqrt_zz(targets),
+        (frame, targets) => frame.do_sqrt_zz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -166,6 +171,7 @@ function *iter_gates_sqrt_pauli_pairs() {
             ['XI', 'YZ'],
             ['ZI', 'ZI'],
         ]),
+        (frame, targets) => frame.do_sqrt_zz(targets),
         (frame, targets) => frame.do_sqrt_zz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

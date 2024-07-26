@@ -33,6 +33,32 @@ std::optional<size_t> py_index_to_optional_size_t(
     return (size_t)i;
 }
 
+uint8_t pybind11_object_to_pauli_ixyz(const pybind11::object &obj) {
+    if (pybind11::isinstance<pybind11::str>(obj)) {
+        std::string_view s = pybind11::cast<std::string_view>(obj);
+        if (s == "X") {
+            return 1;
+        } else if (s == "Y") {
+            return 2;
+        } else if (s == "Z") {
+            return 3;
+        } else if (s == "I" || s == "_") {
+            return 0;
+        }
+    } else if (pybind11::isinstance<pybind11::int_>(obj)) {
+        uint8_t v = 255;
+        try {
+            v = pybind11::cast<uint8_t>(obj);
+        } catch (const pybind11::cast_error &) {
+        }
+        if (v < 4) {
+            return (uint8_t)v;
+        }
+    }
+
+    throw std::invalid_argument("Need pauli in ['I', 'X', 'Y', 'Z', 0, 1, 2, 3, '_'].");
+}
+
 pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>> stim_pybind::pybind_frame_simulator(pybind11::module &m) {
     return pybind11::class_<FrameSimulator<MAX_BITWORD_WIDTH>>(
         m,
@@ -59,12 +85,12 @@ pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11:
         py_index_to_optional_size_t(py_instance_index, self.batch_size, "instance_index", "batch_size");
 
     if (instance_index.has_value()) {
-        return pybind11::cast(PyPauliString(self.get_frame(*instance_index)));
+        return pybind11::cast(FlexPauliString(self.get_frame(*instance_index)));
     }
 
-    std::vector<PyPauliString> result;
+    std::vector<FlexPauliString> result;
     for (size_t k = 0; k < self.batch_size; k++) {
-        result.push_back(PyPauliString(self.get_frame(k)));
+        result.push_back(FlexPauliString(self.get_frame(k)));
     }
     return pybind11::cast(std::move(result));
 }
@@ -112,7 +138,8 @@ pybind11::object sliced_table_to_numpy(
             auto data = table.read_across_majors_at_minor_index(0, num_major_exact, *minor_index);
             return simd_bits_to_numpy(data, num_major_exact, bit_packed);
         } else {
-            return simd_bit_table_to_numpy(table, num_major_exact, num_minor_exact, bit_packed);
+            return simd_bit_table_to_numpy(
+                table, num_major_exact, num_minor_exact, bit_packed, false, pybind11::none());
         }
     }
 }
@@ -374,27 +401,7 @@ void stim_pybind::pybind_frame_simulator_methods(
            const pybind11::object &pauli,
            int64_t qubit_index,
            int64_t instance_index) {
-            uint8_t p = 255;
-            try {
-                p = pybind11::cast<uint8_t>(pauli);
-            } catch (const pybind11::cast_error &) {
-                try {
-                    std::string s = pybind11::cast<std::string>(pauli);
-                    if (s == "X") {
-                        p = 1;
-                    } else if (s == "Y") {
-                        p = 2;
-                    } else if (s == "Z") {
-                        p = 3;
-                    } else if (s == "I" || s == "_") {
-                        p = 0;
-                    }
-                } catch (const pybind11::cast_error &) {
-                }
-            }
-            if (p > 3) {
-                throw std::invalid_argument("Expected pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
-            }
+            uint8_t p = pybind11_object_to_pauli_ixyz(pauli);
             if (instance_index < 0) {
                 instance_index += self.batch_size;
             }
@@ -409,6 +416,7 @@ void stim_pybind::pybind_frame_simulator_methods(
                 stats.num_qubits = qubit_index + 1;
                 self.ensure_safe_to_do_circuit_with_stats(stats);
             }
+
             p ^= p >> 1;
             self.x_table[qubit_index][instance_index] = (p & 1) != 0;
             self.z_table[qubit_index][instance_index] = (p & 2) != 0;
@@ -729,8 +737,11 @@ void stim_pybind::pybind_frame_simulator_methods(
                 const CircuitRepeatBlock &block = pybind11::cast<const CircuitRepeatBlock &>(obj);
                 self.safe_do_circuit(block.body, block.repeat_count);
             } else {
-                throw std::invalid_argument(
-                    "Don't know how to do a '" + pybind11::cast<std::string>(pybind11::repr(obj)) + "'.");
+                std::stringstream ss;
+                ss << "Don't know how to do a '";
+                ss << pybind11::repr(obj);
+                ss << "'.";
+                throw std::invalid_argument(ss.str());
             }
         },
         pybind11::arg("obj"),
@@ -768,6 +779,209 @@ void stim_pybind::pybind_frame_simulator_methods(
                 >>> sim.do(circuit[1])
                 >>> sim.peek_pauli_flips()
                 [stim.PauliString("+YX__")]
+        )DOC")
+            .data());
+
+    c.def(
+        "broadcast_pauli_errors",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, const pybind11::object &mask) {
+            uint8_t p = pybind11_object_to_pauli_ixyz(pauli);
+
+            if (!pybind11::isinstance<pybind11::array_t<bool>>(mask)) {
+                throw std::invalid_argument("Need isinstance(mask, np.ndarray) and mask.dtype == np.bool_");
+            }
+            const pybind11::array_t<bool> &arr = pybind11::cast<pybind11::array_t<bool>>(mask);
+
+            if (arr.ndim() != 2) {
+                throw std::invalid_argument(
+                    "Need a 2d mask (first axis is qubits, second axis is simulation instances). Need len(mask.shape) "
+                    "== 2.");
+            }
+
+            pybind11::ssize_t s_mask_num_qubits = arr.shape(0);
+            pybind11::ssize_t s_mask_batch_size = arr.shape(1);
+            if ((uint64_t)s_mask_batch_size != self.batch_size) {
+                throw std::invalid_argument("Need mask.shape[1] == flip_sim.batch_size");
+            }
+            if (s_mask_num_qubits > UINT32_MAX) {
+                throw std::invalid_argument("Mask exceeds maximum number of simulated qubits.");
+            }
+            uint32_t mask_num_qubits = (uint32_t)s_mask_num_qubits;
+            uint32_t mask_batch_size = (uint32_t)s_mask_batch_size;
+
+            self.ensure_safe_to_do_circuit_with_stats(CircuitStats{.num_qubits = mask_num_qubits});
+            auto u = arr.unchecked<2>();
+            bool p_x = (0b0110 >> p) & 1;  // parity of 2 bit number
+            bool p_z = p & 2;
+            for (size_t i = 0; i < mask_num_qubits; i++) {
+                for (size_t j = 0; j < mask_batch_size; j++) {
+                    bool b = *u.data(i, j);
+                    self.x_table[i][j] ^= b & p_x;
+                    self.z_table[i][j] ^= b & p_z;
+                }
+            }
+        },
+        pybind11::kw_only(),
+        pybind11::arg("pauli"),
+        pybind11::arg("mask"),
+        clean_doc_string(R"DOC(
+            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
+            Applies a pauli error to all qubits in all instances, filtered by a mask.
+
+            Args:
+                pauli: The pauli, specified as an integer or string.
+                    Uses the convention 0=I, 1=X, 2=Y, 3=Z.
+                    Any value from [0, 1, 2, 3, 'X', 'Y', 'Z', 'I', '_'] is allowed.
+                mask: A 2d numpy array specifying where to apply errors. The first axis
+                    is qubits, the second axis is simulation instances. The first axis
+                    can have a length less than the current number of qubits (or more,
+                    which adds qubits to the simulation). The length of the second axis
+                    must match the simulator's `batch_size`. The array must satisfy
+
+                        mask.dtype == np.bool_
+                        len(mask.shape) == 2
+                        mask.shape[1] == flip_sim.batch_size
+
+                    The error is only applied to qubit q in instance k when
+
+                        mask[q, k] == True.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+                >>> sim = stim.FlipSimulator(
+                ...     batch_size=2,
+                ...     num_qubits=3,
+                ...     disable_stabilizer_randomization=True,
+                ... )
+                >>> sim.broadcast_pauli_errors(
+                ...     pauli='X',
+                ...     mask=np.asarray([[True, False],[False, False],[True, True]]),
+                ... )
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+X_X"), stim.PauliString("+__X")]
+
+                >>> sim.broadcast_pauli_errors(
+                ...     pauli='Z',
+                ...     mask=np.asarray([[False, True],[False, False],[True, True]]),
+                ... )
+                >>> sim.peek_pauli_flips()
+                [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
+
+        )DOC")
+            .data());
+
+    c.def(
+        "copy",
+        [](const FrameSimulator<MAX_BITWORD_WIDTH> &self, bool copy_rng, pybind11::object &seed) {
+            if (copy_rng && !seed.is_none()) {
+                throw std::invalid_argument("seed and copy_rng are incompatible");
+            }
+
+            FrameSimulator<MAX_BITWORD_WIDTH> copy = self;
+            if (!copy_rng || !seed.is_none()) {
+                copy.rng = make_py_seeded_rng(seed);
+            }
+            return copy;
+        },
+        pybind11::kw_only(),
+        pybind11::arg("copy_rng") = false,
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def copy(self, *, copy_rng: bool = False, seed: Optional[int] = None) -> stim.FlipSimulator:
+            Returns a simulator with the same internal state, except perhaps its prng.
+
+            Args:
+                copy_rng: Defaults to False. When False, the copy's pseudo random number
+                    generator is reinitialized with a random seed instead of being a copy
+                    of the original simulator's pseudo random number generator. This
+                    causes the copy and the original to sample independent randomness,
+                    instead of identical randomness, for future random operations. When set
+                    to true, the copy will have the exact same pseudo random number
+                    generator state as the original, and so will produce identical results
+                    if told to do the same noisy operations. This argument is incompatible
+                    with the `seed` argument.
+
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng state is either copied from the
+                    original simulator or reseeded from system entropy, depending on the
+                    copy_rng argument.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                    circuit is executed. For example, reordering whether a reset on one
+                    qubit happens before or after a reset on another qubit can result in
+                    different measurement results being observed starting from the same
+                    seed.
+
+            Returns:
+                The copy of the simulator.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+
+                >>> s1 = stim.FlipSimulator(batch_size=256)
+                >>> s1.set_pauli_flip('X', qubit_index=2, instance_index=3)
+                >>> s2 = s1.copy()
+                >>> s2 is s1
+                False
+                >>> s2.peek_pauli_flips() == s1.peek_pauli_flips()
+                True
+
+                >>> s1 = stim.FlipSimulator(batch_size=256)
+                >>> s2 = s1.copy(copy_rng=True)
+                >>> s1.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+                >>> s2.do(stim.Circuit("X_ERROR(0.25) 0 \n M 0"))
+                >>> np.array_equal(s1.get_measurement_flips(), s2.get_measurement_flips())
+                True
+        )DOC")
+            .data());
+
+    c.def(
+        "reset",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self) {
+            self.reset_all();
+        },
+        clean_doc_string(R"DOC(
+            Resets the simulator's state, so it can be reused for another simulation.
+
+            This empties the measurement flip history, empties the detector flip history,
+            and zeroes the observable flip state. It also resets all qubits to |0>. If
+            stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
+            it randomizes all pauli flips to be I or Z with equal probability.
+
+            Examples:
+                >>> import stim
+                >>> sim = stim.FlipSimulator(batch_size=256)
+                >>> sim.do(stim.Circuit("M(0.1) 9"))
+                >>> sim.num_qubits
+                10
+                >>> sim.get_measurement_flips().shape
+                (1, 256)
+
+                >>> sim.reset()
+                >>> sim.num_qubits
+                10
+                >>> sim.get_measurement_flips().shape
+                (0, 256)
         )DOC")
             .data());
 }

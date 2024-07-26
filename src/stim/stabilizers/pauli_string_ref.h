@@ -60,6 +60,7 @@ struct PauliStringRef {
     bool operator==(const PauliStringRef<W> &other) const;
     /// Inequality.
     bool operator!=(const PauliStringRef<W> &other) const;
+    bool operator<(const PauliStringRef<W> &other) const;
 
     /// Overwrite assignment.
     PauliStringRef<W> &operator=(const PauliStringRef<W> &other);
@@ -118,9 +119,19 @@ struct PauliStringRef {
     /// Returns a string describing the given Pauli string, indexing the Paulis so that identities can be omitted.
     std::string sparse_str() const;
 
-    void after_inplace_broadcast(const Tableau<W> &tableau, SpanRef<const size_t> targets, bool inverse);
-    void after_inplace(const Circuit &Circuit);
-    void after_inplace(const CircuitInstruction &operation, bool inverse);
+    /// Applies the given tableau to the pauli string, at the given targets.
+    ///
+    /// Args:
+    ///     tableau: The Clifford operation to apply.
+    ///     targets: The qubits to target. Broadcasting is supported. The length of the span must be a multiple of the
+    ///         tableau's size.
+    ///     inverse: When true, applies the inverse of the tableau instead of the tableau.
+    void do_tableau(const Tableau<W> &tableau, SpanRef<const size_t> targets, bool inverse);
+    void do_circuit(const Circuit &circuit);
+    void undo_circuit(const Circuit &circuit);
+    void do_instruction(const CircuitInstruction &inst);
+    void undo_instruction(const CircuitInstruction &inst);
+
     PauliString<W> after(const Circuit &circuit) const;
     PauliString<W> after(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
     PauliString<W> after(const CircuitInstruction &operation) const;
@@ -129,6 +140,79 @@ struct PauliStringRef {
     PauliString<W> before(const CircuitInstruction &operation) const;
 
     size_t weight() const;
+    bool has_no_pauli_terms() const;
+    bool intersects(PauliStringRef<W> other) const;
+
+    template <typename CALLBACK>
+    void for_each_active_pauli(CALLBACK callback) const {
+        size_t n = xs.num_u64_padded();
+        for (size_t w = 0; w < n; w++) {
+            uint64_t v = xs.u64[w] | zs.u64[w];
+            while (v) {
+                size_t q = w * 64 + std::countr_zero(v);
+                v &= v - 1;
+                callback(q);
+            }
+        }
+    }
+
+   private:
+    void check_avoids_MPP(const CircuitInstruction &inst);
+    void check_avoids_reset(const CircuitInstruction &inst);
+    void check_avoids_measurement(const CircuitInstruction &inst);
+    void undo_reset_xyz(const CircuitInstruction &inst);
+
+    void do_single_cx(const CircuitInstruction &inst, uint32_t c, uint32_t t);
+    void do_single_cy(const CircuitInstruction &inst, uint32_t c, uint32_t t);
+    void do_single_cz(const CircuitInstruction &inst, uint32_t c, uint32_t t);
+
+    void do_H_XZ(const CircuitInstruction &inst);
+    void do_H_YZ(const CircuitInstruction &inst);
+    void do_H_XY(const CircuitInstruction &inst);
+    void do_C_XYZ(const CircuitInstruction &inst);
+    void do_C_ZYX(const CircuitInstruction &inst);
+    void do_SQRT_X(const CircuitInstruction &inst);
+    void do_SQRT_Y(const CircuitInstruction &inst);
+    void do_SQRT_Z(const CircuitInstruction &inst);
+    void do_SQRT_X_DAG(const CircuitInstruction &inst);
+    void do_SQRT_Y_DAG(const CircuitInstruction &inst);
+    void do_SQRT_Z_DAG(const CircuitInstruction &inst);
+    void do_SQRT_XX(const CircuitInstruction &inst);
+    void do_SQRT_XX_DAG(const CircuitInstruction &inst);
+    void do_SQRT_YY(const CircuitInstruction &inst);
+    void do_SQRT_YY_DAG(const CircuitInstruction &inst);
+    void do_SQRT_ZZ(const CircuitInstruction &inst);
+    void do_SQRT_ZZ_DAG(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_ZCX(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_ZCY(const CircuitInstruction &inst);
+    void do_ZCZ(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_SWAP(const CircuitInstruction &inst);
+    void do_X(const CircuitInstruction &inst);
+    void do_Y(const CircuitInstruction &inst);
+    void do_Z(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_ISWAP(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_ISWAP_DAG(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_CXSWAP(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_CZSWAP(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_SWAPCX(const CircuitInstruction &inst);
+    void do_XCX(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_XCY(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_XCZ(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_YCX(const CircuitInstruction &inst);
+    void do_YCY(const CircuitInstruction &inst);
+    template <bool reverse_order>
+    void do_YCZ(const CircuitInstruction &inst);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

@@ -17,13 +17,13 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
-std::unordered_map<std::string, size_t> line_freq(std::string data) {
+std::unordered_map<std::string_view, size_t> line_freq_with_lifetime_matching_arg(std::string_view data) {
     data = trim(data);
-    std::unordered_map<std::string, size_t> result{};
+    std::unordered_map<std::string_view, size_t> result{};
     size_t start = 0;
     for (size_t k = 0; k <= data.size(); k++) {
         if (data[k] == '\n' || data[k] == '\0') {
@@ -34,12 +34,12 @@ std::unordered_map<std::string, size_t> line_freq(std::string data) {
     return result;
 }
 
-std::string deviation(const std::string &sample_content, const std::unordered_map<std::string, float> &expected) {
-    auto actual = line_freq(sample_content);
+std::string deviation(std::string_view sample_content, const std::unordered_map<std::string_view, float> &expected) {
+    auto actual = line_freq_with_lifetime_matching_arg(sample_content);
     size_t actual_total = 0;
     for (const auto &kv : actual) {
         if (expected.find(kv.first) == expected.end()) {
-            return "Sampled " + kv.first + " which was not expected.";
+            return "Sampled " + std::string(kv.first) + " which was not expected.";
         }
         actual_total += kv.second;
     }
@@ -62,7 +62,7 @@ std::string deviation(const std::string &sample_content, const std::unordered_ma
 
         float actual_rate = actual[kv.first] / (float)actual_total;
         if (fabs(expected_rate - actual_rate) > allowed_variation) {
-            return "Actual rate " + std::to_string(actual_rate) + " of sample '" + kv.first +
+            return "Actual rate " + std::to_string(actual_rate) + " of sample '" + std::string(kv.first) +
                    "' is more than 5 standard deviations from expected rate " + std::to_string(expected_rate);
         }
     }

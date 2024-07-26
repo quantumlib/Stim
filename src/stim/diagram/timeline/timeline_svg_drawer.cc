@@ -1,9 +1,11 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -27,7 +29,7 @@ size_t DiagramTimelineSvgDrawer::m2x(size_t m) const {
 }
 
 Coord<2> DiagramTimelineSvgDrawer::qt2xy(uint64_t tick, uint64_t moment_delta, size_t q) const {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         Coord<2> result = coord_sys.qubit_coords[q];
         result.xyz[0] += moment_delta * 14;
         result.xyz[1] += moment_delta * 16;
@@ -52,16 +54,16 @@ size_t DiagramTimelineSvgDrawer::q2y(size_t q) const {
 }
 
 void DiagramTimelineSvgDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
     std::stringstream exponent;
     if (feedback_target.is_sweep_bit_target()) {
         exponent << "sweep";
-        if (mode == SVG_MODE_TIMELINE) {
+        if (mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
             exponent << "[" << feedback_target.value() << "]";
         }
     } else if (feedback_target.is_measurement_record_target()) {
         exponent << "rec";
-        if (mode == SVG_MODE_TIMELINE) {
+        if (mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
             exponent << "[" << (feedback_target.value() + resolver.measure_offset) << "]";
         }
     }
@@ -71,7 +73,14 @@ void DiagramTimelineSvgDrawer::do_feedback(
         c.xyz[0],
         c.xyz[1],
         SvgGateData{
-            (uint16_t)(mode == SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black", 0, 10},
+            (uint16_t)(mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE ? 2 : 1),
+            std::string(gate),
+            "",
+            exponent.str(),
+            "lightgray",
+            "black",
+            0,
+            10},
         {});
 }
 
@@ -198,10 +207,11 @@ void DiagramTimelineSvgDrawer::draw_iswap_control(float cx, float cy, bool inver
 }
 
 void DiagramTimelineSvgDrawer::draw_generic_box(
-    float cx, float cy, const std::string &text, SpanRef<const double> end_args) {
+    float cx, float cy, std::string_view text, SpanRef<const double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
-        throw std::invalid_argument("DiagramTimelineSvgDrawer unhandled gate case: " + text);
+        throw std::invalid_argument(
+            "DiagramTimelineSvgDrawer::draw_generic_box unhandled gate case: " + std::string(text));
     }
     SvgGateData data = f->second;
     draw_annotated_gate(cx, cy, data, end_args);
@@ -270,7 +280,7 @@ void DiagramTimelineSvgDrawer::draw_annotated_gate(
 }
 
 void DiagramTimelineSvgDrawer::draw_two_qubit_gate_end_point(
-    float cx, float cy, const std::string &type, SpanRef<const double> args) {
+    float cx, float cy, std::string_view type, SpanRef<const double> args) {
     if (type == "X") {
         draw_x_control(cx, cy);
     } else if (type == "Y") {
@@ -308,16 +318,18 @@ void DiagramTimelineSvgDrawer::do_two_qubit_gate_instance(const ResolvedTimeline
     }
 
     auto pieces = two_qubit_gate_pieces(op.gate_type);
+    std::string piece1 = std::string(pieces.first);
+    std::string piece2 = std::string(pieces.second);
     if (op.gate_type == GateType::PAULI_CHANNEL_2) {
-        pieces.first.append("[0]");
-        pieces.second.append("[1]");
+        piece1.append("[0]");
+        piece2.append("[1]");
     }
 
     auto c1 = q2xy(target1.qubit_value());
     auto c2 = q2xy(target2.qubit_value());
     bool b = c1.xyz[1] > c2.xyz[1];
-    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], pieces.first, b ? op.args : SpanRef<const double>{});
-    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], pieces.second, !b ? op.args : SpanRef<const double>{});
+    draw_two_qubit_gate_end_point(c1.xyz[0], c1.xyz[1], piece1, b ? op.args : SpanRef<const double>{});
+    draw_two_qubit_gate_end_point(c2.xyz[0], c2.xyz[1], piece2, !b ? op.args : SpanRef<const double>{});
 }
 
 void DiagramTimelineSvgDrawer::start_next_moment() {
@@ -329,7 +341,7 @@ void DiagramTimelineSvgDrawer::start_next_moment() {
 }
 
 void DiagramTimelineSvgDrawer::do_tick() {
-    if (has_ticks && cur_moment > tick_start_moment && mode == SVG_MODE_TIMELINE) {
+    if (has_ticks && cur_moment > tick_start_moment && mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         float x1 = (float)m2x(tick_start_moment);
         float x2 = (float)m2x(cur_moment + moment_width - 1);
         float y1 = PADDING;
@@ -361,7 +373,7 @@ void DiagramTimelineSvgDrawer::do_single_qubit_gate_instance(const ResolvedTimel
     const auto &target = op.targets[0];
 
     std::stringstream ss;
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
+    const auto &gate_data = GATE_DATA[op.gate_type];
     ss << gate_data.name;
 
     auto c = q2xy(target.qubit_value());
@@ -451,7 +463,7 @@ std::pair<size_t, size_t> compute_minmax_q(SpanRef<const GateTarget> targets) {
 }
 
 void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         for (const auto &t : targets) {
             if (t.has_qubit_value() && cur_moment_used_flags[t.qubit_value()]) {
                 start_next_moment();
@@ -471,9 +483,27 @@ void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(SpanRef<const Ga
             svg_out << "<path d=\"";
             svg_out << "M" << coords[0].xyz[0] << "," << coords[0].xyz[1] << " ";
             for (size_t k = 1; k < coords.size(); k++) {
-                svg_out << "L" << coords[k].xyz[0] << "," << coords[k].xyz[1] << " ";
+                auto p1 = coords[k - 1];
+                auto p2 = coords[k];
+                auto dp = p2 - p1;
+                if (dp.norm() < coord_sys.unit_distance * 1.1) {
+                    svg_out << "L";
+                    svg_out << p2.xyz[0] << "," << p2.xyz[1] << " ";
+                } else {
+                    auto dp2 = Coord<2>{-dp.xyz[1], dp.xyz[0]};
+                    if (2 * dp2.xyz[0] + 3 * dp2.xyz[1] < 0) {
+                        dp2 *= -1;
+                    }
+                    auto p3 = p1 + dp * 0.2 + dp2 * 0.2;
+                    auto p4 = p2 + dp * -0.2 + dp2 * 0.2;
+                    svg_out << "C";
+                    svg_out << p3.xyz[0] << " " << p3.xyz[1] << ",";
+                    svg_out << p4.xyz[0] << " " << p4.xyz[1] << ",";
+                    svg_out << p2.xyz[0] << " " << p2.xyz[1] << " ";
+                }
             }
             svg_out << "\"";
+            write_key_val(svg_out, "fill", "none");
             write_key_val(svg_out, "stroke", "black");
             write_key_val(svg_out, "stroke-width", "5");
             svg_out << "/>\n";
@@ -513,7 +543,7 @@ void DiagramTimelineSvgDrawer::reserve_drawing_room_for_targets(SpanRef<const Ga
 }
 
 void DiagramTimelineSvgDrawer::draw_rec(float cx, float cy) {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
     svg_out << "<text";
@@ -536,7 +566,7 @@ void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_pauli_targets(const Reso
             continue;
         }
         std::stringstream ss;
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         ss << gate_data.name;
         if (t.is_x_target()) {
             ss << "[X]";
@@ -561,7 +591,7 @@ void DiagramTimelineSvgDrawer::do_start_repeat(const CircuitTimelineLoopData &lo
     if (cur_moment_is_used) {
         do_tick();
     }
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
 
@@ -600,7 +630,7 @@ void DiagramTimelineSvgDrawer::do_end_repeat(const CircuitTimelineLoopData &loop
     if (cur_moment_is_used) {
         do_tick();
     }
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
 
@@ -625,6 +655,10 @@ void DiagramTimelineSvgDrawer::do_mpp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimelineSvgDrawer::do_spp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_pauli_targets(op);
+}
+
 void DiagramTimelineSvgDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -637,7 +671,7 @@ void DiagramTimelineSvgDrawer::do_else_correlated_error(const ResolvedTimelineOp
 }
 
 void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &op) {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
     reserve_drawing_room_for_targets(op.targets);
@@ -653,7 +687,7 @@ void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &
 }
 
 void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
     reserve_drawing_room_for_targets(op.targets);
@@ -701,7 +735,7 @@ void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) 
 }
 
 void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOperation &op) {
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         return;
     }
     reserve_drawing_room_for_targets(op.targets);
@@ -742,6 +776,8 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
     }
     if (op.gate_type == GateType::MPP) {
         do_mpp(op);
+    } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_spp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
@@ -754,7 +790,7 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
         do_else_correlated_error(op);
     } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);
@@ -772,7 +808,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     uint64_t tick_slice_start,
     uint64_t tick_slice_num,
     DiagramTimelineSvgDrawerMode mode,
-    SpanRef<const CoordFilter> filter) {
+    SpanRef<const CoordFilter> filter,
+    size_t num_rows) {
     uint64_t circuit_num_ticks = circuit.count_ticks();
     auto circuit_has_ticks = circuit_num_ticks > 0;
     auto num_qubits = circuit.count_qubits();
@@ -782,15 +819,20 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     if (!circuit.operations.empty() && circuit.operations.back().gate_type == GateType::TICK) {
         tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start);
     }
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         // The +1 is because we're showing the detector slice at the end of each tick region.
         obj.detector_slice_set =
             DetectorSliceSet::from_circuit_ticks(circuit, tick_slice_start + 1, tick_slice_num, filter);
         obj.coord_sys = FlattenedCoords::from(obj.detector_slice_set, GATE_PITCH);
         obj.coord_sys.size.xyz[0] += TIME_SLICE_PADDING * 2;
         obj.coord_sys.size.xyz[1] += TIME_SLICE_PADDING * 2;
-        obj.num_cols = (uint64_t)ceil(sqrt((double)tick_slice_num));
-        obj.num_rows = tick_slice_num / obj.num_cols;
+        if (num_rows == 0) {
+            obj.num_cols = (uint64_t)ceil(sqrt((double)tick_slice_num));
+            obj.num_rows = tick_slice_num / obj.num_cols;
+        } else {
+            obj.num_rows = num_rows;
+            obj.num_cols = (tick_slice_num + num_rows - 1) / num_rows;
+        }
         while (obj.num_cols * obj.num_rows < tick_slice_num) {
             obj.num_rows++;
         }
@@ -801,7 +843,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     obj.min_tick = tick_slice_start;
     obj.max_tick = tick_slice_start + tick_slice_num - 1;
     obj.mode = mode;
-    obj.resolver.unroll_loops = mode != SVG_MODE_TIMELINE;
+    obj.resolver.unroll_loops = mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE;
     obj.resolver.resolved_op_callback = [&](const ResolvedTimelineOperation &op) {
         obj.do_resolved_operation(op);
     };
@@ -818,10 +860,10 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
 
     auto w = obj.m2x(obj.cur_moment) - GATE_PITCH * 0.5f;
     svg_out << R"SVG(<svg viewBox="0 0 )SVG";
-    if (mode != SVG_MODE_TIMELINE) {
-        svg_out << obj.coord_sys.size.xyz[0] * ((obj.num_cols - 1) * SLICE_WINDOW_GAP + 1);
-        svg_out << " ";
-        svg_out << obj.coord_sys.size.xyz[1] * ((obj.num_rows - 1) * SLICE_WINDOW_GAP + 1);
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
+        auto sw = obj.coord_sys.size.xyz[0] * ((obj.num_cols - 1) * SLICE_WINDOW_GAP + 1);
+        auto sh = obj.coord_sys.size.xyz[1] * ((obj.num_rows - 1) * SLICE_WINDOW_GAP + 1);
+        svg_out << sw << " " << sh;
     } else {
         svg_out << w + PADDING;
         svg_out << " ";
@@ -832,7 +874,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     write_key_val(svg_out, "xmlns", "http://www.w3.org/2000/svg");
     svg_out << ">\n";
 
-    if (mode == SVG_MODE_TIME_DETECTOR_SLICE) {
+    if (mode == DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE) {
         obj.detector_slice_set.write_svg_contents_to(
             svg_out,
             [&](uint32_t qubit) {
@@ -846,7 +888,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     }
 
     // Make sure qubit lines/points are drawn first, so they are in the background.
-    if (mode != SVG_MODE_TIMELINE) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
         // Draw qubit points.
         auto tick = tick_slice_start;
         svg_out << "<g id=\"qubit_dots\">\n";
@@ -920,18 +962,31 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     svg_out << buffer.str();
 
     // Border around different slices.
-    if (mode != SVG_MODE_TIMELINE && tick_slice_num > 1) {
+    if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE && tick_slice_num > 1) {
         auto k = 0;
         svg_out << "<g id=\"tick_borders\">\n";
-        for (uint64_t col = 0; col < obj.num_cols; col++) {
-            for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
+        for (uint64_t row = 0; row < obj.num_rows; row++) {
+            for (uint64_t col = 0; col < obj.num_cols && row * obj.num_cols + col < tick_slice_num; col++) {
                 auto sw = obj.coord_sys.size.xyz[0];
                 auto sh = obj.coord_sys.size.xyz[1];
 
                 std::stringstream id_ss;
+                auto tick = k + tick_slice_start;  // the absolute tick
                 id_ss << "tick_border:" << k;
                 id_ss << ":" << row << "_" << col;
-                id_ss << ":" << k + tick_slice_start;  // the absolute tick
+                id_ss << ":" << tick;
+
+                svg_out << "<text";
+                write_key_val(svg_out, "dominant-baseline", "hanging");
+                write_key_val(svg_out, "text-anchor", "middle");
+                write_key_val(svg_out, "font-family", "serif");
+                write_key_val(svg_out, "font-size", 18);
+                write_key_val(svg_out, "transform", "rotate(90)");
+                write_key_val(svg_out, "x", sh * row * SLICE_WINDOW_GAP + sh / 2);
+                write_key_val(svg_out, "y", -(sw * col * SLICE_WINDOW_GAP + sw - 6));
+                svg_out << ">";
+                svg_out << "Tick " << tick;
+                svg_out << "</text>\n";
 
                 svg_out << "<rect";
                 write_key_val(svg_out, "id", id_ss.str());
@@ -942,6 +997,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 write_key_val(svg_out, "stroke", "black");
                 write_key_val(svg_out, "fill", "none");
                 svg_out << "/>\n";
+
+                k++;
             }
         }
         svg_out << "</g>\n";

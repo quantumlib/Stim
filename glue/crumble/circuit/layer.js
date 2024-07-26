@@ -1,9 +1,62 @@
 import {Operation} from "./operation.js"
+import {GATE_MAP} from "../gates/gateset.js";
+import {groupBy} from "../base/seq.js";
 
 class Layer {
     constructor() {
         this.id_ops = /** @type {!Map<!int, !Operation>} */ new Map();
         this.markers /** @type {!Array<!Operation>} */ = [];
+    }
+
+    /**
+     * @returns {!string}
+     */
+    toString() {
+        let result = 'Layer {\n';
+        result += "    id_ops {\n";
+        for (let [key, val] of this.id_ops.entries()) {
+            result += `        ${key}: ${val}\n`
+        }
+        result += '    }\n';
+        result += "    markers {\n";
+        for (let val of this.markers) {
+            result += `        ${val}\n`
+        }
+        result += '    }\n';
+        result += '}';
+        return result;
+    }
+
+    /**
+     * @returns {Map<!string, !Array<!Operation>>}
+     */
+    opsGroupedByNameWithArgs() {
+        let opsByName = groupBy(this.iter_gates_and_markers(), op => {
+            let key = op.gate.name;
+            if (key.startsWith('MPP:') && !GATE_MAP.has(key)) {
+                key = 'MPP';
+            }
+            if (key.startsWith('SPP:') && !GATE_MAP.has(key)) {
+                key = 'SPP';
+            }
+            if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
+                key = 'SPP_DAG';
+            }
+            if (op.args.length > 0) {
+                key += '(' + [...op.args].join(',') + ')';
+            }
+            return key;
+        });
+        let namesWithArgs = [...opsByName.keys()];
+        namesWithArgs.sort((a, b) => {
+            let ma = a.startsWith('MARK') || a.startsWith('POLY');
+            let mb = b.startsWith('MARK') || b.startsWith('POLY');
+            if (ma !== mb) {
+                return ma < mb ? -1 : +1;
+            }
+            return a < b ? -1 : a > b ? +1 : 0;
+        });
+        return new Map(namesWithArgs.map(e => [e, opsByName.get(e)]));
     }
 
     /**
@@ -14,6 +67,111 @@ class Layer {
         result.id_ops = new Map(this.id_ops);
         result.markers = [...this.markers];
         return result;
+    }
+
+    /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        let total = 0;
+        for (let [target_id, op] of this.id_ops.entries()) {
+            if (op.id_targets[0] === target_id) {
+                total += op.countMeasurements();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * @returns {!boolean}
+     */
+    hasDissipativeOperations() {
+        let dissipative_gate_names = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.gate.name.startsWith('MPP:') || dissipative_gate_names.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hasSingleQubitCliffords() {
+        let dissipative_gate_names = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.id_targets.length === 1 && dissipative_gate_names.indexOf(op.gate.name) === -1 && op.countMeasurements() === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @returns {!boolean}
+     */
+    hasResetOperations() {
+        let gateNames = [
+            'MR',
+            'MRX',
+            'MRY',
+            'RX',
+            'RY',
+            'R',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (gateNames.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @returns {!boolean}
+     */
+    hasMeasurementOperations() {
+        let gateNames = [
+            'M',
+            'MX',
+            'MY',
+            'MR',
+            'MRX',
+            'MRY',
+            'MXX',
+            'MYY',
+            'MZZ',
+        ]
+        for (let op of this.id_ops.values()) {
+            if (op.gate.name.startsWith('MPP:') || gateNames.indexOf(op.gate.name) !== -1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

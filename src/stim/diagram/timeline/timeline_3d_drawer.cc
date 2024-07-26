@@ -1,8 +1,10 @@
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -17,18 +19,18 @@ Coord<3> DiagramTimeline3DDrawer::mq2xyz(size_t m, size_t q) const {
 }
 
 void DiagramTimeline3DDrawer::do_feedback(
-    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
-    std::string key = gate;
+    std::string_view gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    std::string key = std::string(gate);
     if (feedback_target.is_sweep_bit_target()) {
-        key = gate + ":SWEEP";
+        key.append(":SWEEP");
     } else if (feedback_target.is_measurement_record_target()) {
-        key = gate + ":REC";
+        key.append(":REC");
     }
     auto center = mq2xyz(cur_moment, qubit_target.qubit_value());
     diagram_out.elements.push_back({key, center});
 }
 
-void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, const std::string &type) {
+void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, std::string_view type) {
     if (type == "X") {
         diagram_out.elements.push_back({"X_CONTROL", center});
     } else if (type == "Y") {
@@ -36,7 +38,7 @@ void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, con
     } else if (type == "Z") {
         diagram_out.elements.push_back({"Z_CONTROL", center});
     } else {
-        diagram_out.elements.push_back({type, center});
+        diagram_out.elements.push_back({std::string(type), center});
     }
 }
 
@@ -140,8 +142,8 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
     const auto &target = op.targets[0];
 
     auto center = mq2xyz(cur_moment, target.qubit_value());
-    const auto &gate_data = GATE_DATA.items[op.gate_type];
-    diagram_out.elements.push_back({gate_data.name, center});
+    const auto &gate_data = GATE_DATA[op.gate_type];
+    diagram_out.elements.push_back({std::string(gate_data.name), center});
 }
 
 void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(SpanRef<const GateTarget> targets) {
@@ -171,7 +173,7 @@ void DiagramTimeline3DDrawer::do_multi_qubit_gate_with_pauli_targets(const Resol
             continue;
         }
         std::stringstream ss;
-        const auto &gate_data = GATE_DATA.items[op.gate_type];
+        const auto &gate_data = GATE_DATA[op.gate_type];
         ss << gate_data.name;
         if (t.is_x_target()) {
             ss << ":X";
@@ -271,6 +273,10 @@ void DiagramTimeline3DDrawer::do_mpp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimeline3DDrawer::do_spp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_pauli_targets(op);
+}
+
 void DiagramTimeline3DDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -297,6 +303,8 @@ void DiagramTimeline3DDrawer::do_observable_include(const ResolvedTimelineOperat
 void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
     if (op.gate_type == GateType::MPP) {
         do_mpp(op);
+    } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
+        do_spp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {
@@ -309,7 +317,7 @@ void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperat
         do_else_correlated_error(op);
     } else if (op.gate_type == GateType::TICK) {
         do_tick();
-    } else if (GATE_DATA.items[op.gate_type].flags & GATE_TARGETS_PAIRS) {
+    } else if (GATE_DATA[op.gate_type].flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate_instance(op);
     } else {
         do_single_qubit_gate_instance(op);

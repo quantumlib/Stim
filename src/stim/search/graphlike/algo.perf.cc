@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/perf.perf.h"
 #include "stim/search/search.h"
 #include "stim/simulators/error_analyzer.h"
 

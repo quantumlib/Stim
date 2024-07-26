@@ -15,11 +15,11 @@
 #include "stim/cmd/command_detect.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/io/raii_file.h"
 #include "stim/io/stim_data_formats.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/frame_simulator_util.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 
@@ -42,7 +42,7 @@ int stim::command_detect(int argc, const char **argv) {
         find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
         : find_argument("--detect", argc, argv) ? (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv)
                                                 : 1;
-    if (out_format.id == SAMPLE_FORMAT_DETS && !append_observables) {
+    if (out_format.id == SampleFormat::SAMPLE_FORMAT_DETS && !append_observables) {
         prepend_observables = true;
     }
 

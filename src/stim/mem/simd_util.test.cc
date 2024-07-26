@@ -21,7 +21,7 @@
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -425,21 +425,4 @@ TEST(simd_util, interleave_mask) {
     ASSERT_EQ(interleave_mask(8), 0x00FF00FF00FF00FFULL);
     ASSERT_EQ(interleave_mask(16), 0x0000FFFF0000FFFFULL);
     ASSERT_EQ(interleave_mask(32), 0x00000000FFFFFFFFULL);
-}
-
-TEST(simd_util, popcnt64) {
-    for (size_t expected = 0; expected <= 64; expected++) {
-        std::vector<uint64_t> bits{};
-        for (size_t i = 0; i < 64; i++) {
-            bits.push_back(i < expected);
-        }
-        for (size_t reps = 0; reps < 100; reps++) {
-            std::shuffle(bits.begin(), bits.end(), INDEPENDENT_TEST_RNG());
-            uint64_t v = 0;
-            for (size_t i = 0; i < 64; i++) {
-                v |= bits[i] << i;
-            }
-            ASSERT_EQ(popcnt64(v), expected);
-        }
-    }
 }

@@ -257,6 +257,12 @@ simd_bits<W> &simd_bits<W>::operator+=(const simd_bits_range_ref<W> other) {
 }
 
 template <size_t W>
+simd_bits<W> &simd_bits<W>::operator-=(const simd_bits_range_ref<W> other) {
+    simd_bits_range_ref<W>(*this) -= other;
+    return *this;
+}
+
+template <size_t W>
 simd_bits<W> &simd_bits<W>::operator>>=(int offset) {
     simd_bits_range_ref<W>(*this) >>= offset;
     return *this;
@@ -300,6 +306,16 @@ void simd_bits<W>::destructive_resize(size_t new_min_bits) {
 template <size_t W>
 size_t simd_bits<W>::popcnt() const {
     return simd_bits_range_ref<W>(*this).popcnt();
+}
+
+template <size_t W>
+uint64_t simd_bits<W>::as_u64() const {
+    return simd_bits_range_ref<W>(*this).as_u64();
+}
+
+template <size_t W>
+size_t simd_bits<W>::countr_zero() const {
+    return simd_bits_range_ref<W>(*this).countr_zero();
 }
 
 template <size_t W>

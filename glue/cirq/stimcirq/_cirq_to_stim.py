@@ -290,6 +290,32 @@ def _stim_append_pauli_measurement_gate(
     circuit.append_operation("MPP", new_targets)
 
 
+def _stim_append_spp_gate(
+    circuit: stim.Circuit, gate: cirq.PauliStringPhasorGate, targets: List[int]
+):
+    obs: cirq.DensePauliString = gate.dense_pauli_string
+    a = gate.exponent_neg
+    b = gate.exponent_pos
+    d = (a - b) % 2
+    if obs.coefficient == -1:
+        d += 1
+        d %= 2
+    if d != 0.5 and d != 1.5:
+        return False
+
+    new_targets = []
+    for t, p in zip(targets, obs.pauli_mask):
+        if p:
+            new_targets.append(stim.target_pauli(t, p))
+            new_targets.append(stim.target_combiner())
+    if len(new_targets) == 0:
+        return False
+    new_targets.pop()
+
+    circuit.append_operation("SPP" if d == 0.5 else "SPP_DAG", new_targets)
+    return True
+
+
 def _stim_append_dense_pauli_string_gate(
     c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int]
 ):
@@ -383,7 +409,9 @@ class CirqToStimHelper:
 
     def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
         if self.flatten or op.repetitions == 1:
-            self.process_operations(cirq.decompose_once(op))
+            moments = cirq.unroll_circuit_op(cirq.Circuit(op), deep=False, tags_to_check=None).moments
+            self.process_moments(moments)
+            self.out = self.out[:-1] # Remove a trailing TICK (to avoid double TICK)
             return
 
         child = CirqToStimHelper()
@@ -421,6 +449,9 @@ class CirqToStimHelper:
                 continue
 
             # Special case measurement, because of its metadata.
+            if isinstance(gate, cirq.PauliStringPhasorGate):
+                if _stim_append_spp_gate(self.out, gate, targets):
+                    continue
             if isinstance(gate, cirq.PauliMeasurementGate):
                 self.key_out.append((gate.key, len(targets)))
                 _stim_append_pauli_measurement_gate(self.out, gate, targets)

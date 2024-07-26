@@ -118,18 +118,23 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
             }
             c /= det_coords.size();
             for (const auto &e : det_coords) {
-                out.blue_line_data.push_back(c);
-                out.blue_line_data.push_back(e);
+                if (has_observables) {
+                    out.purple_line_data.push_back(c);
+                    out.purple_line_data.push_back(e);
+                } else {
+                    out.blue_line_data.push_back(c);
+                    out.blue_line_data.push_back(e);
+                }
             }
         }
     };
 
     for (const auto &c : coords) {
-        out.elements.push_back({"Z_CONTROL", c});
+        out.elements.push_back({"DETECTOR", c});
     }
 
     dem.iter_flatten_error_instructions([&](const DemInstruction &op) {
-        if (op.type != stim::DEM_ERROR) {
+        if (op.type != DemInstructionType::DEM_ERROR) {
             return;
         }
         auto *p = op.target_data.ptr_start;

@@ -12,6 +12,7 @@ function *iter_gates_quarter_turns() {
             ['Z', 'Z'],
         ]),
         (frame, targets) => frame.do_exchange_xy(targets),
+        (frame, targets) => frame.do_exchange_xy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'yellow';
@@ -33,6 +34,7 @@ function *iter_gates_quarter_turns() {
             ['X', 'Y'],
             ['Z', 'Z'],
         ]),
+        (frame, targets) => frame.do_exchange_xy(targets),
         (frame, targets) => frame.do_exchange_xy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -57,6 +59,7 @@ function *iter_gates_quarter_turns() {
             ['Z', 'Y'],
         ]),
         (frame, targets) => frame.do_exchange_yz(targets),
+        (frame, targets) => frame.do_exchange_yz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'yellow';
@@ -78,6 +81,7 @@ function *iter_gates_quarter_turns() {
             ['X', 'X'],
             ['Z', 'Y'],
         ]),
+        (frame, targets) => frame.do_exchange_yz(targets),
         (frame, targets) => frame.do_exchange_yz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -102,6 +106,7 @@ function *iter_gates_quarter_turns() {
             ['Z', 'X'],
         ]),
         (frame, targets) => frame.do_exchange_xz(targets),
+        (frame, targets) => frame.do_exchange_xz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'yellow';
@@ -123,6 +128,7 @@ function *iter_gates_quarter_turns() {
             ['X', 'Z'],
             ['Z', 'X'],
         ]),
+        (frame, targets) => frame.do_exchange_xz(targets),
         (frame, targets) => frame.do_exchange_xz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

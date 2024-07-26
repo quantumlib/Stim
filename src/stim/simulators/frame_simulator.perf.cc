@@ -14,9 +14,9 @@
 
 #include "stim/simulators/frame_simulator.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

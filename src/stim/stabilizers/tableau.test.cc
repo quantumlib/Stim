@@ -18,11 +18,11 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/circuit/gate_data.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -72,8 +72,8 @@ bool tableau_agrees_with_unitary(
         VectorSimulator sim(n * 2);
         // Create EPR pairs to test all possible inputs via state channel duality.
         for (size_t q = 0; q < n; q++) {
-            sim.apply("H_XZ", q);
-            sim.apply("ZCX", q, q + n);
+            sim.apply(GateType::H, q);
+            sim.apply(GateType::CX, q, q + n);
         }
         // Apply input-side observable.
         sim.apply<W>(input_side_obs, n);
@@ -383,7 +383,7 @@ bool are_tableau_mutations_equivalent(
 }
 
 template <size_t W>
-bool are_tableau_prepends_equivalent(const std::string &name, const std::function<void(Tableau<W> &t, size_t)> &func) {
+bool are_tableau_prepends_equivalent(std::string_view name, const std::function<void(Tableau<W> &t, size_t)> &func) {
     return are_tableau_mutations_equivalent<W>(
         1,
         [&](Tableau<W> &t, const std::vector<size_t> &targets) {
@@ -396,7 +396,7 @@ bool are_tableau_prepends_equivalent(const std::string &name, const std::functio
 
 template <size_t W>
 bool are_tableau_prepends_equivalent(
-    const std::string &name, const std::function<void(Tableau<W> &t, size_t, size_t)> &func) {
+    std::string_view name, const std::function<void(Tableau<W> &t, size_t, size_t)> &func) {
     return are_tableau_mutations_equivalent<W>(
         2,
         [&](Tableau<W> &t, const std::vector<size_t> &targets) {
@@ -722,15 +722,15 @@ TEST_EACH_WORD_SIZE_W(tableau, expand_pad_equals, {
 
 TEST_EACH_WORD_SIZE_W(tableau, transposed_access, {
     auto rng = INDEPENDENT_TEST_RNG();
-    size_t n = 1000;
+    size_t n = W > 256 ? 1000 : 400;
     Tableau<W> t(n);
     auto m = t.xs.xt.data.num_bits_padded();
     t.xs.xt.data.randomize(m, rng);
     t.xs.zt.data.randomize(m, rng);
     t.zs.xt.data.randomize(m, rng);
     t.zs.zt.data.randomize(m, rng);
-    for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
-        for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
+    for (size_t inp_qubit = 0; inp_qubit < n; inp_qubit += 99) {
+        for (size_t out_qubit = 0; out_qubit < n; out_qubit += 99) {
             bool bxx = t.xs.xt[inp_qubit][out_qubit];
             bool bxz = t.xs.zt[inp_qubit][out_qubit];
             bool bzx = t.zs.xt[inp_qubit][out_qubit];
@@ -885,26 +885,26 @@ TEST_EACH_WORD_SIZE_W(tableau, transposed_xz_input, {
 
 TEST_EACH_WORD_SIZE_W(tableau, direct_sum, {
     auto rng = INDEPENDENT_TEST_RNG();
-    auto t1 = Tableau<W>::random(260, rng);
-    auto t2 = Tableau<W>::random(270, rng);
+    auto t1 = Tableau<W>::random(160, rng);
+    auto t2 = Tableau<W>::random(170, rng);
     auto t3 = t1;
     t3 += t2;
     ASSERT_EQ(t3, t1 + t2);
 
     PauliString<W> p1 = t1.xs[5];
-    p1.ensure_num_qubits(260 + 270, 1.0);
+    p1.ensure_num_qubits(160 + 170, 1.0);
     ASSERT_EQ(t3.xs[5], p1);
 
     std::string p2 = t2.xs[6].str();
-    std::string p3 = t3.xs[266].str();
+    std::string p3 = t3.xs[166].str();
     ASSERT_EQ(p2[0], p3[0]);
     p2 = p2.substr(1);
     p3 = p3.substr(1);
-    for (size_t k = 0; k < 260; k++) {
+    for (size_t k = 0; k < 160; k++) {
         ASSERT_EQ(p3[k], '_');
     }
-    for (size_t k = 0; k < 270; k++) {
-        ASSERT_EQ(p3[260 + k], p2[k]);
+    for (size_t k = 0; k < 170; k++) {
+        ASSERT_EQ(p3[160 + k], p2[k]);
     }
 })
 

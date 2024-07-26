@@ -16,12 +16,14 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_bot/probability_util.h"
+#include "stim/util_bot/str_util.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -29,12 +31,12 @@ using namespace stim_pybind;
 template <size_t W>
 void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
-        self.expand_do_circuit(pybind11::cast<Circuit>(obj));
+        self.safe_do_circuit(pybind11::cast<Circuit>(obj));
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
-        self.expand_do_circuit(block.body, block.repeat_count);
-    } else if (pybind11::isinstance<PyPauliString>(obj)) {
-        const PyPauliString &pauli_string = pybind11::cast<PyPauliString>(obj);
+        self.safe_do_circuit(block.body, block.repeat_count);
+    } else if (pybind11::isinstance<FlexPauliString>(obj)) {
+        const FlexPauliString &pauli_string = pybind11::cast<FlexPauliString>(obj);
         self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
         self.paulis(pauli_string.value);
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
@@ -43,7 +45,7 @@ void do_obj(TableauSimulator<W> &self, const pybind11::object &obj) {
     } else {
         std::stringstream ss;
         ss << "Don't know how to handle ";
-        ss << obj;
+        ss << pybind11::repr(obj);
         throw std::invalid_argument(ss.str());
     }
 }
@@ -254,7 +256,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "state_vector",
-        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -317,15 +319,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 >>> import numpy as np
                 >>> s = stim.TableauSimulator()
                 >>> s.x(2)
-                >>> list(s.state_vector(endian='little'))
-                [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+                >>> s.state_vector(endian='little')
+                array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                      dtype=complex64)
 
-                >>> list(s.state_vector(endian='big'))
-                [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+                >>> s.state_vector(endian='big')
+                array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                      dtype=complex64)
 
                 >>> s.sqrt_x(1, 2)
-                >>> list(s.state_vector())
-                [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
+                >>> s.state_vector()
+                array([0.5+0.j , 0. +0.j , 0. -0.5j, 0. +0.j , 0. +0.5j, 0. +0.j ,
+                       0.5+0.j , 0. +0.j ], dtype=complex64)
         )DOC")
             .data());
 
@@ -333,7 +338,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
         "canonical_stabilizers",
         [](const TableauSimulator<MAX_BITWORD_WIDTH> &self) {
             auto stabilizers = self.canonical_stabilizers();
-            std::vector<PyPauliString> result;
+            std::vector<FlexPauliString> result;
             result.reserve(stabilizers.size());
             for (auto &s : stabilizers) {
                 result.emplace_back(std::move(s), false);
@@ -451,7 +456,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "do_pauli_string",
-        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, PyPauliString &pauli_string) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, FlexPauliString &pauli_string) {
             self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
             self.paulis(pauli_string.value);
         },
@@ -474,7 +479,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
     c.def(
         "do_circuit",
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const Circuit &circuit) {
-            self.expand_do_circuit(circuit);
+            self.safe_do_circuit(circuit);
         },
         pybind11::arg("circuit"),
         clean_doc_string(R"DOC(
@@ -1315,7 +1320,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
         "peek_bloch",
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self, size_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
-            return PyPauliString(self.peek_bloch(target));
+            return FlexPauliString(self.peek_bloch(target));
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1365,7 +1370,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "peek_observable_expectation",
-        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const PyPauliString &observable) -> int8_t {
+        [](const TableauSimulator<MAX_BITWORD_WIDTH> &self, const FlexPauliString &observable) -> int8_t {
             if (observable.imag) {
                 throw std::invalid_argument(
                     "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
@@ -1421,7 +1426,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
     c.def(
         "measure_observable",
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self,
-           const PyPauliString &observable,
+           const FlexPauliString &observable,
            double flip_probability) -> bool {
             if (observable.imag) {
                 throw std::invalid_argument(
@@ -1468,7 +1473,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "postselect_observable",
-        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const PyPauliString &observable, bool desired_value) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, const FlexPauliString &observable, bool desired_value) {
             if (observable.imag) {
                 throw std::invalid_argument(
                     "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
@@ -1888,7 +1893,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
             if (result.second.num_qubits == 0) {
                 return pybind11::make_tuple(result.first, pybind11::none());
             }
-            return pybind11::make_tuple(result.first, PyPauliString(result.second));
+            return pybind11::make_tuple(result.first, FlexPauliString(result.second));
         },
         pybind11::arg("target"),
         clean_doc_string(R"DOC(
@@ -1953,7 +1958,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
            bool allow_underconstrained) {
             std::vector<PauliString<MAX_BITWORD_WIDTH>> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
-                const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
+                const FlexPauliString &p = pybind11::cast<FlexPauliString>(stabilizer);
                 if (p.imag) {
                     throw std::invalid_argument("Stabilizers can't have imaginary sign.");
                 }
@@ -2055,7 +2060,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
     c.def(
         "set_state_from_state_vector",
-        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::object &state_vector, const std::string &endian) {
+        [](TableauSimulator<MAX_BITWORD_WIDTH> &self, pybind11::object &state_vector, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2070,10 +2075,9 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 v.push_back(pybind11::cast<std::complex<float>>(obj));
             }
 
-            self.inv_state =
-                circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                    stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false)
-                    .inverse();
+            self.inv_state = circuit_to_tableau<MAX_BITWORD_WIDTH>(
+                                 stabilizer_state_vector_to_circuit(v, little_endian), false, false, false)
+                                 .inverse();
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
