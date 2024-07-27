@@ -367,7 +367,7 @@ def collect(*,
     progress_printer = ThrottledProgressPrinter(
         outs=[],
         print_progress=print_progress,
-        min_progress_delay=1,
+        min_progress_delay=0.1,
     )
     with contextlib.ExitStack() as exit_stack:
         # Open save/resume file.

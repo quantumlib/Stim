@@ -296,7 +296,7 @@ def main_collect(*, command_line_args: List[str]):
     printer = ThrottledProgressPrinter(
         outs=[],
         print_progress=not args.quiet,
-        min_progress_delay=0.03 if args.also_print_results_to_stdout else 0.2,
+        min_progress_delay=0.03 if args.also_print_results_to_stdout else 0.1,
     )
     if print_to_stdout:
         printer.outs.append(sys.stdout)
