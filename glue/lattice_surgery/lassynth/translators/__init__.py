@@ -1,0 +1,1 @@
+from lassynth.translators.zx_grid_graph import ZXGridGraph
