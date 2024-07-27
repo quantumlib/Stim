@@ -2,8 +2,8 @@ import collections
 import dataclasses
 from typing import Counter, List, Any
 
-from sinter._anon_task_stats import AnonTaskStats
-from sinter._csv_out import csv_line
+from sinter._data._anon_task_stats import AnonTaskStats
+from sinter._data._csv_out import csv_line
 
 
 @dataclasses.dataclass(frozen=True)

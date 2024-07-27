@@ -9,11 +9,11 @@ import numpy as np
 import stim
 
 import sinter
-from sinter._printer import ThrottledProgressPrinter
-from sinter._task import Task
+from sinter._collection import ThrottledProgressPrinter
+from sinter._data import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_predicate
-from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._main_combine import ExistingData, CSV_HEADER
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._command._main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],

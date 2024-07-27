@@ -7,14 +7,10 @@ import tempfile
 import stim
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
-from sinter._decoding_decoder_class import Decoder
-from sinter._collection_options import CollectionOptions
-from sinter._existing_data import ExistingData
-from sinter._task_stats import TaskStats
-from sinter._task import Task
-from sinter._anon_task_stats import AnonTaskStats
-from sinter._collection_tracker_for_single_task import CollectionTrackerForSingleTask
-from sinter._worker import worker_loop, WorkIn, WorkOut
+from sinter._decoding import Decoder
+from sinter._data import CollectionOptions, ExistingData, TaskStats, Task, AnonTaskStats
+from sinter._collection._collection_tracker_for_single_task import CollectionTrackerForSingleTask
+from sinter._collection._worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:

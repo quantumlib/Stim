@@ -1,6 +1,9 @@
 import collections
 import dataclasses
-from typing import Counter
+from typing import Counter, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sinter._data._task_stats import TaskStats
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,7 +59,7 @@ class AnonTaskStats:
             terms.append(f'custom_counts={self.custom_counts!r}')
         return f'sinter.AnonTaskStats({", ".join(terms)})'
 
-    def __add__(self, other: 'AnonTaskStats') -> 'AnonTaskStats':
+    def __add__(self, other: Union['AnonTaskStats', 'TaskStats']) -> 'AnonTaskStats':
         """Returns the sum of the statistics from both anonymous stats.
 
         Adds the shots, the errors, the discards, and the seconds.
@@ -74,13 +77,14 @@ class AnonTaskStats:
             >>> a + b
             sinter.AnonTaskStats(shots=1100, errors=220)
         """
-        if not isinstance(other, AnonTaskStats):
-            return NotImplemented
+        from sinter._data._task_stats import TaskStats
+        if isinstance(other, (AnonTaskStats, TaskStats)):
+            return AnonTaskStats(
+                shots=self.shots + other.shots,
+                errors=self.errors + other.errors,
+                discards=self.discards + other.discards,
+                seconds=self.seconds + other.seconds,
+                custom_counts=self.custom_counts + other.custom_counts,
+            )
 
-        return AnonTaskStats(
-            shots=self.shots + other.shots,
-            errors=self.errors + other.errors,
-            discards=self.discards + other.discards,
-            seconds=self.seconds + other.seconds,
-            custom_counts=self.custom_counts + other.custom_counts,
-        )
+        return NotImplemented

@@ -6,7 +6,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 from sinter import shot_error_rate_to_piece_error_rate
-from sinter._main_combine import ExistingData
+from sinter._command._main_combine import ExistingData
 from sinter._plotting import plot_discard_rate, plot_custom
 from sinter._plotting import plot_error_rate
 

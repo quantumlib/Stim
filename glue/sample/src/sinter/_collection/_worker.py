@@ -163,7 +163,7 @@ def do_work_safely(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sin
 
 def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Decoder']) -> WorkOut:
     import stim
-    from sinter._task import Task
+    from sinter._data import Task
     from sinter._decoding import sample_decode
 
     if work.strong_id is None:

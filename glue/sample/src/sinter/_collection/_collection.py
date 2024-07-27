@@ -1,19 +1,15 @@
 import contextlib
 import dataclasses
 import pathlib
-from typing import Any
-from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
+from typing import Any, Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
 
 import math
 import numpy as np
 import stim
 
-from sinter._collection_options import CollectionOptions
-from sinter._csv_out import CSV_HEADER
-from sinter._collection_work_manager import CollectionWorkManager
-from sinter._existing_data import ExistingData
-from sinter._printer import ThrottledProgressPrinter
-from sinter._task_stats import TaskStats
+from sinter._data import CSV_HEADER, ExistingData, TaskStats, CollectionOptions
+from sinter._collection._collection_work_manager import CollectionWorkManager
+from sinter._collection._printer import ThrottledProgressPrinter
 
 if TYPE_CHECKING:
     import sinter

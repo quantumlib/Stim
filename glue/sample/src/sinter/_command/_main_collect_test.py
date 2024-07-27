@@ -6,8 +6,8 @@ import stim
 
 import pytest
 import sinter
-from sinter._main import main
-from sinter._main_combine import ExistingData
+from sinter._command._main import main
+from sinter._command._main_combine import ExistingData
 from sinter._plotting import split_by
 
 
@@ -144,7 +144,7 @@ def test_main_collect_with_custom_decoder():
                 "--decoders",
                 "NOTEXIST",
                 "--custom_decoders_module_function",
-                "sinter._main_collect_test:_make_custom_decoders",
+                "sinter._command._main_collect_test:_make_custom_decoders",
                 "--processes",
                 "2",
                 "--quiet",
@@ -162,7 +162,7 @@ def test_main_collect_with_custom_decoder():
             "--decoders",
             "alternate",
             "--custom_decoders_module_function",
-            "sinter._main_collect_test:_make_custom_decoders",
+            "sinter._command._main_collect_test:_make_custom_decoders",
             "--processes",
             "2",
             "--quiet",

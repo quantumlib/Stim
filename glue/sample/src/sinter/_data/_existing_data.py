@@ -3,9 +3,9 @@ import json
 import pathlib
 from typing import Any, Dict, List, TYPE_CHECKING
 
-from sinter._task_stats import TaskStats
-from sinter._task import Task
-from sinter._decoding import AnonTaskStats
+from sinter._data._task_stats import TaskStats
+from sinter._data._task import Task
+from sinter._data._anon_task_stats import AnonTaskStats
 
 if TYPE_CHECKING:
     import sinter
