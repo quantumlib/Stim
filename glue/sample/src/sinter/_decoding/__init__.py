@@ -9,3 +9,7 @@ from sinter._decoding._decoding_decoder_class import (
 from sinter._decoding._decoding_all_built_in_decoders import (
     BUILT_IN_DECODERS,
 )
+from sinter._decoding._sampler import (
+    Sampler,
+    CompiledSampler,
+)

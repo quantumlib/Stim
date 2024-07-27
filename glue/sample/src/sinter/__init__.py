@@ -19,6 +19,8 @@ from sinter._decoding import (
     CompiledDecoder,
     Decoder,
     BUILT_IN_DECODERS,
+    Sampler,
+    CompiledSampler,
 )
 from sinter._probability_util import (
     comma_separated_key_values,

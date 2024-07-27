@@ -7,8 +7,8 @@ import math
 import numpy as np
 import stim
 
-from sinter._data import CSV_HEADER, ExistingData, TaskStats, CollectionOptions
-from sinter._collection._collection_work_manager import CollectionWorkManager
+from sinter._data import CSV_HEADER, ExistingData, TaskStats, CollectionOptions, Task
+from sinter._collection._collection_manager import CollectionManager
 from sinter._collection._printer import ThrottledProgressPrinter
 
 if TYPE_CHECKING:
@@ -162,50 +162,65 @@ def iter_collect(*,
         except TypeError:
             pass
 
-    with CollectionWorkManager(
-        tasks_iter=iter(tasks),
-        global_collection_options=CollectionOptions(
+    if decoders is not None:
+        old_tasks = tasks
+        tasks = (
+            Task(
+                circuit=task.circuit,
+                decoder=decoder,
+                detector_error_model=task.detector_error_model,
+                postselection_mask=task.postselection_mask,
+                postselected_observables_mask=task.postselected_observables_mask,
+                json_metadata=task.json_metadata,
+                collection_options=task.collection_options,
+                circuit_path=task.circuit_path,
+            )
+            for task in old_tasks
+            for decoder in (decoders if task.decoder is None else [task.decoder])
+        )
+
+    progress_log: list[Optional[TaskStats]] = []
+    def log_progress(e: Optional[TaskStats]):
+        progress_log.append(e)
+    with CollectionManager(
+        num_workers=num_workers,
+        tasks=tasks,
+        collection_options=CollectionOptions(
             max_shots=max_shots,
             max_errors=max_errors,
             max_batch_seconds=max_batch_seconds,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
         ),
-        decoders=decoders,
+        existing_data={} if additional_existing_data is None else additional_existing_data.data,
         count_observable_error_combos=count_observable_error_combos,
         count_detection_events=count_detection_events,
-        additional_existing_data=additional_existing_data,
-        custom_decoders=custom_decoders,
         custom_error_count_key=custom_error_count_key,
+        custom_decoders=custom_decoders or {},
         allowed_cpu_affinity_ids=allowed_cpu_affinity_ids,
+        worker_flush_period=max_batch_seconds or 120,
+        progress_callback=log_progress,
     ) as manager:
         try:
             yield Progress(
                 new_stats=(),
                 status_message=f"Starting {num_workers} workers..."
             )
-            manager.start_workers(num_workers)
+            manager.start_workers()
+            manager.start_distributing_work()
 
-            yield Progress(
-                new_stats=(),
-                status_message="Finding work..."
-            )
-            manager.fill_work_queue()
-            yield Progress(
-                new_stats=(),
-                status_message=manager.status(num_circuits=hint_num_tasks)
-            )
+            while manager.task_states:
+                manager.process_message()
+                if progress_log:
+                    vals = list(progress_log)
+                    progress_log.clear()
+                    for e in vals:
+                        if e is not None:
+                            yield Progress(
+                                new_stats=(e,),
+                                status_message=manager.status_message(),
+                            )
 
-            while manager.fill_work_queue():
-                # Wait for a worker to finish a job.
-                sample = manager.wait_for_next_sample()
-                manager.fill_work_queue()
-
-                # Report the incremental results.
-                yield Progress(
-                    new_stats=(sample,) if sample.shots > 0 else (),
-                    status_message=manager.status(num_circuits=hint_num_tasks),
-                )
         except KeyboardInterrupt:
             yield Progress(
                 new_stats=(),
