@@ -13,13 +13,10 @@ if TYPE_CHECKING:
 def collection_worker_loop(
     flush_period: float,
     worker_id: int,
-    custom_decoders: dict[str, Union[Decoder, Sampler]],
+    sampler: Sampler,
     inp: 'multiprocessing.Queue',
     out: 'multiprocessing.Queue',
     core_affinity: Optional[int],
-    count_detection_events: bool,
-    count_observable_error_combos: bool,
-    tmp_dir: pathlib.Path,
     custom_error_count_key: Optional[str],
 ) -> None:
     try:
@@ -32,12 +29,9 @@ def collection_worker_loop(
     worker = CollectionWorkerState(
         flush_period=flush_period,
         worker_id=worker_id,
-        custom_decoders=custom_decoders,
+        sampler=sampler,
         inp=inp,
         out=out,
-        count_detection_events=count_detection_events,
-        count_observable_error_combos=count_observable_error_combos,
-        tmp_dir=tmp_dir,
         custom_error_count_key=custom_error_count_key,
     )
     worker.run_message_loop()

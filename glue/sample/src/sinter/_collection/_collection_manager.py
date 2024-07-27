@@ -9,6 +9,8 @@ from typing import Any, Optional, List, Dict, Iterable, Callable, Tuple
 from typing import Union
 from typing import cast
 
+from sinter._collection._mux_sampler import MuxSampler
+from sinter._collection._sampler_ramp_throttled import RampThrottledSampler
 from sinter._data import CollectionOptions, Task, AnonTaskStats, TaskStats
 from sinter._decoding import Sampler, Decoder
 from sinter._collection._collection_worker_loop import collection_worker_loop
@@ -115,6 +117,18 @@ class CollectionManager:
 
     def start_workers(self, *, actually_start_worker_processes: bool = True):
         assert not self.started
+
+        sampler = RampThrottledSampler(
+            sub_sampler=MuxSampler(
+                custom_decoders=self.custom_decoders,
+                count_observable_error_combos=self.count_observable_error_combos,
+                count_detection_events=self.count_detection_events,
+                tmp_dir=self.tmp_dir,
+            ),
+            target_batch_seconds=1,
+            max_batch_shots=1024,
+        )
+
         self.started = True
         current_method = multiprocessing.get_start_method()
         try:
@@ -135,13 +149,10 @@ class CollectionManager:
                     args=(
                         self.worker_flush_period,
                         worker_id,
-                        self.custom_decoders,
+                        sampler,
                         worker_state.input_queue,
                         self.shared_worker_output_queue,
                         worker_state.cpu_pin,
-                        self.count_detection_events,
-                        self.count_observable_error_combos,
-                        self.tmp_dir,
                         self.custom_error_count_key,
                     ),
                 )

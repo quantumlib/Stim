@@ -51,12 +51,9 @@ def test_worker_stop():
     worker = CollectionWorkerState(
         flush_period=-1,
         worker_id=5,
-        custom_decoders={'mock': handler},
+        sampler=handler,
         inp=inp,
         out=out,
-        count_observable_error_combos=False,
-        count_detection_events=False,
-        tmp_dir=None,
         custom_error_count_key=None,
     )
 
@@ -91,12 +88,9 @@ def test_worker_skip_work():
     worker = CollectionWorkerState(
         flush_period=-1,
         worker_id=5,
-        custom_decoders={'mock': handler},
+        sampler=handler,
         inp=inp,
         out=out,
-        count_detection_events=False,
-        count_observable_error_combos=False,
-        tmp_dir=None,
         custom_error_count_key=None,
     )
 
@@ -150,12 +144,9 @@ def test_worker_finish_work():
     worker = CollectionWorkerState(
         flush_period=-1,
         worker_id=5,
-        custom_decoders={'mock': handler},
+        sampler=handler,
         inp=inp,
         out=out,
-        count_detection_events=False,
-        count_observable_error_combos=False,
-        tmp_dir=None,
         custom_error_count_key=None,
     )
 

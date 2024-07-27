@@ -1,16 +1,15 @@
-import pathlib
 import queue
 import time
 from typing import Optional
 from typing import TYPE_CHECKING
-from typing import Union
 
 import stim
 
-from sinter._data import Task, AnonTaskStats, CollectionOptions
-from sinter._collection._mux_sampler import MuxSampler
-from sinter._decoding import Sampler, CompiledSampler, Decoder
-from sinter._collection._sampler_ramp_throttled import RampThrottledSampler
+from sinter._data import AnonTaskStats
+from sinter._data import CollectionOptions
+from sinter._data import Task
+from sinter._decoding import CompiledSampler
+from sinter._decoding import Sampler
 
 if TYPE_CHECKING:
     import multiprocessing
@@ -50,28 +49,16 @@ class CollectionWorkerState:
             worker_id: int,
             inp: 'multiprocessing.Queue',
             out: 'multiprocessing.Queue',
-            custom_decoders: dict[str, Union[Decoder, Sampler]],
-            count_observable_error_combos: bool,
-            count_detection_events: bool,
-            tmp_dir: Optional[pathlib.Path],
+            sampler: Sampler,
             custom_error_count_key: Optional[str],
     ):
         assert isinstance(flush_period, (int, float))
-        assert isinstance(custom_decoders, dict)
+        assert isinstance(sampler, Sampler)
         self.max_flush_period = flush_period
         self.cur_flush_period = 0.01
         self.inp = inp
         self.out = out
-        self.sampler = RampThrottledSampler(
-            sub_sampler=MuxSampler(
-                custom_decoders=custom_decoders,
-                count_observable_error_combos=count_observable_error_combos,
-                count_detection_events=count_detection_events,
-                tmp_dir=tmp_dir,
-            ),
-            target_batch_seconds=1,
-            max_batch_shots=1024,
-        )
+        self.sampler = sampler
         self.compiled_sampler: CompiledSampler | None = None
         self.worker_id = worker_id
 

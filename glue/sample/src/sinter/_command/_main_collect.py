@@ -82,7 +82,7 @@ def parse_args(args: List[str]) -> Any:
                         default=None,
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('--processes',
-                        required=True,
+                        default='auto',
                         type=str,
                         help='Number of processes to use for simultaneous sampling and decoding. '
                              'Must be either a number or "auto" which sets it to the number of '
