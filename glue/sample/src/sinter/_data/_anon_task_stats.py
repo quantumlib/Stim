@@ -59,7 +59,7 @@ class AnonTaskStats:
             terms.append(f'custom_counts={self.custom_counts!r}')
         return f'sinter.AnonTaskStats({", ".join(terms)})'
 
-    def __add__(self, other: Union['AnonTaskStats', 'TaskStats']) -> 'AnonTaskStats':
+    def __add__(self, other: 'AnonTaskStats') -> 'AnonTaskStats':
         """Returns the sum of the statistics from both anonymous stats.
 
         Adds the shots, the errors, the discards, and the seconds.
@@ -77,8 +77,7 @@ class AnonTaskStats:
             >>> a + b
             sinter.AnonTaskStats(shots=1100, errors=220)
         """
-        from sinter._data._task_stats import TaskStats
-        if isinstance(other, (AnonTaskStats, TaskStats)):
+        if isinstance(other, AnonTaskStats):
             return AnonTaskStats(
                 shots=self.shots + other.shots,
                 errors=self.errors + other.errors,

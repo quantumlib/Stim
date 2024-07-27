@@ -1,6 +1,8 @@
 import collections
 import dataclasses
 from typing import Counter, List, Any
+from typing import Union
+from typing import overload
 
 from sinter._data._anon_task_stats import AnonTaskStats
 from sinter._data._csv_out import csv_line
@@ -67,21 +69,33 @@ class TaskStats:
         assert self.shots >= self.errors + self.discards
         assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
 
+    @overload
+    def __add__(self, other: AnonTaskStats) -> AnonTaskStats:
+        pass
+    @overload
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        if self.strong_id != other.strong_id:
-            raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
-        total = self.to_anon_stats() + other.to_anon_stats()
+        pass
+    def __add__(self, other: Union[AnonTaskStats, 'TaskStats']) -> Union[AnonTaskStats, 'TaskStats']:
+        if isinstance(other, AnonTaskStats):
+            return self.to_anon_stats() + other
 
-        return TaskStats(
-            decoder=self.decoder,
-            strong_id=self.strong_id,
-            json_metadata=self.json_metadata,
-            shots=total.shots,
-            errors=total.errors,
-            discards=total.discards,
-            seconds=total.seconds,
-            custom_counts=total.custom_counts,
-        )
+        if isinstance(other, TaskStats):
+            if self.strong_id != other.strong_id:
+                raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
+            total = self.to_anon_stats() + other.to_anon_stats()
+            return TaskStats(
+                decoder=self.decoder,
+                strong_id=self.strong_id,
+                json_metadata=self.json_metadata,
+                shots=total.shots,
+                errors=total.errors,
+                discards=total.discards,
+                seconds=total.seconds,
+                custom_counts=total.custom_counts,
+            )
+
+        return NotImplemented
+    __radd__ = __add__
 
     def to_anon_stats(self) -> AnonTaskStats:
         """Returns a `sinter.AnonTaskStats` with the same statistics.

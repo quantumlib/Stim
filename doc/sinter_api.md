@@ -12,11 +12,16 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`sinter.CollectionOptions.combine`](#sinter.CollectionOptions.combine)
 - [`sinter.CompiledDecoder`](#sinter.CompiledDecoder)
     - [`sinter.CompiledDecoder.decode_shots_bit_packed`](#sinter.CompiledDecoder.decode_shots_bit_packed)
+- [`sinter.CompiledSampler`](#sinter.CompiledSampler)
+    - [`sinter.CompiledSampler.handles_throttling`](#sinter.CompiledSampler.handles_throttling)
+    - [`sinter.CompiledSampler.sample`](#sinter.CompiledSampler.sample)
 - [`sinter.Decoder`](#sinter.Decoder)
     - [`sinter.Decoder.compile_decoder_for_dem`](#sinter.Decoder.compile_decoder_for_dem)
     - [`sinter.Decoder.decode_via_files`](#sinter.Decoder.decode_via_files)
 - [`sinter.Fit`](#sinter.Fit)
 - [`sinter.Progress`](#sinter.Progress)
+- [`sinter.Sampler`](#sinter.Sampler)
+    - [`sinter.Sampler.compiled_sampler_for_task`](#sinter.Sampler.compiled_sampler_for_task)
 - [`sinter.Task`](#sinter.Task)
     - [`sinter.Task.__init__`](#sinter.Task.__init__)
     - [`sinter.Task.strong_id`](#sinter.Task.strong_id)
@@ -257,6 +262,50 @@ def decode_shots_bit_packed(
     """
 ```
 
+<a name="sinter.CompiledSampler"></a>
+```python
+# sinter.CompiledSampler
+
+# (at top-level in the sinter module)
+class CompiledSampler(metaclass=abc.ABCMeta):
+    """A sampler that has been configured for efficiently sampling some task.
+    """
+```
+
+<a name="sinter.CompiledSampler.handles_throttling"></a>
+```python
+# sinter.CompiledSampler.handles_throttling
+
+# (in class sinter.CompiledSampler)
+def handles_throttling(
+    self,
+) -> bool:
+    """Return True to disable sinter wrapping samplers with throttling.
+
+    By default, sinter will wrap samplers so that they initially only do
+    a small number of shots then slowly ramp up. Sometimes this behavior
+    is not desired (e.g. in unit tests). Override this method to return True
+    to disable it.
+    """
+```
+
+<a name="sinter.CompiledSampler.sample"></a>
+```python
+# sinter.CompiledSampler.sample
+
+# (in class sinter.CompiledSampler)
+@abc.abstractmethod
+def sample(
+    self,
+    shots: int,
+) -> sinter.AnonTaskStats:
+    """Perform the given number of samples, and return statistics.
+
+    This method is permitted to perform fewer shots than specified, but must
+    indicate this in its returned statistics.
+    """
+```
+
 <a name="sinter.Decoder"></a>
 ```python
 # sinter.Decoder
@@ -385,9 +434,9 @@ class Fit:
             of the best fit's square error, or whose likelihood was within some
             maximum Bayes factor of the max likelihood hypothesis.
     """
-    low: float
-    best: float
-    high: float
+    low: Optional[float]
+    best: Optional[float]
+    high: Optional[float]
 ```
 
 <a name="sinter.Progress"></a>
@@ -409,8 +458,43 @@ class Progress:
             collection status, such as the number of tasks left and the
             estimated time to completion for each task.
     """
-    new_stats: Tuple[sinter._task_stats.TaskStats, ...]
+    new_stats: Tuple[sinter.TaskStats, ...]
     status_message: str
+```
+
+<a name="sinter.Sampler"></a>
+```python
+# sinter.Sampler
+
+# (at top-level in the sinter module)
+class Sampler(metaclass=abc.ABCMeta):
+    """A strategy for producing stats from tasks.
+
+    Call `sampler.compiled_sampler_for_task(task)` to get a compiled sampler for
+    a task, then call `compiled_sampler.sample(shots)` to collect statistics.
+
+    A sampler differs from a `sinter.Decoder` because the sampler is responsible
+    for the full sampling process (e.g. simulating the circuit), whereas a
+    decoder can do nothing except predict observable flips from detection event
+    data. This prevents the decoders from cheating, but makes them less flexible
+    overall. A sampler can do things like use simulators other than stim, or
+    really anything at all as long as it ends with returning statistics about
+    shot counts, error counts, and etc.
+    """
+```
+
+<a name="sinter.Sampler.compiled_sampler_for_task"></a>
+```python
+# sinter.Sampler.compiled_sampler_for_task
+
+# (in class sinter.Sampler)
+@abc.abstractmethod
+def compiled_sampler_for_task(
+    self,
+    task: sinter.Task,
+) -> sinter.CompiledSampler:
+    """Creates, configures, and returns an object for sampling the task.
+    """
 ```
 
 <a name="sinter.Task"></a>
@@ -475,9 +559,9 @@ class Task:
 def __init__(
     self,
     *,
-    circuit: Optional[ForwardRef(stim.Circuit)] = None,
+    circuit: Optional[stim.Circuit] = None,
     decoder: Optional[str] = None,
-    detector_error_model: Optional[ForwardRef(stim.DetectorErrorModel)] = None,
+    detector_error_model: Optional[stim.DetectorErrorModel] = None,
     postselection_mask: Optional[np.ndarray] = None,
     postselected_observables_mask: Optional[np.ndarray] = None,
     json_metadata: Any = None,
@@ -699,7 +783,7 @@ class TaskStats:
 # (in class sinter.TaskStats)
 def to_anon_stats(
     self,
-) -> sinter._anon_task_stats.AnonTaskStats:
+) -> sinter.AnonTaskStats:
     """Returns a `sinter.AnonTaskStats` with the same statistics.
 
     Examples:
@@ -1124,7 +1208,7 @@ def iter_collect(
     num_workers: int,
     tasks: Union[Iterator[sinter.Task], Iterable[sinter.Task]],
     hint_num_tasks: Optional[int] = None,
-    additional_existing_data: Optional[sinter._existing_data.ExistingData] = None,
+    additional_existing_data: Union[NoneType, Dict[str, sinter.TaskStats], Iterable[sinter.TaskStats]] = None,
     max_shots: Optional[int] = None,
     max_errors: Optional[int] = None,
     decoders: Optional[Iterable[str]] = None,
@@ -1337,6 +1421,7 @@ def plot_discard_rate(
     filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
+    point_label_func: Callable[[sinter.TaskStats], Any] = lambda _: None,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
 
@@ -1370,6 +1455,7 @@ def plot_discard_rate(
         highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
+        point_label_func: Optional. Specifies text to draw next to data points.
     """
 ```
 
@@ -1390,6 +1476,7 @@ def plot_error_rate(
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
     highlight_max_likelihood_factor: Optional[float] = 1000.0,
     line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
+    point_label_func: Callable[[sinter.TaskStats], Any] = lambda _: None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -1430,6 +1517,7 @@ def plot_error_rate(
         line_fits: Defaults to None. Set this to a tuple (x_scale, y_scale) to include a dashed line
             fit to every curve. The scales determine how to transform the coordinates before
             performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
+        point_label_func: Optional. Specifies text to draw next to data points.
     """
 ```
 
@@ -1712,11 +1800,11 @@ def read_stats_from_csv_files(
 
 # (at top-level in the sinter module)
 def shot_error_rate_to_piece_error_rate(
-    shot_error_rate: Union[float, ForwardRef(sinter.Fit)],
+    shot_error_rate: Union[float, sinter.Fit],
     *,
     pieces: float,
     values: float = 1,
-) -> Union[float, ForwardRef(sinter.Fit)]:
+) -> Union[float, sinter.Fit]:
     """Convert from total error rate to per-piece error rate.
 
     Args:

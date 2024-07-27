@@ -38,7 +38,7 @@ def iter_collect(*,
                  tasks: Union[Iterator['sinter.Task'],
                               Iterable['sinter.Task']],
                  hint_num_tasks: Optional[int] = None,
-                 additional_existing_data: Optional[ExistingData] = None,
+                 additional_existing_data: Union[None, dict[str, 'TaskStats'], Iterable['TaskStats']] = None,
                  max_shots: Optional[int] = None,
                  max_errors: Optional[int] = None,
                  decoders: Optional[Iterable[str]] = None,
@@ -152,6 +152,19 @@ def iter_collect(*,
         >>> print(total_shots)
         200
     """
+    existing_data: dict[str, TaskStats]
+    if isinstance(additional_existing_data, ExistingData):
+        existing_data = additional_existing_data.data
+    elif isinstance(additional_existing_data, dict):
+        existing_data = additional_existing_data
+    elif additional_existing_data is None:
+        existing_data = {}
+    else:
+        acc = ExistingData()
+        for stat in additional_existing_data:
+            acc.add_sample(stat)
+        existing_data = acc.data
+
     if isinstance(decoders, str):
         decoders = [decoders]
 
@@ -192,7 +205,7 @@ def iter_collect(*,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
         ),
-        existing_data={} if additional_existing_data is None else additional_existing_data.data,
+        existing_data=existing_data,
         count_observable_error_combos=count_observable_error_combos,
         count_detection_events=count_detection_events,
         custom_error_count_key=custom_error_count_key,

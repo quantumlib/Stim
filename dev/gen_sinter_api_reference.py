@@ -48,6 +48,24 @@ import stim
 ```
 '''.strip())
 
+    replace_rules = []
+    for package in ['stim', 'sinter']:
+        p = __import__(package)
+        for name in dir(p):
+            x = getattr(p, name)
+            if isinstance(x, type) and '_' in str(x) and 'class' in str(x):
+                desired_name = f'{package}.{name}'
+                bad_name = str(x).split("'")[1]
+                lonely_name = desired_name.split(".")[-1]
+                replace_rules.append((bad_name, desired_name))
+                for q in ['"', "'"]:
+                    replace_rules.append(('ForwardRef(' + q + lonely_name + q + ')', desired_name))
+                    replace_rules.append(('ForwardRef(' + q + desired_name + q + ')', desired_name))
+                    replace_rules.append((q + desired_name + q, desired_name))
+                    replace_rules.append((q + lonely_name + q, desired_name))
+                replace_rules.append(('ForwardRef(' + desired_name + ')', desired_name))
+                replace_rules.append(('ForwardRef(' + lonely_name + ')', desired_name))
+
     for obj in objects:
         print()
         print(f'<a name="{obj.full_name}"></a>')
@@ -58,7 +76,10 @@ import stim
             print(f'# (in class {".".join(obj.full_name.split(".")[:-1])})')
         else:
             print(f'# (at top-level in the sinter module)')
-        print('\n'.join(obj.lines))
+        for line in obj.lines:
+            for a, b in replace_rules:
+                line = line.replace(a, b)
+            print(line)
         print("```")
 
 
