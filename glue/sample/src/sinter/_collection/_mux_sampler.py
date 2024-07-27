@@ -3,7 +3,7 @@ from typing import Optional
 from typing import Union
 
 from sinter._data import Task
-from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_SAMPLERS
 from sinter._decoding._decoding_decoder_class import Decoder
 from sinter._decoding._sampler import CompiledSampler
 from sinter._decoding._sampler import Sampler
@@ -34,8 +34,8 @@ class MuxSampler(Sampler):
 
         if name in self.custom_decoders:
             sub_sampler = self.custom_decoders[name]
-        elif name in BUILT_IN_DECODERS:
-            sub_sampler = BUILT_IN_DECODERS[name]
+        elif name in BUILT_IN_SAMPLERS:
+            sub_sampler = BUILT_IN_SAMPLERS[name]
         else:
             raise NotImplementedError(f'Not a recognized decoder or sampler: {name=}. Did you forget to specify custom_decoders?')
 

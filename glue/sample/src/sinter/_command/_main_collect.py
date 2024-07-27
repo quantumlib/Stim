@@ -14,6 +14,7 @@ from sinter._data import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_predicate
 from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 from sinter._command._main_combine import ExistingData, CSV_HEADER
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_SAMPLERS
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
@@ -243,9 +244,9 @@ def parse_args(args: List[str]) -> Any:
     else:
         a.custom_decoders = None
     for decoder in a.decoders:
-        if decoder not in BUILT_IN_DECODERS and (a.custom_decoders is None or decoder not in a.custom_decoders):
-            message = f"Not a recognized decoder: {decoder=}.\n"
-            message += f"Available built-in decoders: {sorted(e for e in BUILT_IN_DECODERS.keys() if 'internal' not in e)}.\n"
+        if decoder not in BUILT_IN_SAMPLERS and (a.custom_decoders is None or decoder not in a.custom_decoders):
+            message = f"Not a recognized decoder or sampler: {decoder=}.\n"
+            message += f"Available built-in decoders and samplers: {sorted(e for e in BUILT_IN_SAMPLERS.keys() if 'internal' not in e)}.\n"
             if a.custom_decoders is None:
                 message += f"No custom decoders are available. --custom_decoders_module_function wasn't specified."
             else:

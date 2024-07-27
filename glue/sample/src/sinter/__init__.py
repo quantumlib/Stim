@@ -19,6 +19,7 @@ from sinter._decoding import (
     CompiledDecoder,
     Decoder,
     BUILT_IN_DECODERS,
+    BUILT_IN_SAMPLERS,
     Sampler,
     CompiledSampler,
 )
