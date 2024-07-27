@@ -53,11 +53,12 @@ import stim
         p = __import__(package)
         for name in dir(p):
             x = getattr(p, name)
-            if isinstance(x, type) and '_' in str(x) and 'class' in str(x):
+            if isinstance(x, type) and 'class' in str(x):
                 desired_name = f'{package}.{name}'
-                bad_name = str(x).split("'")[1]
+                if '._' in str(x):
+                    bad_name = str(x).split("'")[1]
+                    replace_rules.append((bad_name, desired_name))
                 lonely_name = desired_name.split(".")[-1]
-                replace_rules.append((bad_name, desired_name))
                 for q in ['"', "'"]:
                     replace_rules.append(('ForwardRef(' + q + lonely_name + q + ')', desired_name))
                     replace_rules.append(('ForwardRef(' + q + desired_name + q + ')', desired_name))
