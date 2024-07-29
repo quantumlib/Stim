@@ -383,7 +383,8 @@ void stim_pybind::pybind_flipped_measurement_methods(
     });
     c.def(
         pybind11::init(
-            [](const pybind11::object &measurement_record_index, const pybind11::object &measured_observable) -> FlippedMeasurement {
+            [](const pybind11::object &measurement_record_index,
+               const pybind11::object &measured_observable) -> FlippedMeasurement {
                 uint64_t u;
                 if (measurement_record_index.is_none()) {
                     u = UINT64_MAX;

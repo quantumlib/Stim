@@ -28,7 +28,6 @@ pybind11::class_<ExposedDemTarget> stim_pybind::pybind_detector_error_model_targ
 
 void stim_pybind::pybind_detector_error_model_target_methods(
     pybind11::module &m, pybind11::class_<ExposedDemTarget> &c) {
-
     c.def(
         pybind11::init([](const pybind11::object &arg) -> ExposedDemTarget {
             if (pybind11::isinstance<ExposedDemTarget>(arg)) {

@@ -1,9 +1,9 @@
 #include "stim/util_top/circuit_vs_amplitudes.h"
 
-#include "stim/util_top/circuit_inverse_unitary.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/util_bot/twiddle.h"
+#include "stim/util_top/circuit_inverse_unitary.h"
 
 using namespace stim;
 
