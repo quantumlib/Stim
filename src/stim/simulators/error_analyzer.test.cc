@@ -23,6 +23,7 @@
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/util_bot/test_util.test.h"
+#include "stim/util_top/circuit_to_dem.h"
 
 using namespace stim;
 
@@ -3491,17 +3492,13 @@ TEST(ErrorAnalyzer, heralded_erase_conditional_division) {
 }
 
 TEST(ErrorAnalyzer, heralded_erase) {
-    ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit("HERALDED_ERASE(0.25) 0"), false, false, false, 0.3, false, false);
+    circuit_to_dem(Circuit("HERALDED_ERASE(0.25) 0"), {.approximate_disjoint_errors_threshold = 0.3});
     ASSERT_THROW(
-        {
-            ErrorAnalyzer::circuit_to_detector_error_model(
-                Circuit("HERALDED_ERASE(0.25) 0"), false, false, false, 0.2, false, false);
-        },
+        { circuit_to_dem(Circuit("HERALDED_ERASE(0.25) 0"), {.approximate_disjoint_errors_threshold = 0.2}); },
         std::invalid_argument);
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit_to_dem(
             Circuit(R"CIRCUIT(
                 MZZ 0 1
                 MXX 0 1
@@ -3512,12 +3509,7 @@ TEST(ErrorAnalyzer, heralded_erase) {
                 DETECTOR rec[-2] rec[-5]
                 DETECTOR rec[-3]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            1.0,
-            false,
-            false),
+            {.approximate_disjoint_errors_threshold = 1}),
         DetectorErrorModel(R"DEM(
             error(0.0625) D0 D1 D2
             error(0.0625) D0 D2
@@ -3526,7 +3518,7 @@ TEST(ErrorAnalyzer, heralded_erase) {
         )DEM"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit_to_dem(
             Circuit(R"CIRCUIT(
                 MPP X10*X11*X20*X21
                 MPP Z11*Z12*Z21*Z22
@@ -3543,12 +3535,7 @@ TEST(ErrorAnalyzer, heralded_erase) {
                 DETECTOR rec[-4] rec[-9]
                 DETECTOR rec[-5]
             )CIRCUIT"),
-            true,
-            false,
-            false,
-            1.0,
-            false,
-            false),
+            {.decompose_errors = true, .approximate_disjoint_errors_threshold = 1}),
         DetectorErrorModel(R"DEM(
             error(0.0625) D0 D3 ^ D1 D2 ^ D4
             error(0.0625) D0 D3 ^ D4
@@ -3557,7 +3544,7 @@ TEST(ErrorAnalyzer, heralded_erase) {
         )DEM"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit_to_dem(
             Circuit(R"CIRCUIT(
                 M 0
                 HERALDED_ERASE(0.25) 9 0 9 9 9
@@ -3565,19 +3552,14 @@ TEST(ErrorAnalyzer, heralded_erase) {
                 DETECTOR rec[-1] rec[-7]
                 DETECTOR rec[-5]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            1.0,
-            false,
-            false),
+            {.approximate_disjoint_errors_threshold = 1}),
         DetectorErrorModel(R"DEM(
             error(0.125) D0 D1
             error(0.125) D1
         )DEM"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit_to_dem(
             Circuit(R"CIRCUIT(
                 MPAD 0
                 MPAD 0
@@ -3594,12 +3576,7 @@ TEST(ErrorAnalyzer, heralded_erase) {
                 DETECTOR rec[-4] rec[-9]
                 DETECTOR rec[-5]
             )CIRCUIT"),
-            true,
-            false,
-            false,
-            1.0,
-            false,
-            false),
+            {.decompose_errors = true, .approximate_disjoint_errors_threshold = 1}),
         DetectorErrorModel(R"DEM(
             error(0.0625) D0 ^ D1 ^ D4
             error(0.0625) D0 ^ D4
@@ -3626,54 +3603,44 @@ TEST(ErrorAnalyzer, heralded_pauli_channel_1) {
         },
         std::invalid_argument);
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+    ASSERT_TRUE(circuit_to_dem(
                     Circuit(R"CIRCUIT(
-                MZZ 0 1
-                MXX 0 1
-                HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0
-                MZZ 0 1
-                MXX 0 1
-                DETECTOR rec[-1] rec[-4]
-                DETECTOR rec[-2] rec[-5]
-                DETECTOR rec[-3]
-            )CIRCUIT"),
-                    false,
-                    false,
-                    false,
-                    1.0,
-                    false,
-                    false)
+                        MZZ 0 1
+                        MXX 0 1
+                        HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0
+                        MZZ 0 1
+                        MXX 0 1
+                        DETECTOR rec[-1] rec[-4]
+                        DETECTOR rec[-2] rec[-5]
+                        DETECTOR rec[-3]
+                    )CIRCUIT"),
+                    {.approximate_disjoint_errors_threshold = 1})
                     .approx_equals(
                         DetectorErrorModel(R"DEM(
-            error(0.04) D0 D1 D2
-            error(0.02) D0 D2
-            error(0.03) D1 D2
-            error(0.01) D2
-        )DEM"),
+                            error(0.03) D0 D1 D2
+                            error(0.04) D0 D2
+                            error(0.02) D1 D2
+                            error(0.01) D2
+                        )DEM"),
                         1e-6));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+    ASSERT_TRUE(circuit_to_dem(
                     Circuit(R"CIRCUIT(
-                MZZ 0 1
-                MXX 0 1
-                HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0
-                MZZ 0 1
-                MXX 0 1
-                DETECTOR
-                DETECTOR rec[-2] rec[-5]
-                DETECTOR rec[-3]
-            )CIRCUIT"),
-                    false,
-                    false,
-                    false,
-                    1.0,
-                    false,
-                    false)
+                        MZZ 0 1
+                        MXX 0 1
+                        HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.1) 0
+                        MZZ 0 1
+                        MXX 0 1
+                        DETECTOR
+                        DETECTOR rec[-2] rec[-5]
+                        DETECTOR rec[-3]
+                    )CIRCUIT"),
+                    {.approximate_disjoint_errors_threshold = 1})
                     .approx_equals(
                         DetectorErrorModel(R"DEM(
-            error(0.07) D1 D2
-            error(0.03) D2
-            detector D0
-        )DEM"),
+                            error(0.05) D1 D2
+                            error(0.11) D2
+                            detector D0
+                        )DEM"),
                         1e-6));
 }
