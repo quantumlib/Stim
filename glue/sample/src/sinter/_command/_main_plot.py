@@ -32,6 +32,16 @@ def parse_args(args: List[str]) -> Any:
                              'Examples:\n'
                              '''    --filter_func "decoder=='pymatching'"\n'''
                              '''    --filter_func "0.001 < metadata['p'] < 0.005"\n''')
+    parser.add_argument('--preprocess_stats_func',
+                        type=str,
+                        default=None,
+                        help='An expression that operates on a `stats` value, returning a new list of stats to plot.\n'
+                             'For example, this could double add a field to json_metadata or merge stats together.\n'
+                             'Examples:\n'
+                             '''    --preprocess_stats_func "[stat for stat in stats if stat.errors > 0]\n'''
+                             '''    --preprocess_stats_func "[stat.with_edits(errors=stat.custom_counts['severe_errors']) for stat in stats]\n'''
+                             '''    --preprocess_stats_func "__import__('your_custom_module').your_custom_function(stats)"\n'''
+                             )
     parser.add_argument('--x_func',
                         type=str,
                         default="1",
@@ -174,7 +184,7 @@ def parse_args(args: List[str]) -> Any:
                         )
     parser.add_argument('--plot_args_func',
                         type=str,
-                        default='''{'marker': 'ov*sp^<>8P+xXhHDd|'[index % 18]}''',
+                        default='''{}''',
                         help='A python expression used to customize the look of curves.\n'
                              'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
@@ -284,6 +294,10 @@ def parse_args(args: List[str]) -> Any:
         a.failure_values_func = "1"
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
+    a.preprocess_stats_func = None if a.preprocess_stats_func is None else eval(compile(
+        f'lambda *, stats: {a.preprocess_stats_func}',
+        filename='preprocess_stats_func:command_line_arg',
+        mode='eval'))
     a.x_func = eval(compile(
         f'lambda *, stat, decoder, metadata, m, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',
@@ -491,6 +505,7 @@ def _plot_helper(
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
     group_func: Callable[['sinter.TaskStats'], Any],
     filter_func: Callable[['sinter.TaskStats'], Any],
+    preprocess_stats_func: Optional[Callable],
     failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any],
     failure_values_func: Callable[['sinter.TaskStats'], Any],
     x_func: Callable[['sinter.TaskStats'], Any],
@@ -520,6 +535,12 @@ def _plot_helper(
     total.data = {k: v
                   for k, v in total.data.items()
                   if bool(filter_func(v))}
+
+    if preprocess_stats_func is not None:
+        processed_stats = preprocess_stats_func(stats=list(total.data.values()))
+        total.data = {}
+        for stat in processed_stats:
+            total.add_sample(stat)
 
     if not plot_types:
         if y_func is not None:
@@ -553,7 +574,6 @@ def _plot_helper(
     plotted_stats: List['sinter.TaskStats'] = [
         stat
         for stat in total.data.values()
-        if filter_func(stat)
     ]
 
     def stat_to_err_rate(stat: 'sinter.TaskStats') -> Optional[float]:
@@ -652,7 +672,6 @@ def _plot_helper(
             x_func=x_func,
             y_func=y_func,
             group_func=group_func,
-            filter_func=filter_func,
             plot_args_func=plot_args_func,
             line_fits=None if not line_fits else (x_scale_name, y_scale_name),
             point_label_func=point_label_func,
@@ -801,6 +820,7 @@ def main_plot(*, command_line_args: List[str]):
         title=args.title,
         subtitle=args.subtitle,
         line_fits=args.line_fits,
+        preprocess_stats_func=args.preprocess_stats_func,
     )
     if args.out is not None:
         fig.savefig(args.out)

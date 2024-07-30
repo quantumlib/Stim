@@ -478,8 +478,6 @@ def plot_custom(
     }
 
     for k, group_key in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
-        this_group_stats = sorted(curve_groups[group_key], key=x_func)
-
         group = curve_groups[group_key]
         group = sorted(group, key=x_func)
         color = colors[group_key.get('color', group_key)]

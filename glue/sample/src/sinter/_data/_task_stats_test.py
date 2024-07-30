@@ -87,3 +87,36 @@ def test_add():
             seconds=52,
             custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
         )
+
+
+def test_with_edits():
+    v = sinter.TaskStats(
+        decoder='pymatching',
+        json_metadata={'a': 2},
+        strong_id='abcdefDIFFERENT',
+        shots=270,
+        errors=34,
+        discards=43,
+        seconds=52,
+        custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
+    )
+    assert v.with_edits(json_metadata={'b': 3}) == sinter.TaskStats(
+        decoder='pymatching',
+        json_metadata={'b': 3},
+        strong_id='abcdefDIFFERENT',
+        shots=270,
+        errors=34,
+        discards=43,
+        seconds=52,
+        custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
+    )
+    assert v == sinter.TaskStats(strong_id='', json_metadata={}, decoder='').with_edits(
+        decoder='pymatching',
+        json_metadata={'a': 2},
+        strong_id='abcdefDIFFERENT',
+        shots=270,
+        errors=34,
+        discards=43,
+        seconds=52,
+        custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
+    )

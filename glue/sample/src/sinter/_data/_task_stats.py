@@ -1,6 +1,7 @@
 import collections
 import dataclasses
 from typing import Counter, List, Any
+from typing import Optional
 from typing import Union
 from typing import overload
 
@@ -68,6 +69,29 @@ class TaskStats:
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
         assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
+
+    def with_edits(
+        self,
+        *,
+        strong_id: Optional[str] = None,
+        decoder: Optional[str] = None,
+        json_metadata: Optional[Any] = None,
+        shots: Optional[int] = None,
+        errors: Optional[int] = None,
+        discards: Optional[int] = None,
+        seconds: Optional[float] = None,
+        custom_counts: Optional[Counter[str]] = None,
+    ) -> 'TaskStats':
+        return TaskStats(
+            strong_id=self.strong_id if strong_id is None else strong_id,
+            decoder=self.decoder if decoder is None else decoder,
+            json_metadata=self.json_metadata if json_metadata is None else json_metadata,
+            shots=self.shots if shots is None else shots,
+            errors=self.errors if errors is None else errors,
+            discards=self.discards if discards is None else discards,
+            seconds=self.seconds if seconds is None else seconds,
+            custom_counts=self.custom_counts if custom_counts is None else custom_counts,
+        )
 
     @overload
     def __add__(self, other: AnonTaskStats) -> AnonTaskStats:
