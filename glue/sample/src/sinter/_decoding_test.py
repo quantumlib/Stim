@@ -361,7 +361,7 @@ def test_decode_fails_correctly(decoder: str, force_streaming: Optional[bool]):
         with open(d / 'bad_dets.b8', 'wb') as f:
             f.write(b'!')
 
-        if 'vacuous' not in decoder:
+        if 'vacuous' not in decoder and decoder_obj is not None:
             with pytest.raises(Exception):
                 decoder_obj.decode_via_files(
                     num_shots=1,

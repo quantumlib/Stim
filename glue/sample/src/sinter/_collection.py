@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import pathlib
 from typing import Any
-from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
+from typing import Callable, Iterator, Optional, Union, Iterable, List, Tuple, Dict
 
 import math
 import numpy as np
@@ -11,12 +11,11 @@ import stim
 from sinter._collection_options import CollectionOptions
 from sinter._csv_out import CSV_HEADER
 from sinter._collection_work_manager import CollectionWorkManager
+from sinter._decoding_decoder_class import Decoder
 from sinter._existing_data import ExistingData
 from sinter._printer import ThrottledProgressPrinter
+from sinter._task import Task
 from sinter._task_stats import TaskStats
-
-if TYPE_CHECKING:
-    import sinter
 
 
 @dataclasses.dataclass(frozen=True)
@@ -39,8 +38,8 @@ class Progress:
 
 def iter_collect(*,
                  num_workers: int,
-                 tasks: Union[Iterator['sinter.Task'],
-                              Iterable['sinter.Task']],
+                 tasks: Union[Iterator[Task],
+                              Iterable[Task]],
                  hint_num_tasks: Optional[int] = None,
                  additional_existing_data: Optional[ExistingData] = None,
                  max_shots: Optional[int] = None,
@@ -51,10 +50,10 @@ def iter_collect(*,
                  start_batch_size: Optional[int] = None,
                  count_observable_error_combos: bool = False,
                  count_detection_events: bool = False,
-                 custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+                 custom_decoders: Optional[Dict[str, Decoder]] = None,
                  custom_error_count_key: Optional[str] = None,
                  allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
-                 ) -> Iterator['sinter.Progress']:
+                 ) -> Iterator[Progress]:
     """Iterates error correction statistics collected from worker processes.
 
     It is important to iterate until the sequence ends, or worker processes will
@@ -161,7 +160,7 @@ def iter_collect(*,
 
     if hint_num_tasks is None:
         try:
-            # noinspection PyTypeChecker
+            tasks = list(tasks)
             hint_num_tasks = len(tasks)
         except TypeError:
             pass
@@ -220,10 +219,10 @@ def iter_collect(*,
 
 def collect(*,
             num_workers: int,
-            tasks: Union[Iterator['sinter.Task'], Iterable['sinter.Task']],
+            tasks: Union[Iterator[Task], Iterable[Task]],
             existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
             save_resume_filepath: Union[None, str, pathlib.Path] = None,
-            progress_callback: Optional[Callable[['sinter.Progress'], None]] = None,
+            progress_callback: Optional[Callable[[Progress], None]] = None,
             max_shots: Optional[int] = None,
             max_errors: Optional[int] = None,
             count_observable_error_combos: bool = False,
@@ -234,10 +233,10 @@ def collect(*,
             start_batch_size: Optional[int] = None,
             print_progress: bool = False,
             hint_num_tasks: Optional[int] = None,
-            custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+            custom_decoders: Optional[Dict[str, Decoder]] = None,
             custom_error_count_key: Optional[str] = None,
             allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
-            ) -> List['sinter.TaskStats']:
+            ) -> List[TaskStats]:
     """Collects statistics from the given tasks, using multiprocessing.
 
     Args:

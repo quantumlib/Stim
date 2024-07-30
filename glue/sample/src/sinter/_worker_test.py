@@ -80,6 +80,7 @@ def test_worker_loop_does_not_recompute_dem():
         result: WorkOut = out.get(timeout=1)
         assert out.empty()
 
+        assert result.stats is not None
         assert result.stats.shots == 1000
         assert result.stats.discards == 0
         assert 0 < result.stats.errors < 1000

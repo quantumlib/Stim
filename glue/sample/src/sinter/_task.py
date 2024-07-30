@@ -72,7 +72,7 @@ class Task:
         postselection_mask: Optional[np.ndarray] = None,
         postselected_observables_mask: Optional[np.ndarray] = None,
         json_metadata: Any = None,
-        collection_options: 'sinter.CollectionOptions' = CollectionOptions(),
+        collection_options: CollectionOptions = CollectionOptions(),
         skip_validation: bool = False,
         circuit_path: Optional[Union[str, pathlib.Path]] = None,
         _unvalidated_strong_id: Optional[str] = None,
@@ -278,11 +278,11 @@ class Task:
             terms.append(f'decoder={self.decoder!r}')
         if self.detector_error_model is not None:
             terms.append(f'detector_error_model={self.detector_error_model!r}')
-        if self.postselection_mask is not None:
+        if self.circuit is not None and self.postselection_mask is not None:
             nd = self.circuit.num_detectors
             bits = list(np.unpackbits(self.postselection_mask, count=nd, bitorder='little'))
             terms.append(f'''postselection_mask=np.packbits({bits!r}, bitorder='little')''')
-        if self.postselected_observables_mask is not None:
+        if self.circuit is not None and self.postselected_observables_mask is not None:
             no = self.circuit.num_observables
             bits = list(np.unpackbits(self.postselected_observables_mask, count=no, bitorder='little'))
             terms.append(f'''postselected_observables_mask=np.packbits({bits!r}, bitorder='little')''')

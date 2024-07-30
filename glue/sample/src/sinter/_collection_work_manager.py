@@ -94,8 +94,9 @@ class CollectionWorkManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shut_down_workers()
-        self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
-        self.exit_stack = None
+        if self.exit_stack:
+            self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
+            self.exit_stack = None
         self.tmp_dir = None
 
     def shut_down_workers(self) -> None:
@@ -112,6 +113,7 @@ class CollectionWorkManager:
             w.join()
 
     def fill_work_queue(self) -> bool:
+        assert self.queue_to_workers is not None, 'start_workers not called'
         while len(self.deployed_jobs) < len(self.workers):
             work = self.provide_more_work()
             if work is None:
@@ -126,6 +128,7 @@ class CollectionWorkManager:
                              *,
                              timeout: Optional[float] = None,
                              ) -> TaskStats:
+        assert self.queue_from_workers is not None, 'start_workers not called'
         result = self.queue_from_workers.get(timeout=timeout)
         assert isinstance(result, WorkOut)
         if result.msg_error is not None:
