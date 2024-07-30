@@ -26,8 +26,9 @@ class ExistingData:
 
     def add_sample(self, sample: TaskStats) -> None:
         k = sample.strong_id
-        if k in self.data:
-            self.data[k] += sample
+        current = self.data.get(k)
+        if current is not None:
+            self.data[k] = current + sample
         else:
             self.data[k] = sample
 

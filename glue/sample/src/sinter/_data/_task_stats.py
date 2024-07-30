@@ -106,6 +106,16 @@ class TaskStats:
         if isinstance(other, TaskStats):
             if self.strong_id != other.strong_id:
                 raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
+            if self.json_metadata != other.json_metadata or self.decoder != other.decoder:
+                raise ValueError(
+                    "A stat had the same strong id as another, but their other identifying information (json_metadata, decoder) differed.\n"
+                    "The strong id is supposed to be a cryptographic hash that uniquely identifies what was sampled, so this is an error.\n"
+                    "\n"
+                    "This failure can occur when post-processing data (e.g. combining X basis stats and Z basis stats into synthetic both-basis stats).\n"
+                    "To fix it, ensure any post-processing sets the strong id of the synthetic data in some cryptographically secure way.\n"
+                    "\n"
+                    f"The two stats:\n1. {self!r}\n2. {other!r}")
+
             total = self.to_anon_stats() + other.to_anon_stats()
             return TaskStats(
                 decoder=self.decoder,
