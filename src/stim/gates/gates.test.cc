@@ -22,8 +22,8 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/util_bot/str_util.h"
 #include "stim/util_bot/test_util.test.h"
-#include "stim/util_top/has_flow.h"
 #include "stim/util_top/circuit_flow_generators.h"
+#include "stim/util_top/has_flow.h"
 
 using namespace stim;
 
@@ -375,8 +375,10 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
             GateType actual_s = g.hadamard_conjugated(false);
             GateType actual_u = g.hadamard_conjugated(true);
             bool found = std::find(other_us.begin(), other_us.end(), actual_u) != other_us.end();
-            EXPECT_EQ(actual_s, expected_s) << "signed " << g.name << " -> " << GATE_DATA[actual_s].name << " != " << GATE_DATA[expected_s].name;
-            EXPECT_TRUE(found) << "unsigned " << g.name << " -> " << GATE_DATA[actual_u].name << " not in " << GATE_DATA[other_us[0]].name;
+            EXPECT_EQ(actual_s, expected_s)
+                << "signed " << g.name << " -> " << GATE_DATA[actual_s].name << " != " << GATE_DATA[expected_s].name;
+            EXPECT_TRUE(found) << "unsigned " << g.name << " -> " << GATE_DATA[actual_u].name << " not in "
+                               << GATE_DATA[other_us[0]].name;
         }
     }
 }

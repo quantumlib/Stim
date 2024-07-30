@@ -307,7 +307,7 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
 }
 
 void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_ERASE", dat.args);
+    check_can_approximate_disjoint("HERALDED_ERASE", dat.args, false);
     double p = dat.args[0] * 0.25;
     double i = std::max(0.0, 1.0 - 4 * p);
 
@@ -327,7 +327,7 @@ void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
 }
 
 void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args);
+    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args, true);
     double hi = dat.args[0];
     double hx = dat.args[1];
     double hy = dat.args[2];
@@ -341,7 +341,7 @@ void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat)
         SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
         if (accumulate_errors) {
             add_error_combinations<3>(
-                {i, 0, 0, 0, hi, hx, hy, hz},
+                {i, 0, 0, 0, hi, hz, hx, hy},
                 {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
                 true);
         }
@@ -750,7 +750,7 @@ void ErrorAnalyzer::correlated_error_block(const std::vector<CircuitInstruction>
         add_composite_error(dats[0].args[0], dats[0].targets);
         return;
     }
-    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {});
+    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {}, false);
 
     double remaining_p = 1;
     for (size_t k = dats.size(); k--;) {
@@ -820,7 +820,18 @@ void ErrorAnalyzer::undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &dat) {
     }
 }
 
-void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name, SpanRef<const double> probabilities) const {
+void ErrorAnalyzer::check_can_approximate_disjoint(
+    const char *op_name, SpanRef<const double> probabilities, bool allow_single_component) const {
+    if (allow_single_component) {
+        size_t num_specified = 0;
+        for (double p : probabilities) {
+            num_specified += p > 0;
+        }
+        if (num_specified <= 1) {
+            return;
+        }
+    }
+
     if (approximate_disjoint_errors_threshold == 0) {
         std::stringstream msg;
         msg << "Encountered the operation " << op_name
@@ -854,7 +865,7 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
     double iz;
     bool is_independent = try_disjoint_to_independent_xyz_errors_approx(dx, dy, dz, &ix, &iy, &iz);
     if (!is_independent) {
-        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args);
+        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args, true);
         ix = dx;
         iy = dy;
         iz = dz;
@@ -875,7 +886,7 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
 }
 
 void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args);
+    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args, true);
 
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {

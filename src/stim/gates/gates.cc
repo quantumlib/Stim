@@ -47,110 +47,110 @@ GateDataMap::GateDataMap() {
 
 GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
     switch (id) {
-    case GateType::DETECTOR:
-    case GateType::OBSERVABLE_INCLUDE:
-    case GateType::TICK:
-    case GateType::QUBIT_COORDS:
-    case GateType::SHIFT_COORDS:
-    case GateType::MPAD:
-    case GateType::H:
-    case GateType::DEPOLARIZE1:
-    case GateType::DEPOLARIZE2:
-    case GateType::Y_ERROR:
-    case GateType::I:
-    case GateType::Y:
-    case GateType::SQRT_YY:
-    case GateType::SQRT_YY_DAG:
-    case GateType::MYY:
-    case GateType::SWAP:
-        return id;
+        case GateType::DETECTOR:
+        case GateType::OBSERVABLE_INCLUDE:
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::MPAD:
+        case GateType::H:
+        case GateType::DEPOLARIZE1:
+        case GateType::DEPOLARIZE2:
+        case GateType::Y_ERROR:
+        case GateType::I:
+        case GateType::Y:
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+        case GateType::MYY:
+        case GateType::SWAP:
+            return id;
 
-    case GateType::MY:
-    case GateType::MRY:
-    case GateType::RY:
-    case GateType::YCY:
-        return ignoring_sign ? id : GateType::NOT_A_GATE;
+        case GateType::MY:
+        case GateType::MRY:
+        case GateType::RY:
+        case GateType::YCY:
+            return ignoring_sign ? id : GateType::NOT_A_GATE;
 
-    case GateType::ISWAP:
-    case GateType::CZSWAP:
-    case GateType::ISWAP_DAG:
-        return GateType::NOT_A_GATE;
+        case GateType::ISWAP:
+        case GateType::CZSWAP:
+        case GateType::ISWAP_DAG:
+            return GateType::NOT_A_GATE;
 
-    case GateType::XCY:
-        return ignoring_sign ? GateType::CY : GateType::NOT_A_GATE;
-    case GateType::CY:
-        return ignoring_sign ? GateType::XCY : GateType::NOT_A_GATE;
-    case GateType::YCX:
-        return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
-    case GateType::YCZ:
-        return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
-    case GateType::C_XYZ:
-        return ignoring_sign ? GateType::C_ZYX : GateType::NOT_A_GATE;
-    case GateType::C_ZYX:
-        return ignoring_sign ? GateType::C_XYZ : GateType::NOT_A_GATE;
-    case GateType::H_XY:
-        return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
-    case GateType::H_YZ:
-        return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
+        case GateType::XCY:
+            return ignoring_sign ? GateType::CY : GateType::NOT_A_GATE;
+        case GateType::CY:
+            return ignoring_sign ? GateType::XCY : GateType::NOT_A_GATE;
+        case GateType::YCX:
+            return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
+        case GateType::YCZ:
+            return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
+        case GateType::C_XYZ:
+            return ignoring_sign ? GateType::C_ZYX : GateType::NOT_A_GATE;
+        case GateType::C_ZYX:
+            return ignoring_sign ? GateType::C_XYZ : GateType::NOT_A_GATE;
+        case GateType::H_XY:
+            return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
+        case GateType::H_YZ:
+            return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
 
-    case GateType::X:
-        return GateType::Z;
-    case GateType::Z:
-        return GateType::X;
-    case GateType::SQRT_Y:
-        return GateType::SQRT_Y_DAG;
-    case GateType::SQRT_Y_DAG:
-        return GateType::SQRT_Y;
-    case GateType::MX:
-        return GateType::M;
-    case GateType::M:
-        return GateType::MX;
-    case GateType::MRX:
-        return GateType::MR;
-    case GateType::MR:
-        return GateType::MRX;
-    case GateType::RX:
-        return GateType::R;
-    case GateType::R:
-        return GateType::RX;
-    case GateType::XCX:
-        return GateType::CZ;
-    case GateType::XCZ:
-        return GateType::CX;
-    case GateType::CX:
-        return GateType::XCZ;
-    case GateType::CZ:
-        return GateType::XCX;
-    case GateType::X_ERROR:
-        return GateType::Z_ERROR;
-    case GateType::Z_ERROR:
-        return GateType::X_ERROR;
-    case GateType::SQRT_X:
-        return GateType::S;
-    case GateType::SQRT_X_DAG:
-        return GateType::S_DAG;
-    case GateType::S:
-        return GateType::SQRT_X;
-    case GateType::S_DAG:
-        return GateType::SQRT_X_DAG;
-    case GateType::SQRT_XX:
-        return GateType::SQRT_ZZ;
-    case GateType::SQRT_XX_DAG:
-        return GateType::SQRT_ZZ_DAG;
-    case GateType::SQRT_ZZ:
-        return GateType::SQRT_XX;
-    case GateType::SQRT_ZZ_DAG:
-        return GateType::SQRT_XX_DAG;
-    case GateType::CXSWAP:
-        return GateType::SWAPCX;
-    case GateType::SWAPCX:
-        return GateType::CXSWAP;
-    case GateType::MXX:
-        return GateType::MZZ;
-    case GateType::MZZ:
-        return GateType::MXX;
-    default:
-        return GateType::NOT_A_GATE;
+        case GateType::X:
+            return GateType::Z;
+        case GateType::Z:
+            return GateType::X;
+        case GateType::SQRT_Y:
+            return GateType::SQRT_Y_DAG;
+        case GateType::SQRT_Y_DAG:
+            return GateType::SQRT_Y;
+        case GateType::MX:
+            return GateType::M;
+        case GateType::M:
+            return GateType::MX;
+        case GateType::MRX:
+            return GateType::MR;
+        case GateType::MR:
+            return GateType::MRX;
+        case GateType::RX:
+            return GateType::R;
+        case GateType::R:
+            return GateType::RX;
+        case GateType::XCX:
+            return GateType::CZ;
+        case GateType::XCZ:
+            return GateType::CX;
+        case GateType::CX:
+            return GateType::XCZ;
+        case GateType::CZ:
+            return GateType::XCX;
+        case GateType::X_ERROR:
+            return GateType::Z_ERROR;
+        case GateType::Z_ERROR:
+            return GateType::X_ERROR;
+        case GateType::SQRT_X:
+            return GateType::S;
+        case GateType::SQRT_X_DAG:
+            return GateType::S_DAG;
+        case GateType::S:
+            return GateType::SQRT_X;
+        case GateType::S_DAG:
+            return GateType::SQRT_X_DAG;
+        case GateType::SQRT_XX:
+            return GateType::SQRT_ZZ;
+        case GateType::SQRT_XX_DAG:
+            return GateType::SQRT_ZZ_DAG;
+        case GateType::SQRT_ZZ:
+            return GateType::SQRT_XX;
+        case GateType::SQRT_ZZ_DAG:
+            return GateType::SQRT_XX_DAG;
+        case GateType::CXSWAP:
+            return GateType::SWAPCX;
+        case GateType::SWAPCX:
+            return GateType::CXSWAP;
+        case GateType::MXX:
+            return GateType::MZZ;
+        case GateType::MZZ:
+            return GateType::MXX;
+        default:
+            return GateType::NOT_A_GATE;
     }
 }
 
