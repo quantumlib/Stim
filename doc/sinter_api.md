@@ -31,6 +31,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`sinter.TaskStats`](#sinter.TaskStats)
     - [`sinter.TaskStats.to_anon_stats`](#sinter.TaskStats.to_anon_stats)
     - [`sinter.TaskStats.to_csv_line`](#sinter.TaskStats.to_csv_line)
+    - [`sinter.TaskStats.with_edits`](#sinter.TaskStats.with_edits)
 - [`sinter.better_sorted_str_terms`](#sinter.better_sorted_str_terms)
 - [`sinter.collect`](#sinter.collect)
 - [`sinter.comma_separated_key_values`](#sinter.comma_separated_key_values)
@@ -827,6 +828,25 @@ def to_csv_line(
         >>> print(stat.to_csv_line())
                 22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
     """
+```
+
+<a name="sinter.TaskStats.with_edits"></a>
+```python
+# sinter.TaskStats.with_edits
+
+# (in class sinter.TaskStats)
+def with_edits(
+    self,
+    *,
+    strong_id: Optional[str] = None,
+    decoder: Optional[str] = None,
+    json_metadata: Optional[Any] = None,
+    shots: Optional[int] = None,
+    errors: Optional[int] = None,
+    discards: Optional[int] = None,
+    seconds: Optional[float] = None,
+    custom_counts: Optional[Counter[str]] = None,
+) -> sinter.TaskStats:
 ```
 
 <a name="sinter.better_sorted_str_terms"></a>
