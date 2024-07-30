@@ -108,6 +108,7 @@
 #include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_inverse_unitary.h"
+#include "stim/util_top/circuit_to_dem.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_amplitudes.h"
 #include "stim/util_top/circuit_vs_tableau.h"

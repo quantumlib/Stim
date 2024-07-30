@@ -268,7 +268,13 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords, num_rows);
+            circuit,
+            out,
+            tick_min,
+            num_ticks,
+            DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE,
+            filter_coords,
+            num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -276,7 +282,8 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "detslice-svg" || type == "detslice" || type == "detslice-html" || type == "detslice-svg-html" ||
         type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out, num_rows);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
+            .write_svg_diagram_to(out, num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
