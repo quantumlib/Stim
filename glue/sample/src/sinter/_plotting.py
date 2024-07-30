@@ -537,8 +537,13 @@ def plot_custom(
         for x, y, lbl in zip(xs_label, ys_label, vs_label):
             if lbl:
                 ax.annotate(lbl, (x, y))
-        if xs_low_high:
+        if len(xs_low_high) > 1:
             ax.fill_between(xs_low_high, ys_low, ys_high, color=color, alpha=0.2, zorder=-100)
+        elif len(xs_low_high) == 1:
+            l, = ys_low
+            h, = ys_high
+            m = (l + h) / 2
+            ax.errorbar(xs_low_high, [m], yerr=([m - l], [h - m]), marker='', elinewidth=1, ecolor=color, capsize=5)
 
         if line_fits is not None and len(set(xs_best)) >= 2:
             x_scale, y_scale = line_fits
