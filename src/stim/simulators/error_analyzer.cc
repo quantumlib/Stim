@@ -414,12 +414,32 @@ void ErrorAnalyzer::check_for_gauge(
     has_detectors &= !allow_gauge_detectors;
     if (has_observables) {
         error_msg << "The circuit contains non-deterministic observables.\n";
-        error_msg << "(Error analysis requires deterministic observables.)\n";
     }
     if (has_detectors) {
         error_msg << "The circuit contains non-deterministic detectors.\n";
-        error_msg << "(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)\n";
     }
+    size_t range_start = num_ticks_in_past - std::min(num_ticks_in_past, size_t{5});
+    size_t range_end = num_ticks_in_past + 5;
+    error_msg << "\nTo make an SVG picture of the problem, you can use the python API like this:\n    ";
+    error_msg << "your_circuit.diagram('detslice-with-ops-svg'";
+    error_msg << ", tick=range(" << range_start << ", " << range_end << ")";
+    error_msg << ", filter_coords=[";
+    for (auto d : potential_gauge) {
+        error_msg << "'" << d << "', ";
+    }
+    error_msg << "])";
+    error_msg << "\nor the command line API like this:\n    ";
+    error_msg << "stim diagram --in your_circuit_file.stim";
+    error_msg << " --type detslice-with-ops-svg";
+    error_msg << " --tick " << range_start << ":" << range_end;
+    error_msg << " --filter_coords ";
+    for (size_t k = 0; k < potential_gauge.size(); k++) {
+        if (k) {
+            error_msg << ':';
+        }
+        error_msg << potential_gauge.sorted_items[k];
+    }
+    error_msg << " > output_image.svg\n";
 
     std::map<uint64_t, std::vector<double>> qubit_coords_map;
     if (current_circuit_being_analyzed != nullptr) {
