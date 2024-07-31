@@ -418,7 +418,7 @@ void ErrorAnalyzer::check_for_gauge(
     if (has_detectors) {
         error_msg << "The circuit contains non-deterministic detectors.\n";
     }
-    size_t range_start = num_ticks_in_past - std::min(num_ticks_in_past, size_t{5});
+    size_t range_start = num_ticks_in_past - std::min((size_t)num_ticks_in_past, size_t{5});
     size_t range_end = num_ticks_in_past + 5;
     error_msg << "\nTo make an SVG picture of the problem, you can use the python API like this:\n    ";
     error_msg << "your_circuit.diagram('detslice-with-ops-svg'";
