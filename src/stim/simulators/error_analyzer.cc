@@ -1512,7 +1512,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
                           "`--ignore_decomposition_failures` to `stim analyze_errors`.";
                     if (block_decomposition_from_introducing_remnant_edges) {
                         ss << "\n\nNote: `block_decomposition_from_introducing_remnant_edges` is ON.\n";
-                        ss << "Turning it off may prevent this error.\n";
+                        ss << "Turning it off may prevent this error.";
                     }
                     throw std::invalid_argument(ss.str());
                 }
@@ -1558,12 +1558,16 @@ void ErrorAnalyzer::add_error_combinations(
                             std::stringstream message;
                             message
                                 << "An error case in a composite error exceeded the max supported number of symptoms "
-                                   "(<=15). ";
+                                   "(<=15).";
                             message << "\nThe " << std::to_string(s)
                                     << " basis error cases (e.g. X, Z) used to form the combined ";
                             message << "error cases (e.g. Y = X*Z) are:\n";
                             for (size_t k2 = 0; k2 < s; k2++) {
-                                message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+                                message << std::to_string(k2) << ":";
+                                if (!basis_errors[k2].empty()) {
+                                    message << ' ';
+                                }
+                                message << comma_sep_workaround(basis_errors[k2]) << "\n";
                             }
                             throw std::invalid_argument(message.str());
                         }

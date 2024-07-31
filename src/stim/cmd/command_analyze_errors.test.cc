@@ -97,7 +97,11 @@ DETECTOR rec[-2]
 [stderr=)OUTPUT"
              "\x1B"
              R"OUTPUT([31mThe circuit contains non-deterministic detectors.
-(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)
+
+To make an SVG picture of the problem, you can use the python API like this:
+    your_circuit.diagram('detslice-with-ops-svg', tick=range(0, 5), filter_coords=['D0', 'D1', ])
+or the command line API like this:
+    stim diagram --in your_circuit_file.stim --type detslice-with-ops-svg --tick 0:5 --filter_coords D0:D1 > output_image.svg
 
 This was discovered while analyzing a Z-basis reset (R) on:
     qubit 0

@@ -1,17 +1,3 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/simulators/error_analyzer.h"
 
 #include <regex>
@@ -2359,20 +2345,6 @@ std::string expect_catch_message(std::function<void(void)> func) {
     }
 }
 
-template <typename TEx>
-std::string check_catch(std::string expected_substring, std::function<void(void)> func) {
-    try {
-        func();
-        return "Expected an exception with message '" + expected_substring + "', but no exception was thrown.";
-    } catch (const TEx &ex) {
-        std::string s = ex.what();
-        if (s.find(expected_substring) == std::string::npos) {
-            return "Didn't find '" + expected_substring + "' in '" + std::string(ex.what()) + "'.";
-        }
-        return "";
-    }
-}
-
 TEST(ErrorAnalyzer, context_clues_for_errors) {
     ASSERT_EQ(
         expect_catch_message<std::invalid_argument>([&](){
@@ -2394,30 +2366,21 @@ TEST(ErrorAnalyzer, context_clues_for_errors) {
         "    at instruction #2 [which is DEPOLARIZE1(1) 0]");
 
     ASSERT_EQ(
-        "",
-        check_catch<std::invalid_argument>(
-            "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
-            "\n"
-            "Circuit stack trace:\n"
-            "    at instruction #3 [which is a REPEAT 500 block]\n"
-            "    at block's instruction #1 [which is DEPOLARIZE1(1) 0]",
-            [&] {
-                ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&](){
+            circuit_to_dem(Circuit(R"CIRCUIT(
                 X 0
                 Y 1
                 REPEAT 500 {
                     DEPOLARIZE1(1) 0
                 }
                 Z 3
-            )CIRCUIT"),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true);
-            }));
+            )CIRCUIT"), {.block_decomposition_from_introducing_remnant_edges = true});
+        }),
+        "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
+        "\n"
+        "Circuit stack trace:\n"
+        "    at instruction #3 [which is a REPEAT 500 block]\n"
+        "    at block's instruction #1 [which is DEPOLARIZE1(1) 0]");
 }
 
 TEST(ErrorAnalyzer, too_many_symptoms) {
@@ -2445,9 +2408,22 @@ TEST(ErrorAnalyzer, too_many_symptoms) {
         DETECTOR rec[-1]
         DETECTOR rec[-1]
     )CIRCUIT");
-    ASSERT_EQ("", check_catch<std::invalid_argument>("max supported number of symptoms", [&] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(symptoms_20, true, false, false, 0.0, false, true);
-              }));
+
+    ASSERT_EQ(
+        expect_catch_message<std::invalid_argument>([&](){
+            circuit_to_dem(
+                symptoms_20,
+                {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+        }),
+        R"MSG(An error case in a composite error exceeded the max supported number of symptoms (<=15).
+The 2 basis error cases (e.g. X, Z) used to form the combined error cases (e.g. Y = X*Z) are:
+0:
+1: D0, D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15, D16, D17, D18, D19
+
+
+Circuit stack trace:
+    at instruction #1 [which is DEPOLARIZE1(0.001) 0])MSG");
+
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(symptoms_20, false, false, false, 0.0, false, true),
         DetectorErrorModel(R"model(
@@ -2456,57 +2432,63 @@ TEST(ErrorAnalyzer, too_many_symptoms) {
 }
 
 TEST(ErrorAnalyzer, decompose_error_failures) {
-    ASSERT_EQ("", check_catch<std::invalid_argument>("failed to decompose is 'D0, D1, D2'", [] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(
-                      Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        expect_catch_message<std::invalid_argument>([&](){
+            circuit_to_dem(Circuit(R"CIRCUIT(
                 DEPOLARIZE1(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
-            )CIRCUIT"),
-                      true,
-                      false,
-                      false,
-                      0.0,
-                      false,
-                      true);
-              }));
+            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+        }),
+        R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
+The error component that failed to decompose is 'D0, D1, D2'.
 
-    ASSERT_EQ("", check_catch<std::invalid_argument>("decompose errors into graphlike components", [] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(
-                      Circuit(R"CIRCUIT(
+In Python, you can ignore this error by passing `ignore_decomposition_failures=True` to `stim.Circuit.detector_error_model(...)`.
+From the command line, you can ignore this error by passing the flag `--ignore_decomposition_failures` to `stim analyze_errors`.
+
+Note: `block_decomposition_from_introducing_remnant_edges` is ON.
+Turning it off may prevent this error.)MSG");
+
+    ASSERT_EQ(
+        expect_catch_message<std::invalid_argument>([&](){
+            circuit_to_dem(Circuit(R"CIRCUIT(
                 X_ERROR(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
-            )CIRCUIT"),
-                      true,
-                      false,
-                      false,
-                      0.0,
-                      false,
-                      true);
-              }));
+            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+        }),
+        R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
+The error component that failed to decompose is 'D0, D1, D2'.
 
-    ASSERT_EQ("", check_catch<std::invalid_argument>("failed to decompose is 'D0, D1, D2, L5'", [] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(
-                      Circuit(R"CIRCUIT(
+In Python, you can ignore this error by passing `ignore_decomposition_failures=True` to `stim.Circuit.detector_error_model(...)`.
+From the command line, you can ignore this error by passing the flag `--ignore_decomposition_failures` to `stim analyze_errors`.
+
+Note: `block_decomposition_from_introducing_remnant_edges` is ON.
+Turning it off may prevent this error.)MSG");
+
+    ASSERT_EQ(
+        expect_catch_message<std::invalid_argument>([&](){
+            circuit_to_dem(Circuit(R"CIRCUIT(
                 X_ERROR(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 OBSERVABLE_INCLUDE(5) rec[-1]
-            )CIRCUIT"),
-                      true,
-                      false,
-                      false,
-                      0.0,
-                      false,
-                      true);
-              }));
+            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+        }),
+        R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
+The error component that failed to decompose is 'D0, D1, D2, L5'.
+
+In Python, you can ignore this error by passing `ignore_decomposition_failures=True` to `stim.Circuit.detector_error_model(...)`.
+From the command line, you can ignore this error by passing the flag `--ignore_decomposition_failures` to `stim analyze_errors`.
+
+Note: `block_decomposition_from_introducing_remnant_edges` is ON.
+Turning it off may prevent this error.)MSG");
 }
 
 TEST(ErrorAnalyzer, other_error_decomposition_fallback) {
