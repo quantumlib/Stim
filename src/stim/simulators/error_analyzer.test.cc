@@ -2352,7 +2352,7 @@ template <typename TEx>
 std::string expect_catch_message(std::function<void(void)> func) {
     try {
         func();
-        EXPECT_FALSE(false) << "Function didn't throw an exception.";
+        EXPECT_TRUE(false) << "Function didn't throw an exception.";
         return "";
     } catch (const TEx &ex) {
         return ex.what();
