@@ -414,12 +414,32 @@ void ErrorAnalyzer::check_for_gauge(
     has_detectors &= !allow_gauge_detectors;
     if (has_observables) {
         error_msg << "The circuit contains non-deterministic observables.\n";
-        error_msg << "(Error analysis requires deterministic observables.)\n";
     }
     if (has_detectors) {
         error_msg << "The circuit contains non-deterministic detectors.\n";
-        error_msg << "(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)\n";
     }
+    size_t range_start = num_ticks_in_past - std::min((size_t)num_ticks_in_past, size_t{5});
+    size_t range_end = num_ticks_in_past + 5;
+    error_msg << "\nTo make an SVG picture of the problem, you can use the python API like this:\n    ";
+    error_msg << "your_circuit.diagram('detslice-with-ops-svg'";
+    error_msg << ", tick=range(" << range_start << ", " << range_end << ")";
+    error_msg << ", filter_coords=[";
+    for (auto d : potential_gauge) {
+        error_msg << "'" << d << "', ";
+    }
+    error_msg << "])";
+    error_msg << "\nor the command line API like this:\n    ";
+    error_msg << "stim diagram --in your_circuit_file.stim";
+    error_msg << " --type detslice-with-ops-svg";
+    error_msg << " --tick " << range_start << ":" << range_end;
+    error_msg << " --filter_coords ";
+    for (size_t k = 0; k < potential_gauge.size(); k++) {
+        if (k) {
+            error_msg << ':';
+        }
+        error_msg << potential_gauge.sorted_items[k];
+    }
+    error_msg << " > output_image.svg\n";
 
     std::map<uint64_t, std::vector<double>> qubit_coords_map;
     if (current_circuit_being_analyzed != nullptr) {
@@ -1492,7 +1512,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
                           "`--ignore_decomposition_failures` to `stim analyze_errors`.";
                     if (block_decomposition_from_introducing_remnant_edges) {
                         ss << "\n\nNote: `block_decomposition_from_introducing_remnant_edges` is ON.\n";
-                        ss << "Turning it off may prevent this error.\n";
+                        ss << "Turning it off may prevent this error.";
                     }
                     throw std::invalid_argument(ss.str());
                 }
@@ -1538,12 +1558,16 @@ void ErrorAnalyzer::add_error_combinations(
                             std::stringstream message;
                             message
                                 << "An error case in a composite error exceeded the max supported number of symptoms "
-                                   "(<=15). ";
+                                   "(<=15).";
                             message << "\nThe " << std::to_string(s)
                                     << " basis error cases (e.g. X, Z) used to form the combined ";
                             message << "error cases (e.g. Y = X*Z) are:\n";
                             for (size_t k2 = 0; k2 < s; k2++) {
-                                message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+                                message << std::to_string(k2) << ":";
+                                if (!basis_errors[k2].empty()) {
+                                    message << ' ';
+                                }
+                                message << comma_sep_workaround(basis_errors[k2]) << "\n";
                             }
                             throw std::invalid_argument(message.str());
                         }

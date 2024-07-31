@@ -7,6 +7,8 @@ std::string stim::export_crumble_url(const Circuit &circuit) {
     std::string_view s_view = s;
     std::vector<std::pair<std::string_view, std::string_view>> replace_rules{
         {"QUBIT_COORDS", "Q"},
+        {"DETECTOR", "DT"},
+        {"OBSERVABLE_INCLUDE", "OI"},
         {", ", ","},
         {") ", ")"},
         {"    ", ""},
