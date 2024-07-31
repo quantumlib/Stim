@@ -125,6 +125,31 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
     c.def("_repr_pretty_", [](const DiagramHelper &self, pybind11::object p, pybind11::object cycle) -> void {
         pybind11::getattr(p, "text")(self.content);
     });
+    c.def("__repr__", [](const DiagramHelper &self) -> std::string {
+        std::stringstream ss;
+        ss << "<A stim._DiagramHelper containing ";
+        switch (self.type) {
+            case DiagramType::DIAGRAM_TYPE_GLTF:
+                ss << "a GLTF 3d model";
+                break;
+            case DiagramType::DIAGRAM_TYPE_SVG:
+                ss << "an SVG image";
+                break;
+            case DiagramType::DIAGRAM_TYPE_TEXT:
+                ss << "text";
+                break;
+            case DiagramType::DIAGRAM_TYPE_HTML:
+                ss << "an HTML document";
+                break;
+            case DiagramType::DIAGRAM_TYPE_SVG_HTML:
+                ss << "an HTML SVG image viewer";
+                break;
+            default:
+                ss << "???";
+        }
+        ss << " that will display inline in Jupyter notebooks. Use 'str' or 'print' to access the contents as text.>";
+        return ss.str();
+    });
     c.def("__str__", [](const DiagramHelper &self) -> pybind11::object {
         if (self.type == DiagramType::DIAGRAM_TYPE_SVG_HTML) {
             return diagram_as_html(self);
