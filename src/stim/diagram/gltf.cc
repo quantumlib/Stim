@@ -97,7 +97,8 @@ void GltfImage::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfImage::to_json() const {
     return std::map<std::string, JsonObj>{
-        {"name", id.name},
+        // Note: saving space by not including names.
+        //{"name", id.name},
         {"uri", uri},
     };
 }
@@ -116,7 +117,8 @@ void GltfTexture::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfTexture::to_json() const {
     return std::map<std::string, JsonObj>{
-        {"name", id.name},
+        // Note: saving space by not including names.
+//        {"name", id.name},
         {"sampler", 0},
         {"source", 0},
     };
@@ -137,7 +139,7 @@ void GltfMaterial::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfMaterial::to_json() const {
     JsonObj result = std::map<std::string, JsonObj>{
-        {"name", id.name},
+//        {"name", id.name},
         {"pbrMetallicRoughness",
          std::map<std::string, JsonObj>{
              {"baseColorFactor",

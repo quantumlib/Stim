@@ -5,41 +5,50 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-JsonObj::JsonObj(bool boolean) : boolean(boolean), type(4) {
+enum JsonType : uint8_t {
+    JsonTypeEmpty = 0,
+    JsonTypeMap = 1,
+    JsonTypeArray = 2,
+    JsonTypeBool = 3,
+    JsonTypeSingle = 4,
+    JsonTypeDouble = 5,
+    JsonTypeInt64 = 6,
+    JsonTypeUInt64 = 7,
+    JsonTypeString = 8,
+};
+
+JsonObj::JsonObj(float num) : val_float(num), type(JsonTypeSingle) {
 }
-JsonObj::JsonObj(int num) : num(num), type(0) {
+JsonObj::JsonObj(double num) : val_double(num), type(JsonTypeDouble) {
 }
-JsonObj::JsonObj(size_t num) : num(num), type(0) {
+JsonObj::JsonObj(uint64_t num) : val_uint64_t(num), type(JsonTypeUInt64) {
 }
-JsonObj::JsonObj(float num) : num(num), type(0) {
+JsonObj::JsonObj(int num) : val_int64_t(num), type(JsonTypeInt64) {
 }
-JsonObj::JsonObj(double num) : double_num(num), type(11) {
+JsonObj::JsonObj(int64_t num) : val_int64_t(num), type(JsonTypeInt64) {
 }
 
-JsonObj::JsonObj(std::string text) : text(text), type(1) {
+JsonObj::JsonObj(std::string text) : text(text), type(JsonTypeString) {
 }
 
-JsonObj::JsonObj(const char *text) : text(text), type(1) {
+JsonObj::JsonObj(const char *text) : text(text), type(JsonTypeString) {
 }
 
-JsonObj::JsonObj(std::map<std::string, JsonObj> map) : map(map), type(2) {
+JsonObj::JsonObj(std::map<std::string, JsonObj> map) : map(map), type(JsonTypeMap) {
 }
 
-JsonObj::JsonObj(std::vector<JsonObj> arr) : arr(arr), type(3) {
+JsonObj::JsonObj(std::vector<JsonObj> arr) : arr(arr), type(JsonTypeArray) {
+
+};
+JsonObj::JsonObj(bool boolean) : val_boolean(boolean), type(JsonTypeBool) {
 }
 
 void JsonObj::clear() {
-    auto old_type = type;
-    if (old_type == 1) {
-        text.clear();
-    } else if (old_type == 2) {
-        map.clear();
-    } else if (old_type == 3) {
-        arr.clear();
-    }
-    type = 0;
-    num = 0;
-    double_num = 0;
+    text.clear();
+    map.clear();
+    arr.clear();
+    type = JsonTypeEmpty;
+    val_uint64_t = 0;
 }
 
 void JsonObj::write_str(std::string_view s, std::ostream &out) {
@@ -70,55 +79,76 @@ void indented_new_line(std::ostream &out, int64_t indent) {
 }
 
 void JsonObj::write(std::ostream &out, int64_t indent) const {
-    if (type == 0) {
-        out << num;
-    } else if (type == 11) {
-        auto p = out.precision();
-        out.precision(std::numeric_limits<double>::digits10);
-        out << double_num;
-        out.precision(p);
-    } else if (type == 1) {
-        write_str(text, out);
-    } else if (type == 2) {
-        out << "{";
-        indented_new_line(out, indent + 2);
-        bool first = true;
-        for (const auto &e : map) {
-            if (first) {
-                first = false;
-            } else {
-                out << ',';
-                indented_new_line(out, indent + 2);
+    switch (type) {
+        case JsonTypeMap: {
+            out << "{";
+            indented_new_line(out, indent + 2);
+            bool first = true;
+            for (const auto &e : map) {
+                if (first) {
+                    first = false;
+                } else {
+                    out << ',';
+                    indented_new_line(out, indent + 2);
+                }
+                write_str(e.first, out);
+                out << ':';
+                e.second.write(out, indent + 2);
             }
-            write_str(e.first, out);
-            out << ':';
-            e.second.write(out, indent + 2);
-        }
-        if (!first) {
-            indented_new_line(out, indent);
-        }
-        out << "}";
-    } else if (type == 3) {
-        out << "[";
-        indented_new_line(out, indent + 2);
-        bool first = true;
-        for (const auto &e : arr) {
-            if (first) {
-                first = false;
-            } else {
-                out << ',';
-                indented_new_line(out, indent + 2);
+            if (!first) {
+                indented_new_line(out, indent);
             }
-            e.write(out, indent + 2);
+            out << "}";
+            break;
         }
-        if (!first) {
-            indented_new_line(out, indent);
+        case JsonTypeArray: {
+            out << "[";
+            indented_new_line(out, indent + 2);
+            bool first = true;
+            for (const auto &e : arr) {
+                if (first) {
+                    first = false;
+                } else {
+                    out << ',';
+                    indented_new_line(out, indent + 2);
+                }
+                e.write(out, indent + 2);
+            }
+            if (!first) {
+                indented_new_line(out, indent);
+            }
+            out << "]";
+            break;
         }
-        out << "]";
-    } else if (type == 4) {
-        out << (boolean ? "true" : "false");
-    } else {
-        throw std::invalid_argument("unknown type");
+        case JsonTypeString: {
+            write_str(text, out);
+            break;
+        }
+        case JsonTypeBool: {
+            out << (val_boolean ? "true" : "false");
+            break;
+        }
+        case JsonTypeSingle: {
+            out << val_float;
+            break;
+        }
+        case JsonTypeDouble: {
+            auto p = out.precision();
+            out.precision(std::numeric_limits<double>::digits10);
+            out << val_double;
+            out.precision(p);
+            break;
+        }
+        case JsonTypeInt64: {
+            out << val_int64_t;
+            break;
+        }
+        case JsonTypeUInt64: {
+            out << val_uint64_t;
+            break;
+        }
+        default:
+            throw std::invalid_argument("unknown type");
     }
 }
 
