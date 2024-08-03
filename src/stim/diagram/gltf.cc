@@ -31,14 +31,14 @@ JsonObj GltfScene::_to_json_local() const {
 JsonObj GltfScene::to_json() {
     // Clear indices.
     visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
-        item_id.index = SIZE_MAX;
+        item_id.index = UINT64_MAX;
     });
 
     // Re-index.
     std::map<std::string, size_t> counts;
     visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
         auto &c = counts[type];
-        if (item_id.index == SIZE_MAX || item_id.index == c) {
+        if (item_id.index == UINT64_MAX || item_id.index == c) {
             item_id.index = c;
             c++;
         } else if (item_id.index > c) {

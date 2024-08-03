@@ -32,9 +32,9 @@ constexpr size_t GL_NEAREST = 9728;
 
 struct GltfId {
     std::string name;
-    size_t index;
+    uint64_t index;
 
-    GltfId(std::string name) : name(name), index(SIZE_MAX) {
+    GltfId(std::string name) : name(name), index(UINT64_MAX) {
     }
     GltfId() = delete;
 };
@@ -125,10 +125,10 @@ struct GltfBuffer {
 
 struct GltfSampler {
     GltfId id;
-    size_t magFilter;
-    size_t minFilter;
-    size_t wrapS;
-    size_t wrapT;
+    uint64_t magFilter;
+    uint64_t minFilter;
+    uint64_t wrapS;
+    uint64_t wrapT;
 
     void visit(const gltf_visit_callback &callback);
     JsonObj to_json() const;
