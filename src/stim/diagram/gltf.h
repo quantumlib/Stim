@@ -13,9 +13,6 @@ namespace stim_draw_internal {
 
 constexpr uint64_t GL_FLOAT = 5126;
 constexpr uint64_t GL_ARRAY_BUFFER = 34962;
-constexpr uint64_t GL_UNSIGNED_SHORT = 5123;
-constexpr uint64_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-constexpr uint64_t GL_TRIANGLE_STRIP = 5;
 constexpr uint64_t GL_TRIANGLES = 4;
 constexpr uint64_t GL_TRIANGLE_FAN = 6;
 
@@ -23,11 +20,7 @@ constexpr uint64_t GL_LINES = 1;
 constexpr uint64_t GL_LINE_STRIP = 3;
 constexpr uint64_t GL_LINE_LOOP = 2;
 
-constexpr uint64_t GL_REPEAT = 10497;
-constexpr uint64_t GL_CLAMP = 10496;
 constexpr uint64_t GL_CLAMP_TO_EDGE = 33071;
-constexpr uint64_t GL_LINEAR = 9729;
-constexpr uint64_t GL_LINEAR_MIPMAP_NEAREST = 9987;
 constexpr uint64_t GL_NEAREST = 9728;
 
 struct GltfId {
@@ -90,7 +83,7 @@ struct GltfBuffer {
             {"name", id.name},
             {"buffer", id.index},
             {"byteOffset", 0},
-            {"byteLength", vertices.size() * sizeof(Coord<DIM>)},
+            {"byteLength", (uint64_t)(vertices.size() * sizeof(Coord<DIM>))},
             {"target", GL_ARRAY_BUFFER},
         };
     }
