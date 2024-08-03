@@ -39,9 +39,14 @@ struct JsonObj {
     JsonObj(bool boolean);
     JsonObj(float num);
     JsonObj(double double_num);
-    JsonObj(int int_num);
-    JsonObj(int64_t int_num);
+    JsonObj(uint8_t int_num);
+    JsonObj(uint16_t int_num);
+    JsonObj(uint32_t int_num);
     JsonObj(uint64_t uint_num);
+    JsonObj(int8_t int_num);
+    JsonObj(int16_t int_num);
+    JsonObj(int32_t int_num);
+    JsonObj(int64_t int_num);
     JsonObj(std::string text);
     JsonObj(const char *text);
     JsonObj(std::map<std::string, JsonObj> map);

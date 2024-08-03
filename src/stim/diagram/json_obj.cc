@@ -23,7 +23,17 @@ JsonObj::JsonObj(double num) : val_double(num), type(JsonTypeDouble) {
 }
 JsonObj::JsonObj(uint64_t num) : val_uint64_t(num), type(JsonTypeUInt64) {
 }
-JsonObj::JsonObj(int num) : val_int64_t(num), type(JsonTypeInt64) {
+JsonObj::JsonObj(uint32_t num) : val_uint64_t(num), type(JsonTypeUInt64) {
+}
+JsonObj::JsonObj(uint16_t num) : val_uint64_t(num), type(JsonTypeUInt64) {
+}
+JsonObj::JsonObj(uint8_t num) : val_uint64_t(num), type(JsonTypeUInt64) {
+}
+JsonObj::JsonObj(int8_t num) : val_int64_t(num), type(JsonTypeInt64) {
+}
+JsonObj::JsonObj(int16_t num) : val_int64_t(num), type(JsonTypeInt64) {
+}
+JsonObj::JsonObj(int32_t num) : val_int64_t(num), type(JsonTypeInt64) {
 }
 JsonObj::JsonObj(int64_t num) : val_int64_t(num), type(JsonTypeInt64) {
 }
