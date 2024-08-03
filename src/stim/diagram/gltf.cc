@@ -31,14 +31,14 @@ JsonObj GltfScene::_to_json_local() const {
 JsonObj GltfScene::to_json() {
     // Clear indices.
     visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
-        item_id.index = SIZE_MAX;
+        item_id.index = UINT64_MAX;
     });
 
     // Re-index.
     std::map<std::string, size_t> counts;
     visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
         auto &c = counts[type];
-        if (item_id.index == SIZE_MAX || item_id.index == c) {
+        if (item_id.index == UINT64_MAX || item_id.index == c) {
             item_id.index = c;
             c++;
         } else if (item_id.index > c) {
@@ -97,7 +97,8 @@ void GltfImage::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfImage::to_json() const {
     return std::map<std::string, JsonObj>{
-        {"name", id.name},
+        // Note: saving space by not including names.
+        //{"name", id.name},
         {"uri", uri},
     };
 }
@@ -116,7 +117,8 @@ void GltfTexture::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfTexture::to_json() const {
     return std::map<std::string, JsonObj>{
-        {"name", id.name},
+        // Note: saving space by not including names.
+//        {"name", id.name},
         {"sampler", 0},
         {"source", 0},
     };
@@ -137,7 +139,7 @@ void GltfMaterial::visit(const gltf_visit_callback &callback) {
 
 JsonObj GltfMaterial::to_json() const {
     JsonObj result = std::map<std::string, JsonObj>{
-        {"name", id.name},
+//        {"name", id.name},
         {"pbrMetallicRoughness",
          std::map<std::string, JsonObj>{
              {"baseColorFactor",
