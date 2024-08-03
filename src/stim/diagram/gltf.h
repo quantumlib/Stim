@@ -165,7 +165,7 @@ struct GltfMaterial {
 
 struct GltfPrimitive {
     GltfId id;
-    size_t element_type;
+    uint64_t element_type;
     std::shared_ptr<GltfBuffer<3>> position_buffer;
     std::shared_ptr<GltfBuffer<2>> tex_coords_buffer;
     std::shared_ptr<GltfMaterial> material;
