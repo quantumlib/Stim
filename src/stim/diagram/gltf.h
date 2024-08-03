@@ -81,7 +81,7 @@ struct GltfBuffer {
         return std::map<std::string, JsonObj>{
             {"name", id.name},
             {"uri", ss.str()},
-            {"byteLength", vertex_data_size},
+            {"byteLength", (uint64_t)vertex_data_size},
         };
     }
 
