@@ -11,24 +11,24 @@
 
 namespace stim_draw_internal {
 
-constexpr size_t GL_FLOAT = 5126;
-constexpr size_t GL_ARRAY_BUFFER = 34962;
-constexpr size_t GL_UNSIGNED_SHORT = 5123;
-constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-constexpr size_t GL_TRIANGLE_STRIP = 5;
-constexpr size_t GL_TRIANGLES = 4;
-constexpr size_t GL_TRIANGLE_FAN = 6;
+constexpr uint64_t GL_FLOAT = 5126;
+constexpr uint64_t GL_ARRAY_BUFFER = 34962;
+constexpr uint64_t GL_UNSIGNED_SHORT = 5123;
+constexpr uint64_t GL_ELEMENT_ARRAY_BUFFER = 34963;
+constexpr uint64_t GL_TRIANGLE_STRIP = 5;
+constexpr uint64_t GL_TRIANGLES = 4;
+constexpr uint64_t GL_TRIANGLE_FAN = 6;
 
-constexpr size_t GL_LINES = 1;
-constexpr size_t GL_LINE_STRIP = 3;
-constexpr size_t GL_LINE_LOOP = 2;
+constexpr uint64_t GL_LINES = 1;
+constexpr uint64_t GL_LINE_STRIP = 3;
+constexpr uint64_t GL_LINE_LOOP = 2;
 
-constexpr size_t GL_REPEAT = 10497;
-constexpr size_t GL_CLAMP = 10496;
-constexpr size_t GL_CLAMP_TO_EDGE = 33071;
-constexpr size_t GL_LINEAR = 9729;
-constexpr size_t GL_LINEAR_MIPMAP_NEAREST = 9987;
-constexpr size_t GL_NEAREST = 9728;
+constexpr uint64_t GL_REPEAT = 10497;
+constexpr uint64_t GL_CLAMP = 10496;
+constexpr uint64_t GL_CLAMP_TO_EDGE = 33071;
+constexpr uint64_t GL_LINEAR = 9729;
+constexpr uint64_t GL_LINEAR_MIPMAP_NEAREST = 9987;
+constexpr uint64_t GL_NEAREST = 9728;
 
 struct GltfId {
     std::string name;
@@ -115,7 +115,7 @@ struct GltfBuffer {
             {"bufferView", id.index},
             {"byteOffset", 0},
             {"componentType", GL_FLOAT},
-            {"count", vertices.size()},
+            {"count", (uint64_t)vertices.size()},
             {"type", "VEC" + std::to_string(DIM)},
             {"min", std::move(min_v)},
             {"max", std::move(max_v)},
