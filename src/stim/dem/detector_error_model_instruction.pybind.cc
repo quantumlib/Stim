@@ -1,17 +1,3 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -20,6 +6,18 @@
 
 using namespace stim;
 using namespace stim_pybind;
+
+std::vector<std::vector<ExposedDemTarget>> ExposedDemInstruction::target_groups() const {
+    std::vector<std::vector<ExposedDemTarget>> result;
+    as_dem_instruction().for_separated_targets([&](std::span<const DemTarget> group) {
+        std::vector<ExposedDemTarget> copy;
+        for (auto e : group) {
+            copy.push_back(e);
+        }
+        result.push_back(copy);
+    });
+    return result;
+}
 
 DemInstruction ExposedDemInstruction::as_dem_instruction() const {
     return DemInstruction{arguments, targets, type};
@@ -202,6 +200,39 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 True
                 >>> instruction.args_copy() is instruction.args_copy()
                 False
+        )DOC")
+            .data());
+
+    c.def(
+        "target_groups",
+        &ExposedDemInstruction::target_groups,
+        clean_doc_string(R"DOC(
+            @signature def target_groups(self) -> List[List[stim.DemTarget]]:
+            Returns a copy of the instruction's targets, split by target separators.
+
+            When a detector error model instruction contains a suggested decomposition,
+            its targets contain separators (`stim.DemTarget("^")`). This method splits the
+            targets into groups based the separators, similar to how `str.split` works.
+
+            Returns:
+                A list of groups of targets.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.01) D0 D1 ^ D2
+                ...     error(0.01) D0 L0
+                ...     error(0.01)
+                ... ''')
+
+                >>> dem[0].target_groups()
+                [[stim.DemTarget('D0'), stim.DemTarget('D1')], [stim.DemTarget('D2')]]
+
+                >>> dem[1].target_groups()
+                [[stim.DemTarget('D0'), stim.DemTarget('L0')]]
+
+                >>> dem[2].target_groups()
+                [[]]
         )DOC")
             .data());
 
