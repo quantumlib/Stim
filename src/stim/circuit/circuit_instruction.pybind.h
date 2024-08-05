@@ -39,6 +39,7 @@ struct PyCircuitInstruction {
     std::vector<stim::GateTarget> targets_copy() const;
     std::vector<double> gate_args_copy() const;
     std::vector<uint32_t> raw_targets() const;
+    std::vector<std::vector<stim::GateTarget>> target_groups() const;
     bool operator==(const PyCircuitInstruction &other) const;
     bool operator!=(const PyCircuitInstruction &other) const;
 
