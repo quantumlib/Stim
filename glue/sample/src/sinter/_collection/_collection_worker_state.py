@@ -72,6 +72,8 @@ class CollectionWorkerState:
     def flush_results(self):
         if self.unflushed_results.shots > 0:
             self.last_flush_message_time = time.monotonic()
+            if self.current_task_shots_left < 0:
+                self.current_task_shots_left = 0
             self.out.put((
                 'flushed_results',
                 self.worker_id,
@@ -92,9 +94,9 @@ class CollectionWorkerState:
 
     def return_shots(self, *, requested_shots: int):
         assert requested_shots >= 0
-        returned_shots = min(requested_shots, self.current_task_shots_left)
+        returned_shots = max(0, min(requested_shots, self.current_task_shots_left))
         self.current_task_shots_left -= returned_shots
-        if self.current_task_shots_left == 0:
+        if self.current_task_shots_left <= 0:
             self.flush_results()
         self.out.put((
             'returned_shots',
@@ -177,8 +179,9 @@ class CollectionWorkerState:
                 return self.flush_results()
 
             some_work_done = self.compiled_sampler.sample(self.current_task_shots_left)
+            if some_work_done.shots < 1:
+                raise ValueError(f"Sampler didn't do any work. It returned statistics with shots == 0: {some_work_done}.")
             assert isinstance(some_work_done, AnonTaskStats)
-            assert some_work_done.shots <= self.current_task_shots_left
             self.current_task_shots_left -= some_work_done.shots
             if self.current_error_cutoff is not None:
                 if self.custom_error_count_key is not None:
@@ -189,7 +192,7 @@ class CollectionWorkerState:
             did_some_work = True
 
         if self.unflushed_results.shots > 0:
-            if self.current_task_shots_left == 0 or self.last_flush_message_time + self.cur_flush_period < time.monotonic():
+            if self.current_task_shots_left <= 0 or self.last_flush_message_time + self.cur_flush_period < time.monotonic():
                 self.cur_flush_period = min(self.cur_flush_period * 1.4, self.max_flush_period)
                 did_some_work |= self.flush_results()
 

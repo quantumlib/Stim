@@ -1,17 +1,42 @@
 import abc
+from typing import TYPE_CHECKING
 
-from sinter._data import AnonTaskStats, Task
+if TYPE_CHECKING:
+    import sinter
 
 
 class CompiledSampler(metaclass=abc.ABCMeta):
     """A sampler that has been configured for efficiently sampling some task."""
 
     @abc.abstractmethod
-    def sample(self, shots: int) -> AnonTaskStats:
-        """Perform the given number of samples, and return statistics.
+    def sample(self, suggested_shots: int) -> 'sinter.AnonTaskStats':
+        """Samples shots and returns statistics.
 
-        This method is permitted to perform fewer shots than specified, but must
-        indicate this in its returned statistics.
+        Args:
+            suggested_shots: The number of shots being requested. The sampler
+                may perform more shots or fewer shots than this, so technically
+                this argument can just be ignored. If a sampler is optimized for
+                a specific batch size, it can simply return one batch per call
+                regardless of this parameter.
+
+                However, this parameter is a useful hint about the amount of
+                work being done. The sampler can use this to optimize its
+                behavior. For example, it could adjust its batch size downward
+                if the suggested shots is very small. Whereas if the suggested
+                shots is very high, the sampler should focus entirely on
+                achieving the best possible throughput.
+
+                Note that, in typical workloads, the sampler will be called
+                repeatedly with the same value of suggested_shots. Therefore it
+                is reasonable to allocate buffers sized to accomodate the
+                current suggested_shots, expecting them to be useful again for
+                the next shot.
+
+        Returns:
+            A sinter.AnonTaskStats saying how many shots were actually taken,
+            how many errors were seen, etc.
+
+            The returned stats must have at least one shot.
         """
         pass
 
@@ -42,6 +67,6 @@ class Sampler(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def compiled_sampler_for_task(self, task: Task) -> CompiledSampler:
+    def compiled_sampler_for_task(self, task: 'sinter.Task') -> 'sinter.CompiledSampler':
         """Creates, configures, and returns an object for sampling the task."""
         pass

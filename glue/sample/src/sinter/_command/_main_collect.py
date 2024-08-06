@@ -8,11 +8,9 @@ from typing import cast
 import numpy as np
 import stim
 
-import sinter
 from sinter._collection import ThrottledProgressPrinter
 from sinter._data import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_predicate
-from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 from sinter._command._main_combine import ExistingData, CSV_HEADER
 from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_SAMPLERS
 
@@ -204,6 +202,7 @@ def parse_args(args: List[str]) -> Any:
                              '''    --metadata_func "auto"\n'''
                              '''    --metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
                         )
+    import sinter
     a = parser.parse_args(args=args)
     if a.metadata_func == 'auto':
         a.metadata_func = "sinter.comma_separated_key_values(path)"

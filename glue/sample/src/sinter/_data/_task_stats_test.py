@@ -3,6 +3,7 @@ import collections
 import pytest
 
 import sinter
+from sinter._data._task_stats import _is_equal_json_values
 
 
 def test_repr():
@@ -120,3 +121,20 @@ def test_with_edits():
         seconds=52,
         custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
     )
+
+
+def test_is_equal_json_values():
+    assert _is_equal_json_values([1, 2], (1, 2))
+    assert _is_equal_json_values([1, [3, (5, 6)]], (1, (3, [5, 6])))
+    assert not _is_equal_json_values([1, [3, (5, 6)]], (1, (3, [5, 7])))
+    assert not _is_equal_json_values([1, [3, (5, 6)]], (1, (3, [5])))
+    assert not _is_equal_json_values([1, 2], (1, 3))
+    assert not _is_equal_json_values([1, 2], {1, 2})
+    assert _is_equal_json_values({'x': [1, 2]}, {'x': (1, 2)})
+    assert _is_equal_json_values({'x': (1, 2)}, {'x': (1, 2)})
+    assert not _is_equal_json_values({'x': (1, 2)}, {'y': (1, 2)})
+    assert not _is_equal_json_values({'x': (1, 2)}, {'x': (1, 2), 'y': []})
+    assert not _is_equal_json_values({'x': (1, 2), 'y': []}, {'x': (1, 2)})
+    assert not _is_equal_json_values({'x': (1, 2)}, {'x': (1, 3)})
+    assert not _is_equal_json_values(1, 2)
+    assert _is_equal_json_values(1, 1)

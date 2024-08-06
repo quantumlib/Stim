@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import pathlib
 import queue
+import sys
 import tempfile
 from typing import Any, Optional, List, Dict, Iterable, Callable, Tuple
 from typing import Union
@@ -26,9 +27,12 @@ class _ManagedWorkerState:
         self.asked_to_drop_shots: int = 0
         self.cpu_pin = cpu_pin
 
+    def send_message(self, message: Any):
+        self.input_queue.put(message)
+
     def ask_to_return_all_shots(self):
         if self.asked_to_drop_shots == 0 and self.assigned_shots > 0:
-            self.input_queue.put((
+            self.send_message((
                 'return_shots',
                 (
                     self.assigned_work_key,
@@ -175,7 +179,7 @@ class CollectionManager:
                 worker_id = idle_worker_ids.pop()
                 unknown_task_id = unknown_task_ids.pop()
                 worker_to_task_map[worker_id] = unknown_task_id
-                self.worker_states[worker_id].input_queue.put(('compute_strong_id', self.partial_tasks[unknown_task_id]))
+                self.worker_states[worker_id].send_message(('compute_strong_id', self.partial_tasks[unknown_task_id]))
 
             try:
                 message = self.shared_worker_output_queue.get()
@@ -298,14 +302,16 @@ class CollectionManager:
             assert isinstance(anon_stat, AnonTaskStats)
             assert worker_state.assigned_work_key == task_strong_id
             task_state = self.task_states[task_strong_id]
-            assert worker_state.assigned_shots >= anon_stat.shots
             worker_state.assigned_shots -= anon_stat.shots
+            if worker_state.assigned_shots < 0:
+                # Overachieving sampler did extra shots.
+                task_state.shots_unassigned += worker_state.assigned_shots
+                worker_state.assigned_shots -= worker_state.assigned_shots
             task_state.shots_left -= anon_stat.shots
             if self.custom_error_count_key is None:
                 task_state.errors_left -= anon_stat.errors
             else:
                 task_state.errors_left -= anon_stat.custom_counts[self.custom_error_count_key]
-
 
             stat = TaskStats(
                 strong_id=task_state.strong_id,
@@ -334,6 +340,7 @@ class CollectionManager:
         elif message_type == 'returned_shots':
             task_key, shots_returned = message_body
             assert isinstance(shots_returned, int)
+            assert shots_returned >= 0
             assert worker_state.assigned_work_key == task_key
             assert worker_state.asked_to_drop_shots or worker_state.asked_to_drop_errors
             task_state = self.task_states[task_key]
@@ -342,6 +349,7 @@ class CollectionManager:
             worker_state.asked_to_drop_errors = 0
             task_state.shots_unassigned += shots_returned
             worker_state.assigned_shots -= shots_returned
+            assert worker_state.assigned_shots >= 0
             self._handle_task_progress(task_key)
 
         elif message_type == 'stopped_due_to_exception':
@@ -395,7 +403,7 @@ class CollectionManager:
             task_state.workers_assigned.append(worker_id)
             worker_state = self.worker_states[worker_id]
             worker_state.assigned_work_key = task_state.strong_id
-            worker_state.input_queue.put((
+            worker_state.send_message((
                 'change_job',
                 (task_state.partial_task, CollectionOptions(max_errors=task_state.errors_left)),
             ))
@@ -416,7 +424,7 @@ class CollectionManager:
                 if shots_to_assign > 0:
                     task_state.shots_unassigned -= shots_to_assign
                     worker_state.assigned_shots += shots_to_assign
-                    worker_state.input_queue.put((
+                    worker_state.send_message((
                         'accept_shots',
                         (task_state.strong_id, shots_to_assign),
                     ))
@@ -513,7 +521,7 @@ class CollectionManager:
             assert shots_to_take > 0
             worker_state.asked_to_drop_shots = shots_to_take
             task_state.shot_return_requests += 1
-            worker_state.input_queue.put((
+            worker_state.send_message((
                 'return_shots',
                 (
                     task_state.strong_id,

@@ -9,6 +9,21 @@ from sinter._data._anon_task_stats import AnonTaskStats
 from sinter._data._csv_out import csv_line
 
 
+def _is_equal_json_values(json1: Any, json2: Any):
+    if json1 == json2:
+        return True
+
+    if type(json1) == type(json2):
+        if isinstance(json1, dict):
+            return json1.keys() == json2.keys() and all(_is_equal_json_values(json1[k], json2[k]) for k in json1.keys())
+        elif isinstance(json1, (list, tuple)):
+            return len(json1) == len(json2) and all(_is_equal_json_values(a, b) for a, b in zip(json1, json2))
+    elif isinstance(json1, (list, tuple)) and isinstance(json2, (list, tuple)):
+        return _is_equal_json_values(tuple(json1), tuple(json2))
+
+    return False
+
+
 @dataclasses.dataclass(frozen=True)
 class TaskStats:
     """Statistics sampled from a task.
@@ -106,13 +121,16 @@ class TaskStats:
         if isinstance(other, TaskStats):
             if self.strong_id != other.strong_id:
                 raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
-            if self.json_metadata != other.json_metadata or self.decoder != other.decoder:
+            if not _is_equal_json_values(self.json_metadata, other.json_metadata) or self.decoder != other.decoder:
                 raise ValueError(
                     "A stat had the same strong id as another, but their other identifying information (json_metadata, decoder) differed.\n"
                     "The strong id is supposed to be a cryptographic hash that uniquely identifies what was sampled, so this is an error.\n"
                     "\n"
                     "This failure can occur when post-processing data (e.g. combining X basis stats and Z basis stats into synthetic both-basis stats).\n"
                     "To fix it, ensure any post-processing sets the strong id of the synthetic data in some cryptographically secure way.\n"
+                    "\n"
+                    "In some cases this can be caused by attempting to add a value that has gone through JSON serialization+parsing to one\n"
+                    "that hasn't, which causes things like tuples transforming into lists.\n"
                     "\n"
                     f"The two stats:\n1. {self!r}\n2. {other!r}")
 
