@@ -56,21 +56,30 @@ def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
 
 class LooseCompare:
     def __init__(self, val: Any):
-        self.val = val
+        self.val: Any = None
 
-    def __lt__(self, other):
-        if isinstance(other, LooseCompare):
-            other_val = other.val
-        else:
-            other_val = other
+        self.val = val.val if isinstance(val, LooseCompare) else val
+
+    def __lt__(self, other: Any) -> bool:
+        other_val = other.val if isinstance(other, LooseCompare) else other
         if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
             return self.val < other_val
+        if isinstance(self.val, (tuple, list)) and isinstance(other_val, (tuple, list)):
+            return tuple(LooseCompare(e) for e in self.val) < tuple(LooseCompare(e) for e in other_val)
         return str(self.val) < str(other_val)
 
-    def __str__(self):
+    def __gt__(self, other: Any) -> bool:
+        other_val = other.val if isinstance(other, LooseCompare) else other
+        if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
+            return self.val > other_val
+        if isinstance(self.val, (tuple, list)) and isinstance(other_val, (tuple, list)):
+            return tuple(LooseCompare(e) for e in self.val) > tuple(LooseCompare(e) for e in other_val)
+        return str(self.val) > str(other_val)
+
+    def __str__(self) -> str:
         return str(self.val)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, LooseCompare):
             other_val = other.val
         else:
@@ -118,7 +127,7 @@ def better_sorted_str_terms(val: Any) -> Any:
     if isinstance(val, tuple):
         return tuple(better_sorted_str_terms(e) for e in val)
     if not isinstance(val, str):
-        return val
+        return LooseCompare(val)
     terms = split_by(val, lambda c: c in '.0123456789')
     result = []
     for term in terms:
@@ -137,6 +146,8 @@ def better_sorted_str_terms(val: Any) -> Any:
             except ValueError:
                 pass
         result.append(term)
+    if len(result) == 1 and isinstance(result[0], (int, float)):
+        return LooseCompare(result[0])
     return tuple(LooseCompare(e) for e in result)
 
 

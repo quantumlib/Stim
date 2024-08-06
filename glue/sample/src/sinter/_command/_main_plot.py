@@ -4,11 +4,12 @@ from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple
 import argparse
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-from sinter import shot_error_rate_to_piece_error_rate
 from sinter._command._main_combine import ExistingData
 from sinter._plotting import plot_discard_rate, plot_custom
 from sinter._plotting import plot_error_rate
+from sinter._probability_util import shot_error_rate_to_piece_error_rate, Fit
 
 if TYPE_CHECKING:
     import sinter
@@ -294,43 +295,51 @@ def parse_args(args: List[str]) -> Any:
         a.failure_values_func = "1"
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
+
+    def _compile_argument_into_func(arg_name: str, arg_val: Any = ()):
+        if arg_val == ():
+            arg_val = getattr(a, arg_name)
+        raw_func = eval(compile(
+            f'lambda *, stat, decoder, metadata, m, strong_id, sinter, math, np: {arg_val}',
+            filename=f'{arg_name}:command_line_arg',
+            mode='eval',
+        ))
+        import sinter
+        return lambda stat: raw_func(
+            sinter=sinter,
+            math=math,
+            np=np,
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
+            strong_id=stat.strong_id)
+
     a.preprocess_stats_func = None if a.preprocess_stats_func is None else eval(compile(
         f'lambda *, stats: {a.preprocess_stats_func}',
         filename='preprocess_stats_func:command_line_arg',
         mode='eval'))
-    a.x_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.x_func}',
-        filename='x_func:command_line_arg',
-        mode='eval'))
+    a.x_func = _compile_argument_into_func('x_func', a.x_func)
     if a.y_func is not None:
-        a.y_func = eval(compile(
-            f'lambda *, stat, decoder, metadata, m, strong_id: {a.y_func}',
-            filename='x_func:command_line_arg',
-            mode='eval'))
-    a.point_label_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.point_label_func}',
-        filename='group_func:command_line_arg',
-        mode='eval'))
-    a.group_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.group_func}',
-        filename='group_func:command_line_arg',
-        mode='eval'))
-    a.filter_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.filter_func}',
-        filename='filter_func:command_line_arg',
-        mode='eval'))
-    a.failure_units_per_shot_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_units_per_shot_func}',
-        filename='failure_units_per_shot_func:command_line_arg',
-        mode='eval'))
-    a.failure_values_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_values_func}',
-        filename='failure_values_func:command_line_arg',
-        mode='eval'))
-    a.plot_args_func = eval(compile(
+        a.y_func = _compile_argument_into_func('y_func')
+    a.point_label_func = _compile_argument_into_func('point_label_func')
+    a.group_func = _compile_argument_into_func('group_func')
+    a.filter_func = _compile_argument_into_func('filter_func')
+    a.failure_units_per_shot_func = _compile_argument_into_func('failure_units_per_shot_func')
+    a.failure_values_func = _compile_argument_into_func('failure_values_func')
+    raw_plot_args_func = eval(compile(
         f'lambda *, index, key, stats, stat, decoder, metadata, m, strong_id: {a.plot_args_func}',
         filename='plot_args_func:command_line_arg',
         mode='eval'))
+    a.plot_args_func = lambda index, group_key, stats: raw_plot_args_func(
+            index=index,
+            key=group_key,
+            stats=stats,
+            stat=stats[0],
+            decoder=stats[0].decoder,
+            metadata=stats[0].json_metadata,
+            m=_FieldToMetadataWrapper(stats[0].json_metadata),
+            strong_id=stats[0].strong_id)
     return a
 
 
@@ -398,12 +407,21 @@ def _pick_min_max(
         want_strictly_positive: bool,
 ) -> Tuple[float, float]:
     assert default_max >= default_min
-    vs = [
-        v
-        for stat in plotted_stats
-        if (v := v_func(stat)) is not None
-        if v > 0 or not want_positive
-    ]
+    vs = []
+    for stat in plotted_stats:
+        v = v_func(stat)
+        if isinstance(v, (int, float)):
+            vs.append(v)
+        elif isinstance(v, Fit):
+            for e in [v.low, v.best, v.high]:
+                if e is not None:
+                    vs.append(e)
+        elif v is None:
+            pass
+        else:
+            raise NotImplementedError(f'{v=}')
+    if want_positive:
+        vs = [v for v in vs if v > 0]
 
     min_v = min(vs, default=default_min)
     max_v = max(vs, default=default_max)
@@ -756,57 +774,14 @@ def main_plot(*, command_line_args: List[str]):
 
     fig, _ = _plot_helper(
         samples=total,
-        group_func=lambda stat: args.group_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        x_func=lambda stat: args.x_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        point_label_func=lambda stat: args.point_label_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        y_func=None if args.y_func is None else lambda stat: args.y_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        filter_func=lambda stat: args.filter_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        failure_units_per_shot_func=lambda stat: args.failure_units_per_shot_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        failure_values_func=lambda stat: args.failure_values_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        plot_args_func=lambda index, group_key, stats: args.plot_args_func(
-            index=index,
-            key=group_key,
-            stats=stats,
-            stat=stats[0],
-            decoder=stats[0].decoder,
-            metadata=stats[0].json_metadata,
-            m=_FieldToMetadataWrapper(stats[0].json_metadata),
-            strong_id=stats[0].strong_id),
+        group_func=args.group_func,
+        x_func=args.x_func,
+        point_label_func=args.point_label_func,
+        y_func=args.y_func,
+        filter_func=args.filter_func,
+        failure_units_per_shot_func=args.failure_units_per_shot_func,
+        failure_values_func=args.failure_values_func,
+        plot_args_func=args.plot_args_func,
         failure_unit=args.failure_unit_name,
         plot_types=args.type,
         xaxis=args.xaxis,
