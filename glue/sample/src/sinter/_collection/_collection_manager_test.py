@@ -80,7 +80,7 @@ task task.strong_id='c03f7852e4579e2a99cefac80eeb6b09556907540ab3d7787a3d07309c3
     _assert_drain_queue(manager.worker_states[0].input_queue, [
         (
             'change_job',
-            (t0, sinter.CollectionOptions(max_errors=100)),
+            (t0, sinter.CollectionOptions(max_errors=100), 100),
         ),
         (
             'accept_shots',
@@ -91,7 +91,7 @@ task task.strong_id='c03f7852e4579e2a99cefac80eeb6b09556907540ab3d7787a3d07309c3
         ('compute_strong_id', t0),
         (
             'change_job',
-            (t1, sinter.CollectionOptions(max_errors=10000000)),
+            (t1, sinter.CollectionOptions(max_errors=10000000), 10000000),
         ),
         (
             'accept_shots',
@@ -102,7 +102,7 @@ task task.strong_id='c03f7852e4579e2a99cefac80eeb6b09556907540ab3d7787a3d07309c3
         ('compute_strong_id', t1),
         (
             'change_job',
-            (t1, sinter.CollectionOptions(max_errors=10000000)),
+            (t1, sinter.CollectionOptions(max_errors=10000000), 10000000),
         ),
         (
             'accept_shots',
@@ -279,9 +279,9 @@ task task.strong_id='a9165b6e4ab1053c04c017d0739a7bfff0910d62091fc9ee81716833eda
         ('return_shots', (t0.strong_id(), 66666666)),
     ])
     _assert_drain_queue(manager.worker_states[1].input_queue, [
-        ('change_job', (t0, sinter.CollectionOptions(max_errors=100))),
+        ('change_job', (t0, sinter.CollectionOptions(max_errors=100), 100)),
     ])
     _assert_drain_queue(manager.worker_states[2].input_queue, [
         ('return_shots', (t1.strong_id(), 1000000)),
-        ('change_job', (t0, sinter.CollectionOptions(max_errors=100))),
+        ('change_job', (t0, sinter.CollectionOptions(max_errors=100), 100)),
     ])

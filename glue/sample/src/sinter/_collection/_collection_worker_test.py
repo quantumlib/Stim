@@ -69,7 +69,7 @@ def test_worker_stop():
     )
     handler.expected_task = t0
 
-    _put_wait_not_empty(inp, ('change_job', (t0, sinter.CollectionOptions(max_errors=100_000_000))))
+    _put_wait_not_empty(inp, ('change_job', (t0, sinter.CollectionOptions(max_errors=100_000_000), 100_000_000)))
     assert worker.process_messages() == 1
     _assert_drain_queue(out, [('changed_job', 5, (t0.strong_id(),))])
 
@@ -105,7 +105,7 @@ def test_worker_skip_work():
         json_metadata={'a': 3},
     )
     handler.expected_task = t0
-    _put_wait_not_empty(inp, ('change_job', (t0, sinter.CollectionOptions(max_errors=100_000_000))))
+    _put_wait_not_empty(inp, ('change_job', (t0, sinter.CollectionOptions(max_errors=100_000_000), 100_000_000)))
     assert worker.process_messages() == 1
     _assert_drain_queue(out, [('changed_job', 5, (t0.strong_id(),))])
 
@@ -161,7 +161,7 @@ def test_worker_finish_work():
         json_metadata={'a': 3},
     )
     handler.expected_task = ta
-    _put_wait_not_empty(inp, ('change_job', (ta, sinter.CollectionOptions(max_errors=100_000_000))))
+    _put_wait_not_empty(inp, ('change_job', (ta, sinter.CollectionOptions(max_errors=100_000_000), 100_000_000)))
     _put_wait_not_empty(inp, ('accept_shots', (ta.strong_id(), 10000)))
     assert worker.process_messages() == 2
     _assert_drain_queue(out, [
