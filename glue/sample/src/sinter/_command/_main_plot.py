@@ -484,16 +484,24 @@ def _set_axis_scale_label_ticks(
     elif scale_name == 'log':
         set_scale('log')
         min_v, max_v, major_ticks, minor_ticks = _log_ticks(min_v, max_v)
+        if forced_min_v is not None:
+            min_v = forced_min_v
+        if forced_max_v is not None:
+            max_v = forced_max_v
         set_ticks(major_ticks)
         set_ticks(minor_ticks, minor=True)
         set_lim(min_v, max_v)
     elif scale_name == 'sqrt':
         from matplotlib.scale import FuncScale
         min_v, max_v, major_ticks, minor_ticks = _sqrt_ticks(min_v, max_v)
-        set_lim(min_v, max_v)
+        if forced_min_v is not None:
+            min_v = forced_min_v
+        if forced_max_v is not None:
+            max_v = forced_max_v
         set_scale(FuncScale(ax, (lambda e: e**0.5, lambda e: e**2)))
         set_ticks(major_ticks)
         set_ticks(minor_ticks, minor=True)
+        set_lim(min_v, max_v)
     else:
         raise NotImplemented(f'{scale_name=}')
     return scale_name

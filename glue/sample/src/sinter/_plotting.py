@@ -222,7 +222,7 @@ class _FrozenDict:
         return self._v.get(item, alternate)
 
     def __str__(self):
-        return " ".join(v for _, v in sorted(self._v.items()))
+        return " ".join(str(v) for _, v in sorted(self._v.items()))
 
 
 def plot_discard_rate(
