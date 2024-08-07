@@ -1,10 +1,10 @@
 import collections
 import contextlib
+import math
 import multiprocessing
 import os
 import pathlib
 import queue
-import sys
 import tempfile
 from typing import Any, Optional, List, Dict, Iterable, Callable, Tuple
 from typing import Union
@@ -23,7 +23,7 @@ class _ManagedWorkerState:
         self.process: Optional[multiprocessing.Process] = None
         self.input_queue: Optional[multiprocessing.Queue[Tuple[str, Any]]] = None
         self.assigned_work_key: Any = None
-        self.assigned_shots: int = 0
+        self.assigned_shots_remote: int = 0
         self.asked_to_drop_shots: int = 0
         self.cpu_pin = cpu_pin
 
@@ -31,18 +31,18 @@ class _ManagedWorkerState:
         self.input_queue.put(message)
 
     def ask_to_return_all_shots(self):
-        if self.asked_to_drop_shots == 0 and self.assigned_shots > 0:
+        if self.asked_to_drop_shots == 0 and self.assigned_shots_remote > 0:
             self.send_message((
                 'return_shots',
                 (
                     self.assigned_work_key,
-                    self.assigned_shots - self.asked_to_drop_shots,
+                    self.assigned_shots_remote,
                 ),
             ))
-            self.asked_to_drop_shots = self.assigned_shots
+            self.asked_to_drop_shots = self.assigned_shots_remote
 
     def has_returned_all_shots(self) -> bool:
-        return self.assigned_shots == 0 and self.asked_to_drop_shots == 0
+        return self.assigned_shots_remote == 0 and self.asked_to_drop_shots == 0
 
     def is_available_to_reassign(self) -> bool:
         return self.assigned_work_key is None
@@ -56,7 +56,8 @@ class _ManagedTaskState:
         self.errors_left = errors_left
         self.shots_unassigned = shots_left
         self.shot_return_requests = 0
-        self.workers_assigned = []
+        self.assigned_soft_error_flush_threshold: int = errors_left
+        self.workers_assigned: list[int] = []
 
     def is_completed(self) -> bool:
         return self.shots_left <= 0 or self.errors_left <= 0
@@ -259,7 +260,7 @@ class CollectionManager:
                 del self.task_states[task_id]
                 for worker_id in task_state.workers_assigned:
                     w = self.worker_states[worker_id]
-                    assert w.assigned_shots == 0
+                    assert w.assigned_shots_remote == 0
                     assert w.asked_to_drop_shots == 0
                     w.assigned_work_key = None
                 self._distribute_work()
@@ -277,7 +278,7 @@ class CollectionManager:
         for worker_id, worker in enumerate(self.worker_states):
             lines.append(f'worker {worker_id}:'
                          f' asked_to_drop_shots={worker.asked_to_drop_shots}'
-                         f' assigned_shots={worker.assigned_shots}'
+                         f' assigned_shots_remote={worker.assigned_shots_remote}'
                          f' assigned_work_key={worker.assigned_work_key}')
         for task in self.task_states.values():
             lines.append(f'task {task.strong_id=}:\n'
@@ -302,11 +303,8 @@ class CollectionManager:
             assert isinstance(anon_stat, AnonTaskStats)
             assert worker_state.assigned_work_key == task_strong_id
             task_state = self.task_states[task_strong_id]
-            worker_state.assigned_shots -= anon_stat.shots
-            if worker_state.assigned_shots < 0:
-                # Overachieving sampler did extra shots.
-                task_state.shots_unassigned += worker_state.assigned_shots
-                worker_state.assigned_shots -= worker_state.assigned_shots
+
+            worker_state.assigned_shots_remote -= anon_stat.shots
             task_state.shots_left -= anon_stat.shots
             if self.custom_error_count_key is None:
                 task_state.errors_left -= anon_stat.errors
@@ -348,8 +346,9 @@ class CollectionManager:
             worker_state.asked_to_drop_shots = 0
             worker_state.asked_to_drop_errors = 0
             task_state.shots_unassigned += shots_returned
-            worker_state.assigned_shots -= shots_returned
-            assert worker_state.assigned_shots >= 0
+            worker_state.assigned_shots_remote -= shots_returned
+            if worker_state.assigned_shots_remote < 0:
+                worker_state.assigned_shots_remote = 0
             self._handle_task_progress(task_key)
 
         elif message_type == 'stopped_due_to_exception':
@@ -405,7 +404,7 @@ class CollectionManager:
             worker_state.assigned_work_key = task_state.strong_id
             worker_state.send_message((
                 'change_job',
-                (task_state.partial_task, CollectionOptions(max_errors=task_state.errors_left)),
+                (task_state.partial_task, CollectionOptions(max_errors=task_state.errors_left), task_state.assigned_soft_error_flush_threshold),
             ))
 
     def _distribute_unassigned_work_to_workers_within_a_job(self, task_state: _ManagedTaskState):
@@ -416,14 +415,14 @@ class CollectionManager:
         expected_shots_per_worker = (task_state.shots_left + num_task_workers - 1) // num_task_workers
 
         # Give unassigned shots to idle workers.
-        for worker_id in sorted(task_state.workers_assigned, key=lambda wid: self.worker_states[wid].assigned_shots):
+        for worker_id in sorted(task_state.workers_assigned, key=lambda wid: self.worker_states[wid].assigned_shots_remote):
             worker_state = self.worker_states[worker_id]
-            if worker_state.assigned_shots < expected_shots_per_worker:
-                shots_to_assign = min(expected_shots_per_worker - worker_state.assigned_shots,
+            if worker_state.assigned_shots_remote < expected_shots_per_worker:
+                shots_to_assign = min(expected_shots_per_worker - worker_state.assigned_shots_remote,
                                       task_state.shots_unassigned)
                 if shots_to_assign > 0:
                     task_state.shots_unassigned -= shots_to_assign
-                    worker_state.assigned_shots += shots_to_assign
+                    worker_state.assigned_shots_remote += shots_to_assign
                     worker_state.send_message((
                         'accept_shots',
                         (task_state.strong_id, shots_to_assign),
@@ -502,22 +501,35 @@ class CollectionManager:
             lines.append('        ... (' + str(len(skipped_lines)) + ' more tasks) ...')
         return f'{tasks_left} tasks left:\n' + '\n'.join(lines)
 
+    def _update_soft_error_threshold_for_a_job(self, task_state: _ManagedTaskState):
+        if task_state.errors_left <= len(task_state.workers_assigned):
+            desired_threshold = 1
+        elif task_state.errors_left <= task_state.assigned_soft_error_flush_threshold * self.num_workers:
+            desired_threshold = max(1, math.ceil(task_state.errors_left * 0.5 / self.num_workers))
+        else:
+            return
+
+        if task_state.assigned_soft_error_flush_threshold != desired_threshold:
+            task_state.assigned_soft_error_flush_threshold = desired_threshold
+            for wid in task_state.workers_assigned:
+                self.worker_states[wid].send_message(('set_soft_error_flush_threshold', desired_threshold))
+
     def _take_work_if_unsatisfied_workers_within_a_job(self, task_state: _ManagedTaskState):
         if not self.started or not task_state.workers_assigned or task_state.shots_left <= 0:
             return
 
-        if all(self.worker_states[w].assigned_shots for w in task_state.workers_assigned):
+        if all(self.worker_states[w].assigned_shots_remote for w in task_state.workers_assigned):
             return
 
         w = len(task_state.workers_assigned)
         expected_shots_per_worker = (task_state.shots_left + w - 1) // w
 
         # There are idle workers that couldn't be given any shots. Take shots from other workers.
-        for worker_id in sorted(task_state.workers_assigned, key=lambda w: self.worker_states[w].assigned_shots, reverse=True):
+        for worker_id in sorted(task_state.workers_assigned, key=lambda w: self.worker_states[w].assigned_shots_remote, reverse=True):
             worker_state = self.worker_states[worker_id]
-            if worker_state.asked_to_drop_shots or worker_state.assigned_shots <= expected_shots_per_worker:
+            if worker_state.asked_to_drop_shots or worker_state.assigned_shots_remote <= expected_shots_per_worker:
                 continue
-            shots_to_take = worker_state.assigned_shots - expected_shots_per_worker
+            shots_to_take = worker_state.assigned_shots_remote - expected_shots_per_worker
             assert shots_to_take > 0
             worker_state.asked_to_drop_shots = shots_to_take
             task_state.shot_return_requests += 1

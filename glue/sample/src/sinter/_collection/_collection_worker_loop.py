@@ -1,9 +1,7 @@
 import os
-import pathlib
 from typing import Optional, TYPE_CHECKING
-from typing import Union
 
-from sinter._decoding import Decoder, Sampler
+from sinter._decoding import Sampler
 from sinter._collection._collection_worker_state import CollectionWorkerState
 
 if TYPE_CHECKING:

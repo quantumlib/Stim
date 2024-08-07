@@ -15,6 +15,7 @@ def test_better_sorted_str_terms():
     assert f('a1.5.3b2') == ('a', (1, 5, 3), 'b', 2)
     assert f(1) < f(None)
     assert f(1) < f('2')
+    assert f('2') > f(1)
     assert sorted([
         "planar d=10 r=30",
         "planar d=16 r=36",

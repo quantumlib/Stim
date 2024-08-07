@@ -68,12 +68,11 @@ class CollectionWorkerState:
         self.current_task_shots_left: int = 0
         self.unflushed_results: AnonTaskStats = AnonTaskStats()
         self.last_flush_message_time = time.monotonic()
+        self.soft_error_flush_threshold: int = 1
 
     def flush_results(self):
         if self.unflushed_results.shots > 0:
             self.last_flush_message_time = time.monotonic()
-            if self.current_task_shots_left < 0:
-                self.current_task_shots_left = 0
             self.out.put((
                 'flushed_results',
                 self.worker_id,
@@ -98,6 +97,8 @@ class CollectionWorkerState:
         self.current_task_shots_left -= returned_shots
         if self.current_task_shots_left <= 0:
             self.flush_results()
+        if self.current_task_shots_left < 0:
+            self.current_task_shots_left = 0
         self.out.put((
             'returned_shots',
             self.worker_id,
@@ -150,10 +151,15 @@ class CollectionWorkerState:
                 self.compute_strong_id(new_task=message_body)
 
             elif message_type == 'change_job':
+                new_task, new_collection_options, soft_error_flush_threshold = message_body
                 self.cur_flush_period = 0.01
-                new_task, new_collection_options = message_body
+                self.soft_error_flush_threshold = soft_error_flush_threshold
                 assert isinstance(new_task, Task)
                 self.change_job(new_task=new_task, new_collection_options=new_collection_options)
+
+            elif message_type == 'set_soft_error_flush_threshold':
+                soft_error_flush_threshold = message_body
+                self.soft_error_flush_threshold = soft_error_flush_threshold
 
             elif message_type == 'accept_shots':
                 job_key, shots_delta = message_body
@@ -170,9 +176,15 @@ class CollectionWorkerState:
             else:
                 raise NotImplementedError(f'{message_type=}')
 
+    def num_unflushed_errors(self) -> int:
+        if self.custom_error_count_key is not None:
+            return self.unflushed_results.custom_counts[self.custom_error_count_key]
+        return self.unflushed_results.errors
+
     def do_some_work(self) -> bool:
         did_some_work = False
 
+        # Sample some stats.
         if self.current_task_shots_left > 0:
             # Don't keep sampling if we've exceeded the number of errors needed.
             if self.current_error_cutoff is not None and self.current_error_cutoff <= 0:
@@ -184,17 +196,20 @@ class CollectionWorkerState:
             assert isinstance(some_work_done, AnonTaskStats)
             self.current_task_shots_left -= some_work_done.shots
             if self.current_error_cutoff is not None:
-                if self.custom_error_count_key is not None:
-                    self.current_error_cutoff -= some_work_done.custom_counts[self.custom_error_count_key]
-                else:
-                    self.current_error_cutoff -= some_work_done.errors
+                self.current_error_cutoff -= self.num_unflushed_errors()
             self.unflushed_results += some_work_done
             did_some_work = True
 
+        # Report them periodically.
+        should_flush = False
+        if self.num_unflushed_errors() >= self.soft_error_flush_threshold:
+            should_flush = True
         if self.unflushed_results.shots > 0:
             if self.current_task_shots_left <= 0 or self.last_flush_message_time + self.cur_flush_period < time.monotonic():
-                self.cur_flush_period = min(self.cur_flush_period * 1.4, self.max_flush_period)
-                did_some_work |= self.flush_results()
+                should_flush = True
+        if should_flush:
+            self.cur_flush_period = min(self.cur_flush_period * 1.4, self.max_flush_period)
+            did_some_work |= self.flush_results()
 
         return did_some_work
 
