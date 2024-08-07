@@ -8,16 +8,16 @@ def main(*, command_line_args: Optional[List[str]] = None):
 
     mode = command_line_args[0] if command_line_args else None
     if mode == 'combine':
-        from sinter._main_combine import main_combine
+        from sinter._command._main_combine import main_combine
         return main_combine(command_line_args=command_line_args[1:])
     if mode == 'collect':
-        from sinter._main_collect import main_collect
+        from sinter._command._main_collect import main_collect
         return main_collect(command_line_args=command_line_args[1:])
     if mode == 'plot':
-        from sinter._main_plot import main_plot
+        from sinter._command._main_plot import main_plot
         return main_plot(command_line_args=command_line_args[1:])
     if mode == 'predict':
-        from sinter._main_predict import main_predict
+        from sinter._command._main_predict import main_predict
         return main_predict(command_line_args=command_line_args[1:])
 
     want_help = mode in ['help', 'h', '--help', '-help', '-h', '--h']

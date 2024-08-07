@@ -1,6 +1,9 @@
 import collections
 import dataclasses
-from typing import Counter
+from typing import Counter, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sinter._data._task_stats import TaskStats
 
 
 @dataclasses.dataclass(frozen=True)
@@ -74,13 +77,13 @@ class AnonTaskStats:
             >>> a + b
             sinter.AnonTaskStats(shots=1100, errors=220)
         """
-        if not isinstance(other, AnonTaskStats):
-            return NotImplemented
+        if isinstance(other, AnonTaskStats):
+            return AnonTaskStats(
+                shots=self.shots + other.shots,
+                errors=self.errors + other.errors,
+                discards=self.discards + other.discards,
+                seconds=self.seconds + other.seconds,
+                custom_counts=self.custom_counts + other.custom_counts,
+            )
 
-        return AnonTaskStats(
-            shots=self.shots + other.shots,
-            errors=self.errors + other.errors,
-            discards=self.discards + other.discards,
-            seconds=self.seconds + other.seconds,
-            custom_counts=self.custom_counts + other.custom_counts,
-        )
+        return NotImplemented

@@ -1,9 +1,27 @@
 import collections
 import dataclasses
 from typing import Counter, List, Any
+from typing import Optional
+from typing import Union
+from typing import overload
 
-from sinter._anon_task_stats import AnonTaskStats
-from sinter._csv_out import csv_line
+from sinter._data._anon_task_stats import AnonTaskStats
+from sinter._data._csv_out import csv_line
+
+
+def _is_equal_json_values(json1: Any, json2: Any):
+    if json1 == json2:
+        return True
+
+    if type(json1) == type(json2):
+        if isinstance(json1, dict):
+            return json1.keys() == json2.keys() and all(_is_equal_json_values(json1[k], json2[k]) for k in json1.keys())
+        elif isinstance(json1, (list, tuple)):
+            return len(json1) == len(json2) and all(_is_equal_json_values(a, b) for a, b in zip(json1, json2))
+    elif isinstance(json1, (list, tuple)) and isinstance(json2, (list, tuple)):
+        return _is_equal_json_values(tuple(json1), tuple(json2))
+
+    return False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -67,21 +85,69 @@ class TaskStats:
         assert self.shots >= self.errors + self.discards
         assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
 
-    def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        if self.strong_id != other.strong_id:
-            raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
-        total = self.to_anon_stats() + other.to_anon_stats()
-
+    def with_edits(
+        self,
+        *,
+        strong_id: Optional[str] = None,
+        decoder: Optional[str] = None,
+        json_metadata: Optional[Any] = None,
+        shots: Optional[int] = None,
+        errors: Optional[int] = None,
+        discards: Optional[int] = None,
+        seconds: Optional[float] = None,
+        custom_counts: Optional[Counter[str]] = None,
+    ) -> 'TaskStats':
         return TaskStats(
-            decoder=self.decoder,
-            strong_id=self.strong_id,
-            json_metadata=self.json_metadata,
-            shots=total.shots,
-            errors=total.errors,
-            discards=total.discards,
-            seconds=total.seconds,
-            custom_counts=total.custom_counts,
+            strong_id=self.strong_id if strong_id is None else strong_id,
+            decoder=self.decoder if decoder is None else decoder,
+            json_metadata=self.json_metadata if json_metadata is None else json_metadata,
+            shots=self.shots if shots is None else shots,
+            errors=self.errors if errors is None else errors,
+            discards=self.discards if discards is None else discards,
+            seconds=self.seconds if seconds is None else seconds,
+            custom_counts=self.custom_counts if custom_counts is None else custom_counts,
         )
+
+    @overload
+    def __add__(self, other: AnonTaskStats) -> AnonTaskStats:
+        pass
+    @overload
+    def __add__(self, other: 'TaskStats') -> 'TaskStats':
+        pass
+    def __add__(self, other: Union[AnonTaskStats, 'TaskStats']) -> Union[AnonTaskStats, 'TaskStats']:
+        if isinstance(other, AnonTaskStats):
+            return self.to_anon_stats() + other
+
+        if isinstance(other, TaskStats):
+            if self.strong_id != other.strong_id:
+                raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
+            if not _is_equal_json_values(self.json_metadata, other.json_metadata) or self.decoder != other.decoder:
+                raise ValueError(
+                    "A stat had the same strong id as another, but their other identifying information (json_metadata, decoder) differed.\n"
+                    "The strong id is supposed to be a cryptographic hash that uniquely identifies what was sampled, so this is an error.\n"
+                    "\n"
+                    "This failure can occur when post-processing data (e.g. combining X basis stats and Z basis stats into synthetic both-basis stats).\n"
+                    "To fix it, ensure any post-processing sets the strong id of the synthetic data in some cryptographically secure way.\n"
+                    "\n"
+                    "In some cases this can be caused by attempting to add a value that has gone through JSON serialization+parsing to one\n"
+                    "that hasn't, which causes things like tuples transforming into lists.\n"
+                    "\n"
+                    f"The two stats:\n1. {self!r}\n2. {other!r}")
+
+            total = self.to_anon_stats() + other.to_anon_stats()
+            return TaskStats(
+                decoder=self.decoder,
+                strong_id=self.strong_id,
+                json_metadata=self.json_metadata,
+                shots=total.shots,
+                errors=total.errors,
+                discards=total.discards,
+                seconds=total.seconds,
+                custom_counts=total.custom_counts,
+            )
+
+        return NotImplemented
+    __radd__ = __add__
 
     def to_anon_stats(self) -> AnonTaskStats:
         """Returns a `sinter.AnonTaskStats` with the same statistics.

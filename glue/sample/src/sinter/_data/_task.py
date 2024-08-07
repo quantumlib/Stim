@@ -8,7 +8,7 @@ from typing import Union
 
 import numpy as np
 
-from sinter._collection_options import CollectionOptions
+from sinter._data._collection_options import CollectionOptions
 
 if TYPE_CHECKING:
     import sinter

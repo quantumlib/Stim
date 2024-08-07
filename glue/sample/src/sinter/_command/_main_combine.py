@@ -6,8 +6,7 @@ import sys
 from typing import List, Any
 
 import sinter
-from sinter._csv_out import CSV_HEADER
-from sinter._existing_data import ExistingData
+from sinter._data import CSV_HEADER, ExistingData
 from sinter._plotting import better_sorted_str_terms
 
 

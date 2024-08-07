@@ -1,7 +1,7 @@
 import pathlib
 import tempfile
 
-from sinter._main import main
+from sinter._command._main import main
 
 
 def test_main_predict():

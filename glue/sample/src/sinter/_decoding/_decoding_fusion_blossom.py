@@ -5,7 +5,7 @@ from typing import Callable, List, TYPE_CHECKING, Tuple
 import numpy as np
 import stim
 
-from sinter._decoding_decoder_class import Decoder, CompiledDecoder
+from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder
 
 if TYPE_CHECKING:
     import fusion_blossom
