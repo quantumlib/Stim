@@ -26,3 +26,4 @@
 ## 2024
 
 - [arXiv:2405.15854](https://arxiv.org/abs/2405.15854) → [Stim circuits for 'Accommodating Fabrication Defects on Floquet Codes with Minimal Hardware Requirements' manuscript](https://zenodo.org/records/11241876)
+- [arXiv:2408.00758](https://arxiv.org/abs/2408.00758) → [Stim circuits for ``To reset, or not to reset -- that is the question" manuscript](https://zenodo.org/records/13152440)
