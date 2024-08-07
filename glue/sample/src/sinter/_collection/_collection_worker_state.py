@@ -1,5 +1,6 @@
 import queue
 import time
+from typing import Any
 from typing import Optional
 from typing import TYPE_CHECKING
 
@@ -70,10 +71,32 @@ class CollectionWorkerState:
         self.last_flush_message_time = time.monotonic()
         self.soft_error_flush_threshold: int = 1
 
+    def _send_message_to_manager(self, message: Any):
+        self.out.put(message)
+
+    def state_summary(self) -> str:
+        lines = [
+            f'Worker(id={self.worker_id}) [',
+            f'    max_flush_period={self.max_flush_period}',
+            f'    cur_flush_period={self.cur_flush_period}',
+            f'    sampler={self.sampler}',
+            f'    compiled_sampler={self.compiled_sampler}',
+            f'    current_task={self.current_task}',
+            f'    current_error_cutoff={self.current_error_cutoff}',
+            f'    custom_error_count_key={self.custom_error_count_key}',
+            f'    current_task_shots_left={self.current_task_shots_left}',
+            f'    unflushed_results={self.unflushed_results}',
+            f'    last_flush_message_time={self.last_flush_message_time}',
+            f'    soft_error_flush_threshold={self.soft_error_flush_threshold}',
+            f']',
+        ]
+        return '\n' + '\n'.join(lines) + '\n'
+
     def flush_results(self):
         if self.unflushed_results.shots > 0:
             self.last_flush_message_time = time.monotonic()
-            self.out.put((
+            self.cur_flush_period = min(self.cur_flush_period * 1.4, self.max_flush_period)
+            self._send_message_to_manager((
                 'flushed_results',
                 self.worker_id,
                 (self.current_task.strong_id(), self.unflushed_results),
@@ -85,7 +108,7 @@ class CollectionWorkerState:
     def accept_shots(self, *, shots_delta: int):
         assert shots_delta >= 0
         self.current_task_shots_left += shots_delta
-        self.out.put((
+        self._send_message_to_manager((
             'accepted_shots',
             self.worker_id,
             (self.current_task.strong_id(), shots_delta),
@@ -97,9 +120,7 @@ class CollectionWorkerState:
         self.current_task_shots_left -= returned_shots
         if self.current_task_shots_left <= 0:
             self.flush_results()
-        if self.current_task_shots_left < 0:
-            self.current_task_shots_left = 0
-        self.out.put((
+        self._send_message_to_manager((
             'returned_shots',
             self.worker_id,
             (self.current_task.strong_id(), returned_shots),
@@ -107,7 +128,7 @@ class CollectionWorkerState:
 
     def compute_strong_id(self, *, new_task: Task):
         strong_id = _fill_in_task(new_task).strong_id()
-        self.out.put((
+        self._send_message_to_manager((
             'computed_strong_id',
             self.worker_id,
             strong_id,
@@ -123,7 +144,7 @@ class CollectionWorkerState:
         self.current_task_shots_left = 0
         self.last_flush_message_time = time.monotonic()
 
-        self.out.put((
+        self._send_message_to_manager((
             'changed_job',
             self.worker_id,
             (self.current_task.strong_id(),),
@@ -196,7 +217,8 @@ class CollectionWorkerState:
             assert isinstance(some_work_done, AnonTaskStats)
             self.current_task_shots_left -= some_work_done.shots
             if self.current_error_cutoff is not None:
-                self.current_error_cutoff -= self.num_unflushed_errors()
+                errors_done = some_work_done.custom_counts[self.custom_error_count_key] if self.custom_error_count_key is not None else some_work_done.errors
+                self.current_error_cutoff -= errors_done
             self.unflushed_results += some_work_done
             did_some_work = True
 
@@ -208,7 +230,6 @@ class CollectionWorkerState:
             if self.current_task_shots_left <= 0 or self.last_flush_message_time + self.cur_flush_period < time.monotonic():
                 should_flush = True
         if should_flush:
-            self.cur_flush_period = min(self.cur_flush_period * 1.4, self.max_flush_period)
             did_some_work |= self.flush_results()
 
         return did_some_work
@@ -228,7 +249,7 @@ class CollectionWorkerState:
 
         except BaseException as ex:
             import traceback
-            self.out.put((
+            self._send_message_to_manager((
                 'stopped_due_to_exception',
                 self.worker_id,
                 (None if self.current_task is None else self.current_task.strong_id(), self.current_task_shots_left, self.unflushed_results, traceback.format_exc(), ex),

@@ -6,6 +6,7 @@ import os
 import pathlib
 import queue
 import tempfile
+import threading
 from typing import Any, Optional, List, Dict, Iterable, Callable, Tuple
 from typing import Union
 from typing import cast
@@ -20,29 +21,32 @@ from sinter._decoding import Sampler, Decoder
 class _ManagedWorkerState:
     def __init__(self, worker_id: int, *, cpu_pin: Optional[int] = None):
         self.worker_id: int = worker_id
-        self.process: Optional[multiprocessing.Process] = None
+        self.process: Union[multiprocessing.Process, threading.Thread, None] = None
         self.input_queue: Optional[multiprocessing.Queue[Tuple[str, Any]]] = None
         self.assigned_work_key: Any = None
-        self.assigned_shots_remote: int = 0
         self.asked_to_drop_shots: int = 0
         self.cpu_pin = cpu_pin
+
+        # Shots transfer into this field when manager sends shot requests to workers.
+        # Shots transfer out of this field when clients flush results or respond to work return requests.
+        self.assigned_shots: int = 0
 
     def send_message(self, message: Any):
         self.input_queue.put(message)
 
     def ask_to_return_all_shots(self):
-        if self.asked_to_drop_shots == 0 and self.assigned_shots_remote > 0:
+        if self.asked_to_drop_shots == 0 and self.assigned_shots > 0:
             self.send_message((
                 'return_shots',
                 (
                     self.assigned_work_key,
-                    self.assigned_shots_remote,
+                    self.assigned_shots,
                 ),
             ))
-            self.asked_to_drop_shots = self.assigned_shots_remote
+            self.asked_to_drop_shots = self.assigned_shots
 
     def has_returned_all_shots(self) -> bool:
-        return self.assigned_shots_remote == 0 and self.asked_to_drop_shots == 0
+        return self.assigned_shots == 0 and self.asked_to_drop_shots == 0
 
     def is_available_to_reassign(self) -> bool:
         return self.assigned_work_key is None
@@ -78,6 +82,7 @@ class CollectionManager:
             count_observable_error_combos: bool = False,
             count_detection_events: bool = False,
             custom_error_count_key: Optional[str] = None,
+            use_threads_for_debugging: bool = False,
     ):
         assert isinstance(custom_decoders, dict)
         self.existing_data = existing_data
@@ -92,6 +97,7 @@ class CollectionManager:
         self.count_observable_error_combos = count_observable_error_combos
         self.count_detection_events = count_detection_events
         self.custom_error_count_key = custom_error_count_key
+        self.use_threads_for_debugging = use_threads_for_debugging
 
         self.shared_worker_output_queue: Optional[multiprocessing.SimpleQueue[Tuple[str, int, Any]]] = None
         self.task_states: Dict[Any, _ManagedTaskState] = {}
@@ -149,18 +155,25 @@ class CollectionManager:
                 worker_state.input_queue = multiprocessing.Queue()
                 worker_state.input_queue.cancel_join_thread()
                 worker_state.assigned_work_key = None
-                worker_state.process = multiprocessing.Process(
-                    target=collection_worker_loop,
-                    args=(
-                        self.worker_flush_period,
-                        worker_id,
-                        sampler,
-                        worker_state.input_queue,
-                        self.shared_worker_output_queue,
-                        worker_state.cpu_pin,
-                        self.custom_error_count_key,
-                    ),
+                args = (
+                    self.worker_flush_period,
+                    worker_id,
+                    sampler,
+                    worker_state.input_queue,
+                    self.shared_worker_output_queue,
+                    worker_state.cpu_pin,
+                    self.custom_error_count_key,
                 )
+                if self.use_threads_for_debugging:
+                    worker_state.process = threading.Thread(
+                        target=collection_worker_loop,
+                        args=args,
+                    )
+                else:
+                    worker_state.process = multiprocessing.Process(
+                        target=collection_worker_loop,
+                        args=args,
+                    )
 
                 if actually_start_worker_processes:
                     worker_state.process.start()
@@ -237,6 +250,8 @@ class CollectionManager:
 
         removed_workers = [state.process for state in self.worker_states]
         for state in self.worker_states:
+            if isinstance(state.process, threading.Thread):
+                state.send_message('stop')
             state.process = None
             state.assigned_work_key = None
             state.input_queue = None
@@ -246,7 +261,8 @@ class CollectionManager:
 
         # SIGKILL everything.
         for w in removed_workers:
-            w.kill()
+            if isinstance(w, multiprocessing.Process):
+                w.kill()
         # Wait for them to be done.
         for w in removed_workers:
             w.join()
@@ -260,7 +276,7 @@ class CollectionManager:
                 del self.task_states[task_id]
                 for worker_id in task_state.workers_assigned:
                     w = self.worker_states[worker_id]
-                    assert w.assigned_shots_remote == 0
+                    assert w.assigned_shots <= 0
                     assert w.asked_to_drop_shots == 0
                     w.assigned_work_key = None
                 self._distribute_work()
@@ -278,7 +294,7 @@ class CollectionManager:
         for worker_id, worker in enumerate(self.worker_states):
             lines.append(f'worker {worker_id}:'
                          f' asked_to_drop_shots={worker.asked_to_drop_shots}'
-                         f' assigned_shots_remote={worker.assigned_shots_remote}'
+                         f' assigned_shots={worker.assigned_shots}'
                          f' assigned_work_key={worker.assigned_work_key}')
         for task in self.task_states.values():
             lines.append(f'task {task.strong_id=}:\n'
@@ -304,8 +320,18 @@ class CollectionManager:
             assert worker_state.assigned_work_key == task_strong_id
             task_state = self.task_states[task_strong_id]
 
-            worker_state.assigned_shots_remote -= anon_stat.shots
+            worker_state.assigned_shots -= anon_stat.shots
             task_state.shots_left -= anon_stat.shots
+            if worker_state.assigned_shots < 0:
+                # Worker over-achieved. Correct the imbalance by giving them the shots.
+                extra_shots = abs(worker_state.assigned_shots)
+                worker_state.assigned_shots += extra_shots
+                task_state.shots_unassigned -= extra_shots
+                worker_state.send_message((
+                    'accept_shots',
+                    (task_state.strong_id, extra_shots),
+                ))
+
             if self.custom_error_count_key is None:
                 task_state.errors_left -= anon_stat.errors
             else:
@@ -346,9 +372,8 @@ class CollectionManager:
             worker_state.asked_to_drop_shots = 0
             worker_state.asked_to_drop_errors = 0
             task_state.shots_unassigned += shots_returned
-            worker_state.assigned_shots_remote -= shots_returned
-            if worker_state.assigned_shots_remote < 0:
-                worker_state.assigned_shots_remote = 0
+            worker_state.assigned_shots -= shots_returned
+            assert worker_state.assigned_shots >= 0
             self._handle_task_progress(task_key)
 
         elif message_type == 'stopped_due_to_exception':
@@ -415,14 +440,14 @@ class CollectionManager:
         expected_shots_per_worker = (task_state.shots_left + num_task_workers - 1) // num_task_workers
 
         # Give unassigned shots to idle workers.
-        for worker_id in sorted(task_state.workers_assigned, key=lambda wid: self.worker_states[wid].assigned_shots_remote):
+        for worker_id in sorted(task_state.workers_assigned, key=lambda wid: self.worker_states[wid].assigned_shots):
             worker_state = self.worker_states[worker_id]
-            if worker_state.assigned_shots_remote < expected_shots_per_worker:
-                shots_to_assign = min(expected_shots_per_worker - worker_state.assigned_shots_remote,
+            if worker_state.assigned_shots < expected_shots_per_worker:
+                shots_to_assign = min(expected_shots_per_worker - worker_state.assigned_shots,
                                       task_state.shots_unassigned)
                 if shots_to_assign > 0:
                     task_state.shots_unassigned -= shots_to_assign
-                    worker_state.assigned_shots_remote += shots_to_assign
+                    worker_state.assigned_shots += shots_to_assign
                     worker_state.send_message((
                         'accept_shots',
                         (task_state.strong_id, shots_to_assign),
@@ -461,7 +486,7 @@ class CollectionManager:
             line = [
                 f'{w}',
                 self.partial_tasks[k].decoder,
-                ("?" if dt is None else "[draining]" if dt <= 0 else "<1m" if dt < 1 else str(round(dt)) + 'm') + ('·∞' if w == 0 else ''),
+                ("?" if dt is None or dt == 0 else "[draining]" if dt <= 0 else "<1m" if dt < 1 else str(round(dt)) + 'm') + ('·∞' if w == 0 else ''),
                 f'{max_shots - c.shots}' if max_shots is not None else f'{c.shots}',
                 f'{max_errors - c_errors}' if max_errors is not None else f'{c_errors}',
                 ",".join(
@@ -518,18 +543,18 @@ class CollectionManager:
         if not self.started or not task_state.workers_assigned or task_state.shots_left <= 0:
             return
 
-        if all(self.worker_states[w].assigned_shots_remote for w in task_state.workers_assigned):
+        if all(self.worker_states[w].assigned_shots > 0 for w in task_state.workers_assigned):
             return
 
         w = len(task_state.workers_assigned)
         expected_shots_per_worker = (task_state.shots_left + w - 1) // w
 
         # There are idle workers that couldn't be given any shots. Take shots from other workers.
-        for worker_id in sorted(task_state.workers_assigned, key=lambda w: self.worker_states[w].assigned_shots_remote, reverse=True):
+        for worker_id in sorted(task_state.workers_assigned, key=lambda w: self.worker_states[w].assigned_shots, reverse=True):
             worker_state = self.worker_states[worker_id]
-            if worker_state.asked_to_drop_shots or worker_state.assigned_shots_remote <= expected_shots_per_worker:
+            if worker_state.asked_to_drop_shots or worker_state.assigned_shots <= expected_shots_per_worker:
                 continue
-            shots_to_take = worker_state.assigned_shots_remote - expected_shots_per_worker
+            shots_to_take = worker_state.assigned_shots - expected_shots_per_worker
             assert shots_to_take > 0
             worker_state.asked_to_drop_shots = shots_to_take
             task_state.shot_return_requests += 1

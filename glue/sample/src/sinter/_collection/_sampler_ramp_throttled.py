@@ -20,6 +20,9 @@ class RampThrottledSampler(Sampler):
         self.target_batch_seconds = target_batch_seconds
         self.max_batch_shots = max_batch_shots
 
+    def __str__(self) -> str:
+        return f'CompiledRampThrottledSampler({self.sub_sampler})'
+
     def compiled_sampler_for_task(self, task: Task) -> CompiledSampler:
         compiled_sub_sampler = self.sub_sampler.compiled_sampler_for_task(task)
         if compiled_sub_sampler.handles_throttling():
@@ -39,18 +42,25 @@ class CompiledRampThrottledSampler(CompiledSampler):
         self.batch_shots = 1
         self.max_batch_shots = max_batch_shots
 
+    def __str__(self) -> str:
+        return f'CompiledRampThrottledSampler({self.sub_sampler})'
+
     def sample(self, max_shots: int) -> AnonTaskStats:
         t0 = time.monotonic()
-        result = self.sub_sampler.sample(min(max_shots, self.batch_shots))
+        actual_shots = min(max_shots, self.batch_shots)
+        result = self.sub_sampler.sample(actual_shots)
         dt = time.monotonic() - t0
 
         # Rebalance number of shots.
         if self.batch_shots > 1 and dt > self.target_batch_seconds * 1.3:
             self.batch_shots //= 2
-        for _ in range(4):
-            if self.batch_shots * 2 > self.max_batch_shots or dt > self.target_batch_seconds * 0.3:
-                break
-            self.batch_shots *= 2
-            dt *= 2
+        if result.shots * 2 >= actual_shots:
+            for _ in range(4):
+                if self.batch_shots * 2 > self.max_batch_shots:
+                    break
+                if dt > self.target_batch_seconds * 0.3:
+                    break
+                self.batch_shots *= 2
+                dt *= 2
 
         return result

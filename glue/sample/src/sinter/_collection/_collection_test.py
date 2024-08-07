@@ -1,6 +1,9 @@
 import collections
+import math
 import pathlib
+import sys
 import tempfile
+import time
 
 import pytest
 import stim
@@ -238,3 +241,34 @@ def test_fixed_size_sampler():
         custom_decoders={'fixed_size_sampler': FixedSizeSampler()}
     )
     assert 100_000 <= results[0].shots <= 100_000 + 3000
+
+
+class MockTimingSampler(sinter.Sampler, sinter.CompiledSampler):
+    def compiled_sampler_for_task(self, task: sinter.Task) -> sinter.CompiledSampler:
+        return self
+
+    def sample(self, suggested_shots: int) -> 'sinter.AnonTaskStats':
+        actual_shots = -(-suggested_shots // 1024) * 1024
+        time.sleep(actual_shots * 0.00001)
+        return sinter.AnonTaskStats(
+            shots=actual_shots,
+            errors=5,
+            seconds=actual_shots * 0.00001,
+        )
+
+
+def test_mock_timing_sampler():
+    results = sinter.collect(
+        num_workers=12,
+        tasks=[
+            sinter.Task(
+                circuit=stim.Circuit(),
+                decoder='MockTimingSampler',
+                json_metadata={},
+            )
+        ],
+        max_shots=1_000_000,
+        max_errors=10_000,
+        custom_decoders={'MockTimingSampler': MockTimingSampler()},
+    )
+    assert 1_000_000 <= results[0].shots <= 1_000_000 + 12000
