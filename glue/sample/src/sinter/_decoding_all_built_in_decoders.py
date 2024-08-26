@@ -10,6 +10,8 @@ BUILT_IN_DECODERS: Dict[str, Decoder] = {
     'vacuous': VacuousDecoder(),
     'pymatching': PyMatchingDecoder(),
     'fusion_blossom': FusionBlossomDecoder(),
-    'hyper_uf': HyperUFDecoder(),
-    'mwpf': MwpfDecoder(),
+    # an implementation of (weighted) hypergraph UF decoder (https://arxiv.org/abs/2103.08049)
+    'hypergraph_union_find': HyperUFDecoder(),
+    # Minimum-Weight Parity Factor using similar primal-dual method the blossom algorithm (https://pypi.org/project/mwpf/)
+    'mw_parity_factor': MwpfDecoder(),  
 }
