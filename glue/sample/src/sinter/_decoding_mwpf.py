@@ -1,6 +1,6 @@
 import math
 import pathlib
-from typing import Callable, List, TYPE_CHECKING, Tuple, Any
+from typing import Callable, List, TYPE_CHECKING, Tuple, Any, Optional
 
 import numpy as np
 import stim
@@ -50,12 +50,15 @@ class MwpfCompiledDecoder(CompiledDecoder):
                 )
             )
             syndrome = mwpf.SyndromePattern(defect_vertices=dets_sparse)
-            self.solver.solve(syndrome)
-            prediction = int(
-                np.bitwise_xor.reduce(self.fault_masks[self.solver.subgraph()])
-            )
+            if self.solver is None:
+                prediction = 0
+            else:
+                self.solver.solve(syndrome)
+                prediction = int(
+                    np.bitwise_xor.reduce(self.fault_masks[self.solver.subgraph()])
+                )
+                self.solver.clear()
             predictions[shot] = np.packbits(prediction, bitorder="little")
-            self.solver.clear()
         return predictions
 
 
@@ -92,6 +95,8 @@ class MwpfDecoder(Decoder):
         tmp_dir: pathlib.Path,
         decoder_cls: Any = None,
     ) -> None:
+        import mwpf
+
         error_model = stim.DetectorErrorModel.from_file(dem_path)
         solver, fault_masks = detector_error_model_to_mwpf_solver_and_fault_masks(
             error_model, decoder_cls=decoder_cls
@@ -111,14 +116,17 @@ class MwpfDecoder(Decoder):
                         )
                     )
                     syndrome = mwpf.SyndromePattern(defect_vertices=dets_sparse)
-                    solver.solve(syndrome)
-                    prediction = int(
-                        np.bitwise_xor.reduce(fault_masks[solver.subgraph()])
-                    )
+                    if solver is None:
+                        prediction = 0
+                    else:
+                        solver.solve(syndrome)
+                        prediction = int(
+                            np.bitwise_xor.reduce(fault_masks[solver.subgraph()])
+                        )
+                        solver.clear()
                     obs_out_f.write(
                         prediction.to_bytes((num_obs + 7) // 8, byteorder="little")
                     )
-                    solver.clear()
 
 
 class HyperUFDecoder(MwpfDecoder):
@@ -209,9 +217,28 @@ def iter_flatten_model(
     _helper(model, 1)
 
 
+def deduplicate_hyperedges(
+    hyperedges: List[Tuple[List[int], float, int]]
+) -> List[Tuple[List[int], float, int]]:
+    indices: dict[frozenset[int], int] = dict()
+    result: List[Tuple[List[int], float, int]] = []
+    for dets, weight, mask in hyperedges:
+        dets_set = frozenset(dets)
+        if dets_set in indices:
+            idx = indices[dets_set]
+            p1 = 1 / (1 + math.exp(weight))
+            p2 = 1 / (1 + math.exp(result[idx][1]))
+            p = p1 * (1 - p2) + p2 * (1 - p1)
+            result[idx] = (dets, math.log((1 - p) / p), mask)
+        else:
+            indices[dets_set] = len(result)
+            result.append((dets, weight, mask))
+    return result
+
+
 def detector_error_model_to_mwpf_solver_and_fault_masks(
     model: stim.DetectorErrorModel, decoder_cls: Any = None
-) -> Tuple["mwpf.SolverSerialJointSingleHair", np.ndarray]:
+) -> Tuple[Optional["mwpf.SolverSerialJointSingleHair"], np.ndarray]:
     """Convert a stim error model into a NetworkX graph."""
 
     try:
@@ -248,6 +275,8 @@ def detector_error_model_to_mwpf_solver_and_fault_masks(
         handle_error=handle_error,
         handle_detector_coords=handle_detector_coords,
     )
+    # mwpf package panic on duplicate edges, thus we need to handle them here
+    hyperedges = deduplicate_hyperedges(hyperedges)
 
     # fix the input by connecting an edge to all isolated vertices
     for idx in range(num_detectors):
@@ -269,6 +298,10 @@ def detector_error_model_to_mwpf_solver_and_fault_masks(
         # default to the solver with highest accuracy
         decoder_cls = mwpf.SolverSerialJointSingleHair
     return (
-        decoder_cls(initializer),
+        (
+            decoder_cls(initializer)
+            if num_detectors > 0 and len(rescaled_edges) > 0
+            else None
+        ),
         fault_masks,
     )
