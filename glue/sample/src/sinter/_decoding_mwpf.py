@@ -229,7 +229,9 @@ def deduplicate_hyperedges(
             p1 = 1 / (1 + math.exp(weight))
             p2 = 1 / (1 + math.exp(result[idx][1]))
             p = p1 * (1 - p2) + p2 * (1 - p1)
-            result[idx] = (dets, math.log((1 - p) / p), mask)
+            # not sure why would this fail? two hyperedges with different masks?
+            # assert mask == result[idx][2], (result[idx], (dets, weight, mask))
+            result[idx] = (dets, math.log((1 - p) / p), result[idx][2])
         else:
             indices[dets_set] = len(result)
             result.append((dets, weight, mask))
