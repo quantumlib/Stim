@@ -82,6 +82,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitInstruction.gate_args_copy`](#stim.CircuitInstruction.gate_args_copy)
     - [`stim.CircuitInstruction.name`](#stim.CircuitInstruction.name)
     - [`stim.CircuitInstruction.num_measurements`](#stim.CircuitInstruction.num_measurements)
+    - [`stim.CircuitInstruction.target_groups`](#stim.CircuitInstruction.target_groups)
     - [`stim.CircuitInstruction.targets_copy`](#stim.CircuitInstruction.targets_copy)
 - [`stim.CircuitRepeatBlock`](#stim.CircuitRepeatBlock)
     - [`stim.CircuitRepeatBlock.__eq__`](#stim.CircuitRepeatBlock.__eq__)
@@ -123,6 +124,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemInstruction.__repr__`](#stim.DemInstruction.__repr__)
     - [`stim.DemInstruction.__str__`](#stim.DemInstruction.__str__)
     - [`stim.DemInstruction.args_copy`](#stim.DemInstruction.args_copy)
+    - [`stim.DemInstruction.target_groups`](#stim.DemInstruction.target_groups)
     - [`stim.DemInstruction.targets_copy`](#stim.DemInstruction.targets_copy)
     - [`stim.DemInstruction.type`](#stim.DemInstruction.type)
 - [`stim.DemRepeatBlock`](#stim.DemRepeatBlock)
@@ -3664,6 +3666,25 @@ def instruction_targets(
     """Within the error instruction, which may have hundreds of
     targets, which specific targets were being executed to
     produce the error.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     TICK
+        ...     Y_ERROR(0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> targets = err[0].circuit_error_locations[0].instruction_targets
+        >>> targets == stim.CircuitTargetsInsideInstruction(
+        ...     gate='Y_ERROR',
+        ...     args=[0.125],
+        ...     target_range_start=0,
+        ...     target_range_end=1,
+        ...     targets_in_range=(stim.GateTargetWithCoords(0, []),),
+        ... )
+        True
     """
 ```
 
@@ -3917,6 +3938,17 @@ def gate_args_copy(
     For noisy gates this typically a list of probabilities.
     For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable
     index.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.CircuitInstruction('X_ERROR', [2, 3], [0.125])
+        >>> instruction.gate_args_copy()
+        [0.125]
+
+        >>> instruction.gate_args_copy() == instruction.gate_args_copy()
+        True
+        >>> instruction.gate_args_copy() is instruction.gate_args_copy()
+        False
     """
 ```
 
@@ -3961,6 +3993,52 @@ def num_measurements(
     """
 ```
 
+<a name="stim.CircuitInstruction.target_groups"></a>
+```python
+# stim.CircuitInstruction.target_groups
+
+# (in class stim.CircuitInstruction)
+def target_groups(
+    self,
+) -> List[List[stim.GateTarget]]:
+    """Splits the instruction's targets into groups depending on the type of gate.
+
+    Single qubit gates like H get one group per target.
+    Two qubit gates like CX get one group per pair of targets.
+    Pauli product gates like MPP get one group per combined product.
+
+    Returns:
+        A list of groups of targets.
+
+    Examples:
+        >>> import stim
+        >>> for g in stim.Circuit('H 0 1 2')[0].target_groups():
+        ...     print(repr(g))
+        [stim.GateTarget(0)]
+        [stim.GateTarget(1)]
+        [stim.GateTarget(2)]
+
+        >>> for g in stim.Circuit('CX 0 1 2 3')[0].target_groups():
+        ...     print(repr(g))
+        [stim.GateTarget(0), stim.GateTarget(1)]
+        [stim.GateTarget(2), stim.GateTarget(3)]
+
+        >>> for g in stim.Circuit('MPP X0*Y1*Z2 X5*X6')[0].target_groups():
+        ...     print(repr(g))
+        [stim.target_x(0), stim.target_y(1), stim.target_z(2)]
+        [stim.target_x(5), stim.target_x(6)]
+
+        >>> for g in stim.Circuit('DETECTOR rec[-1] rec[-2]')[0].target_groups():
+        ...     print(repr(g))
+        [stim.target_rec(-1)]
+        [stim.target_rec(-2)]
+
+        >>> for g in stim.Circuit('CORRELATED_ERROR(0.1) X0 Y1')[0].target_groups():
+        ...     print(repr(g))
+        [stim.target_x(0), stim.target_y(1)]
+    """
+```
+
 <a name="stim.CircuitInstruction.targets_copy"></a>
 ```python
 # stim.CircuitInstruction.targets_copy
@@ -3970,6 +4048,17 @@ def targets_copy(
     self,
 ) -> List[stim.GateTarget]:
     """Returns a copy of the targets of the instruction.
+
+    Examples:
+        >>> import stim
+        >>> instruction = stim.CircuitInstruction('X_ERROR', [2, 3], [0.125])
+        >>> instruction.targets_copy()
+        [stim.GateTarget(2), stim.GateTarget(3)]
+
+        >>> instruction.targets_copy() == instruction.targets_copy()
+        True
+        >>> instruction.targets_copy() is instruction.targets_copy()
+        False
     """
 ```
 
@@ -5332,6 +5421,42 @@ def args_copy(
         True
         >>> instruction.args_copy() is instruction.args_copy()
         False
+    """
+```
+
+<a name="stim.DemInstruction.target_groups"></a>
+```python
+# stim.DemInstruction.target_groups
+
+# (in class stim.DemInstruction)
+def target_groups(
+    self,
+) -> List[List[stim.DemTarget]]:
+    """Returns a copy of the instruction's targets, split by target separators.
+
+    When a detector error model instruction contains a suggested decomposition,
+    its targets contain separators (`stim.DemTarget("^")`). This method splits the
+    targets into groups based the separators, similar to how `str.split` works.
+
+    Returns:
+        A list of groups of targets.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.01) D0 D1 ^ D2
+        ...     error(0.01) D0 L0
+        ...     error(0.01)
+        ... ''')
+
+        >>> dem[0].target_groups()
+        [[stim.DemTarget('D0'), stim.DemTarget('D1')], [stim.DemTarget('D2')]]
+
+        >>> dem[1].target_groups()
+        [[stim.DemTarget('D0'), stim.DemTarget('L0')]]
+
+        >>> dem[2].target_groups()
+        [[]]
     """
 ```
 
@@ -8928,7 +9053,7 @@ class GateTarget:
         >>> circuit[0].targets_copy()[0]
         stim.GateTarget(0)
         >>> circuit[0].targets_copy()[1]
-        stim.GateTarget(stim.target_inv(1))
+        stim.target_inv(1)
     """
 ```
 

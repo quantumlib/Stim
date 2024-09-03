@@ -26,3 +26,6 @@
 ## 2024
 
 - [arXiv:2405.15854](https://arxiv.org/abs/2405.15854) → [Stim circuits for 'Accommodating Fabrication Defects on Floquet Codes with Minimal Hardware Requirements' manuscript](https://zenodo.org/records/11241876)
+- [arXiv:2407.13826 ](https://arxiv.org/abs/2407.13826) → [Stim circuits for 'Designing fault-tolerant circuits using detector error models'](https://github.com/peter-janderks/short_measurement_schedules_simulations/tree/main/stim_circuits)
+- [arXiv:2408.00758](https://arxiv.org/abs/2408.00758) → [Stim circuits for ``To reset, or not to reset -- that is the question" manuscript](https://zenodo.org/records/13152440)
+- [arXiv:2408.11894](https://arxiv.org/abs/2408.11894) → [Stim circuits for 'Automated Synthesis of Fault-Tolerant State Preparation Circuits for Quantum Error Correction Codes'](https://github.com/cda-tum/mqt-qecc/tree/main/src/mqt/qecc/ft_stateprep/eval/circuits)

@@ -624,6 +624,25 @@ void stim_pybind::pybind_circuit_error_location_methods(
             Within the error instruction, which may have hundreds of
             targets, which specific targets were being executed to
             produce the error.
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0
+                ...     TICK
+                ...     Y_ERROR(0.125) 0
+                ...     M 0
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> targets = err[0].circuit_error_locations[0].instruction_targets
+                >>> targets == stim.CircuitTargetsInsideInstruction(
+                ...     gate='Y_ERROR',
+                ...     args=[0.125],
+                ...     target_range_start=0,
+                ...     target_range_end=1,
+                ...     targets_in_range=(stim.GateTargetWithCoords(0, []),),
+                ... )
+                True
         )DOC")
             .data());
 
