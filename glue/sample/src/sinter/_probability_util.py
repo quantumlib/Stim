@@ -2,6 +2,7 @@ import dataclasses
 import math
 import pathlib
 from typing import Any, Dict, Union, Callable, Sequence, TYPE_CHECKING, overload
+from typing import Optional
 
 import numpy as np
 
@@ -208,9 +209,9 @@ class Fit:
             of the best fit's square error, or whose likelihood was within some
             maximum Bayes factor of the max likelihood hypothesis.
     """
-    low: float
-    best: float
-    high: float
+    low: Optional[float]
+    best: Optional[float]
+    high: Optional[float]
 
     def __repr__(self) -> str:
         return f'sinter.Fit(low={self.low!r}, best={self.best!r}, high={self.high!r})'

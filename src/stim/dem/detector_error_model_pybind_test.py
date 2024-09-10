@@ -155,7 +155,7 @@ def test_append_bad():
     m.append("shift_detectors", [], [5])
     m += m * 3
 
-    with pytest.raises(ValueError, match=r"Bad target 'stim.target_relative_detector_id\(0\)' for instruction 'shift_detectors'"):
+    with pytest.raises(ValueError, match=r"Bad target 'stim.DemTarget\('D0'\)' for instruction 'shift_detectors'"):
         m.append("shift_detectors", [0.125, 0.25], [stim.target_relative_detector_id(0)])
     with pytest.raises(ValueError, match="takes 1 argument"):
         m.append("error", [0.125, 0.25], [stim.target_relative_detector_id(0)])

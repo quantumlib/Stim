@@ -129,7 +129,8 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
                 obs_slice.clear();
             }
         }
-        obs_data = simd_bit_table_to_numpy(obs_table, circuit_stats.num_observables, num_shots, bit_pack_result, true, pybind11::none());
+        obs_data = simd_bit_table_to_numpy(
+            obs_table, circuit_stats.num_observables, num_shots, bit_pack_result, true, pybind11::none());
     }
 
     // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.

@@ -37,6 +37,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/flow.h"
+#include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"
 #include "stim/util_top/circuit_to_detecting_regions.h"
 #include "stim/util_top/circuit_vs_tableau.h"
@@ -178,11 +179,7 @@ std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization
     return stim::likeliest_error_sat_problem(dem, quantization, format);
 }
 
-void circuit_insert(
-    Circuit &self,
-    pybind11::ssize_t &index,
-    pybind11::object &operation) {
-
+void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &operation) {
     if (index < 0) {
         index += self.operations.size();
     }
@@ -724,8 +721,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Examples:
                 >>> import stim
                 >>> stim.Circuit('''
-                ...    X 1
-                ...    M 0 1
+                ...     X 1
+                ...     M 0 1
                 ... ''').reference_sample()
                 array([False,  True])
         )DOC")
@@ -1134,9 +1131,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Inserts an operation at the given index, pushing existing operations forward.
             @signature def insert(self, index: int, operation: Union[stim.CircuitInstruction, stim.Circuit]) -> None:
 
-            Note that, unlike when appending operations or parsing stim circuit files,
-            inserted operations aren't automatically fused into the preceding operation.
-            This is to avoid creating complicated situations where it's difficult to reason
+            Beware that inserted operations are automatically fused with the preceding
+            and following operations, if possible. This can make it complex to reason
             about how the indices of operations change in response to insertions.
 
             Args:
@@ -1147,7 +1143,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     indices relative to the end of the circuit instead of the start.
 
                     Instructions before the index are not shifted. Instructions that
-                    were at or after the index are shifted forwards.
+                    were at or after the index are shifted forwards as needed.
                 operation: The object to insert. This can be a single
                     stim.CircuitInstruction or an entire stim.Circuit.
 
@@ -1171,14 +1167,13 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 stim.Circuit('''
                     H 0
                     Y 3 4 5
-                    S 1
-                    S 999
+                    S 1 999
                     CX 0 1
                     CZ 2 3
                     X 2
                 ''')
         )DOC")
-             .data());
+            .data());
 
     c.def(
         "append_from_stim_program_text",
@@ -2822,6 +2817,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like P -> 1 means the circuit measures P.
             A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flow: The flow to check for.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2857,6 +2854,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                 >>> stim.Circuit('''
                 ...     RY 0
+                ... ''').has_flow(stim.Flow(
+                ...     output=stim.PauliString("Y"),
+                ... ))
+                True
+
+                >>> stim.Circuit('''
+                ...     RY 0
+                ...     X_ERROR(0.1) 0
                 ... ''').has_flow(stim.Flow(
                 ...     output=stim.PauliString("Y"),
                 ... ))
@@ -2943,6 +2948,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             because, behind the scenes, the circuit can be iterated once instead of once
             per flow.
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flows: An iterable of `stim.Flow` instances representing the flows to check.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2983,6 +2990,61 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 positive, and a 0% chance of a false negative. So, when the method returns
                 True, there is technically still a 2^-256 chance the circuit doesn't have
                 the flow. This is lower than the chance of a cosmic ray flipping the result.
+        )DOC")
+            .data());
+
+    c.def(
+        "flow_generators",
+        &circuit_flow_generators<MAX_BITWORD_WIDTH>,
+        clean_doc_string(R"DOC(
+            @signature def flow_generators(self) -> List[stim.Flow]:
+            Returns a list of flows that generate all of the circuit's flows.
+
+            Every stabilizer flow that the circuit implements is a product of some
+            subset of the returned generators. Every returned flow will be a flow
+            of the circuit.
+
+            Returns:
+                A list of flow generators for the circuit.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit("H 0").flow_generators()
+                [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+                >>> stim.Circuit("M 0").flow_generators()
+                [stim.Flow("1 -> Z xor rec[0]"), stim.Flow("Z -> rec[0]")]
+
+                >>> stim.Circuit("RX 0").flow_generators()
+                [stim.Flow("1 -> X")]
+
+                >>> for flow in stim.Circuit("MXX 0 1").flow_generators():
+                ...     print(flow)
+                1 -> XX xor rec[0]
+                _X -> _X
+                X_ -> _X xor rec[0]
+                ZZ -> ZZ
+
+                >>> for flow in stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=2,
+                ...     distance=3,
+                ...     after_clifford_depolarization=1e-3,
+                ... ).flow_generators():
+                ...     print(flow)
+                1 -> rec[0]
+                1 -> rec[1]
+                1 -> rec[2]
+                1 -> rec[3]
+                1 -> rec[4]
+                1 -> rec[5]
+                1 -> rec[6]
+                1 -> ____Z
+                1 -> ___Z_
+                1 -> __Z__
+                1 -> _Z___
+                1 -> Z____
         )DOC")
             .data());
 
@@ -3205,9 +3267,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("type") = "timeline-text",
         pybind11::kw_only(),
         pybind11::arg("tick") = pybind11::none(),
+        pybind11::arg("rows") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
@@ -3281,11 +3344,19 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                     Passing `range(A, B)` for a time slice will show the
                     operations between tick A and tick B.
-                filter_coords: A set of acceptable coordinate prefixes, or
-                    desired stim.DemTargets. For detector slice diagrams, only
-                    detectors match one of the filters are included. If no filter
-                    is specified, all detectors are included (but no observables).
-                    To include an observable, add it as one of the filters.
+                rows: In diagrams that have multiple separate pieces, such as timeslice
+                    diagrams and detslice diagrams, this controls how many rows of
+                    pieces there will be. If not specified, a number of rows that creates
+                    a roughly square layout will be chosen.
+                filter_coords: A list of things to include in the diagram. Different
+                    effects depending on the diagram.
+
+                    For detslice diagrams, the filter defaults to showing all detectors
+                    and no observables. When specified, each list entry can be a collection
+                    of floats (detectors whose coordinates start with the same numbers will
+                    be included), a stim.DemTarget (specifying a detector or observable
+                    to include), a string like "D5" or "L0" specifying a detector or
+                    observable to include.
 
             Returns:
                 An object whose `__str__` method returns the diagram, so that

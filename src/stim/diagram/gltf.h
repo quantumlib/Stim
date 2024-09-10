@@ -11,30 +11,23 @@
 
 namespace stim_draw_internal {
 
-constexpr size_t GL_FLOAT = 5126;
-constexpr size_t GL_ARRAY_BUFFER = 34962;
-constexpr size_t GL_UNSIGNED_SHORT = 5123;
-constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-constexpr size_t GL_TRIANGLE_STRIP = 5;
-constexpr size_t GL_TRIANGLES = 4;
-constexpr size_t GL_TRIANGLE_FAN = 6;
+constexpr uint64_t GL_FLOAT = 5126;
+constexpr uint64_t GL_ARRAY_BUFFER = 34962;
+constexpr uint64_t GL_TRIANGLES = 4;
+constexpr uint64_t GL_TRIANGLE_FAN = 6;
 
-constexpr size_t GL_LINES = 1;
-constexpr size_t GL_LINE_STRIP = 3;
-constexpr size_t GL_LINE_LOOP = 2;
+constexpr uint64_t GL_LINES = 1;
+constexpr uint64_t GL_LINE_STRIP = 3;
+constexpr uint64_t GL_LINE_LOOP = 2;
 
-constexpr size_t GL_REPEAT = 10497;
-constexpr size_t GL_CLAMP = 10496;
-constexpr size_t GL_CLAMP_TO_EDGE = 33071;
-constexpr size_t GL_LINEAR = 9729;
-constexpr size_t GL_LINEAR_MIPMAP_NEAREST = 9987;
-constexpr size_t GL_NEAREST = 9728;
+constexpr uint64_t GL_CLAMP_TO_EDGE = 33071;
+constexpr uint64_t GL_NEAREST = 9728;
 
 struct GltfId {
     std::string name;
-    size_t index;
+    uint64_t index;
 
-    GltfId(std::string name) : name(name), index(SIZE_MAX) {
+    GltfId(std::string name) : name(name), index(UINT64_MAX) {
     }
     GltfId() = delete;
 };
@@ -81,7 +74,7 @@ struct GltfBuffer {
         return std::map<std::string, JsonObj>{
             {"name", id.name},
             {"uri", ss.str()},
-            {"byteLength", vertex_data_size},
+            {"byteLength", (uint64_t)vertex_data_size},
         };
     }
 
@@ -90,7 +83,7 @@ struct GltfBuffer {
             {"name", id.name},
             {"buffer", id.index},
             {"byteOffset", 0},
-            {"byteLength", vertices.size() * sizeof(Coord<DIM>)},
+            {"byteLength", (uint64_t)(vertices.size() * sizeof(Coord<DIM>))},
             {"target", GL_ARRAY_BUFFER},
         };
     }
@@ -115,7 +108,7 @@ struct GltfBuffer {
             {"bufferView", id.index},
             {"byteOffset", 0},
             {"componentType", GL_FLOAT},
-            {"count", vertices.size()},
+            {"count", (uint64_t)vertices.size()},
             {"type", "VEC" + std::to_string(DIM)},
             {"min", std::move(min_v)},
             {"max", std::move(max_v)},
@@ -125,10 +118,10 @@ struct GltfBuffer {
 
 struct GltfSampler {
     GltfId id;
-    size_t magFilter;
-    size_t minFilter;
-    size_t wrapS;
-    size_t wrapT;
+    uint64_t magFilter;
+    uint64_t minFilter;
+    uint64_t wrapS;
+    uint64_t wrapT;
 
     void visit(const gltf_visit_callback &callback);
     JsonObj to_json() const;
@@ -165,7 +158,7 @@ struct GltfMaterial {
 
 struct GltfPrimitive {
     GltfId id;
-    size_t element_type;
+    uint64_t element_type;
     std::shared_ptr<GltfBuffer<3>> position_buffer;
     std::shared_ptr<GltfBuffer<2>> tex_coords_buffer;
     std::shared_ptr<GltfMaterial> material;

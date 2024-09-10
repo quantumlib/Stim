@@ -1,17 +1,3 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/circuit/circuit_instruction.pybind.h"
 
 #include "stim/circuit/gate_target.pybind.h"
@@ -90,6 +76,19 @@ std::vector<GateTarget> PyCircuitInstruction::targets_copy() const {
 std::vector<double> PyCircuitInstruction::gate_args_copy() const {
     return gate_args;
 }
+std::vector<std::vector<stim::GateTarget>> PyCircuitInstruction::target_groups() const {
+    std::vector<std::vector<stim::GateTarget>> results;
+    as_operation_ref().for_combined_target_groups([&](std::span<const GateTarget> group) {
+        std::vector<stim::GateTarget> copy;
+        for (auto g : group) {
+            if (!g.is_combiner()) {
+                copy.push_back(g);
+            }
+        }
+        results.push_back(std::move(copy));
+    });
+    return results;
+}
 
 pybind11::class_<PyCircuitInstruction> stim_pybind::pybind_circuit_instruction(pybind11::module &m) {
     return pybind11::class_<PyCircuitInstruction>(
@@ -143,10 +142,64 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
             .data());
 
     c.def(
+        "target_groups",
+        &PyCircuitInstruction::target_groups,
+        clean_doc_string(R"DOC(
+            @signature def target_groups(self) -> List[List[stim.GateTarget]]:
+            Splits the instruction's targets into groups depending on the type of gate.
+
+            Single qubit gates like H get one group per target.
+            Two qubit gates like CX get one group per pair of targets.
+            Pauli product gates like MPP get one group per combined product.
+
+            Returns:
+                A list of groups of targets.
+
+            Examples:
+                >>> import stim
+                >>> for g in stim.Circuit('H 0 1 2')[0].target_groups():
+                ...     print(repr(g))
+                [stim.GateTarget(0)]
+                [stim.GateTarget(1)]
+                [stim.GateTarget(2)]
+
+                >>> for g in stim.Circuit('CX 0 1 2 3')[0].target_groups():
+                ...     print(repr(g))
+                [stim.GateTarget(0), stim.GateTarget(1)]
+                [stim.GateTarget(2), stim.GateTarget(3)]
+
+                >>> for g in stim.Circuit('MPP X0*Y1*Z2 X5*X6')[0].target_groups():
+                ...     print(repr(g))
+                [stim.target_x(0), stim.target_y(1), stim.target_z(2)]
+                [stim.target_x(5), stim.target_x(6)]
+
+                >>> for g in stim.Circuit('DETECTOR rec[-1] rec[-2]')[0].target_groups():
+                ...     print(repr(g))
+                [stim.target_rec(-1)]
+                [stim.target_rec(-2)]
+
+                >>> for g in stim.Circuit('CORRELATED_ERROR(0.1) X0 Y1')[0].target_groups():
+                ...     print(repr(g))
+                [stim.target_x(0), stim.target_y(1)]
+        )DOC")
+            .data());
+
+    c.def(
         "targets_copy",
         &PyCircuitInstruction::targets_copy,
         clean_doc_string(R"DOC(
             Returns a copy of the targets of the instruction.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.CircuitInstruction('X_ERROR', [2, 3], [0.125])
+                >>> instruction.targets_copy()
+                [stim.GateTarget(2), stim.GateTarget(3)]
+
+                >>> instruction.targets_copy() == instruction.targets_copy()
+                True
+                >>> instruction.targets_copy() is instruction.targets_copy()
+                False
         )DOC")
             .data());
 
@@ -159,6 +212,42 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
             For noisy gates this typically a list of probabilities.
             For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable
             index.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.CircuitInstruction('X_ERROR', [2, 3], [0.125])
+                >>> instruction.gate_args_copy()
+                [0.125]
+
+                >>> instruction.gate_args_copy() == instruction.gate_args_copy()
+                True
+                >>> instruction.gate_args_copy() is instruction.gate_args_copy()
+                False
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_measurements",
+        [](const PyCircuitInstruction &self) -> uint64_t {
+            return self.as_operation_ref().count_measurement_results();
+        },
+        clean_doc_string(R"DOC(
+            Returns the number of bits produced when running this instruction.
+
+            Examples:
+                >>> import stim
+                >>> stim.CircuitInstruction('H', [0]).num_measurements
+                0
+                >>> stim.CircuitInstruction('M', [0]).num_measurements
+                1
+                >>> stim.CircuitInstruction('M', [2, 3, 5, 7, 11]).num_measurements
+                5
+                >>> stim.CircuitInstruction('MXX', [0, 1, 4, 5, 11, 13]).num_measurements
+                3
+                >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
+                2
+                >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+                1
         )DOC")
             .data());
 

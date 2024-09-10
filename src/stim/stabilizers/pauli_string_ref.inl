@@ -16,6 +16,7 @@
 #include <sstream>
 
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_decomposition.h"
 #include "stim/mem/simd_util.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
@@ -82,6 +83,25 @@ bool PauliStringRef<W>::operator==(const PauliStringRef<W> &other) const {
 template <size_t W>
 bool PauliStringRef<W>::operator!=(const PauliStringRef<W> &other) const {
     return !(*this == other);
+}
+
+template <size_t W>
+bool PauliStringRef<W>::operator<(const PauliStringRef<W> &other) const {
+    size_t n = std::min(num_qubits, other.num_qubits);
+    for (size_t q = 0; q < n; q++) {
+        uint8_t p1 = (xs[q] ^ zs[q]) + zs[q] * 2;
+        uint8_t p2 = (other.xs[q] ^ other.zs[q]) + other.zs[q] * 2;
+        if (p1 != p2) {
+            return p1 < p2;
+        }
+    }
+    if (num_qubits != other.num_qubits) {
+        return num_qubits < other.num_qubits;
+    }
+    if (sign != other.sign) {
+        return sign < other.sign;
+    }
+    return false;
 }
 
 template <size_t W>
@@ -173,6 +193,39 @@ void PauliStringRef<W>::do_circuit(const Circuit &circuit) {
 }
 
 template <size_t W>
+void PauliStringRef<W>::undo_reset_xyz(const CircuitInstruction &inst) {
+    bool x_dep, z_dep;
+    if (inst.gate_type == GateType::R || inst.gate_type == GateType::MR) {
+        x_dep = true;
+        z_dep = false;
+    } else if (inst.gate_type == GateType::RX || inst.gate_type == GateType::MRX) {
+        x_dep = false;
+        z_dep = true;
+    } else if (inst.gate_type == GateType::RY || inst.gate_type == GateType::MRY) {
+        x_dep = true;
+        z_dep = true;
+    } else {
+        throw std::invalid_argument("Unrecognized measurement type: " + inst.str());
+    }
+    for (const auto &t : inst.targets) {
+        assert(t.is_qubit_target());
+        auto q = t.qubit_value();
+        if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
+            std::stringstream ss;
+            ss << "The pauli observable '" << *this;
+            ss << "' doesn't have a well specified value before '" << inst;
+            ss << "' because it anticommutes with the reset.";
+            throw std::invalid_argument(ss.str());
+        }
+    }
+    for (const auto &t : inst.targets) {
+        auto q = t.qubit_value();
+        xs[q] = false;
+        zs[q] = false;
+    }
+}
+
+template <size_t W>
 void PauliStringRef<W>::check_avoids_measurement(const CircuitInstruction &inst) {
     bool x_dep, z_dep;
     if (inst.gate_type == GateType::M) {
@@ -193,7 +246,7 @@ void PauliStringRef<W>::check_avoids_measurement(const CircuitInstruction &inst)
         if (q < num_qubits && ((xs[q] & x_dep) ^ (zs[q] & z_dep))) {
             std::stringstream ss;
             ss << "The pauli observable '" << *this;
-            ss << "' doesn't have a well specified value after '" << inst;
+            ss << "' doesn't have a well specified value across '" << inst;
             ss << "' because it anticommutes with the measurement.";
             throw std::invalid_argument(ss.str());
         }
@@ -238,7 +291,7 @@ void PauliStringRef<W>::check_avoids_MPP(const CircuitInstruction &inst) {
         if (anticommutes) {
             std::stringstream ss;
             ss << "The pauli observable '" << *this;
-            ss << "' doesn't have a well specified value after '" << inst;
+            ss << "' doesn't have a well specified value across '" << inst;
             ss << "' because it anticommutes with the measurement.";
             throw std::invalid_argument(ss.str());
         }
@@ -396,6 +449,13 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
             check_avoids_MPP(inst);
             break;
 
+        case GateType::SPP:
+        case GateType::SPP_DAG:
+            decompose_spp_or_spp_dag_operation(inst, num_qubits, false, [&](CircuitInstruction sub_inst) {
+                do_instruction(sub_inst);
+            });
+            break;
+
         case GateType::X_ERROR:
         case GateType::Y_ERROR:
         case GateType::Z_ERROR:
@@ -536,6 +596,21 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
             do_YCZ<true>(inst);
             break;
 
+        case GateType::SPP:
+        case GateType::SPP_DAG: {
+            std::vector<GateTarget> buf_targets;
+            buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
+            std::reverse(buf_targets.begin(), buf_targets.end());
+            decompose_spp_or_spp_dag_operation(
+                CircuitInstruction{inst.gate_type, {}, buf_targets},
+                num_qubits,
+                false,
+                [&](CircuitInstruction sub_inst) {
+                    undo_instruction(sub_inst);
+                });
+            break;
+        }
+
         case GateType::DETECTOR:
         case GateType::OBSERVABLE_INCLUDE:
         case GateType::TICK:
@@ -552,7 +627,7 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::MR:
         case GateType::MRX:
         case GateType::MRY:
-            check_avoids_reset(inst);
+            undo_reset_xyz(inst);
             break;
 
         case GateType::M:
@@ -914,9 +989,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_SWAP(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         zs[q1].swap_with(zs[q2]);
         xs[q1].swap_with(xs[q2]);
     }
@@ -1120,9 +1195,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_XCZ(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         do_single_cx(inst, q2, q1);
     }
 }
@@ -1163,9 +1238,9 @@ template <bool reverse_order>
 void PauliStringRef<W>::do_YCZ(const CircuitInstruction &inst) {
     const auto &targets = inst.targets;
     assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        size_t k2 = reverse_order ? inst.targets.size() - 2 - k : k;
-        size_t q1 = inst.targets[k2].data, q2 = inst.targets[k2 + 1].data;
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t k2 = reverse_order ? targets.size() - 2 - k : k;
+        size_t q1 = targets[k2].data, q2 = targets[k2 + 1].data;
         do_single_cy(inst, q2, q1);
     }
 }

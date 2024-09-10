@@ -26,7 +26,9 @@
 <circle cx="659.2" cy="80" r="12" stroke="black" fill="white"/>
 <path d="M647.2,80 L671.2,80 M659.2,68 L659.2,92 " stroke="black"/>
 <g id="tick_borders">
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-346">Tick 0</text>
 <rect id="tick_border:0:0_0:0" x="0" y="0" width="352" height="160" stroke="black" fill="none"/>
-<rect id="tick_border:0:0_1:0" x="387.2" y="0" width="352" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-733.2">Tick 1</text>
+<rect id="tick_border:1:0_1:1" x="387.2" y="0" width="352" height="160" stroke="black" fill="none"/>
 </g>
 </svg>

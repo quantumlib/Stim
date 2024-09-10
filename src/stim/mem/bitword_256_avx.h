@@ -52,6 +52,8 @@ struct bitword<256> {
     }
     inline bitword<256>(__m256i val) : val(val) {
     }
+    inline bitword<256>(std::array<uint64_t, 4> val) : val{_mm256_set_epi64x(val[3], val[2], val[1], val[0])} {
+    }
     inline bitword<256>(uint64_t val) : val{_mm256_set_epi64x(0, 0, 0, val)} {
     }
     inline bitword<256>(int64_t val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {

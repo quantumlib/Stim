@@ -149,3 +149,13 @@ TEST_EACH_WORD_SIZE_W(simd_word, ordering, {
     ASSERT_TRUE(!(simd_word<W>(2) < simd_word<W>(2)));
     ASSERT_TRUE(!(simd_word<W>(3) < simd_word<W>(2)));
 })
+
+TEST_EACH_WORD_SIZE_W(simd_word, from_u64_array, {
+    std::array<uint64_t, W / 64> expected;
+    for (size_t k = 0; k < expected.size(); k++) {
+        expected[k] = k * 3 + 1;
+    }
+    simd_word<W> w(expected);
+    std::array<uint64_t, W / 64> actual = w.to_u64_array();
+    ASSERT_EQ(actual, expected);
+})

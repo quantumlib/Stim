@@ -72,8 +72,10 @@ pybind11::object dem_sampler_py_sample(
     if (return_errors) {
         err_out = simd_bit_table_to_numpy(self.err_buffer, self.num_errors, shots, bit_packed, true, pybind11::none());
     }
-    pybind11::object det_out = simd_bit_table_to_numpy(self.det_buffer, self.num_detectors, shots, bit_packed, true, pybind11::none());
-    pybind11::object obs_out = simd_bit_table_to_numpy(self.obs_buffer, self.num_observables, shots, bit_packed, true, pybind11::none());
+    pybind11::object det_out =
+        simd_bit_table_to_numpy(self.det_buffer, self.num_detectors, shots, bit_packed, true, pybind11::none());
+    pybind11::object obs_out =
+        simd_bit_table_to_numpy(self.obs_buffer, self.num_observables, shots, bit_packed, true, pybind11::none());
     return pybind11::make_tuple(det_out, obs_out, err_out);
 }
 

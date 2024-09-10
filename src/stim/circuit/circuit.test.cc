@@ -1769,3 +1769,142 @@ TEST(circuit, generate_test_circuit_with_all_operations) {
     }
     ASSERT_EQ(seen.size(), NUM_DEFINED_GATES);
 }
+
+TEST(circuit, insert_circuit) {
+    Circuit c(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c.operations.size(), 5);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        X 3
+        S 2 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+}
+
+TEST(circuit, insert_instruction) {
+    Circuit c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("H 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("S 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 1 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        X 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        X 1
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        X 1
+    )CIRCUIT"));
+}

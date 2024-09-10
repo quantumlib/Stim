@@ -60,7 +60,7 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
     });
 
     auto buf_purple_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
-        {"buf_blue_scattered_lines"},
+        {"buf_purple_scattered_lines"},
         purple_line_data,
     });
 

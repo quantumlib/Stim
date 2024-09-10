@@ -52,7 +52,7 @@ pybind11::class_<stim::GateTarget> stim_pybind::pybind_circuit_gate_target(pybin
                 >>> circuit[0].targets_copy()[0]
                 stim.GateTarget(0)
                 >>> circuit[0].targets_copy()[1]
-                stim.GateTarget(stim.target_inv(1))
+                stim.target_inv(1)
         )DOC")
             .data());
 }

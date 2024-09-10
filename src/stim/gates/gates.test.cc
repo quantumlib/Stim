@@ -22,6 +22,7 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/util_bot/str_util.h"
 #include "stim/util_bot/test_util.test.h"
+#include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/has_flow.h"
 
 using namespace stim;
@@ -302,6 +303,82 @@ TEST(gate_data, to_euler_angles_axis_reference) {
             auto u1 = reconstruct_unitary_from_data(g);
             auto u2 = reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(g);
             expect_unitaries_close_up_global_phase(g, u1, u2);
+        }
+    }
+}
+
+TEST(gate_data, is_symmetric_vs_flow_generators_of_two_qubit_gates) {
+    for (const auto &g : GATE_DATA.items) {
+        if ((g.flags & stim::GATE_IS_NOISY) && !(g.flags & stim::GATE_PRODUCES_RESULTS)) {
+            continue;
+        }
+        if (g.flags & GATE_TARGETS_PAIRS) {
+            Circuit c1;
+            Circuit c2;
+            c1.safe_append_u(g.name, {0, 1}, {});
+            c2.safe_append_u(g.name, {1, 0}, {});
+            auto f1 = circuit_flow_generators<64>(c1);
+            auto f2 = circuit_flow_generators<64>(c2);
+            EXPECT_EQ(g.is_symmetric(), f1 == f2) << g.name;
+        }
+    }
+}
+
+TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
+    auto flow_key = [](const Circuit &circuit, bool ignore_sign) {
+        auto f = circuit_flow_generators<64>(circuit);
+        if (ignore_sign) {
+            for (auto &e : f) {
+                e.input.sign = false;
+                e.output.sign = false;
+            }
+        }
+        std::stringstream ss;
+        ss << comma_sep(f);
+        return ss.str();
+    };
+    std::map<std::string, GateType> known_flows_s;
+    std::map<std::string, std::vector<GateType>> known_flows_u;
+
+    for (const auto &g : GATE_DATA.items) {
+        if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {
+            continue;
+        }
+        if ((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            Circuit c;
+            c.safe_append_u(g.name, {0, 1}, {});
+            auto key_s = flow_key(c, false);
+            auto key_u = flow_key(c, true);
+            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end());
+            known_flows_s[key_s] = g.id;
+            known_flows_u[key_u].push_back(g.id);
+        }
+    }
+    for (const auto &g : GATE_DATA.items) {
+        if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {
+            continue;
+        }
+        if ((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            Circuit c;
+            c.safe_append_u("H", {0, 1}, {});
+            c.safe_append_u(g.name, {0, 1}, {});
+            c.safe_append_u("H", {0, 1}, {});
+            auto key_s = flow_key(c, false);
+            auto key_u = flow_key(c, true);
+            auto other_s = known_flows_s.find(key_s);
+            auto &other_us = known_flows_u[key_u];
+            if (other_us.empty()) {
+                other_us.push_back(GateType::NOT_A_GATE);
+            }
+
+            GateType expected_s = other_s == known_flows_s.end() ? GateType::NOT_A_GATE : other_s->second;
+            GateType actual_s = g.hadamard_conjugated(false);
+            GateType actual_u = g.hadamard_conjugated(true);
+            bool found = std::find(other_us.begin(), other_us.end(), actual_u) != other_us.end();
+            EXPECT_EQ(actual_s, expected_s)
+                << "signed " << g.name << " -> " << GATE_DATA[actual_s].name << " != " << GATE_DATA[expected_s].name;
+            EXPECT_TRUE(found) << "unsigned " << g.name << " -> " << GATE_DATA[actual_u].name << " not in "
+                               << GATE_DATA[other_us[0]].name;
         }
     }
 }
