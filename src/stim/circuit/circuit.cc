@@ -97,7 +97,24 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
 }
 
 bool Circuit::operator==(const Circuit &other) const {
-    return operations == other.operations && blocks == other.blocks;
+    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
+            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
+                return false;
+            }
+            const auto &b1 = operations[k].repeat_block_body(*this);
+            const auto &b2 = other.operations[k].repeat_block_body(other);
+            if (b1 != b2) {
+                return false;
+            }
+        } else if (operations[k] != other.operations[k]) {
+            return false;
+        }
+    }
+    return true;
 }
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
@@ -107,12 +124,16 @@ bool Circuit::approx_equals(const Circuit &other, double atol) const {
         return false;
     }
     for (size_t k = 0; k < operations.size(); k++) {
-        if (!operations[k].approx_equals(other.operations[k], atol)) {
-            return false;
-        }
-    }
-    for (size_t k = 0; k < blocks.size(); k++) {
-        if (!blocks[k].approx_equals(other.blocks[k], atol)) {
+        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
+            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
+                return false;
+            }
+            const auto &b1 = operations[k].repeat_block_body(*this);
+            const auto &b2 = other.operations[k].repeat_block_body(other);
+            if (!b1.approx_equals(b2, atol)) {
+                return false;
+            }
+        } else if (!operations[k].approx_equals(other.operations[k], atol)) {
             return false;
         }
     }
@@ -204,13 +225,21 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
 }
 
 void Circuit::try_fuse_last_two_ops() {
-    auto &ops = operations;
-    size_t n = ops.size();
-    if (n > 1 && ops[n - 2].can_fuse(ops[n - 1])) {
-        fuse_data(ops[n - 2].targets, ops[n - 1].targets, target_buf);
-        ops.pop_back();
+    if (operations.size() >= 2) {
+        try_fuse_after(operations.size() - 2);
     }
 }
+
+void Circuit::try_fuse_after(size_t index) {
+    if (index + 1 >= operations.size()) {
+        return;
+    }
+    if (operations[index].can_fuse(operations[index + 1])) {
+        fuse_data(operations[index].targets, operations[index + 1].targets, target_buf);
+        operations.erase(operations.begin() + index + 1);
+    }
+}
+
 template <typename SOURCE>
 void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION read_condition) {
     auto &ops = circuit.operations;
@@ -320,6 +349,75 @@ void Circuit::safe_append(
         // Add a fresh new operation with its own target data.
         operations.push_back(to_add);
     }
+}
+
+void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+    auto flags = GATE_DATA[instruction.gate_type].flags;
+    if (flags & GATE_IS_BLOCK) {
+        throw std::invalid_argument("Can't insert a block like a normal operation.");
+    }
+    instruction.validate();
+
+    // Copy arg/target data into this circuit's buffers.
+    CircuitInstruction copy = instruction;
+    copy.args = arg_buf.take_copy(copy.args);
+    copy.targets = target_buf.take_copy(copy.targets);
+    operations.insert(operations.begin() + index, copy);
+
+    // Fuse at boundaries.
+    try_fuse_after(index);
+    if (index > 0) {
+        try_fuse_after(index - 1);
+    }
+}
+
+void Circuit::safe_insert(size_t index, const Circuit &circuit) {
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+
+    operations.insert(operations.begin() + index, circuit.operations.begin(), circuit.operations.end());
+
+    // Copy backing data over into this circuit.
+    for (size_t k = index; k < index + circuit.operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT) {
+            blocks.push_back(operations[k].repeat_block_body(circuit));
+            auto repeat_count = operations[k].repeat_block_rep_count();
+            target_buf.append_tail(GateTarget{(uint32_t)(blocks.size() - 1)});
+            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+            operations[k].targets = target_buf.commit_tail();
+        } else {
+            operations[k].targets = target_buf.take_copy(operations[k].targets);
+            operations[k].args = arg_buf.take_copy(operations[k].args);
+        }
+    }
+
+    // Fuse at boundaries.
+    if (!circuit.operations.empty()) {
+        try_fuse_after(index + circuit.operations.size() - 1);
+        if (index > 0) {
+            try_fuse_after(index - 1);
+        }
+    }
+}
+
+void Circuit::safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(block);
+    auto targets = target_buf.commit_tail();
+    operations.insert(operations.begin() + index, CircuitInstruction{GateType::REPEAT, {}, targets});
 }
 
 void Circuit::safe_append_reversed_targets(

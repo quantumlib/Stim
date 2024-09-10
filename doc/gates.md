@@ -3111,7 +3111,7 @@ Decomposition (into H, S, CX, M, R):
 <a name="SPP_DAG"></a>
 ### The 'SPP_DAG' Instruction
 
-The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
+The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.
 
 Parens Arguments:
 

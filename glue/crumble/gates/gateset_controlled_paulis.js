@@ -21,6 +21,7 @@ function *iter_gates_controlled_paulis() {
             ['ZI', 'ZI'],
         ]),
         (frame, targets) => frame.do_cx(targets),
+        (frame, targets) => frame.do_cx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -40,6 +41,7 @@ function *iter_gates_controlled_paulis() {
             ['XI', 'XY'],
             ['ZI', 'ZI'],
         ]),
+        (frame, targets) => frame.do_cy(targets),
         (frame, targets) => frame.do_cy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -61,6 +63,7 @@ function *iter_gates_controlled_paulis() {
             ['ZI', 'ZX'],
         ]),
         (frame, targets) => frame.do_xcx(targets),
+        (frame, targets) => frame.do_xcx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -80,6 +83,7 @@ function *iter_gates_controlled_paulis() {
             ['XI', 'XI'],
             ['ZI', 'ZY'],
         ]),
+        (frame, targets) => frame.do_xcy(targets),
         (frame, targets) => frame.do_xcy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -101,6 +105,7 @@ function *iter_gates_controlled_paulis() {
             ['ZI', 'ZY'],
         ]),
         (frame, targets) => frame.do_ycy(targets),
+        (frame, targets) => frame.do_ycy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -120,6 +125,7 @@ function *iter_gates_controlled_paulis() {
             ['XI', 'XZ'],
             ['ZI', 'ZI'],
         ]),
+        (frame, targets) => frame.do_cz(targets),
         (frame, targets) => frame.do_cz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

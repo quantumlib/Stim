@@ -7,6 +7,8 @@ import {initUrlCircuitSync} from "./editor/sync_url_to_state.js";
 import {draw} from "./draw/main_draw.js";
 import {drawToolbox} from "./keyboard/toolbox.js";
 import {Operation} from "./circuit/operation.js";
+import {make_mpp_gate} from './gates/gateset_mpp.js';
+import {PropagatedPauliFrames} from './circuit/propagated_pauli_frames.js';
 
 const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
 const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
@@ -26,6 +28,8 @@ const txtStimCircuit = /** @type {!HTMLTextAreaElement} */ document.getElementBy
 const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnTimelineFocus');
 const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
 const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
+const btnShowExamples = /** @type {!HTMLButtonElement} */ document.getElementById('btnShowExamples');
+const divExamples = /** @type{!HTMLDivElement} */ document.getElementById('examples-div');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
 txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
@@ -38,7 +42,7 @@ btnExport.addEventListener('click', _ev => {
 });
 btnImport.addEventListener('click', _ev => {
     let text = txtStimCircuit.value;
-    let circuit = Circuit.fromStimCircuit(text.replaceAll('\n#!pragma ', '\n'));
+    let circuit = Circuit.fromStimCircuit(text);
     editorState.commit(circuit);
 });
 
@@ -74,6 +78,16 @@ btnTimelineFocus.addEventListener('click', _ev => {
 btnClearSelectedMarkers.addEventListener('click', _ev => {
     editorState.unmarkFocusInferBasis(false);
     editorState.force_redraw();
+});
+
+btnShowExamples.addEventListener('click', _ev => {
+    if (divExamples.style.display === 'none') {
+        divExamples.style.display = 'block';
+        btnShowExamples.textContent = "Hide Example Circuits";
+    } else {
+        divExamples.style.display = 'none';
+        btnShowExamples.textContent = "Show Example Circuits";
+    }
 });
 
 btnClearTimelineFocus.addEventListener('click', _ev => {
@@ -124,24 +138,30 @@ editorState.canvas.addEventListener('mousemove', ev => {
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    if (editorState.mouseDownX - OFFSET_X < 10 && editorState.curMouseX - OFFSET_X < 10 && ev.buttons === 1) {
-        editorState.changeCurLayerTo(Math.floor(ev.offsetY / 5));
-        ev.preventDefault();
+    let w = editorState.canvas.width / 2;
+    if (isInScrubber && ev.buttons === 1) {
+        editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
     }
 
     editorState.force_redraw();
 });
 
+let isInScrubber = false;
 editorState.canvas.addEventListener('mousedown', ev => {
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
     editorState.mouseDownX = ev.offsetX + OFFSET_X;
     editorState.mouseDownY = ev.offsetY + OFFSET_Y;
-    if (editorState.mouseDownX - OFFSET_X < 10 && ev.buttons === 1) {
-        editorState.changeCurLayerTo(Math.floor(ev.offsetY / 5));
+
+    // Scrubber.
+    let w = editorState.canvas.width / 2;
+    isInScrubber = ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1;
+    if (isInScrubber) {
+        editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
     }
+
     editorState.force_redraw();
 });
 
@@ -152,6 +172,9 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
     editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
+    if (ev.buttons === 1) {
+        isInScrubber = false;
+    }
 });
 
 /**
@@ -175,7 +198,14 @@ function makeChordHandlers() {
     res.set('ctrl+v', pasteFromClipboard);
     res.set('ctrl+x', async preview => {
         await copyToClipboard();
-        editorState.deleteAtFocus(preview);
+        if (editorState.focusedSet.size === 0) {
+            let c = editorState.copyOfCurCircuit();
+            c.layers[editorState.curLayer].id_ops.clear();
+            c.layers[editorState.curLayer].markers.length = 0;
+            editorState.commit_or_preview(c, preview);
+        } else {
+            editorState.deleteAtFocus(preview);
+        }
     });
     res.set('l', preview => {
         if (!preview) {
@@ -205,18 +235,37 @@ function makeChordHandlers() {
         res.set(`${key}+x`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKX').withDefaultArgument(val)));
         res.set(`${key}+y`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKY').withDefaultArgument(val)));
         res.set(`${key}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKZ').withDefaultArgument(val)));
+        res.set(`${key}+d`, preview => editorState.writeMarkerToDetector(preview, val));
+        res.set(`${key}+o`, preview => editorState.writeMarkerToObservable(preview, val));
+        res.set(`${key}+j`, preview => editorState.moveDetOrObsAtFocusIntoMarker(preview, val));
+        res.set(`${key}+k`, preview => editorState.addDissipativeOverlapToMarkers(preview, val));
     }
 
-    res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));
-    res.set('alt+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, 0.5]));
-    res.set('shift+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, 0.5]));
-    res.set('p+x', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, 0.5]));
-    res.set('p+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, 0.5]));
-    res.set('p+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, 0.5]));
-    res.set('p+x+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 0, 0.5]));
-    res.set('p+x+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 1, 0.5]));
-    res.set('p+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 1, 0.5]));
-    res.set('p+x+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 1, 0.5]));
+    let defaultPolygonAlpha = 0.25;
+    res.set('p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, defaultPolygonAlpha]));
+    res.set('alt+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, defaultPolygonAlpha]));
+    res.set('shift+p', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, defaultPolygonAlpha]));
+    res.set('p+x', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 0, defaultPolygonAlpha]));
+    res.set('p+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 0, defaultPolygonAlpha]));
+    res.set('p+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 0, 1, defaultPolygonAlpha]));
+    res.set('p+x+y', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 0, defaultPolygonAlpha]));
+    res.set('p+x+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 0, 1, defaultPolygonAlpha]));
+    res.set('p+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [0, 1, 1, defaultPolygonAlpha]));
+    res.set('p+x+y+z', preview => editorState.writeGateToFocus(preview, GATE_MAP.get("POLYGON"), [1, 1, 1, defaultPolygonAlpha]));
+    res.set('m+p+x', preview => editorState.writeGateToFocus(preview, make_mpp_gate("X".repeat(editorState.focusedSet.size)), []));
+    res.set('m+p+y', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Y".repeat(editorState.focusedSet.size)), []));
+    res.set('m+p+z', preview => editorState.writeGateToFocus(preview, make_mpp_gate("Z".repeat(editorState.focusedSet.size)), []));
+    res.set('f', preview => editorState.flipTwoQubitGateOrderAtFocus(preview));
+    res.set('g', preview => editorState.reverseLayerOrderFromFocusToEmptyLayer(preview));
+    res.set('shift+>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview, false));
+    res.set('shift+<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview, false));
+    res.set('shift+v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));
+    res.set('shift+^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview, false));
+    res.set('>', preview => editorState.applyCoordinateTransform((x, y) => [x + 1, y], preview, false));
+    res.set('<', preview => editorState.applyCoordinateTransform((x, y) => [x - 1, y], preview, false));
+    res.set('v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));
+    res.set('^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview, false));
+    res.set('.', preview => editorState.applyCoordinateTransform((x, y) => [x + 0.5, y + 0.5], preview, false));
 
     /**
      * @param {!Array<!string>} chords
@@ -254,6 +303,9 @@ function makeChordHandlers() {
     addGateChords(['c+x'], "CX", "CX");
     addGateChords(['c+y'], "CY", "CY");
     addGateChords(['c+z'], "CZ", "CZ");
+    addGateChords(['j+x'], "X", "X");
+    addGateChords(['j+y'], "Y", "Y");
+    addGateChords(['j+z'], "Z", "Z");
     addGateChords(['c+x+y'], "XCY", "XCY");
     addGateChords(['alt+c+x'], "XCX", "XCX");
     addGateChords(['alt+c+y'], "YCY", "YCY");
@@ -266,7 +318,7 @@ function makeChordHandlers() {
     addGateChords(['c+w+z'], "CZSWAP", undefined);
     addGateChords(['c+w'], "CZSWAP", undefined);
 
-    addGateChords(['f'], "C_XYZ", "C_ZYX");
+    addGateChords(['c+t'], "C_XYZ", "C_ZYX");
     addGateChords(['c+s+x'], "SQRT_XX", "SQRT_XX_DAG");
     addGateChords(['c+s+y'], "SQRT_YY", "SQRT_YY_DAG");
     addGateChords(['c+s+z'], "SQRT_ZZ", "SQRT_ZZ_DAG");
@@ -369,12 +421,24 @@ const CHORD_HANDLERS = makeChordHandlers();
 function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
     if (ev.type === 'keydown') {
-        if (ev.key === 'q') {
-            editorState.changeCurLayerTo(editorState.curLayer - 1);
+        if (ev.key.toLowerCase() === 'q') {
+            let d = ev.shiftKey ? 5 : 1;
+            editorState.changeCurLayerTo(editorState.curLayer - d);
             return;
         }
-        if (ev.key === 'e') {
-            editorState.changeCurLayerTo(editorState.curLayer + 1);
+        if (ev.key.toLowerCase() === 'e') {
+            let d = ev.shiftKey ? 5 : 1;
+            editorState.changeCurLayerTo(editorState.curLayer + d);
+            return;
+        }
+        if (ev.key === 'Home') {
+            editorState.changeCurLayerTo(0);
+            ev.preventDefault();
+            return;
+        }
+        if (ev.key === 'End') {
+            editorState.changeCurLayerTo(editorState.copyOfCurCircuit().layers.length - 1);
+            ev.preventDefault();
             return;
         }
     }
@@ -436,3 +500,17 @@ window.addEventListener('focus', () => {
 window.addEventListener('blur', () => {
     editorState.chorder.handleFocusChanged();
 });
+
+// Intercept clicks on the example circuit links, and load them without actually reloading the page, to preserve undo history.
+for (let anchor of document.getElementById('examples-div').querySelectorAll('a')) {
+    anchor.onclick = ev => {
+        // Don't stop the user from e.g. opening the example in a new tab using ctrl+click.
+        if (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.button !== 0) {
+            return undefined;
+        }
+        let circuitText = anchor.href.split('#circuit=')[1];
+
+        editorState.rev.commit(circuitText);
+        return false;
+    };
+}

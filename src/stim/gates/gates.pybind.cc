@@ -496,6 +496,123 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
             .data());
 
     c.def_property_readonly(
+        "is_symmetric_gate",
+        [](const Gate &self) -> bool {
+            return self.is_symmetric();
+        },
+        clean_doc_string(R"DOC(
+            Returns whether or not the gate is the same when its targets are swapped.
+
+            A two qubit gate is symmetric if it doesn't matter if you swap its targets. It
+            is unaffected when conjugated by the SWAP gate.
+
+            Single qubit gates are vacuously symmetric. A multi-qubit gate is symmetric if
+            swapping any two of its targets has no effect.
+
+            Note that this method is for symmetry *without broadcasting*. For example, SWAP
+            is symmetric even though SWAP 1 2 3 4 isn't equal to SWAP 1 3 2 4.
+
+            Returns:
+                True if the gate is symmetric.
+                False if the gate isn't symmetric.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('CX').is_symmetric_gate
+                False
+                >>> stim.gate_data('CZ').is_symmetric_gate
+                True
+                >>> stim.gate_data('ISWAP').is_symmetric_gate
+                True
+                >>> stim.gate_data('CXSWAP').is_symmetric_gate
+                False
+                >>> stim.gate_data('MXX').is_symmetric_gate
+                True
+                >>> stim.gate_data('DEPOLARIZE2').is_symmetric_gate
+                True
+                >>> stim.gate_data('PAULI_CHANNEL_2').is_symmetric_gate
+                False
+                >>> stim.gate_data('H').is_symmetric_gate
+                True
+                >>> stim.gate_data('R').is_symmetric_gate
+                True
+                >>> stim.gate_data('X_ERROR').is_symmetric_gate
+                True
+                >>> stim.gate_data('CORRELATED_ERROR').is_symmetric_gate
+                False
+                >>> stim.gate_data('MPP').is_symmetric_gate
+                False
+                >>> stim.gate_data('DETECTOR').is_symmetric_gate
+                False
+        )DOC")
+            .data());
+
+    c.def(
+        "hadamard_conjugated",
+        [](const Gate &self, bool ignoring_sign) -> pybind11::object {
+            GateType g = self.hadamard_conjugated(ignoring_sign);
+            if (g == GateType::NOT_A_GATE) {
+                return pybind11::none();
+            }
+            return pybind11::cast(GATE_DATA[g]);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(R"DOC(
+            @signature def hadamard_conjugated(self, *, unsigned: bool = False) -> Optional[stim.GateData]:
+            Returns a stim gate equivalent to this gate conjugated by Hadamard gates.
+
+            The Hadamard conjugate can be thought of as the XZ dual of the gate; the gate
+            you get by exchanging the X and Z bases. For example, a SQRT_X will become a
+            SQRT_Z and a CX gate will switch directions into an XCZ.
+
+            If stim doesn't define a gate equivalent to conjugating this gate by Hadamards,
+            the value `None` is returned.
+
+            Args:
+                unsigned: Defaults to False. When False, the returned gate must be *exactly*
+                    the Hadamard conjugation of this gate. When True, the returned gate must
+                    have the same flows but the sign of the flows can be different (i.e.
+                    the returned gate must be the Hadamard conjugate up to Pauli gate
+                    differences).
+
+            Returns:
+                A stim.GateData instance of the Hadamard conjugate, if it exists in stim.
+
+                None, if stim doesn't define a gate equal to the Hadamard conjugate.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.gate_data('X').hadamard_conjugated()
+                stim.gate_data('Z')
+                >>> stim.gate_data('CX').hadamard_conjugated()
+                stim.gate_data('XCZ')
+                >>> stim.gate_data('RY').hadamard_conjugated() is None
+                True
+                >>> stim.gate_data('RY').hadamard_conjugated(unsigned=True)
+                stim.gate_data('RY')
+                >>> stim.gate_data('ISWAP').hadamard_conjugated(unsigned=True) is None
+                True
+                >>> stim.gate_data('SWAP').hadamard_conjugated()
+                stim.gate_data('SWAP')
+                >>> stim.gate_data('CXSWAP').hadamard_conjugated()
+                stim.gate_data('SWAPCX')
+                >>> stim.gate_data('MXX').hadamard_conjugated()
+                stim.gate_data('MZZ')
+                >>> stim.gate_data('DEPOLARIZE1').hadamard_conjugated()
+                stim.gate_data('DEPOLARIZE1')
+                >>> stim.gate_data('X_ERROR').hadamard_conjugated()
+                stim.gate_data('Z_ERROR')
+                >>> stim.gate_data('H_XY').hadamard_conjugated(unsigned=True)
+                stim.gate_data('H_YZ')
+                >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
+                stim.gate_data('DETECTOR')
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
         "is_two_qubit_gate",
         [](const Gate &self) -> bool {
             return self.flags & GATE_TARGETS_PAIRS;
@@ -507,6 +624,10 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
 
             Variable-qubit gates like CORRELATED_ERROR and MPP are not
             considered two qubit gates.
+
+            Returns:
+                True if the gate is a two qubit gate.
+                False if the gate isn't a two qubit gate.
 
             Examples:
                 >>> import stim

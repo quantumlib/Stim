@@ -97,7 +97,7 @@ Tableau<W> stabilizers_to_tableau(
             if (!allow_redundant) {
                 std::stringstream ss;
                 ss << "Some of the given stabilizers are redundant.";
-                ss<< "\nTo allow redundant stabilizers, pass the argument allow_redundant=True.";
+                ss << "\nTo allow redundant stabilizers, pass the argument allow_redundant=True.";
                 ss << "\n";
                 ss << "\nFor example:";
                 ss << "\n    stabilizers[" << k << "] = " << stabilizers[k];

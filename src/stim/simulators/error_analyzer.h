@@ -329,7 +329,8 @@ struct ErrorAnalyzer {
     void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
     void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
     void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
-    void check_can_approximate_disjoint(const char *op_name, SpanRef<const double> probabilities) const;
+    void check_can_approximate_disjoint(
+        const char *op_name, SpanRef<const double> probabilities, bool allow_single_component) const;
     void add_composite_error(double probability, SpanRef<const GateTarget> targets);
     void correlated_error_block(const std::vector<CircuitInstruction> &dats);
 };

@@ -119,6 +119,10 @@ struct Circuit {
     /// Safely moves a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, Circuit &&body);
 
+    void safe_insert(size_t index, const CircuitInstruction &instruction);
+    void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block);
+    void safe_insert(size_t index, const Circuit &circuit);
+
     /// Appends the given gate, but with targets reversed.
     void safe_append_reversed_targets(
         GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs);
@@ -276,6 +280,7 @@ struct Circuit {
     std::string describe_instruction_location(size_t instruction_offset) const;
 
     void try_fuse_last_two_ops();
+    void try_fuse_after(size_t index);
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);

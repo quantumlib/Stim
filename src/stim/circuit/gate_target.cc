@@ -178,9 +178,14 @@ std::string GateTarget::str() const {
 
 std::string GateTarget::repr() const {
     std::stringstream ss;
-    ss << "stim.GateTarget(";
+    bool need_wrap = is_qubit_target() && !is_inverted_result_target();
+    if (need_wrap) {
+        ss << "stim.GateTarget(";
+    }
     ss << *this;
-    ss << ")";
+    if (need_wrap) {
+        ss << ")";
+    }
     return ss.str();
 }
 

@@ -75,6 +75,11 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
         }
         PauliString<W> out(0);
         std::vector<int32_t> measurements;
+        bool flip_out = false;
+        if (parts[k].starts_with('-')) {
+            flip_out = true;
+            parts[k] = parts[k].substr(1);
+        }
         if (!parts[k].empty() && parts[k][0] != 'r') {
             out = parse_non_empty_pauli_string_allowing_i<W>(parts[k], &imag_out);
         } else {
@@ -84,6 +89,7 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
             }
             measurements.push_back(rec);
         }
+        out.sign ^= flip_out;
         k++;
         while (k < parts.size()) {
             if (parts[k] != "xor" || k + 1 == parts.size()) {
@@ -111,6 +117,20 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
 template <size_t W>
 bool Flow<W>::operator==(const Flow<W> &other) const {
     return input == other.input && output == other.output && measurements == other.measurements;
+}
+
+template <size_t W>
+bool Flow<W>::operator<(const Flow<W> &other) const {
+    if (input != other.input) {
+        return input < other.input;
+    }
+    if (output != other.output) {
+        return output < other.output;
+    }
+    if (measurements != other.measurements) {
+        return SpanRef<const int32_t>(measurements) < SpanRef<const int32_t>(other.measurements);
+    }
+    return false;
 }
 
 template <size_t W>

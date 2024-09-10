@@ -808,7 +808,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     uint64_t tick_slice_start,
     uint64_t tick_slice_num,
     DiagramTimelineSvgDrawerMode mode,
-    SpanRef<const CoordFilter> filter) {
+    SpanRef<const CoordFilter> filter,
+    size_t num_rows) {
     uint64_t circuit_num_ticks = circuit.count_ticks();
     auto circuit_has_ticks = circuit_num_ticks > 0;
     auto num_qubits = circuit.count_qubits();
@@ -825,8 +826,13 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
         obj.coord_sys = FlattenedCoords::from(obj.detector_slice_set, GATE_PITCH);
         obj.coord_sys.size.xyz[0] += TIME_SLICE_PADDING * 2;
         obj.coord_sys.size.xyz[1] += TIME_SLICE_PADDING * 2;
-        obj.num_cols = (uint64_t)ceil(sqrt((double)tick_slice_num));
-        obj.num_rows = tick_slice_num / obj.num_cols;
+        if (num_rows == 0) {
+            obj.num_cols = (uint64_t)ceil(sqrt((double)tick_slice_num));
+            obj.num_rows = tick_slice_num / obj.num_cols;
+        } else {
+            obj.num_rows = num_rows;
+            obj.num_cols = (tick_slice_num + num_rows - 1) / num_rows;
+        }
         while (obj.num_cols * obj.num_rows < tick_slice_num) {
             obj.num_rows++;
         }
@@ -855,9 +861,9 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     auto w = obj.m2x(obj.cur_moment) - GATE_PITCH * 0.5f;
     svg_out << R"SVG(<svg viewBox="0 0 )SVG";
     if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE) {
-        svg_out << obj.coord_sys.size.xyz[0] * ((obj.num_cols - 1) * SLICE_WINDOW_GAP + 1);
-        svg_out << " ";
-        svg_out << obj.coord_sys.size.xyz[1] * ((obj.num_rows - 1) * SLICE_WINDOW_GAP + 1);
+        auto sw = obj.coord_sys.size.xyz[0] * ((obj.num_cols - 1) * SLICE_WINDOW_GAP + 1);
+        auto sh = obj.coord_sys.size.xyz[1] * ((obj.num_rows - 1) * SLICE_WINDOW_GAP + 1);
+        svg_out << sw << " " << sh;
     } else {
         svg_out << w + PADDING;
         svg_out << " ";
@@ -959,15 +965,28 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     if (mode != DiagramTimelineSvgDrawerMode::SVG_MODE_TIMELINE && tick_slice_num > 1) {
         auto k = 0;
         svg_out << "<g id=\"tick_borders\">\n";
-        for (uint64_t col = 0; col < obj.num_cols; col++) {
-            for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
+        for (uint64_t row = 0; row < obj.num_rows; row++) {
+            for (uint64_t col = 0; col < obj.num_cols && row * obj.num_cols + col < tick_slice_num; col++) {
                 auto sw = obj.coord_sys.size.xyz[0];
                 auto sh = obj.coord_sys.size.xyz[1];
 
                 std::stringstream id_ss;
+                auto tick = k + tick_slice_start;  // the absolute tick
                 id_ss << "tick_border:" << k;
                 id_ss << ":" << row << "_" << col;
-                id_ss << ":" << k + tick_slice_start;  // the absolute tick
+                id_ss << ":" << tick;
+
+                svg_out << "<text";
+                write_key_val(svg_out, "dominant-baseline", "hanging");
+                write_key_val(svg_out, "text-anchor", "middle");
+                write_key_val(svg_out, "font-family", "serif");
+                write_key_val(svg_out, "font-size", 18);
+                write_key_val(svg_out, "transform", "rotate(90)");
+                write_key_val(svg_out, "x", sh * row * SLICE_WINDOW_GAP + sh / 2);
+                write_key_val(svg_out, "y", -(sw * col * SLICE_WINDOW_GAP + sw - 6));
+                svg_out << ">";
+                svg_out << "Tick " << tick;
+                svg_out << "</text>\n";
 
                 svg_out << "<rect";
                 write_key_val(svg_out, "id", id_ss.str());
@@ -978,6 +997,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 write_key_val(svg_out, "stroke", "black");
                 write_key_val(svg_out, "fill", "none");
                 svg_out << "/>\n";
+
+                k++;
             }
         }
         svg_out << "</g>\n";

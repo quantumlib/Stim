@@ -18,8 +18,6 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 
@@ -131,13 +129,13 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
                 obs_slice.clear();
             }
         }
-        obs_data =
-            transposed_simd_bit_table_to_numpy(obs_table, circuit_stats.num_observables, num_shots, bit_pack_result);
+        obs_data = simd_bit_table_to_numpy(
+            obs_table, circuit_stats.num_observables, num_shots, bit_pack_result, true, pybind11::none());
     }
 
     // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.
-    pybind11::object det_data = transposed_simd_bit_table_to_numpy(
-        out_detection_results_minor_shot_index, num_output_bits, num_shots, bit_pack_result);
+    pybind11::object det_data = simd_bit_table_to_numpy(
+        out_detection_results_minor_shot_index, num_output_bits, num_shots, bit_pack_result, true, pybind11::none());
 
     if (separate_observables) {
         return pybind11::make_tuple(det_data, obs_data);

@@ -9,7 +9,7 @@ echo '#include "stim/diagram/crumble_data.h"'
 echo '';
 echo 'std::string stim_draw_internal::make_crumble_html() {'
 echo '    std::string result;'
-dev/regen_crumble_html.sh | python -c '
+dev/compile_crumble_into_single_html_page.sh | python -c '
 import sys
 for line in sys.stdin:
     for k in range(0, len(line), 1024):

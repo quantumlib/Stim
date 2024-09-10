@@ -12,6 +12,7 @@ function *iter_gates_hadamard_likes() {
             ['Z', 'X'],
         ]),
         (frame, targets) => frame.do_exchange_xz(targets),
+        (frame, targets) => frame.do_exchange_xz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             ctx.fillStyle = 'yellow';
@@ -33,6 +34,7 @@ function *iter_gates_hadamard_likes() {
             ['X', 'Y'],
             ['Z', 'Z'],  // -Z technically
         ]),
+        (frame, targets) => frame.do_exchange_xy(targets),
         (frame, targets) => frame.do_exchange_xy(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -56,6 +58,7 @@ function *iter_gates_hadamard_likes() {
             ['X', 'X'],  // -X technically
             ['Z', 'Y'],
         ]),
+        (frame, targets) => frame.do_exchange_yz(targets),
         (frame, targets) => frame.do_exchange_yz(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

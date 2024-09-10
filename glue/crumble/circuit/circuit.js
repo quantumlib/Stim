@@ -5,27 +5,6 @@ import {make_mpp_gate, make_spp_gate} from '../gates/gateset_mpp.js';
 import {describe} from "../base/describe.js";
 
 /**
- * @param {!Iterator<TItem>}items
- * @param {!function(item: TItem): TKey} func
- * @returns {!Map<TKey, !Array<TItem>>}
- * @template TItem
- * @template TKey
- */
-function groupBy(items, func) {
-    let result = new Map();
-    for (let item of items) {
-        let key = func(item);
-        let group = result.get(key);
-        if (group === undefined) {
-            result.set(key, [item]);
-        } else {
-            group.push(item);
-        }
-    }
-    return result;
-}
-
-/**
  * @param {!string} targetText
  * @returns {!Array.<!string>}
  */
@@ -87,9 +66,10 @@ function splitUncombinedTargets(targets) {
 /**
  * @param {!Float32Array} args
  * @param {!Array.<!string>} combinedTargets
+ * @param {!boolean} convertIntoOtherGates
  * @returns {!Operation}
  */
-function simplifiedMPP(args, combinedTargets) {
+function simplifiedMPP(args, combinedTargets, convertIntoOtherGates) {
     let bases = '';
     let qubits = [];
     for (let t of combinedTargets) {
@@ -108,7 +88,10 @@ function simplifiedMPP(args, combinedTargets) {
         }
     }
 
-    let gate = GATE_MAP.get('M' + bases);
+    let gate = undefined;
+    if (convertIntoOtherGates) {
+        gate = GATE_MAP.get('M' + bases);
+    }
     if (gate === undefined) {
         gate = GATE_MAP.get('MPP:' + bases);
     }
@@ -176,9 +159,12 @@ class Circuit {
      */
     static fromStimCircuit(stimCircuit) {
         let lines = stimCircuit.replaceAll(';', '\n').
+            replaceAll('#!pragma MARK', 'MARK').
+            replaceAll('#!pragma POLYGON', 'POLYGON').
             replaceAll('_', ' ').
             replaceAll('Q(', 'QUBIT_COORDS(').
             replaceAll('DT', 'DETECTOR').
+            replaceAll('OI', 'OBSERVABLE_INCLUDE').
             replaceAll(' COORDS', '_COORDS').
             replaceAll(' ERROR', '_ERROR').
             replaceAll('C XYZ', 'C_XYZ').
@@ -190,6 +176,7 @@ class Circuit {
             replaceAll(' DAG ', '_DAG ').
             replaceAll('C ZYX', 'C_ZYX').split('\n');
         let layers = [new Layer()];
+        let num_detectors = 0;
         let i2q = new Map();
         let used_positions = new Set();
 
@@ -233,6 +220,7 @@ class Circuit {
             }
         };
 
+        let measurement_locs = [];
         let processLine = line => {
             let args = [];
             let targets = [];
@@ -257,6 +245,9 @@ class Circuit {
             if (name === '') {
                 return;
             }
+            if (args.length > 0 && ['M', 'MX', 'MY', 'MZ', 'MR', 'MRX', 'MRY', 'MRZ', 'MPP', 'MPAD'].indexOf(name) !== -1) {
+                args = [];
+            }
             let alias = GATE_ALIAS_MAP.get(name);
             if (alias !== undefined) {
                 if (alias.ignore) {
@@ -274,14 +265,38 @@ class Circuit {
                 let combinedTargets = splitUncombinedTargets(targets);
                 let layer = layers[layers.length - 1]
                 for (let combo of combinedTargets) {
+                    let op = simplifiedMPP(new Float32Array(args), combo);
                     try {
-                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                        layer.put(op, false);
                     } catch (_) {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
-                        layer.put(simplifiedMPP(new Float32Array(args), combo), false);
+                        layer.put(op, false);
                     }
+                    measurement_locs.push({layer: layers.length - 1, targets: op.id_targets});
                 }
+                return;
+            } else if (name === 'DETECTOR' || name === 'OBSERVABLE_INCLUDE') {
+                let isDet = name === 'DETECTOR';
+                let argIndex = isDet ? num_detectors : args.length > 0 ? Math.round(args[0]) : 0;
+                for (let target of targets) {
+                    if (!target.startsWith("rec[-") || ! target.endsWith("]")) {
+                        console.warn("Ignoring instruction due to non-record target: " + line);
+                        return;
+                    }
+                    let index = measurement_locs.length + Number.parseInt(target.substring(4, target.length - 1));
+                    if (index < 0 || index >= measurement_locs.length) {
+                        console.warn("Ignoring instruction due to out of range record target: " + line);
+                        return;
+                    }
+                    let loc = measurement_locs[index];
+                    layers[loc.layer].markers.push(
+                        new Operation(GATE_MAP.get(name),
+                            new Float32Array([argIndex]),
+                            new Uint32Array([loc.targets[0]]),
+                        ));
+                }
+                num_detectors += isDet;
                 return;
             } else if (name === 'SPP' || name === 'SPP_DAG') {
                 let dag = name === 'SPP_DAG';
@@ -314,26 +329,35 @@ class Circuit {
                 return;
             }
 
-            let ignored = false;
+            let has_feedback = false;
             for (let targ of targets) {
                 if (targ.startsWith("rec[")) {
                     if (name === "CX" || name === "CY" || name === "CZ" || name === "ZCX" || name === "ZCY") {
-                        ignored = true;
-                        break;
+                        has_feedback = true;
                     }
-                }
-                if (typeof parseInt(targ) !== 'number') {
+                } else if (typeof parseInt(targ) !== 'number') {
                     throw new Error(line);
                 }
             }
-            if (ignored) {
-                console.warn("IGNORED", name);
-                return;
+            if (has_feedback) {
+                let clean_targets = [];
+                for (let k = 0; k < targets.length; k += 2) {
+                    if (targets[k].startsWith("rec[") || targets[k + 1].startsWith("rec[")) {
+                        console.warn("Feedback isn't supported yet. Ignoring", name, targets[k], targets[k + 1]);
+                    } else {
+                        clean_targets.push(targets[k]);
+                        clean_targets.push(targets[k + 1]);
+                    }
+                }
+                targets = clean_targets;
+                if (targets.length === 0) {
+                    return;
+                }
             }
 
             let gate = GATE_MAP.get(name);
             if (gate === undefined) {
-                console.warn("Unrecognized gate name in " + line);
+                console.warn("Ignoring unrecognized instruction: " + line);
                 return;
             }
             let a = new Float32Array(args);
@@ -351,12 +375,16 @@ class Circuit {
                         sub_targets.reverse();
                     }
                     let qs = new Uint32Array(sub_targets);
+                    let op = new Operation(gate, a, qs);
                     try {
-                        layer.put(new Operation(gate, a, qs), false);
+                        layer.put(op, false);
                     } catch (_) {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
-                        layer.put(new Operation(gate, a, qs), false);
+                        layer.put(op, false);
+                    }
+                    if (op.countMeasurements() > 0) {
+                        measurement_locs.push({layer: layers.length - 1, targets: op.id_targets});
                     }
                 }
             }
@@ -507,6 +535,88 @@ class Circuit {
     }
 
     /**
+     * @param {!boolean} orderForToStimCircuit
+     * @returns {!{dets: !Array<!{mids: !Array<!int>, qids: !Array<!int>}>, obs: !Map<!int, !Array.<!int>>}}
+     */
+    collectDetectorsAndObservables(orderForToStimCircuit) {
+        // Index measurements.
+        let m2d = new Map();
+        for (let k = 0; k < this.layers.length; k++) {
+            let layer = this.layers[k];
+            if (orderForToStimCircuit) {
+                for (let group of layer.opsGroupedByNameWithArgs().values()) {
+                    for (let op of group) {
+                        if (op.countMeasurements() > 0) {
+                            let target_id = op.id_targets[0];
+                            m2d.set(`${k}:${target_id}`, {mid: m2d.size, qids: op.id_targets});
+                        }
+                    }
+                }
+            } else {
+                for (let [target_id, op] of layer.id_ops.entries()) {
+                    if (op.id_targets[0] === target_id) {
+                        if (op.countMeasurements() > 0) {
+                            m2d.set(`${k}:${target_id}`, {mid: m2d.size, qids: op.id_targets});
+                        }
+                    }
+                }
+            }
+        }
+
+        let detectors = [];
+        let observables = new Map();
+        for (let k = 0; k < this.layers.length; k++) {
+            let layer = this.layers[k];
+            for (let op of layer.markers) {
+                if (op.gate.name === 'DETECTOR') {
+                    let d = Math.round(op.args[0]);
+                    while (detectors.length <= d) {
+                        detectors.push({mids: [], qids: []});
+                    }
+                    let det_entry = detectors[d];
+                    let key = `${k}:${op.id_targets[0]}`;
+                    let v = m2d.get(key);
+                    if (v !== undefined) {
+                        det_entry.mids.push(v.mid - m2d.size);
+                        det_entry.qids.push(...v.qids);
+                    }
+                } else if (op.gate.name === 'OBSERVABLE_INCLUDE') {
+                    let d = Math.round(op.args[0]);
+                    let entries = observables.get(d);
+                    if (entries === undefined) {
+                        entries = []
+                        observables.set(d, entries);
+                    }
+                    let key = `${k}:${op.id_targets[0]}`;
+                    if (m2d.has(key)) {
+                        entries.push(m2d.get(key).mid - m2d.size);
+                    }
+                }
+            }
+        }
+        let seen = new Set();
+        let keptDetectors = [];
+        for (let ds of detectors) {
+            if (ds.mids.length > 0) {
+                ds.mids = [...new Set(ds.mids)];
+                ds.mids.sort((a, b) => b - a);
+                let key = ds.mids.join(':');
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    keptDetectors.push(ds);
+                }
+            }
+        }
+        for (let [k, vs] of observables.entries()) {
+            vs = [...new Set(vs)]
+            vs.sort((a, b) => b - a);
+            observables.set(k, vs);
+        }
+        keptDetectors.sort((a, b) => a.mids[0] - b.mids[0]);
+        return {dets: keptDetectors, obs: observables};
+    }
+
+    /**
      * @returns {!string}
      */
     toStimCircuit() {
@@ -518,6 +628,11 @@ class Circuit {
                 }
             }
         }
+
+        let {dets: remainingDetectors, obs: remainingObservables} = this.collectDetectorsAndObservables(true);
+        remainingDetectors.reverse();
+        let seenMeasurements = 0;
+        let totalMeasurements = this.countMeasurements();
 
         let packedQubitCoords = [];
         for (let q of usedQubits) {
@@ -541,44 +656,25 @@ class Circuit {
             old2new.set(old_q, q);
             out.push(`QUBIT_COORDS(${x}, ${y}) ${q}`);
         }
+        let detectorLayer = 0;
+        let usedDetectorCoords = new Set();
 
         for (let layer of this.layers) {
-            let opsByName = groupBy(layer.iter_gates_and_markers(), op => {
-                let key = op.gate.name;
-                if (key.startsWith('MPP:') && !GATE_MAP.has(key)) {
-                    key = 'MPP';
-                }
-                if (key.startsWith('SPP:') && !GATE_MAP.has(key)) {
-                    key = 'SPP';
-                }
-                if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
-                    key = 'SPP_DAG';
-                }
-                if (op.args.length > 0) {
-                    key += '(' + [...op.args].join(',') + ')';
-                }
-                return key;
-            });
-            let namesWithArgs = [...opsByName.keys()];
-            namesWithArgs.sort((a, b) => {
-                let ma = a.startsWith('MARK') || a.startsWith('POLY');
-                let mb = b.startsWith('MARK') || b.startsWith('POLY');
-                if (ma !== mb) {
-                    return ma < mb ? -1 : +1;
-                }
-                return a < b ? -1 : a > b ? +1 : 0;
-            });
+            let opsByName = layer.opsGroupedByNameWithArgs();
 
-            for (let nameWithArgs of namesWithArgs) {
-                let group = opsByName.get(nameWithArgs);
+            for (let [nameWithArgs, group] of opsByName.entries()) {
                 let targetGroups = [];
 
                 let gateName = nameWithArgs.split('(')[0];
+                if (gateName === 'DETECTOR' || gateName === 'OBSERVABLE_INCLUDE') {
+                    continue;
+                }
 
                 let gate = GATE_MAP.get(gateName);
                 if (gate === undefined && (gateName === 'MPP' || gateName === 'SPP' || gateName === 'SPP_DAG')) {
                     let line = [gateName + ' '];
                     for (let op of group) {
+                        seenMeasurements += op.countMeasurements();
                         let bases = op.gate.name.substring(gateName.length + 1);
                         for (let k = 0; k < op.id_targets.length; k++) {
                             line.push(bases[k] + old2new.get(op.id_targets[k]));
@@ -592,11 +688,13 @@ class Circuit {
                     if (gate !== undefined && gate.can_fuse) {
                         let flatTargetGroups = [];
                         for (let op of group) {
+                            seenMeasurements += op.countMeasurements();
                             flatTargetGroups.push(...op.id_targets)
                         }
                         targetGroups.push(flatTargetGroups);
                     } else {
                         for (let op of group) {
+                            seenMeasurements += op.countMeasurements();
                             targetGroups.push([...op.id_targets])
                         }
                     }
@@ -610,6 +708,72 @@ class Circuit {
                     }
                 }
             }
+
+            // Output DETECTOR lines immediately after the last measurement layer they use.
+            let nextDetectorLayer = detectorLayer;
+            while (remainingDetectors.length > 0) {
+                let candidate = remainingDetectors[remainingDetectors.length - 1];
+                let offset = totalMeasurements - seenMeasurements;
+                if (candidate.mids[0] + offset >= 0) {
+                    break;
+                }
+                remainingDetectors.pop();
+                let cxs = [];
+                let cys = [];
+                let sx = 0;
+                let sy = 0;
+                for (let q of candidate.qids) {
+                    let cx = this.qubitCoordData[2 * q];
+                    let cy = this.qubitCoordData[2 * q + 1];
+                    sx += cx;
+                    sy += cy;
+                    cxs.push(cx);
+                    cys.push(cy);
+                }
+                if (candidate.qids.length > 0) {
+                    sx /= candidate.qids.length;
+                    sy /= candidate.qids.length;
+                    sx = Math.round(sx * 2) / 2;
+                    sy = Math.round(sy * 2) / 2;
+                }
+                cxs.push(sx);
+                cys.push(sy);
+                let name;
+                let dt = detectorLayer;
+                for (let k = 0; ; k++) {
+                    if (k >= cxs.length) {
+                        k = 0;
+                        dt += 1;
+                    }
+                    name = `DETECTOR(${cxs[k]}, ${cys[k]}, ${dt})`;
+                    if (!usedDetectorCoords.has(name)) {
+                        break;
+                    }
+                }
+                usedDetectorCoords.add(name);
+                let line = [name];
+                for (let d of candidate.mids) {
+                    line.push(`rec[${d + offset}]`)
+                }
+                out.push(line.join(' '));
+                nextDetectorLayer = Math.max(nextDetectorLayer, dt + 1);
+            }
+            detectorLayer = nextDetectorLayer;
+
+            // Output OBSERVABLE_INCLUDE lines immediately after the last measurement layer they use.
+            for (let [obsIndex, candidate] of [...remainingObservables.entries()]) {
+                let offset = totalMeasurements - seenMeasurements;
+                if (candidate[0] + offset >= 0) {
+                    continue;
+                }
+                remainingObservables.delete(obsIndex);
+                let line = [`OBSERVABLE_INCLUDE(${obsIndex})`];
+                for (let d of candidate) {
+                    line.push(`rec[${d + offset}]`)
+                }
+                out.push(line.join(' '));
+            }
+
             out.push(`TICK`);
         }
         while (out.length > 0 && out[out.length - 1] === 'TICK') {
@@ -617,6 +781,17 @@ class Circuit {
         }
 
         return out.join('\n');
+    }
+
+    /**
+     * @returns {!int}
+     */
+    countMeasurements() {
+        let total = 0;
+        for (let layer of this.layers) {
+            total += layer.countMeasurements();
+        }
+        return total;
     }
 
     /**

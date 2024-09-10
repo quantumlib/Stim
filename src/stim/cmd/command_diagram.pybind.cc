@@ -125,6 +125,31 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
     c.def("_repr_pretty_", [](const DiagramHelper &self, pybind11::object p, pybind11::object cycle) -> void {
         pybind11::getattr(p, "text")(self.content);
     });
+    c.def("__repr__", [](const DiagramHelper &self) -> std::string {
+        std::stringstream ss;
+        ss << "<A stim._DiagramHelper containing ";
+        switch (self.type) {
+            case DiagramType::DIAGRAM_TYPE_GLTF:
+                ss << "a GLTF 3d model";
+                break;
+            case DiagramType::DIAGRAM_TYPE_SVG:
+                ss << "an SVG image";
+                break;
+            case DiagramType::DIAGRAM_TYPE_TEXT:
+                ss << "text";
+                break;
+            case DiagramType::DIAGRAM_TYPE_HTML:
+                ss << "an HTML document";
+                break;
+            case DiagramType::DIAGRAM_TYPE_SVG_HTML:
+                ss << "an HTML SVG image viewer";
+                break;
+            default:
+                ss << "???";
+        }
+        ss << " that will display inline in Jupyter notebooks. Use 'str' or 'print' to access the contents as text.>";
+        return ss.str();
+    });
     c.def("__str__", [](const DiagramHelper &self) -> pybind11::object {
         if (self.type == DiagramType::DIAGRAM_TYPE_SVG_HTML) {
             return diagram_as_html(self);
@@ -213,12 +238,18 @@ DiagramHelper stim_pybind::circuit_diagram(
     const Circuit &circuit,
     std::string_view type,
     const pybind11::object &tick,
+    const pybind11::object &rows,
     const pybind11::object &filter_coords_obj) {
     std::vector<CoordFilter> filter_coords;
     try {
         filter_coords = item_to_filter_multi(filter_coords_obj);
     } catch (const std::exception &_) {
         throw std::invalid_argument("filter_coords wasn't an Iterable[stim.DemTarget | Iterable[float]].");
+    }
+
+    size_t num_rows = 0;
+    if (!rows.is_none()) {
+        num_rows = pybind11::cast<size_t>(rows);
     }
 
     uint64_t tick_min;
@@ -262,7 +293,13 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "timeslice" || type == "time-slice") {
         std::stringstream out;
         DiagramTimelineSvgDrawer::make_diagram_write_to(
-            circuit, out, tick_min, num_ticks, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, filter_coords);
+            circuit,
+            out,
+            tick_min,
+            num_ticks,
+            DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE,
+            filter_coords,
+            num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -270,7 +307,8 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "detslice-svg" || type == "detslice" || type == "detslice-html" || type == "detslice-svg-html" ||
         type == "detector-slice-svg" || type == "detector-slice") {
         std::stringstream out;
-        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords).write_svg_diagram_to(out);
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
+            .write_svg_diagram_to(out, num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -284,7 +322,8 @@ DiagramHelper stim_pybind::circuit_diagram(
             tick_min,
             num_ticks,
             DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
-            filter_coords);
+            filter_coords,
+            num_rows);
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
@@ -311,7 +350,14 @@ DiagramHelper stim_pybind::circuit_diagram(
         type == "matchgraph-html" || type == "match-graph-svg-html" || type == "match-graph-html" ||
         type == "match-graph-3d" || type == "matchgraph-3d" || type == "match-graph-3d-html" ||
         type == "matchgraph-3d-html") {
-        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+        DetectorErrorModel dem;
+        try {
+            // By default, try to decompose the errors.
+            dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, false, false);
+        } catch (const std::invalid_argument &) {
+            // If any decomposition fails, don't decompose at all.
+            dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 1, false, false);
+        }
         return dem_diagram(dem, type);
     } else {
         std::stringstream ss;

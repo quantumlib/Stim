@@ -107,7 +107,7 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
 
     c.def_property_readonly(
         "name",
-        [](const CircuitRepeatBlock &self) -> pybind11::object {
+        [](const CircuitRepeatBlock &self) -> pybind11::str {
             return pybind11::cast("REPEAT");
         },
         clean_doc_string(R"DOC(

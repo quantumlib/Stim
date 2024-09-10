@@ -30,6 +30,7 @@ function *iter_gates_pair_measurements() {
             ['ZZ', 'ZZ'],
         ]),
         (frame, targets) => frame.do_measure('XX', targets),
+        (frame, targets) => frame.do_measure('XX', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -76,6 +77,7 @@ function *iter_gates_pair_measurements() {
             ['ZZ', 'ZZ'],
         ]),
         (frame, targets) => frame.do_measure('YY', targets),
+        (frame, targets) => frame.do_measure('YY', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -121,6 +123,7 @@ function *iter_gates_pair_measurements() {
             ['ZY', 'ERR:ZY'],
             ['ZZ', 'ZZ'],
         ]),
+        (frame, targets) => frame.do_measure('ZZ', targets),
         (frame, targets) => frame.do_measure('ZZ', targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

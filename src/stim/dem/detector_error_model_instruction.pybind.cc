@@ -1,26 +1,23 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 
-#include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/util_bot/str_util.h"
 
 using namespace stim;
 using namespace stim_pybind;
+
+std::vector<std::vector<ExposedDemTarget>> ExposedDemInstruction::target_groups() const {
+    std::vector<std::vector<ExposedDemTarget>> result;
+    as_dem_instruction().for_separated_targets([&](std::span<const DemTarget> group) {
+        std::vector<ExposedDemTarget> copy;
+        for (auto e : group) {
+            copy.push_back(e);
+        }
+        result.push_back(copy);
+    });
+    return result;
+}
 
 DemInstruction ExposedDemInstruction::as_dem_instruction() const {
     return DemInstruction{arguments, targets, type};
@@ -183,7 +180,62 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     c.def(
         "args_copy",
         &ExposedDemInstruction::args_copy,
-        "Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).");
+        clean_doc_string(R"DOC(
+            @signature def args_copy(self) -> List[float]:
+            Returns a copy of the list of numbers parameterizing the instruction.
+
+            For example, this would be coordinates of a detector instruction or the
+            probability of an error instruction. The result is a copy, meaning that
+            editing it won't change the instruction's targets or future copies.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.DetectorErrorModel('''
+                ...     error(0.125) D0
+                ... ''')[0]
+                >>> instruction.args_copy()
+                [0.125]
+
+                >>> instruction.args_copy() == instruction.args_copy()
+                True
+                >>> instruction.args_copy() is instruction.args_copy()
+                False
+        )DOC")
+            .data());
+
+    c.def(
+        "target_groups",
+        &ExposedDemInstruction::target_groups,
+        clean_doc_string(R"DOC(
+            @signature def target_groups(self) -> List[List[stim.DemTarget]]:
+            Returns a copy of the instruction's targets, split by target separators.
+
+            When a detector error model instruction contains a suggested decomposition,
+            its targets contain separators (`stim.DemTarget("^")`). This method splits the
+            targets into groups based the separators, similar to how `str.split` works.
+
+            Returns:
+                A list of groups of targets.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.01) D0 D1 ^ D2
+                ...     error(0.01) D0 L0
+                ...     error(0.01)
+                ... ''')
+
+                >>> dem[0].target_groups()
+                [[stim.DemTarget('D0'), stim.DemTarget('D1')], [stim.DemTarget('D2')]]
+
+                >>> dem[1].target_groups()
+                [[stim.DemTarget('D0'), stim.DemTarget('L0')]]
+
+                >>> dem[2].target_groups()
+                [[]]
+        )DOC")
+            .data());
+
     c.def(
         "targets_copy",
         &ExposedDemInstruction::targets_copy,
@@ -191,8 +243,21 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
             @signature def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
             Returns a copy of the instruction's targets.
 
-            (Making a copy is enforced to make it clear that editing the result won't change
-            the instruction's targets.)
+            The result is a copy, meaning that editing it won't change the instruction's
+            targets or future copies.
+
+            Examples:
+                >>> import stim
+                >>> instruction = stim.DetectorErrorModel('''
+                ...     error(0.125) D0 L2
+                ... ''')[0]
+                >>> instruction.targets_copy()
+                [stim.DemTarget('D0'), stim.DemTarget('L2')]
+
+                >>> instruction.targets_copy() == instruction.targets_copy()
+                True
+                >>> instruction.targets_copy() is instruction.targets_copy()
+                False
         )DOC")
             .data());
     c.def_property_readonly(

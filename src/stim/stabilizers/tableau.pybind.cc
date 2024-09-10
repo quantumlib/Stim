@@ -320,10 +320,10 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             auto n = self.num_qubits;
 
             return pybind11::make_tuple(
-                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed, false, pybind11::none()),
                 simd_bits_to_numpy(self.xs.signs, n, bit_packed),
                 simd_bits_to_numpy(self.zs.signs, n, bit_packed));
         },
@@ -838,7 +838,16 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             return self.num_qubits;
         },
-        "Returns the number of qubits operated on by the tableau.");
+        clean_doc_string(R"DOC(
+            Returns the number of qubits operated on by the tableau.
+
+            Examples:
+                >>> import stim
+                >>> t = stim.Tableau.from_named_gate("CNOT")
+                >>> len(t)
+                2
+        )DOC")
+            .data());
 
     c.def("__str__", &Tableau<MAX_BITWORD_WIDTH>::str, "Returns a text description.");
 

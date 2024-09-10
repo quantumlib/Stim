@@ -18,6 +18,7 @@ class Gate {
      * @param {!boolean} is_marker
      * @param {!Map<!string, !string>|undefined} tableau_map
      * @param {!function(!PauliFrame, !Array<!int>)} frameDo,
+     * @param {!function(!PauliFrame, !Array<!int>)} frameUndo,
      * @param {!gateDrawCallback} drawer
      * @param {undefined|!number=undefined} defaultArgument
      */
@@ -27,6 +28,7 @@ class Gate {
                 is_marker,
                 tableau_map,
                 frameDo,
+                frameUndo,
                 drawer,
                 defaultArgument = undefined) {
         this.name = name;
@@ -35,6 +37,7 @@ class Gate {
         this.can_fuse = can_fuse;
         this.tableau_map = tableau_map;
         this.frameDo = frameDo;
+        this.frameUndo = frameUndo;
         this.drawer = drawer;
         this.defaultArgument = defaultArgument;
     }
@@ -50,6 +53,7 @@ class Gate {
             this.is_marker,
             this.tableau_map,
             this.frameDo,
+            this.frameUndo,
             this.drawer,
             newDefaultArgument);
     }

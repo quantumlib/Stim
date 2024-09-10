@@ -42,6 +42,7 @@ DiagramHelper circuit_diagram(
     const stim::Circuit &circuit,
     std::string_view type,
     const pybind11::object &tick,
+    const pybind11::object &rows,
     const pybind11::object &filter_coords_obj);
 
 }  // namespace stim_pybind

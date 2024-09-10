@@ -5,4 +5,4 @@ set -e
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 cd "$(git rev-parse --show-toplevel)"
 
-dev/regen_crumble_to_cpp_string_write_to_stdout.sh > src/stim/diagram/crumble_data.cc
+dev/compile_crumble_into_cpp_string_file.sh > src/stim/diagram/crumble_data.cc

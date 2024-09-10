@@ -928,3 +928,30 @@ def test_pauli_indices():
     assert stim.PauliString("_XYZ").pauli_indices("_") == [0]
     with pytest.raises(ValueError, match="Invalid character"):
         assert stim.PauliString("_XYZ").pauli_indices("k")
+
+
+def test_before_reset():
+    assert stim.PauliString("Z").before(stim.Circuit("R 0")) == stim.PauliString("_")
+    assert stim.PauliString("Z").before(stim.Circuit("MR 0")) == stim.PauliString("_")
+    assert stim.PauliString("Z").before(stim.Circuit("M 0")) == stim.PauliString("Z")
+
+    assert stim.PauliString("X").before(stim.Circuit("RX 0")) == stim.PauliString("_")
+    assert stim.PauliString("X").before(stim.Circuit("MRX 0")) == stim.PauliString("_")
+    assert stim.PauliString("X").before(stim.Circuit("MX 0")) == stim.PauliString("X")
+
+    assert stim.PauliString("Y").before(stim.Circuit("RY 0")) == stim.PauliString("_")
+    assert stim.PauliString("Y").before(stim.Circuit("MRY 0")) == stim.PauliString("_")
+    assert stim.PauliString("Y").before(stim.Circuit("MY 0")) == stim.PauliString("Y")
+
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("RX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("RY 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MRX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MRY 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MX 0"))
+    with pytest.raises(ValueError):
+        stim.PauliString("Z").before(stim.Circuit("MY 0"))

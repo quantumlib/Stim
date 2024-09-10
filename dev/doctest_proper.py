@@ -89,6 +89,15 @@ def main():
         module = __import__(module_name)
         out = {}
         gen(obj=module, fullname=module_name, out=out)
+        for k, v in out.items():
+            if v.__doc__ is None:
+                continue
+            v = v.__doc__.lower()
+            if '\n' in v.strip() and 'examples:' not in v and 'example:' not in v and '[deprecated]' not in v:
+                if k.split('.')[-1] not in ['__next__', '__iter__', '__init_subclass__', '__module__', '__eq__', '__ne__', '__str__', '__repr__']:
+                    if all(not (e.startswith('_') and not e.startswith('__')) for e in k.split('.')):
+                        print(f"    Warning: Missing 'examples:' section in docstring of {k!r}", file=sys.stderr)
+
         module.__test__ = {k: v for k, v in out.items()}
         if doctest.testmod(module, globs=globs).failed:
             any_failed = True
