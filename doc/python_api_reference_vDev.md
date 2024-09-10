@@ -1610,6 +1610,7 @@ def diagram(
     *,
     tick: Union[None, int, range] = None,
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
+    rows: int | None = None,
 ) -> 'stim._DiagramHelper':
     """Returns a diagram of the circuit, from a variety of options.
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from sinter._decoding_decoder_class import Decoder, CompiledDecoder
+from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder
 
 
 class VacuousDecoder(Decoder):

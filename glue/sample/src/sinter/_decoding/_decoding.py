@@ -11,9 +11,9 @@ import time
 import numpy as np
 import stim
 
-from sinter._anon_task_stats import AnonTaskStats
-from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding_decoder_class import CompiledDecoder, Decoder
+from sinter._data import AnonTaskStats
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._decoding._decoding_decoder_class import CompiledDecoder, Decoder
 
 if TYPE_CHECKING:
     import sinter
