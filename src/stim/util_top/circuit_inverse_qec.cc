@@ -130,7 +130,7 @@ void CircuitFlowReverser::do_feedback_capable_instruction(const CircuitInstructi
             throw std::invalid_argument("Time-reversing feedback isn't supported yet. Found feedback in: " + inst.str());
         }
     }
-    rev.undo_gate(inst);
+    do_simple_instruction(inst);
 }
 
 void CircuitFlowReverser::do_simple_instruction(const CircuitInstruction &inst) {
