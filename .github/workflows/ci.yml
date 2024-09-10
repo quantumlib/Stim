@@ -183,7 +183,6 @@ jobs:
       - run: mkdir -p output/sinter
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
       - run: python -m cibuildwheel --print-build-identifiers
-      - run: python -m cibuildwheel --output-dir output/stim
       - run: python setup.py sdist
       - run: cd glue/cirq && python setup.py sdist
       - run: cd glue/sample && python setup.py sdist
