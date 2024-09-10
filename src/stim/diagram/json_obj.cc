@@ -48,8 +48,8 @@ JsonObj::JsonObj(std::map<std::string, JsonObj> map) : map(map), type(JsonTypeMa
 }
 
 JsonObj::JsonObj(std::vector<JsonObj> arr) : arr(arr), type(JsonTypeArray) {
+}
 
-};
 JsonObj::JsonObj(bool boolean) : val_boolean(boolean), type(JsonTypeBool) {
 }
 
