@@ -188,6 +188,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.__init__`](#stim.FlipSimulator.__init__)
     - [`stim.FlipSimulator.batch_size`](#stim.FlipSimulator.batch_size)
     - [`stim.FlipSimulator.broadcast_pauli_errors`](#stim.FlipSimulator.broadcast_pauli_errors)
+    - [`stim.FlipSimulator.clear`](#stim.FlipSimulator.clear)
     - [`stim.FlipSimulator.copy`](#stim.FlipSimulator.copy)
     - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
     - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
@@ -198,7 +199,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.num_observables`](#stim.FlipSimulator.num_observables)
     - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
     - [`stim.FlipSimulator.peek_pauli_flips`](#stim.FlipSimulator.peek_pauli_flips)
-    - [`stim.FlipSimulator.reset`](#stim.FlipSimulator.reset)
     - [`stim.FlipSimulator.set_pauli_flip`](#stim.FlipSimulator.set_pauli_flip)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
@@ -7343,6 +7343,42 @@ def broadcast_pauli_errors(
     """
 ```
 
+<a name="stim.FlipSimulator.clear"></a>
+```python
+# stim.FlipSimulator.clear
+
+# (in class stim.FlipSimulator)
+def clear(
+    self,
+) -> None:
+    """Clears the simulator's state, so it can be reused for another simulation.
+
+    This clears the measurement flip history, clears the detector flip history,
+    and zeroes the observable flip state. It also resets all qubits to |0>. If
+    stabilizer randomization is disabled, this zeros all pauli flip data. Otherwise
+    it randomizes all pauli flips to be I or Z with equal probability.
+
+    Behind the scenes, this doesn't free memory or resize the simulator. So,
+    repeating the same simulation with calls to `clear` in between will be faster
+    than allocating a new simulator each time (by avoiding re-allocations).
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> sim.do(stim.Circuit("M(0.1) 9"))
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (1, 256)
+
+        >>> sim.clear()
+        >>> sim.num_qubits
+        10
+        >>> sim.get_measurement_flips().shape
+        (0, 256)
+    """
+```
+
 <a name="stim.FlipSimulator.copy"></a>
 ```python
 # stim.FlipSimulator.copy
@@ -7853,38 +7889,6 @@ def peek_pauli_flips(
         >>> flips: stim.PauliString = sim.peek_pauli_flips(instance_index=0)
         >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
         ['+', 'Z', '_']
-    """
-```
-
-<a name="stim.FlipSimulator.reset"></a>
-```python
-# stim.FlipSimulator.reset
-
-# (in class stim.FlipSimulator)
-def reset(
-    self,
-) -> None:
-    """Resets the simulator's state, so it can be reused for another simulation.
-
-    This empties the measurement flip history, empties the detector flip history,
-    and zeroes the observable flip state. It also resets all qubits to |0>. If
-    stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
-    it randomizes all pauli flips to be I or Z with equal probability.
-
-    Examples:
-        >>> import stim
-        >>> sim = stim.FlipSimulator(batch_size=256)
-        >>> sim.do(stim.Circuit("M(0.1) 9"))
-        >>> sim.num_qubits
-        10
-        >>> sim.get_measurement_flips().shape
-        (1, 256)
-
-        >>> sim.reset()
-        >>> sim.num_qubits
-        10
-        >>> sim.get_measurement_flips().shape
-        (0, 256)
     """
 ```
 
