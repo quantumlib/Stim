@@ -193,7 +193,7 @@ class _FrozenDict:
         self._hash = hash(self._eq)
 
         terms = []
-        for k in sorted(self._v.keys(), key=lambda e: (e != 'order', e)):
+        for k in sorted(self._v.keys(), key=lambda e: (e != 'sort', e)):
             terms.append(k)
             terms.append(better_sorted_str_terms(self._v[k])
         )

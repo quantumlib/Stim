@@ -298,12 +298,35 @@ def handles_throttling(
 @abc.abstractmethod
 def sample(
     self,
-    shots: int,
+    suggested_shots: int,
 ) -> sinter.AnonTaskStats:
-    """Perform the given number of samples, and return statistics.
+    """Samples shots and returns statistics.
 
-    This method is permitted to perform fewer shots than specified, but must
-    indicate this in its returned statistics.
+    Args:
+        suggested_shots: The number of shots being requested. The sampler
+            may perform more shots or fewer shots than this, so technically
+            this argument can just be ignored. If a sampler is optimized for
+            a specific batch size, it can simply return one batch per call
+            regardless of this parameter.
+
+            However, this parameter is a useful hint about the amount of
+            work being done. The sampler can use this to optimize its
+            behavior. For example, it could adjust its batch size downward
+            if the suggested shots is very small. Whereas if the suggested
+            shots is very high, the sampler should focus entirely on
+            achieving the best possible throughput.
+
+            Note that, in typical workloads, the sampler will be called
+            repeatedly with the same value of suggested_shots. Therefore it
+            is reasonable to allocate buffers sized to accomodate the
+            current suggested_shots, expecting them to be useful again for
+            the next shot.
+
+    Returns:
+        A sinter.AnonTaskStats saying how many shots were actually taken,
+        how many errors were seen, etc.
+
+        The returned stats must have at least one shot.
     """
 ```
 
@@ -913,7 +936,7 @@ def collect(
     start_batch_size: Optional[int] = None,
     print_progress: bool = False,
     hint_num_tasks: Optional[int] = None,
-    custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_decoders: Optional[Dict[str, Union[sinter.Decoder, sinter.Sampler]]] = None,
     custom_error_count_key: Optional[str] = None,
     allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> List[sinter.TaskStats]:
@@ -1237,7 +1260,7 @@ def iter_collect(
     start_batch_size: Optional[int] = None,
     count_observable_error_combos: bool = False,
     count_detection_events: bool = False,
-    custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_decoders: Optional[Dict[str, Union[sinter.Decoder, sinter.Sampler]]] = None,
     custom_error_count_key: Optional[str] = None,
     allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
 ) -> Iterator[sinter.Progress]:
@@ -1458,11 +1481,21 @@ def plot_discard_rate(
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+            If the result of the function is a dictionary, then optional keys in the dictionary will
+            also control the plotting of each curve. Available keys are:
+                'label': the label added to the legend for the curve
+                'color': the color used for plotting the curve
+                'marker': the marker used for the curve
+                'linestyle': the linestyle used for the curve
+                'sort': the order in which the curves will be plotted and added to the legend
+            e.g. if two curves (with different resulting dictionaries from group_func) share the same
+            value for key 'marker', they will be plotted with the same marker.
+            Colors, markers and linestyles are assigned in order, sorted by the values for those keys.
         filter_func: Optional. When specified, some curves will not be plotted.
             The statistics are filtered and only plotted if filter_func(stat) returns True.
             For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
             where the saved metadata indicates the basis was 'x'.
-        plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
+        plot_args_func: Optional. Specifies additional arguments to give the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
             curve_id (these will be 0 and None respectively if group_func is not specified). For example,
@@ -1517,11 +1550,21 @@ def plot_error_rate(
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+            If the result of the function is a dictionary, then optional keys in the dictionary will
+            also control the plotting of each curve. Available keys are:
+                'label': the label added to the legend for the curve
+                'color': the color used for plotting the curve
+                'marker': the marker used for the curve
+                'linestyle': the linestyle used for the curve
+                'sort': the order in which the curves will be plotted and added to the legend
+            e.g. if two curves (with different resulting dictionaries from group_func) share the same
+            value for key 'marker', they will be plotted with the same marker.
+            Colors, markers and linestyles are assigned in order, sorted by the values for those keys.
         filter_func: Optional. When specified, some curves will not be plotted.
             The statistics are filtered and only plotted if filter_func(stat) returns True.
             For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
             where the saved metadata indicates the basis was 'x'.
-        plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
+        plot_args_func: Optional. Specifies additional arguments to give the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
             curve_id (these will be 0 and None respectively if group_func is not specified). For example,
