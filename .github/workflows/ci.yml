@@ -173,6 +173,7 @@ jobs:
 #            ./output/sinter/*.tar.gz
 #            ./output/stim/*
   build_sdist:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
