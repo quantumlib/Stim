@@ -11,9 +11,9 @@ import sinter
 import stim
 
 from sinter._collection import post_selection_mask_from_4th_coord
-from sinter._decoding import sample_decode
-from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding_vacuous import VacuousDecoder
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._decoding._decoding import sample_decode
+from sinter._decoding._decoding_vacuous import VacuousDecoder
 
 
 def get_test_decoders() -> Tuple[List[str], Dict[str, sinter.Decoder]]:

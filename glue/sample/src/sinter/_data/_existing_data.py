@@ -3,9 +3,9 @@ import json
 import pathlib
 from typing import Any, Dict, List, TYPE_CHECKING
 
-from sinter._task_stats import TaskStats
-from sinter._task import Task
-from sinter._decoding import AnonTaskStats
+from sinter._data._task_stats import TaskStats
+from sinter._data._task import Task
+from sinter._data._anon_task_stats import AnonTaskStats
 
 if TYPE_CHECKING:
     import sinter
@@ -26,8 +26,9 @@ class ExistingData:
 
     def add_sample(self, sample: TaskStats) -> None:
         k = sample.strong_id
-        if k in self.data:
-            self.data[k] += sample
+        current = self.data.get(k)
+        if current is not None:
+            self.data[k] = current + sample
         else:
             self.data[k] = sample
 
