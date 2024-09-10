@@ -8,12 +8,11 @@ from typing import cast
 import numpy as np
 import stim
 
-import sinter
-from sinter._printer import ThrottledProgressPrinter
-from sinter._task import Task
+from sinter._collection import ThrottledProgressPrinter
+from sinter._data import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_predicate
-from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._main_combine import ExistingData, CSV_HEADER
+from sinter._command._main_combine import ExistingData, CSV_HEADER
+from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_SAMPLERS
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
@@ -82,7 +81,7 @@ def parse_args(args: List[str]) -> Any:
                         default=None,
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('--processes',
-                        required=True,
+                        default='auto',
                         type=str,
                         help='Number of processes to use for simultaneous sampling and decoding. '
                              'Must be either a number or "auto" which sets it to the number of '
@@ -203,6 +202,7 @@ def parse_args(args: List[str]) -> Any:
                              '''    --metadata_func "auto"\n'''
                              '''    --metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
                         )
+    import sinter
     a = parser.parse_args(args=args)
     if a.metadata_func == 'auto':
         a.metadata_func = "sinter.comma_separated_key_values(path)"
@@ -243,9 +243,9 @@ def parse_args(args: List[str]) -> Any:
     else:
         a.custom_decoders = None
     for decoder in a.decoders:
-        if decoder not in BUILT_IN_DECODERS and (a.custom_decoders is None or decoder not in a.custom_decoders):
-            message = f"Not a recognized decoder: {decoder=}.\n"
-            message += f"Available built-in decoders: {sorted(e for e in BUILT_IN_DECODERS.keys() if 'internal' not in e)}.\n"
+        if decoder not in BUILT_IN_SAMPLERS and (a.custom_decoders is None or decoder not in a.custom_decoders):
+            message = f"Not a recognized decoder or sampler: {decoder=}.\n"
+            message += f"Available built-in decoders and samplers: {sorted(e for e in BUILT_IN_SAMPLERS.keys() if 'internal' not in e)}.\n"
             if a.custom_decoders is None:
                 message += f"No custom decoders are available. --custom_decoders_module_function wasn't specified."
             else:
@@ -296,7 +296,7 @@ def main_collect(*, command_line_args: List[str]):
     printer = ThrottledProgressPrinter(
         outs=[],
         print_progress=not args.quiet,
-        min_progress_delay=0.03 if args.also_print_results_to_stdout else 0.2,
+        min_progress_delay=0.03 if args.also_print_results_to_stdout else 0.1,
     )
     if print_to_stdout:
         printer.outs.append(sys.stdout)

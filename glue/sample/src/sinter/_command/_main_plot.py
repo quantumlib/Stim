@@ -4,11 +4,12 @@ from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple
 import argparse
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-from sinter import shot_error_rate_to_piece_error_rate
-from sinter._main_combine import ExistingData
+from sinter._command._main_combine import ExistingData
 from sinter._plotting import plot_discard_rate, plot_custom
 from sinter._plotting import plot_error_rate
+from sinter._probability_util import shot_error_rate_to_piece_error_rate, Fit
 
 if TYPE_CHECKING:
     import sinter
@@ -32,6 +33,16 @@ def parse_args(args: List[str]) -> Any:
                              'Examples:\n'
                              '''    --filter_func "decoder=='pymatching'"\n'''
                              '''    --filter_func "0.001 < metadata['p'] < 0.005"\n''')
+    parser.add_argument('--preprocess_stats_func',
+                        type=str,
+                        default=None,
+                        help='An expression that operates on a `stats` value, returning a new list of stats to plot.\n'
+                             'For example, this could double add a field to json_metadata or merge stats together.\n'
+                             'Examples:\n'
+                             '''    --preprocess_stats_func "[stat for stat in stats if stat.errors > 0]\n'''
+                             '''    --preprocess_stats_func "[stat.with_edits(errors=stat.custom_counts['severe_errors']) for stat in stats]\n'''
+                             '''    --preprocess_stats_func "__import__('your_custom_module').your_custom_function(stats)"\n'''
+                             )
     parser.add_argument('--x_func',
                         type=str,
                         default="1",
@@ -49,6 +60,21 @@ def parse_args(args: List[str]) -> Any:
                              '''    --x_func m.p\n'''
                              '''    --x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
                         )
+    parser.add_argument('--point_label_func',
+                        type=str,
+                        default="None",
+                        help='A python expression that determines text to put next to data points.\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
+                             'Expected expression type:\n'
+                             '    Something Falsy (no label), or something that can be given to `str` to get a string.\n'
+                             'Examples:\n'
+                             '''    --point_label_func "f'p={m.p}'"\n'''
+                        )
     parser.add_argument('--y_func',
                         type=str,
                         default=None,
@@ -62,7 +88,8 @@ def parse_args(args: List[str]) -> Any:
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
-                             '    Something that can be given to `float` to get a float.\n'
+                             '    A `sinter.Fit` specifying an uncertainty region,.\n'
+                             '    or else something that can be given to `float` to get a float.\n'
                              'Examples:\n'
                              '''    --x_func "metadata['p']"\n'''
                              '''    --x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
@@ -76,6 +103,7 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",
                         help='A python expression that determines how points are grouped into curves.\n'
+                             'If this evaluates to a dict, different keys control different groupings (e.g. "color" and "marker")\n'
                              'Values available to the python expression:\n'
                              '    metadata: The parsed value from the json_metadata for the data point.\n'
                              '    m: `m.key` is a shorthand for `metadata.get("key", None)`.\n'
@@ -83,10 +111,16 @@ def parse_args(args: List[str]) -> Any:
                              '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
                              '    stat: The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
-                             '    Something that can be given to `str` to get a useful string.\n'
+                             '    A dict, or something that can be given to `str` to get a useful string.\n'
+                             'Recognized dict keys:\n'
+                             '    "color": controls color grouping\n'
+                             '    "marker": controls marker grouping\n'
+                             '    "linestyle": controls linestyle grouping\n'
+                             '    "order": controls ordering in the legend\n'
+                             '    "label": the text shown in the legend\n'
                              'Examples:\n'
-                             '''    --group_func "(decoder, metadata['d'])"\n'''
-                             '''    --group_func m.d\n'''
+                             '''    --group_func "(decoder, m.d)"\n'''
+                             '''    --group_func "{'color': decoder, 'marker': m.d, 'label': (decoder, m.d)}"\n'''
                              '''    --group_func "metadata['path'].split('/')[-2]"\n'''
                         )
     parser.add_argument('--failure_unit_name',
@@ -151,7 +185,7 @@ def parse_args(args: List[str]) -> Any:
                         )
     parser.add_argument('--plot_args_func',
                         type=str,
-                        default='''{'marker': 'ov*sp^<>8P+xXhHDd|'[index % 18]}''',
+                        default='''{}''',
                         help='A python expression used to customize the look of curves.\n'
                              'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
@@ -181,9 +215,8 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--out',
                         type=str,
                         default=None,
-                        help='Output file to write the plot to.\n'
-                             'The file extension determines the type of image.\n'
-                             'Either this or --show must be specified.')
+                        help='Write the plot to a file instead of showing it.\n'
+                             '(Use --show to still show the plot.)')
     parser.add_argument('--xaxis',
                         type=str,
                         default='[log]',
@@ -207,8 +240,7 @@ def parse_args(args: List[str]) -> Any:
                              "stats.")
     parser.add_argument('--show',
                         action='store_true',
-                        help='Displays the plot in a window.\n'
-                             'Either this or --out must be specified.')
+                        help='Displays the plot in a window even when --out is specified.')
     parser.add_argument('--xmin',
                         default=None,
                         type=float,
@@ -246,8 +278,6 @@ def parse_args(args: List[str]) -> Any:
                         help='Adds dashed line fits to every curve.')
 
     a = parser.parse_args(args=args)
-    if not a.show and a.out is None:
-        raise ValueError("Must specify '--out file' or '--show'.")
     if 'custom_y' in a.type and a.y_func is None:
         raise ValueError("--type custom_y requires --y_func.")
     if a.y_func is not None and a.type and 'custom_y' not in a.type:
@@ -265,35 +295,51 @@ def parse_args(args: List[str]) -> Any:
         a.failure_values_func = "1"
     if a.failure_unit_name is None:
         a.failure_unit_name = 'shot'
-    a.x_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.x_func}',
-        filename='x_func:command_line_arg',
+
+    def _compile_argument_into_func(arg_name: str, arg_val: Any = ()):
+        if arg_val == ():
+            arg_val = getattr(a, arg_name)
+        raw_func = eval(compile(
+            f'lambda *, stat, decoder, metadata, m, strong_id, sinter, math, np: {arg_val}',
+            filename=f'{arg_name}:command_line_arg',
+            mode='eval',
+        ))
+        import sinter
+        return lambda stat: raw_func(
+            sinter=sinter,
+            math=math,
+            np=np,
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            m=_FieldToMetadataWrapper(stat.json_metadata),
+            strong_id=stat.strong_id)
+
+    a.preprocess_stats_func = None if a.preprocess_stats_func is None else eval(compile(
+        f'lambda *, stats: {a.preprocess_stats_func}',
+        filename='preprocess_stats_func:command_line_arg',
         mode='eval'))
+    a.x_func = _compile_argument_into_func('x_func', a.x_func)
     if a.y_func is not None:
-        a.y_func = eval(compile(
-            f'lambda *, stat, decoder, metadata, m, strong_id: {a.y_func}',
-            filename='x_func:command_line_arg',
-            mode='eval'))
-    a.group_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.group_func}',
-        filename='group_func:command_line_arg',
-        mode='eval'))
-    a.filter_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.filter_func}',
-        filename='filter_func:command_line_arg',
-        mode='eval'))
-    a.failure_units_per_shot_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_units_per_shot_func}',
-        filename='failure_units_per_shot_func:command_line_arg',
-        mode='eval'))
-    a.failure_values_func = eval(compile(
-        f'lambda *, stat, decoder, metadata, m, strong_id: {a.failure_values_func}',
-        filename='failure_values_func:command_line_arg',
-        mode='eval'))
-    a.plot_args_func = eval(compile(
+        a.y_func = _compile_argument_into_func('y_func')
+    a.point_label_func = _compile_argument_into_func('point_label_func')
+    a.group_func = _compile_argument_into_func('group_func')
+    a.filter_func = _compile_argument_into_func('filter_func')
+    a.failure_units_per_shot_func = _compile_argument_into_func('failure_units_per_shot_func')
+    a.failure_values_func = _compile_argument_into_func('failure_values_func')
+    raw_plot_args_func = eval(compile(
         f'lambda *, index, key, stats, stat, decoder, metadata, m, strong_id: {a.plot_args_func}',
         filename='plot_args_func:command_line_arg',
         mode='eval'))
+    a.plot_args_func = lambda index, group_key, stats: raw_plot_args_func(
+            index=index,
+            key=group_key,
+            stats=stats,
+            stat=stats[0],
+            decoder=stats[0].decoder,
+            metadata=stats[0].json_metadata,
+            m=_FieldToMetadataWrapper(stats[0].json_metadata),
+            strong_id=stats[0].strong_id)
     return a
 
 
@@ -361,12 +407,21 @@ def _pick_min_max(
         want_strictly_positive: bool,
 ) -> Tuple[float, float]:
     assert default_max >= default_min
-    vs = [
-        v
-        for stat in plotted_stats
-        if (v := v_func(stat)) is not None
-        if v > 0 or not want_positive
-    ]
+    vs = []
+    for stat in plotted_stats:
+        v = v_func(stat)
+        if isinstance(v, (int, float)):
+            vs.append(v)
+        elif isinstance(v, Fit):
+            for e in [v.low, v.best, v.high]:
+                if e is not None:
+                    vs.append(e)
+        elif v is None:
+            pass
+        else:
+            raise NotImplementedError(f'{v=}')
+    if want_positive:
+        vs = [v for v in vs if v > 0]
 
     min_v = min(vs, default=default_min)
     max_v = max(vs, default=default_max)
@@ -429,16 +484,24 @@ def _set_axis_scale_label_ticks(
     elif scale_name == 'log':
         set_scale('log')
         min_v, max_v, major_ticks, minor_ticks = _log_ticks(min_v, max_v)
+        if forced_min_v is not None:
+            min_v = forced_min_v
+        if forced_max_v is not None:
+            max_v = forced_max_v
         set_ticks(major_ticks)
         set_ticks(minor_ticks, minor=True)
         set_lim(min_v, max_v)
     elif scale_name == 'sqrt':
         from matplotlib.scale import FuncScale
         min_v, max_v, major_ticks, minor_ticks = _sqrt_ticks(min_v, max_v)
-        set_lim(min_v, max_v)
+        if forced_min_v is not None:
+            min_v = forced_min_v
+        if forced_max_v is not None:
+            max_v = forced_max_v
         set_scale(FuncScale(ax, (lambda e: e**0.5, lambda e: e**2)))
         set_ticks(major_ticks)
         set_ticks(minor_ticks, minor=True)
+        set_lim(min_v, max_v)
     else:
         raise NotImplemented(f'{scale_name=}')
     return scale_name
@@ -468,6 +531,7 @@ def _plot_helper(
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
     group_func: Callable[['sinter.TaskStats'], Any],
     filter_func: Callable[['sinter.TaskStats'], Any],
+    preprocess_stats_func: Optional[Callable],
     failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any],
     failure_values_func: Callable[['sinter.TaskStats'], Any],
     x_func: Callable[['sinter.TaskStats'], Any],
@@ -486,6 +550,7 @@ def _plot_helper(
     fig_size: Optional[Tuple[int, int]],
     plot_args_func: Callable[[int, Any, List['sinter.TaskStats']], Dict[str, Any]],
     line_fits: bool,
+    point_label_func: Callable[['sinter.TaskStats'], Any] = lambda _: None,
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -496,6 +561,12 @@ def _plot_helper(
     total.data = {k: v
                   for k, v in total.data.items()
                   if bool(filter_func(v))}
+
+    if preprocess_stats_func is not None:
+        processed_stats = preprocess_stats_func(stats=list(total.data.values()))
+        total.data = {}
+        for stat in processed_stats:
+            total.add_sample(stat)
 
     if not plot_types:
         if y_func is not None:
@@ -529,7 +600,6 @@ def _plot_helper(
     plotted_stats: List['sinter.TaskStats'] = [
         stat
         for stat in total.data.values()
-        if filter_func(stat)
     ]
 
     def stat_to_err_rate(stat: 'sinter.TaskStats') -> Optional[float]:
@@ -581,6 +651,7 @@ def _plot_helper(
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=plot_args_func,
             line_fits=None if not line_fits else (x_scale_name, y_scale_name),
+            point_label_func=point_label_func,
         )
         ax_err.grid(which='major', color='#000000')
         ax_err.grid(which='minor', color='#DDDDDD')
@@ -595,6 +666,7 @@ def _plot_helper(
             x_func=x_func,
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=plot_args_func,
+            point_label_func=point_label_func,
         )
         ax_dis.set_yticks([p / 10 for p in range(11)], labels=[f'{10*p}%' for p in range(11)])
         ax_dis.set_ylim(0, 1)
@@ -626,9 +698,9 @@ def _plot_helper(
             x_func=x_func,
             y_func=y_func,
             group_func=group_func,
-            filter_func=filter_func,
             plot_args_func=plot_args_func,
             line_fits=None if not line_fits else (x_scale_name, y_scale_name),
+            point_label_func=point_label_func,
         )
         ax_cus.grid(which='major', color='#000000')
         ax_cus.grid(which='minor', color='#DDDDDD')
@@ -710,51 +782,14 @@ def main_plot(*, command_line_args: List[str]):
 
     fig, _ = _plot_helper(
         samples=total,
-        group_func=lambda stat: args.group_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        x_func=lambda stat: args.x_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        y_func=None if args.y_func is None else lambda stat: args.y_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        filter_func=lambda stat: args.filter_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        failure_units_per_shot_func=lambda stat: args.failure_units_per_shot_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        failure_values_func=lambda stat: args.failure_values_func(
-            stat=stat,
-            decoder=stat.decoder,
-            metadata=stat.json_metadata,
-            m=_FieldToMetadataWrapper(stat.json_metadata),
-            strong_id=stat.strong_id),
-        plot_args_func=lambda index, group_key, stats: args.plot_args_func(
-            index=index,
-            key=group_key,
-            stats=stats,
-            stat=stats[0],
-            decoder=stats[0].decoder,
-            metadata=stats[0].json_metadata,
-            m=_FieldToMetadataWrapper(stats[0].json_metadata),
-            strong_id=stats[0].strong_id),
+        group_func=args.group_func,
+        x_func=args.x_func,
+        point_label_func=args.point_label_func,
+        y_func=args.y_func,
+        filter_func=args.filter_func,
+        failure_units_per_shot_func=args.failure_units_per_shot_func,
+        failure_values_func=args.failure_values_func,
+        plot_args_func=args.plot_args_func,
         failure_unit=args.failure_unit_name,
         plot_types=args.type,
         xaxis=args.xaxis,
@@ -768,8 +803,9 @@ def main_plot(*, command_line_args: List[str]):
         title=args.title,
         subtitle=args.subtitle,
         line_fits=args.line_fits,
+        preprocess_stats_func=args.preprocess_stats_func,
     )
     if args.out is not None:
         fig.savefig(args.out)
-    if args.show:
+    if args.show or args.out is None:
         plt.show()

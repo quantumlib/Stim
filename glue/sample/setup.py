@@ -37,6 +37,6 @@ setup(
     install_requires=requirements,
     tests_require=['pytest', 'pymatching'],
     entry_points={
-        'console_scripts': ['sinter=sinter._main:main'],
+        'console_scripts': ['sinter=sinter._command._main:main'],
     },
 )

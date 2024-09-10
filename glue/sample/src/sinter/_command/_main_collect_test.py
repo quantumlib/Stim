@@ -6,8 +6,8 @@ import stim
 
 import pytest
 import sinter
-from sinter._main import main
-from sinter._main_combine import ExistingData
+from sinter._command._main import main
+from sinter._command._main_combine import ExistingData
 from sinter._plotting import split_by
 
 
@@ -144,7 +144,7 @@ def test_main_collect_with_custom_decoder():
                 "--decoders",
                 "NOTEXIST",
                 "--custom_decoders_module_function",
-                "sinter._main_collect_test:_make_custom_decoders",
+                "sinter._command._main_collect_test:_make_custom_decoders",
                 "--processes",
                 "2",
                 "--quiet",
@@ -162,7 +162,7 @@ def test_main_collect_with_custom_decoder():
             "--decoders",
             "alternate",
             "--custom_decoders_module_function",
-            "sinter._main_collect_test:_make_custom_decoders",
+            "sinter._command._main_collect_test:_make_custom_decoders",
             "--processes",
             "2",
             "--quiet",
@@ -450,3 +450,33 @@ def test_auto_processes():
         ])
         data = sinter.stats_from_csv_files(d / "out.csv")
         assert len(data) == 1
+
+
+def test_implicit_auto_processes():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        stim.Circuit.generated(
+            'repetition_code:memory',
+            rounds=5,
+            distance=3,
+            after_clifford_depolarization=0.1,
+        ).to_file(d / 'a=3.stim')
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / 'a=3.stim'),
+            "--max_shots",
+            "200",
+            "--quiet",
+            "--metadata_func",
+            "auto",
+            "--decoders",
+            "perfectionist",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        assert len(data) == 1
+        assert data[0].discards > 0
