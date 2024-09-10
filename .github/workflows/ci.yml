@@ -165,9 +165,9 @@ jobs:
       - run: mv dist/* output/stim
       - run: mv glue/cirq/dist/* output/stimcirq
       - run: mv glue/sample/dist/* output/sinter
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.4.0
         with:
-          name: dist
+          name: "dist-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
           path: |
             ./output/stimcirq/*.tar.gz
             ./output/sinter/*.tar.gz
@@ -180,12 +180,21 @@ jobs:
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
       - run: python setup.py sdist
       - run: pip install dist/*.tar.gz
-  upload_dev_release_to_pypi:
+  merge_upload_artifacts:
     needs: ["build_dist"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: dist
+          pattern: dist-*
+  upload_dev_release_to_pypi:
+    needs: ["merge_upload_artifacts"]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: dist
           path: dist
