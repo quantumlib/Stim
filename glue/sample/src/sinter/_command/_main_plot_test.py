@@ -4,8 +4,8 @@ import pathlib
 import tempfile
 
 import pytest
-from sinter._main import main
-from sinter._main_plot import _log_ticks, _sqrt_ticks
+from sinter._command._main import main
+from sinter._command._main_plot import _log_ticks, _sqrt_ticks
 
 
 def test_main_plot():
