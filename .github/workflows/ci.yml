@@ -167,7 +167,7 @@ jobs:
       - run: mv glue/sample/dist/* output/sinter
       - uses: actions/upload-artifact@v4.4.0
         with:
-          name: dist-${{ matrix.runs-os }}-${{ matrix.runs-dist }}-${{ matrix.runs-macosarch }}
+          name: "dist-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
           path: |
             ./output/stimcirq/*.tar.gz
             ./output/sinter/*.tar.gz
