@@ -177,7 +177,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - run: python -m pip install setuptools
+      - run: python -m pip install setuptools pybind11~=2.11.1
       - run: python dev/overwrite_dev_versions_with_date.py
       - run: mkdir output
       - run: python setup.py sdist
