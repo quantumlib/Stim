@@ -192,7 +192,7 @@ jobs:
 #      - run: python setup.py sdist
 #      - run: pip install dist/*.tar.gz
   merge_upload_artifacts:
-    needs: ["build_sdist"]
+    needs: ["build_dist", "build_sdist"]
     runs-on: ubuntu-latest
     steps:
       - name: Merge Artifacts
