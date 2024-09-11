@@ -177,30 +177,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
+      - run: python -m pip install setuptools
       - run: python dev/overwrite_dev_versions_with_date.py
-      - run: mkdir -p output/stim
-      - run: mkdir -p output/stimcirq
-      - run: mkdir -p output/sinter
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
-      - run: python -m cibuildwheel --print-build-identifiers
+      - run: mkdir output
       - run: python setup.py sdist
       - run: cd glue/cirq && python setup.py sdist
       - run: cd glue/sample && python setup.py sdist
-      - run: mv dist/* output/stim
-      - run: mv glue/cirq/dist/* output/stimcirq
-      - run: mv glue/sample/dist/* output/sinter
       - uses: actions/upload-artifact@v4.4.0
         with:
           name: "dist-src-sinter"
-          path: ./output/sinter/*.tar.gz
+          path: glue/sample/dist/*.tar.gz
       - uses: actions/upload-artifact@v4.4.0
         with:
           name: "dist-src-stimcirq"
-          path: ./output/stimcirq/*.tar.gz
+          path: glue/cirq/dist/*.tar.gz
       - uses: actions/upload-artifact@v4.4.0
         with:
           name: "dist-src-stim"
-          path: ./output/stim/*
+          path: dist/*.tar.gz
 #  check_sdist_installs:
 #    runs-on: ubuntu-latest
 #    steps:
