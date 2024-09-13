@@ -27,7 +27,7 @@ setup(
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     license='Apache 2',
-    packages=['sinter'],
+    packages=['sinter', 'sinter._data', 'sinter._collection', 'sinter._command', 'sinter._decoding'],
     package_dir={'': 'src'},
     description='Samples stim circuits and decodes them using pymatching.',
     long_description=long_description,
