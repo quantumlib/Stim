@@ -10845,10 +10845,19 @@ def __call__(
     self,
     pauli_string: stim.PauliString,
 ) -> stim.PauliString:
-    """Returns the conjugation of a PauliString by the Tableau's Clifford operation.
+    """Returns the equivalent PauliString after the Tableau's Clifford operation.
 
-    The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
-    before C, then P2 = C**-1 * P * C is an equivalent Pauli product after C.
+    If P is a Pauli product before a Clifford operation C, then this method returns
+    Q = C * P * C**-1 (the conjugation of P by C). Q is the equivalent Pauli product
+    after C. This works because:
+
+        C*P
+        = C*P * I
+        = C*P * (C**-1 * C)
+        = (C*P*C**-1) * C
+        = Q*C
+
+    (Keep in mind that A*B means first B is applied, then A is applied.)
 
     Args:
         pauli_string: The pauli string to conjugate.
