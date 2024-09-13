@@ -956,17 +956,21 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def(
-        "reset",
+        "clear",
         [](FrameSimulator<MAX_BITWORD_WIDTH> &self) {
             self.reset_all();
         },
         clean_doc_string(R"DOC(
-            Resets the simulator's state, so it can be reused for another simulation.
+            Clears the simulator's state, so it can be reused for another simulation.
 
-            This empties the measurement flip history, empties the detector flip history,
+            This clears the measurement flip history, clears the detector flip history,
             and zeroes the observable flip state. It also resets all qubits to |0>. If
-            stabilizer randomization is disabled, this zeros all pauli flips data. Otherwise
+            stabilizer randomization is disabled, this zeros all pauli flip data. Otherwise
             it randomizes all pauli flips to be I or Z with equal probability.
+
+            Behind the scenes, this doesn't free memory or resize the simulator. So,
+            repeating the same simulation with calls to `clear` in between will be faster
+            than allocating a new simulator each time (by avoiding re-allocations).
 
             Examples:
                 >>> import stim
@@ -977,7 +981,7 @@ void stim_pybind::pybind_frame_simulator_methods(
                 >>> sim.get_measurement_flips().shape
                 (1, 256)
 
-                >>> sim.reset()
+                >>> sim.clear()
                 >>> sim.num_qubits
                 10
                 >>> sim.get_measurement_flips().shape

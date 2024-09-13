@@ -124,6 +124,15 @@ void CircuitFlowReverser::do_measuring_instruction(const CircuitInstruction &ins
     rev.undo_gate(inst);
 }
 
+void CircuitFlowReverser::do_feedback_capable_instruction(const CircuitInstruction &inst) {
+    for (GateTarget t : inst.targets) {
+        if (t.is_measurement_record_target()) {
+            throw std::invalid_argument("Time-reversing feedback isn't supported yet. Found feedback in: " + inst.str());
+        }
+    }
+    do_simple_instruction(inst);
+}
+
 void CircuitFlowReverser::do_simple_instruction(const CircuitInstruction &inst) {
     Gate g = GATE_DATA[inst.gate_type];
     rev.undo_gate(inst);
@@ -207,13 +216,8 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         case GateType::ISWAP_DAG:
         case GateType::XCX:
         case GateType::XCY:
-        case GateType::XCZ:
         case GateType::YCX:
         case GateType::YCY:
-        case GateType::YCZ:
-        case GateType::CX:
-        case GateType::CY:
-        case GateType::CZ:
         case GateType::H:
         case GateType::H_XY:
         case GateType::H_YZ:
@@ -229,6 +233,13 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         case GateType::HERALDED_PAULI_CHANNEL_1:
             do_simple_instruction(inst);
             return;
+        case GateType::XCZ:
+        case GateType::YCZ:
+        case GateType::CX:
+        case GateType::CY:
+        case GateType::CZ:
+            do_feedback_capable_instruction(inst);
+            break;
         case GateType::MRX:
         case GateType::MRY:
         case GateType::MR:

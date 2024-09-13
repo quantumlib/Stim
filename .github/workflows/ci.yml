@@ -153,42 +153,62 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
       - run: python dev/overwrite_dev_versions_with_date.py
-      - run: mkdir -p output/stim
-      - run: mkdir -p output/stimcirq
-      - run: mkdir -p output/sinter
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
       - run: python -m cibuildwheel --print-build-identifiers
-      - run: python -m cibuildwheel --output-dir output/stim
-      - run: python setup.py sdist
-      - run: cd glue/cirq && python setup.py sdist
-      - run: cd glue/sample && python setup.py sdist
-      - run: mv dist/* output/stim
-      - run: mv glue/cirq/dist/* output/stimcirq
-      - run: mv glue/sample/dist/* output/sinter
+      - run: python -m cibuildwheel --output-dir dist
       - uses: actions/upload-artifact@v4.4.0
         with:
-          name: "dist-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
-          path: |
-            ./output/stimcirq/*.tar.gz
-            ./output/sinter/*.tar.gz
-            ./output/stim/*
-  check_sdist_installs:
+          name: "dist-stim-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
+          path: dist/*
+  build_sdist:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
+      - run: python -m pip install setuptools pybind11~=2.11.1
+      - run: python dev/overwrite_dev_versions_with_date.py
+      - run: mkdir output
       - run: python setup.py sdist
-      - run: pip install dist/*.tar.gz
+      - run: cd glue/cirq && python setup.py sdist
+      - run: cd glue/sample && python setup.py sdist
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: "dist-sinter"
+          path: glue/sample/dist/*.tar.gz
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: "dist-stimcirq"
+          path: glue/cirq/dist/*.tar.gz
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: "dist-stim-sdist"
+          path: dist/*.tar.gz
+  check_sdist_installs_stim:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+    - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
+    - run: python setup.py sdist
+    - run: pip install dist/*.tar.gz
+  check_sdist_installs_sinter:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+    - run: python -m pip install setuptools
+    - run: cd glue/sample && python setup.py sdist
+    - run: pip install glue/sample/dist/*
+    - run: python -c "import sinter"
   merge_upload_artifacts:
-    needs: ["build_dist"]
+    needs: ["build_dist", "build_sdist"]
     runs-on: ubuntu-latest
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: dist
-          pattern: dist-*
+          name: dist-stim
+          pattern: dist-stim-*
   upload_dev_release_to_pypi:
     needs: ["merge_upload_artifacts"]
     if: github.ref == 'refs/heads/main'
@@ -196,22 +216,30 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4.1.7
         with:
-          name: dist
-          path: dist
+          name: dist-stim
+          path: dist-stim
+      - uses: actions/download-artifact@v4.1.7
+        with:
+          name: dist-stimcirq
+          path: dist-stimcirq
+      - uses: actions/download-artifact@v4.1.7
+        with:
+          name: dist-sinter
+          path: dist-sinter
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
-          packages_dir: dist/stim/
+          packages_dir: dist-stim
           password: ${{ secrets.pypi_token_stim }}
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
-          packages_dir: dist/stimcirq/
+          packages_dir: dist-stimcirq
           password: ${{ secrets.pypi_token_stimcirq }}
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
-          packages_dir: dist/sinter/
+          packages_dir: dist-sinter
           password: ${{ secrets.pypi_token_sinter }}
   run_main:
     runs-on: ubuntu-latest
