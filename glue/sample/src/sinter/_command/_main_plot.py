@@ -99,6 +99,10 @@ def parse_args(args: List[str]) -> Any:
                         nargs=2,
                         default=None,
                         help='Desired figure width and height in pixels.')
+    parser.add_argument('--dpi',
+                        type=float,
+                        default=100,
+                        help='Dots per inch. Determines resolution of the figure.')
     parser.add_argument('--group_func',
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",
@@ -551,6 +555,7 @@ def _plot_helper(
     plot_args_func: Callable[[int, Any, List['sinter.TaskStats']], Dict[str, Any]],
     line_fits: bool,
     point_label_func: Callable[['sinter.TaskStats'], Any] = lambda _: None,
+    dpi: float,
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -733,12 +738,12 @@ def _plot_helper(
             ax.set_title(ax.title.get_text() + '\n' + subtitle)
 
     if fig_size is None:
-        fig.set_size_inches(10 * num_plots, 10)
-        fig.set_dpi(100)
+        fig.set_dpi(dpi)
+        fig.set_size_inches(1000 * num_plots / dpi, 1000 / dpi)
     else:
         w, h = fig_size
-        fig.set_size_inches(w / 100, h / 100)
-        fig.set_dpi(100)
+        fig.set_dpi(dpi)
+        fig.set_size_inches(w / dpi, h / dpi)
     fig.tight_layout()
     axs = [e for e in [ax_err, ax_dis] if e is not None]
     return fig, axs
@@ -804,8 +809,9 @@ def main_plot(*, command_line_args: List[str]):
         subtitle=args.subtitle,
         line_fits=args.line_fits,
         preprocess_stats_func=args.preprocess_stats_func,
+        dpi=args.dpi,
     )
     if args.out is not None:
-        fig.savefig(args.out)
+        fig.savefig(args.out, dpi=args.dpi)
     if args.show or args.out is None:
         plt.show()
