@@ -2706,7 +2706,7 @@ def pop(
     """Pops an operation from the end of the circuit, or at the given index.
 
     Args:
-        index: Defaults to -1 (end of list). The index to pop from.
+        index: Defaults to -1 (end of circuit). The index to pop from.
 
     Returns:
         The popped instruction.
