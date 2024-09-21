@@ -1989,6 +1989,39 @@ class Circuit:
             ... ''').num_ticks
             101
         """
+    def pop(
+        self,
+        index: int = -1,
+    ) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+        """Pops an operation from the end of the circuit, or at the given index.
+
+        Args:
+            index: Defaults to -1 (end of list). The index to pop from.
+
+        Returns:
+            The popped instruction.
+
+        Raises:
+            IndexError: The given index is outside the bounds of the circuit.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.Circuit('''
+            ...     H 0
+            ...     S 1
+            ...     X 2
+            ...     Y 3
+            ... ''')
+            >>> c.pop()
+            stim.CircuitInstruction('Y', [stim.GateTarget(3)], [])
+            >>> c.pop(1)
+            stim.CircuitInstruction('S', [stim.GateTarget(1)], [])
+            >>> c
+            stim.Circuit('''
+                H 0
+                X 2
+            ''')
+        """
     def reference_sample(
         self,
         *,

@@ -1879,3 +1879,21 @@ def test_insert():
         M 2
         H 1
     """)
+
+
+def test_pop():
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop()
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop(-1)
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop(0)
+    c = stim.Circuit("H 0")
+    with pytest.raises(IndexError, match='index'):
+        c.pop(1)
+    with pytest.raises(IndexError, match='index'):
+        c.pop(-2)
+    assert c.pop(0) == stim.CircuitInstruction("H", [0])
+    c = stim.Circuit("H 0\n X 1")
+    assert c.pop() == stim.CircuitInstruction("X", [1])
+    assert c.pop() == stim.CircuitInstruction("H", [0])

@@ -49,6 +49,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
+    - [`stim.Circuit.pop`](#stim.Circuit.pop)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
@@ -2689,6 +2690,46 @@ def num_ticks(
         ...    }
         ... ''').num_ticks
         101
+    """
+```
+
+<a name="stim.Circuit.pop"></a>
+```python
+# stim.Circuit.pop
+
+# (in class stim.Circuit)
+def pop(
+    self,
+    index: int = -1,
+) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+    """Pops an operation from the end of the circuit, or at the given index.
+
+    Args:
+        index: Defaults to -1 (end of list). The index to pop from.
+
+    Returns:
+        The popped instruction.
+
+    Raises:
+        IndexError: The given index is outside the bounds of the circuit.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit('''
+        ...     H 0
+        ...     S 1
+        ...     X 2
+        ...     Y 3
+        ... ''')
+        >>> c.pop()
+        stim.CircuitInstruction('Y', [stim.GateTarget(3)], [])
+        >>> c.pop(1)
+        stim.CircuitInstruction('S', [stim.GateTarget(1)], [])
+        >>> c
+        stim.Circuit('''
+            H 0
+            X 2
+        ''')
     """
 ```
 

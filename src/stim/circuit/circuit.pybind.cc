@@ -179,6 +179,41 @@ std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization
     return stim::likeliest_error_sat_problem(dem, quantization, format);
 }
 
+pybind11::object circuit_get_item(const Circuit &self, const pybind11::object &index_or_slice) {
+    pybind11::ssize_t index, step, slice_length;
+    if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
+        return pybind11::cast(self.py_get_slice(index, step, slice_length));
+    }
+
+    auto &op = self.operations[index];
+    if (op.gate_type == GateType::REPEAT) {
+        return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
+    }
+    std::vector<GateTarget> targets;
+    for (const auto &e : op.targets) {
+        targets.push_back(GateTarget(e));
+    }
+    std::vector<double> args;
+    for (const auto &e : op.args) {
+        args.push_back(e);
+    }
+    return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args));
+}
+
+pybind11::object circuit_pop(Circuit &self, pybind11::ssize_t index) {
+    if (index < -(pybind11::ssize_t)self.operations.size() || index >= (pybind11::ssize_t)self.operations.size()) {
+        std::stringstream ss;
+        ss << "not -len(circuit) < index=" << index << " < len(circuit)=" << self.operations.size();
+        throw std::out_of_range(ss.str());
+    }
+    if (index < 0) {
+        index += self.operations.size();
+    }
+
+    pybind11::object result = circuit_get_item(self, pybind11::cast(index));
+    self.operations.erase(self.operations.begin() + (size_t)index);
+    return result;
+}
 void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &operation) {
     if (index < 0) {
         index += self.operations.size();
@@ -1176,6 +1211,43 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
+        "pop",
+        &circuit_pop,
+        pybind11::arg("index") = -1,
+        clean_doc_string(R"DOC(
+            @signature def pop(self, index: int = -1) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+            Pops an operation from the end of the circuit, or at the given index.
+
+            Args:
+                index: Defaults to -1 (end of circuit). The index to pop from.
+
+            Returns:
+                The popped instruction.
+
+            Raises:
+                IndexError: The given index is outside the bounds of the circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...     H 0
+                ...     S 1
+                ...     X 2
+                ...     Y 3
+                ... ''')
+                >>> c.pop()
+                stim.CircuitInstruction('Y', [stim.GateTarget(3)], [])
+                >>> c.pop(1)
+                stim.CircuitInstruction('S', [stim.GateTarget(1)], [])
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    X 2
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
         "append_from_stim_program_text",
         [](Circuit &self, const char *text) {
             self.append_from_text(text);
@@ -1674,26 +1746,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "__getitem__",
-        [](const Circuit &self, const pybind11::object &index_or_slice) -> pybind11::object {
-            pybind11::ssize_t index, step, slice_length;
-            if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
-                return pybind11::cast(self.py_get_slice(index, step, slice_length));
-            }
-
-            auto &op = self.operations[index];
-            if (op.gate_type == GateType::REPEAT) {
-                return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
-            }
-            std::vector<GateTarget> targets;
-            for (const auto &e : op.targets) {
-                targets.push_back(GateTarget(e));
-            }
-            std::vector<double> args;
-            for (const auto &e : op.args) {
-                args.push_back(e);
-            }
-            return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args));
-        },
+        &circuit_get_item,
         pybind11::arg("index_or_slice"),
         clean_doc_string(R"DOC(
             Returns copies of instructions from the circuit.
