@@ -3449,8 +3449,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "to_crumble_url",
-        &export_crumble_url,
+        [](const Circuit &self, bool skip_detectors, pybind11::object &obj_mark) {
+            std::map<int, std::vector<ExplainedError>> mark;
+            if (!obj_mark.is_none()) {
+                mark = pybind11::cast<std::map<int, std::vector<ExplainedError>>>(obj_mark);
+            }
+            return export_crumble_url(self, skip_detectors, mark);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("skip_detectors") = false,
+        pybind11::arg("mark") = pybind11::none(),
         clean_doc_string(R"DOC(
+            @signature def to_crumble_url(self, *, skip_detectors: bool = False, mark: Optional[dict[int, list[stim.ExplainedError]]] = None) -> str:
             Returns a URL that opens up crumble and loads this circuit into it.
 
             Crumble is a tool for editing stabilizer circuits, and visualizing their
@@ -3458,6 +3468,15 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             the stim code repository on github. A prebuilt version is made available
             at https://algassert.com/crumble, which is what the URL returned by this
             method will point to.
+
+            Args:
+                skip_detectors: Defaults to False. If set to True, detectors from the
+                    circuit aren't included in the crumble URL. This can reduce visual
+                    clutter in crumble, and improve its performance, since it doesn't
+                    need to indicate or track the sensitivity regions of detectors.
+                mark: Defaults to None (no marks). If set to a dictionary from int to
+                    errors, such as `mark={1: circuit.shortest_graphlike_error()}`,
+                    then the errors will be highlighted and tracked forward by crumble.
 
             Returns:
                 A URL that can be opened in a web browser.
@@ -3470,6 +3489,16 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     S 1
                 ... ''').to_crumble_url()
                 'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+
+                >>> circuit = stim.Circuit('''
+                ...     M(0.25) 0 1 2
+                ...     DETECTOR rec[-1] rec[-2]
+                ...     DETECTOR rec[-2] rec[-3]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''')
+                >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
+                >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
+                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
         )DOC")
             .data());
 
