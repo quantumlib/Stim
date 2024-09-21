@@ -1879,3 +1879,8 @@ def test_insert():
         M 2
         H 1
     """)
+
+
+def test_circuit_create_with_odd_cx():
+    with pytest.raises(ValueError, match="0, 1, 2"):
+        stim.Circuit("CX 0 1 2")

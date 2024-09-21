@@ -138,7 +138,7 @@ void CircuitInstruction::validate() const {
                     "Two qubit gate " + std::string(gate.name) +
                     " requires an even number of targets but was given "
                     "(" +
-                    comma_sep(args).str() + ").");
+                    comma_sep(targets).str() + ").");
             }
             for (size_t k = 0; k < targets.size(); k += 2) {
                 if (targets[k] == targets[k + 1]) {
