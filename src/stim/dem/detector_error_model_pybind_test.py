@@ -536,3 +536,7 @@ def test_shortest_graphlike_error_remnant():
     assert len(d.shortest_graphlike_error(ignore_ungraphlike_errors=True)) == 8
     assert len(c.shortest_graphlike_error()) == 8
     assert len(d.shortest_graphlike_error()) == 8
+
+
+def test_init_parse():
+    assert stim.DemInstruction("error(0.125) D0 D1") == stim.DemInstruction("error", [0.125], [stim.DemTarget("D0"), stim.DemTarget("D1")])

@@ -18,7 +18,7 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
-#include "stim/dem/detector_error_model_instruction.pybind.h"
+#include "stim/dem/dem_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/io/raii_file.h"

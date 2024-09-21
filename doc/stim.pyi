@@ -2954,6 +2954,30 @@ class CircuitErrorLocationStackFrame:
     The full location of an instruction is a list of these frames,
     drilling down from the top level circuit to the inner-most loop
     that the instruction is within.
+
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     REPEAT 5 {
+        ...         R 0
+        ...         Y_ERROR(0.125) 0
+        ...         M 0
+        ...     }
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].stack_frames[0]
+        stim.CircuitErrorLocationStackFrame(
+            instruction_offset=0,
+            iteration_index=0,
+            instruction_repetitions_arg=5,
+        )
+        >>> err[0].circuit_error_locations[0].stack_frames[1]
+        stim.CircuitErrorLocationStackFrame(
+            instruction_offset=1,
+            iteration_index=4,
+            instruction_repetitions_arg=0,
+        )
     """
     def __init__(
         self,
@@ -2963,6 +2987,14 @@ class CircuitErrorLocationStackFrame:
         instruction_repetitions_arg: int,
     ) -> None:
         """Creates a stim.CircuitErrorLocationStackFrame.
+
+        Examples:
+            >>> import stim
+            >>> frame = stim.CircuitErrorLocationStackFrame(
+            ...     instruction_offset=1,
+            ...     iteration_index=2,
+            ...     instruction_repetitions_arg=3,
+            ... )
         """
     @property
     def instruction_offset(
@@ -2973,6 +3005,18 @@ class CircuitErrorLocationStackFrame:
         from the line number, because blank lines and commented lines
         don't count and also because the offset of the first instruction
         is 0 instead of 1.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0
+            ...     TICK
+            ...     Y_ERROR(0.125) 0
+            ...     M 0
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].circuit_error_locations[0].stack_frames[0].instruction_offset
+            2
         """
     @property
     def instruction_repetitions_arg(
@@ -2981,6 +3025,23 @@ class CircuitErrorLocationStackFrame:
         """If the instruction being referred to is a REPEAT block,
         this is the repetition count of that REPEAT block. Otherwise
         this field defaults to 0.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     REPEAT 5 {
+            ...         R 0
+            ...         Y_ERROR(0.125) 0
+            ...         M 0
+            ...     }
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> full = err[0].circuit_error_locations[0].stack_frames[0]
+            >>> loop = err[0].circuit_error_locations[0].stack_frames[1]
+            >>> full.instruction_repetitions_arg
+            5
+            >>> loop.instruction_repetitions_arg
+            0
         """
     @property
     def iteration_index(
@@ -2989,6 +3050,23 @@ class CircuitErrorLocationStackFrame:
         """Disambiguates which iteration of the loop containing this instruction
         is being referred to. If the instruction isn't in a REPEAT block, this
         field defaults to 0.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     REPEAT 5 {
+            ...         R 0
+            ...         Y_ERROR(0.125) 0
+            ...         M 0
+            ...     }
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> full = err[0].circuit_error_locations[0].stack_frames[0]
+            >>> loop = err[0].circuit_error_locations[0].stack_frames[1]
+            >>> full.iteration_index
+            0
+            >>> loop.iteration_index
+            4
         """
 class CircuitInstruction:
     """An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
@@ -3016,19 +3094,30 @@ class CircuitInstruction:
     def __init__(
         self,
         name: str,
-        targets: List[object],
-        gate_args: List[float] = (),
+        targets: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
+        gate_args: Optional[Iterable[float]] = None,
     ) -> None:
-        """Initializes a `stim.CircuitInstruction`.
+        """Creates or parses a `stim.CircuitInstruction`.
 
         Args:
             name: The name of the instruction being applied.
+                If `targets` and `gate_args` aren't specified, this can be a full
+                instruction line from a stim Circuit file, like "CX 0 1".
             targets: The targets the instruction is being applied to. These can be raw
                 values like `0` and `stim.target_rec(-1)`, or instances of
                 `stim.GateTarget`.
             gate_args: The sequence of numeric arguments parameterizing a gate. For
                 noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
                 instructions it's the index of the logical observable to affect.
+
+        Examples:
+            >>> import stim
+
+            >>> print(stim.CircuitInstruction('DEPOLARIZE1', [5], [0.25]))
+            DEPOLARIZE1(0.25) 5
+
+            >>> stim.CircuitInstruction('CX rec[-1] 5  # comment')
+            stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
         """
     def __ne__(
         self,
@@ -3090,7 +3179,7 @@ class CircuitInstruction:
             3
             >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
             2
-            >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+            >>> stim.CircuitInstruction('HERALDED_ERASE', [0], [0.25]).num_measurements
             1
         """
     def target_groups(
@@ -3242,6 +3331,20 @@ class CircuitRepeatBlock:
             ... ''')
             >>> [instruction.name for instruction in circuit]
             ['H', 'REPEAT', 'S']
+        """
+    @property
+    def num_measurements(
+        self,
+    ) -> int:
+        """Returns the number of bits produced when running this loop.
+
+        Examples:
+            >>> import stim
+            >>> stim.CircuitRepeatBlock(
+            ...     body=stim.Circuit("M 0 1"),
+            ...     repeat_count=25,
+            ... ).num_measurements
+            50
         """
     @property
     def repeat_count(
@@ -4227,13 +4330,15 @@ class DemInstruction:
     def __init__(
         self,
         type: str,
-        args: List[float],
-        targets: List[object],
+        args: Optional[Iterable[float]] = None,
+        targets: Optional[Iterable[stim.DemTarget]] = None,
     ) -> None:
-        """Creates a stim.DemInstruction.
+        """Creates or parses a stim.DemInstruction.
 
         Args:
             type: The name of the instruction type (e.g. "error" or "shift_detectors").
+                If `args` and `targets` aren't specified, this can also be set to a
+                full line of text from a dem file, like "error(0.25) D0".
             args: Numeric values parameterizing the instruction (e.g. the 0.1 in
                 "error(0.1)").
             targets: The objects the instruction involves (e.g. the "D0" and "L1" in
@@ -4247,6 +4352,9 @@ class DemInstruction:
             ...     [stim.target_relative_detector_id(5)])
             >>> print(instruction)
             error(0.125) D5
+
+            >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
+            error(0.125) D5 L6 ^ D4
         """
     def __ne__(
         self,
