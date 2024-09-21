@@ -1881,6 +1881,24 @@ def test_insert():
     """)
 
 
+def test_pop():
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop()
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop(-1)
+    with pytest.raises(IndexError, match='index'):
+        stim.Circuit().pop(0)
+    c = stim.Circuit("H 0")
+    with pytest.raises(IndexError, match='index'):
+        c.pop(1)
+    with pytest.raises(IndexError, match='index'):
+        c.pop(-2)
+    assert c.pop(0) == stim.CircuitInstruction("H", [0])
+    c = stim.Circuit("H 0\n X 1")
+    assert c.pop() == stim.CircuitInstruction("X", [1])
+    assert c.pop() == stim.CircuitInstruction("H", [0])
+
+
 def test_circuit_create_with_odd_cx():
     with pytest.raises(ValueError, match="0, 1, 2"):
         stim.Circuit("CX 0 1 2")
