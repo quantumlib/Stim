@@ -29,9 +29,11 @@ struct PyCircuitInstruction {
     std::vector<double> gate_args;
 
     PyCircuitInstruction(
-        const char *name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
+        std::string_view name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
     PyCircuitInstruction(
         stim::GateType gate_type, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
+    static PyCircuitInstruction from_str(std::string_view text);
+    static PyCircuitInstruction from_instruction(stim::CircuitInstruction instruction);
 
     stim::CircuitInstruction as_operation_ref() const;
     operator stim::CircuitInstruction() const;

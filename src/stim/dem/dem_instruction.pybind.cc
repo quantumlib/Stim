@@ -1,4 +1,4 @@
-#include "stim/dem/detector_error_model_instruction.pybind.h"
+#include "stim/dem/dem_instruction.pybind.h"
 
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
@@ -21,6 +21,27 @@ std::vector<std::vector<ExposedDemTarget>> ExposedDemInstruction::target_groups(
 
 DemInstruction ExposedDemInstruction::as_dem_instruction() const {
     return DemInstruction{arguments, targets, type};
+}
+
+ExposedDemInstruction ExposedDemInstruction::from_dem_instruction(stim::DemInstruction instruction) {
+    std::vector<double> arguments;
+    std::vector<DemTarget> targets;
+    arguments.insert(arguments.begin(), instruction.arg_data.begin(), instruction.arg_data.end());
+    targets.insert(targets.begin(), instruction.target_data.begin(), instruction.target_data.end());
+    return ExposedDemInstruction{
+        arguments,
+        targets,
+        instruction.type
+    };
+}
+
+ExposedDemInstruction ExposedDemInstruction::from_str(std::string_view text) {
+    DetectorErrorModel host;
+    host.append_from_text(text);
+    if (host.instructions.size() != 1 || host.instructions[0].type == DemInstructionType::DEM_REPEAT_BLOCK) {
+        throw std::invalid_argument("Given text didn't parse to a single DemInstruction.");
+    }
+    return ExposedDemInstruction::from_dem_instruction(host.instructions[0]);
 }
 
 std::string ExposedDemInstruction::type_name() const {
@@ -108,10 +129,14 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     pybind11::module &m, pybind11::class_<ExposedDemInstruction> &c) {
     c.def(
         pybind11::init(
-            [](const char *type, const std::vector<double> &arguments, const std::vector<pybind11::object> &targets) {
+            [](std::string_view type, pybind11::object &arguments, pybind11::object &targets) -> ExposedDemInstruction {
+                if (arguments.is_none() && targets.is_none()) {
+                    return ExposedDemInstruction::from_str(type);
+                }
+
                 std::string lower;
-                for (const char *c = type; *c != '\0'; c++) {
-                    lower.push_back(tolower(*c));
+                for (char c : type) {
+                    lower.push_back(tolower(c));
                 }
                 DemInstructionType conv_type;
                 std::vector<DemTarget> conv_targets;
@@ -126,41 +151,50 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 } else {
                     throw std::invalid_argument("Unrecognized instruction name '" + lower + "'.");
                 }
-                if (conv_type == DemInstructionType::DEM_SHIFT_DETECTORS) {
-                    for (const auto &e : targets) {
-                        try {
-                            conv_targets.push_back(DemTarget{pybind11::cast<uint64_t>(e)});
-                        } catch (pybind11::cast_error &ex) {
-                            throw std::invalid_argument(
-                                "Instruction '" + lower + "' only takes unsigned integer targets.");
+                if (!targets.is_none()) {
+                    if (conv_type == DemInstructionType::DEM_SHIFT_DETECTORS) {
+                        for (const auto &e : targets) {
+                            try {
+                                conv_targets.push_back(DemTarget{pybind11::cast<uint64_t>(e)});
+                            } catch (pybind11::cast_error &ex) {
+                                throw std::invalid_argument(
+                                    "Instruction '" + lower + "' only takes unsigned integer targets.");
+                            }
                         }
-                    }
-                } else {
-                    for (const auto &e : targets) {
-                        try {
-                            conv_targets.push_back(pybind11::cast<ExposedDemTarget>(e).internal());
-                        } catch (pybind11::cast_error &ex) {
-                            throw std::invalid_argument(
-                                "Instruction '" + lower +
-                                "' only takes stim.target_relative_detector_id(k), "
-                                "stim.target_logical_observable_id(k), "
-                                "stim.target_separator() targets.");
+                    } else {
+                        for (const auto &e : targets) {
+                            try {
+                                conv_targets.push_back(pybind11::cast<ExposedDemTarget>(e).internal());
+                            } catch (pybind11::cast_error &ex) {
+                                throw std::invalid_argument(
+                                    "Instruction '" + lower +
+                                    "' only takes stim.target_relative_detector_id(k), "
+                                    "stim.target_logical_observable_id(k), "
+                                    "stim.target_separator() targets.");
+                            }
                         }
                     }
                 }
 
-                ExposedDemInstruction result{arguments, std::move(conv_targets), conv_type};
+                std::vector<double> conv_args;
+                if (!arguments.is_none()) {
+                    conv_args = pybind11::cast<std::vector<double>>(arguments);
+                }
+                ExposedDemInstruction result{std::move(conv_args), std::move(conv_targets), conv_type};
                 result.as_dem_instruction().validate();
                 return result;
             }),
         pybind11::arg("type"),
-        pybind11::arg("args"),
-        pybind11::arg("targets"),
+        pybind11::arg("args") = pybind11::none(),
+        pybind11::arg("targets") = pybind11::none(),
         clean_doc_string(R"DOC(
-            Creates a stim.DemInstruction.
+            @signature def __init__(self, type: str, args: Optional[Iterable[float]] = None, targets: Optional[Iterable[stim.DemTarget]] = None) -> None:
+            Creates or parses a stim.DemInstruction.
 
             Args:
                 type: The name of the instruction type (e.g. "error" or "shift_detectors").
+                    If `args` and `targets` aren't specified, this can also be set to a
+                    full line of text from a dem file, like "error(0.25) D0".
                 args: Numeric values parameterizing the instruction (e.g. the 0.1 in
                     "error(0.1)").
                 targets: The objects the instruction involves (e.g. the "D0" and "L1" in
@@ -174,6 +208,9 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 ...     [stim.target_relative_detector_id(5)])
                 >>> print(instruction)
                 error(0.125) D5
+
+                >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
+                error(0.125) D5 L6 ^ D4
         )DOC")
             .data());
 
