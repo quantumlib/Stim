@@ -1897,3 +1897,8 @@ def test_pop():
     c = stim.Circuit("H 0\n X 1")
     assert c.pop() == stim.CircuitInstruction("X", [1])
     assert c.pop() == stim.CircuitInstruction("H", [0])
+
+
+def test_circuit_create_with_odd_cx():
+    with pytest.raises(ValueError, match="0, 1, 2"):
+        stim.Circuit("CX 0 1 2")
