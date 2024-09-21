@@ -83,5 +83,22 @@ def test_eager_validate():
         stim.CircuitInstruction("CX", [0, 1, 2])
 
 
-def test_init_parse():
+def test_init_from_str():
     assert stim.CircuitInstruction("CX", [0, 1]) == stim.CircuitInstruction("CX 0 1")
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("")
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("""
+            REPEAT 5 {
+                H 0
+                X 1
+            }
+        """)
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("""
+            H 0 
+            X 1
+        """)

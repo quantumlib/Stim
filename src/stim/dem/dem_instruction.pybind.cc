@@ -1,4 +1,4 @@
-#include "stim/dem/detector_error_model_instruction.pybind.h"
+#include "stim/dem/dem_instruction.pybind.h"
 
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
@@ -38,7 +38,7 @@ ExposedDemInstruction ExposedDemInstruction::from_dem_instruction(stim::DemInstr
 ExposedDemInstruction ExposedDemInstruction::from_str(std::string_view text) {
     DetectorErrorModel host;
     host.append_from_text(text);
-    if (host.instructions.size() != 1) {
+    if (host.instructions.size() != 1 || host.instructions[0].type == DemInstructionType::DEM_REPEAT_BLOCK) {
         throw std::invalid_argument("Given text didn't parse to a single DemInstruction.");
     }
     return ExposedDemInstruction::from_dem_instruction(host.instructions[0]);

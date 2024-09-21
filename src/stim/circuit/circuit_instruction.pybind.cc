@@ -25,7 +25,7 @@ PyCircuitInstruction::PyCircuitInstruction(
 PyCircuitInstruction PyCircuitInstruction::from_str(std::string_view text) {
     Circuit host;
     host.append_from_text(text);
-    if (host.operations.size() != 1) {
+    if (host.operations.size() != 1 || host.operations[0].gate_type == GateType::REPEAT) {
         throw std::invalid_argument("Given text didn't parse to a single CircuitInstruction.");
     }
     return PyCircuitInstruction::from_instruction(host.operations[0]);
