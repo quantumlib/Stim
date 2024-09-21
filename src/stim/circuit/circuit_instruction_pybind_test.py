@@ -76,3 +76,12 @@ def test_target_groups():
     assert stim.CircuitInstruction("MPP", []).target_groups() == []
     assert stim.CircuitInstruction("MPAD", []).target_groups() == []
     assert stim.CircuitInstruction("QUBIT_COORDS", [1, 2]).target_groups() == [[stim.GateTarget(1)], [stim.GateTarget(2)]]
+
+
+def test_eager_validate():
+    with pytest.raises(ValueError, match="0, 1, 2"):
+        stim.CircuitInstruction("CX", [0, 1, 2])
+
+
+def test_init_parse():
+    assert stim.CircuitInstruction("CX", [0, 1]) == stim.CircuitInstruction("CX 0 1")

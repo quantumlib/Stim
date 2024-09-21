@@ -9,15 +9,38 @@ using namespace stim;
 using namespace stim_pybind;
 
 PyCircuitInstruction::PyCircuitInstruction(
-    const char *name, const std::vector<pybind11::object> &init_targets, const std::vector<double> &gate_args)
+    std::string_view name, const std::vector<pybind11::object> &init_targets, const std::vector<double> &gate_args)
     : gate_type(GATE_DATA.at(name).id), gate_args(gate_args) {
     for (const auto &obj : init_targets) {
         targets.push_back(obj_to_gate_target(obj));
     }
+    as_operation_ref().validate();
 }
 PyCircuitInstruction::PyCircuitInstruction(
     GateType gate_type, std::vector<GateTarget> targets, std::vector<double> gate_args)
     : gate_type(gate_type), targets(targets), gate_args(gate_args) {
+    as_operation_ref().validate();
+}
+
+PyCircuitInstruction PyCircuitInstruction::from_str(std::string_view text) {
+    Circuit host;
+    host.append_from_text(text);
+    if (host.operations.size() != 1) {
+        throw std::invalid_argument("Given text didn't parse to a single CircuitInstruction.");
+    }
+    return PyCircuitInstruction::from_instruction(host.operations[0]);
+}
+
+PyCircuitInstruction PyCircuitInstruction::from_instruction(CircuitInstruction instruction) {
+    std::vector<double> arguments;
+    std::vector<GateTarget> targets;
+    arguments.insert(arguments.begin(), instruction.args.begin(), instruction.args.end());
+    targets.insert(targets.begin(), instruction.targets.begin(), instruction.targets.end());
+    return PyCircuitInstruction{
+        instruction.gate_type,
+        targets,
+        arguments,
+    };
 }
 
 bool PyCircuitInstruction::operator==(const PyCircuitInstruction &other) const {
@@ -115,21 +138,46 @@ pybind11::class_<PyCircuitInstruction> stim_pybind::pybind_circuit_instruction(p
 }
 void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<PyCircuitInstruction> &c) {
     c.def(
-        pybind11::init<const char *, std::vector<pybind11::object>, std::vector<double>>(),
+        pybind11::init([](std::string_view name, pybind11::object targets, pybind11::object gate_args) -> PyCircuitInstruction {
+            if (targets.is_none() and gate_args.is_none()) {
+                return PyCircuitInstruction::from_str(name);
+            }
+            std::vector<double> conv_args;
+            std::vector<pybind11::object> conv_targets;
+            if (!gate_args.is_none()) {
+                conv_args = pybind11::cast<std::vector<double>>(gate_args);
+            }
+            if (!targets.is_none()) {
+                conv_targets = pybind11::cast<std::vector<pybind11::object>>(targets);
+            }
+            return PyCircuitInstruction(name, conv_targets, conv_args);
+        }),
         pybind11::arg("name"),
-        pybind11::arg("targets"),
-        pybind11::arg("gate_args") = std::make_tuple(),
+        pybind11::arg("targets") = pybind11::none(),
+        pybind11::arg("gate_args") = pybind11::none(),
         clean_doc_string(R"DOC(
-            Initializes a `stim.CircuitInstruction`.
+            @signature def __init__(self, name: str, targets: Optional[Iterable[Union[int, stim.GateTarget]]] = None, gate_args: Optional[Iterable[float]] = None) -> None:
+            Creates or parses a `stim.CircuitInstruction`.
 
             Args:
                 name: The name of the instruction being applied.
+                    If `targets` and `gate_args` aren't specified, this can be a full
+                    instruction line from a stim Circuit file, like "CX 0 1".
                 targets: The targets the instruction is being applied to. These can be raw
                     values like `0` and `stim.target_rec(-1)`, or instances of
                     `stim.GateTarget`.
                 gate_args: The sequence of numeric arguments parameterizing a gate. For
                     noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
                     instructions it's the index of the logical observable to affect.
+
+            Examples:
+                >>> import stim
+
+                >>> print(stim.CircuitInstruction('DEPOLARIZE1', [5], [0.25]))
+                DEPOLARIZE1(0.25) 5
+
+                >>> stim.CircuitInstruction('CX rec[-1] 5  # comment')
+                stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
         )DOC")
             .data());
 
@@ -246,7 +294,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
                 3
                 >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
                 2
-                >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+                >>> stim.CircuitInstruction('HERALDED_ERASE', [0], [0.25]).num_measurements
                 1
         )DOC")
             .data());

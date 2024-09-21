@@ -12,6 +12,9 @@ struct ExposedDemInstruction {
     std::vector<stim::DemTarget> targets;
     stim::DemInstructionType type;
 
+    static ExposedDemInstruction from_str(std::string_view text);
+    static ExposedDemInstruction from_dem_instruction(stim::DemInstruction instruction);
+
     std::vector<std::vector<stim_pybind::ExposedDemTarget>> target_groups() const;
     std::vector<double> args_copy() const;
     std::vector<pybind11::object> targets_copy() const;
