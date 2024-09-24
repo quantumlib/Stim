@@ -1,4 +1,4 @@
-__version__ = '1.14.dev0'
+__version__ = '1.15.dev0'
 
 from sinter._collection import (
     collect,

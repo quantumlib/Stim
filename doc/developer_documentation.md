@@ -68,10 +68,7 @@ A *spandrel* is an implementation detail that has observable effects, but which 
 
 - Create an off-main-branch release commit
     - [ ] `git checkout main -b SOMEBRANCHNAME`
-    - [ ] Update version to `version = 'X.Y.0'` in `setup.py` (at repo root)
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/cirq/setup.py`
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/sinter/setup.py`
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/stimzx/setup.py`
+    - [ ] Global search replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.Y.0'`
     - [ ] `git commit -a -m "Bump to vX.Y.0"`
     - [ ] `git tag vX.Y.0`
     - [ ] Push tag to github
@@ -79,11 +76,10 @@ A *spandrel* is an implementation detail that has observable effects, but which 
     - [ ] Wait for ci to finish validating and producing artifacts for the tag
     - [ ] Get `stim`, `stimcirq`, and `sinter` wheels/sdists [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
 - Bump to next dev version on main branch
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `setup.py` (at repo root)
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/cirq/setup.py`
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/sinter/setup.py`
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/stimzx/setup.py`
-    - [ ] Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - [ ] `git checkout main -b SOMEBRANCHNAME`
+    - [ ] Global search replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.(Y+1).dev0'`
+    - [ ] Increment `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - [ ] `git commit -a -m "Start vX.(Y+1).dev"`
     - [ ] Push to github as a branch and merge into main using a pull request
 - Write release notes on github
     - [ ] In title, use two-word theming of most important changes
