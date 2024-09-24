@@ -19,7 +19,7 @@ with open('README.md', encoding='UTF-8') as f:
 with open('requirements.txt', encoding='UTF-8') as f:
     requirements = f.read().splitlines()
 
-__version__ = '1.14.dev0'
+__version__ = '1.15.dev0'
 
 setup(
     name='sinter',
