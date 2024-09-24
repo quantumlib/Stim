@@ -3339,8 +3339,8 @@ def to_qasm(
             This should be set to 2 or to 3.
 
             Differences between the versions are:
-                - Support for operations on classical bits operations (only version
-                    3). This means DETECTOR and OBSERVABLE_INCLUDE only work with
+                - Support for operations on classical bits (only version 3).
+                    This means DETECTOR and OBSERVABLE_INCLUDE only work with
                     version 3.
                 - Support for feedback operations (only version 3).
                 - Support for subroutines (only version 3). Without subroutines,
