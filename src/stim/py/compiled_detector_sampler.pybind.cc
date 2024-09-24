@@ -305,6 +305,19 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                         (dets[s, m // 8] >> (m % 8)) & 1
                     The bit for observable `m` in shot `s` is at
                         (obs[s, m // 8] >> (m % 8)) & 1
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...    H 0
+                ...    CNOT 0 1
+                ...    X_ERROR(1.0) 0
+                ...    M 0 1
+                ...    DETECTOR rec[-1] rec[-2]
+                ... ''')
+                >>> s = c.compile_detector_sampler()
+                >>> s.sample(shots=1)
+                array([[ True]])
         )DOC")
             .data());
 

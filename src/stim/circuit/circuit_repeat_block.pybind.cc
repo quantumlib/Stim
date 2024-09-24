@@ -131,6 +131,24 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "num_measurements",
+        [](const CircuitRepeatBlock &self) -> uint64_t {
+            return self.body.count_measurements() * self.repeat_count;
+        },
+        clean_doc_string(R"DOC(
+            Returns the number of bits produced when running this loop.
+
+            Examples:
+                >>> import stim
+                >>> stim.CircuitRepeatBlock(
+                ...     body=stim.Circuit("M 0 1"),
+                ...     repeat_count=25,
+                ... ).num_measurements
+                50
+        )DOC")
+            .data());
+
     c.def_readonly(
         "repeat_count",
         &CircuitRepeatBlock::repeat_count,

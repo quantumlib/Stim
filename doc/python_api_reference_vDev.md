@@ -49,6 +49,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
+    - [`stim.Circuit.pop`](#stim.Circuit.pop)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
@@ -91,6 +92,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitRepeatBlock.__repr__`](#stim.CircuitRepeatBlock.__repr__)
     - [`stim.CircuitRepeatBlock.body_copy`](#stim.CircuitRepeatBlock.body_copy)
     - [`stim.CircuitRepeatBlock.name`](#stim.CircuitRepeatBlock.name)
+    - [`stim.CircuitRepeatBlock.num_measurements`](#stim.CircuitRepeatBlock.num_measurements)
     - [`stim.CircuitRepeatBlock.repeat_count`](#stim.CircuitRepeatBlock.repeat_count)
 - [`stim.CircuitTargetsInsideInstruction`](#stim.CircuitTargetsInsideInstruction)
     - [`stim.CircuitTargetsInsideInstruction.__init__`](#stim.CircuitTargetsInsideInstruction.__init__)
@@ -2692,6 +2694,46 @@ def num_ticks(
     """
 ```
 
+<a name="stim.Circuit.pop"></a>
+```python
+# stim.Circuit.pop
+
+# (in class stim.Circuit)
+def pop(
+    self,
+    index: int = -1,
+) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+    """Pops an operation from the end of the circuit, or at the given index.
+
+    Args:
+        index: Defaults to -1 (end of circuit). The index to pop from.
+
+    Returns:
+        The popped instruction.
+
+    Raises:
+        IndexError: The given index is outside the bounds of the circuit.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit('''
+        ...     H 0
+        ...     S 1
+        ...     X 2
+        ...     Y 3
+        ... ''')
+        >>> c.pop()
+        stim.CircuitInstruction('Y', [stim.GateTarget(3)], [])
+        >>> c.pop(1)
+        stim.CircuitInstruction('S', [stim.GateTarget(1)], [])
+        >>> c
+        stim.Circuit('''
+            H 0
+            X 2
+        ''')
+    """
+```
+
 <a name="stim.Circuit.reference_sample"></a>
 ```python
 # stim.Circuit.reference_sample
@@ -3193,6 +3235,9 @@ def time_reversed_for_flows(
 # (in class stim.Circuit)
 def to_crumble_url(
     self,
+    *,
+    skip_detectors: bool = False,
+    mark: Optional[Dict[int, List[stim.ExplainedError]]] = None,
 ) -> str:
     """Returns a URL that opens up crumble and loads this circuit into it.
 
@@ -3201,6 +3246,15 @@ def to_crumble_url(
     the stim code repository on github. A prebuilt version is made available
     at https://algassert.com/crumble, which is what the URL returned by this
     method will point to.
+
+    Args:
+        skip_detectors: Defaults to False. If set to True, detectors from the
+            circuit aren't included in the crumble URL. This can reduce visual
+            clutter in crumble, and improve its performance, since it doesn't
+            need to indicate or track the sensitivity regions of detectors.
+        mark: Defaults to None (no marks). If set to a dictionary from int to
+            errors, such as `mark={1: circuit.shortest_graphlike_error()}`,
+            then the errors will be highlighted and tracked forward by crumble.
 
     Returns:
         A URL that can be opened in a web browser.
@@ -3213,6 +3267,16 @@ def to_crumble_url(
         ...     S 1
         ... ''').to_crumble_url()
         'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+
+        >>> circuit = stim.Circuit('''
+        ...     M(0.25) 0 1 2
+        ...     DETECTOR rec[-1] rec[-2]
+        ...     DETECTOR rec[-2] rec[-3]
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''')
+        >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
+        >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
+        'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
     """
 ```
 
@@ -3762,6 +3826,30 @@ class CircuitErrorLocationStackFrame:
     The full location of an instruction is a list of these frames,
     drilling down from the top level circuit to the inner-most loop
     that the instruction is within.
+
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     REPEAT 5 {
+        ...         R 0
+        ...         Y_ERROR(0.125) 0
+        ...         M 0
+        ...     }
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].stack_frames[0]
+        stim.CircuitErrorLocationStackFrame(
+            instruction_offset=0,
+            iteration_index=0,
+            instruction_repetitions_arg=5,
+        )
+        >>> err[0].circuit_error_locations[0].stack_frames[1]
+        stim.CircuitErrorLocationStackFrame(
+            instruction_offset=1,
+            iteration_index=4,
+            instruction_repetitions_arg=0,
+        )
     """
 ```
 
@@ -3778,6 +3866,14 @@ def __init__(
     instruction_repetitions_arg: int,
 ) -> None:
     """Creates a stim.CircuitErrorLocationStackFrame.
+
+    Examples:
+        >>> import stim
+        >>> frame = stim.CircuitErrorLocationStackFrame(
+        ...     instruction_offset=1,
+        ...     iteration_index=2,
+        ...     instruction_repetitions_arg=3,
+        ... )
     """
 ```
 
@@ -3795,6 +3891,18 @@ def instruction_offset(
     from the line number, because blank lines and commented lines
     don't count and also because the offset of the first instruction
     is 0 instead of 1.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     TICK
+        ...     Y_ERROR(0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].stack_frames[0].instruction_offset
+        2
     """
 ```
 
@@ -3810,6 +3918,23 @@ def instruction_repetitions_arg(
     """If the instruction being referred to is a REPEAT block,
     this is the repetition count of that REPEAT block. Otherwise
     this field defaults to 0.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     REPEAT 5 {
+        ...         R 0
+        ...         Y_ERROR(0.125) 0
+        ...         M 0
+        ...     }
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> full = err[0].circuit_error_locations[0].stack_frames[0]
+        >>> loop = err[0].circuit_error_locations[0].stack_frames[1]
+        >>> full.instruction_repetitions_arg
+        5
+        >>> loop.instruction_repetitions_arg
+        0
     """
 ```
 
@@ -3825,6 +3950,23 @@ def iteration_index(
     """Disambiguates which iteration of the loop containing this instruction
     is being referred to. If the instruction isn't in a REPEAT block, this
     field defaults to 0.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     REPEAT 5 {
+        ...         R 0
+        ...         Y_ERROR(0.125) 0
+        ...         M 0
+        ...     }
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> full = err[0].circuit_error_locations[0].stack_frames[0]
+        >>> loop = err[0].circuit_error_locations[0].stack_frames[1]
+        >>> full.iteration_index
+        0
+        >>> loop.iteration_index
+        4
     """
 ```
 
@@ -3873,19 +4015,30 @@ def __eq__(
 def __init__(
     self,
     name: str,
-    targets: List[object],
-    gate_args: List[float] = (),
+    targets: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
+    gate_args: Optional[Iterable[float]] = None,
 ) -> None:
-    """Initializes a `stim.CircuitInstruction`.
+    """Creates or parses a `stim.CircuitInstruction`.
 
     Args:
         name: The name of the instruction being applied.
+            If `targets` and `gate_args` aren't specified, this can be a full
+            instruction line from a stim Circuit file, like "CX 0 1".
         targets: The targets the instruction is being applied to. These can be raw
             values like `0` and `stim.target_rec(-1)`, or instances of
             `stim.GateTarget`.
         gate_args: The sequence of numeric arguments parameterizing a gate. For
             noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
             instructions it's the index of the logical observable to affect.
+
+    Examples:
+        >>> import stim
+
+        >>> print(stim.CircuitInstruction('DEPOLARIZE1', [5], [0.25]))
+        DEPOLARIZE1(0.25) 5
+
+        >>> stim.CircuitInstruction('CX rec[-1] 5  # comment')
+        stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
     """
 ```
 
@@ -3989,7 +4142,7 @@ def num_measurements(
         3
         >>> stim.Circuit('MPP X0*X1 X0*Z1*Y2')[0].num_measurements
         2
-        >>> stim.CircuitInstruction('HERALDED_ERASE', [0]).num_measurements
+        >>> stim.CircuitInstruction('HERALDED_ERASE', [0], [0.25]).num_measurements
         1
     """
 ```
@@ -4204,6 +4357,27 @@ def name(
         ... ''')
         >>> [instruction.name for instruction in circuit]
         ['H', 'REPEAT', 'S']
+    """
+```
+
+<a name="stim.CircuitRepeatBlock.num_measurements"></a>
+```python
+# stim.CircuitRepeatBlock.num_measurements
+
+# (in class stim.CircuitRepeatBlock)
+@property
+def num_measurements(
+    self,
+) -> int:
+    """Returns the number of bits produced when running this loop.
+
+    Examples:
+        >>> import stim
+        >>> stim.CircuitRepeatBlock(
+        ...     body=stim.Circuit("M 0 1"),
+        ...     repeat_count=25,
+        ... ).num_measurements
+        50
     """
 ```
 
@@ -4774,6 +4948,19 @@ def sample(
                 (dets[s, m // 8] >> (m % 8)) & 1
             The bit for observable `m` in shot `s` is at
                 (obs[s, m // 8] >> (m % 8)) & 1
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit('''
+        ...    H 0
+        ...    CNOT 0 1
+        ...    X_ERROR(1.0) 0
+        ...    M 0 1
+        ...    DETECTOR rec[-1] rec[-2]
+        ... ''')
+        >>> s = c.compile_detector_sampler()
+        >>> s.sample(shots=1)
+        array([[ True]])
     """
 ```
 
@@ -5336,13 +5523,15 @@ def __eq__(
 def __init__(
     self,
     type: str,
-    args: List[float],
-    targets: List[object],
+    args: Optional[Iterable[float]] = None,
+    targets: Optional[Iterable[stim.DemTarget]] = None,
 ) -> None:
-    """Creates a stim.DemInstruction.
+    """Creates or parses a stim.DemInstruction.
 
     Args:
         type: The name of the instruction type (e.g. "error" or "shift_detectors").
+            If `args` and `targets` aren't specified, this can also be set to a
+            full line of text from a dem file, like "error(0.25) D0".
         args: Numeric values parameterizing the instruction (e.g. the 0.1 in
             "error(0.1)").
         targets: The objects the instruction involves (e.g. the "D0" and "L1" in
@@ -5356,6 +5545,9 @@ def __init__(
         ...     [stim.target_relative_detector_id(5)])
         >>> print(instruction)
         error(0.125) D5
+
+        >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
+        error(0.125) D5 L6 ^ D4
     """
 ```
 

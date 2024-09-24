@@ -78,3 +78,24 @@ def test_hashable():
 def test_target_groups():
     dem = stim.DetectorErrorModel("detector D0")
     assert dem[0].target_groups() == [[stim.DemTarget("D0")]]
+
+
+def test_init_from_str():
+    assert stim.DemInstruction("detector D0") == stim.DemInstruction("detector", [], [stim.target_relative_detector_id(0)])
+
+    with pytest.raises(ValueError, match="single DemInstruction"):
+        stim.DemInstruction("")
+
+    with pytest.raises(ValueError, match="single DemInstruction"):
+        stim.DemInstruction("""
+            repeat 5 {
+                error(0.25) D0
+                shift_detectors 1
+            }
+        """)
+
+    with pytest.raises(ValueError, match="single DemInstruction"):
+        stim.DemInstruction("""
+            detector D0
+            detector D1
+        """)
