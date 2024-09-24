@@ -17,7 +17,7 @@ from setuptools import setup
 with open('README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
-__version__ = '1.14.dev0'
+__version__ = '1.14.0'
 
 setup(
     name='stimzx',
