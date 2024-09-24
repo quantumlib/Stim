@@ -27,7 +27,10 @@ def _fill_in_task(task: Task) -> Task:
         try:
             dem = circuit.detector_error_model(decompose_errors=True, approximate_disjoint_errors=True)
         except ValueError:
-            dem = circuit.detector_error_model(approximate_disjoint_errors=True)
+            try:
+                dem = circuit.detector_error_model(approximate_disjoint_errors=True)
+            except ValueError:
+                dem = circuit.detector_error_model(approximate_disjoint_errors=True, flatten_loops=True)
         changed = True
     if not changed:
         return task
