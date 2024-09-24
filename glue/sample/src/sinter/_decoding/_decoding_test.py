@@ -27,6 +27,11 @@ def get_test_decoders() -> Tuple[List[str], Dict[str, sinter.Decoder]]:
         import fusion_blossom
     except ImportError:
         available_decoders.remove('fusion_blossom')
+    try:
+        import mwpf
+    except ImportError:
+        available_decoders.remove('hypergraph_union_find')
+        available_decoders.remove('mw_parity_factor')
 
     e = os.environ.get('SINTER_PYTEST_CUSTOM_DECODERS')
     if e is not None:
