@@ -1,5 +1,3 @@
-# Copyright 2021 Google LLC
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -55,6 +53,27 @@ def test_from_named_gate():
         stim.Tableau.from_named_gate("not a gate")
     with pytest.raises(IndexError, match="not unitary"):
         stim.Tableau.from_named_gate("X_ERROR")
+
+def test_from_state_vector():
+    t = stim.Tableau.from_state_vector([
+        0.5**0.5,
+        0,
+        0,
+        0.5**0.5,
+    ], endian='little')
+    assert len(t) == 2
+    assert t.x_output(0) == stim.PauliString("Z_")
+    assert t.x_output(1) == stim.PauliString("_X")
+    assert t.z_output(0) == stim.PauliString("XX")
+    assert t.z_output(1) == stim.PauliString("ZZ")
+
+    unnormalized = stim.Tableau.from_state_vector([
+        1,
+        0,
+        0,
+        1
+    ], endian='little')
+    assert unnormalized == t
 
 
 def test_identity():
