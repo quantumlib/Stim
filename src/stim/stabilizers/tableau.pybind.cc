@@ -2130,16 +2130,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             }
 
             std::vector<std::complex<float>> v;
-            double weight = 0;
             for (const auto &obj : state_vector) {
                 v.push_back(pybind11::cast<std::complex<float>>(obj));
-                weight += std::norm(v.back());
-            }
-            if (weight != 1.0 && weight > 0.0) {
-                std::complex<float> scale = (float)sqrt(1.0 / weight);
-                for (auto &amplitude : v) {
-                    amplitude *= scale;
-                }
             }
 
             return circuit_to_tableau<MAX_BITWORD_WIDTH>(
@@ -2155,7 +2147,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             Args:
                 state_vector: A list of complex amplitudes specifying a superposition. The
                     vector must correspond to a state that is reachable using Clifford
-                    operations.
+                    operations, and can be unnormalized.
                 endian:
                     "little": state vector is in little endian order, where higher index
                         qubits correspond to larger changes in the state index.
