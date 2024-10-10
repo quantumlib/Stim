@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import random
 import re
 
 import numpy as np
@@ -57,18 +58,12 @@ def test_from_named_gate():
         stim.Tableau.from_named_gate("X_ERROR")
 
 
-def test_from_state_vector():
-    t = stim.Tableau.from_state_vector([
-        0.5**0.5,
-        0,
-        0,
-        0.5**0.5,
-    ], endian='little')
-    assert len(t) == 2
-    assert t.x_output(0) == stim.PauliString("Z_")
-    assert t.x_output(1) == stim.PauliString("_X")
-    assert t.z_output(0) == stim.PauliString("XX")
-    assert t.z_output(1) == stim.PauliString("ZZ")
+def test_from_state_vector_fuzz():
+    for n in range(1, 7):
+        t = stim.Tableau.random(n)
+        v = t.to_state_vector() * (random.random() + 1j*random.random())
+        t2 = stim.Tableau.from_state_vector(v, endian='little')
+        np.testing.assert_array_equal(t.to_stabilizers(canonicalize=True), t2.to_stabilizers(canonicalize=True))
 
 
 def test_identity():
