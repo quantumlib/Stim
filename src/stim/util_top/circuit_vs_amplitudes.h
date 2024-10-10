@@ -8,7 +8,8 @@ namespace stim {
 /// Synthesizes a circuit to generate the given state vector.
 ///
 /// Args:
-///     stabilizer_state_vector: The vector of amplitudes to produce using a circuit.
+///     stabilizer_state_vector: The vector of amplitudes to produce using a circuit. Does not need to be a unit vector,
+///     but must be non-zero.
 ///     little_endian: Whether the vector is using little endian or big endian ordering.
 ///     inverted_circuit: If false, returns a circuit that sends |000...0> to the state vector.
 ///         If true, returns a circuit that sends the state vector to |000...0> instead of a cir.

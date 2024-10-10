@@ -8,10 +8,12 @@
 using namespace stim;
 
 TEST(conversions, stabilizer_state_vector_to_circuit_basic) {
+    ASSERT_THROW(stabilizer_state_vector_to_circuit({}, false), std::invalid_argument);
+
     ASSERT_THROW(
         stabilizer_state_vector_to_circuit(
             {
-                {0.5},
+                {0},
             },
             false),
         std::invalid_argument);
@@ -172,6 +174,35 @@ TEST(conversions, stabilizer_state_vector_to_circuit_fuzz_round_trip) {
             auto actual_vec = circuit_to_output_state_vector(circuit, little_endian);
             ASSERT_EQ(actual_vec, desired_vec) << "little_endian=" << little_endian << ", n=" << n;
         }
+    }
+}
+
+TEST(conversions, stabilizer_state_vector_to_circuit_unnormalized_fuzz_round_trip) {
+    auto rng = INDEPENDENT_TEST_RNG();
+    auto little_endian = true;
+
+    for (size_t i = 0; i < 100; i++) {
+        // Pick a random stabilizer state.
+        size_t n = i % 5;
+        TableauSimulator<64> sim(INDEPENDENT_TEST_RNG(), n);
+        sim.inv_state = Tableau<64>::random(n, rng);
+        auto desired_vec = sim.to_state_vector(little_endian);
+
+        // Unnormalize by multiplying by a random non-zero factor.
+        auto scaled_vec = desired_vec;
+        std::uniform_real_distribution<float> dist(-1000.0, +1000.0);
+        std::complex<float> scale = {dist(rng), dist(rng)};
+        while (std::norm(scale) < 0.01) {
+            scale = {dist(rng), dist(rng)};
+        }
+        for (auto &c : scaled_vec) {
+            c *= scale;
+        }
+
+        // Round trip through a circuit.
+        auto circuit = stabilizer_state_vector_to_circuit(scaled_vec, little_endian);
+        auto actual_vec = circuit_to_output_state_vector(circuit, little_endian);
+        ASSERT_EQ(actual_vec, desired_vec) << " scale=" << scale;
     }
 }
 

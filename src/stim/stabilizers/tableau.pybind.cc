@@ -2147,7 +2147,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             Args:
                 state_vector: A list of complex amplitudes specifying a superposition. The
                     vector must correspond to a state that is reachable using Clifford
-                    operations, and must be normalized (i.e. it must be a unit vector).
+                    operations, and can be unnormalized.
                 endian:
                     "little": state vector is in little endian order, where higher index
                         qubits correspond to larger changes in the state index.

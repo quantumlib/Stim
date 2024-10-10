@@ -40,15 +40,6 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     }
 
     uint8_t num_qubits = floor_lg2(state_vector.size());
-    double weight = 0;
-    for (const auto &c : state_vector) {
-        weight += std::norm(c);
-    }
-    if (abs(weight - 1) > 0.125) {
-        throw std::invalid_argument(
-            "The given state vector wasn't a unit vector. It had a length of " + std::to_string(weight) + ".");
-    }
-
     VectorSimulator sim(num_qubits);
     sim.state = state_vector;
 
@@ -73,7 +64,7 @@ Circuit stim::stabilizer_state_vector_to_circuit(
             {});
     };
 
-    // Move biggest amplitude to start of state vector..
+    // Move biggest amplitude to start of state vector.
     size_t pivot = biggest_index(state_vector);
     for (size_t q = 0; q < num_qubits; q++) {
         if ((pivot >> q) & 1) {
