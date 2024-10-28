@@ -864,7 +864,6 @@ def test_likeliest_error_sat_problem():
         DETECTOR rec[-1] rec[-2]
     """)
     sat_str = c.likeliest_error_sat_problem(quantization=100)
-    print(sat_str)
     assert sat_str == 'p wcnf 2 4 401\n18 -1 0\n100 -2 0\n401 -1 0\n401 2 0\n'
 
 
@@ -1902,3 +1901,14 @@ def test_pop():
 def test_circuit_create_with_odd_cx():
     with pytest.raises(ValueError, match="0, 1, 2"):
         stim.Circuit("CX 0 1 2")
+
+
+def test_to_tableau():
+    assert stim.Circuit().to_tableau() == stim.Tableau(0)
+    assert stim.Circuit("QUBIT_COORDS 0").to_tableau() == stim.Tableau(1)
+    assert stim.Circuit("I 0").to_tableau() == stim.Tableau(1)
+    assert stim.Circuit("H 0").to_tableau() == stim.Tableau.from_named_gate("H")
+    assert stim.Circuit("CX 0 1").to_tableau() == stim.Tableau.from_named_gate("CX")
+    assert stim.Circuit("SPP Z0").to_tableau() == stim.Tableau.from_named_gate("S")
+    assert stim.Circuit("SPP X0").to_tableau() == stim.Tableau.from_named_gate("SQRT_X")
+    assert stim.Circuit("SPP_DAG Y0*Y1").to_tableau() == stim.Tableau.from_named_gate("SQRT_YY_DAG")
