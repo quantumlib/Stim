@@ -37,16 +37,16 @@ struct OpDat {
     OpDat(std::vector<uint32_t> u) : targets(qubit_targets(u)) {
     }
     operator CircuitInstruction() const {
-        return {(GateType)0, {}, targets};
+        return {(GateType)0, {}, targets, ""};
     }
 };
 
 TEST_EACH_WORD_SIZE_W(TableauSimulator, identity, {
     auto s = TableauSimulator<W>(INDEPENDENT_TEST_RNG(), 1);
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
-    s.do_MZ({GateType::Z, {}, qubit_targets({0})});
+    s.do_MZ({GateType::Z, {}, qubit_targets({0}), ""});
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
-    s.do_MZ({GateType::Z, {}, qubit_targets({0 | TARGET_INVERTED_BIT})});
+    s.do_MZ({GateType::Z, {}, qubit_targets({0 | TARGET_INVERTED_BIT}), ""});
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, true}));
 })
 
@@ -318,10 +318,10 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, unitary_gates_consistent_with_tableau_da
 
         const auto &inverse_op_tableau = gate.inverse().tableau<W>();
         if (inverse_op_tableau.num_qubits == 2) {
-            sim.do_gate({gate.id, {}, qubit_targets({7, 4})});
+            sim.do_gate({gate.id, {}, qubit_targets({7, 4}), ""});
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
-            sim.do_gate({gate.id, {}, qubit_targets({5})});
+            sim.do_gate({gate.id, {}, qubit_targets({5}), ""});
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
         EXPECT_EQ(sim.inv_state, t) << gate.name;
@@ -334,8 +334,8 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, certain_errors_consistent_with_gates, {
     GateTarget targets[]{GateTarget{0}};
     double p0 = 0.0;
     double p1 = 1.0;
-    CircuitInstruction d0{(GateType)0, {&p0}, {targets}};
-    CircuitInstruction d1{(GateType)0, {&p1}, {targets}};
+    CircuitInstruction d0{(GateType)0, {&p0}, {targets}, ""};
+    CircuitInstruction d1{(GateType)0, {&p1}, {targets}, ""};
 
     sim1.do_X_ERROR(d1);
     sim2.do_X(d0);
@@ -410,7 +410,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, to_vector_sim, {
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.do_gate({GateType::XCX, {}, qubit_targets({4, 7})});
+    sim_tab.do_gate({GateType::XCX, {}, qubit_targets({4, 7}), ""});
     sim_vec.apply(GateType::XCX, 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 })

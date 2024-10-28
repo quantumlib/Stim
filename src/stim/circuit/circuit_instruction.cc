@@ -106,8 +106,8 @@ const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const 
 }
 
 CircuitInstruction::CircuitInstruction(
-    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets)
-    : gate_type(gate_type), args(args), targets(targets) {
+    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag)
+    : gate_type(gate_type), args(args), targets(targets), tag(tag) {
 }
 
 void CircuitInstruction::validate() const {
@@ -295,7 +295,7 @@ uint64_t CircuitInstruction::count_measurement_results() const {
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
     auto flags = GATE_DATA[gate_type].flags;
-    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE);
+    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE) && tag == other.tag;
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
@@ -315,6 +315,51 @@ bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double a
 
 bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
     return !(*this == other);
+}
+
+std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &instruction) {
+    out << GATE_DATA[instruction.gate_type].name;
+    if (!instruction.tag.empty()) {
+        out << '[';
+        for (char c : instruction.tag) {
+            switch (c) {
+                case '\n':
+                    out << "\\n";
+                    break;
+                case '\r':
+                    out << "\\r";
+                    break;
+                case '\\':
+                    out << "\\b";
+                    break;
+                case ']':
+                    out << "\\c";
+                    break;
+                default:
+                    out << c;
+            }
+        }
+        out << ']';
+    }
+    if (!instruction.args.empty()) {
+        out << '(';
+        bool first = true;
+        for (auto e : instruction.args) {
+            if (first) {
+                first = false;
+            } else {
+                out << ", ";
+            }
+            if (e > (double)INT64_MIN && e < (double)INT64_MAX && (int64_t)e == e) {
+                out << (int64_t)e;
+            } else {
+                out << e;
+            }
+        }
+        out << ')';
+    }
+    write_targets(out, instruction.targets);
+    return out;
 }
 
 std::string CircuitInstruction::str() const {

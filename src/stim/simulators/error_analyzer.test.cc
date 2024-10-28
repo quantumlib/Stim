@@ -308,8 +308,8 @@ TEST_EACH_WORD_SIZE_W(ErrorAnalyzer, unitary_gates_match_frame_simulator, {
     }
     for (const auto &gate : GATE_DATA.items) {
         if (gate.flags & GATE_IS_UNITARY) {
-            e.undo_gate({gate.id, {}, data});
-            f.do_gate({gate.inverse().id, {}, data});
+            e.undo_gate(CircuitInstruction{gate.id, {}, data, ""});
+            f.do_gate(CircuitInstruction{gate.inverse().id, {}, data, ""});
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
                 bool zs[2]{};

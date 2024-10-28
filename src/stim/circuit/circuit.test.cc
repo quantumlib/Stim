@@ -1060,14 +1060,14 @@ TEST(circuit, append_repeat_block) {
     Circuit b("X 0");
     Circuit a("Y 0");
 
-    c.append_repeat_block(100, b);
+    c.append_repeat_block(100, b, "");
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
         REPEAT 100 {
             X 0
         }
     )CIRCUIT"));
 
-    c.append_repeat_block(200, a);
+    c.append_repeat_block(200, a, "");
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
         REPEAT 100 {
             X 0
@@ -1077,7 +1077,7 @@ TEST(circuit, append_repeat_block) {
         }
     )CIRCUIT"));
 
-    c.append_repeat_block(400, std::move(b));
+    c.append_repeat_block(400, std::move(b), "");
     ASSERT_TRUE(b.operations.empty());
     ASSERT_FALSE(a.operations.empty());
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
@@ -1092,8 +1092,8 @@ TEST(circuit, append_repeat_block) {
         }
     )CIRCUIT"));
 
-    ASSERT_THROW({ c.append_repeat_block(0, a); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_repeat_block(0, std::move(a)); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_repeat_block(0, a, ""); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_repeat_block(0, std::move(a), ""); }, std::invalid_argument);
 }
 
 TEST(circuit, aliased_noiseless_circuit) {

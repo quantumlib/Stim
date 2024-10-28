@@ -75,7 +75,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         auto test_value = PauliString<W>::random(circuit_stats.num_qubits, rng);
         PauliStringRef<W> test_value_ref(test_value);
         sim.set_frame(k, test_value);
-        sim.do_gate({gate.id, {}, targets});
+        sim.do_gate({gate.id, {}, targets, ""});
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
             size_t target_buf[2];
             if (num_targets == 1) {
@@ -112,7 +112,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         if (op.gate_type == GateType::M) {
             for (auto qf : op.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.do_MZ({GateType::M, {}, &qf});
+                tableau_sim.do_MZ(CircuitInstruction{GateType::M, {}, &qf, ""});
                 if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }

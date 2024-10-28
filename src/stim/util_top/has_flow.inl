@@ -62,7 +62,7 @@ bool _sample_if_noiseless_circuit_has_stabilizer_flow(
     for (int32_t m : flow.measurements) {
         std::array<GateTarget, 2> targets{
             measurement_index_to_target<W>(m, num_measurements, flow), GateTarget::qubit(num_qubits)};
-        augmented_circuit.safe_append(GateType::CX, targets, {});
+        augmented_circuit.safe_append(CircuitInstruction(GateType::CX, {}, targets, ""));
     }
     augmented_circuit.safe_append_u("M", {num_qubits}, {});
 
@@ -115,7 +115,7 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
         for (int32_t m : flow.measurements) {
             targets.push_back(measurement_index_to_target<W>(m, stats.num_measurements, flow));
         }
-        rev.undo_DETECTOR(CircuitInstruction{GateType::DETECTOR, {}, targets});
+        rev.undo_DETECTOR(CircuitInstruction{GateType::DETECTOR, {}, targets, ""});
     }
 
     // Undo the circuit.

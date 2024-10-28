@@ -12,8 +12,8 @@ GraphSimulator::GraphSimulator(size_t num_qubits)
 
 void GraphSimulator::do_1q_gate(GateType gate, size_t qubit) {
     GateTarget t = GateTarget::qubit(qubit);
-    x2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t});
-    z2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t});
+    x2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t, ""});
+    z2outs.ref().do_instruction(CircuitInstruction{gate, {}, &t, ""});
     paulis.xs[qubit] ^= z2outs.sign;
     paulis.zs[qubit] ^= x2outs.sign;
     x2outs.sign = 0;
@@ -398,7 +398,7 @@ void GraphSimulator::output_pauli_layer(Circuit &out, bool to_hs_xyz) const {
 
     auto f = [&](GateType g, int k) {
         if (!groups[k].empty()) {
-            out.safe_append(g, groups[k], {});
+            out.safe_append(CircuitInstruction(g, {}, groups[k], ""));
         }
     };
     f(GateType::X, 0b01);
@@ -428,7 +428,7 @@ void GraphSimulator::output_clifford_layer(Circuit &out, bool to_hs_xyz) const {
             }
         } else {
             if (!groups[k].empty()) {
-                out.safe_append(g, groups[k], {});
+                out.safe_append(CircuitInstruction(g, {}, groups[k], ""));
             }
         }
     };
@@ -440,7 +440,7 @@ void GraphSimulator::output_clifford_layer(Circuit &out, bool to_hs_xyz) const {
     for (size_t k = 0; k < 3; k++) {
         if (!shs[k].empty()) {
             std::sort(shs[k].begin(), shs[k].end());
-            out.safe_append(k == 1 ? GateType::H : GateType::S, shs[k], {});
+            out.safe_append(CircuitInstruction(k == 1 ? GateType::H : GateType::S, {}, shs[k], ""));
         }
     }
 }
@@ -454,9 +454,9 @@ Circuit GraphSimulator::to_circuit(bool to_hs_xyz) const {
         targets.push_back(GateTarget::qubit(q));
     }
     if (!targets.empty()) {
-        out.safe_append(GateType::RX, targets, {});
+        out.safe_append(CircuitInstruction(GateType::RX, {}, targets, ""));
     }
-    out.safe_append(GateType::TICK, {}, {});
+    out.safe_append(CircuitInstruction(GateType::TICK, {}, {}, ""));
 
     bool has_cz = false;
     for (size_t q = 0; q < num_qubits; q++) {
@@ -468,12 +468,12 @@ Circuit GraphSimulator::to_circuit(bool to_hs_xyz) const {
             }
         }
         if (!targets.empty()) {
-            out.safe_append(GateType::CZ, targets, {});
+            out.safe_append(CircuitInstruction(GateType::CZ, {}, targets, ""));
         }
         has_cz |= !targets.empty();
     }
     if (has_cz) {
-        out.safe_append(GateType::TICK, {}, {});
+        out.safe_append(CircuitInstruction(GateType::TICK, {}, {}, ""));
     }
 
     output_clifford_layer(out, to_hs_xyz);

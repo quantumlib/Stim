@@ -71,8 +71,12 @@ struct CircuitInstruction {
     /// Encoded data indicating the qubits and other targets acted on by the gate.
     SpanRef<const GateTarget> targets;
 
+    /// Arbitrary string associated with the instruction.
+    /// No effect on simulations or analysis steps within stim, but user code may use it.
+    std::string_view tag;
+
     CircuitInstruction() = delete;
-    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets);
+    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
 
     /// Computes number of qubits, number of measurements, etc.
     CircuitStats compute_stats(const Circuit *host) const;
@@ -142,6 +146,8 @@ struct CircuitInstruction {
         }
     }
 };
+
+std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
 
 }  // namespace stim
 

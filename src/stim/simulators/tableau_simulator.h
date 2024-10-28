@@ -284,7 +284,7 @@ void perform_pauli_errors_via_correlated_errors(
     const CircuitInstruction &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
     double target_p{};
     GateTarget target_t[Q];
-    CircuitInstruction data{GateType::E, {&target_p}, {&target_t[0], &target_t[Q]}};
+    CircuitInstruction data{GateType::E, {&target_p}, {&target_t[0], &target_t[Q]}, ""};
     for (size_t k = 0; k < target_data.targets.size(); k += Q) {
         reset_flag();
         double used_probability = 0;

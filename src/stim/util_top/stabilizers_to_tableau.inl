@@ -49,8 +49,8 @@ Tableau<W> stabilizers_to_tableau(
         target = target.ref().after(elimination_instructions);
         if (num_qubits > 0) {
             GateTarget t = GateTarget::qubit(num_qubits - 1);
-            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
-            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
+            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
+            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
         }
         Tableau<W> inverse = circuit_to_tableau<W>(elimination_instructions, false, false, false, true);
         target.ref().for_each_active_pauli([&](size_t q) {
@@ -113,7 +113,7 @@ Tableau<W> stabilizers_to_tableau(
         if (buf_xs[pivot][k]) {
             GateType g = buf_zs[pivot][k] ? GateType::H_YZ : GateType::H;
             GateTarget t = GateTarget::qubit(pivot);
-            CircuitInstruction instruction{g, {}, &t};
+            CircuitInstruction instruction{g, {}, &t, ""};
             elimination_instructions.safe_append(instruction);
             size_t q = pivot;
             simd_bits_range_ref<W> xs1 = buf_xs[q];
@@ -143,7 +143,7 @@ Tableau<W> stabilizers_to_tableau(
             if (p && q != pivot) {
                 std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(q)};
                 GateType g = p == 1 ? GateType::XCX : p == 2 ? GateType::XCZ : GateType::XCY;
-                CircuitInstruction instruction{g, {}, targets};
+                CircuitInstruction instruction{g, {}, targets, ""};
                 elimination_instructions.safe_append(instruction);
                 size_t q1 = targets[0].qubit_value();
                 size_t q2 = targets[1].qubit_value();
@@ -185,7 +185,7 @@ Tableau<W> stabilizers_to_tableau(
         // Move pivot to diagonal.
         if (pivot != used) {
             std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(used)};
-            CircuitInstruction instruction{GateType::SWAP, {}, targets};
+            CircuitInstruction instruction{GateType::SWAP, {}, targets, ""};
             elimination_instructions.safe_append(instruction);
             buf_xs[pivot].swap_with(buf_xs[used]);
             buf_zs[pivot].swap_with(buf_zs[used]);
@@ -194,7 +194,7 @@ Tableau<W> stabilizers_to_tableau(
         // Fix sign.
         if (buf_signs[k]) {
             GateTarget t = GateTarget::qubit(used);
-            CircuitInstruction instruction{GateType::X, {}, &t};
+            CircuitInstruction instruction{GateType::X, {}, &t, ""};
             elimination_instructions.safe_append(instruction);
             buf_signs ^= buf_zs[used];
         }
@@ -213,8 +213,8 @@ Tableau<W> stabilizers_to_tableau(
     if (num_qubits > 0) {
         // Force size of resulting tableau to be correct.
         GateTarget t = GateTarget::qubit(num_qubits - 1);
-        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
-        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t});
+        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
+        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
     }
 
     if (invert) {
