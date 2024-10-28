@@ -99,7 +99,7 @@ S 1
             .id = GateType::SPP,
             .best_candidate_inverse_id = GateType::SPP_DAG,
             .arg_count = 0,
-            .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS),
+            .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS | GATE_IS_UNITARY),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
 The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
@@ -174,7 +174,7 @@ CX 2 1
             .id = GateType::SPP_DAG,
             .best_candidate_inverse_id = GateType::SPP,
             .arg_count = 0,
-            .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS),
+            .flags = (GateFlags)(GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS | GATE_IS_UNITARY),
             .category = "P_Generalized Pauli Product Gates",
             .help = R"MARKDOWN(
 The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.

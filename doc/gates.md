@@ -3043,7 +3043,7 @@ Decomposition (into H, S, CX, M, R):
     
 
 <a name="SPP"></a>
-### The 'SPP' Instruction
+### The 'SPP' Gate
 
 The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
 
@@ -3109,7 +3109,7 @@ Decomposition (into H, S, CX, M, R):
     
 
 <a name="SPP_DAG"></a>
-### The 'SPP_DAG' Instruction
+### The 'SPP_DAG' Gate
 
 The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.
 

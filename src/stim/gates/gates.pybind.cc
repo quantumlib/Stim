@@ -50,7 +50,7 @@ pybind11::object gate_tableau(const Gate &self) {
     return pybind11::none();
 }
 pybind11::object gate_unitary_matrix(const Gate &self) {
-    if (self.flags & GATE_IS_UNITARY) {
+    if (self.has_known_unitary_matrix()) {
         auto r = self.unitary();
         auto n = r.size();
         std::complex<float> *buffer = new std::complex<float>[n * n];

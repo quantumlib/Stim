@@ -258,7 +258,7 @@ struct Gate {
 
     template <size_t W>
     std::vector<Flow<W>> flows() const {
-        if (flags & GateFlags::GATE_IS_UNITARY) {
+        if (has_known_unitary_matrix()) {
             auto t = tableau<W>();
             if (flags & GateFlags::GATE_TARGETS_PAIRS) {
                 return {
@@ -284,6 +284,12 @@ struct Gate {
 
     bool is_symmetric() const;
     GateType hadamard_conjugated(bool ignoring_sign) const;
+
+    /// Determines if the gate has a specified unitary matrix.
+    ///
+    /// Some unitary gates, such as SPP, don't have a specified matrix because the
+    /// matrix depends crucially on the targets.
+    bool has_known_unitary_matrix() const;
 
     /// Converts a single qubit unitary gate into an euler-angles rotation.
     ///
