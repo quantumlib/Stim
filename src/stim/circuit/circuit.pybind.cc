@@ -187,7 +187,7 @@ pybind11::object circuit_get_item(const Circuit &self, const pybind11::object &i
 
     auto &op = self.operations[index];
     if (op.gate_type == GateType::REPEAT) {
-        return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
+        return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self), pybind11::str(op.tag)});
     }
     std::vector<GateTarget> targets;
     for (const auto &e : op.targets) {
@@ -197,7 +197,7 @@ pybind11::object circuit_get_item(const Circuit &self, const pybind11::object &i
     for (const auto &e : op.args) {
         args.push_back(e);
     }
-    return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args));
+    return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args, op.tag));
 }
 
 pybind11::object circuit_pop(Circuit &self, pybind11::ssize_t index) {
@@ -230,7 +230,7 @@ void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &o
         self.safe_insert(index, v.as_operation_ref());
     } else if (pybind11::isinstance<CircuitRepeatBlock>(operation)) {
         const CircuitRepeatBlock &v = pybind11::cast<const CircuitRepeatBlock &>(operation);
-        self.safe_insert_repeat_block(index, v.repeat_count, v.body);
+        self.safe_insert_repeat_block(index, v.repeat_count, v.body, pybind11::cast<std::string_view>(v.tag));
     } else if (pybind11::isinstance<Circuit>(operation)) {
         const Circuit &v = pybind11::cast<const Circuit &>(operation);
         self.safe_insert(index, v);
@@ -292,14 +292,19 @@ void circuit_append(
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
-        self.safe_append(instruction.gate_type, instruction.targets, instruction.gate_args);
+        self.safe_append(CircuitInstruction{
+            instruction.gate_type,
+            instruction.gate_args,
+            instruction.targets,
+            pybind11::cast<std::string_view>(instruction.tag),
+        });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
             throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
-        self.append_repeat_block(block.repeat_count, block.body);
+        self.append_repeat_block(block.repeat_count, block.body, pybind11::cast<std::string_view>(block.tag));
     } else {
         throw std::invalid_argument(
             "First argument of append_operation must be a str (a gate name), "
