@@ -321,24 +321,7 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &inst
     out << GATE_DATA[instruction.gate_type].name;
     if (!instruction.tag.empty()) {
         out << '[';
-        for (char c : instruction.tag) {
-            switch (c) {
-                case '\n':
-                    out << "\\n";
-                    break;
-                case '\r':
-                    out << "\\r";
-                    break;
-                case '\\':
-                    out << "\\b";
-                    break;
-                case ']':
-                    out << "\\c";
-                    break;
-                default:
-                    out << c;
-            }
-        }
+        write_tag_escaped_string_to(instruction.tag, out);
         out << ']';
     }
     if (!instruction.args.empty()) {
@@ -360,6 +343,27 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &inst
     }
     write_targets(out, instruction.targets);
     return out;
+}
+
+void stim::write_tag_escaped_string_to(std::string_view tag, std::ostream &out) {
+    for (char c : tag) {
+        switch (c) {
+            case '\n':
+                out << "\\n";
+                break;
+            case '\r':
+                out << "\\r";
+                break;
+            case '\\':
+                out << "\\B";
+                break;
+            case ']':
+                out << "\\C";
+                break;
+            default:
+                out << c;
+        }
+    }
 }
 
 std::string CircuitInstruction::str() const {

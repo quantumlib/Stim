@@ -360,7 +360,19 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
     c = read_char();
 
     while (c != ']') {
-        if (c == '\\') {
+        if (c == '\r' || c == '\n') {
+            std::stringstream ss;
+            ss << "A tag wasn't closed with ']' before the end of the line.\n";
+            ss << "Hit a ";
+            if (c == '\r') {
+                ss << "carriage return character (0x0D)";
+            } else {
+                ss << "line feed character (0x0A)";
+            }
+            ss << " while trying to parse the tag of a '" << name << "' instruction.\n";
+            ss << "In tags, use the escape sequence '\\r' for carriage returns and '\\n' for line feeds.";
+            throw std::invalid_argument(ss.str());
+        } else if (c == '\\') {
             c = read_char();
             switch (c) {
                 case 'n':
@@ -369,10 +381,10 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
                 case 'r':
                     out.append_tail('\r');
                     break;
-                case 'b':
+                case 'B':
                     out.append_tail('\\');
                     break;
-                case 'c':
+                case 'C':
                     out.append_tail(']');
                     break;
                 default:
@@ -381,8 +393,8 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
                     ss << "\nKnown escape sequences are:";
                     ss << "\n    \\n: 0x0A (line feed)";
                     ss << "\n    \\r: 0x0D (carriage return)";
-                    ss << "\n    \\b: 0x5C (backslash '\\')";
-                    ss << "\n    \\c: 0x5D (closing square bracket ']')";
+                    ss << "\n    \\B: 0x5C (backslash '\\')";
+                    ss << "\n    \\C: 0x5D (closing square bracket ']')";
                     throw std::invalid_argument(ss.str());
             }
         } else {
@@ -390,6 +402,8 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
         }
         c = read_char();
     }
+
+    c = read_char();
 }
 
 template <typename SOURCE>

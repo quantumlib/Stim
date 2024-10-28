@@ -491,7 +491,13 @@ void stim::print_circuit(std::ostream &out, const Circuit &c, size_t indentation
                 for (size_t k = 0; k < indentation; k++) {
                     out << ' ';
                 }
-                out << "REPEAT " << op.repeat_block_rep_count() << " {\n";
+                out << "REPEAT";
+                if (!op.tag.empty()) {
+                    out << '[';
+                    write_tag_escaped_string_to(op.tag, out);
+                    out << ']';
+                }
+                out << " " << op.repeat_block_rep_count() << " {\n";
                 print_circuit(out, c.blocks[op.targets[0].data], indentation + 4);
                 out << '\n';
                 for (size_t k = 0; k < indentation; k++) {

@@ -147,6 +147,8 @@ struct CircuitInstruction {
     }
 };
 
+void write_tag_escaped_string_to(std::string_view tag, std::ostream &out);
+
 std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
 
 }  // namespace stim
