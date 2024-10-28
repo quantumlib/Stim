@@ -290,7 +290,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
 }
 
 void print_bloch_vector(Acc &out, const Gate &gate) {
-    if (!(gate.flags & GATE_IS_UNITARY) || (gate.flags & GATE_TARGETS_PAIRS)) {
+    if (!(gate.flags & GATE_IS_UNITARY) || !(gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
         return;
     }
 
@@ -343,7 +343,7 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
 }
 
 void print_unitary_matrix(Acc &out, const Gate &gate) {
-    if (!(gate.flags & GATE_IS_UNITARY)) {
+    if (!gate.has_known_unitary_matrix()) {
         return;
     }
     auto matrix = gate.unitary();

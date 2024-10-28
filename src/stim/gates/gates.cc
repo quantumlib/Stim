@@ -267,6 +267,10 @@ std::array<float, 4> Gate::to_axis_angle() const {
     return {rx, ry, rz, acosf(rs) * 2};
 }
 
+bool Gate::has_known_unitary_matrix() const {
+    return (flags & GateFlags::GATE_IS_UNITARY) && (flags & (GateFlags::GATE_IS_SINGLE_QUBIT_GATE | GateFlags::GATE_TARGETS_PAIRS));
+}
+
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");

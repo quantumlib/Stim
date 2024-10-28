@@ -136,6 +136,13 @@ def test_main_write_to_file():
             assert "Generated repetition_code" in f.read()
 
 
+def test_main_help(capsys):
+    assert stim.main(command_line_args=["help"]) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert 'Available stim commands' in captured.out
+
+
 def test_main_redirects_stdout(capsys):
     assert stim.main(command_line_args=[
         "gen",
