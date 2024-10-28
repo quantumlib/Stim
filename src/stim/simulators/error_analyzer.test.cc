@@ -307,7 +307,7 @@ TEST_EACH_WORD_SIZE_W(ErrorAnalyzer, unitary_gates_match_frame_simulator, {
         data.push_back(GateTarget::qubit(k));
     }
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             e.undo_gate({gate.id, {}, data});
             f.do_gate({gate.inverse().id, {}, data});
             for (size_t q = 0; q < 16; q++) {

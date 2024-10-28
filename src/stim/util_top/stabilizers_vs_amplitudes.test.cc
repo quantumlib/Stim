@@ -10,7 +10,7 @@ using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(conversions, unitary_to_tableau_vs_gate_data, {
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             EXPECT_EQ(unitary_to_tableau<W>(gate.unitary(), true), gate.tableau<W>()) << gate.name;
         }
     }
@@ -20,7 +20,7 @@ TEST_EACH_WORD_SIZE_W(conversions, tableau_to_unitary_vs_gate_data, {
     VectorSimulator v1(2);
     VectorSimulator v2(2);
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             auto actual = tableau_to_unitary<W>(gate.tableau<W>(), true);
             auto expected = gate.unitary();
             v1.state.clear();

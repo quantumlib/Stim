@@ -311,7 +311,7 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, unitary_gates_consistent_with_tableau_da
     auto t = Tableau<W>::random(10, rng);
     TableauSimulator<W> sim(INDEPENDENT_TEST_RNG(), 10);
     for (const auto &gate : GATE_DATA.items) {
-        if (!(gate.flags & GATE_IS_UNITARY)) {
+        if (!gate.has_known_unitary_matrix()) {
             continue;
         }
         sim.inv_state = t;

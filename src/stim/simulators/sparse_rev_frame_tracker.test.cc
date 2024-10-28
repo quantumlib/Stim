@@ -144,7 +144,7 @@ static std::vector<GateTarget> qubit_targets(const std::vector<uint32_t> &target
 TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau, {
     auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             size_t n = (gate.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
             SparseUnsignedRevFrameTracker tracker_gate(n + 3, 0, 0);
             for (size_t q = 0; q < n; q++) {

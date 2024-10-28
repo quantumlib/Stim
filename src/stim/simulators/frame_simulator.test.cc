@@ -97,7 +97,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
 
 TEST_EACH_WORD_SIZE_W(FrameSimulator, bulk_operations_consistent_with_tableau_data, {
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau<W>(gate)) << gate.name;
         }
     }

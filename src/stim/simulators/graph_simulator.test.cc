@@ -257,7 +257,7 @@ TEST(graph_simulator, all_unitary_gates_work) {
     SpanRef<GateTarget> t1 = t2;
     t1.ptr_end--;
     for (const auto &gate : GATE_DATA.items) {
-        if (!(gate.flags & GATE_IS_UNITARY)) {
+        if (!gate.has_known_unitary_matrix()) {
             continue;
         }
         Circuit circuit;

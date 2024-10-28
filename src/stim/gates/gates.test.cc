@@ -144,7 +144,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
 
 TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
-        if (g.flags & GATE_IS_UNITARY) {
+        if (g.has_known_unitary_matrix()) {
             auto g_t_inv = g.tableau<W>().inverse(false);
             auto g_inv_t = GATE_DATA[g.best_candidate_inverse_id].tableau<W>();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
