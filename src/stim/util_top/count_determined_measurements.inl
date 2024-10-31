@@ -22,7 +22,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
                 for (const auto &t : inst.targets) {
                     assert(t.is_qubit_target());
                     result += sim.peek_z(t.qubit_value()) != 0;
-                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}});
+                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}, ""});
                 }
                 break;
             }
@@ -33,7 +33,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
                 for (const auto &t : inst.targets) {
                     assert(t.is_qubit_target());
                     result += sim.peek_x(t.qubit_value()) != 0;
-                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}});
+                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}, ""});
                 }
                 break;
             }
@@ -44,7 +44,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
                 for (const auto &t : inst.targets) {
                     assert(t.is_qubit_target());
                     result += sim.peek_y(t.qubit_value()) != 0;
-                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}});
+                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, {&t}, ""});
                 }
                 break;
             }
@@ -68,7 +68,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
                     obs_buffer.xs[q1] = 0;
                     obs_buffer.zs[q0] = 0;
                     obs_buffer.zs[q1] = 0;
-                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, inst.targets.sub(k, k + 2)});
+                    sim.do_gate(CircuitInstruction{inst.gate_type, {}, inst.targets.sub(k, k + 2), ""});
                 }
                 break;
             }
@@ -90,7 +90,7 @@ uint64_t count_determined_measurements(const Circuit &circuit) {
                     obs_buffer.xs.clear();
                     obs_buffer.zs.clear();
 
-                    sim.do_gate({inst.gate_type, {}, inst.targets.sub(start, end)});
+                    sim.do_gate({inst.gate_type, {}, inst.targets.sub(start, end), ""});
                     start = end;
                 }
                 break;

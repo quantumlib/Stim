@@ -11,11 +11,11 @@ static void for_each_target_group(
         return for_each_combined_targets_group(instruction, callback);
     } else if (g.flags & GATE_TARGETS_PAIRS) {
         for (size_t k = 0; k < instruction.targets.size(); k += 2) {
-            callback({instruction.gate_type, instruction.args, instruction.targets.sub(k, k + 2)});
+            callback({instruction.gate_type, instruction.args, instruction.targets.sub(k, k + 2), instruction.tag});
         }
     } else if (g.flags & GATE_IS_SINGLE_QUBIT_GATE) {
         for (GateTarget t : instruction.targets) {
-            callback({instruction.gate_type, instruction.args, &t});
+            callback({instruction.gate_type, instruction.args, &t, instruction.tag});
         }
     } else {
         callback(instruction);

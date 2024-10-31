@@ -61,12 +61,12 @@ Tableau<W> unitary_to_tableau(const std::vector<std::vector<std::complex<float>>
 
     auto apply = [&](GateType gate_type, uint32_t target) {
         sim.apply(gate_type, target);
-        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target)}, {});
+        recorded_circuit.safe_append(CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target)}, ""));
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         sim.apply(gate_type, target, target2);
         recorded_circuit.safe_append(
-            gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
+            CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, ""));
     };
 
     // Undo the permutation and also single-qubit phases.

@@ -127,7 +127,7 @@ void ErrorMatcher::err_xyz(const CircuitInstruction &op, uint32_t target_flags) 
         cur_loc.instruction_targets.target_range_start = k;
         cur_loc.instruction_targets.target_range_end = k + 1;
         resolve_paulis_into(&op.targets[k], target_flags, cur_loc.flipped_pauli_product);
-        err_atom({op.gate_type, a, &t[k]});
+        err_atom(CircuitInstruction{op.gate_type, a, &t[k], op.tag});
         cur_loc.flipped_pauli_product.clear();
     }
 }
@@ -188,9 +188,9 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
 void ErrorMatcher::err_pauli_channel_1(const CircuitInstruction &op) {
     const auto &a = op.args;
     const auto &t = op.targets;
-    err_xyz(CircuitInstruction{GateType::X_ERROR, &a[0], t}, TARGET_PAULI_X_BIT);
-    err_xyz(CircuitInstruction{GateType::Y_ERROR, &a[1], t}, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
-    err_xyz(CircuitInstruction{GateType::Z_ERROR, &a[2], t}, TARGET_PAULI_Z_BIT);
+    err_xyz(CircuitInstruction{GateType::X_ERROR, &a[0], t, op.tag}, TARGET_PAULI_X_BIT);
+    err_xyz(CircuitInstruction{GateType::Y_ERROR, &a[1], t, op.tag}, TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT);
+    err_xyz(CircuitInstruction{GateType::Z_ERROR, &a[2], t, op.tag}, TARGET_PAULI_Z_BIT);
 }
 
 void ErrorMatcher::err_pauli_channel_2(const CircuitInstruction &op) {
@@ -200,9 +200,9 @@ void ErrorMatcher::err_pauli_channel_2(const CircuitInstruction &op) {
     // Buffers and pointers into them.
     std::array<GateTarget, 2> pair;
     double p = 0;
-    CircuitInstruction pair_effect = {GateType::E, &p, pair};
-    CircuitInstruction first_effect = {GateType::E, &p, &pair[0]};
-    CircuitInstruction second_effect = {GateType::E, &p, &pair[1]};
+    CircuitInstruction pair_effect = {GateType::E, &p, pair, op.tag};
+    CircuitInstruction first_effect = {GateType::E, &p, &pair[0], op.tag};
+    CircuitInstruction second_effect = {GateType::E, &p, &pair[1], op.tag};
 
     for (size_t k = 0; k < t.size(); k += 2) {
         cur_loc.instruction_targets.target_range_start = k;
@@ -261,7 +261,7 @@ void ErrorMatcher::err_m(const CircuitInstruction &op, uint32_t obs_mask) {
         cur_loc.instruction_targets.target_range_end = end;
         cur_loc.flipped_measurement.measurement_record_index = error_analyzer.tracker.num_measurements_in_past - 1;
         resolve_paulis_into(slice, obs_mask, cur_loc.flipped_measurement.measured_observable);
-        err_atom({op.gate_type, a, slice});
+        err_atom(CircuitInstruction{op.gate_type, a, slice, op.tag});
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
         cur_loc.flipped_measurement.measured_observable.clear();
 
@@ -332,13 +332,13 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
         case GateType::HERALDED_ERASE: {
             float p = op.args[0] / 4;
             std::array<double, 4> spread{p, p, p, p};
-            err_heralded_pauli_channel_1({op.gate_type, spread, op.targets});
+            err_heralded_pauli_channel_1(CircuitInstruction{op.gate_type, spread, op.targets, op.tag});
             break;
         }
         case GateType::DEPOLARIZE1: {
             float p = op.args[0];
             std::array<double, 3> spread{p, p, p};
-            err_pauli_channel_1({op.gate_type, spread, op.targets});
+            err_pauli_channel_1(CircuitInstruction{op.gate_type, spread, op.targets, op.tag});
             break;
         }
         case GateType::PAULI_CHANNEL_2:
@@ -347,7 +347,7 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
         case GateType::DEPOLARIZE2: {
             float p = op.args[0];
             std::array<double, 15> spread{p, p, p, p, p, p, p, p, p, p, p, p, p, p, p};
-            err_pauli_channel_2({op.gate_type, spread, op.targets});
+            err_pauli_channel_2(CircuitInstruction{op.gate_type, spread, op.targets, op.tag});
             break;
         }
         case GateType::MPP:

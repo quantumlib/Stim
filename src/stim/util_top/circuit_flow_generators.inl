@@ -206,7 +206,7 @@ void CircuitFlowGeneratorSolver<W>::undo_feedback_capable_instruction(CircuitIns
                 xor_item_into_sorted_vec(t, table[r].measurements);
             }
         } else if (f1 && f2) {
-            CircuitInstruction sub_inst = CircuitInstruction{inst.gate_type, {}, inst.targets.sub(k, k + 2)};
+            CircuitInstruction sub_inst = CircuitInstruction{inst.gate_type, {}, inst.targets.sub(k, k + 2), inst.tag};
             for (auto &row : table) {
                 row.input.ref().undo_instruction(sub_inst);
             }
@@ -347,7 +347,7 @@ void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
             buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
             std::reverse(buf_targets.begin(), buf_targets.end());
             decompose_mpp_operation(
-                CircuitInstruction{inst.gate_type, {}, buf_targets}, num_qubits, [&](CircuitInstruction sub_inst) {
+                CircuitInstruction{inst.gate_type, {}, buf_targets, inst.tag}, num_qubits, [&](CircuitInstruction sub_inst) {
                     undo_instruction(sub_inst);
                 });
             break;

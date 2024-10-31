@@ -31,7 +31,7 @@ void check_pauli_string_do_instruction_agrees_with_tableau_sim(Gate gate, Tablea
         GateTarget::qubit(8),
         GateTarget::qubit(5),
     };
-    CircuitInstruction inst{gate.id, {}, targets};
+    CircuitInstruction inst{gate.id, {}, targets, ""};
 
     std::vector<PauliString<W>> before;
     for (size_t k = 0; k < 16; k++) {

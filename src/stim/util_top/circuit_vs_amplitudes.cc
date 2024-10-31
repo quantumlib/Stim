@@ -46,22 +46,24 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     Circuit recorded;
     auto apply = [&](GateType gate_type, uint32_t target) {
         sim.apply(gate_type, target);
-        recorded.safe_append(
+        recorded.safe_append(CircuitInstruction(
             gate_type,
+            {},
             std::vector<GateTarget>{
                 GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
             },
-            {});
+            ""));
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         sim.apply(gate_type, target, target2);
-        recorded.safe_append(
+        recorded.safe_append(CircuitInstruction(
             gate_type,
+            {},
             std::vector<GateTarget>{
                 GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
                 GateTarget::qubit(little_endian ? target2 : (num_qubits - target2 - 1)),
             },
-            {});
+            ""));
     };
 
     // Move biggest amplitude to start of state vector.

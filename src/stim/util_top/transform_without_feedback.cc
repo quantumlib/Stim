@@ -62,7 +62,7 @@ struct WithoutFeedbackHelper {
     void undo_feedback_capable_pcp_operation(const CircuitInstruction &op) {
         for (size_t k = op.targets.size(); k > 0;) {
             k -= 2;
-            CircuitInstruction op_piece = {op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}};
+            CircuitInstruction op_piece = {op.gate_type, op.args, {&op.targets[k], &op.targets[k + 2]}, op.tag};
             auto t1 = op.targets[k];
             auto t2 = op.targets[k + 1];
             auto b1 = t1.is_measurement_record_target();
@@ -92,6 +92,7 @@ struct WithoutFeedbackHelper {
                     op_piece.gate_type,
                     reversed_semi_flattened_output.arg_buf.take_copy(op_piece.args),
                     reversed_semi_flattened_output.target_buf.take_copy(op_piece.targets),
+                    op_piece.tag,
                 });
             }
             tracker.undo_gate(op_piece);
@@ -104,6 +105,7 @@ struct WithoutFeedbackHelper {
                     GateType::OBSERVABLE_INCLUDE,
                     reversed_semi_flattened_output.arg_buf.commit_tail(),
                     reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
+                    op.tag,
                 });
             }
         }
@@ -118,7 +120,7 @@ struct WithoutFeedbackHelper {
         for (size_t rep = 0; rep < reps; rep++) {
             reversed_semi_flattened_output.clear();
             undo_circuit(loop);
-            tmp.append_repeat_block(1, std::move(reversed_semi_flattened_output));
+            tmp.append_repeat_block(1, std::move(reversed_semi_flattened_output), op.tag);
         }
         reversed_semi_flattened_output = std::move(tmp);
     }
@@ -151,7 +153,7 @@ struct WithoutFeedbackHelper {
             tracker.num_measurements_in_past += op.count_measurement_results();
 
             if (op.gate_type == GateType::REPEAT) {
-                result.append_repeat_block(op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)));
+                result.append_repeat_block(op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)), op.tag);
                 continue;
             }
 
@@ -169,7 +171,7 @@ struct WithoutFeedbackHelper {
                         reversed_semi_flattened_output.target_buf.append_tail(
                             GateTarget::rec((int64_t)m - (int64_t)tracker.num_measurements_in_past));
                     }
-                    result.safe_append(op.gate_type, reversed_semi_flattened_output.target_buf.tail, op.args);
+                    result.safe_append(CircuitInstruction(op.gate_type, op.args, reversed_semi_flattened_output.target_buf.tail, op.tag));
                     reversed_semi_flattened_output.target_buf.discard_tail();
 
                     continue;
@@ -186,16 +188,18 @@ Circuit circuit_with_identical_adjacent_loops_fused(const Circuit &circuit) {
     Circuit result;
     Circuit growing_loop;
     uint64_t loop_reps = 0;
+    std::string_view loop_tag;
 
     auto flush_loop = [&]() {
         if (loop_reps > 0) {
             growing_loop = circuit_with_identical_adjacent_loops_fused(growing_loop);
             if (loop_reps > 1) {
-                result.append_repeat_block(loop_reps, std::move(growing_loop));
+                result.append_repeat_block(loop_reps, std::move(growing_loop), loop_tag);
             } else if (loop_reps == 1) {
                 result += growing_loop;
             }
         }
+        loop_tag = "";
         loop_reps = 0;
     };
     for (const auto &op : circuit.operations) {
@@ -215,6 +219,7 @@ Circuit circuit_with_identical_adjacent_loops_fused(const Circuit &circuit) {
         if (is_loop) {
             growing_loop = op.repeat_block_body(circuit);
             loop_reps = op.repeat_block_rep_count();
+            loop_tag = op.tag;
             continue;
         }
 

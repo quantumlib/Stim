@@ -261,7 +261,7 @@ TEST(graph_simulator, all_unitary_gates_work) {
             continue;
         }
         Circuit circuit;
-        circuit.safe_append(gate.id, (gate.flags & GATE_TARGETS_PAIRS) ? t2 : t1, {});
+        circuit.safe_append(CircuitInstruction(gate.id, {}, (gate.flags & GATE_TARGETS_PAIRS) ? t2 : t1, ""));
         for (size_t k = 0; k < 20; k++) {
             expect_graph_sim_effect_matches_tableau_sim(GraphSimulator::random_state(8, rng), circuit);
         }
