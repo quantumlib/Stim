@@ -3118,6 +3118,8 @@ class CircuitInstruction:
         name: str,
         targets: Optional[Iterable[Union[int, stim.GateTarget]]] = None,
         gate_args: Optional[Iterable[float]] = None,
+        *,
+        tag: str = "",
     ) -> None:
         """Creates or parses a `stim.CircuitInstruction`.
 
@@ -3131,6 +3133,11 @@ class CircuitInstruction:
             gate_args: The sequence of numeric arguments parameterizing a gate. For
                 noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
                 instructions it's the index of the logical observable to affect.
+            tag: Defaults to "". A custom string attached to the instruction. For
+                example, for a TICK instruction, this could a string specifying an
+                amount of time which is used by custom code for adding noise to a
+                circuit. In general, stim will attempt to propagate tags across circuit
+                transformations but will otherwise completely ignore them.
 
         Examples:
             >>> import stim
@@ -3140,6 +3147,9 @@ class CircuitInstruction:
 
             >>> stim.CircuitInstruction('CX rec[-1] 5  # comment')
             stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
+
+            >>> print(stim.CircuitInstruction('I', [2], tag='100ns'))
+            I[200ns] 2
         """
     def __ne__(
         self,
@@ -3203,6 +3213,15 @@ class CircuitInstruction:
             2
             >>> stim.CircuitInstruction('HERALDED_ERASE', [0], [0.25]).num_measurements
             1
+        """
+    @property
+    def tag(
+        self,
+    ) -> str:
+        """The custom tag attached to the instruction.
+
+        The tag is an arbitrary string.
+        The default tag, when none is specified, is the empty string.
         """
     def target_groups(
         self,
@@ -3290,12 +3309,15 @@ class CircuitRepeatBlock:
         self,
         repeat_count: int,
         body: stim.Circuit,
+        *,
+        tag: str = '',
     ) -> None:
         """Initializes a `stim.CircuitRepeatBlock`.
 
         Args:
             repeat_count: The number of times to repeat the block.
             body: The body of the block, as a circuit.
+            tag: Defaults to empty. A custom string attached to the REPEAT instruction.
         """
     def __ne__(
         self,
@@ -3386,6 +3408,15 @@ class CircuitRepeatBlock:
             >>> repeat_block = circuit[1]
             >>> repeat_block.repeat_count
             5
+        """
+    @property
+    def tag(
+        self,
+    ) -> str:
+        """The custom tag attached to the REPEAT instruction.
+
+        The tag is an arbitrary string.
+        The default tag, when none is specified, is the empty string.
         """
 class CircuitTargetsInsideInstruction:
     """Describes a range of targets within a circuit instruction.

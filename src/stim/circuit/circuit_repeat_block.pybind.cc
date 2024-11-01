@@ -33,7 +33,7 @@ Circuit CircuitRepeatBlock::body_copy() {
     return body;
 }
 bool CircuitRepeatBlock::operator==(const CircuitRepeatBlock &other) const {
-    return repeat_count == other.repeat_count && body == other.body;
+    return repeat_count == other.repeat_count && body == other.body && pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
 }
 bool CircuitRepeatBlock::operator!=(const CircuitRepeatBlock &other) const {
     return !(*this == other);
@@ -76,14 +76,14 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
         pybind11::arg("repeat_count"),
         pybind11::arg("body"),
         pybind11::kw_only(),
-        pybind11::arg("tag"),
+        pybind11::arg("tag") = "",
         clean_doc_string(R"DOC(
             Initializes a `stim.CircuitRepeatBlock`.
 
             Args:
                 repeat_count: The number of times to repeat the block.
                 body: The body of the block, as a circuit.
-                tag: A custom string attached to the REPEAT instruction.
+                tag: Defaults to empty. A custom string attached to the REPEAT instruction.
         )DOC")
             .data());
 
@@ -175,7 +175,7 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
 
     c.def_property_readonly(
         "tag",
-        [](PyCircuitInstruction &self) -> pybind11::str {
+        [](CircuitRepeatBlock &self) -> pybind11::str {
             return self.tag;
         },
         clean_doc_string(R"DOC(
@@ -183,6 +183,23 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
 
             The tag is an arbitrary string.
             The default tag, when none is specified, is the empty string.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     REPEAT[test] 5 {
+                ...         H 0
+                ...     }
+                ... ''')[0].tag
+                'test'
+
+                >>> stim.Circuit('''
+                ...     REPEAT 5 {
+                ...         H 0
+                ...     }
+                ... ''')[0].tag
+                ''
         )DOC")
             .data());
 

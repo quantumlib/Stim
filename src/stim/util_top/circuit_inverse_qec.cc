@@ -165,12 +165,13 @@ void CircuitFlowReverser::flush_detectors_and_observables() {
         for (auto e : d.second) {
             buf.push_back(GateTarget::rec((int32_t)e - (int32_t)num_new_measurements));
         }
-        inverted_circuit.safe_append(CircuitInstruction(out_gate, out_args, buf, ""));
+        inverted_circuit.safe_append(CircuitInstruction(out_gate, out_args, buf, d2tag[d.first]));
         terms_to_erase.push_back(d.first);
     }
     for (auto e : terms_to_erase) {
         d2coords.erase(e);
         d2ms.erase(e);
+        d2tag.erase(e);
     }
 }
 
@@ -178,6 +179,7 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
     switch (inst.gate_type) {
         case GateType::DETECTOR: {
             rev.undo_gate(inst);
+            d2tag[DemTarget::relative_detector_id(rev.num_detectors_in_past)] = inst.tag;
             auto &v = d2coords[DemTarget::relative_detector_id(rev.num_detectors_in_past)];
             for (size_t k = 0; k < inst.args.size(); k++) {
                 v.push_back(inst.args[k] + (k < coord_shifts.size() ? coord_shifts[k] : 0));
@@ -186,6 +188,7 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         }
         case GateType::OBSERVABLE_INCLUDE:
             rev.undo_gate(inst);
+            d2tag[DemTarget::observable_id((uint64_t)inst.args[0])] = inst.tag;
             break;
         case GateType::TICK:
         case GateType::I:

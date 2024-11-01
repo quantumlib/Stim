@@ -49,7 +49,7 @@ PyCircuitInstruction PyCircuitInstruction::from_instruction(CircuitInstruction i
 }
 
 bool PyCircuitInstruction::operator==(const PyCircuitInstruction &other) const {
-    return gate_type == other.gate_type && targets == other.targets && gate_args == other.gate_args;
+    return gate_type == other.gate_type && targets == other.targets && gate_args == other.gate_args && pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
 }
 bool PyCircuitInstruction::operator!=(const PyCircuitInstruction &other) const {
     return !(*this == other);
@@ -68,7 +68,7 @@ std::string PyCircuitInstruction::repr() const {
         result << t.repr();
     }
     result << "], [" << comma_sep(gate_args) << "]";
-    if ((bool)tag) {
+    if (pybind11::cast<bool>(pybind11::bool_(tag))) {
         result << ", tag=";
         result << pybind11::repr(tag);
     }
@@ -150,7 +150,7 @@ pybind11::class_<PyCircuitInstruction> stim_pybind::pybind_circuit_instruction(p
 void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<PyCircuitInstruction> &c) {
     c.def(
         pybind11::init([](std::string_view name, pybind11::object targets, pybind11::object gate_args, pybind11::str tag) -> PyCircuitInstruction {
-            if (targets.is_none() and gate_args.is_none()) {
+            if (targets.is_none() and gate_args.is_none() && !pybind11::cast<bool>(pybind11::bool_(tag))) {
                 return PyCircuitInstruction::from_str(name);
             }
             std::vector<double> conv_args;
@@ -198,7 +198,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
                 stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
 
                 >>> print(stim.CircuitInstruction('I', [2], tag='100ns'))
-                I[200ns] 2
+                I[100ns] 2
         )DOC")
             .data());
 
@@ -220,6 +220,13 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
 
             The tag is an arbitrary string.
             The default tag, when none is specified, is the empty string.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit("H[test] 0")[0].tag
+                'test'
+                >>> stim.Circuit("H 0")[0].tag
+                ''
         )DOC")
             .data());
 

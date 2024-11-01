@@ -299,10 +299,10 @@ bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate_type == other.gate_type && args == other.args && targets == other.targets;
+    return gate_type == other.gate_type && args == other.args && targets == other.targets && tag == other.tag;
 }
 bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double atol) const {
-    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size()) {
+    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size() || tag != other.tag) {
         return false;
     }
     for (size_t k = 0; k < args.size(); k++) {
