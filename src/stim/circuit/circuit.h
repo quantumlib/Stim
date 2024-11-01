@@ -43,6 +43,7 @@ struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
     MonotonicBuffer<GateTarget> target_buf;
     MonotonicBuffer<double> arg_buf;
+    MonotonicBuffer<char> tag_buf;
     /// Operations in the circuit, from earliest to latest.
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
@@ -105,27 +106,24 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(const CircuitInstruction &operation, bool block_fusion = false);
+    void safe_append(CircuitInstruction operation, bool block_fusion = false);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_u(
         std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
-    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(
-        GateType gate_type, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool block_fusion = false);
     /// Safely copies a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, const Circuit &body);
+    void append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag);
     /// Safely moves a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, Circuit &&body);
+    void append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag);
 
     void safe_insert(size_t index, const CircuitInstruction &instruction);
-    void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block);
+    void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag);
     void safe_insert(size_t index, const Circuit &circuit);
 
     /// Appends the given gate, but with targets reversed.
     void safe_append_reversed_targets(
-        GateType gate, SpanRef<const GateTarget> targets, SpanRef<const double> args, bool reverse_in_pairs);
+        CircuitInstruction instruction, bool reverse_in_pairs);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -355,6 +353,60 @@ double read_normal_double(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
+void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<char> &out) {
+    if (c != '[') {
+        return;
+    }
+    c = read_char();
+
+    while (c != ']') {
+        if (c == '\r' || c == '\n') {
+            std::stringstream ss;
+            ss << "A tag wasn't closed with ']' before the end of the line.\n";
+            ss << "Hit a ";
+            if (c == '\r') {
+                ss << "carriage return character (0x0D)";
+            } else {
+                ss << "line feed character (0x0A)";
+            }
+            ss << " while trying to parse the tag of a '" << name << "' instruction.\n";
+            ss << "In tags, use the escape sequence '\\r' for carriage returns and '\\n' for line feeds.";
+            throw std::invalid_argument(ss.str());
+        } else if (c == '\\') {
+            c = read_char();
+            switch (c) {
+                case 'n':
+                    out.append_tail('\n');
+                    break;
+                case 'r':
+                    out.append_tail('\r');
+                    break;
+                case 'B':
+                    out.append_tail('\\');
+                    break;
+                case 'C':
+                    out.append_tail(']');
+                    break;
+                default:
+                    std::stringstream ss;
+                    ss << "Unrecognized escape sequence '\\" << c << "'.";
+                    ss << "\nKnown escape sequences are:";
+                    ss << "\n    \\n: 0x0A (line feed)";
+                    ss << "\n    \\r: 0x0D (carriage return)";
+                    ss << "\n    \\B: 0x5C (backslash '\\')";
+                    ss << "\n    \\C: 0x5D (closing square bracket ']')";
+                    throw std::invalid_argument(ss.str());
+            }
+        } else {
+            out.append_tail(c);
+        }
+        c = read_char();
+    }
+
+    c = read_char();
+}
+
+template <typename SOURCE>
 void read_parens_arguments(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<double> &out) {
     if (c != '(') {
         return;
@@ -380,7 +432,6 @@ void read_parens_arguments(int &c, std::string_view name, SOURCE read_char, Mono
 }
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
-std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
 void print_circuit(std::ostream &out, const Circuit &c, size_t indentation);
 
 }  // namespace stim

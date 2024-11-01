@@ -21,6 +21,7 @@ struct CircuitFlowReverser {
     size_t num_new_measurements;
 
     Circuit inverted_circuit;
+    std::map<DemTarget, std::string_view> d2tag;
     std::map<DemTarget, std::vector<double>> d2coords;
     std::vector<double> coord_buf;
     std::vector<double> coord_shifts;

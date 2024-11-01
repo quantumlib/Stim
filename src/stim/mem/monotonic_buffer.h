@@ -116,10 +116,19 @@ struct MonotonicBuffer {
 
     /// Appends and commits data.
     /// Requires the tail to be empty, to avoid bugs where previously staged data is committed.
-    SpanRef<T> take_copy(SpanRef<const T> data) {
+    std::span<T> take_copy(std::span<const T> data) {
         assert(tail.size() == 0);
         append_tail(data);
         return commit_tail();
+    }
+    std::string_view take_copy(std::string_view data) {
+        if (data.empty()) {
+            return std::string_view();
+        }
+        assert(tail.size() == 0);
+        append_tail(SpanRef<const char>(&data[0], &data[0] + data.size()));
+        SpanRef<char> v = commit_tail();
+        return {v.ptr_start, v.size()};
     }
 
     /// Adds a staged data item.

@@ -22,8 +22,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-CircuitRepeatBlock::CircuitRepeatBlock(uint64_t repeat_count, stim::Circuit body)
-    : repeat_count(repeat_count), body(body) {
+CircuitRepeatBlock::CircuitRepeatBlock(uint64_t repeat_count, stim::Circuit body, pybind11::str tag)
+    : repeat_count(repeat_count), body(body), tag(tag) {
     if (repeat_count == 0) {
         throw std::invalid_argument("Can't repeat 0 times.");
     }
@@ -33,7 +33,7 @@ Circuit CircuitRepeatBlock::body_copy() {
     return body;
 }
 bool CircuitRepeatBlock::operator==(const CircuitRepeatBlock &other) const {
-    return repeat_count == other.repeat_count && body == other.body;
+    return repeat_count == other.repeat_count && body == other.body && pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
 }
 bool CircuitRepeatBlock::operator!=(const CircuitRepeatBlock &other) const {
     return !(*this == other);
@@ -72,15 +72,18 @@ pybind11::class_<CircuitRepeatBlock> stim_pybind::pybind_circuit_repeat_block(py
 
 void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybind11::class_<CircuitRepeatBlock> &c) {
     c.def(
-        pybind11::init<uint64_t, Circuit>(),
+        pybind11::init<uint64_t, Circuit, pybind11::str>(),
         pybind11::arg("repeat_count"),
         pybind11::arg("body"),
+        pybind11::kw_only(),
+        pybind11::arg("tag") = "",
         clean_doc_string(R"DOC(
             Initializes a `stim.CircuitRepeatBlock`.
 
             Args:
                 repeat_count: The number of times to repeat the block.
                 body: The body of the block, as a circuit.
+                tag: Defaults to empty. A custom string attached to the REPEAT instruction.
         )DOC")
             .data());
 
@@ -167,6 +170,36 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
                 >>> repeat_block = circuit[1]
                 >>> repeat_block.repeat_count
                 5
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "tag",
+        [](CircuitRepeatBlock &self) -> pybind11::str {
+            return self.tag;
+        },
+        clean_doc_string(R"DOC(
+            The custom tag attached to the REPEAT instruction.
+
+            The tag is an arbitrary string.
+            The default tag, when none is specified, is the empty string.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     REPEAT[test] 5 {
+                ...         H 0
+                ...     }
+                ... ''')[0].tag
+                'test'
+
+                >>> stim.Circuit('''
+                ...     REPEAT 5 {
+                ...         H 0
+                ...     }
+                ... ''')[0].tag
+                ''
         )DOC")
             .data());
 

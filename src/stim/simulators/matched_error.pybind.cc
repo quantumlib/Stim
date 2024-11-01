@@ -384,6 +384,18 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
         },
         clean_doc_string(R"DOC(
             Returns the actual DEM target as a `stim.DemTarget`.
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0 1
+                ...     X_ERROR(0.25) 0 1
+                ...     M 0 1
+                ...     DETECTOR(2, 3) rec[-1] rec[-2]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> err[0].dem_error_terms[0].dem_target
+                stim.DemTarget('D0')
         )DOC")
             .data());
 
@@ -394,6 +406,18 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
             Returns the associated coordinate information as a list of floats.
 
             If there is no coordinate information, returns an empty list.
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0 1
+                ...     X_ERROR(0.25) 0 1
+                ...     M 0 1
+                ...     DETECTOR(2, 3) rec[-1] rec[-2]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> err[0].dem_error_terms[0].coords
+                [2.0, 3.0]
         )DOC")
             .data());
 
@@ -414,6 +438,18 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
         pybind11::arg("coords"),
         clean_doc_string(R"DOC(
             Creates a stim.DemTargetWithCoords.
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0 1
+                ...     X_ERROR(0.25) 0 1
+                ...     M 0 1
+                ...     DETECTOR(2, 3) rec[-1] rec[-2]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> err[0].dem_error_terms[0]
+                stim.DemTargetWithCoords(dem_target=stim.DemTarget('D0'), coords=[2, 3])
         )DOC")
             .data());
     c.def("__repr__", DemTargetWithCoords_repr);

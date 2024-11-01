@@ -108,7 +108,7 @@ PyCircuitInstruction build_single_qubit_gate_instruction_ensure_size(
     // Note: quadratic behavior.
     self.ensure_large_enough_for_qubits(max_q + 1);
 
-    return PyCircuitInstruction(gate_type, targets, gate_args_vec);
+    return PyCircuitInstruction(gate_type, targets, gate_args_vec, "");
 }
 
 template <size_t W>
@@ -1518,7 +1518,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
         [](TableauSimulator<MAX_BITWORD_WIDTH> &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             GateTarget g{target};
-            self.do_MZ(CircuitInstruction{GateType::M, {}, &g});
+            self.do_MZ(CircuitInstruction{GateType::M, {}, &g, ""});
             return (bool)self.measurement_record.storage.back();
         },
         pybind11::arg("target"),

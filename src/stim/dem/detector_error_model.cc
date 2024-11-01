@@ -51,10 +51,10 @@ void DetectorErrorModel::append_dem_instruction(const DemInstruction &instructio
 }
 
 void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body) {
-    DemTarget data[2];
+    std::array<DemTarget, 2> data;
     data[0].data = repeat_count;
     data[1].data = blocks.size();
-    auto stored_targets = target_buf.take_copy({&data[0], &data[2]});
+    auto stored_targets = target_buf.take_copy(data);
     blocks.push_back(std::move(body));
     instructions.push_back({{}, stored_targets, DemInstructionType::DEM_REPEAT_BLOCK});
 }

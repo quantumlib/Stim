@@ -602,7 +602,7 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
             buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
             std::reverse(buf_targets.begin(), buf_targets.end());
             decompose_spp_or_spp_dag_operation(
-                CircuitInstruction{inst.gate_type, {}, buf_targets},
+                CircuitInstruction{inst.gate_type, {}, buf_targets, inst.tag},
                 num_qubits,
                 false,
                 [&](CircuitInstruction sub_inst) {
