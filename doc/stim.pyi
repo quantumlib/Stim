@@ -3149,7 +3149,7 @@ class CircuitInstruction:
             stim.CircuitInstruction('CX', [stim.target_rec(-1), stim.GateTarget(5)], [])
 
             >>> print(stim.CircuitInstruction('I', [2], tag='100ns'))
-            I[200ns] 2
+            I[100ns] 2
         """
     def __ne__(
         self,
@@ -3222,6 +3222,13 @@ class CircuitInstruction:
 
         The tag is an arbitrary string.
         The default tag, when none is specified, is the empty string.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit("H[test] 0")[0].tag
+            'test'
+            >>> stim.Circuit("H 0")[0].tag
+            ''
         """
     def target_groups(
         self,
@@ -3417,6 +3424,23 @@ class CircuitRepeatBlock:
 
         The tag is an arbitrary string.
         The default tag, when none is specified, is the empty string.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     REPEAT[test] 5 {
+            ...         H 0
+            ...     }
+            ... ''')[0].tag
+            'test'
+
+            >>> stim.Circuit('''
+            ...     REPEAT 5 {
+            ...         H 0
+            ...     }
+            ... ''')[0].tag
+            ''
         """
 class CircuitTargetsInsideInstruction:
     """Describes a range of targets within a circuit instruction.
@@ -4812,6 +4836,18 @@ class DemTargetWithCoords:
         coords: List[float],
     ) -> None:
         """Creates a stim.DemTargetWithCoords.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0 1
+            ...     X_ERROR(0.25) 0 1
+            ...     M 0 1
+            ...     DETECTOR(2, 3) rec[-1] rec[-2]
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].dem_error_terms[0]
+            stim.DemTargetWithCoords(dem_target=stim.DemTarget('D0'), coords=[2, 3])
         """
     @property
     def coords(
@@ -4820,12 +4856,36 @@ class DemTargetWithCoords:
         """Returns the associated coordinate information as a list of floats.
 
         If there is no coordinate information, returns an empty list.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0 1
+            ...     X_ERROR(0.25) 0 1
+            ...     M 0 1
+            ...     DETECTOR(2, 3) rec[-1] rec[-2]
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].dem_error_terms[0].coords
+            [2.0, 3.0]
         """
     @property
     def dem_target(
         self,
     ) -> stim.DemTarget:
         """Returns the actual DEM target as a `stim.DemTarget`.
+
+        Examples:
+            >>> import stim
+            >>> err = stim.Circuit('''
+            ...     R 0 1
+            ...     X_ERROR(0.25) 0 1
+            ...     M 0 1
+            ...     DETECTOR(2, 3) rec[-1] rec[-2]
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').shortest_graphlike_error()
+            >>> err[0].dem_error_terms[0].dem_target
+            stim.DemTarget('D0')
         """
 class DetectorErrorModel:
     """An error model built out of independent error mechanics.

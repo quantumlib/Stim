@@ -2093,9 +2093,9 @@ def test_tag_compile_samplers():
         DETECTOR[test4](1, 2) rec[-1]
     """)
     s = c.compile_detector_sampler()
-    assert 100 < np.sum(s.sample(shots=1000)) < 400
+    assert 200 < np.sum(s.sample(shots=1000)) < 600
     s = c.compile_sampler()
-    assert 100 < np.sum(s.sample(shots=1000)) < 400
+    assert 200 < np.sum(s.sample(shots=1000)) < 600
     _ = c.compile_m2d_converter()
 
 
@@ -2106,7 +2106,7 @@ def test_tag_detector_error_model():
         M[test3](0.25) 0
         DETECTOR[test4](1, 2) rec[-1]
     """).detector_error_model()
-    # TODO: propagate tags
+    # TODO: propagate tags into detector error model
     assert dem == stim.DetectorErrorModel("""
         error(0.375) D0
         detector(1, 2) D0
