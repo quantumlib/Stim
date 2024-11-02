@@ -9,7 +9,10 @@ using namespace stim;
 using namespace stim_pybind;
 
 PyCircuitInstruction::PyCircuitInstruction(
-    std::string_view name, std::span<pybind11::object> init_targets, std::span<double> init_gate_args, pybind11::str tag)
+    std::string_view name,
+    std::span<pybind11::object> init_targets,
+    std::span<double> init_gate_args,
+    pybind11::str tag)
     : gate_type(GATE_DATA.at(name).id), tag(tag) {
     for (const auto &obj : init_gate_args) {
         gate_args.push_back(obj);
@@ -49,7 +52,8 @@ PyCircuitInstruction PyCircuitInstruction::from_instruction(CircuitInstruction i
 }
 
 bool PyCircuitInstruction::operator==(const PyCircuitInstruction &other) const {
-    return gate_type == other.gate_type && targets == other.targets && gate_args == other.gate_args && pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
+    return gate_type == other.gate_type && targets == other.targets && gate_args == other.gate_args &&
+           pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
 }
 bool PyCircuitInstruction::operator!=(const PyCircuitInstruction &other) const {
     return !(*this == other);
@@ -83,12 +87,7 @@ std::string PyCircuitInstruction::str() const {
 }
 
 CircuitInstruction PyCircuitInstruction::as_operation_ref() const {
-    return CircuitInstruction{
-        gate_type,
-        gate_args,
-        targets,
-        pybind11::cast<std::string_view>(tag)
-    };
+    return CircuitInstruction{gate_type, gate_args, targets, pybind11::cast<std::string_view>(tag)};
 }
 PyCircuitInstruction::operator CircuitInstruction() const {
     return as_operation_ref();
@@ -149,20 +148,22 @@ pybind11::class_<PyCircuitInstruction> stim_pybind::pybind_circuit_instruction(p
 }
 void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<PyCircuitInstruction> &c) {
     c.def(
-        pybind11::init([](std::string_view name, pybind11::object targets, pybind11::object gate_args, pybind11::str tag) -> PyCircuitInstruction {
-            if (targets.is_none() and gate_args.is_none() && !pybind11::cast<bool>(pybind11::bool_(tag))) {
-                return PyCircuitInstruction::from_str(name);
-            }
-            std::vector<double> conv_args;
-            std::vector<pybind11::object> conv_targets;
-            if (!gate_args.is_none()) {
-                conv_args = pybind11::cast<std::vector<double>>(gate_args);
-            }
-            if (!targets.is_none()) {
-                conv_targets = pybind11::cast<std::vector<pybind11::object>>(targets);
-            }
-            return PyCircuitInstruction(name, conv_targets, conv_args, tag);
-        }),
+        pybind11::init(
+            [](std::string_view name, pybind11::object targets, pybind11::object gate_args, pybind11::str tag)
+                -> PyCircuitInstruction {
+                if (targets.is_none() and gate_args.is_none() && !pybind11::cast<bool>(pybind11::bool_(tag))) {
+                    return PyCircuitInstruction::from_str(name);
+                }
+                std::vector<double> conv_args;
+                std::vector<pybind11::object> conv_targets;
+                if (!gate_args.is_none()) {
+                    conv_args = pybind11::cast<std::vector<double>>(gate_args);
+                }
+                if (!targets.is_none()) {
+                    conv_targets = pybind11::cast<std::vector<pybind11::object>>(targets);
+                }
+                return PyCircuitInstruction(name, conv_targets, conv_args, tag);
+            }),
         pybind11::arg("name"),
         pybind11::arg("targets") = pybind11::none(),
         pybind11::arg("gate_args") = pybind11::none(),

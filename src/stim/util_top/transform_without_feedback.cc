@@ -88,12 +88,13 @@ struct WithoutFeedbackHelper {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (!b1 && !b2) {
-                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
-                    op_piece.gate_type,
-                    reversed_semi_flattened_output.arg_buf.take_copy(op_piece.args),
-                    reversed_semi_flattened_output.target_buf.take_copy(op_piece.targets),
-                    op_piece.tag,
-                });
+                reversed_semi_flattened_output.operations.push_back(
+                    CircuitInstruction{
+                        op_piece.gate_type,
+                        reversed_semi_flattened_output.arg_buf.take_copy(op_piece.args),
+                        reversed_semi_flattened_output.target_buf.take_copy(op_piece.targets),
+                        op_piece.tag,
+                    });
             }
             tracker.undo_gate(op_piece);
         }
@@ -101,12 +102,13 @@ struct WithoutFeedbackHelper {
         for (const auto &e : obs_changes) {
             if (!e.second.empty()) {
                 reversed_semi_flattened_output.arg_buf.append_tail((double)e.first);
-                reversed_semi_flattened_output.operations.push_back(CircuitInstruction{
-                    GateType::OBSERVABLE_INCLUDE,
-                    reversed_semi_flattened_output.arg_buf.commit_tail(),
-                    reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
-                    op.tag,
-                });
+                reversed_semi_flattened_output.operations.push_back(
+                    CircuitInstruction{
+                        GateType::OBSERVABLE_INCLUDE,
+                        reversed_semi_flattened_output.arg_buf.commit_tail(),
+                        reversed_semi_flattened_output.target_buf.take_copy(e.second.range()),
+                        op.tag,
+                    });
             }
         }
         obs_changes.clear();
@@ -153,7 +155,8 @@ struct WithoutFeedbackHelper {
             tracker.num_measurements_in_past += op.count_measurement_results();
 
             if (op.gate_type == GateType::REPEAT) {
-                result.append_repeat_block(op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)), op.tag);
+                result.append_repeat_block(
+                    op.repeat_block_rep_count(), build_output(op.repeat_block_body(reversed)), op.tag);
                 continue;
             }
 
@@ -171,7 +174,8 @@ struct WithoutFeedbackHelper {
                         reversed_semi_flattened_output.target_buf.append_tail(
                             GateTarget::rec((int64_t)m - (int64_t)tracker.num_measurements_in_past));
                     }
-                    result.safe_append(CircuitInstruction(op.gate_type, op.args, reversed_semi_flattened_output.target_buf.tail, op.tag));
+                    result.safe_append(CircuitInstruction(
+                        op.gate_type, op.args, reversed_semi_flattened_output.target_buf.tail, op.tag));
                     reversed_semi_flattened_output.target_buf.discard_tail();
 
                     continue;

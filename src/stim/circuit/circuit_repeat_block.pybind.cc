@@ -33,7 +33,8 @@ Circuit CircuitRepeatBlock::body_copy() {
     return body;
 }
 bool CircuitRepeatBlock::operator==(const CircuitRepeatBlock &other) const {
-    return repeat_count == other.repeat_count && body == other.body && pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
+    return repeat_count == other.repeat_count && body == other.body &&
+           pybind11::cast<std::string_view>(tag) == pybind11::cast<std::string_view>(other.tag);
 }
 bool CircuitRepeatBlock::operator!=(const CircuitRepeatBlock &other) const {
     return !(*this == other);

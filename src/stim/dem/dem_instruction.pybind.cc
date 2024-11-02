@@ -28,11 +28,7 @@ ExposedDemInstruction ExposedDemInstruction::from_dem_instruction(stim::DemInstr
     std::vector<DemTarget> targets;
     arguments.insert(arguments.begin(), instruction.arg_data.begin(), instruction.arg_data.end());
     targets.insert(targets.begin(), instruction.target_data.begin(), instruction.target_data.end());
-    return ExposedDemInstruction{
-        arguments,
-        targets,
-        instruction.type
-    };
+    return ExposedDemInstruction{arguments, targets, instruction.type};
 }
 
 ExposedDemInstruction ExposedDemInstruction::from_str(std::string_view text) {

@@ -107,11 +107,12 @@ std::vector<Flow<W>> CircuitFlowReverser::build_inverted_flows(std::span<const F
     std::vector<Flow<W>> inverted_flows;
     for (size_t k = 0; k < flows.size(); k++) {
         const auto &f = flows[k];
-        inverted_flows.push_back(Flow<W>{
-            .input = f.output,
-            .output = f.input,
-            .measurements = {},
-        });
+        inverted_flows.push_back(
+            Flow<W>{
+                .input = f.output,
+                .output = f.input,
+                .measurements = {},
+            });
         auto &f2 = inverted_flows.back();
         f2.input.sign = false;
         f2.output.sign = false;

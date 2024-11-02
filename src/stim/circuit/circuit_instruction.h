@@ -76,7 +76,8 @@ struct CircuitInstruction {
     std::string_view tag;
 
     CircuitInstruction() = delete;
-    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
+    CircuitInstruction(
+        GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
 
     /// Computes number of qubits, number of measurements, etc.
     CircuitStats compute_stats(const Circuit *host) const;
@@ -129,7 +130,9 @@ struct CircuitInstruction {
                 end = start + 1;
             } else if (flags & stim::GateFlags::GATE_TARGETS_PAIRS) {
                 end = start + 2;
-            } else if ((flags & stim::GateFlags::GATE_TARGETS_PAULI_STRING) && !(flags & stim::GateFlags::GATE_TARGETS_COMBINERS)) {
+            } else if (
+                (flags & stim::GateFlags::GATE_TARGETS_PAULI_STRING) &&
+                !(flags & stim::GateFlags::GATE_TARGETS_COMBINERS)) {
                 // like CORRELATED_ERROR
                 end = targets.size();
             } else if (flags & stim::GateFlags::GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {

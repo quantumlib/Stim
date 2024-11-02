@@ -90,12 +90,13 @@ SubCommandHelp stim::command_explain_errors_help() {
             }
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--dem_filter",
-        "filepath",
-        "01",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--dem_filter",
+            "filepath",
+            "01",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a detector error model to use as a filter.
 
             If `--dem_filter` isn't specified, an explanation of every single
@@ -108,14 +109,15 @@ SubCommandHelp stim::command_explain_errors_help() {
             The filter is specified as a detector error model file. See
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--single",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--single",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Explain using a single simple error instead of all possible errors.
 
             When `--single` isn't specified, every single circuit error that
@@ -126,14 +128,15 @@ SubCommandHelp stim::command_explain_errors_help() {
             output. The "simplest" error is chosen by using heuristics such as
             "has fewer Pauli terms" and "happens earlier".
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the stim circuit file to read the explanatory circuit from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -142,14 +145,15 @@ SubCommandHelp stim::command_explain_errors_help() {
             The input should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the explanations to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -157,7 +161,7 @@ SubCommandHelp stim::command_explain_errors_help() {
 
             The output is in an arbitrary semi-human-readable format.
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

@@ -102,7 +102,8 @@ void stim::decompose_mpp_operation(
         }
         {
             ConjugateBySelfInverse c1(CircuitInstruction(GateType::H, {}, h_xz, mpp_op.tag), do_instruction_callback);
-            ConjugateBySelfInverse c2(CircuitInstruction(GateType::H_YZ, {}, h_yz, mpp_op.tag), do_instruction_callback);
+            ConjugateBySelfInverse c2(
+                CircuitInstruction(GateType::H_YZ, {}, h_yz, mpp_op.tag), do_instruction_callback);
             ConjugateBySelfInverse c3(CircuitInstruction(GateType::CX, {}, cnot, mpp_op.tag), do_instruction_callback);
             do_instruction_callback(CircuitInstruction(GateType::M, mpp_op.args, meas, mpp_op.tag));
         }
@@ -247,12 +248,13 @@ void stim::decompose_pair_instruction_into_disjoint_segments(
     size_t num_flushed = 0;
     size_t cur_index = 0;
     auto flush = [&]() {
-        callback(CircuitInstruction{
-            inst.gate_type,
-            inst.args,
-            inst.targets.sub(num_flushed, cur_index),
-            inst.tag,
-        });
+        callback(
+            CircuitInstruction{
+                inst.gate_type,
+                inst.args,
+                inst.targets.sub(num_flushed, cur_index),
+                inst.tag,
+            });
         used_as_control.clear();
         num_flushed = cur_index;
     };
@@ -279,12 +281,7 @@ void stim::for_each_disjoint_target_segment_in_instruction_reversed(
     size_t cur_end = inst.targets.size();
     size_t cur_start = inst.targets.size();
     auto flush = [&]() {
-        callback(CircuitInstruction(
-            inst.gate_type,
-            inst.args,
-            inst.targets.sub(cur_start, cur_end),
-            inst.tag
-        ));
+        callback(CircuitInstruction(inst.gate_type, inst.args, inst.targets.sub(cur_start, cur_end), inst.tag));
         workspace.clear();
         cur_end = cur_start;
     };

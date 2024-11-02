@@ -90,17 +90,18 @@ TEST(main, help_modes) {
 TEST(main, bad_flag) {
     ASSERT_EQ(
         trim(run_captured_stim_main({"--gen", "--unknown"})),
-        trim("[stderr=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
-             "Recognized command line arguments for `stim gen`:\n"
-             "    --after_clifford_depolarization\n"
-             "    --after_reset_flip_probability\n"
-             "    --before_measure_flip_probability\n"
-             "    --before_round_data_depolarization\n"
-             "    --code\n"
-             "    --distance\n"
-             "    --in\n"
-             "    --out\n"
-             "    --rounds\n"
-             "    --task\n"
-             "\033[0m]\n"));
+        trim(
+            "[stderr=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
+            "Recognized command line arguments for `stim gen`:\n"
+            "    --after_clifford_depolarization\n"
+            "    --after_reset_flip_probability\n"
+            "    --before_measure_flip_probability\n"
+            "    --before_round_data_depolarization\n"
+            "    --code\n"
+            "    --distance\n"
+            "    --in\n"
+            "    --out\n"
+            "    --rounds\n"
+            "    --task\n"
+            "\033[0m]\n"));
 }

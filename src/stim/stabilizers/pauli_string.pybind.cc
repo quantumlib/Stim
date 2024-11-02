@@ -1576,13 +1576,14 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const FlexPauliString &self) -> pybind11::str {
-            return self.str();
-        },
-        [](const pybind11::str &d) {
-            return FlexPauliString::from_text(pybind11::cast<std::string_view>(d));
-        }));
+    c.def(
+        pybind11::pickle(
+            [](const FlexPauliString &self) -> pybind11::str {
+                return self.str();
+            },
+            [](const pybind11::str &d) {
+                return FlexPauliString::from_text(pybind11::cast<std::string_view>(d));
+            }));
 
     c.def_static(
         "iter_all",

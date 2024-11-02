@@ -42,11 +42,15 @@ TEST(dem_instruction, for_separated_targets) {
         }
         results.push_back(items);
     });
-    ASSERT_EQ(results, (std::vector<std::vector<DemTarget>>{
-                           {DemTarget::relative_detector_id(0)},
-                           {DemTarget::relative_detector_id(2), DemTarget::observable_id(0)},
-                           {DemTarget::relative_detector_id(1), DemTarget::relative_detector_id(2), DemTarget::relative_detector_id(3)},
-                       }));
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {DemTarget::relative_detector_id(0)},
+            {DemTarget::relative_detector_id(2), DemTarget::observable_id(0)},
+            {DemTarget::relative_detector_id(1),
+             DemTarget::relative_detector_id(2),
+             DemTarget::relative_detector_id(3)},
+        }));
 
     dem = DetectorErrorModel("error(0.1) D0");
     results.clear();
@@ -57,9 +61,11 @@ TEST(dem_instruction, for_separated_targets) {
         }
         results.push_back(items);
     });
-    ASSERT_EQ(results, (std::vector<std::vector<DemTarget>>{
-                           {DemTarget::relative_detector_id(0)},
-                       }));
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {DemTarget::relative_detector_id(0)},
+        }));
 
     dem = DetectorErrorModel("error(0.1)");
     results.clear();
@@ -70,7 +76,9 @@ TEST(dem_instruction, for_separated_targets) {
         }
         results.push_back(items);
     });
-    ASSERT_EQ(results, (std::vector<std::vector<DemTarget>>{
-                           {},
-                       }));
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {},
+        }));
 }

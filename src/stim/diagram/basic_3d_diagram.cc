@@ -70,87 +70,92 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
         if (p == gate_data.end()) {
             throw std::invalid_argument("Basic3dDiagram unknown gate piece: " + std::string(g.gate_piece));
         }
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {""},
-            p->second,
-            g.center,
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {""},
+                p->second,
+                g.center,
+            }));
     }
 
     if (!buf_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_scattered_lines"},
-                        GL_LINES,
-                        buf_scattered_lines,
-                        nullptr,
-                        black_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {"node_scattered_lines"},
+                std::shared_ptr<GltfMesh>(new GltfMesh{
+                    {"mesh_scattered_lines"},
+                    {
+                        std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                            {"primitive_scattered_lines"},
+                            GL_LINES,
+                            buf_scattered_lines,
+                            nullptr,
+                            black_material,
+                        }),
+                    },
+                }),
+                {0, 0, 0},
+            }));
     }
 
     if (!buf_red_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_red_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_red_scattered_lines"},
-                        GL_LINES,
-                        buf_red_scattered_lines,
-                        nullptr,
-                        red_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {"node_red_scattered_lines"},
+                std::shared_ptr<GltfMesh>(new GltfMesh{
+                    {"mesh_scattered_lines"},
+                    {
+                        std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                            {"primitive_red_scattered_lines"},
+                            GL_LINES,
+                            buf_red_scattered_lines,
+                            nullptr,
+                            red_material,
+                        }),
+                    },
+                }),
+                {0, 0, 0},
+            }));
     }
 
     if (!buf_blue_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_blue_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_blue_scattered_lines"},
-                        GL_LINES,
-                        buf_blue_scattered_lines,
-                        nullptr,
-                        blue_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {"node_blue_scattered_lines"},
+                std::shared_ptr<GltfMesh>(new GltfMesh{
+                    {"mesh_scattered_lines"},
+                    {
+                        std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                            {"primitive_blue_scattered_lines"},
+                            GL_LINES,
+                            buf_blue_scattered_lines,
+                            nullptr,
+                            blue_material,
+                        }),
+                    },
+                }),
+                {0, 0, 0},
+            }));
     }
 
     if (!buf_purple_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_purple_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_purple_scattered_lines"},
-                        GL_LINES,
-                        buf_purple_scattered_lines,
-                        nullptr,
-                        purple_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {"node_purple_scattered_lines"},
+                std::shared_ptr<GltfMesh>(new GltfMesh{
+                    {"mesh_scattered_lines"},
+                    {
+                        std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                            {"primitive_purple_scattered_lines"},
+                            GL_LINES,
+                            buf_purple_scattered_lines,
+                            nullptr,
+                            purple_material,
+                        }),
+                    },
+                }),
+                {0, 0, 0},
+            }));
     }
 
     if (scene.nodes.empty()) {
@@ -195,22 +200,23 @@ GltfScene Basic3dDiagram::to_gltf_scene() const {
                 {7, 1, 0},
                 {7.5, 0, 0},
             }});
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"empty_message"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_blue_scattered_lines"},
-                        GL_LINES,
-                        buf_message_lines,
-                        nullptr,
-                        red_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+        scene.nodes.push_back(
+            std::shared_ptr<GltfNode>(new GltfNode{
+                {"empty_message"},
+                std::shared_ptr<GltfMesh>(new GltfMesh{
+                    {"mesh_scattered_lines"},
+                    {
+                        std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                            {"primitive_blue_scattered_lines"},
+                            GL_LINES,
+                            buf_message_lines,
+                            nullptr,
+                            red_material,
+                        }),
+                    },
+                }),
+                {0, 0, 0},
+            }));
     }
 
     return scene;

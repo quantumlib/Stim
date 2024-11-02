@@ -39,7 +39,8 @@ struct Simplifier {
         for (size_t k = 0; k < inst.targets.size(); k++) {
             auto t = inst.targets[k];
             if (t.has_qubit_value() && used[t.qubit_value()]) {
-                CircuitInstruction disjoint = CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
+                CircuitInstruction disjoint =
+                    CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
                 simplify_disjoint_1q_instruction(disjoint);
                 used.clear();
                 start = k;
@@ -60,7 +61,8 @@ struct Simplifier {
             auto a = inst.targets[k];
             auto b = inst.targets[k + 1];
             if ((a.has_qubit_value() && used[a.qubit_value()]) || (b.has_qubit_value() && used[b.qubit_value()])) {
-                CircuitInstruction disjoint = CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
+                CircuitInstruction disjoint =
+                    CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
                 simplify_disjoint_2q_instruction(disjoint);
                 used.clear();
                 start = k;

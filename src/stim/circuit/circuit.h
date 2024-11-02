@@ -122,8 +122,7 @@ struct Circuit {
     void safe_insert(size_t index, const Circuit &circuit);
 
     /// Appends the given gate, but with targets reversed.
-    void safe_append_reversed_targets(
-        CircuitInstruction instruction, bool reverse_in_pairs);
+    void safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs);
 
     /// Resets the circuit back to an empty circuit.
     void clear();

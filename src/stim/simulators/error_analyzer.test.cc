@@ -83,23 +83,24 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
             detector D0
         )model"));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"circuit(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
                 DEPOLARIZE1(0.25) 3
                 M 3
                 DETECTOR rec[-1]
             )circuit"),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.166666) D0
             )model"),
-                        1e-4));
+                1e-4));
 
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
@@ -141,30 +142,32 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
             error(0.125) L3
         )model"));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"circuit(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
                         DEPOLARIZE2(0.25) 3 5
                         M 3
                         M 5
                         DETECTOR rec[-1]
                         DETECTOR rec[-2]
                     )circuit"),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.0718255) D0
                 error(0.0718255) D0 D1
                 error(0.0718255) D1
             )model"),
-                        1e-5));
+                1e-5));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"circuit(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
                         H 0 1
                         CNOT 0 2 1 3
                         DEPOLARIZE2(0.25) 0 1
@@ -176,14 +179,14 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                         DETECTOR rec[-3]
                         DETECTOR rec[-4]
                     )circuit"),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.019013) D0
                 error(0.019013) D0 D1
                 error(0.019013) D0 D1 D2
@@ -200,10 +203,11 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 error(0.019013) D2 D3
                 error(0.019013) D3
             )model"),
-                        1e-4));
+                1e-4));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"circuit(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
                         H 0 1
                         CNOT 0 2 1 3
                         DEPOLARIZE2(0.25) 0 1
@@ -215,14 +219,14 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                         DETECTOR rec[-3]
                         DETECTOR rec[-4]
                     )circuit"),
-                    true,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+            true,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.019013) D0
                 error(0.019013) D1
                 error(0.019013) D1 ^ D0
@@ -239,10 +243,11 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 error(0.019013) D3 ^ D2
                 error(0.019013) D3 ^ D2 ^ D0
             )model"),
-                        1e-4));
+                1e-4));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"circuit(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
                         H 0 1
                         CNOT 0 2 1 3
                         # Perform depolarizing error in a different basis.
@@ -262,19 +267,19 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                         DETECTOR rec[-3]
                         DETECTOR rec[-4]
                     )circuit"),
-                    true,
-                    false,
-                    true,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+            true,
+            false,
+            true,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.071825) D0 D1
                 error(0.071825) D0 D1 ^ D2 D3
                 error(0.071825) D2 D3
             )model"),
-                        1e-4));
+                1e-4));
 }
 
 TEST_EACH_WORD_SIZE_W(ErrorAnalyzer, unitary_gates_match_frame_simulator, {
@@ -1213,22 +1218,24 @@ TEST(ErrorAnalyzer, composite_error_analysis) {
 
     auto encode = measure_stabilizers;
     auto decode = measure_stabilizers + detectors;
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("DEPOLARIZE1(0.01) 4") + decode), true, false, false, 0.0, false, true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("DEPOLARIZE1(0.01) 4") + decode), true, false, false, 0.0, false, true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.0033445) D0 D4
                 error(0.0033445) D0 D4 ^ D1 D3
                 error(0.0033445) D1 D3
                 detector D2
                 detector D5
             )model"),
-                        1e-6));
+                1e-6));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode), true, false, false, 0.0, false, true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode), true, false, false, 0.0, false, true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.000669) D0 D2
                 error(0.000669) D0 D2 ^ D1 D3
                 error(0.000669) D0 D2 ^ D1 D5
@@ -1245,7 +1252,7 @@ TEST(ErrorAnalyzer, composite_error_analysis) {
                 error(0.000669) D2 D4 ^ D3 D5
                 error(0.000669) D3 D5
             )model"),
-                        1e-6));
+                1e-6));
 
     auto expected = DetectorErrorModel(R"model(
         error(0.000669) D0 D1 D2 D3
@@ -1264,27 +1271,30 @@ TEST(ErrorAnalyzer, composite_error_analysis) {
         error(0.000669) D2 D4
         error(0.000669) D3 D5
     )model");
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode), false, false, false, 0.0, false, true)
-                    .approx_equals(expected, 1e-5));
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("CNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5") + decode),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(expected, 1e-5));
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(expected, 1e-5));
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode), false, false, false, 0.0, false, true)
+            .approx_equals(expected, 1e-5));
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("CNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5") + decode),
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(expected, 1e-5));
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode),
+            false,
+            false,
+            false,
+            0.0,
+            false,
+            true)
+            .approx_equals(expected, 1e-5));
 }
 
 std::string declare_detectors(size_t min, size_t max) {
@@ -1557,8 +1567,9 @@ TEST(ErrorAnalyzer, multi_round_gauge_detectors_dont_grow) {
             error(0.5) D18 D19
         )MODEL"));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"CIRCUIT(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
                         # Distance 2 Bacon-Shor.
                         ZCX 0 10 1 10
                         ZCX 2 11 3 11
@@ -1578,14 +1589,14 @@ TEST(ErrorAnalyzer, multi_round_gauge_detectors_dont_grow) {
                             DETECTOR rec[-4] rec[-8]
                         }
                     )CIRCUIT"),
-                    false,
-                    false,
-                    true,
-                    0.0,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"MODEL(
+            false,
+            false,
+            true,
+            0.0,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"MODEL(
             error(0.00667) D0
             error(0.5) D0 D1
             error(0.00334) D0 D2
@@ -1637,7 +1648,7 @@ TEST(ErrorAnalyzer, multi_round_gauge_detectors_dont_grow) {
             error(0.5) D18 D19
             error(0.00667) D19
         )MODEL"),
-                        0.01));
+                0.01));
 
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
@@ -1930,56 +1941,60 @@ TEST(ErrorAnalyzer, pauli_channel_composite_errors) {
 
     auto encode = measure_stabilizers;
     auto decode = measure_stabilizers + detectors;
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("PAULI_CHANNEL_1(0.00001, 0.02, 0.03) 4") + decode),
-                    true,
-                    false,
-                    false,
-                    0.1,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("PAULI_CHANNEL_1(0.00001, 0.02, 0.03) 4") + decode),
+            true,
+            false,
+            false,
+            0.1,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.03) D0 D4
                 error(0.02) D0 D4 ^ D1 D3
                 error(0.00001) D1 D3
                 detector D2
                 detector D5
             )model"),
-                        1e-6));
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(encode + Circuit("PAULI_CHANNEL_1(0.00001, 0.02, 0.03) 5") + decode),
-                    true,
-                    false,
-                    false,
-                    0.1,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+                1e-6));
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(encode + Circuit("PAULI_CHANNEL_1(0.00001, 0.02, 0.03) 5") + decode),
+            true,
+            false,
+            false,
+            0.1,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.00001) D1 D5
                 error(0.02) D1 D5 ^ D2 D4
                 error(0.03) D2 D4
                 detector D0
                 detector D3
             )model"),
-                        1e-6));
+                1e-6));
 
-    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(
-                        encode +
-                        Circuit("PAULI_CHANNEL_2(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,0."
-                                "011,0."
-                                "012,0.013,0.014,0.015) 4 5") +
-                        decode),
-                    true,
-                    false,
-                    false,
-                    0.02,
-                    false,
-                    true)
-                    .approx_equals(
-                        DetectorErrorModel(R"model(
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(
+                encode +
+                Circuit(
+                    "PAULI_CHANNEL_2(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,0."
+                    "011,0."
+                    "012,0.013,0.014,0.015) 4 5") +
+                decode),
+            true,
+            false,
+            false,
+            0.02,
+            false,
+            true)
+            .approx_equals(
+                DetectorErrorModel(R"model(
                 error(0.015) D0 D2          # ZZ
                 error(0.011) D0 D2 ^ D1 D3  # YZ
                 error(0.014) D0 D2 ^ D1 D5  # ZY
@@ -1996,7 +2011,7 @@ TEST(ErrorAnalyzer, pauli_channel_composite_errors) {
                 error(0.006) D2 D4 ^ D3 D5  # XY
                 error(0.005) D3 D5          # XX
             )model"),
-                        1e-6));
+                1e-6));
 }
 
 TEST(ErrorAnalyzer, duplicate_records_in_detectors) {
@@ -2347,18 +2362,18 @@ std::string expect_catch_message(std::function<void(void)> func) {
 
 TEST(ErrorAnalyzer, context_clues_for_errors) {
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
-                ErrorAnalyzer::circuit_to_detector_error_model(
-                    Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&]() {
+            ErrorAnalyzer::circuit_to_detector_error_model(
+                Circuit(R"CIRCUIT(
                 X 0
                 DEPOLARIZE1(1) 0
             )CIRCUIT"),
-                    false,
-                    false,
-                    false,
-                    0.0,
-                    false,
-                    true);
+                false,
+                false,
+                false,
+                0.0,
+                false,
+                true);
         }),
         "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
         "\n"
@@ -2366,15 +2381,17 @@ TEST(ErrorAnalyzer, context_clues_for_errors) {
         "    at instruction #2 [which is DEPOLARIZE1(1) 0]");
 
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
-            circuit_to_dem(Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&]() {
+            circuit_to_dem(
+                Circuit(R"CIRCUIT(
                 X 0
                 Y 1
                 REPEAT 500 {
                     DEPOLARIZE1(1) 0
                 }
                 Z 3
-            )CIRCUIT"), {.block_decomposition_from_introducing_remnant_edges = true});
+            )CIRCUIT"),
+                {.block_decomposition_from_introducing_remnant_edges = true});
         }),
         "Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).\n"
         "\n"
@@ -2410,10 +2427,9 @@ TEST(ErrorAnalyzer, too_many_symptoms) {
     )CIRCUIT");
 
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
+        expect_catch_message<std::invalid_argument>([&]() {
             circuit_to_dem(
-                symptoms_20,
-                {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+                symptoms_20, {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
         }),
         R"MSG(An error case in a composite error exceeded the max supported number of symptoms (<=15).
 The 2 basis error cases (e.g. X, Z) used to form the combined error cases (e.g. Y = X*Z) are:
@@ -2433,14 +2449,16 @@ Circuit stack trace:
 
 TEST(ErrorAnalyzer, decompose_error_failures) {
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
-            circuit_to_dem(Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&]() {
+            circuit_to_dem(
+                Circuit(R"CIRCUIT(
                 DEPOLARIZE1(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
-            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+            )CIRCUIT"),
+                {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
         }),
         R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
 The error component that failed to decompose is 'D0, D1, D2'.
@@ -2452,14 +2470,16 @@ Note: `block_decomposition_from_introducing_remnant_edges` is ON.
 Turning it off may prevent this error.)MSG");
 
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
-            circuit_to_dem(Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&]() {
+            circuit_to_dem(
+                Circuit(R"CIRCUIT(
                 X_ERROR(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
-            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+            )CIRCUIT"),
+                {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
         }),
         R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
 The error component that failed to decompose is 'D0, D1, D2'.
@@ -2471,15 +2491,17 @@ Note: `block_decomposition_from_introducing_remnant_edges` is ON.
 Turning it off may prevent this error.)MSG");
 
     ASSERT_EQ(
-        expect_catch_message<std::invalid_argument>([&](){
-            circuit_to_dem(Circuit(R"CIRCUIT(
+        expect_catch_message<std::invalid_argument>([&]() {
+            circuit_to_dem(
+                Circuit(R"CIRCUIT(
                 X_ERROR(0.001) 0
                 M 0
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 DETECTOR rec[-1]
                 OBSERVABLE_INCLUDE(5) rec[-1]
-            )CIRCUIT"), {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
+            )CIRCUIT"),
+                {.decompose_errors = true, .block_decomposition_from_introducing_remnant_edges = true});
         }),
         R"MSG(Failed to decompose errors into graphlike components with at most two symptoms.
 The error component that failed to decompose is 'D0, D1, D2, L5'.
@@ -2567,57 +2589,64 @@ TEST(ErrorAnalyzer, other_error_decomposition_fallback) {
 TEST(ErrorAnalyzer, is_graph_like) {
     ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{}));
     ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{DemTarget::separator()}));
-    ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::observable_id(0),
-        DemTarget::observable_id(1),
-        DemTarget::observable_id(2),
-        DemTarget::separator(),
-        DemTarget::observable_id(1),
-    }));
-    ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::observable_id(0),
-        DemTarget::relative_detector_id(1),
-        DemTarget::observable_id(2),
-        DemTarget::separator(),
-        DemTarget::observable_id(1),
-    }));
-    ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::observable_id(0),
-        DemTarget::relative_detector_id(1),
-        DemTarget::relative_detector_id(2),
-        DemTarget::separator(),
-        DemTarget::observable_id(1),
-    }));
-    ASSERT_FALSE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::relative_detector_id(0),
-        DemTarget::relative_detector_id(1),
-        DemTarget::relative_detector_id(2),
-        DemTarget::separator(),
-        DemTarget::observable_id(1),
-    }));
-    ASSERT_FALSE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::relative_detector_id(0),
-        DemTarget::relative_detector_id(1),
-        DemTarget::relative_detector_id(2),
-    }));
-    ASSERT_FALSE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::separator(),
-        DemTarget::separator(),
-        DemTarget::relative_detector_id(0),
-        DemTarget::relative_detector_id(1),
-        DemTarget::relative_detector_id(2),
-        DemTarget::separator(),
-        DemTarget::separator(),
-    }));
-    ASSERT_TRUE(is_graphlike(std::vector<DemTarget>{
-        DemTarget::separator(),
-        DemTarget::relative_detector_id(0),
-        DemTarget::separator(),
-        DemTarget::relative_detector_id(1),
-        DemTarget::relative_detector_id(2),
-        DemTarget::separator(),
-        DemTarget::separator(),
-    }));
+    ASSERT_TRUE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::observable_id(0),
+            DemTarget::observable_id(1),
+            DemTarget::observable_id(2),
+            DemTarget::separator(),
+            DemTarget::observable_id(1),
+        }));
+    ASSERT_TRUE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::observable_id(0),
+            DemTarget::relative_detector_id(1),
+            DemTarget::observable_id(2),
+            DemTarget::separator(),
+            DemTarget::observable_id(1),
+        }));
+    ASSERT_TRUE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::observable_id(0),
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(2),
+            DemTarget::separator(),
+            DemTarget::observable_id(1),
+        }));
+    ASSERT_FALSE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::relative_detector_id(0),
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(2),
+            DemTarget::separator(),
+            DemTarget::observable_id(1),
+        }));
+    ASSERT_FALSE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::relative_detector_id(0),
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(2),
+        }));
+    ASSERT_FALSE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::separator(),
+            DemTarget::separator(),
+            DemTarget::relative_detector_id(0),
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(2),
+            DemTarget::separator(),
+            DemTarget::separator(),
+        }));
+    ASSERT_TRUE(is_graphlike(
+        std::vector<DemTarget>{
+            DemTarget::separator(),
+            DemTarget::relative_detector_id(0),
+            DemTarget::separator(),
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(2),
+            DemTarget::separator(),
+            DemTarget::separator(),
+        }));
 }
 
 TEST(ErrorAnalyzer, honeycomb_code_decomposes) {
@@ -2837,7 +2866,7 @@ TEST(ErrorAnalyzer, mpp_ordering) {
 TEST(ErrorAnalyzer, anticommuting_observable_error_message_help) {
     for (size_t folding = 0; folding < 2; folding++) {
         ASSERT_EQ(
-            expect_catch_message<std::invalid_argument>([&](){
+            expect_catch_message<std::invalid_argument>([&]() {
                 circuit_to_dem(
                     Circuit(R"CIRCUIT(
                         QUBIT_COORDS(1, 2, 3) 0
@@ -2878,8 +2907,9 @@ Circuit stack trace:
     at instruction #2 [which is RX 2])ERROR");
 
         ASSERT_EQ(
-            expect_catch_message<std::invalid_argument>([&](){
-                circuit_to_dem(Circuit(R"CIRCUIT(
+            expect_catch_message<std::invalid_argument>([&]() {
+                circuit_to_dem(
+                    Circuit(R"CIRCUIT(
                     TICK
                     SHIFT_COORDS(1000, 2000)
                     M 0 1
@@ -2902,7 +2932,8 @@ Circuit stack trace:
                     REPEAT 1000 {
                         TICK
                     }
-                )CIRCUIT"), {.flatten_loops = folding != 1});
+                )CIRCUIT"),
+                    {.flatten_loops = folding != 1});
             }),
             R"ERROR(The circuit contains non-deterministic observables.
 The circuit contains non-deterministic detectors.

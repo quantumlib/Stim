@@ -187,7 +187,8 @@ pybind11::object circuit_get_item(const Circuit &self, const pybind11::object &i
 
     auto &op = self.operations[index];
     if (op.gate_type == GateType::REPEAT) {
-        return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self), pybind11::str(op.tag)});
+        return pybind11::cast(
+            CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self), pybind11::str(op.tag)});
     }
     std::vector<GateTarget> targets;
     for (const auto &e : op.targets) {
@@ -292,12 +293,13 @@ void circuit_append(
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
-        self.safe_append(CircuitInstruction{
-            instruction.gate_type,
-            instruction.gate_args,
-            instruction.targets,
-            pybind11::cast<std::string_view>(instruction.tag),
-        });
+        self.safe_append(
+            CircuitInstruction{
+                instruction.gate_type,
+                instruction.gate_args,
+                instruction.targets,
+                pybind11::cast<std::string_view>(instruction.tag),
+            });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
             throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
@@ -2040,13 +2042,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const Circuit &self) -> pybind11::str {
-            return self.str();
-        },
-        [](const pybind11::str &text) {
-            return Circuit(pybind11::cast<std::string_view>(text));
-        }));
+    c.def(
+        pybind11::pickle(
+            [](const Circuit &self) -> pybind11::str {
+                return self.str();
+            },
+            [](const pybind11::str &text) {
+                return Circuit(pybind11::cast<std::string_view>(text));
+            }));
 
     c.def(
         "shortest_graphlike_error",

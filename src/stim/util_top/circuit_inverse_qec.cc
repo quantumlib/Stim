@@ -48,7 +48,8 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
 
         // Undo the gate, ignoring measurement noise.
         rev.undo_gate(segment);
-        inverted_circuit.safe_append_reversed_targets(CircuitInstruction(g.best_candidate_inverse_id, {}, segment.targets, inst.tag), false);
+        inverted_circuit.safe_append_reversed_targets(
+            CircuitInstruction(g.best_candidate_inverse_id, {}, segment.targets, inst.tag), false);
 
         // Measurement noise becomes noise-after-reset in the reversed circuit.
         if (!inst.args.empty()) {
@@ -62,7 +63,8 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
             } else {
                 throw std::invalid_argument("Don't know how to invert " + inst.str());
             }
-            inverted_circuit.safe_append_reversed_targets(CircuitInstruction(ejected_noise, segment.args, segment.targets, inst.tag), false);
+            inverted_circuit.safe_append_reversed_targets(
+                CircuitInstruction(ejected_noise, segment.args, segment.targets, inst.tag), false);
         }
     });
 }
@@ -119,7 +121,8 @@ void CircuitFlowReverser::do_measuring_instruction(const CircuitInstruction &ins
         num_new_measurements++;
     }
     inverted_circuit.safe_append_reversed_targets(
-        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag), g.flags & GATE_TARGETS_PAIRS);
+        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag),
+        g.flags & GATE_TARGETS_PAIRS);
 
     rev.undo_gate(inst);
 }
@@ -127,7 +130,8 @@ void CircuitFlowReverser::do_measuring_instruction(const CircuitInstruction &ins
 void CircuitFlowReverser::do_feedback_capable_instruction(const CircuitInstruction &inst) {
     for (GateTarget t : inst.targets) {
         if (t.is_measurement_record_target()) {
-            throw std::invalid_argument("Time-reversing feedback isn't supported yet. Found feedback in: " + inst.str());
+            throw std::invalid_argument(
+                "Time-reversing feedback isn't supported yet. Found feedback in: " + inst.str());
         }
     }
     do_simple_instruction(inst);
@@ -137,7 +141,8 @@ void CircuitFlowReverser::do_simple_instruction(const CircuitInstruction &inst) 
     Gate g = GATE_DATA[inst.gate_type];
     rev.undo_gate(inst);
     inverted_circuit.safe_append_reversed_targets(
-        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag), g.flags & GATE_TARGETS_PAIRS);
+        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag),
+        g.flags & GATE_TARGETS_PAIRS);
 }
 
 void CircuitFlowReverser::flush_detectors_and_observables() {
@@ -274,12 +279,13 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
                 qubit_coords_circuit.arg_buf.append_tail(
                     inst.args[k] + (k < coord_shifts.size() ? coord_shifts[k] : 0));
             }
-            qubit_coords_circuit.operations.push_back(CircuitInstruction{
-                inst.gate_type,
-                qubit_coords_circuit.arg_buf.commit_tail(),
-                qubit_coords_circuit.target_buf.take_copy(inst.targets),
-                inst.tag,
-            });
+            qubit_coords_circuit.operations.push_back(
+                CircuitInstruction{
+                    inst.gate_type,
+                    qubit_coords_circuit.arg_buf.commit_tail(),
+                    qubit_coords_circuit.target_buf.take_copy(inst.targets),
+                    inst.tag,
+                });
             break;
         case GateType::SHIFT_COORDS:
             vec_pad_add_mul(coord_shifts, inst.args);

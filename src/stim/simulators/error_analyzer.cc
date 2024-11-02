@@ -1711,7 +1711,9 @@ void ErrorAnalyzer::undo_MXX(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_disjoint_segments(
-        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag}, tracker.xs.size(), [&](CircuitInstruction segment) {
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -1725,7 +1727,9 @@ void ErrorAnalyzer::undo_MYY(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_disjoint_segments(
-        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag}, tracker.xs.size(), [&](CircuitInstruction segment) {
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -1739,7 +1743,9 @@ void ErrorAnalyzer::undo_MZZ(const CircuitInstruction &inst) {
     }
 
     decompose_pair_instruction_into_disjoint_segments(
-        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag}, tracker.xs.size(), [&](CircuitInstruction segment) {
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
 }

@@ -33,7 +33,11 @@ void write_crumble_name_with_args(const CircuitInstruction &instruction, std::os
     }
 }
 
-void write_crumble_url(const Circuit &circuit, bool skip_detectors, const std::vector<std::pair<int, CircuitErrorLocation>> &marks, std::ostream &out) {
+void write_crumble_url(
+    const Circuit &circuit,
+    bool skip_detectors,
+    const std::vector<std::pair<int, CircuitErrorLocation>> &marks,
+    std::ostream &out) {
     ExplainedError err;
     std::vector<std::pair<int, CircuitErrorLocation>> active_marks;
     for (size_t k = 0; k < circuit.operations.size(); k++) {
@@ -57,7 +61,8 @@ void write_crumble_url(const Circuit &circuit, bool skip_detectors, const std::v
                 const auto &v1 = mark.second.flipped_pauli_product;
                 const auto &v2 = mark.second.flipped_measurement.measured_observable;
                 for (const auto &e : v1) {
-                    out << ";MARK" << e.gate_target.pauli_type() << "(" << mark.first << ")" << e.gate_target.qubit_value();
+                    out << ";MARK" << e.gate_target.pauli_type() << "(" << mark.first << ")"
+                        << e.gate_target.qubit_value();
                 }
                 if (!v2.empty()) {
                     auto t = v2[0].gate_target;
@@ -88,7 +93,8 @@ void write_crumble_url(const Circuit &circuit, bool skip_detectors, const std::v
                 for (size_t k2 = 0; k2 < instruction.repeat_block_rep_count(); k2++) {
                     iter_marks.clear();
                     for (const auto &mark : active_marks) {
-                        if (!mark.second.stack_frames.empty() && mark.second.stack_frames.back().iteration_index == k2) {
+                        if (!mark.second.stack_frames.empty() &&
+                            mark.second.stack_frames.back().iteration_index == k2) {
                             iter_marks.push_back(mark);
                         }
                     }
@@ -113,7 +119,8 @@ void write_crumble_url(const Circuit &circuit, bool skip_detectors, const std::v
     }
 }
 
-std::string stim::export_crumble_url(const Circuit &circuit, bool skip_detectors, const std::map<int, std::vector<ExplainedError>> &mark) {
+std::string stim::export_crumble_url(
+    const Circuit &circuit, bool skip_detectors, const std::map<int, std::vector<ExplainedError>> &mark) {
     std::vector<std::pair<int, CircuitErrorLocation>> marks;
     for (const auto &[k, vs] : mark) {
         for (const auto &v : vs) {
