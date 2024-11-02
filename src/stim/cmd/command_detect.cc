@@ -129,12 +129,13 @@ SubCommandHelp stim::command_detect_help() {
             shot D0 D1
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing output data.
 
             The available formats are:
@@ -150,14 +151,15 @@ SubCommandHelp stim::command_detect_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--seed",
-        "int",
-        "system_entropy",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--seed",
+            "int",
+            "system_entropy",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Makes simulation results PARTIALLY deterministic.
 
             The seed integer must be a non-negative 64 bit signed integer.
@@ -192,27 +194,29 @@ SubCommandHelp stim::command_detect_help() {
             `stim sample` and `stim detect` will not result in detection events
             corresponding to the measurement results.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--shots",
-        "int",
-        "1",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--shots",
+            "int",
+            "1",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of samples to take from the circuit.
 
             Defaults to 1.
             Must be an integer between 0 and a quintillion (10^18).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--append_observables",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--append_observables",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Appends observable flips to the end of samples as extra detectors.
 
             PREFER --obs_out OVER THIS FLAG. Mixing the observable flip data
@@ -234,14 +238,15 @@ SubCommandHelp stim::command_detect_help() {
             example, in the example from the last paragraph, the observables
             would be named `L0` through `L9` instead of `D100` through `D109`.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the file to write observable flip data to.
 
             When sampling detection event data, the goal is typically to predict
@@ -255,14 +260,15 @@ SubCommandHelp stim::command_detect_help() {
             The output is in a format specified by `--obs_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing observable flip data.
 
             Irrelevant unless `--obs_out` is specified.
@@ -280,14 +286,15 @@ SubCommandHelp stim::command_detect_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the stim circuit file to read the circuit to sample from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -296,14 +303,15 @@ SubCommandHelp stim::command_detect_help() {
             The input should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the sampled data to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -312,7 +320,7 @@ SubCommandHelp stim::command_detect_help() {
             The output is in a format specified by `--out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

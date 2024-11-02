@@ -6,7 +6,8 @@
 
 namespace stim {
 
-std::string export_crumble_url(const Circuit &circuit, bool skip_detectors = false, const std::map<int, std::vector<ExplainedError>> &mark = {});
+std::string export_crumble_url(
+    const Circuit &circuit, bool skip_detectors = false, const std::map<int, std::vector<ExplainedError>> &mark = {});
 
 }  // namespace stim
 

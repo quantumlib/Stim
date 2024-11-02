@@ -139,12 +139,13 @@ Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau) {
     Circuit recorded_circuit;
     auto apply = [&](GateType gate_type, uint32_t target) {
         remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target});
-        recorded_circuit.safe_append(CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target)}, ""));
+        recorded_circuit.safe_append(
+            CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target)}, ""));
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target, target2});
-        recorded_circuit.safe_append(
-            CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, ""));
+        recorded_circuit.safe_append(CircuitInstruction(
+            gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, ""));
     };
     auto x_out = [&](size_t inp, size_t out) {
         const auto &p = remaining.xs[inp];

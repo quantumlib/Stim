@@ -359,11 +359,12 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, certain_errors_consistent_with_gates, {
 TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate, {
     auto rng = INDEPENDENT_TEST_RNG();
     auto results = TableauSimulator<W>::sample_circuit(
-        Circuit("H 0\n"
-                "CNOT 0 1\n"
-                "M 0\n"
-                "M 1\n"
-                "M 2\n"),
+        Circuit(
+            "H 0\n"
+            "CNOT 0 1\n"
+            "M 0\n"
+            "M 1\n"
+            "M 2\n"),
         rng);
     ASSERT_EQ(results[0], results[1]);
     ASSERT_EQ(results[2], false);
@@ -372,12 +373,13 @@ TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate, {
 TEST_EACH_WORD_SIZE_W(TableauSimulator, simulate_reset, {
     auto rng = INDEPENDENT_TEST_RNG();
     auto results = TableauSimulator<W>::sample_circuit(
-        Circuit("X 0\n"
-                "M 0\n"
-                "R 0\n"
-                "M 0\n"
-                "R 0\n"
-                "M 0\n"),
+        Circuit(
+            "X 0\n"
+            "M 0\n"
+            "R 0\n"
+            "M 0\n"
+            "R 0\n"
+            "M 0\n"),
         rng);
     ASSERT_EQ(results[0], true);
     ASSERT_EQ(results[1], false);

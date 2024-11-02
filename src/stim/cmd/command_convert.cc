@@ -346,12 +346,13 @@ SubCommandHelp stim::command_convert_help() {
             0,1,2
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when reading data.
 
             The available formats are:
@@ -367,14 +368,15 @@ SubCommandHelp stim::command_convert_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing output data.
 
             The available formats are:
@@ -390,14 +392,15 @@ SubCommandHelp stim::command_convert_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing observable flip data.
 
             Irrelevant unless `--obs_out` is specified.
@@ -415,14 +418,15 @@ SubCommandHelp stim::command_convert_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the file to read data from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -431,14 +435,15 @@ SubCommandHelp stim::command_convert_help() {
             The input's format is specified by `--in_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the data to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -447,14 +452,15 @@ SubCommandHelp stim::command_convert_help() {
             The output's format is specified by `--out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the file to write observable flip data to.
 
             When producing detection event data, the goal is typically to
@@ -468,14 +474,15 @@ SubCommandHelp stim::command_convert_help() {
             The output is in a format specified by `--obs_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--circuit",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--circuit",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies where the circuit that generated the data is.
 
             This argument is optional, but can be used to infer the number of
@@ -484,15 +491,16 @@ SubCommandHelp stim::command_convert_help() {
             The circuit file should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--types",
-        "M|D|L",
-        "",
-        {"[none]"
-         "types"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--types",
+            "M|D|L",
+            "",
+            {"[none]"
+             "types"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the types of events in the files.
 
             This argument is required if a circuit is given as the circuit can
@@ -506,53 +514,57 @@ SubCommandHelp stim::command_convert_help() {
             in dets files. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md#dets
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--num_measurements",
-        "int",
-        "0",
-        {"[none], int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--num_measurements",
+            "int",
+            "0",
+            {"[none], int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of measurements in the input/output files.
 
             This argument is required if writing to a dets file and the circuit
             is not given.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--num_detectors",
-        "int",
-        "0",
-        {"[none], int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--num_detectors",
+            "int",
+            "0",
+            {"[none], int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of detectors in the input/output files.
 
             This argument is required if writing to a dets file and the circuit
             or dem is not given.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--num_observables",
-        "int",
-        "0",
-        {"[none], int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--num_observables",
+            "int",
+            "0",
+            {"[none], int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of observables in the input/output files.
 
             This argument is required if writing to a dets file and the circuit
             or dem is not given.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--bits_per_shot",
-        "int",
-        "0",
-        {"[none], int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--bits_per_shot",
+            "int",
+            "0",
+            {"[none], int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of bits per shot in the input/output files.
 
             This argument is required if the circuit, dem or num_* flags
@@ -561,7 +573,7 @@ SubCommandHelp stim::command_convert_help() {
             In this case we just treat the bits aas arbitrary data. It is up
             to the user to interpert it correctly.
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

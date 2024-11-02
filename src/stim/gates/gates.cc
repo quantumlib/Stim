@@ -268,7 +268,8 @@ std::array<float, 4> Gate::to_axis_angle() const {
 }
 
 bool Gate::has_known_unitary_matrix() const {
-    return (flags & GateFlags::GATE_IS_UNITARY) && (flags & (GateFlags::GATE_IS_SINGLE_QUBIT_GATE | GateFlags::GATE_TARGETS_PAIRS));
+    return (flags & GateFlags::GATE_IS_UNITARY) &&
+           (flags & (GateFlags::GATE_IS_SINGLE_QUBIT_GATE | GateFlags::GATE_TARGETS_PAIRS));
 }
 
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {

@@ -120,15 +120,16 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
             ss << "ANTICOMMUTED";
             ss << ":";
             ss << s.first.second;
-            drawer.diagram.add_entry(AsciiDiagramEntry{
-                AsciiDiagramPos{
-                    drawer.m2x(drawer.cur_moment + 1),
-                    drawer.q2y(t.qubit_value()),
-                    0,
-                    0.5,
-                },
-                ss.str(),
-            });
+            drawer.diagram.add_entry(
+                AsciiDiagramEntry{
+                    AsciiDiagramPos{
+                        drawer.m2x(drawer.cur_moment + 1),
+                        drawer.q2y(t.qubit_value()),
+                        0,
+                        0.5,
+                    },
+                    ss.str(),
+                });
         }
     }
 
@@ -147,15 +148,16 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
             }
             ss << ":";
             ss << s.first.second;
-            drawer.diagram.add_entry(AsciiDiagramEntry{
-                AsciiDiagramPos{
-                    drawer.m2x(drawer.cur_moment),
-                    drawer.q2y(t.qubit_value()),
-                    0,
-                    0.5,
-                },
-                ss.str(),
-            });
+            drawer.diagram.add_entry(
+                AsciiDiagramEntry{
+                    AsciiDiagramPos{
+                        drawer.m2x(drawer.cur_moment),
+                        drawer.q2y(t.qubit_value()),
+                        0,
+                        0.5,
+                    },
+                    ss.str(),
+                });
         }
     }
 
@@ -175,10 +177,11 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
             ss << "(" << comma_sep(p->second) << ")";
         }
         ss << " ";
-        drawer.diagram.add_entry(AsciiDiagramEntry{
-            {0, drawer.q2y(q), 1.0, 0.5},
-            ss.str(),
-        });
+        drawer.diagram.add_entry(
+            AsciiDiagramEntry{
+                {0, drawer.q2y(q), 1.0, 0.5},
+                ss.str(),
+            });
     }
 
     drawer.diagram.render(out);

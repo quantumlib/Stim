@@ -230,7 +230,8 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
     }
 
     circuit.tag_buf.commit_tail();
-    circuit.operations.push_back(CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
+    circuit.operations.push_back(
+        CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
 }
 
 void Circuit::try_fuse_last_two_ops() {
@@ -411,7 +412,8 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
     }
 }
 
-void Circuit::safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
+void Circuit::safe_insert_repeat_block(
+    size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
     if (repeat_count == 0) {
         throw std::invalid_argument("Can't repeat 0 times.");
     }
@@ -426,8 +428,7 @@ void Circuit::safe_insert_repeat_block(size_t index, uint64_t repeat_count, cons
     operations.insert(operations.begin() + index, CircuitInstruction(GateType::REPEAT, {}, targets, tag));
 }
 
-void Circuit::safe_append_reversed_targets(
-    CircuitInstruction instruction, bool reverse_in_pairs) {
+void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs) {
     if (reverse_in_pairs) {
         if (instruction.targets.size() % 2 != 0) {
             throw std::invalid_argument("targets.size() % 2 != 0");
@@ -779,7 +780,8 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
                 auto &tail = result.target_buf.tail;
                 tail.ptr_end = tail.ptr_start + op.targets.size();
                 memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
-                result.operations.push_back(CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), op.tag));
+                result.operations.push_back(
+                    CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), op.tag));
                 result.try_fuse_last_two_ops();
             } else {
                 // Drop result flip probability.
@@ -812,7 +814,8 @@ Circuit Circuit::without_noise() const {
                 tail.ptr_end = tail.ptr_start + op.targets.size();
                 memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
                 auto tag = result.tag_buf.take_copy(op.tag);
-                result.operations.push_back(CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), tag));
+                result.operations.push_back(
+                    CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), tag));
             } else {
                 // Drop result flip probabilities.
                 auto targets = result.target_buf.take_copy(op.targets);

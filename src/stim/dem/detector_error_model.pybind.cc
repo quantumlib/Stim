@@ -499,11 +499,12 @@ void stim_pybind::pybind_detector_error_model_methods(
                     }
                 }
 
-                self.append_dem_instruction(DemInstruction{
-                    conv_args,
-                    conv_targets,
-                    type,
-                });
+                self.append_dem_instruction(
+                    DemInstruction{
+                        conv_args,
+                        conv_targets,
+                        type,
+                    });
             } else if (pybind11::isinstance<ExposedDemInstruction>(instruction)) {
                 const ExposedDemInstruction &exp = pybind11::cast<ExposedDemInstruction>(instruction);
                 self.append_dem_instruction(DemInstruction{exp.arguments, exp.targets, exp.type});
@@ -761,13 +762,14 @@ void stim_pybind::pybind_detector_error_model_methods(
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const DetectorErrorModel &self) -> pybind11::str {
-            return self.str();
-        },
-        [](const pybind11::str &text) -> DetectorErrorModel {
-            return DetectorErrorModel(pybind11::cast<std::string_view>(text));
-        }));
+    c.def(
+        pybind11::pickle(
+            [](const DetectorErrorModel &self) -> pybind11::str {
+                return self.str();
+            },
+            [](const pybind11::str &text) -> DetectorErrorModel {
+                return DetectorErrorModel(pybind11::cast<std::string_view>(text));
+            }));
 
     c.def(
         "shortest_graphlike_error",

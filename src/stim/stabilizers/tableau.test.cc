@@ -472,46 +472,51 @@ TEST_EACH_WORD_SIZE_W(tableau, random, {
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, specialized_operation, {
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("X").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("X").tableau<W>(), targets);
-        }));
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Z").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Z").tableau<W>(), targets);
-        }));
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
-        }));
-    EXPECT_FALSE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("H_XZ").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Y").tableau<W>(), targets);
-        }));
-    EXPECT_FALSE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_DATA.at("ZCZ").tableau<W>(), targets);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("X").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("X").tableau<W>(), targets);
+            }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Z").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Z").tableau<W>(), targets);
+            }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
+            }));
+    EXPECT_FALSE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("H_XZ").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("SQRT_Y").tableau<W>(), targets);
+            }));
+    EXPECT_FALSE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("ZCX").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_prepend(GATE_DATA.at("ZCZ").tableau<W>(), targets);
+            }));
 
     EXPECT_TRUE(are_tableau_prepends_equivalent<W>("H_XZ", &Tableau<W>::prepend_H_XZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent<W>("H_YZ", &Tableau<W>::prepend_H_YZ));
@@ -546,86 +551,95 @@ TEST_EACH_WORD_SIZE_W(tableau, specialized_operation, {
     EXPECT_TRUE(are_tableau_prepends_equivalent<W>("SQRT_ZZ", &Tableau<W>::prepend_SQRT_ZZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent<W>("SQRT_ZZ_DAG", &Tableau<W>::prepend_SQRT_ZZ_DAG));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("X").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_X(targets[0]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("X").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_X(targets[0]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("H_XZ").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_H_XZ(targets[0]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("H_XZ").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_H_XZ(targets[0]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("H_XY").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_H_XY(targets[0]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("H_XY").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_H_XY(targets[0]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("H_YZ").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_H_YZ(targets[0]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("H_YZ").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_H_YZ(targets[0]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        1,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("S").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_S(targets[0]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            1,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("S").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_S(targets[0]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("ZCX").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_ZCX(targets[0], targets[1]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("ZCX").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_ZCX(targets[0], targets[1]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("ZCY").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_ZCY(targets[0], targets[1]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("ZCY").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_ZCY(targets[0], targets[1]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("ZCZ").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_ZCZ(targets[0], targets[1]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("ZCZ").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_ZCZ(targets[0], targets[1]);
+            }));
 
-    EXPECT_TRUE(are_tableau_mutations_equivalent<W>(
-        2,
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_DATA.at("SWAP").tableau<W>(), targets);
-        },
-        [](Tableau<W> &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii<W>(t).append_SWAP(targets[0], targets[1]);
-        }));
+    EXPECT_TRUE(
+        are_tableau_mutations_equivalent<W>(
+            2,
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                t.inplace_scatter_append(GATE_DATA.at("SWAP").tableau<W>(), targets);
+            },
+            [](Tableau<W> &t, const std::vector<size_t> &targets) {
+                TableauTransposedRaii<W>(t).append_SWAP(targets[0], targets[1]);
+            }));
 })
 
 TEST_EACH_WORD_SIZE_W(tableau, expand, {

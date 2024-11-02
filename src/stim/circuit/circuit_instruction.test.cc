@@ -31,36 +31,44 @@ TEST(circuit_instruction, for_combined_targets) {
         });
         return results;
     };
-    ASSERT_EQ(get_k(0), (std::vector<std::vector<GateTarget>>{
-                       }));
-    ASSERT_EQ(get_k(1), (std::vector<std::vector<GateTarget>>{
-                       }));
-    ASSERT_EQ(get_k(2), (std::vector<std::vector<GateTarget>>{
-                           {GateTarget::qubit(1)},
-                       }));
-    ASSERT_EQ(get_k(3), (std::vector<std::vector<GateTarget>>{
-                           {GateTarget::qubit(0)},
-                           {GateTarget::qubit(2)},
-                       }));
-    ASSERT_EQ(get_k(4), (std::vector<std::vector<GateTarget>>{
-                       }));
-    ASSERT_EQ(get_k(5), (std::vector<std::vector<GateTarget>>{
-                            {GateTarget::qubit(0), GateTarget::qubit(1)},
-                            {GateTarget::qubit(2), GateTarget::qubit(3)},
-                       }));
-    ASSERT_EQ(get_k(6), (std::vector<std::vector<GateTarget>>{
-                            {GateTarget::qubit(3), GateTarget::qubit(5)},
-                       }));
-    ASSERT_EQ(get_k(7), (std::vector<std::vector<GateTarget>>{
-                       }));
-    ASSERT_EQ(get_k(8), (std::vector<std::vector<GateTarget>>{
-                            {GateTarget::x(0), GateTarget::combiner(), GateTarget::x(1), GateTarget::combiner(), GateTarget::z(2)},
-                            {GateTarget::z(7)},
-                            {GateTarget::x(5), GateTarget::combiner(), GateTarget::x(9)},
-                       }));
-    ASSERT_EQ(get_k(9), (std::vector<std::vector<GateTarget>>{
-                            {GateTarget::z(5)},
-                       }));
+    ASSERT_EQ(get_k(0), (std::vector<std::vector<GateTarget>>{}));
+    ASSERT_EQ(get_k(1), (std::vector<std::vector<GateTarget>>{}));
+    ASSERT_EQ(
+        get_k(2),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::qubit(1)},
+        }));
+    ASSERT_EQ(
+        get_k(3),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::qubit(0)},
+            {GateTarget::qubit(2)},
+        }));
+    ASSERT_EQ(get_k(4), (std::vector<std::vector<GateTarget>>{}));
+    ASSERT_EQ(
+        get_k(5),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::qubit(0), GateTarget::qubit(1)},
+            {GateTarget::qubit(2), GateTarget::qubit(3)},
+        }));
+    ASSERT_EQ(
+        get_k(6),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::qubit(3), GateTarget::qubit(5)},
+        }));
+    ASSERT_EQ(get_k(7), (std::vector<std::vector<GateTarget>>{}));
+    ASSERT_EQ(
+        get_k(8),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::x(0), GateTarget::combiner(), GateTarget::x(1), GateTarget::combiner(), GateTarget::z(2)},
+            {GateTarget::z(7)},
+            {GateTarget::x(5), GateTarget::combiner(), GateTarget::x(9)},
+        }));
+    ASSERT_EQ(
+        get_k(9),
+        (std::vector<std::vector<GateTarget>>{
+            {GateTarget::z(5)},
+        }));
 }
 
 TEST(circuit_instruction, for_combined_targets_works_on_all) {

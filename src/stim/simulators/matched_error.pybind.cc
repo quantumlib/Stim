@@ -45,13 +45,14 @@ std::string DemTargetWithCoords_repr(const DemTargetWithCoords &self) {
 }
 
 pybind11::ssize_t CircuitTargetsInsideInstruction_hash(const CircuitTargetsInsideInstruction &self) {
-    return pybind11::hash(pybind11::make_tuple(
-        "CircuitTargetsInsideInstruction",
-        self.gate_type == GateType::NOT_A_GATE ? std::string_view("") : GATE_DATA[self.gate_type].name,
-        self.target_range_start,
-        self.target_range_end,
-        tuple_tree(self.targets_in_range),
-        tuple_tree(self.args)));
+    return pybind11::hash(
+        pybind11::make_tuple(
+            "CircuitTargetsInsideInstruction",
+            self.gate_type == GateType::NOT_A_GATE ? std::string_view("") : GATE_DATA[self.gate_type].name,
+            self.target_range_start,
+            self.target_range_end,
+            tuple_tree(self.targets_in_range),
+            tuple_tree(self.args)));
 }
 
 std::string GateTargetWithCoords_repr(const GateTargetWithCoords &self) {
@@ -260,11 +261,12 @@ void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const CircuitErrorLocationStackFrame &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "CircuitErrorLocationStackFrame",
-            self.instruction_offset,
-            self.iteration_index,
-            self.instruction_repetitions_arg));
+        return pybind11::hash(
+            pybind11::make_tuple(
+                "CircuitErrorLocationStackFrame",
+                self.instruction_offset,
+                self.iteration_index,
+                self.instruction_repetitions_arg));
     });
     c.def(
         pybind11::init(
@@ -492,8 +494,9 @@ void stim_pybind::pybind_flipped_measurement_methods(
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const FlippedMeasurement &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "FlippedMeasurement", self.measurement_record_index, tuple_tree(self.measured_observable)));
+        return pybind11::hash(
+            pybind11::make_tuple(
+                "FlippedMeasurement", self.measurement_record_index, tuple_tree(self.measured_observable)));
     });
     c.def(
         pybind11::init(
@@ -790,13 +793,14 @@ void stim_pybind::pybind_circuit_error_location_methods(
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const CircuitErrorLocation &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "CircuitErrorLocation",
-            self.tick_offset,
-            tuple_tree(self.flipped_pauli_product),
-            self.flipped_measurement,
-            self.instruction_targets,
-            tuple_tree(self.stack_frames)));
+        return pybind11::hash(
+            pybind11::make_tuple(
+                "CircuitErrorLocation",
+                self.tick_offset,
+                tuple_tree(self.flipped_pauli_product),
+                self.flipped_measurement,
+                self.instruction_targets,
+                tuple_tree(self.stack_frames)));
     });
     c.def(
         pybind11::init(
@@ -905,8 +909,9 @@ void stim_pybind::pybind_explained_error_methods(pybind11::module &m, pybind11::
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const ExplainedError &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "ExplainedError", tuple_tree(self.dem_error_terms), tuple_tree(self.circuit_error_locations)));
+        return pybind11::hash(
+            pybind11::make_tuple(
+                "ExplainedError", tuple_tree(self.dem_error_terms), tuple_tree(self.circuit_error_locations)));
     });
     c.def(
         pybind11::init(

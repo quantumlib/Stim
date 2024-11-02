@@ -121,7 +121,8 @@ TEST(export_crumble, graphlike_error) {
         DETECTOR rec[-3] rec[-4]
         OBSERVABLE_INCLUDE(0) rec[-1]
     )CIRCUIT");
-    DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 1, false, false);
+    DetectorErrorModel dem =
+        ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 1, false, false);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, false);
     auto error = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
 

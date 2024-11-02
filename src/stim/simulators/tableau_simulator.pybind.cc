@@ -585,8 +585,9 @@ void stim_pybind::pybind_tableau_simulator_methods(
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_DEPOLARIZE1(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
-                self, GateType::DEPOLARIZE1, args, &p));
+            self.do_DEPOLARIZE1(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
+                    self, GateType::DEPOLARIZE1, args, &p));
         },
         clean_doc_string(R"DOC(
             @signature def depolarize1(self, *targets: int, p: float):
@@ -629,8 +630,9 @@ void stim_pybind::pybind_tableau_simulator_methods(
             if (kwargs.size() != 1) {
                 throw std::invalid_argument("Unexpected argument. Expected position-only targets and p=probability.");
             }
-            self.do_X_ERROR(build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
-                self, GateType::X_ERROR, args, {&p}));
+            self.do_X_ERROR(
+                build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(
+                    self, GateType::X_ERROR, args, {&p}));
         },
         clean_doc_string(R"DOC(
             @signature def x_error(self, *targets: int, p: float):

@@ -33,7 +33,10 @@ struct PyCircuitInstruction {
     PyCircuitInstruction(
         std::string_view name, std::span<pybind11::object> targets, std::span<double> gate_args, pybind11::str tag);
     PyCircuitInstruction(
-        stim::GateType gate_type, std::vector<stim::GateTarget> targets, std::vector<double> gate_args, pybind11::str tag);
+        stim::GateType gate_type,
+        std::vector<stim::GateTarget> targets,
+        std::vector<double> gate_args,
+        pybind11::str tag);
     static PyCircuitInstruction from_str(std::string_view text);
     static PyCircuitInstruction from_instruction(stim::CircuitInstruction instruction);
 
