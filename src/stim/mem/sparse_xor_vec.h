@@ -224,6 +224,14 @@ struct SparseXorVec {
         return sorted_items.data() + size();
     }
 
+    bool operator==(const std::vector<T> &other) const {
+        return sorted_items == other;
+    }
+
+    bool operator!=(const std::vector<T> &other) const {
+        return sorted_items != other;
+    }
+
     bool operator==(const SparseXorVec &other) const {
         return sorted_items == other.sorted_items;
     }

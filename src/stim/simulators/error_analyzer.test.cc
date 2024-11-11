@@ -3657,3 +3657,74 @@ TEST(ErrorAnalyzer, heralded_pauli_channel_1) {
                         )DEM"),
                         1e-6));
 }
+
+
+TEST(ErrorAnalyzer, OBS_INCLUDE_PAULIS) {
+    auto circuit = Circuit(R"CIRCUIT(
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        X_ERROR(0.125) 0
+        Y_ERROR(0.25) 0
+        Z_ERROR(0.375) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    )CIRCUIT");
+    ASSERT_EQ(circuit_to_dem(circuit), DetectorErrorModel(R"DEM(
+        error(0.375) L0 L1
+        error(0.25) L0 L2
+        error(0.125) L1 L2
+    )DEM"));
+
+    circuit = Circuit(R"CIRCUIT(
+        DEPOLARIZE1(0.125) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        X_ERROR(0.25) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        DEPOLARIZE1(0.125) 0
+    )CIRCUIT");
+    ASSERT_EQ(circuit_to_dem(circuit), DetectorErrorModel(R"DEM(
+        error(0.25) L1 L2
+        logical_observable L0
+        logical_observable L0
+    )DEM"));
+
+    circuit = Circuit(R"CIRCUIT(
+        DEPOLARIZE1(0.125) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        Y_ERROR(0.25) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        DEPOLARIZE1(0.125) 0
+    )CIRCUIT");
+    ASSERT_EQ(circuit_to_dem(circuit), DetectorErrorModel(R"DEM(
+        error(0.25) L0 L2
+        logical_observable L1
+        logical_observable L1
+    )DEM"));
+
+    circuit = Circuit(R"CIRCUIT(
+        DEPOLARIZE1(0.125) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        Z_ERROR(0.25) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        DEPOLARIZE1(0.125) 0
+    )CIRCUIT");
+    ASSERT_EQ(circuit_to_dem(circuit), DetectorErrorModel(R"DEM(
+        error(0.25) L0 L1
+        logical_observable L2
+        logical_observable L2
+    )DEM"));
+}

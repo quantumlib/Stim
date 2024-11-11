@@ -95,7 +95,7 @@ Example:
             .id = GateType::OBSERVABLE_INCLUDE,
             .best_candidate_inverse_id = GateType::OBSERVABLE_INCLUDE,
             .arg_count = 1,
-            .flags = (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE |
+            .flags = (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE |
                                  GATE_ARGS_ARE_UNSIGNED_INTEGERS | GATE_HAS_NO_EFFECT_ON_QUBITS),
             .category = "Z_Annotations",
             .help = R"MARKDOWN(
