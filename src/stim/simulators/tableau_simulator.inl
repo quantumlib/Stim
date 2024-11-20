@@ -89,7 +89,7 @@ void TableauSimulator<W>::postselect_helper(
     unique_targets_vec.insert(unique_targets_vec.end(), unique_targets.begin(), unique_targets.end());
 
     size_t finished = 0;
-    do_gate({basis_change_gate, {}, unique_targets_vec});
+    do_gate({basis_change_gate, {}, unique_targets_vec, ""});
     {
         uint8_t old_bias = sign_bias;
         sign_bias = desired_result ? -1 : +1;
@@ -104,7 +104,7 @@ void TableauSimulator<W>::postselect_helper(
         }
         sign_bias = old_bias;
     }
-    do_gate({basis_change_gate, {}, unique_targets_vec});
+    do_gate({basis_change_gate, {}, unique_targets_vec, ""});
 
     if (finished < targets.size()) {
         std::stringstream msg;
@@ -231,7 +231,7 @@ void TableauSimulator<W>::do_MX(const CircuitInstruction &target_data) {
 template <size_t W>
 void TableauSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 
     // Ensure measurement observables are collapsed.
     collapse_x(inst.targets, 2);
@@ -248,13 +248,13 @@ void TableauSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruct
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void TableauSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 
     // Ensure measurement observables are collapsed.
     collapse_y(inst.targets, 2);
@@ -271,13 +271,13 @@ void TableauSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruct
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 
     // Ensure measurement observables are collapsed.
     collapse_z(inst.targets, 2);
@@ -294,7 +294,7 @@ void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruct
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 }
 
 template <size_t W>
@@ -388,7 +388,7 @@ bool TableauSimulator<W>::measure_pauli_string(const PauliStringRef<W> pauli_str
         measurement_record.record_result(std::bernoulli_distribution(p)(rng));
     } else {
         targets.pop_back();
-        do_MPP(CircuitInstruction{GateType::MPP, &p, targets});
+        do_MPP(CircuitInstruction{GateType::MPP, &p, targets, ""});
     }
     return measurement_record.lookback(1);
 }
@@ -998,7 +998,7 @@ void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &
     }
     RareErrorIterator::for_samples(ht, nt, rng, [&](size_t target) {
         measurement_record.storage[offset + target] = true;
-        do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target]});
+        do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target], ""});
     });
 }
 
@@ -1201,14 +1201,14 @@ void TableauSimulator<W>::collapse_x(SpanRef<const GateTarget> targets, size_t s
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        do_H_XZ({GateType::H, {}, collapse_targets});
+        do_H_XZ({GateType::H, {}, collapse_targets, ""});
         {
             TableauTransposedRaii<W> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
         }
-        do_H_XZ({GateType::H, {}, collapse_targets});
+        do_H_XZ({GateType::H, {}, collapse_targets, ""});
     }
 }
 
@@ -1227,14 +1227,14 @@ void TableauSimulator<W>::collapse_y(SpanRef<const GateTarget> targets, size_t s
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        do_H_YZ({GateType::H_YZ, {}, collapse_targets});
+        do_H_YZ({GateType::H_YZ, {}, collapse_targets, ""});
         {
             TableauTransposedRaii<W> temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q.data, temp_transposed);
             }
         }
-        do_H_YZ({GateType::H_YZ, {}, collapse_targets});
+        do_H_YZ({GateType::H_YZ, {}, collapse_targets, ""});
     }
 }
 
@@ -1431,9 +1431,9 @@ std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_z(GateTarg
 
 template <size_t W>
 std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_y(GateTarget target) {
-    do_H_YZ({GateType::H, {}, &target});
+    do_H_YZ({GateType::H, {}, &target, ""});
     auto result = measure_kickback_z(target);
-    do_H_YZ({GateType::H, {}, &target});
+    do_H_YZ({GateType::H, {}, &target, ""});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_YZ.
         result.second.xs[target.qubit_value()] ^= result.second.zs[target.qubit_value()];
@@ -1443,9 +1443,9 @@ std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_y(GateTarg
 
 template <size_t W>
 std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_x(GateTarget target) {
-    do_H_XZ({GateType::H, {}, &target});
+    do_H_XZ({GateType::H, {}, &target, ""});
     auto result = measure_kickback_z(target);
-    do_H_XZ({GateType::H, {}, &target});
+    do_H_XZ({GateType::H, {}, &target, ""});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_XZ.
         result.second.xs[target.qubit_value()].swap_with(result.second.zs[target.qubit_value()]);
@@ -1467,7 +1467,7 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
     state.ensure_large_enough_for_qubits(n + 1);
     GateTarget anc{n};
     if (observable.sign) {
-        state.do_X({GateType::X, {}, &anc});
+        state.do_X({GateType::X, {}, &anc, ""});
     }
     observable.ref().for_each_active_pauli([&](size_t q) {
         int p = observable.xs[q] + (observable.zs[q] << 1);
@@ -1478,14 +1478,14 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
         } else if (p == 3) {
             c2_type = GateType::YCX;
         }
-        state.do_gate({c2_type, {}, targets});
+        state.do_gate({c2_type, {}, targets, ""});
     });
 
     // Use simulator features to determines if the measurement is deterministic.
     if (!state.is_deterministic_z(anc.data)) {
         return 0;
     }
-    state.do_MZ({GateType::M, {}, &anc});
+    state.do_MZ({GateType::M, {}, &anc, ""});
     return state.measurement_record.storage.back() ? -1 : +1;
 }
 

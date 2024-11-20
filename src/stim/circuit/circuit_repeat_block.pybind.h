@@ -24,7 +24,8 @@ namespace stim_pybind {
 struct CircuitRepeatBlock {
     uint64_t repeat_count;
     stim::Circuit body;
-    CircuitRepeatBlock(uint64_t repeat_count, stim::Circuit body);
+    pybind11::str tag;
+    CircuitRepeatBlock(uint64_t repeat_count, stim::Circuit body, pybind11::str tag);
     stim::Circuit body_copy();
     bool operator==(const CircuitRepeatBlock &other) const;
     bool operator!=(const CircuitRepeatBlock &other) const;

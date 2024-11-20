@@ -34,6 +34,17 @@ Each line is either blank, an instruction, a block initiator, or a block termina
 Also, each line may be indented with spacing characters and may end with a comment indicated by a hash (`#`).
 Comments and indentation are purely decorative; they carry no semantic significance.
 
+Here is a formal definition of the above paragraph.
+Entries like `/this/` are regular expressions.
+Entries like `<this>` are named expressions.
+Entries like `'this'` are literal string expressions.
+The `::=` operator means "defined as".
+The `|` binary operator means "or".
+The `?` suffix operator means "zero-or-one".
+The `*` suffix operator means "zero-or-many".
+Parens are used to group expressions.
+Adjacent expressions are combined by concatenation.
+
 ```
 <CIRCUIT> ::= <LINE>*
 <LINE> ::= <INDENT> (<INSTRUCTION> | <BLOCK_START> | <BLOCK_END>)? <COMMENT>? '\n'
@@ -42,13 +53,15 @@ Comments and indentation are purely decorative; they carry no semantic significa
 ```
 
 An *instruction* is composed of a name,
+then (introduced in stim v1.15) an optional tag inside square brackets,
 then an optional comma-separated list of arguments inside of parentheses,
 then a list of space-separated targets.
 For example, the line `X_ERROR(0.1) 5 6` is an instruction with a name (`X_ERROR`),
 one argument (`0.1`), and two targets (`5` and `6`).
 
 ```
-<INSTRUCTION> ::= <NAME> <PARENS_ARGUMENTS>? <TARGETS>
+<INSTRUCTION> ::= <NAME> <TAG>? <PARENS_ARGUMENTS>? <TARGETS>
+<TAG> ::= '[' /[^\r\]\n]/* ']'
 <PARENS_ARGUMENTS> ::= '(' <ARGUMENTS> ')' 
 <ARGUMENTS> ::= /[ \t]*/ <ARG> /[ \t]*/ (',' <ARGUMENTS>)?
 <TARGETS> ::= /[ \t]+/ <TARG> <TARGETS>?
@@ -56,6 +69,14 @@ one argument (`0.1`), and two targets (`5` and `6`).
 
 An instruction *name* starts with a letter and then contains a series of letters, digits, and underscores.
 Names are case-insensitive.
+
+An instruction *tag* is an arbitrary string enclosed by square brackets.
+Certain characters cannot appear directly in the tag, and must instead be included using escape sequences.
+The closing square bracket character `]` cannot appear directly, and is instead encoded using the escape sequence `\C`.
+The carriage return character cannot appear directly, and is instead encoded using the escape sequence `\r`.
+The line feed character cannot appear directly, and is instead encoded using the escape sequence `\n`.
+The backslash character `\` cannot appear directly, and is instead encoded using the escape sequence `\B`.
+(This backslash escape sequence differs from the common escape sequence `\\` because that sequence causes exponential explosions when escaping multiple times.)
 
 An *argument* is a double precision floating point number.
 
@@ -123,6 +144,17 @@ They define a noise model for the circuit.)
 Currently, control flow is limited to *repetition*.
 A circuit can contain `REPEAT K { ... }` blocks,
 which indicate that the block's instructions should be iterated over `K` times instead of just once.
+
+### Tags
+
+Instruction tags have no effect on the function of a circuit.
+In general, tools should attempt to propagate tags through circuit transformations and otherwise ignore them.
+The intent is that users and tools can use tags to specify custom behavior that stim is not aware of.
+For example, consider the tagged instruction `TICK[100ns]`.
+In most situations, the `100ns` tag does nothing.
+But if you are using a tool that adds noise to circuits, and it's programmed to look at tags to get hints about what
+noise to add, then the `100ns` tag could be a message to that tool (specifying a duration, which the tool could use when
+computing the probability argument of an inserted `DEPOLARIZE1` instruction).
 
 ### Target Types
 

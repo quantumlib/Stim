@@ -830,43 +830,43 @@ void FrameSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
 template <size_t W>
 void FrameSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 }
 
 template <size_t W>

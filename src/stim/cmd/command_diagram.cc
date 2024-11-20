@@ -312,12 +312,13 @@ SubCommandHelp stim::command_diagram_help() {
     )PARAGRAPH",
         true));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--remove_noise",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--remove_noise",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Removes noise from the input before turning it into a diagram.
 
             For example, if the input is a noisy circuit and you aren't
@@ -325,14 +326,15 @@ SubCommandHelp stim::command_diagram_help() {
             of the circuit, you can specify this flag in order to filter out
             the noise.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--tick",
-        "int | int:int",
-        "none",
-        {"[none]", "int", "int-int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--tick",
+            "int | int:int",
+            "none",
+            {"[none]", "int", "int-int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies that the diagram should apply to a specific TICK or range
             of TICKS from the input circuit.
 
@@ -345,14 +347,15 @@ SubCommandHelp stim::command_diagram_help() {
             beginning of the circuit and `--tick=1` is the instant of the first
             TICK instruction.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--filter_coords",
-        "(float.seperatedby(',') | L# | D#).seperatedby(':')",
-        "",
-        {"[none]", "(float.seperatedby(',') | L# | D#).seperatedby(':')"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--filter_coords",
+            "(float.seperatedby(',') | L# | D#).seperatedby(':')",
+            "",
+            {"[none]", "(float.seperatedby(',') | L# | D#).seperatedby(':')"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies coordinate filters that determine what appears in the diagram.
 
             A coordinate is a double precision floating point number.
@@ -374,14 +377,15 @@ SubCommandHelp stim::command_diagram_help() {
                     should be included. Logical observables are only included if
                     explicitly filtered in.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--type",
-        "name",
-        "",
-        {"name"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--type",
+            "name",
+            "",
+            {"name"},
+            clean_doc_string(R"PARAGRAPH(
             The type of diagram to make.
 
             The available diagram types are:
@@ -466,14 +470,15 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Where to read the object to diagram from.
 
             By default, the object is read from stdin. When `--in $FILEPATH` is
@@ -481,14 +486,15 @@ SubCommandHelp stim::command_diagram_help() {
 
             The expected type of object depends on the type of diagram.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the diagram to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -496,7 +502,7 @@ SubCommandHelp stim::command_diagram_help() {
 
             The type of output produced depends on the type of diagram.
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

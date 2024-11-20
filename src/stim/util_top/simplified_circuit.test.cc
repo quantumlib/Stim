@@ -26,7 +26,7 @@ bool is_simplification_correct(const Gate &gate) {
     }
 
     Circuit original;
-    original.safe_append(gate.id, gate_decomposition_help_targets_for_gate_type(gate.id), args);
+    original.safe_append(CircuitInstruction(gate.id, args, gate_decomposition_help_targets_for_gate_type(gate.id), ""));
     Circuit simplified = simplified_circuit(original);
 
     if (gate.h_s_cx_m_r_decomposition == nullptr) {

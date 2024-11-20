@@ -142,12 +142,13 @@ SubCommandHelp stim::command_m2d_help() {
             shot D1 L2
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing output detection data.
 
             The available formats are:
@@ -163,14 +164,15 @@ SubCommandHelp stim::command_m2d_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the file to write observable flip data to.
 
             When producing detection event data, the goal is typically to
@@ -184,14 +186,15 @@ SubCommandHelp stim::command_m2d_help() {
             The output is in a format specified by `--obs_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing observable flip data.
 
             Irrelevant unless `--obs_out` is specified.
@@ -209,14 +212,15 @@ SubCommandHelp stim::command_m2d_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when reading measurement data.
 
             The available formats are:
@@ -232,14 +236,15 @@ SubCommandHelp stim::command_m2d_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--sweep",
-        "filepath",
-        "",
-        {"filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--sweep",
+            "filepath",
+            "",
+            {"filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a file to read sweep configuration data from.
 
             Sweep bits are used to vary whether certain Pauli gates are included
@@ -255,14 +260,15 @@ SubCommandHelp stim::command_m2d_help() {
             The sweep data's format is specified by `--sweep_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--sweep_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--sweep_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when reading sweep config data.
 
             The available formats are:
@@ -278,14 +284,15 @@ SubCommandHelp stim::command_m2d_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the file to read measurement data from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -294,14 +301,15 @@ SubCommandHelp stim::command_m2d_help() {
             The input's format is specified by `--in_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the sampled data to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -310,14 +318,15 @@ SubCommandHelp stim::command_m2d_help() {
             The output's format is specified by `--out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--circuit",
-        "filepath",
-        "",
-        {"filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--circuit",
+            "filepath",
+            "",
+            {"filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies where the circuit that generated the measurements is.
 
             This argument is required, because the circuit is what specifies how
@@ -326,14 +335,15 @@ SubCommandHelp stim::command_m2d_help() {
             The circuit file should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--append_observables",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--append_observables",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Appends observable flips to the end of samples as extra detectors.
 
             PREFER --obs_out OVER THIS FLAG. Mixing the observable flip data
@@ -349,14 +359,15 @@ SubCommandHelp stim::command_m2d_help() {
             in the circuit, then the output will contain 110 detectors and the
             last 10 are the observables.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--ran_without_feedback",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--ran_without_feedback",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Converts the results assuming all feedback operations were skipped.
 
             Pauli feedback operations don't need to be performed on the quantum
@@ -371,14 +382,15 @@ SubCommandHelp stim::command_m2d_help() {
             In the python API, the same effect can be achieved by using
             stim.Circuit.with_inlined_feedback().compile_m2d_converter().
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--skip_reference_sample",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--skip_reference_sample",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Asserts the circuit can produce a noiseless sample that is just 0s.
 
             When this argument is specified, the reference sample (that the
@@ -397,7 +409,7 @@ SubCommandHelp stim::command_m2d_help() {
             produced by the circuit under noiseless execution, specifying this
             flag will cause incorrect output to be produced.
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

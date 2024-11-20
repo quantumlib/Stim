@@ -122,12 +122,13 @@ SubCommandHelp stim::command_analyze_errors_help() {
             detector(3, 1) D5
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--allow_gauge_detectors",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--allow_gauge_detectors",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Allows non-deterministic detectors to appear in the circuit.
 
             Normally (without `--allow_gauge_detectors`), when a detector's
@@ -167,14 +168,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             detectors that anticommute with the same operations flip together in
             a consistent fashion that respects the structure of the circuit.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--approximate_disjoint_errors",
-        "probability",
-        "0.0",
-        {"[none]", "[switch]", "probability"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--approximate_disjoint_errors",
+            "probability",
+            "0.0",
+            {"[none]", "[switch]", "probability"},
+            clean_doc_string(R"PARAGRAPH(
             Allows disjoint errors to be approximated during the conversion.
 
             Detector error models require that all error mechanisms be
@@ -214,14 +216,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             In principle some custom Pauli channels can be converted exactly,
             but Stim does not currently contain logic that attempts to do this.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--block_decompose_from_introducing_remnant_edges",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--block_decompose_from_introducing_remnant_edges",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Prevents A*B from being decomposed unless A,B BOTH appear elsewhere.
 
             Irrelevant unless `--decompose_errors` is specified.
@@ -257,14 +260,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             this case, the `--block_decompose_from_introducing_remnant_edges`
             can be specified.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--decompose_errors",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--decompose_errors",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Decomposes errors with many detection events into "graphlike" parts.
 
             When `--decompose_errors` is specified, Stim will suggest how errors
@@ -337,14 +341,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             Stim will throw an error saying it failed to find a satisfying
             decomposition.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--fold_loops",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--fold_loops",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Allows the output to contain `repeat` blocks.
 
             This flag substantially improves performance on circuits with
@@ -371,14 +376,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             in the billions) because in that case loop folding is the difference
             between the error analysis finishing in seconds instead of in days.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--ignore_decomposition_failures",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--ignore_decomposition_failures",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Allows non-graphlike errors into the output when decomposing errors.
 
             Irrelevant unless `--decompose_errors` is specified.
@@ -393,14 +399,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             the detector error model is then responsible for dealing with the
             undecomposed errors (e.g. a tool may choose to simply ignore them).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the stim circuit file to read the circuit to convert from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -409,14 +416,15 @@ SubCommandHelp stim::command_analyze_errors_help() {
             The input should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the output detector error model.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -425,7 +433,7 @@ SubCommandHelp stim::command_analyze_errors_help() {
             The output is a stim detector error model. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

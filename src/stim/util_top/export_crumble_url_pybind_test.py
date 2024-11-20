@@ -20,3 +20,11 @@ def test_to_crumble_url_simple():
 def test_to_crumble_url_complex():
     c = stim.Circuit.generated('surface_code:rotated_memory_x', distance=3, rounds=2, after_clifford_depolarization=0.001)
     assert 'DEPOLARIZE1' in c.to_crumble_url()
+
+
+def test_to_crumble_url_mark_error():
+    c = stim.Circuit.generated('surface_code:rotated_memory_x', distance=3, rounds=2, after_clifford_depolarization=0.001, before_round_data_depolarization=0.001)
+    err = c.shortest_graphlike_error(canonicalize_circuit_errors=True)
+    url = c.to_crumble_url(skip_detectors=True, mark={1: err})
+    assert 'MARKZ' in url
+    assert 'DT' not in url

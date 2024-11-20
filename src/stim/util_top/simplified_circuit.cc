@@ -19,7 +19,7 @@ struct Simplifier {
         : num_qubits(num_qubits), yield(init_yield), used(num_qubits) {
     }
 
-    void do_xcz(SpanRef<const GateTarget> targets) {
+    void do_xcz(SpanRef<const GateTarget> targets, std::string_view tag) {
         if (targets.empty()) {
             return;
         }
@@ -29,7 +29,7 @@ struct Simplifier {
             qs_buf.push_back(targets[k + 1]);
             qs_buf.push_back(targets[k]);
         }
-        yield(CircuitInstruction{GateType::CX, {}, qs_buf});
+        yield(CircuitInstruction{GateType::CX, {}, qs_buf, tag});
     }
 
     void simplify_potentially_overlapping_1q_instruction(const CircuitInstruction &inst) {
@@ -39,7 +39,8 @@ struct Simplifier {
         for (size_t k = 0; k < inst.targets.size(); k++) {
             auto t = inst.targets[k];
             if (t.has_qubit_value() && used[t.qubit_value()]) {
-                CircuitInstruction disjoint = CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k)};
+                CircuitInstruction disjoint =
+                    CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
                 simplify_disjoint_1q_instruction(disjoint);
                 used.clear();
                 start = k;
@@ -49,7 +50,7 @@ struct Simplifier {
             }
         }
         simplify_disjoint_1q_instruction(
-            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
+            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size()), inst.tag});
     }
 
     void simplify_potentially_overlapping_2q_instruction(const CircuitInstruction &inst) {
@@ -60,7 +61,8 @@ struct Simplifier {
             auto a = inst.targets[k];
             auto b = inst.targets[k + 1];
             if ((a.has_qubit_value() && used[a.qubit_value()]) || (b.has_qubit_value() && used[b.qubit_value()])) {
-                CircuitInstruction disjoint = CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k)};
+                CircuitInstruction disjoint =
+                    CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, k), inst.tag};
                 simplify_disjoint_2q_instruction(disjoint);
                 used.clear();
                 start = k;
@@ -73,7 +75,7 @@ struct Simplifier {
             }
         }
         simplify_disjoint_2q_instruction(
-            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size())});
+            CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, inst.targets.size()), inst.tag});
     }
 
     void simplify_disjoint_1q_instruction(const CircuitInstruction &inst) {
@@ -84,129 +86,129 @@ struct Simplifier {
                 // Do nothing.
                 break;
             case GateType::X:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::Y:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::Z:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::C_XYZ:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::C_ZYX:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::H:
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::H_XY:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::H_YZ:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::S:
-                yield({GateType::S, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::SQRT_X:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::SQRT_X_DAG:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::SQRT_Y:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::SQRT_Y_DAG:
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::S_DAG:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
 
             case GateType::MX:
-                yield({GateType::H, {}, ts});
-                yield({GateType::M, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::M, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::MY:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::M, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::M, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::M:
-                yield({GateType::M, {}, ts});
+                yield({GateType::M, {}, ts, inst.tag});
                 break;
             case GateType::MRX:
-                yield({GateType::H, {}, ts});
-                yield({GateType::M, {}, ts});
-                yield({GateType::R, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::M, {}, ts, inst.tag});
+                yield({GateType::R, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::MRY:
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::S, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::M, {}, ts});
-                yield({GateType::R, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::M, {}, ts, inst.tag});
+                yield({GateType::R, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::MR:
-                yield({GateType::M, {}, ts});
-                yield({GateType::R, {}, ts});
+                yield({GateType::M, {}, ts, inst.tag});
+                yield({GateType::R, {}, ts, inst.tag});
                 break;
             case GateType::RX:
-                yield({GateType::R, {}, ts});
-                yield({GateType::H, {}, ts});
+                yield({GateType::R, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::RY:
-                yield({GateType::R, {}, ts});
-                yield({GateType::H, {}, ts});
-                yield({GateType::S, {}, ts});
+                yield({GateType::R, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::R:
-                yield({GateType::R, {}, ts});
+                yield({GateType::R, {}, ts, inst.tag});
                 break;
 
             default:
@@ -236,174 +238,174 @@ struct Simplifier {
 
         switch (inst.gate_type) {
             case GateType::CX:
-                yield({GateType::CX, {}, ts});
+                yield({GateType::CX, {}, ts, inst.tag});
                 break;
             case GateType::XCZ:
-                do_xcz(ts);
+                do_xcz(ts, inst.tag);
                 break;
             case GateType::XCX:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs1_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
                 break;
             case GateType::XCY:
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::S, {}, qs2_buf});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
                 break;
             case GateType::YCX:
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
                 break;
             case GateType::YCY:
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::YCZ:
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
-                do_xcz(ts);
-                yield({GateType::S, {}, qs1_buf});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                do_xcz(ts, inst.tag);
+                yield({GateType::S, {}, qs1_buf, inst.tag});
                 break;
             case GateType::CY:
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::S, {}, qs2_buf});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
                 break;
             case GateType::CZ:
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
                 break;
             case GateType::SQRT_XX:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs_buf, inst.tag});
                 break;
             case GateType::SQRT_XX_DAG:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs_buf, inst.tag});
                 break;
             case GateType::SQRT_YY:
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::SQRT_YY_DAG:
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs1_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::H, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs1_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::H, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
                 break;
             case GateType::SQRT_ZZ:
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::SQRT_ZZ_DAG:
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::SWAP:
-                yield({GateType::CX, {}, ts});
-                do_xcz(ts);
-                yield({GateType::CX, {}, ts});
+                yield({GateType::CX, {}, ts, inst.tag});
+                do_xcz(ts, inst.tag);
+                yield({GateType::CX, {}, ts, inst.tag});
                 break;
             case GateType::ISWAP:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                do_xcz(ts);
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                do_xcz(ts, inst.tag);
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::ISWAP_DAG:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                do_xcz(ts);
-                yield({GateType::H, {}, qs2_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                do_xcz(ts, inst.tag);
+                yield({GateType::H, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::CXSWAP:
-                do_xcz(ts);
-                yield({GateType::CX, {}, ts});
+                do_xcz(ts, inst.tag);
+                yield({GateType::CX, {}, ts, inst.tag});
                 break;
             case GateType::SWAPCX:
-                yield({GateType::CX, {}, ts});
-                do_xcz(ts);
+                yield({GateType::CX, {}, ts, inst.tag});
+                do_xcz(ts, inst.tag);
                 break;
             case GateType::CZSWAP:
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                do_xcz(ts);
-                yield({GateType::H, {}, qs2_buf});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                do_xcz(ts, inst.tag);
+                yield({GateType::H, {}, qs2_buf, inst.tag});
                 break;
 
             case GateType::MXX:
-                yield({GateType::CX, {}, ts});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::M, {}, qs1_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::M, {}, qs1_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
                 break;
             case GateType::MYY:
-                yield({GateType::S, {}, qs_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::S, {}, qs2_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::M, {}, qs1_buf});
-                yield({GateType::H, {}, qs1_buf});
-                yield({GateType::CX, {}, ts});
-                yield({GateType::S, {}, qs_buf});
+                yield({GateType::S, {}, qs_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::S, {}, qs2_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::M, {}, qs1_buf, inst.tag});
+                yield({GateType::H, {}, qs1_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::S, {}, qs_buf, inst.tag});
                 break;
             case GateType::MZZ:
-                yield({GateType::CX, {}, ts});
-                yield({GateType::M, {}, qs2_buf});
-                yield({GateType::CX, {}, ts});
+                yield({GateType::CX, {}, ts, inst.tag});
+                yield({GateType::M, {}, qs2_buf, inst.tag});
+                yield({GateType::CX, {}, ts, inst.tag});
                 break;
 
             default:
@@ -477,7 +479,7 @@ Circuit stim::simplified_circuit(const Circuit &circuit) {
     for (auto inst : circuit.operations) {
         if (inst.gate_type == GateType::REPEAT) {
             output.append_repeat_block(
-                inst.repeat_block_rep_count(), simplified_circuit(inst.repeat_block_body(circuit)));
+                inst.repeat_block_rep_count(), simplified_circuit(inst.repeat_block_body(circuit)), inst.tag);
         } else {
             simplifier.simplify_instruction(inst);
         }

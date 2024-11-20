@@ -248,7 +248,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
     if (decomposition != nullptr) {
         std::stringstream undecomposed;
         auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
-        undecomposed << CircuitInstruction{gate.id, {}, decomp_targets};
+        undecomposed << CircuitInstruction{gate.id, {}, decomp_targets, ""};
 
         out << "Decomposition (into H, S, CX, M, R):\n";
         out.change_indent(+4);
@@ -270,7 +270,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
     if (decomp_targets.size() > 2) {
         out << "Stabilizer Generators (for `";
-        out << CircuitInstruction{gate.id, {}, decomp_targets};
+        out << CircuitInstruction{gate.id, {}, decomp_targets, ""};
         out << "`):\n";
     } else {
         out << "Stabilizer Generators:\n";
@@ -290,7 +290,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
 }
 
 void print_bloch_vector(Acc &out, const Gate &gate) {
-    if (!(gate.flags & GATE_IS_UNITARY) || (gate.flags & GATE_TARGETS_PAIRS)) {
+    if (!(gate.flags & GATE_IS_UNITARY) || !(gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
         return;
     }
 
@@ -343,7 +343,7 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
 }
 
 void print_unitary_matrix(Acc &out, const Gate &gate) {
-    if (!(gate.flags & GATE_IS_UNITARY)) {
+    if (!gate.has_known_unitary_matrix()) {
         return;
     }
     auto matrix = gate.unitary();

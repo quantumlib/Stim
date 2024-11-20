@@ -3,6 +3,9 @@
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.test.h"
+#include "stim/search/graphlike/algo.h"
+#include "stim/simulators/error_analyzer.h"
+#include "stim/simulators/error_matcher.h"
 
 using namespace stim;
 
@@ -104,5 +107,42 @@ TEST(export_crumble, all_operations) {
         "CX_rec[-1]_0;"
         "CY_sweep[0]_1;"
         "CZ_2_rec[-1]";
+    ASSERT_EQ(actual, expected);
+}
+
+TEST(export_crumble, graphlike_error) {
+    Circuit circuit(R"CIRCUIT(
+        R 0 1 2 3
+        X_ERROR(0.125) 0 1
+        M 0 1
+        M(0.125) 2 3
+        DETECTOR rec[-1] rec[-2]
+        DETECTOR rec[-2] rec[-3]
+        DETECTOR rec[-3] rec[-4]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )CIRCUIT");
+    DetectorErrorModel dem =
+        ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 1, false, false);
+    DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, false);
+    auto error = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
+
+    auto actual = export_crumble_url(circuit, true, {{0, error}});
+    std::cout << actual << "\n";
+    std::cout << actual << "\n";
+    auto expected =
+        "https://algassert.com/crumble#circuit="
+        "R_0_1_2_3;"
+        "TICK;"
+        "MARKX(0)1;"
+        "MARKX(0)0;"
+        "TICK;"
+        "X_ERROR(0.125)0_1;"
+        "M_0_1;"
+        "TICK;"
+        "MARKX(0)2;"
+        "MARKX(0)3;"
+        "TICK;"
+        "M(0.125)2_3;"
+        "OI(0)rec[-1]";
     ASSERT_EQ(actual, expected);
 }

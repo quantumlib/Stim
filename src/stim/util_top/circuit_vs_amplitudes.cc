@@ -40,40 +40,33 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     }
 
     uint8_t num_qubits = floor_lg2(state_vector.size());
-    double weight = 0;
-    for (const auto &c : state_vector) {
-        weight += std::norm(c);
-    }
-    if (abs(weight - 1) > 0.125) {
-        throw std::invalid_argument(
-            "The given state vector wasn't a unit vector. It had a length of " + std::to_string(weight) + ".");
-    }
-
     VectorSimulator sim(num_qubits);
     sim.state = state_vector;
 
     Circuit recorded;
     auto apply = [&](GateType gate_type, uint32_t target) {
         sim.apply(gate_type, target);
-        recorded.safe_append(
+        recorded.safe_append(CircuitInstruction(
             gate_type,
+            {},
             std::vector<GateTarget>{
                 GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
             },
-            {});
+            ""));
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         sim.apply(gate_type, target, target2);
-        recorded.safe_append(
+        recorded.safe_append(CircuitInstruction(
             gate_type,
+            {},
             std::vector<GateTarget>{
                 GateTarget::qubit(little_endian ? target : (num_qubits - target - 1)),
                 GateTarget::qubit(little_endian ? target2 : (num_qubits - target2 - 1)),
             },
-            {});
+            ""));
     };
 
-    // Move biggest amplitude to start of state vector..
+    // Move biggest amplitude to start of state vector.
     size_t pivot = biggest_index(state_vector);
     for (size_t q = 0; q < num_qubits; q++) {
         if ((pivot >> q) & 1) {

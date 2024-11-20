@@ -13,7 +13,7 @@ Circuit stim::circuit_inverse_unitary(const Circuit &unitary_circuit) {
         auto s = op.targets.ptr_start;
         const auto &inv_gate = gate_data.inverse();
         for (size_t k = op.targets.size(); k > 0; k -= step) {
-            inverted.safe_append(inv_gate.id, {s + k - step, s + k}, op.args);
+            inverted.safe_append(CircuitInstruction(inv_gate.id, op.args, {s + k - step, s + k}, op.tag));
         }
     });
     return inverted;

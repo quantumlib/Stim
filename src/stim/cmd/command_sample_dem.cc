@@ -128,12 +128,13 @@ SubCommandHelp stim::command_sample_dem_help() {
             1
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--replay_err_in",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--replay_err_in",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a file to read error data to replay from.
 
             When replaying error information, errors are no longer sampled
@@ -144,14 +145,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             The input is in a format specified by `--err_in_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--replay_err_in_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--replay_err_in_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when reading error data to replay.
 
             Irrelevant unless `--replay_err_in` is specified.
@@ -169,14 +171,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--err_out",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--err_out",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a file to write a record of which errors occurred.
 
             For example, the errors that occurred can be analyzed, modified, and
@@ -185,14 +188,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             The output is in a format specified by `--err_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--err_out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--err_out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing recorded error data.
 
             Irrelevant unless `--err_out` is specified.
@@ -210,14 +214,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out",
-        "filepath",
-        "",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out",
+            "filepath",
+            "",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the file to write observable flip data to.
 
             When sampling detection event data, the goal is typically to predict
@@ -231,14 +236,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             The output is in a format specified by `--obs_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--obs_out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--obs_out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing observable flip data.
 
             Irrelevant unless `--obs_out` is specified.
@@ -256,14 +262,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing output data.
 
             The available formats are:
@@ -279,14 +286,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--seed",
-        "int",
-        "system_entropy",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--seed",
+            "int",
+            "system_entropy",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Makes simulation results PARTIALLY deterministic.
 
             The seed integer must be a non-negative 64 bit signed integer.
@@ -321,27 +329,29 @@ SubCommandHelp stim::command_sample_dem_help() {
             `stim sample` and `stim detect` will not result in detection events
             corresponding to the measurement results.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--shots",
-        "int",
-        "1",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--shots",
+            "int",
+            "1",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of samples to take from the detector error model.
 
             Defaults to 1.
             Must be an integer between 0 and a quintillion (10^18).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the file to read the detector error model to sample from.
 
             By default, the detector error model is read from stdin. When
@@ -351,14 +361,15 @@ SubCommandHelp stim::command_sample_dem_help() {
             The input should be a stim detector error model. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the sampled data to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -367,7 +378,7 @@ SubCommandHelp stim::command_sample_dem_help() {
             The output is in a format specified by `--out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

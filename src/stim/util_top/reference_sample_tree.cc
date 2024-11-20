@@ -25,11 +25,12 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
     // Flatten children.
     std::vector<ReferenceSampleTree> flattened;
     if (!prefix_bits.empty()) {
-        flattened.push_back(ReferenceSampleTree{
-            .prefix_bits = prefix_bits,
-            .suffix_children = {},
-            .repetitions = 1,
-        });
+        flattened.push_back(
+            ReferenceSampleTree{
+                .prefix_bits = prefix_bits,
+                .suffix_children = {},
+                .repetitions = 1,
+            });
     }
     for (const auto &child : suffix_children) {
         child.flatten_and_simplify_into(flattened);
@@ -77,11 +78,12 @@ void ReferenceSampleTree::flatten_and_simplify_into(std::vector<ReferenceSampleT
         result.suffix_children = std::move(fused);
         out.push_back(std::move(result));
     } else {
-        out.push_back(ReferenceSampleTree{
-            .prefix_bits = {},
-            .suffix_children = std::move(fused),
-            .repetitions = repetitions,
-        });
+        out.push_back(
+            ReferenceSampleTree{
+                .prefix_bits = {},
+                .suffix_children = std::move(fused),
+                .repetitions = repetitions,
+            });
     }
 }
 
@@ -167,8 +169,9 @@ void ReferenceSampleTree::decompress_into(std::vector<bool> &output) const {
 ReferenceSampleTree ReferenceSampleTree::from_circuit_reference_sample(const Circuit &circuit) {
     auto stats = circuit.compute_stats();
     std::mt19937_64 irrelevant_rng{0};
-    CompressedReferenceSampleHelper<MAX_BITWORD_WIDTH> helper(TableauSimulator<MAX_BITWORD_WIDTH>(
-        std::move(irrelevant_rng), stats.num_qubits, +1, MeasureRecord(stats.max_lookback)));
+    CompressedReferenceSampleHelper<MAX_BITWORD_WIDTH> helper(
+        TableauSimulator<MAX_BITWORD_WIDTH>(
+            std::move(irrelevant_rng), stats.num_qubits, +1, MeasureRecord(stats.max_lookback)));
     return helper.do_loop_with_tortoise_hare_folding(circuit, 1).simplified();
 }
 

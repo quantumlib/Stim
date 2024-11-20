@@ -97,7 +97,7 @@ Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign)
         }
         assert(!targets.empty());
         targets.pop_back();
-        result.safe_append(GateType::MPP, targets, {});
+        result.safe_append(CircuitInstruction(GateType::MPP, {}, targets, ""));
         targets.clear();
     }
 
@@ -120,13 +120,13 @@ Circuit tableau_to_circuit_mpp_method(const Tableau<W> &tableau, bool skip_sign)
             }
         }
         if (!targets_x.empty()) {
-            result.safe_append(GateType::CX, targets_x, {});
+            result.safe_append(CircuitInstruction(GateType::CX, {}, targets_x, ""));
         }
         if (!targets_y.empty()) {
-            result.safe_append(GateType::CY, targets_y, {});
+            result.safe_append(CircuitInstruction(GateType::CY, {}, targets_y, ""));
         }
         if (!targets_z.empty()) {
-            result.safe_append(GateType::CZ, targets_z, {});
+            result.safe_append(CircuitInstruction(GateType::CZ, {}, targets_z, ""));
         }
     }
 
@@ -139,12 +139,13 @@ Circuit tableau_to_circuit_elimination_method(const Tableau<W> &tableau) {
     Circuit recorded_circuit;
     auto apply = [&](GateType gate_type, uint32_t target) {
         remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target});
-        recorded_circuit.safe_append(gate_type, std::vector<GateTarget>{GateTarget::qubit(target)}, {});
+        recorded_circuit.safe_append(
+            CircuitInstruction(gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target)}, ""));
     };
     auto apply2 = [&](GateType gate_type, uint32_t target, uint32_t target2) {
         remaining.inplace_scatter_append(GATE_DATA[gate_type].tableau<W>(), {target, target2});
-        recorded_circuit.safe_append(
-            gate_type, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, {});
+        recorded_circuit.safe_append(CircuitInstruction(
+            gate_type, {}, std::vector<GateTarget>{GateTarget::qubit(target), GateTarget::qubit(target2)}, ""));
     };
     auto x_out = [&](size_t inp, size_t out) {
         const auto &p = remaining.xs[inp];

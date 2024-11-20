@@ -20,17 +20,19 @@ using namespace stim_draw_internal;
 
 TEST(ascii_diagram, basic) {
     AsciiDiagram diagram;
-    diagram.add_entry(AsciiDiagramEntry{
-        AsciiDiagramPos{0, 0, 0.5, 0.5},
-        {"ABC"},
-    });
+    diagram.add_entry(
+        AsciiDiagramEntry{
+            AsciiDiagramPos{0, 0, 0.5, 0.5},
+            {"ABC"},
+        });
     ASSERT_EQ("\n" + diagram.str() + "\n", R"DIAGRAM(
 ABC
 )DIAGRAM");
-    diagram.add_entry(AsciiDiagramEntry{
-        AsciiDiagramPos{2, 0, 0.5, 0.5},
-        {"DE"},
-    });
+    diagram.add_entry(
+        AsciiDiagramEntry{
+            AsciiDiagramPos{2, 0, 0.5, 0.5},
+            {"DE"},
+        });
     ASSERT_EQ("\n" + diagram.str() + "\n", R"DIAGRAM(
 ABC DE
 )DIAGRAM");

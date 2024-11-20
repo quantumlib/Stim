@@ -48,7 +48,8 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
 
         // Undo the gate, ignoring measurement noise.
         rev.undo_gate(segment);
-        inverted_circuit.safe_append_reversed_targets(g.best_candidate_inverse_id, segment.targets, {}, false);
+        inverted_circuit.safe_append_reversed_targets(
+            CircuitInstruction(g.best_candidate_inverse_id, {}, segment.targets, inst.tag), false);
 
         // Measurement noise becomes noise-after-reset in the reversed circuit.
         if (!inst.args.empty()) {
@@ -62,7 +63,8 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
             } else {
                 throw std::invalid_argument("Don't know how to invert " + inst.str());
             }
-            inverted_circuit.safe_append_reversed_targets(ejected_noise, segment.targets, segment.args, false);
+            inverted_circuit.safe_append_reversed_targets(
+                CircuitInstruction(ejected_noise, segment.args, segment.targets, inst.tag), false);
         }
     });
 }
@@ -87,7 +89,7 @@ void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
         if (!dont_turn_measurements_into_resets && rev.xs[q].empty() && rev.zs[q].empty() &&
             rev.rec_bits.contains(rev.num_measurements_in_past - 1) && inst.args.empty()) {
             // Noiseless measurements with past-dependence and no future-dependence become resets.
-            inverted_circuit.safe_append(reset, &t, inst.args);
+            inverted_circuit.safe_append(CircuitInstruction(reset, inst.args, &t, inst.tag));
         } else {
             // Measurements that aren't turned into resets need to be re-indexed.
             auto f = rev.rec_bits.find(rev.num_measurements_in_past - 1);
@@ -97,10 +99,10 @@ void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
                 }
             }
             num_new_measurements++;
-            inverted_circuit.safe_append(g.best_candidate_inverse_id, &t, inst.args);
+            inverted_circuit.safe_append(CircuitInstruction(g.best_candidate_inverse_id, inst.args, &t, inst.tag));
         }
 
-        rev.undo_gate(CircuitInstruction{g.id, {}, &t});
+        rev.undo_gate(CircuitInstruction{g.id, {}, &t, inst.tag});
     }
 }
 
@@ -119,16 +121,28 @@ void CircuitFlowReverser::do_measuring_instruction(const CircuitInstruction &ins
         num_new_measurements++;
     }
     inverted_circuit.safe_append_reversed_targets(
-        g.best_candidate_inverse_id, inst.targets, inst.args, g.flags & GATE_TARGETS_PAIRS);
+        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag),
+        g.flags & GATE_TARGETS_PAIRS);
 
     rev.undo_gate(inst);
+}
+
+void CircuitFlowReverser::do_feedback_capable_instruction(const CircuitInstruction &inst) {
+    for (GateTarget t : inst.targets) {
+        if (t.is_measurement_record_target()) {
+            throw std::invalid_argument(
+                "Time-reversing feedback isn't supported yet. Found feedback in: " + inst.str());
+        }
+    }
+    do_simple_instruction(inst);
 }
 
 void CircuitFlowReverser::do_simple_instruction(const CircuitInstruction &inst) {
     Gate g = GATE_DATA[inst.gate_type];
     rev.undo_gate(inst);
     inverted_circuit.safe_append_reversed_targets(
-        g.best_candidate_inverse_id, inst.targets, inst.args, g.flags & GATE_TARGETS_PAIRS);
+        CircuitInstruction(g.best_candidate_inverse_id, inst.args, inst.targets, inst.tag),
+        g.flags & GATE_TARGETS_PAIRS);
 }
 
 void CircuitFlowReverser::flush_detectors_and_observables() {
@@ -156,12 +170,13 @@ void CircuitFlowReverser::flush_detectors_and_observables() {
         for (auto e : d.second) {
             buf.push_back(GateTarget::rec((int32_t)e - (int32_t)num_new_measurements));
         }
-        inverted_circuit.safe_append(out_gate, buf, out_args);
+        inverted_circuit.safe_append(CircuitInstruction(out_gate, out_args, buf, d2tag[d.first]));
         terms_to_erase.push_back(d.first);
     }
     for (auto e : terms_to_erase) {
         d2coords.erase(e);
         d2ms.erase(e);
+        d2tag.erase(e);
     }
 }
 
@@ -169,6 +184,7 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
     switch (inst.gate_type) {
         case GateType::DETECTOR: {
             rev.undo_gate(inst);
+            d2tag[DemTarget::relative_detector_id(rev.num_detectors_in_past)] = inst.tag;
             auto &v = d2coords[DemTarget::relative_detector_id(rev.num_detectors_in_past)];
             for (size_t k = 0; k < inst.args.size(); k++) {
                 v.push_back(inst.args[k] + (k < coord_shifts.size() ? coord_shifts[k] : 0));
@@ -177,6 +193,7 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         }
         case GateType::OBSERVABLE_INCLUDE:
             rev.undo_gate(inst);
+            d2tag[DemTarget::observable_id((uint64_t)inst.args[0])] = inst.tag;
             break;
         case GateType::TICK:
         case GateType::I:
@@ -207,13 +224,8 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         case GateType::ISWAP_DAG:
         case GateType::XCX:
         case GateType::XCY:
-        case GateType::XCZ:
         case GateType::YCX:
         case GateType::YCY:
-        case GateType::YCZ:
-        case GateType::CX:
-        case GateType::CY:
-        case GateType::CZ:
         case GateType::H:
         case GateType::H_XY:
         case GateType::H_YZ:
@@ -229,6 +241,13 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         case GateType::HERALDED_PAULI_CHANNEL_1:
             do_simple_instruction(inst);
             return;
+        case GateType::XCZ:
+        case GateType::YCZ:
+        case GateType::CX:
+        case GateType::CY:
+        case GateType::CZ:
+            do_feedback_capable_instruction(inst);
+            break;
         case GateType::MRX:
         case GateType::MRY:
         case GateType::MR:
@@ -260,11 +279,13 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
                 qubit_coords_circuit.arg_buf.append_tail(
                     inst.args[k] + (k < coord_shifts.size() ? coord_shifts[k] : 0));
             }
-            qubit_coords_circuit.operations.push_back({
-                inst.gate_type,
-                qubit_coords_circuit.arg_buf.commit_tail(),
-                qubit_coords_circuit.target_buf.take_copy(inst.targets),
-            });
+            qubit_coords_circuit.operations.push_back(
+                CircuitInstruction{
+                    inst.gate_type,
+                    qubit_coords_circuit.arg_buf.commit_tail(),
+                    qubit_coords_circuit.target_buf.take_copy(inst.targets),
+                    inst.tag,
+                });
             break;
         case GateType::SHIFT_COORDS:
             vec_pad_add_mul(coord_shifts, inst.args);

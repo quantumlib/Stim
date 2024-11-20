@@ -1883,10 +1883,19 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::arg("pauli_string"),
         clean_doc_string(R"DOC(
-             Returns the conjugation of a PauliString by the Tableau's Clifford operation.
+             Returns the equivalent PauliString after the Tableau's Clifford operation.
 
-             The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
-             before C, then P2 = C**-1 * P * C is an equivalent Pauli product after C.
+             If P is a Pauli product before a Clifford operation C, then this method returns
+             Q = C * P * C**-1 (the conjugation of P by C). Q is the equivalent Pauli product
+             after C. This works because:
+            
+                 C*P
+                 = C*P * I
+                 = C*P * (C**-1 * C)
+                 = (C*P*C**-1) * C
+                 = Q*C
+
+            (Keep in mind that A*B means first B is applied, then A is applied.)
 
              Args:
                  pauli_string: The pauli string to conjugate.
@@ -1960,55 +1969,56 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
-            pybind11::dict d;
-            std::vector<FlexPauliString> xs;
-            std::vector<FlexPauliString> zs;
-            for (size_t q = 0; q < self.num_qubits; q++) {
-                xs.push_back(FlexPauliString(self.xs[q]));
-            }
-            for (size_t q = 0; q < self.num_qubits; q++) {
-                zs.push_back(FlexPauliString(self.zs[q]));
-            }
-            d["xs"] = xs;
-            d["zs"] = zs;
-            return d;
-        },
-        [](const pybind11::dict &d) {
-            std::vector<FlexPauliString> xs;
-            std::vector<FlexPauliString> zs;
-            for (const auto &e : d["xs"]) {
-                xs.push_back(pybind11::cast<FlexPauliString>(e));
-            }
-            for (const auto &e : d["zs"]) {
-                zs.push_back(pybind11::cast<FlexPauliString>(e));
-            }
+    c.def(
+        pybind11::pickle(
+            [](const Tableau<MAX_BITWORD_WIDTH> &self) {
+                pybind11::dict d;
+                std::vector<FlexPauliString> xs;
+                std::vector<FlexPauliString> zs;
+                for (size_t q = 0; q < self.num_qubits; q++) {
+                    xs.push_back(FlexPauliString(self.xs[q]));
+                }
+                for (size_t q = 0; q < self.num_qubits; q++) {
+                    zs.push_back(FlexPauliString(self.zs[q]));
+                }
+                d["xs"] = xs;
+                d["zs"] = zs;
+                return d;
+            },
+            [](const pybind11::dict &d) {
+                std::vector<FlexPauliString> xs;
+                std::vector<FlexPauliString> zs;
+                for (const auto &e : d["xs"]) {
+                    xs.push_back(pybind11::cast<FlexPauliString>(e));
+                }
+                for (const auto &e : d["zs"]) {
+                    zs.push_back(pybind11::cast<FlexPauliString>(e));
+                }
 
-            size_t n = xs.size();
-            bool correct_shape = zs.size() == n;
-            for (const auto &e : xs) {
-                correct_shape &= !e.imag;
-                correct_shape &= e.value.num_qubits == n;
-            }
-            for (const auto &e : zs) {
-                correct_shape &= !e.imag;
-                correct_shape &= e.value.num_qubits == n;
-            }
-            if (!correct_shape) {
-                throw std::invalid_argument("Invalid pickle.");
-            }
+                size_t n = xs.size();
+                bool correct_shape = zs.size() == n;
+                for (const auto &e : xs) {
+                    correct_shape &= !e.imag;
+                    correct_shape &= e.value.num_qubits == n;
+                }
+                for (const auto &e : zs) {
+                    correct_shape &= !e.imag;
+                    correct_shape &= e.value.num_qubits == n;
+                }
+                if (!correct_shape) {
+                    throw std::invalid_argument("Invalid pickle.");
+                }
 
-            Tableau<MAX_BITWORD_WIDTH> result(n);
-            for (size_t q = 0; q < n; q++) {
-                result.xs[q] = xs[q].value;
-                result.zs[q] = zs[q].value;
-            }
-            if (!result.satisfies_invariants()) {
-                throw std::invalid_argument("Pickled tableau was invalid. It doesn't preserve commutativity.");
-            }
-            return result;
-        }));
+                Tableau<MAX_BITWORD_WIDTH> result(n);
+                for (size_t q = 0; q < n; q++) {
+                    result.xs[q] = xs[q].value;
+                    result.zs[q] = zs[q].value;
+                }
+                if (!result.satisfies_invariants()) {
+                    throw std::invalid_argument("Pickled tableau was invalid. It doesn't preserve commutativity.");
+                }
+                return result;
+            }));
 
     c.def_static(
         "from_stabilizers",
@@ -2138,7 +2148,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             Args:
                 state_vector: A list of complex amplitudes specifying a superposition. The
                     vector must correspond to a state that is reachable using Clifford
-                    operations, and must be normalized (i.e. it must be a unit vector).
+                    operations, and can be unnormalized.
                 endian:
                     "little": state vector is in little endian order, where higher index
                         qubits correspond to larger changes in the state index.

@@ -31,7 +31,7 @@ void check_pauli_string_do_instruction_agrees_with_tableau_sim(Gate gate, Tablea
         GateTarget::qubit(8),
         GateTarget::qubit(5),
     };
-    CircuitInstruction inst{gate.id, {}, targets};
+    CircuitInstruction inst{gate.id, {}, targets, ""};
 
     std::vector<PauliString<W>> before;
     for (size_t k = 0; k < 16; k++) {
@@ -71,7 +71,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, do_instruction_agrees_with_tableau_sim, {
     sim.inv_state = Tableau<W>::random(sim.inv_state.num_qubits, sim.rng);
 
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             check_pauli_string_do_instruction_agrees_with_tableau_sim<W>(gate, sim);
         }
     }

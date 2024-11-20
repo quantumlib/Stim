@@ -26,7 +26,7 @@
 namespace stim {
 
 // Change this number from time to time to ensure people don't rely on seeds across versions.
-constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF123BULL;
+constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF124BULL;
 
 /// Yields the indices of hits sampled from a Bernoulli distribution.
 /// Gets more efficient as the hit probability drops.
@@ -70,9 +70,19 @@ struct RareErrorIterator {
 
 std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng);
 
+/// Create a fresh random number generator seeded by entropy from the operating system.
 std::mt19937_64 externally_seeded_rng();
+
+/// Create a random number generator either seeded by a --seed argument, or else by entropy from the operating system.
 std::mt19937_64 optionally_seeded_rng(int argc, const char **argv);
 
+/// Overwrite the given span with random data where bits are set with the given probability.
+///
+/// Args:
+///     probability: The chance that each bit will be on.
+///     start: Inclusive start of the memory span to overwrite.
+///     end: Exclusive end of the memory span to overwrite.
+///     rng: The random number generator to use to generate entropy.
 void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng);
 
 }  // namespace stim

@@ -94,7 +94,7 @@ bool is_decomposition_correct(const Gate &gate) {
     }
 
     Circuit original;
-    original.safe_append(gate.id, gate_decomposition_help_targets_for_gate_type(gate.id), {});
+    original.safe_append(CircuitInstruction(gate.id, {}, gate_decomposition_help_targets_for_gate_type(gate.id), ""));
     uint32_t n = original.count_qubits();
 
     Circuit epr;
@@ -144,7 +144,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, decompositions_are_correct, {
 
 TEST_EACH_WORD_SIZE_W(gate_data, unitary_inverses_are_correct, {
     for (const auto &g : GATE_DATA.items) {
-        if (g.flags & GATE_IS_UNITARY) {
+        if (g.has_known_unitary_matrix()) {
             auto g_t_inv = g.tableau<W>().inverse(false);
             auto g_inv_t = GATE_DATA[g.best_candidate_inverse_id].tableau<W>();
             EXPECT_EQ(g_t_inv, g_inv_t) << g.name;
@@ -161,7 +161,7 @@ TEST_EACH_WORD_SIZE_W(gate_data, stabilizer_flows_are_correct, {
         std::vector<GateTarget> targets = gate_decomposition_help_targets_for_gate_type(g.id);
 
         Circuit c;
-        c.safe_append(g.id, targets, {});
+        c.safe_append(CircuitInstruction(g.id, {}, targets, ""));
         auto rng = INDEPENDENT_TEST_RNG();
         auto r = sample_if_circuit_has_stabilizer_flows<W>(256, rng, c, flows);
         for (uint32_t fk = 0; fk < (uint32_t)flows.size(); fk++) {

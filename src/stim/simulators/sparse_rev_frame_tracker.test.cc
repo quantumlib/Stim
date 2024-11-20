@@ -144,7 +144,7 @@ static std::vector<GateTarget> qubit_targets(const std::vector<uint32_t> &target
 TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_tableau, {
     auto rng = INDEPENDENT_TEST_RNG();
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             size_t n = (gate.flags & GATE_TARGETS_PAIRS) ? 2 : 1;
             SparseUnsignedRevFrameTracker tracker_gate(n + 3, 0, 0);
             for (size_t q = 0; q < n; q++) {
@@ -166,7 +166,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, fuzz_all_unitary_gates_vs_t
             for (size_t k = 0; k < n; k++) {
                 targets.push_back(n - k + 1);
             }
-            tracker_gate.undo_gate({gate.id, {}, qubit_targets(targets)});
+            tracker_gate.undo_gate(CircuitInstruction{gate.id, {}, qubit_targets(targets), ""});
             tracker_tableau.undo_tableau<W>(gate.tableau<W>(), targets);
             EXPECT_EQ(tracker_gate, tracker_tableau) << gate.name;
         }
@@ -177,19 +177,19 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, RX, {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
 
     actual = _tracker_from_pauli_string<W>("III");
-    actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2})});
+    actual.undo_RX(CircuitInstruction{GateType::RX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("XXX");
-    actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2})});
+    actual.undo_RX(CircuitInstruction{GateType::RX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IXI"));
 
     actual = _tracker_from_pauli_string<W>("XIZ");
-    ASSERT_THROW({ actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIZ"));
 
     actual = _tracker_from_pauli_string<W>("YIX");
-    ASSERT_THROW({ actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RX({GateType::RX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIX"));
 })
 
@@ -197,19 +197,19 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, RY, {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
 
     actual = _tracker_from_pauli_string<W>("III");
-    actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2})});
+    actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("YYY");
-    actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2})});
+    actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IYI"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("XIY");
-    ASSERT_THROW({ actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RY({GateType::RY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIY"));
 })
 
@@ -217,19 +217,19 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, RZ, {
     SparseUnsignedRevFrameTracker actual(0, 0, 0);
 
     actual = _tracker_from_pauli_string<W>("III");
-    actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2})});
+    actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("ZZZ");
-    actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2})});
+    actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IZI"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("ZIX");
-    ASSERT_THROW({ actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_RZ({GateType::R, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZIX"));
 })
 
@@ -238,20 +238,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MX, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})});
+    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("XXX");
     actual.num_measurements_in_past = 2;
-    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})});
+    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XXX"));
 
     actual = _tracker_from_pauli_string<W>("XIZ");
-    ASSERT_THROW({ actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIZ"));
 
     actual = _tracker_from_pauli_string<W>("YIX");
-    ASSERT_THROW({ actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIX"));
 })
 
@@ -260,20 +260,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MY, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})});
+    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("YYY");
     actual.num_measurements_in_past = 2;
-    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})});
+    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YYY"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("XIY");
-    ASSERT_THROW({ actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIY"));
 })
 
@@ -282,20 +282,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MZ, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})});
+    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("ZZZ");
     actual.num_measurements_in_past = 2;
-    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})});
+    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZZZ"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("ZIX");
-    ASSERT_THROW({ actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZIX"));
 })
 
@@ -304,20 +304,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MRX, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})});
+    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("XXX");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})});
+    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IXI"));
 
     actual = _tracker_from_pauli_string<W>("XIZ");
-    ASSERT_THROW({ actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIZ"));
 
     actual = _tracker_from_pauli_string<W>("YIX");
-    ASSERT_THROW({ actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIX"));
 })
 
@@ -326,20 +326,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MRY, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})});
+    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("YYY");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})});
+    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IYI"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("XIY");
-    ASSERT_THROW({ actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XIY"));
 })
 
@@ -348,20 +348,20 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, MRZ, {
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})});
+    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("ZZZ");
     actual.num_measurements_in_past = 2;
-    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})});
+    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("IZI"));
 
     actual = _tracker_from_pauli_string<W>("YIZ");
-    ASSERT_THROW({ actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YIZ"));
 
     actual = _tracker_from_pauli_string<W>("ZIX");
-    ASSERT_THROW({ actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""}); }, std::invalid_argument);
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZIX"));
 })
 
@@ -371,67 +371,67 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_from_measurement, 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})});
+    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XII"));
     actual = _tracker_from_pauli_string<W>("XII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2})});
+    actual.undo_MX({GateType::MX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})});
+    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YII"));
     actual = _tracker_from_pauli_string<W>("YII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2})});
+    actual.undo_MY({GateType::MY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})});
+    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZII"));
     actual = _tracker_from_pauli_string<W>("ZII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2})});
+    actual.undo_MZ({GateType::M, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("III"));
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})});
+    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XII"));
     actual = _tracker_from_pauli_string<W>("XII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2})});
+    actual.undo_MRX({GateType::MRX, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("XII"));
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})});
+    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YII"));
     actual = _tracker_from_pauli_string<W>("YII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2})});
+    actual.undo_MRY({GateType::MRY, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("YII"));
 
     actual = _tracker_from_pauli_string<W>("III");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})});
+    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZII"));
     actual = _tracker_from_pauli_string<W>("ZII");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[0].xor_item(DemTarget::observable_id(0));
-    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2})});
+    actual.undo_MRZ({GateType::MR, {}, qubit_targets({0, 2}), ""});
     ASSERT_EQ(actual, _tracker_from_pauli_string<W>("ZII"));
 })
 
@@ -442,14 +442,14 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("XII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCX({GateType::CX, {}, targets});
+    actual.undo_ZCX({GateType::CX, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("XII");
     expected.num_measurements_in_past = 12;
     ASSERT_EQ(actual, expected);
 
     actual = _tracker_from_pauli_string<W>("YII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCX({GateType::CX, {}, targets});
+    actual.undo_ZCX({GateType::CX, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("YII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -457,7 +457,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("ZII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCX({GateType::CX, {}, targets});
+    actual.undo_ZCX({GateType::CX, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("ZII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -465,7 +465,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("XII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCY({GateType::CY, {}, targets});
+    actual.undo_ZCY({GateType::CY, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("XII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -473,14 +473,14 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("YII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCY({GateType::CY, {}, targets});
+    actual.undo_ZCY({GateType::CY, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("YII");
     expected.num_measurements_in_past = 12;
     ASSERT_EQ(actual, expected);
 
     actual = _tracker_from_pauli_string<W>("ZII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCY({GateType::CY, {}, targets});
+    actual.undo_ZCY({GateType::CY, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("ZII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -488,7 +488,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("XII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCZ({GateType::CZ, {}, targets});
+    actual.undo_ZCZ({GateType::CZ, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("XII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -496,7 +496,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("YII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCZ({GateType::CZ, {}, targets});
+    actual.undo_ZCZ({GateType::CZ, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("YII");
     expected.num_measurements_in_past = 12;
     expected.rec_bits[7].xor_item(DemTarget::observable_id(0));
@@ -504,7 +504,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, feedback_into_measurement, 
 
     actual = _tracker_from_pauli_string<W>("ZII");
     actual.num_measurements_in_past = 12;
-    actual.undo_ZCZ({GateType::CZ, {}, targets});
+    actual.undo_ZCZ({GateType::CZ, {}, targets, ""});
     expected = _tracker_from_pauli_string<W>("ZII");
     expected.num_measurements_in_past = 12;
     ASSERT_EQ(actual, expected);
@@ -594,7 +594,7 @@ TEST_EACH_WORD_SIZE_W(SparseUnsignedRevFrameTracker, mpad, {
     actual = _tracker_from_pauli_string<W>("IIZ");
     actual.num_measurements_in_past = 2;
     actual.rec_bits[1].xor_item(DemTarget::relative_detector_id(5));
-    actual.undo_MPAD({GateType::MRY, {}, qubit_targets({0})});
+    actual.undo_MPAD({GateType::MRY, {}, qubit_targets({0}), ""});
 
     expected = _tracker_from_pauli_string<W>("IIZ");
     expected.num_measurements_in_past = 1;

@@ -101,10 +101,11 @@ void stim::decompose_mpp_operation(
             return;
         }
         {
-            ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, h_xz}, do_instruction_callback);
-            ConjugateBySelfInverse c2(CircuitInstruction{GateType::H_YZ, {}, h_yz}, do_instruction_callback);
-            ConjugateBySelfInverse c3(CircuitInstruction{GateType::CX, {}, cnot}, do_instruction_callback);
-            do_instruction_callback(CircuitInstruction{GateType::M, mpp_op.args, meas});
+            ConjugateBySelfInverse c1(CircuitInstruction(GateType::H, {}, h_xz, mpp_op.tag), do_instruction_callback);
+            ConjugateBySelfInverse c2(
+                CircuitInstruction(GateType::H_YZ, {}, h_yz, mpp_op.tag), do_instruction_callback);
+            ConjugateBySelfInverse c3(CircuitInstruction(GateType::CX, {}, cnot, mpp_op.tag), do_instruction_callback);
+            do_instruction_callback(CircuitInstruction(GateType::M, mpp_op.args, meas, mpp_op.tag));
         }
         h_xz.clear();
         h_yz.clear();
@@ -119,7 +120,7 @@ void stim::decompose_mpp_operation(
         if (current.ref().has_no_pauli_terms()) {
             flush();
             GateTarget t = GateTarget::qubit((uint32_t)current.sign);
-            do_instruction_callback(CircuitInstruction{GateType::MPAD, mpp_op.args, &t});
+            do_instruction_callback(CircuitInstruction{GateType::MPAD, mpp_op.args, &t, mpp_op.tag});
             continue;
         }
 
@@ -166,7 +167,8 @@ static void decompose_spp_or_spp_dag_operation_helper(
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback,
     std::vector<GateTarget> *h_xz_buf,
     std::vector<GateTarget> *h_yz_buf,
-    std::vector<GateTarget> *cnot_buf) {
+    std::vector<GateTarget> *cnot_buf,
+    std::string_view tag) {
     h_xz_buf->clear();
     h_yz_buf->clear();
     cnot_buf->clear();
@@ -207,10 +209,10 @@ static void decompose_spp_or_spp_dag_operation_helper(
     bool sign = invert_sign ^ observable.sign;
     GateType g = sign ? GateType::S_DAG : GateType::S;
     {
-        ConjugateBySelfInverse c1(CircuitInstruction{GateType::H, {}, *h_xz_buf}, do_instruction_callback);
-        ConjugateBySelfInverse c2(CircuitInstruction{GateType::H_YZ, {}, *h_yz_buf}, do_instruction_callback);
-        ConjugateBySelfInverse c3(CircuitInstruction{GateType::CX, {}, *cnot_buf}, do_instruction_callback);
-        do_instruction_callback(CircuitInstruction{g, {}, &t});
+        ConjugateBySelfInverse c1(CircuitInstruction(GateType::H, {}, *h_xz_buf, tag), do_instruction_callback);
+        ConjugateBySelfInverse c2(CircuitInstruction(GateType::H_YZ, {}, *h_yz_buf, tag), do_instruction_callback);
+        ConjugateBySelfInverse c3(CircuitInstruction(GateType::CX, {}, *cnot_buf, tag), do_instruction_callback);
+        do_instruction_callback(CircuitInstruction(g, {}, &t, tag));
     }
 }
 
@@ -236,7 +238,7 @@ void stim::decompose_spp_or_spp_dag_operation(
     size_t start = 0;
     while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
         decompose_spp_or_spp_dag_operation_helper(
-            obs, bits, invert_sign, do_instruction_callback, &h_xz_buf, &h_yz_buf, &cnot_buf);
+            obs, bits, invert_sign, do_instruction_callback, &h_xz_buf, &h_yz_buf, &cnot_buf, spp_op.tag);
     }
 }
 
@@ -246,11 +248,13 @@ void stim::decompose_pair_instruction_into_disjoint_segments(
     size_t num_flushed = 0;
     size_t cur_index = 0;
     auto flush = [&]() {
-        callback(CircuitInstruction{
-            inst.gate_type,
-            inst.args,
-            inst.targets.sub(num_flushed, cur_index),
-        });
+        callback(
+            CircuitInstruction{
+                inst.gate_type,
+                inst.args,
+                inst.targets.sub(num_flushed, cur_index),
+                inst.tag,
+            });
         used_as_control.clear();
         num_flushed = cur_index;
     };
@@ -277,11 +281,7 @@ void stim::for_each_disjoint_target_segment_in_instruction_reversed(
     size_t cur_end = inst.targets.size();
     size_t cur_start = inst.targets.size();
     auto flush = [&]() {
-        callback(CircuitInstruction{
-            inst.gate_type,
-            inst.args,
-            inst.targets.sub(cur_start, cur_end),
-        });
+        callback(CircuitInstruction(inst.gate_type, inst.args, inst.targets.sub(cur_start, cur_end), inst.tag));
         workspace.clear();
         cur_end = cur_start;
     };
@@ -309,7 +309,7 @@ void stim::for_each_combined_targets_group(
     size_t next_start = 1;
     while (true) {
         if (next_start >= inst.targets.size() || !inst.targets[next_start].is_combiner()) {
-            callback(CircuitInstruction{inst.gate_type, inst.args, inst.targets.sub(start, next_start)});
+            callback(CircuitInstruction(inst.gate_type, inst.args, inst.targets.sub(start, next_start), inst.tag));
             start = next_start;
             next_start = start + 1;
             if (next_start > inst.targets.size()) {
