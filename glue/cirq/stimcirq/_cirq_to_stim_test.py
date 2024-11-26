@@ -34,16 +34,16 @@ def solve_tableau(gate: cirq.Gate) -> Dict[cirq.PauliString, cirq.PauliString]:
         out: cirq.PauliString = cirq.PauliString({q: "IXZY"[s[str(q)][0]] for q in qs})
 
         # Use phase kickback to determine the sign of the output stabilizer.
-        sign = cirq.NamedQubit('a')
+        sign = cirq.NamedQubit("a")
         c = cirq.Circuit(
             cirq.H(sign),
             inp.controlled_by(sign),
             gate(*qs),
             out.controlled_by(sign),
             cirq.H(sign),
-            cirq.measure(sign, key='sign'),
+            cirq.measure(sign, key="sign"),
         )
-        if cirq.Simulator().sample(c)['sign'][0]:
+        if cirq.Simulator().sample(c)["sign"][0]:
             out *= -1
 
         result[inp] = out
@@ -54,7 +54,7 @@ def test_solve_tableau():
     a, b = cirq.LineQubit.range(2)
     assert solve_tableau(cirq.I) == {cirq.X(a): cirq.X(a), cirq.Z(a): cirq.Z(a)}
     assert solve_tableau(cirq.S) == {cirq.X(a): cirq.Y(a), cirq.Z(a): cirq.Z(a)}
-    assert solve_tableau(cirq.S ** -1) == {cirq.X(a): -cirq.Y(a), cirq.Z(a): cirq.Z(a)}
+    assert solve_tableau(cirq.S**-1) == {cirq.X(a): -cirq.Y(a), cirq.Z(a): cirq.Z(a)}
     assert solve_tableau(cirq.H) == {cirq.X(a): cirq.Z(a), cirq.Z(a): cirq.X(a)}
     assert solve_tableau(
         cirq.SingleQubitCliffordGate.from_xz_map((cirq.Y, False), (cirq.X, False))
@@ -81,7 +81,9 @@ def assert_unitary_gate_converts_correctly(gate: cirq.Gate):
         for q, p in pre.items():
             c.append_operation(f"C{p}", [2 * n, q.x])
         qs = cirq.LineQubit.range(n)
-        conv_gate, _ = cirq_circuit_to_stim_data(cirq.Circuit(gate(*qs)), q2i={q: q.x for q in qs})
+        conv_gate, _ = cirq_circuit_to_stim_data(
+            cirq.Circuit(gate(*qs)), q2i={q: q.x for q in qs}
+        )
         c += conv_gate
         for q, p in post.items():
             c.append_operation(f"C{p}", [2 * n, q.x])
@@ -90,7 +92,9 @@ def assert_unitary_gate_converts_correctly(gate: cirq.Gate):
         c.append_operation("H", [2 * n])
         c.append_operation("M", [2 * n])
         correct = np.count_nonzero(c.compile_sampler().sample_bit_packed(10)) == 0
-        assert correct, f"{gate!r} failed to turn {pre} into {post}.\nConverted to:\n{conv_gate}\n"
+        assert (
+            correct
+        ), f"{gate!r} failed to turn {pre} into {post}.\nConverted to:\n{conv_gate}\n"
 
 
 @pytest.mark.parametrize("gate", gate_to_stim_append_func().keys())
@@ -103,7 +107,9 @@ def test_unitary_gate_conversions(gate: cirq.Gate):
 def test_more_unitary_gate_conversions():
     for p in [1, 1j, -1, -1j]:
         assert_unitary_gate_converts_correctly(p * cirq.DensePauliString("IXYZ"))
-        assert_unitary_gate_converts_correctly((p * cirq.DensePauliString("IXYZ")).controlled(1))
+        assert_unitary_gate_converts_correctly(
+            (p * cirq.DensePauliString("IXYZ")).controlled(1)
+        )
 
     a, b = cirq.LineQubit.range(2)
     c, _ = cirq_circuit_to_stim_data(
@@ -148,9 +154,9 @@ ROUND_TRIP_NOISY_GATES = [
     cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0, p_z=0.1),
     *[
         cirq.asymmetric_depolarize(error_probabilities={a + b: 0.1})
-        for a, b in list(itertools.product('IXYZ', repeat=2))[1:]
+        for a, b in list(itertools.product("IXYZ", repeat=2))[1:]
     ],
-    cirq.asymmetric_depolarize(error_probabilities={'IX': 0.125, 'ZY': 0.375}),
+    cirq.asymmetric_depolarize(error_probabilities={"IX": 0.125, "ZY": 0.375}),
 ]
 
 
@@ -180,7 +186,9 @@ def test_frame_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq.G
     for value, count in zip(unique, counts):
         expected_rate = expected_rates[value]
         actual_rate = count / sample_count
-        allowed_variation = 5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
+        allowed_variation = (
+            5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
+        )
         if not 0 <= expected_rate - allowed_variation <= 1:
             raise ValueError("Not enough samples to bound results away from extremes.")
         assert abs(expected_rate - actual_rate) < allowed_variation, (
@@ -227,7 +235,9 @@ def test_tableau_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq
     for value, count in zip(unique, counts):
         expected_rate = expected_rates[value]
         actual_rate = count / sample_count
-        allowed_variation = 5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
+        allowed_variation = (
+            5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
+        )
         if not 0 <= expected_rate - allowed_variation <= 1:
             raise ValueError("Not enough samples to bound results away from extremes.")
         assert abs(expected_rate - actual_rate) < allowed_variation, (
@@ -266,7 +276,7 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
             raise NotImplementedError()
 
         @property
-        def qubits(self) -> Tuple['cirq.Qid', ...]:
+        def qubits(self) -> Tuple["cirq.Qid", ...]:
             return ()
 
     a, b, c = cirq.LineQubit.range(3)
@@ -316,11 +326,11 @@ def test_custom_qubit_indexing():
     actual = stimcirq.cirq_circuit_to_stim_circuit(
         cirq.Circuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
     )
-    assert actual == stim.Circuit('CX 10 15\nTICK')
+    assert actual == stim.Circuit("CX 10 15\nTICK")
     actual = stimcirq.cirq_circuit_to_stim_circuit(
         cirq.FrozenCircuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
     )
-    assert actual == stim.Circuit('CX 10 15\nTICK')
+    assert actual == stim.Circuit("CX 10 15\nTICK")
 
 
 def test_on_loop():
@@ -337,7 +347,7 @@ def test_on_loop():
         )
     )
     result = stimcirq.StimSampler().run(c)
-    assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}
+    assert result.measurements.keys() == {"0:a", "0:b", "1:a", "1:b", "2:a", "2:b"}
 
 
 def test_multi_moment_circuit_operation():
@@ -352,7 +362,8 @@ def test_multi_moment_circuit_operation():
             )
         )
     )
-    assert stimcirq.cirq_circuit_to_stim_circuit(cc) == stim.Circuit("""
+    assert stimcirq.cirq_circuit_to_stim_circuit(cc) == stim.Circuit(
+        """
         H 0
         TICK
         H 0
@@ -361,7 +372,8 @@ def test_multi_moment_circuit_operation():
         TICK
         H 0
         TICK
-    """)
+    """
+    )
 
 
 def test_on_tagged_loop():
@@ -375,9 +387,9 @@ def test_on_tagged_loop():
                 cirq.measure(b, key="b"),
             ),
             repetitions=3,
-        ).with_tags('my_tag')
+        ).with_tags("my_tag")
     )
-    
+
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
     assert stim.CircuitRepeatBlock in {type(instr) for instr in stim_circuit}
 
@@ -385,10 +397,82 @@ def test_on_tagged_loop():
 def test_random_gate_channel():
     q0, q1 = cirq.LineQubit.range(2)
 
-    circuit = cirq.Circuit(cirq.RandomGateChannel(
-        sub_gate=cirq.DensePauliString((0, 1)),
-        probability=0.25).on(q0, q1))
-    assert stimcirq.cirq_circuit_to_stim_circuit(circuit) == stim.Circuit("""
+    circuit = cirq.Circuit(
+        cirq.RandomGateChannel(
+            sub_gate=cirq.DensePauliString((0, 1)), probability=0.25
+        ).on(q0, q1)
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(circuit) == stim.Circuit(
+        """
         E(0.25) X1
         TICK
-    """)
+    """
+    )
+
+
+def test_stimcirq_tags():
+
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.FrozenCircuit(
+        cirq.X(a).with_tags("H"),
+        cirq.X(b),
+        cirq.measure(a, key="a"),
+        cirq.measure(b, key="b"),
+    )
+
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
+    assert stim_circuit == stim.Circuit(
+        """
+    H 0
+    X 1
+    TICK
+    M 0 1
+    TICK
+    """
+    )
+
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.FrozenCircuit(
+        cirq.XPowGate(exponent=0.243).on(a).with_tags("H"),
+        cirq.X(b),
+        cirq.measure(a, key="a"),
+        cirq.measure(b, key="b"),
+    )
+
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
+    assert stim_circuit == stim.Circuit(
+        """
+    H 0
+    X 1
+    TICK
+    M 0 1
+    TICK
+    """
+    )
+
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.X(a).with_tags("H"),
+                cirq.X(b),
+                cirq.measure(a, key="a"),
+                cirq.measure(b, key="b"),
+            ),
+            repetitions=3,
+        ).with_tags("my_tag")
+    )
+
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
+    assert stim_circuit == stim.Circuit(
+        """
+
+ REPEAT 3 {
+        H 0
+        X 1
+        TICK
+        M 0 1
+        TICK
+    }
+"""
+    )

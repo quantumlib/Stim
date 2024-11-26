@@ -5,10 +5,15 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 
 import cirq
 import stim
+import warnings
+
+_STIMCIRQ_TAG_LOOKUP = {"H": cirq.H, "X": cirq.X, "Y": cirq.Y, "Z": cirq.Z}
 
 
 def cirq_circuit_to_stim_circuit(
-    circuit: cirq.AbstractCircuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None
+    circuit: cirq.AbstractCircuit,
+    *,
+    qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None,
 ) -> stim.Circuit:
     """Converts a cirq circuit into an equivalent stim circuit.
 
@@ -94,7 +99,10 @@ def cirq_circuit_to_stim_circuit(
 
 
 def cirq_circuit_to_stim_data(
-    circuit: cirq.AbstractCircuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool = False,
+    circuit: cirq.AbstractCircuit,
+    *,
+    q2i: Optional[Dict[cirq.Qid, int]] = None,
+    flatten: bool = False,
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
@@ -119,7 +127,9 @@ StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int]], None]
 
 
 @functools.lru_cache(maxsize=1)
-def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[int]], None]]:
+def gate_to_stim_append_func() -> (
+    Dict[cirq.Gate, Callable[[stim.Circuit, List[int]], None]]
+):
     """A dictionary mapping specific gate instances to stim circuit appending functions."""
     x = (cirq.X, False)
     y = (cirq.Y, False)
@@ -161,38 +171,38 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
         cirq.ResetChannel(): use("R"),
         # Identities.
         cirq.I: use("I"),
-        cirq.H ** 0: do_nothing,
-        cirq.X ** 0: do_nothing,
-        cirq.Y ** 0: do_nothing,
-        cirq.Z ** 0: do_nothing,
-        cirq.ISWAP ** 0: do_nothing,
-        cirq.SWAP ** 0: do_nothing,
+        cirq.H**0: do_nothing,
+        cirq.X**0: do_nothing,
+        cirq.Y**0: do_nothing,
+        cirq.Z**0: do_nothing,
+        cirq.ISWAP**0: do_nothing,
+        cirq.SWAP**0: do_nothing,
         # Common named gates.
         cirq.H: use("H"),
         cirq.X: use("X"),
         cirq.Y: use("Y"),
         cirq.Z: use("Z"),
-        cirq.X ** 0.5: use("SQRT_X"),
-        cirq.X ** -0.5: use("SQRT_X_DAG"),
-        cirq.Y ** 0.5: use("SQRT_Y"),
-        cirq.Y ** -0.5: use("SQRT_Y_DAG"),
-        cirq.Z ** 0.5: use("SQRT_Z"),
-        cirq.Z ** -0.5: use("SQRT_Z_DAG"),
+        cirq.X**0.5: use("SQRT_X"),
+        cirq.X**-0.5: use("SQRT_X_DAG"),
+        cirq.Y**0.5: use("SQRT_Y"),
+        cirq.Y**-0.5: use("SQRT_Y_DAG"),
+        cirq.Z**0.5: use("SQRT_Z"),
+        cirq.Z**-0.5: use("SQRT_Z_DAG"),
         cirq.CNOT: use("CNOT"),
         cirq.CZ: use("CZ"),
         cirq.ISWAP: use("ISWAP"),
-        cirq.ISWAP ** -1: use("ISWAP_DAG"),
-        cirq.ISWAP ** 2: use("Z"),
+        cirq.ISWAP**-1: use("ISWAP_DAG"),
+        cirq.ISWAP**2: use("Z"),
         cirq.SWAP: use("SWAP"),
         cirq.X.controlled(1): use("CX"),
         cirq.Y.controlled(1): use("CY"),
         cirq.Z.controlled(1): use("CZ"),
-        cirq.XX ** 0.5: use("SQRT_XX"),
-        cirq.YY ** 0.5: use("SQRT_YY"),
-        cirq.ZZ ** 0.5: use("SQRT_ZZ"),
-        cirq.XX ** -0.5: use("SQRT_XX_DAG"),
-        cirq.YY ** -0.5: use("SQRT_YY_DAG"),
-        cirq.ZZ ** -0.5: use("SQRT_ZZ_DAG"),
+        cirq.XX**0.5: use("SQRT_XX"),
+        cirq.YY**0.5: use("SQRT_YY"),
+        cirq.ZZ**0.5: use("SQRT_ZZ"),
+        cirq.XX**-0.5: use("SQRT_XX_DAG"),
+        cirq.YY**-0.5: use("SQRT_YY_DAG"),
+        cirq.ZZ**-0.5: use("SQRT_ZZ_DAG"),
         # All 24 cirq.SingleQubitCliffordGate instances.
         sqcg(x, y): use("SQRT_X_DAG"),
         sqcg(x, ny): use("SQRT_X"),
@@ -233,8 +243,12 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
     """A dictionary mapping specific gate types to stim circuit appending functions."""
     return {
         cirq.ControlledGate: cast(StimTypeHandler, _stim_append_controlled_gate),
-        cirq.DensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
-        cirq.MutableDensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
+        cirq.DensePauliString: cast(
+            StimTypeHandler, _stim_append_dense_pauli_string_gate
+        ),
+        cirq.MutableDensePauliString: cast(
+            StimTypeHandler, _stim_append_dense_pauli_string_gate
+        ),
         cirq.AsymmetricDepolarizingChannel: cast(
             StimTypeHandler, _stim_append_asymmetric_depolarizing_channel
         ),
@@ -245,10 +259,14 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
             "Z_ERROR", t, cast(cirq.PhaseFlipChannel, g).p
         ),
         cirq.PhaseDampingChannel: lambda c, g, t: c.append_operation(
-            "Z_ERROR", t, 0.5 - math.sqrt(1 - cast(cirq.PhaseDampingChannel, g).gamma) / 2
+            "Z_ERROR",
+            t,
+            0.5 - math.sqrt(1 - cast(cirq.PhaseDampingChannel, g).gamma) / 2,
         ),
         cirq.RandomGateChannel: cast(StimTypeHandler, _stim_append_random_gate_channel),
-        cirq.DepolarizingChannel: cast(StimTypeHandler, _stim_append_depolarizing_channel),
+        cirq.DepolarizingChannel: cast(
+            StimTypeHandler, _stim_append_depolarizing_channel
+        ),
     }
 
 
@@ -335,28 +353,30 @@ def _stim_append_asymmetric_depolarizing_channel(
             "PAULI_CHANNEL_2",
             t,
             [
-                g.error_probabilities.get('IX', 0),
-                g.error_probabilities.get('IY', 0),
-                g.error_probabilities.get('IZ', 0),
-                g.error_probabilities.get('XI', 0),
-                g.error_probabilities.get('XX', 0),
-                g.error_probabilities.get('XY', 0),
-                g.error_probabilities.get('XZ', 0),
-                g.error_probabilities.get('YI', 0),
-                g.error_probabilities.get('YX', 0),
-                g.error_probabilities.get('YY', 0),
-                g.error_probabilities.get('YZ', 0),
-                g.error_probabilities.get('ZI', 0),
-                g.error_probabilities.get('ZX', 0),
-                g.error_probabilities.get('ZY', 0),
-                g.error_probabilities.get('ZZ', 0),
-            ]
+                g.error_probabilities.get("IX", 0),
+                g.error_probabilities.get("IY", 0),
+                g.error_probabilities.get("IZ", 0),
+                g.error_probabilities.get("XI", 0),
+                g.error_probabilities.get("XX", 0),
+                g.error_probabilities.get("XY", 0),
+                g.error_probabilities.get("XZ", 0),
+                g.error_probabilities.get("YI", 0),
+                g.error_probabilities.get("YX", 0),
+                g.error_probabilities.get("YY", 0),
+                g.error_probabilities.get("YZ", 0),
+                g.error_probabilities.get("ZI", 0),
+                g.error_probabilities.get("ZX", 0),
+                g.error_probabilities.get("ZY", 0),
+                g.error_probabilities.get("ZZ", 0),
+            ],
         )
     else:
-        raise NotImplementedError(f'cirq-to-stim gate {g!r}')
+        raise NotImplementedError(f"cirq-to-stim gate {g!r}")
 
 
-def _stim_append_depolarizing_channel(c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int]):
+def _stim_append_depolarizing_channel(
+    c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int]
+):
     if g.num_qubits() == 1:
         c.append_operation("DEPOLARIZE1", t, g.p)
     elif g.num_qubits() == 2:
@@ -383,10 +403,14 @@ def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: Lis
             raise TypeError(f"Phase kickback from {g!r} isn't a stabilizer operation.")
         return
 
-    raise TypeError(f"Don't know how to turn controlled gate {g!r} into Stim operations.")
+    raise TypeError(
+        f"Don't know how to turn controlled gate {g!r} into Stim operations."
+    )
 
 
-def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int]):
+def _stim_append_random_gate_channel(
+    c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int]
+):
     if g.sub_gate in [cirq.X, cirq.Y, cirq.Z]:
         c.append_operation(f"{g.sub_gate}_ERROR", t, g.probability)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
@@ -407,11 +431,15 @@ class CirqToStimHelper:
         self.have_seen_loop = False
         self.flatten = False
 
-    def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
+    def process_circuit_operation_into_repeat_block(
+        self, op: cirq.CircuitOperation
+    ) -> None:
         if self.flatten or op.repetitions == 1:
-            moments = cirq.unroll_circuit_op(cirq.Circuit(op), deep=False, tags_to_check=None).moments
+            moments = cirq.unroll_circuit_op(
+                cirq.Circuit(op), deep=False, tags_to_check=None
+            ).moments
             self.process_moments(moments)
-            self.out = self.out[:-1] # Remove a trailing TICK (to avoid double TICK)
+            self.out = self.out[:-1]  # Remove a trailing TICK (to avoid double TICK)
             return
 
         child = CirqToStimHelper()
@@ -419,7 +447,9 @@ class CirqToStimHelper:
         child.q2i = self.q2i
         child.have_seen_loop = True
         self.have_seen_loop = True
-        child.process_moments(op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit)
+        child.process_moments(
+            op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit
+        )
         self.out += child.out * op.repetitions
 
     def process_operations(self, operations: Iterable[cirq.Operation]) -> None:
@@ -427,12 +457,27 @@ class CirqToStimHelper:
         t2f = gate_type_to_stim_append_func()
         for op in operations:
             assert isinstance(op, cirq.Operation)
+
+            # for tagged cirq operations with a particular conversion
+            if isinstance(op, cirq.TaggedOperation) and len(op.tags) == 1:
+                (tag,) = op.tags
+                if tag in list(_STIMCIRQ_TAG_LOOKUP.keys()):
+                    gate = _STIMCIRQ_TAG_LOOKUP[tag]
+                    op = gate.on(*op.qubits)
+                else:
+                    warnings.warn(f"ignoring cirq {tag=} for conversion to stim")
+                    op = op.untagged
+                    gate = op.gate
+            else:
+                op = op.untagged
+                gate = op.gate
+
             op = op.untagged
             gate = op.gate
             targets = [self.q2i[q] for q in op.qubits]
 
             custom_method = getattr(
-                op, '_stim_conversion_', getattr(gate, '_stim_conversion_', None)
+                op, "_stim_conversion_", getattr(gate, "_stim_conversion_", None)
             )
             if custom_method is not None:
                 custom_method(
@@ -488,7 +533,9 @@ class CirqToStimHelper:
         self.process_operations(moment)
 
         # Append a TICK, unless it was already handled by an internal REPEAT block.
-        if length_before == len(self.out) or not isinstance(self.out[-1], stim.CircuitRepeatBlock):
+        if length_before == len(self.out) or not isinstance(
+            self.out[-1], stim.CircuitRepeatBlock
+        ):
             self.out.append_operation("TICK", [])
 
     def process_moments(self, moments: Iterable[cirq.Moment]):
