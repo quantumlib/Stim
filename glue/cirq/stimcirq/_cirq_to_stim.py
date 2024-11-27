@@ -5,15 +5,13 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 
 import cirq
 import stim
-import warnings
-
-_STIMCIRQ_TAG_LOOKUP = {"H": cirq.H, "X": cirq.X, "Y": cirq.Y, "Z": cirq.Z}
 
 
 def cirq_circuit_to_stim_circuit(
     circuit: cirq.AbstractCircuit,
     *,
     qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None,
+    custom_op_conversion_func: Callable | None = None
 ) -> stim.Circuit:
     """Converts a cirq circuit into an equivalent stim circuit.
 
@@ -95,7 +93,7 @@ def cirq_circuit_to_stim_circuit(
 
             edit_circuit.append_operation("H", targets)
     """
-    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict, flatten=False)[0]
+    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict, flatten=False, custom_op_conversion_func=custom_op_conversion_func)[0]
 
 
 def cirq_circuit_to_stim_data(
@@ -103,6 +101,7 @@ def cirq_circuit_to_stim_data(
     *,
     q2i: Optional[Dict[cirq.Qid, int]] = None,
     flatten: bool = False,
+    custom_op_conversion_func: Callable | None = None,
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
@@ -119,7 +118,7 @@ def cirq_circuit_to_stim_data(
         elif isinstance(q, cirq.GridQubit):
             helper.out.append_operation("QUBIT_COORDS", [q2i[q]], [q.row, q.col])
 
-    helper.process_moments(circuit)
+    helper.process_moments(circuit, custom_op_conversion_func=custom_op_conversion_func)
     return helper.out, helper.key_out
 
 
@@ -432,13 +431,13 @@ class CirqToStimHelper:
         self.flatten = False
 
     def process_circuit_operation_into_repeat_block(
-        self, op: cirq.CircuitOperation
+        self, op: cirq.CircuitOperation, custom_op_conversion_func: Callable | None
     ) -> None:
         if self.flatten or op.repetitions == 1:
             moments = cirq.unroll_circuit_op(
                 cirq.Circuit(op), deep=False, tags_to_check=None
             ).moments
-            self.process_moments(moments)
+            self.process_moments(moments, custom_op_conversion_func=custom_op_conversion_func)
             self.out = self.out[:-1]  # Remove a trailing TICK (to avoid double TICK)
             return
 
@@ -448,31 +447,16 @@ class CirqToStimHelper:
         child.have_seen_loop = True
         self.have_seen_loop = True
         child.process_moments(
-            op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit
+            op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit, custom_op_conversion_func=custom_op_conversion_func
         )
         self.out += child.out * op.repetitions
 
-    def process_operations(self, operations: Iterable[cirq.Operation]) -> None:
+    def process_operations(self, operations: Iterable[cirq.Operation], custom_op_conversion_func: Callable | None) -> None:
         g2f = gate_to_stim_append_func()
         t2f = gate_type_to_stim_append_func()
         for op in operations:
             assert isinstance(op, cirq.Operation)
-
-            # for tagged cirq operations with a particular conversion
-            if isinstance(op, cirq.TaggedOperation) and len(op.tags) == 1:
-                (tag,) = op.tags
-                if tag in list(_STIMCIRQ_TAG_LOOKUP.keys()):
-                    gate = _STIMCIRQ_TAG_LOOKUP[tag]
-                    op = gate.on(*op.qubits)
-                else:
-                    warnings.warn(f"ignoring cirq {tag=} for conversion to stim")
-                    op = op.untagged
-                    gate = op.gate
-            else:
-                op = op.untagged
-                gate = op.gate
-
-            op = op.untagged
+            op = op.untagged if custom_op_conversion_func is None else custom_op_conversion_func(op)
             gate = op.gate
             targets = [self.q2i[q] for q in op.qubits]
 
@@ -490,7 +474,7 @@ class CirqToStimHelper:
                 continue
 
             if isinstance(op, cirq.CircuitOperation):
-                self.process_circuit_operation_into_repeat_block(op)
+                self.process_circuit_operation_into_repeat_block(op, custom_op_conversion_func=custom_op_conversion_func)
                 continue
 
             # Special case measurement, because of its metadata.
@@ -528,9 +512,9 @@ class CirqToStimHelper:
                     f"- It doesn't have a _stim_conversion_ method.\n"
                 ) from ex
 
-    def process_moment(self, moment: cirq.Moment):
+    def process_moment(self, moment: cirq.Moment, custom_op_conversion_func: Callable | None):
         length_before = len(self.out)
-        self.process_operations(moment)
+        self.process_operations(moment, custom_op_conversion_func=custom_op_conversion_func)
 
         # Append a TICK, unless it was already handled by an internal REPEAT block.
         if length_before == len(self.out) or not isinstance(
@@ -538,6 +522,6 @@ class CirqToStimHelper:
         ):
             self.out.append_operation("TICK", [])
 
-    def process_moments(self, moments: Iterable[cirq.Moment]):
+    def process_moments(self, moments: Iterable[cirq.Moment], custom_op_conversion_func: Callable | None):
         for moment in moments:
-            self.process_moment(moment)
+            self.process_moment(moment, custom_op_conversion_func=custom_op_conversion_func)
