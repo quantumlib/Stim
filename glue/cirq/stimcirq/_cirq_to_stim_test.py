@@ -411,13 +411,13 @@ def test_random_gate_channel():
 
 
 def test_stimcirq_custom_conversion():
+    """ Checks the custom operation conversion functionality. In this test, we specifically
+    convert cirq TaggedOperations with particular tag values to a given STIM operation, 
+    according to the lookup `_tag_lookup`. """
 
     _tag_lookup = {"H": cirq.H, "X": cirq.X, "Y": cirq.Y, "Z": cirq.Z}
 
     def _op_conversion(op: cirq.Operation) -> cirq.Operation:
-        """" For converting particular tagged cirq.Operator's to a value described by the tag content. 
-        Useful when treating non-Clifford gates in cirq and converting to STIM. 
-        """
         if isinstance(op, cirq.TaggedOperation):
             tag_checks = [tag for tag in op.tags if tag in list(_tag_lookup.keys())]
             if len(tag_checks) == 1:
@@ -425,6 +425,8 @@ def test_stimcirq_custom_conversion():
                 op = gate.on(*op.qubits)
             elif len(tag_checks) > 1: 
                 raise ValueError(f"found multiple {op.tags=} matching a conversion")
+            else:
+                return op # a different tag 
         return op.untagged
 
     a, b = cirq.LineQubit.range(2)
@@ -437,7 +439,7 @@ def test_stimcirq_custom_conversion():
 
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c, custom_op_conversion_func=_op_conversion)
     assert stim_circuit == stim.Circuit(
-        """
+    """
     H 0
     X 1
     TICK
@@ -480,13 +482,39 @@ def test_stimcirq_custom_conversion():
 
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c, custom_op_conversion_func=_op_conversion)
     assert stim_circuit == stim.Circuit(
-        """
-        REPEAT 3 {
-                H 0
-                X 1
-                TICK
-                M 0 1
-                TICK
-            }
-        """
+    """
+    REPEAT 3 {
+            H 0
+            X 1
+            TICK
+            M 0 1
+            TICK
+        }
+    """
+    )
+
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.X(a).with_tags("H"),
+                cirq.X(b).with_tags("hi"),
+                cirq.measure(a, key="a"),
+                cirq.measure(b, key="b"),
+            ),
+            repetitions=3,
+        ).with_tags("my_tag")
+    )
+
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c, custom_op_conversion_func=_op_conversion)
+    assert stim_circuit == stim.Circuit(
+    """
+    REPEAT 3 {
+            H 0
+            X[hi] 1
+            TICK
+            M 0 1
+            TICK
+        }
+    """
     )
