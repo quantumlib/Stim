@@ -423,7 +423,7 @@ class CircuitTranslationTracker:
                             stim_sweep_bit_index=a.value,
                             cirq_sweep_symbol=f'sweep[{a.value}]',
                             pauli=self.pauli_gate,
-                        ).on(cirq.LineQubit(b.value).with_tags(*tags))
+                        ).on(cirq.LineQubit(b.value)).with_tags(*tags)
                     )
                 else:
                     if not a.is_qubit_target or not b.is_qubit_target:

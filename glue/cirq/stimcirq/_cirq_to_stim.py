@@ -150,7 +150,7 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
     ny = (cirq.Y, True)
     nz = (cirq.Z, True)
 
-    def do_nothing(_gates, _targets, _tag):
+    def do_nothing(_gates, _targets, tag):
         pass
 
     def use(
