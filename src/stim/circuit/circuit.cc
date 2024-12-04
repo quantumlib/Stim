@@ -331,7 +331,7 @@ void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     }
 }
 
-void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
+void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg, std::string_view tag) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -340,11 +340,11 @@ void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint3
         converted.push_back({e});
     }
 
-    safe_append(CircuitInstruction(gate.id, &singleton_arg, converted, ""));
+    safe_append(CircuitInstruction(gate.id, &singleton_arg, converted, tag));
 }
 
 void Circuit::safe_append_u(
-    std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
+    std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args, std::string_view tag) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -353,7 +353,7 @@ void Circuit::safe_append_u(
         converted.push_back({e});
     }
 
-    safe_append(CircuitInstruction(gate.id, args, converted, ""));
+    safe_append(CircuitInstruction(gate.id, args, converted, tag));
 }
 
 void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {

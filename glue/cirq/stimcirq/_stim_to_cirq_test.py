@@ -682,3 +682,72 @@ def test_stim_circuit_to_cirq_circuit_spp():
         SPP Z0
         TICK
     """)
+
+
+def test_tags_convert():
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+        H[my_tag] 0
+    """)) == cirq.Circuit(
+        cirq.H(cirq.LineQubit(0)).with_tags('my_tag'),
+    )
+
+
+@pytest.mark.parametrize('gate', sorted(stim.gate_data().keys()))
+def test_every_operation_converts_tags(gate: str):
+    if gate in [
+        "ELSE_CORRELATED_ERROR",
+        "HERALDED_ERASE",
+        "HERALDED_PAULI_CHANNEL_1",
+        "TICK",
+        "REPEAT",
+        "MPAD",
+        "QUBIT_COORDS",
+    ]:
+        pytest.skip()
+
+    data = stim.gate_data(gate)
+    stim_circuit = stim.Circuit()
+    arg = None
+    targets = [0, 1]
+    if data.num_parens_arguments_range.start:
+        arg = [2**-6] * data.num_parens_arguments_range.start
+    if data.takes_pauli_targets:
+        targets = [stim.target_x(0), stim.target_y(1)]
+    if data.takes_measurement_record_targets and not data.is_unitary:
+        stim_circuit.append("M", [0], tag='custom_tag')
+        targets = [stim.target_rec(-1)]
+    if gate == 'SHIFT_COORDS':
+        targets = []
+    if gate == 'OBSERVABLE_INCLUDE':
+        arg = [1]
+    stim_circuit.append(gate, targets, arg, tag='custom_tag')
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert any(cirq_circuit.all_operations())
+    for op in cirq_circuit.all_operations():
+        assert op.tags == ('custom_tag',)
+    restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert restored_circuit.pop() == stim.CircuitInstruction("TICK")
+    assert all(instruction.tag == 'custom_tag' for instruction in restored_circuit)
+    if gate not in ['MXX', 'MYY', 'MZZ']:
+        assert restored_circuit == stim_circuit
+
+
+def test_loop_tagging():
+    stim_circuit = stim.Circuit("""
+        REPEAT[custom-tag] 5 {
+            H[tag2] 0
+            TICK
+        }
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert cirq_circuit == cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.H(cirq.LineQubit(0)).with_tags('tag2'),
+            ),
+            repetitions=5,
+            use_repetition_ids=False,
+        ).with_tags('custom-tag')
+    )
+    restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert restored_circuit == stim_circuit

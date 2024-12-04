@@ -831,6 +831,8 @@ def append(
     name: str,
     targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]],
     arg: Union[float, Iterable[float]],
+    *,
+    tag: str = "",
 ) -> None:
     pass
 @overload
@@ -844,6 +846,8 @@ def append(
     name: object,
     targets: object = (),
     arg: object = None,
+    *,
+    tag: str = '',
 ) -> None:
     """Appends an operation into the circuit.
 
@@ -894,6 +898,7 @@ def append(
             compatibility reasons, `cirq.append_operation` (but not
             `cirq.append`) will default to a single 0.0 argument for gates that
             take exactly one argument.
+        tag: A customizable string attached to the instruction.
     """
 ```
 

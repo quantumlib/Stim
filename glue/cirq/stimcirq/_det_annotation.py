@@ -77,8 +77,10 @@ class DetAnnotation(cirq.Operation):
 
     def _stim_conversion_(
         self,
+        *,
         edit_circuit: stim.Circuit,
         edit_measurement_key_lengths: List[Tuple[str, int]],
+        tag: str,
         have_seen_loop: bool = False,
         **kwargs,
     ):
@@ -111,4 +113,4 @@ class DetAnnotation(cirq.Operation):
                 f" in an earlier moment (or earlier in the same moment's operation order)."
             )
 
-        edit_circuit.append_operation("DETECTOR", rec_targets, self.coordinate_metadata)
+        edit_circuit.append("DETECTOR", rec_targets, self.coordinate_metadata, tag=tag)
