@@ -24,7 +24,7 @@ class FusionBlossomCompiledDecoder(CompiledDecoder):
             bit_packed_detection_event_data: 'np.ndarray',
     ) -> 'np.ndarray':
         num_shots = bit_packed_detection_event_data.shape[0]
-        predictions = np.zeros(shape=(num_shots, self.num_obs), dtype=np.uint8)
+        predictions = np.zeros(shape=(num_shots, (self.num_obs + 7) // 8), dtype=np.uint8)
         import fusion_blossom
         for shot in range(num_shots):
             dets_sparse = np.flatnonzero(np.unpackbits(bit_packed_detection_event_data[shot], count=self.num_dets, bitorder='little'))
