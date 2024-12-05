@@ -91,15 +91,15 @@ class MeasureAndOrResetGate(cirq.Gate):
             result += self.basis
         return result
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], **kwargs):
+    def _stim_conversion_(self, *, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs):
         if self.invert_measure:
             targets[0] = stim.target_inv(targets[0])
         if self.measure_flip_probability:
             edit_circuit.append_operation(
-                self._stim_op_name(), targets, self.measure_flip_probability
+                self._stim_op_name(), targets, self.measure_flip_probability, tag=tag
             )
         else:
-            edit_circuit.append_operation(self._stim_op_name(), targets)
+            edit_circuit.append_operation(self._stim_op_name(), targets, tag=tag)
 
     def __str__(self) -> str:
         result = self._stim_op_name()

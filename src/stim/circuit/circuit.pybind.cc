@@ -249,6 +249,7 @@ void circuit_append(
     const pybind11::object &obj,
     const pybind11::object &targets,
     const pybind11::object &arg,
+    std::string_view tag,
     bool backwards_compat) {
     // Extract single target or list of targets.
     std::vector<uint32_t> raw_targets;
@@ -276,20 +277,20 @@ void circuit_append(
         // Extract single argument or list of arguments.
         try {
             auto d = pybind11::cast<double>(used_arg);
-            self.safe_append_ua(gate_name, raw_targets, d);
+            self.safe_append_ua(gate_name, raw_targets, d, tag);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
         try {
             auto args = pybind11::cast<std::vector<double>>(used_arg);
-            self.safe_append_u(gate_name, raw_targets, args);
+            self.safe_append_u(gate_name, raw_targets, args, tag);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
-        if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+        if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
+            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
@@ -301,8 +302,8 @@ void circuit_append(
                 pybind11::cast<std::string_view>(instruction.tag),
             });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
-        if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+        if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
+            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
@@ -315,12 +316,12 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
-    circuit_append(self, obj, targets, arg, true);
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    circuit_append(self, obj, targets, arg, tag, true);
 }
 void circuit_append_strict(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
-    circuit_append(self, obj, targets, arg, false);
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    circuit_append(self, obj, targets, arg, tag, false);
 }
 
 pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
@@ -1107,10 +1108,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("name"),
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
+            pybind11::kw_only(),
+            pybind11::arg("tag") = "",
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
                    : clean_doc_string(R"DOC(
                 Appends an operation into the circuit.
-                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]]) -> None:
+                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]], *, tag: str = "") -> None:
                 @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
@@ -1160,6 +1163,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         compatibility reasons, `cirq.append_operation` (but not
                         `cirq.append`) will default to a single 0.0 argument for gates that
                         take exactly one argument.
+                    tag: A customizable string attached to the instruction.
             )DOC")
                          .data());
     }

@@ -35,8 +35,8 @@ class CXSwapGate(cirq.Gate):
             yield cirq.CNOT(a, b)
             yield cirq.SWAP(a, b)
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], **kwargs):
-        edit_circuit.append_operation('SWAPCX' if self.inverted else 'CXSWAP', targets)
+    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs):
+        edit_circuit.append('SWAPCX' if self.inverted else 'CXSWAP', targets, tag=tag)
 
     def __pow__(self, power: int) -> 'CXSwapGate':
         if power == +1:
