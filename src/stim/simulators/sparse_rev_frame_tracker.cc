@@ -810,11 +810,22 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const CircuitInstruction &dat)
 void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
     auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
-        int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
-        if (index < 0) {
-            throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+        if (t.is_measurement_record_target()) {
+            int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
+            if (index < 0) {
+                throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+            }
+            rec_bits[index].xor_item(obs);
+        } else if (t.is_pauli_target()) {
+            if (t.data & TARGET_PAULI_X_BIT) {
+                xs[t.qubit_value()].xor_item(obs);
+            }
+            if (t.data & TARGET_PAULI_Z_BIT) {
+                zs[t.qubit_value()].xor_item(obs);
+            }
+        } else {
+            throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
         }
-        rec_bits[index].xor_item(obs);
     }
 }
 
