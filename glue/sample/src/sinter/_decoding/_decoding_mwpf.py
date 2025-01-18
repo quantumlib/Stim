@@ -58,7 +58,10 @@ class MwpfCompiledDecoder(CompiledDecoder):
                     np.bitwise_xor.reduce(self.fault_masks[self.solver.subgraph()])
                 )
                 self.solver.clear()
-            predictions[shot] = np.packbits(prediction, bitorder="little")
+            predictions[shot] = np.packbits(
+                np.array(list(np.binary_repr(prediction, width=self.num_obs))[::-1],dtype=np.uint8),
+                bitorder="little",
+            )
         return predictions
 
 
