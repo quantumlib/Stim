@@ -49,5 +49,5 @@ class ShiftCoordsAnnotation(cirq.Operation):
     def _is_comment_(self) -> bool:
         return True
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, **kwargs):
-        edit_circuit.append_operation("SHIFT_COORDS", [], self.shift)
+    def _stim_conversion_(self, *, edit_circuit: stim.Circuit, tag: str, **kwargs):
+        edit_circuit.append_operation("SHIFT_COORDS", [], self.shift, tag=tag)

@@ -2306,3 +2306,17 @@ def test_tag_without_noise():
         M[test3] 0
         DETECTOR[test4] rec[-1]
     """)
+
+
+def test_append_tag():
+    c = stim.Circuit()
+    c.append("H", [2, 3], tag="test")
+    assert c == stim.Circuit("H[test] 2 3")
+
+    with pytest.raises(ValueError, match="tag"):
+        c.append(c[0], tag="newtag")
+
+    with pytest.raises(ValueError, match="tag"):
+        c.append(stim.CircuitRepeatBlock(10, stim.Circuit()), tag="newtag")
+
+    assert c == stim.Circuit("H[test] 2 3")

@@ -108,10 +108,10 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append(CircuitInstruction operation, bool block_fusion = false);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
+    void safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg, std::string_view tag = "");
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_u(
-        std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
+        std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {}, std::string_view tag = "");
     /// Safely copies a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag);
     /// Safely moves a repeat block to the end of the circuit.
