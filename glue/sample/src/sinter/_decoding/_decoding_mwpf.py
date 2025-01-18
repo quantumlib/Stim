@@ -196,16 +196,16 @@ def iter_flatten_model(
                     _helper(instruction.body_copy(), instruction.repeat_count)
                 elif isinstance(instruction, stim.DemInstruction):
                     if instruction.type == "error":
-                        dets: List[int] = []
-                        frames: List[int] = []
+                        dets: set[int] = set()
+                        frames: set[int] = set()
                         t: stim.DemTarget
                         p = instruction.args_copy()[0]
                         for t in instruction.targets_copy():
                             if t.is_relative_detector_id():
-                                dets.append(t.val + det_offset)
+                                dets ^= {t.val + det_offset}
                             elif t.is_logical_observable_id():
-                                frames.append(t.val)
-                        handle_error(p, dets, frames)
+                                frames ^= {t.val}
+                        handle_error(p, list(dets), list(frames))
                     elif instruction.type == "shift_detectors":
                         det_offset += instruction.targets_copy()[0]
                         a = np.array(instruction.args_copy())
