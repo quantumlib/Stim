@@ -103,12 +103,15 @@ class MwpfDecoder(Decoder):
         obs_predictions_b8_out_path: pathlib.Path,
         tmp_dir: pathlib.Path,
         decoder_cls: Any = None,
+        cluster_node_limit: int = 50,
     ) -> None:
         import mwpf
 
         error_model = stim.DetectorErrorModel.from_file(dem_path)
         solver, fault_masks = detector_error_model_to_mwpf_solver_and_fault_masks(
-            error_model, decoder_cls=decoder_cls
+            error_model,
+            decoder_cls=decoder_cls,
+            cluster_node_limit=cluster_node_limit,
         )
         num_det_bytes = math.ceil(num_dets / 8)
         with open(dets_b8_in_path, "rb") as dets_in_f:
