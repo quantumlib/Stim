@@ -68,22 +68,29 @@ class MwpfCompiledDecoder(CompiledDecoder):
 class MwpfDecoder(Decoder):
     """Use MWPF to predict observables from detection events."""
 
-    def compile_decoder_for_dem(
+    def __init__(
         self,
-        *,
-        dem: "stim.DetectorErrorModel",
         decoder_cls: Any = None,  # decoder class used to construct the MWPF decoder.
         # in the Rust implementation, all of them inherits from the class of `SolverSerialPlugins`
         # but just provide different plugins for optimizing the primal and/or dual solutions.
         # For example, `SolverSerialUnionFind` is the most basic solver without any plugin: it only
         # grows the clusters until the first valid solution appears; some more optimized solvers uses
         # one or more plugins to further optimize the solution, which requires longer decoding time.
-        cluster_node_limit: int = 50,  # The maximum number of nodes in a cluster.
+        cluster_node_limit: int = 50,  # The maximum number of nodes in a cluster,
+    ):
+        self.decoder_cls = decoder_cls
+        self.cluster_node_limit = cluster_node_limit
+        super().__init__()
+
+    def compile_decoder_for_dem(
+        self,
+        *,
+        dem: "stim.DetectorErrorModel",
     ) -> CompiledDecoder:
         solver, fault_masks = detector_error_model_to_mwpf_solver_and_fault_masks(
             dem,
-            decoder_cls=decoder_cls,
-            cluster_node_limit=cluster_node_limit,
+            decoder_cls=self.decoder_cls,
+            cluster_node_limit=self.cluster_node_limit,
         )
         return MwpfCompiledDecoder(
             solver,
@@ -102,16 +109,14 @@ class MwpfDecoder(Decoder):
         dets_b8_in_path: pathlib.Path,
         obs_predictions_b8_out_path: pathlib.Path,
         tmp_dir: pathlib.Path,
-        decoder_cls: Any = None,
-        cluster_node_limit: int = 50,
     ) -> None:
         import mwpf
 
         error_model = stim.DetectorErrorModel.from_file(dem_path)
         solver, fault_masks = detector_error_model_to_mwpf_solver_and_fault_masks(
             error_model,
-            decoder_cls=decoder_cls,
-            cluster_node_limit=cluster_node_limit,
+            decoder_cls=self.decoder_cls,
+            cluster_node_limit=self.cluster_node_limit,
         )
         num_det_bytes = math.ceil(num_dets / 8)
         with open(dets_b8_in_path, "rb") as dets_in_f:
@@ -142,44 +147,8 @@ class MwpfDecoder(Decoder):
 
 
 class HyperUFDecoder(MwpfDecoder):
-    def compile_decoder_for_dem(
-        self, *, dem: "stim.DetectorErrorModel"
-    ) -> CompiledDecoder:
-        try:
-            import mwpf
-        except ImportError as ex:
-            raise mwpf_import_error() from ex
-
-        return super().compile_decoder_for_dem(
-            dem=dem, decoder_cls=mwpf.SolverSerialUnionFind
-        )
-
-    def decode_via_files(
-        self,
-        *,
-        num_shots: int,
-        num_dets: int,
-        num_obs: int,
-        dem_path: pathlib.Path,
-        dets_b8_in_path: pathlib.Path,
-        obs_predictions_b8_out_path: pathlib.Path,
-        tmp_dir: pathlib.Path,
-    ) -> None:
-        try:
-            import mwpf
-        except ImportError as ex:
-            raise mwpf_import_error() from ex
-
-        return super().decode_via_files(
-            num_shots=num_shots,
-            num_dets=num_dets,
-            num_obs=num_obs,
-            dem_path=dem_path,
-            dets_b8_in_path=dets_b8_in_path,
-            obs_predictions_b8_out_path=obs_predictions_b8_out_path,
-            tmp_dir=tmp_dir,
-            decoder_cls=mwpf.SolverSerialUnionFind,
-        )
+    def __init__(self):
+        super().__init__(decoder_cls=mwpf.SolverSerialUnionFind, cluster_node_limit=0)
 
 
 def iter_flatten_model(
