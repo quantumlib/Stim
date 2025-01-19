@@ -38,7 +38,9 @@ class MwpfCompiledDecoder(CompiledDecoder):
         bit_packed_detection_event_data: "np.ndarray",
     ) -> "np.ndarray":
         num_shots = bit_packed_detection_event_data.shape[0]
-        predictions = np.zeros(shape=(num_shots, (self.num_obs + 7) // 8), dtype=np.uint8)
+        predictions = np.zeros(
+            shape=(num_shots, (self.num_obs + 7) // 8), dtype=np.uint8
+        )
         import mwpf
 
         for shot in range(num_shots):
@@ -59,7 +61,10 @@ class MwpfCompiledDecoder(CompiledDecoder):
                 )
                 self.solver.clear()
             predictions[shot] = np.packbits(
-                np.array(list(np.binary_repr(prediction, width=self.num_obs))[::-1],dtype=np.uint8),
+                np.array(
+                    list(np.binary_repr(prediction, width=self.num_obs))[::-1],
+                    dtype=np.uint8,
+                ),
                 bitorder="little",
             )
         return predictions
@@ -148,6 +153,8 @@ class MwpfDecoder(Decoder):
 
 class HyperUFDecoder(MwpfDecoder):
     def __init__(self):
+        import mwpf
+
         super().__init__(decoder_cls=mwpf.SolverSerialUnionFind, cluster_node_limit=0)
 
 
