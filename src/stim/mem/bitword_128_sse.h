@@ -49,17 +49,17 @@ struct bitword<128> {
         _mm_free(ptr);
     }
 
-    inline bitword<128>() : val(__m128i{}) {
+    inline bitword() : val(__m128i{}) {
     }
-    inline bitword<128>(__m128i val) : val(val) {
+    inline bitword(__m128i val) : val(val) {
     }
-    inline bitword<128>(std::array<uint64_t, 2> val) : val{_mm_set_epi64x(val[1], val[0])} {
+    inline bitword(std::array<uint64_t, 2> val) : val{_mm_set_epi64x(val[1], val[0])} {
     }
-    inline bitword<128>(uint64_t val) : val{_mm_set_epi64x(0, val)} {
+    inline bitword(uint64_t val) : val{_mm_set_epi64x(0, val)} {
     }
-    inline bitword<128>(int64_t val) : val{_mm_set_epi64x(-(val < 0), val)} {
+    inline bitword(int64_t val) : val{_mm_set_epi64x(-(val < 0), val)} {
     }
-    inline bitword<128>(int val) : val{_mm_set_epi64x(-(val < 0), val)} {
+    inline bitword(int val) : val{_mm_set_epi64x(-(val < 0), val)} {
     }
 
     inline static bitword<128> tile8(uint8_t pattern) {
