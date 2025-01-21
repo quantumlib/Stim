@@ -153,9 +153,7 @@ class MwpfDecoder(Decoder):
 
 class HyperUFDecoder(MwpfDecoder):
     def __init__(self):
-        import mwpf
-
-        super().__init__(decoder_cls=mwpf.SolverSerialUnionFind, cluster_node_limit=0)
+        super().__init__(decoder_cls="SolverSerialUnionFind", cluster_node_limit=0)
 
 
 def iter_flatten_model(
@@ -292,6 +290,8 @@ def detector_error_model_to_mwpf_solver_and_fault_masks(
     if decoder_cls is None:
         # default to the solver with highest accuracy
         decoder_cls = mwpf.SolverSerialJointSingleHair
+    elif isinstance(decoder_cls, str):
+        decoder_cls = getattr(mwpf, decoder_cls)
     return (
         (
             decoder_cls(initializer, config={"cluster_node_limit": cluster_node_limit})
