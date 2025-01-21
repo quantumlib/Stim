@@ -458,11 +458,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: mymindstorm/setup-emsdk@v14
         with:
-          version: 2.0.18
+          version: 4.0.1
           actions-cache-folder: 'emsdk-cache'
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18.x
       - run: npm install
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
