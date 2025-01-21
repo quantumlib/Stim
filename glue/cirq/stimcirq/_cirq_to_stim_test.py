@@ -74,21 +74,21 @@ def assert_unitary_gate_converts_correctly(gate: cirq.Gate):
         # If the gate is translated correctly, the measurement will always be zero.
 
         c = stim.Circuit()
-        c.append_operation("H", range(n))
+        c.append("H", range(n))
         for i in range(n):
-            c.append_operation("CNOT", [i, i + n])
-        c.append_operation("H", [2 * n])
+            c.append("CNOT", [i, i + n])
+        c.append("H", [2 * n])
         for q, p in pre.items():
-            c.append_operation(f"C{p}", [2 * n, q.x])
+            c.append(f"C{p}", [2 * n, q.x])
         qs = cirq.LineQubit.range(n)
         conv_gate, _ = cirq_circuit_to_stim_data(cirq.Circuit(gate(*qs)), q2i={q: q.x for q in qs})
         c += conv_gate
         for q, p in post.items():
-            c.append_operation(f"C{p}", [2 * n, q.x])
+            c.append(f"C{p}", [2 * n, q.x])
         if post.coefficient == -1:
-            c.append_operation("Z", [2 * n])
-        c.append_operation("H", [2 * n])
-        c.append_operation("M", [2 * n])
+            c.append("Z", [2 * n])
+        c.append("H", [2 * n])
+        c.append("M", [2 * n])
         correct = np.count_nonzero(c.compile_sampler().sample_bit_packed(10)) == 0
         assert correct, f"{gate!r} failed to turn {pre} into {post}.\nConverted to:\n{conv_gate}\n"
 
@@ -254,13 +254,13 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
             **kwargs,
         ):
             edit_measurement_key_lengths.append(("custom", 2))
-            edit_circuit.append_operation("M", [stim.target_inv(targets[0])])
-            edit_circuit.append_operation("M", [targets[0]])
-            edit_circuit.append_operation("DETECTOR", [stim.target_rec(-1)])
+            edit_circuit.append("M", [stim.target_inv(targets[0])])
+            edit_circuit.append("M", [targets[0]])
+            edit_circuit.append("DETECTOR", [stim.target_rec(-1)])
 
     class SecondLastMeasurementWasDeterministicOperation(cirq.Operation):
-        def _stim_conversion_(self, edit_circuit: stim.Circuit, **kwargs):
-            edit_circuit.append_operation("DETECTOR", [stim.target_rec(-2)])
+        def _stim_conversion_(self, edit_circuit: stim.Circuit, tag: str, **kwargs):
+            edit_circuit.append("DETECTOR", [stim.target_rec(-2)], tag=tag)
 
         def with_qubits(self, *new_qubits):
             raise NotImplementedError()
@@ -390,5 +390,23 @@ def test_random_gate_channel():
         probability=0.25).on(q0, q1))
     assert stimcirq.cirq_circuit_to_stim_circuit(circuit) == stim.Circuit("""
         E(0.25) X1
+        TICK
+    """)
+
+
+def test_custom_tagging():
+    assert stimcirq.cirq_circuit_to_stim_circuit(
+        cirq.Circuit(
+            cirq.X(cirq.LineQubit(0)).with_tags('test'),
+            cirq.X(cirq.LineQubit(0)).with_tags((2, 3, 4)),
+            cirq.H(cirq.LineQubit(0)).with_tags('a', 'b'),
+        ),
+        tag_func=lambda op: "PAIR" if len(op.tags) == 2 else repr(op.tags),
+    ) == stim.Circuit("""
+        X[('test',)] 0
+        TICK
+        X[((2, 3, 4),)] 0
+        TICK
+        H[PAIR] 0
         TICK
     """)

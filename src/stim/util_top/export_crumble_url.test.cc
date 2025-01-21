@@ -127,8 +127,6 @@ TEST(export_crumble, graphlike_error) {
     auto error = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
 
     auto actual = export_crumble_url(circuit, true, {{0, error}});
-    std::cout << actual << "\n";
-    std::cout << actual << "\n";
     auto expected =
         "https://algassert.com/crumble#circuit="
         "R_0_1_2_3;"
