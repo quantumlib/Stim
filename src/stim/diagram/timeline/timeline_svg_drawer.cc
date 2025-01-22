@@ -743,31 +743,67 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
     SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
-    auto c = q2xy(pseudo_target.qubit_value());
-    auto span = (uint16_t)(1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
-    std::stringstream ss;
-    ss << "OBS_INCLUDE(" << op.args[0] << ")";
-    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black", 0, 10}, {});
-    c.xyz[0] += (span - 1) * GATE_PITCH * 0.5f;
-
-    svg_out << "<text";
-    write_key_val(svg_out, "text-anchor", "middle");
-    write_key_val(svg_out, "font-family", "monospace");
-    write_key_val(svg_out, "font-size", 8);
-    write_key_val(svg_out, "x", c.xyz[0]);
-    write_key_val(svg_out, "y", c.xyz[1] - GATE_RADIUS - 4);
-    svg_out << ">";
-    svg_out << "L" << op.args[0] << " *= ";
-    for (size_t k = 0; k < rec_targets.size(); k++) {
-        if (k) {
-            svg_out << "*";
+    // Draw per-quit L#*=P boxes.
+    bool had_paulis = false;
+    bool had_rec = false;
+    for (const auto &t : rec_targets) {
+        if (t.is_measurement_record_target()) {
+            had_rec = true;
         }
-        write_rec_index(svg_out, rec_targets[k].value());
+        if (t.is_pauli_target()) {
+            had_paulis = true;
+            std::stringstream ss;
+            ss << "L" << (op.args.empty() ? 0 : op.args[0]) << "*=";
+            ss << t.pauli_type();
+            auto c = q2xy(t.qubit_value());
+            draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{
+                .span=2,
+                .body=ss.str(),
+                .subscript="",
+                .superscript="",
+                .fill="lightgray",
+                .text_color="black",
+                .font_size=0,
+                .sub_font_size=10
+            }, {});
+        }
     }
-    if (rec_targets.empty()) {
-        svg_out << "1 (vacuous)";
+
+    // Draw OBS_INCLUDE(#) box with rec annotations above it, if there are measurement records.
+    if (had_rec) {
+        had_rec = false;
+        auto span = (uint16_t)(1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
+        auto c = q2xy(pseudo_target.qubit_value());
+        std::stringstream ss;
+        ss << "OBS_INCLUDE(" << (op.args.empty() ? 0 : op.args[0]) << ")";
+        if (!had_paulis) {
+            draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black", 0, 10}, {});
+        }
+        c.xyz[0] += (span - 1) * GATE_PITCH * 0.5f;
+
+        svg_out << "<text";
+        write_key_val(svg_out, "text-anchor", "middle");
+        write_key_val(svg_out, "font-family", "monospace");
+        write_key_val(svg_out, "font-size", 8);
+        write_key_val(svg_out, "x", c.xyz[0]);
+        write_key_val(svg_out, "y", c.xyz[1] - GATE_RADIUS - 4);
+        svg_out << ">";
+        svg_out << "L" << op.args[0] << " *= ";
+        ss << "*=";
+        for (const auto &t : rec_targets) {
+            if (t.is_measurement_record_target()) {
+                if (had_rec) {
+                    svg_out << "*";
+                }
+                had_rec = true;
+                write_rec_index(svg_out, t.value());
+            }
+        }
+        if (!had_rec && !had_paulis) {
+            svg_out << "1 (vacuous)";
+        }
+        svg_out << "</text>\n";
     }
-    svg_out << "</text>\n";
 }
 
 void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {
