@@ -427,27 +427,54 @@ void DiagramTimelineAsciiDrawer::do_observable_include(const ResolvedTimelineOpe
     SpanRef<const GateTarget> rec_targets = op.targets;
     rec_targets.ptr_start++;
 
-    std::stringstream ss;
-    ss << "OBSERVABLE_INCLUDE:L" << (op.args.empty() ? 0 : op.args[0]) << "*=";
-    for (size_t k = 0; k < rec_targets.size(); k++) {
-        if (k) {
-            ss << "*";
+    bool had_paulis = false;
+    for (const auto &t : rec_targets) {
+        if (t.is_pauli_target()) {
+            had_paulis = true;
+            std::stringstream ss;
+            ss << "L" << (op.args.empty() ? 0 : op.args[0]) << "*=";
+            ss << t.pauli_type();
+            diagram.add_entry(
+                AsciiDiagramEntry{
+                    {
+                        m2x(cur_moment),
+                        q2y(t.qubit_value()),
+                        GATE_ALIGNMENT_X,
+                        GATE_ALIGNMENT_Y,
+                    },
+                    ss.str(),
+                });
         }
-        write_rec_index(ss, rec_targets[k].value());
     }
-    if (rec_targets.empty()) {
-        ss.put('1');
+
+    bool had_rec = false;
+    std::stringstream ss;
+    ss << "OBSERVABLE_INCLUDE:L" << (op.args.empty() ? 0 : op.args[0]);
+    ss << "*=";
+    for (const auto &t : rec_targets) {
+        if (t.is_measurement_record_target()) {
+            if (had_rec) {
+                ss << "*";
+            }
+            had_rec = true;
+            write_rec_index(ss, t.value());
+        }
     }
-    diagram.add_entry(
-        AsciiDiagramEntry{
-            {
-                m2x(cur_moment),
-                q2y(pseudo_target.qubit_value()),
-                GATE_ALIGNMENT_X,
-                GATE_ALIGNMENT_Y,
-            },
-            ss.str(),
-        });
+    if (had_rec || !had_paulis) {
+        if (rec_targets.empty()) {
+            ss.put('1');
+        }
+        diagram.add_entry(
+            AsciiDiagramEntry{
+                {
+                    m2x(cur_moment),
+                    q2y(pseudo_target.qubit_value()),
+                    GATE_ALIGNMENT_X,
+                    GATE_ALIGNMENT_Y,
+                },
+                ss.str(),
+            });
+    }
 }
 
 void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOperation &op) {

@@ -184,8 +184,11 @@ enum GateFlags : uint16_t {
     // Controls validation code checking for arguments coming in pairs.
     GATE_TARGETS_PAIRS = 1 << 6,
     // Controls instructions like CORRELATED_ERROR taking Pauli product targets ("X1 Y2 Z3").
+    // Note that this enables the Pauli terms but not the combine terms like X1*Y2.
     GATE_TARGETS_PAULI_STRING = 1 << 7,
     // Controls instructions like DETECTOR taking measurement record targets ("rec[-1]").
+    // The "ONLY" refers to the fact that this flag switches the default behavior to not allowing qubit targets.
+    // Further flags can then override that default.
     GATE_ONLY_TARGETS_MEASUREMENT_RECORD = 1 << 8,
     // Controls instructions like CX operating allowing measurement record targets and sweep bit targets.
     GATE_CAN_TARGET_BITS = 1 << 9,

@@ -496,13 +496,23 @@ struct QasmExporter {
                 }
 
                 int ref_value = 0;
+                bool had_paulis = false;
                 for (auto t : instruction.targets) {
-                    assert(t.is_measurement_record_target());
-                    auto i = measurement_offset + t.rec_offset();
-                    ref_value ^= reference_sample[i];
-                    out << "rec[" << (measurement_offset + t.rec_offset()) << "] ^ ";
+                    if (t.is_measurement_record_target()) {
+                        auto i = measurement_offset + t.rec_offset();
+                        ref_value ^= reference_sample[i];
+                        out << "rec[" << (measurement_offset + t.rec_offset()) << "] ^ ";
+                    } else if (t.is_pauli_target()) {
+                        had_paulis = true;
+                    } else {
+                        throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
+                    }
                 }
                 out << ref_value << ";\n";
+
+                if (had_paulis) {
+                    out << "// Warning: ignored pauli terms in " << instruction << "\n";
+                }
                 return;
             }
 

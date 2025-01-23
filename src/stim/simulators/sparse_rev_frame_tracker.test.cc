@@ -745,3 +745,17 @@ TEST(SparseUnsignedRevFrameTracker, fail_anticommute) {
         circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors(), true);
     ASSERT_THROW({ rev.undo_circuit(circuit); }, std::invalid_argument);
 }
+
+TEST(SparseUnsignedRevFrameTracker, OBS_INCLUDE_PAULIS) {
+    SparseUnsignedRevFrameTracker rev(4, 4, 4);
+
+    rev.undo_circuit(Circuit("OBSERVABLE_INCLUDE(5) X1 Y2 Z3 rec[-1]"));
+    ASSERT_TRUE(rev.xs[0].empty());
+    ASSERT_TRUE(rev.zs[0].empty());
+    ASSERT_EQ(rev.xs[1], (std::vector<DemTarget>{DemTarget::observable_id(5)}));
+    ASSERT_TRUE(rev.zs[1].empty());
+    ASSERT_EQ(rev.xs[2], (std::vector<DemTarget>{DemTarget::observable_id(5)}));
+    ASSERT_EQ(rev.zs[2], (std::vector<DemTarget>{DemTarget::observable_id(5)}));
+    ASSERT_TRUE(rev.xs[3].empty());
+    ASSERT_EQ(rev.zs[3], (std::vector<DemTarget>{DemTarget::observable_id(5)}));
+}
