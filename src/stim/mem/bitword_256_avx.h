@@ -48,17 +48,17 @@ struct bitword<256> {
         _mm_free(ptr);
     }
 
-    inline bitword<256>() : val(__m256i{}) {
+    inline bitword() : val(__m256i{}) {
     }
-    inline bitword<256>(__m256i val) : val(val) {
+    inline bitword(__m256i val) : val(val) {
     }
-    inline bitword<256>(std::array<uint64_t, 4> val) : val{_mm256_set_epi64x(val[3], val[2], val[1], val[0])} {
+    inline bitword(std::array<uint64_t, 4> val) : val{_mm256_set_epi64x(val[3], val[2], val[1], val[0])} {
     }
-    inline bitword<256>(uint64_t val) : val{_mm256_set_epi64x(0, 0, 0, val)} {
+    inline bitword(uint64_t val) : val{_mm256_set_epi64x(0, 0, 0, val)} {
     }
-    inline bitword<256>(int64_t val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
+    inline bitword(int64_t val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
     }
-    inline bitword<256>(int val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
+    inline bitword(int val) : val{_mm256_set_epi64x(-(val < 0), -(val < 0), -(val < 0), val)} {
     }
 
     inline static bitword<256> tile8(uint8_t pattern) {

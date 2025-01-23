@@ -340,7 +340,7 @@ def ry(qubit q0) { reset q0; h q0; s q0; }
 qreg q[18];
 creg rec[25];
 creg dets[1];
-creg obs[1];
+creg obs[2];
 creg sweep[1];
 
 id q[0];
@@ -475,11 +475,14 @@ obs[0] = obs[0] ^ rec[16] ^ 0;
 rec[17] = 0;
 rec[18] = 1;
 rec[19] = 0;
+obs[1] = obs[1] ^ 0;
+// Warning: ignored pauli terms in OBSERVABLE_INCLUDE(1) Z2 Z3
 barrier q;
 
 rec[20] = mrx(q[0]) ^ 1;
 rec[21] = my(q[1]) ^ 1;
 rec[22] = mzz(q[2], q[3]) ^ 1;
+obs[1] = obs[1] ^ rec[22] ^ 1;
 rec[23] = myy(q[4], q[5]);
 // --- begin decomposed MPP X6*!Y7*Z8
 h q[6];

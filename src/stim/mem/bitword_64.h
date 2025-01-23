@@ -45,15 +45,15 @@ struct bitword<64> {
         free(ptr);
     }
 
-    inline constexpr bitword<64>() : val{} {
+    inline constexpr bitword() : val{} {
     }
-    inline bitword<64>(std::array<uint64_t, 1> val) : val{val[0]} {
+    inline bitword(std::array<uint64_t, 1> val) : val{val[0]} {
     }
-    inline constexpr bitword<64>(uint64_t v) : val{v} {
+    inline constexpr bitword(uint64_t v) : val{v} {
     }
-    inline constexpr bitword<64>(int64_t v) : val{(uint64_t)v} {
+    inline constexpr bitword(int64_t v) : val{(uint64_t)v} {
     }
-    inline constexpr bitword<64>(int v) : val{(uint64_t)v} {
+    inline constexpr bitword(int v) : val{(uint64_t)v} {
     }
 
     constexpr inline static bitword<64> tile64(uint64_t pattern) {

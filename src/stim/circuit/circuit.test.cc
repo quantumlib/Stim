@@ -1807,12 +1807,14 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         DETECTOR(1, 2, 3) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
         MPAD 0 1 0
+        OBSERVABLE_INCLUDE(1) Z2 Z3
         TICK
 
         # Inverted measurements.
         MRX !0
         MY !1
         MZZ !2 3
+        OBSERVABLE_INCLUDE(1) rec[-1]
         MYY !4 !5
         MPP X6*!Y7*Z8
         TICK

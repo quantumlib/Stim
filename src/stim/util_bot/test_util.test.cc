@@ -1,20 +1,7 @@
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "stim/util_bot/test_util.test.h"
 
 #include <fstream>
+#include <filesystem>
 
 #include "stim/util_bot/probability_util.h"
 
@@ -67,8 +54,8 @@ void expect_string_is_identical_to_saved_file(std::string_view actual, std::stri
         out.close();
         EXPECT_TRUE(false) << "Diagram didn't agree.\n"
                            << "    key=" << key << "\n"
-                           << "    expected: file://" << path << "\n"
-                           << "    actual: file://" << new_path << "\n";
+                           << "    expected: file://" << std::filesystem::weakly_canonical(std::filesystem::path(path)).c_str() << "\n"
+                           << "    actual: file://" << std::filesystem::weakly_canonical(std::filesystem::path(new_path)).c_str() << "\n";
     }
 }
 
