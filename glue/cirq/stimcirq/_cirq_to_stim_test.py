@@ -377,7 +377,7 @@ def test_on_tagged_loop():
             repetitions=3,
         ).with_tags('my_tag')
     )
-    
+
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(c)
     assert stim.CircuitRepeatBlock in {type(instr) for instr in stim_circuit}
 
@@ -410,3 +410,15 @@ def test_custom_tagging():
         H[PAIR] 0
         TICK
     """)
+
+
+def test_round_trip_example_circuit():
+    stim_circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_x",
+        distance=3,
+        rounds=1,
+        after_clifford_depolarization=0.01,
+    )
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit.flattened())
+    circuit_back = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert len(circuit_back.shortest_graphlike_error()) == 3

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import cirq
 import stim
@@ -91,7 +91,9 @@ class MeasureAndOrResetGate(cirq.Gate):
             result += self.basis
         return result
 
-    def _stim_conversion_(self, *, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs):
+    def _stim_conversion_(self, *, edit_circuit: stim.Circuit, targets: List[int], tag: str, edit_measurement_key_lengths: List[Tuple[str, int]], **kwargs):
+        if self.measure:
+            edit_measurement_key_lengths.append((self.key, 1))
         if self.invert_measure:
             targets[0] = stim.target_inv(targets[0])
         if self.measure_flip_probability:
