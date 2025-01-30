@@ -85,6 +85,17 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
                 repeat_count: The number of times to repeat the block.
                 body: The body of the block, as a circuit.
                 tag: Defaults to empty. A custom string attached to the REPEAT instruction.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit()
+                >>> c.append(stim.CircuitRepeatBlock(100, stim.Circuit("M 0")))
+                >>> c
+                stim.Circuit('''
+                    REPEAT 100 {
+                        M 0
+                    }
+                ''')
         )DOC")
             .data());
 

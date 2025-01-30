@@ -204,6 +204,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.num_qubits`](#stim.FlipSimulator.num_qubits)
     - [`stim.FlipSimulator.peek_pauli_flips`](#stim.FlipSimulator.peek_pauli_flips)
     - [`stim.FlipSimulator.set_pauli_flip`](#stim.FlipSimulator.set_pauli_flip)
+    - [`stim.FlipSimulator.to_numpy`](#stim.FlipSimulator.to_numpy)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
@@ -4315,6 +4316,17 @@ def __init__(
         repeat_count: The number of times to repeat the block.
         body: The body of the block, as a circuit.
         tag: Defaults to empty. A custom string attached to the REPEAT instruction.
+
+    Examples:
+        >>> import stim
+        >>> c = stim.Circuit()
+        >>> c.append(stim.CircuitRepeatBlock(100, stim.Circuit("M 0")))
+        >>> c
+        stim.Circuit('''
+            REPEAT 100 {
+                M 0
+            }
+        ''')
     """
 ```
 
@@ -8229,6 +8241,152 @@ def set_pauli_flip(
         >>> sim.set_pauli_flip('X', qubit_index=2, instance_index=1)
         >>> sim.peek_pauli_flips()
         [stim.PauliString("+___"), stim.PauliString("+__X")]
+    """
+```
+
+<a name="stim.FlipSimulator.to_numpy"></a>
+```python
+# stim.FlipSimulator.to_numpy
+
+# (in class stim.FlipSimulator)
+def to_numpy(
+    self,
+    *,
+    bit_packed: bool = False,
+    transpose: bool = False,
+    output_xs: bool | np.ndarray = False,
+    output_zs: bool | np.ndarray = False,
+    output_measure_flips: bool | np.ndarray = False,
+    output_detector_flips: bool | np.ndarray = False,
+    output_observable_flips: bool | np.ndarray = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Writes the simulator state into numpy arrays.
+
+    Args:
+        bit_packed: Whether or not the result is bit packed, storing 8 bits per
+            byte instead of 1 bit per byte. Bit packing always applies to
+            the second index of the result. Bits are packed in little endian
+            order (as if by `np.packbits(X, axis=1, order='little')`).
+        transpose: Defaults to False. When set to False, the second index of the
+            returned array (the index affected by bit packing) is the shot index
+            (meaning the first index is the qubit index or measurement index or
+            etc). When set to True, results are transposed so that the first
+            index is the shot index.
+        output_xs: Defaults to False. When set to False, the X flip data is not
+            generated and the corresponding array in the result tuple is set to
+            None. When set to True, a new array is allocated to hold the X flip
+            data and this array is returned via the result tuple. When set to
+            a numpy array, the results are written into that array (the shape and
+            dtype of the array must be exactly correct).
+        output_zs: Defaults to False. When set to False, the Z flip data is not
+            generated and the corresponding array in the result tuple is set to
+            None. When set to True, a new array is allocated to hold the Z flip
+            data and this array is returned via the result tuple. When set to
+            a numpy array, the results are written into that array (the shape and
+            dtype of the array must be exactly correct).
+        output_measure_flips: Defaults to False. When set to False, the measure
+            flip data is not generated and the corresponding array in the result
+            tuple is set to None. When set to True, a new array is allocated to
+            hold the measure flip data and this array is returned via the result
+            tuple. When set to a numpy array, the results are written into that
+            array (the shape and dtype of the array must be exactly correct).
+        output_detector_flips: Defaults to False. When set to False, the detector
+            flip data is not generated and the corresponding array in the result
+            tuple is set to None. When set to True, a new array is allocated to
+            hold the detector flip data and this array is returned via the result
+            tuple. When set to a numpy array, the results are written into that
+            array (the shape and dtype of the array must be exactly correct).
+        output_observable_flips: Defaults to False. When set to False, the obs
+            flip data is not generated and the corresponding array in the result
+            tuple is set to None. When set to True, a new array is allocated to
+            hold the obs flip data and this array is returned via the result
+            tuple. When set to a numpy array, the results are written into that
+            array (the shape and dtype of the array must be exactly correct).
+
+    Returns:
+        A tuple (xs, zs, ms, ds, os) of numpy arrays. The xs and zs arrays are
+        the pauli flip data specified using XZ encoding (00=I, 10=X, 11=Y, 01=Z).
+        The ms array is the measure flip data, the ds array is the detector flip
+        data, and the os array is the obs flip data. The arrays default to
+        `None` when the corresponding `output_*` argument was left False.
+
+        The shape and dtype of the data depends on arguments given to the function.
+        The following specifies each array's shape and dtype for each case:
+
+            if not transpose and not bit_packed:
+                xs.shape = (sim.batch_size, sim.num_qubits)
+                zs.shape = (sim.batch_size, sim.num_qubits)
+                ms.shape = (sim.batch_size, sim.num_measurements)
+                ds.shape = (sim.batch_size, sim.num_detectors)
+                os.shape = (sim.batch_size, sim.num_observables)
+                xs.dtype = np.bool_
+                zs.dtype = np.bool_
+                ms.dtype = np.bool_
+                ds.dtype = np.bool_
+                os.dtype = np.bool_
+            elif not transpose and bit_packed:
+                xs.shape = (sim.batch_size, math.ceil(sim.num_qubits / 8))
+                zs.shape = (sim.batch_size, math.ceil(sim.num_qubits / 8))
+                ms.shape = (sim.batch_size, math.ceil(sim.num_measurements / 8))
+                ds.shape = (sim.batch_size, math.ceil(sim.num_detectors / 8))
+                os.shape = (sim.batch_size, math.ceil(sim.num_observables / 8))
+                xs.dtype = np.uint8
+                zs.dtype = np.uint8
+                ms.dtype = np.uint8
+                ds.dtype = np.uint8
+                os.dtype = np.uint8
+            elif transpose and not bit_packed:
+                xs.shape = (sim.num_qubits, sim.batch_size)
+                zs.shape = (sim.num_qubits, sim.batch_size)
+                ms.shape = (sim.num_measurements, sim.batch_size)
+                ds.shape = (sim.num_detectors, sim.batch_size)
+                os.shape = (sim.num_observables, sim.batch_size)
+                xs.dtype = np.bool_
+                zs.dtype = np.bool_
+                ms.dtype = np.bool_
+                ds.dtype = np.bool_
+                os.dtype = np.bool_
+            elif transpose and bit_packed:
+                xs.shape = (sim.num_qubits, math.ceil(sim.batch_size / 8))
+                zs.shape = (sim.num_qubits, math.ceil(sim.batch_size / 8))
+                ms.shape = (sim.num_measurements, math.ceil(sim.batch_size / 8))
+                ds.shape = (sim.num_detectors, math.ceil(sim.batch_size / 8))
+                os.shape = (sim.num_observables, math.ceil(sim.batch_size / 8))
+                xs.dtype = np.uint8
+                zs.dtype = np.uint8
+                ms.dtype = np.uint8
+                ds.dtype = np.uint8
+                os.dtype = np.uint8
+
+    Raises:
+        ValueError:
+            All the `output_*` arguments were False, or an `output_*` argument
+            had a shape or dtype inconsistent with the requested data.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=9)
+        >>> sim.do(stim.Circuit('M 0 1 2'))
+
+        >>> xs, zs, ms, ds, os = sim.to_numpy(
+        ...     transpose=True,
+        ...     bit_packed=True,
+        ...     output_measure_flips=True,
+        ... )
+        >>> xs
+        >>> zs
+        >>> ms
+        array([[0],
+               [0],
+               [0],
+               [0],
+               [0],
+               [0],
+               [0],
+               [0],
+               [0]], dtype=uint8)
+        >>> ds
+        >>> os
     """
 ```
 

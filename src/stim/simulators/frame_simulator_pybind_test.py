@@ -413,3 +413,141 @@ def test_repro_heralded_pauli_channel_1_bug():
     result = circuit.compile_sampler().sample(1024)
     assert np.sum(result[:, 0]) > 0
     assert np.sum(result[:, 1]) == 0
+
+
+def test_to_numpy():
+    sim = stim.FlipSimulator(batch_size=50)
+    sim.do(stim.Circuit.generated(
+        "surface_code:rotated_memory_x",
+        distance=5,
+        rounds=3,
+        after_clifford_depolarization=0.1,
+    ))
+
+    xs0, zs0, ms0, ds0, os0 = sim.to_numpy(
+        output_xs=True,
+        output_zs=True,
+        output_measure_flips=True,
+        output_detector_flips=True,
+        output_observable_flips=True,
+    )
+    for k in range(50):
+        np.testing.assert_array_equal(xs0[:, k], sim.peek_pauli_flips()[k].to_numpy()[0])
+        np.testing.assert_array_equal(zs0[:, k], sim.peek_pauli_flips()[k].to_numpy()[1])
+        np.testing.assert_array_equal(ms0[:, k], sim.get_measurement_flips(instance_index=k))
+        np.testing.assert_array_equal(ds0[:, k], sim.get_detector_flips(instance_index=k))
+        np.testing.assert_array_equal(os0[:, k], sim.get_observable_flips(instance_index=k))
+
+    xs, zs, ms, ds, os = sim.to_numpy(output_xs=True)
+    np.testing.assert_array_equal(xs, xs0)
+    assert zs is None
+    assert ms is None
+    assert ds is None
+    assert os is None
+
+    xs, zs, ms, ds, os = sim.to_numpy(output_zs=True)
+    assert xs is None
+    np.testing.assert_array_equal(zs, zs0)
+    assert ms is None
+    assert ds is None
+    assert os is None
+
+    xs, zs, ms, ds, os = sim.to_numpy(output_measure_flips=True)
+    assert xs is None
+    assert zs is None
+    np.testing.assert_array_equal(ms, ms0)
+    assert ds is None
+    assert os is None
+
+    xs, zs, ms, ds, os = sim.to_numpy(output_detector_flips=True)
+    assert xs is None
+    assert zs is None
+    assert ms is None
+    np.testing.assert_array_equal(ds, ds0)
+    assert os is None
+
+    xs, zs, ms, ds, os = sim.to_numpy(output_observable_flips=True)
+    assert xs is None
+    assert zs is None
+    assert ms is None
+    assert ds is None
+    np.testing.assert_array_equal(os, os0)
+
+    xs1 = np.empty_like(xs0)
+    zs1 = np.empty_like(zs0)
+    ms1 = np.empty_like(ms0)
+    ds1 = np.empty_like(ds0)
+    os1 = np.empty_like(os0)
+    xs2, zs2, ms2, ds2, os2 = sim.to_numpy(
+        output_xs=xs1,
+        output_zs=zs1,
+        output_measure_flips=ms1,
+        output_detector_flips=ds1,
+        output_observable_flips=os1,
+    )
+    assert xs1 is xs2
+    assert zs1 is zs2
+    assert ms1 is ms2
+    assert ds1 is ds2
+    assert os1 is os2
+    np.testing.assert_array_equal(xs1, xs0)
+    np.testing.assert_array_equal(zs1, zs0)
+    np.testing.assert_array_equal(ms1, ms0)
+    np.testing.assert_array_equal(ds1, ds0)
+    np.testing.assert_array_equal(os1, os0)
+
+    xs2, zs2, ms2, ds2, os2 = sim.to_numpy(
+        transpose=True,
+        output_xs=True,
+        output_zs=True,
+        output_measure_flips=True,
+        output_detector_flips=True,
+        output_observable_flips=True,
+    )
+    np.testing.assert_array_equal(xs2, np.transpose(xs0))
+    np.testing.assert_array_equal(zs2, np.transpose(zs0))
+    np.testing.assert_array_equal(ms2, np.transpose(ms0))
+    np.testing.assert_array_equal(ds2, np.transpose(ds0))
+    np.testing.assert_array_equal(os2, np.transpose(os0))
+
+    xs2, zs2, ms2, ds2, os2 = sim.to_numpy(
+        bit_packed=True,
+        output_xs=True,
+        output_zs=True,
+        output_measure_flips=True,
+        output_detector_flips=True,
+        output_observable_flips=True,
+    )
+    np.testing.assert_array_equal(xs2, np.packbits(xs0, axis=1, bitorder='little'))
+    np.testing.assert_array_equal(zs2, np.packbits(zs0, axis=1, bitorder='little'))
+    np.testing.assert_array_equal(ms2, np.packbits(ms0, axis=1, bitorder='little'))
+    np.testing.assert_array_equal(ds2, np.packbits(ds0, axis=1, bitorder='little'))
+    np.testing.assert_array_equal(os2, np.packbits(os0, axis=1, bitorder='little'))
+
+    xs2, zs2, ms2, ds2, os2 = sim.to_numpy(
+        transpose=True,
+        bit_packed=True,
+        output_xs=True,
+        output_zs=True,
+        output_measure_flips=True,
+        output_detector_flips=True,
+        output_observable_flips=True,
+    )
+    np.testing.assert_array_equal(xs2, np.packbits(np.transpose(xs0), axis=1, bitorder='little'))
+    np.testing.assert_array_equal(zs2, np.packbits(np.transpose(zs0), axis=1, bitorder='little'))
+    np.testing.assert_array_equal(ms2, np.packbits(np.transpose(ms0), axis=1, bitorder='little'))
+    np.testing.assert_array_equal(ds2, np.packbits(np.transpose(ds0), axis=1, bitorder='little'))
+    np.testing.assert_array_equal(os2, np.packbits(np.transpose(os0), axis=1, bitorder='little'))
+
+    with pytest.raises(ValueError, match="at least one output"):
+        sim.to_numpy()
+    with pytest.raises(ValueError, match="shape="):
+        sim.to_numpy(output_xs=np.empty(shape=(0, 0), dtype=np.uint64))
+    with pytest.raises(ValueError, match="shape="):
+        sim.to_numpy(output_zs=np.empty(shape=(0, 0), dtype=np.uint64))
+    with pytest.raises(ValueError, match="shape="):
+        sim.to_numpy(output_measure_flips=np.empty(shape=(0, 0), dtype=np.uint64))
+    with pytest.raises(ValueError, match="shape="):
+        sim.to_numpy(output_detector_flips=np.empty(shape=(0, 0), dtype=np.uint64))
+    with pytest.raises(ValueError, match="shape="):
+        sim.to_numpy(output_observable_flips=np.empty(shape=(0, 0), dtype=np.uint64))
