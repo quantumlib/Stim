@@ -195,6 +195,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.FlipSimulator.clear`](#stim.FlipSimulator.clear)
     - [`stim.FlipSimulator.copy`](#stim.FlipSimulator.copy)
     - [`stim.FlipSimulator.do`](#stim.FlipSimulator.do)
+    - [`stim.FlipSimulator.generate_bernoulli_samples`](#stim.FlipSimulator.generate_bernoulli_samples)
     - [`stim.FlipSimulator.get_detector_flips`](#stim.FlipSimulator.get_detector_flips)
     - [`stim.FlipSimulator.get_measurement_flips`](#stim.FlipSimulator.get_measurement_flips)
     - [`stim.FlipSimulator.get_observable_flips`](#stim.FlipSimulator.get_observable_flips)
@@ -7965,6 +7966,76 @@ def do(
     """
 ```
 
+<a name="stim.FlipSimulator.generate_bernoulli_samples"></a>
+```python
+# stim.FlipSimulator.generate_bernoulli_samples
+
+# (in class stim.FlipSimulator)
+def generate_bernoulli_samples(
+    self,
+    num_samples: int,
+    *,
+    p: float,
+    bit_packed: bool = False,
+    out: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """Uses the simulator's random number generator to produce biased coin flips.
+
+    This method has best performance when specifying `bit_packed=True` and
+    when specifying an `out=` parameter pointing to a numpy array that has
+    contiguous data aligned to a 64 bit boundary. (If `out` isn't specified,
+    the returned numpy array will have this property.)
+
+    Args:
+        num_samples: The number of samples to produce.
+        p: The probability of each sample being True instead of False.
+        bit_packed: Defaults to False (no bit packing). When True, the result
+            has type np.uint8 instead of np.bool_ and 8 samples are packed into
+            each byte as if by np.packbits(bitorder='little'). (The bit order
+            is relevant when producing a number of samples that isn't a multiple
+            of 8.)
+        out: Defaults to None (allocate new). A numpy array to write the samples
+            into. Must have the correct size and dtype.
+
+    Returns:
+        A numpy array containing the samples. The shape and dtype depends on
+        the bit_packed argument:
+
+            if not bit_packed:
+                shape = (num_samples,)
+                dtype = np.bool_
+            elif not transpose and bit_packed:
+                shape = (math.ceil(num_samples / 8),)
+                dtype = np.uint8
+
+    Raises:
+        ValueError:
+            The given `out` argument had a shape or dtype inconsistent with the
+            requested data.
+
+    Examples:
+        >>> import stim
+        >>> sim = stim.FlipSimulator(batch_size=256)
+        >>> r = sim.generate_bernoulli_samples(1001, p=0.25)
+        >>> r.dtype
+        dtype('bool')
+        >>> r.shape
+        (1001,)
+
+        >>> r = sim.generate_bernoulli_samples(53, p=0.1, bit_packed=True)
+        >>> r.dtype
+        dtype('uint8')
+        >>> r.shape
+        (7,)
+        >>> r[6] & 0b1110_0000  # zero'd padding bits
+        0
+
+        >>> r2 = sim.generate_bernoulli_samples(53, p=0.2, bit_packed=True, out=r)
+        >>> r is r2  # Check request to reuse r worked.
+        True
+    """
+```
+
 <a name="stim.FlipSimulator.get_detector_flips"></a>
 ```python
 # stim.FlipSimulator.get_detector_flips
@@ -8403,11 +8474,11 @@ def to_numpy(
     *,
     bit_packed: bool = False,
     transpose: bool = False,
-    output_xs: bool | np.ndarray = False,
-    output_zs: bool | np.ndarray = False,
-    output_measure_flips: bool | np.ndarray = False,
-    output_detector_flips: bool | np.ndarray = False,
-    output_observable_flips: bool | np.ndarray = False,
+    output_xs: Union[bool, np.ndarray] = False,
+    output_zs: Union[bool, np.ndarray] = False,
+    output_measure_flips: Union[bool, np.ndarray] = False,
+    output_detector_flips: Union[bool, np.ndarray] = False,
+    output_observable_flips: Union[bool, np.ndarray] = False,
 ) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
     """Writes the simulator state into numpy arrays.
 

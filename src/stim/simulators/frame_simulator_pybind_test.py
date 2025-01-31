@@ -551,3 +551,54 @@ def test_to_numpy():
         sim.to_numpy(output_detector_flips=np.empty(shape=(0, 0), dtype=np.uint64))
     with pytest.raises(ValueError, match="shape="):
         sim.to_numpy(output_observable_flips=np.empty(shape=(0, 0), dtype=np.uint64))
+
+
+def test_generate_bernoulli_samples():
+    sim = stim.FlipSimulator(batch_size=10)
+
+    v = sim.generate_bernoulli_samples(1001, p=0, bit_packed=False)
+    assert v.shape == (1001,)
+    assert v.dtype == np.bool_
+    assert np.sum(v) == 0
+
+    v2 = sim.generate_bernoulli_samples(1001, p=1, bit_packed=False, out=v)
+    assert v is v2
+    assert v.shape == (1001,)
+    assert v.dtype == np.bool_
+    assert np.sum(v) == 1001
+
+    v = sim.generate_bernoulli_samples(2**16, p=0.25, bit_packed=False)
+    assert abs(np.sum(v) - 2**16*0.25) < 2**12
+
+    v = sim.generate_bernoulli_samples(1001, p=0, bit_packed=True)
+    assert v.shape == (126,)
+    assert v.dtype == np.uint8
+    assert np.sum(np.unpackbits(v, count=1001, bitorder='little')) == 0
+    assert np.sum(np.unpackbits(v, count=1008, bitorder='little')) == 0
+
+    v2 = sim.generate_bernoulli_samples(1001, p=1, bit_packed=True, out=v)
+    assert v is v2
+    assert v.shape == (126,)
+    assert v.dtype == np.uint8
+    assert np.sum(np.unpackbits(v, count=1001, bitorder='little')) == 1001
+    assert np.sum(np.unpackbits(v, count=1008, bitorder='little')) == 1001
+
+    v = sim.generate_bernoulli_samples(2**16, p=0.25, bit_packed=True)
+    assert abs(np.sum(np.unpackbits(v, count=2**16)) - 2**16*0.25) < 2**12
+
+    v[:] = 0
+    sim.generate_bernoulli_samples(2**16 - 1, p=1, bit_packed=True, out=v)
+    assert np.all(v[:-1] == 0xFF)
+    assert v[-1] == 0x7F
+
+
+    v[:] = 0
+    sim.generate_bernoulli_samples(2**15, p=1, bit_packed=True, out=v[::2])
+    assert np.all(v[0::2] == 0xFF)
+    assert np.all(v[1::2] == 0)
+
+    v[:] = 0
+    sim.generate_bernoulli_samples(2**15 - 1, p=1, bit_packed=True, out=v[::2])
+    assert np.all(v[0::2][:-1] == 0xFF)
+    assert v[0::2][-1] == 0x7F
+    assert np.all(v[1::2] == 0)

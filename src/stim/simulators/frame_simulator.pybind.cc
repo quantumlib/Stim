@@ -33,6 +33,140 @@ std::optional<size_t> py_index_to_optional_size_t(
     return (size_t)i;
 }
 
+static void generate_biased_samples_bit_packed_contiguous(uint8_t *out, size_t num_bytes, float p, std::mt19937_64 &rng) {
+    uintptr_t start = (uintptr_t)out;
+    uintptr_t end = start + num_bytes;
+    uintptr_t aligned64_start = start & ~0b111ULL;
+    uintptr_t aligned64_end = end & ~0b111ULL;
+    if (aligned64_start != start) {
+        aligned64_start += 1;
+    }
+    biased_randomize_bits(p, (uint64_t *)aligned64_start, (uint64_t *)aligned64_end, rng);
+    if (start != aligned64_start) {
+        uint64_t pad;
+        biased_randomize_bits(p, &pad, &pad + 1, rng);
+        for (size_t k = 0; k < aligned64_start - start; k++) {
+            out[k] = (uint8_t)(pad & 0xFF);
+            pad >>= 8;
+        }
+    }
+    if (end != aligned64_end) {
+        uint64_t pad;
+        biased_randomize_bits(p, &pad, &pad + 1, rng);
+        for (size_t k = 0; k < end - aligned64_end; k++) {
+            ((uint8_t *)aligned64_end)[k] = (uint8_t)(pad & 0xFF);
+            pad >>= 8;
+        }
+    }
+}
+
+static void generate_biased_samples_bit_packed_with_stride(uint8_t *out, pybind11::ssize_t stride, size_t num_bytes, float p, std::mt19937_64 &rng) {
+    uint64_t stack[64];
+    uint64_t *stack_ptr = &stack[0];
+    for (size_t k1 = 0; k1 < num_bytes; k1 += 64*8) {
+        size_t n2 = std::min(num_bytes - k1, (size_t)(64*8));
+        biased_randomize_bits(p, stack_ptr, stack_ptr + (n2 + 7) / 8, rng);
+        uint8_t *stack_data = (uint8_t *)(void *)stack_ptr;
+        for (size_t k2 = 0; k2 < n2; k2++) {
+            *out = *stack_data;
+            stack_data += 1;
+            out += stride;
+        }
+    }
+}
+
+static void generate_biased_samples_bool(uint8_t *out, pybind11::ssize_t stride, size_t num_samples, float p, std::mt19937_64 &rng) {
+    uint64_t stack[64];
+    uint64_t *stack_ptr = &stack[0];
+    for (size_t k1 = 0; k1 < num_samples; k1 += 64*64) {
+        size_t n2 = std::min(num_samples - k1, (size_t)(64*64));
+        biased_randomize_bits(p, stack_ptr, stack_ptr + (n2 + 63) / 64, rng);
+        for (size_t k2 = 0; k2 < n2; k2++) {
+            bool bit = (stack[k2 / 64] >> (k2 & 63)) & 1;
+            *out++ = bit;
+        }
+    }
+}
+
+template <size_t W>
+pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_samples, float p, bool bit_packed, pybind11::object out) {
+    if (bit_packed) {
+        size_t num_bytes = (num_samples + 7) / 8;
+        if (out.is_none()) {
+            // Allocate u64 aligned memory.
+            void *buffer = (void *)new uint64_t[(num_bytes + 7) / 8];
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<uint64_t *>(f);
+            });
+            out = pybind11::array_t<uint8_t>(
+                {(pybind11::ssize_t)num_bytes},
+                {(pybind11::ssize_t)1},
+                (uint8_t *)buffer,
+                free_when_done);
+        } else if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(out)) {
+            throw std::invalid_argument("`out` wasn't `None` or a uint8 numpy array.");
+        }
+        auto buf = pybind11::cast<pybind11::array_t<uint8_t>>(out);
+        if (buf.ndim() != 1) {
+            throw std::invalid_argument("Output buffer wasn't one dimensional.");
+        }
+        if ((size_t)buf.shape(0) != num_bytes) {
+            std::stringstream ss;
+            ss << "Expected output buffer to have size " << num_bytes;
+            ss << " but its size is " << buf.shape(0) << ".";
+            throw std::invalid_argument(ss.str());
+        }
+        auto stride = buf.strides(0);
+        void *start_of_data = (void *)buf.mutable_data();
+
+        if (stride == 1 && num_bytes > 0) {
+            generate_biased_samples_bit_packed_contiguous(
+                (uint8_t *)start_of_data,
+                num_bytes,
+                p,
+                self.rng);
+        } else {
+            generate_biased_samples_bit_packed_with_stride(
+                (uint8_t *)start_of_data,
+                stride,
+                num_bytes,
+                p,
+                self.rng);
+        }
+        if (num_samples & 0b111) {
+            uint8_t mask = (1 << (num_samples & 0b111)) - 1;
+            buf.mutable_at(num_bytes - 1) &= mask;
+        }
+    } else {
+        if (out.is_none()) {
+            auto numpy = pybind11::module::import("numpy");
+            out = numpy.attr("empty")(num_samples, numpy.attr("bool_"));
+        } else if (!pybind11::isinstance<pybind11::array_t<bool>>(out)) {
+            throw std::invalid_argument("`out` wasn't `None` or a bool_ numpy array.");
+        }
+        auto buf = pybind11::cast<pybind11::array_t<bool>>(out);
+        if (buf.ndim() != 1) {
+            throw std::invalid_argument("Output buffer wasn't one dimensional.");
+        }
+        if ((size_t)buf.shape(0) != num_samples) {
+            std::stringstream ss;
+            ss << "Expected output buffer to have size " << num_samples;
+            ss << " but its size is " << buf.shape(0) << ".";
+            throw std::invalid_argument(ss.str());
+        }
+        auto stride = buf.strides(0);
+        void *start_of_data = (void *)buf.mutable_data();
+
+        generate_biased_samples_bool(
+            (uint8_t *)start_of_data,
+            stride,
+            num_samples,
+            p,
+            self.rng);
+    }
+    return out;
+}
+
 uint8_t pybind11_object_to_pauli_ixyz(const pybind11::object &obj) {
     if (pybind11::isinstance<pybind11::str>(obj)) {
         std::string_view s = pybind11::cast<std::string_view>(obj);
@@ -613,7 +747,7 @@ void stim_pybind::pybind_frame_simulator_methods(
         pybind11::arg("output_detector_flips") = false,
         pybind11::arg("output_observable_flips") = false,
         clean_doc_string(R"DOC(
-            @signature def to_numpy(self, *, bit_packed: bool = False, transpose: bool = False, output_xs: bool | np.ndarray = False, output_zs: bool | np.ndarray = False, output_measure_flips: bool | np.ndarray = False, output_detector_flips: bool | np.ndarray = False, output_observable_flips: bool | np.ndarray = False) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+            @signature def to_numpy(self, *, bit_packed: bool = False, transpose: bool = False, output_xs: Union[bool, np.ndarray] = False, output_zs: Union[bool, np.ndarray] = False, output_measure_flips: Union[bool, np.ndarray] = False, output_detector_flips: Union[bool, np.ndarray] = False, output_observable_flips: Union[bool, np.ndarray] = False) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
             Writes the simulator state into numpy arrays.
 
             Args:
@@ -754,6 +888,73 @@ void stim_pybind::pybind_frame_simulator_methods(
                        [7]], dtype=uint8)
                 >>> ds
                 >>> os
+        )DOC")
+            .data());
+
+    c.def(
+        "generate_bernoulli_samples",
+        &generate_bernoulli_samples<MAX_BITWORD_WIDTH>,
+        pybind11::arg("num_samples"),
+        pybind11::kw_only(),
+        pybind11::arg("p"),
+        pybind11::arg("bit_packed") = false,
+        pybind11::arg("out") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def generate_bernoulli_samples(self, num_samples: int, *, p: float, bit_packed: bool = False, out: Optional[np.ndarray] = None) -> np.ndarray:
+            Uses the simulator's random number generator to produce biased coin flips.
+
+            This method has best performance when specifying `bit_packed=True` and
+            when specifying an `out=` parameter pointing to a numpy array that has
+            contiguous data aligned to a 64 bit boundary. (If `out` isn't specified,
+            the returned numpy array will have this property.)
+
+            Args:
+                num_samples: The number of samples to produce.
+                p: The probability of each sample being True instead of False.
+                bit_packed: Defaults to False (no bit packing). When True, the result
+                    has type np.uint8 instead of np.bool_ and 8 samples are packed into
+                    each byte as if by np.packbits(bitorder='little'). (The bit order
+                    is relevant when producing a number of samples that isn't a multiple
+                    of 8.)
+                out: Defaults to None (allocate new). A numpy array to write the samples
+                    into. Must have the correct size and dtype.
+
+            Returns:
+                A numpy array containing the samples. The shape and dtype depends on
+                the bit_packed argument:
+
+                    if not bit_packed:
+                        shape = (num_samples,)
+                        dtype = np.bool_
+                    elif not transpose and bit_packed:
+                        shape = (math.ceil(num_samples / 8),)
+                        dtype = np.uint8
+
+            Raises:
+                ValueError:
+                    The given `out` argument had a shape or dtype inconsistent with the
+                    requested data.
+
+            Examples:
+                >>> import stim
+                >>> sim = stim.FlipSimulator(batch_size=256)
+                >>> r = sim.generate_bernoulli_samples(1001, p=0.25)
+                >>> r.dtype
+                dtype('bool')
+                >>> r.shape
+                (1001,)
+
+                >>> r = sim.generate_bernoulli_samples(53, p=0.1, bit_packed=True)
+                >>> r.dtype
+                dtype('uint8')
+                >>> r.shape
+                (7,)
+                >>> r[6] & 0b1110_0000  # zero'd padding bits
+                0
+
+                >>> r2 = sim.generate_bernoulli_samples(53, p=0.2, bit_packed=True, out=r)
+                >>> r is r2  # Check request to reuse r worked.
+                True
         )DOC")
             .data());
 
