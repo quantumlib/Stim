@@ -169,12 +169,12 @@ std::vector<ExplainedError> py_find_undetectable_logical_error(
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
-std::string py_shortest_error_sat_problem(const Circuit &self, std::string format) {
+std::string py_shortest_error_sat_problem(const Circuit &self, std::string_view format) {
     DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
     return stim::shortest_error_sat_problem(dem, format);
 }
 
-std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization, std::string format) {
+std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization, std::string_view format) {
     DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
     return stim::likeliest_error_sat_problem(dem, quantization, format);
 }
@@ -255,7 +255,7 @@ void circuit_append(
     std::vector<uint32_t> raw_targets;
     try {
         raw_targets.push_back(obj_to_gate_target(targets).data);
-    } catch (const std::invalid_argument &ex) {
+    } catch (const std::invalid_argument &) {
         for (const auto &t : targets) {
             raw_targets.push_back(handle_to_gate_target(t).data);
         }
@@ -279,13 +279,13 @@ void circuit_append(
             auto d = pybind11::cast<double>(used_arg);
             self.safe_append_ua(gate_name, raw_targets, d, tag);
             return;
-        } catch (const pybind11::cast_error &ex) {
+        } catch (const pybind11::cast_error &) {
         }
         try {
             auto args = pybind11::cast<std::vector<double>>(used_arg);
             self.safe_append_u(gate_name, raw_targets, args, tag);
             return;
-        } catch (const pybind11::cast_error &ex) {
+        } catch (const pybind11::cast_error &) {
         }
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
@@ -1329,8 +1329,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
            double before_measure_flip_probability,
            double after_reset_flip_probability) {
             auto r = type.find(':');
-            std::string code;
-            std::string task;
+            std::string_view code;
+            std::string_view task;
             if (r == std::string::npos) {
                 code = "";
                 task = type;
@@ -1339,7 +1339,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 task = type.substr(r + 1);
             }
 
-            CircuitGenParameters params(rounds, distance, task);
+            CircuitGenParameters params(rounds, distance, std::string(task));
             params.after_clifford_depolarization = after_clifford_depolarization;
             params.after_reset_flip_probability = after_reset_flip_probability;
             params.before_measure_flip_probability = before_measure_flip_probability;
@@ -1920,7 +1920,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         [](const Circuit &self, const pybind11::object &obj, double atol) -> bool {
             try {
                 return self.approx_equals(pybind11::cast<Circuit>(obj), atol);
-            } catch (const pybind11::cast_error &ex) {
+            } catch (const pybind11::cast_error &) {
                 return false;
             }
         },

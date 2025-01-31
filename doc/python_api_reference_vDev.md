@@ -8259,7 +8259,7 @@ def to_numpy(
     output_measure_flips: bool | np.ndarray = False,
     output_detector_flips: bool | np.ndarray = False,
     output_observable_flips: bool | np.ndarray = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
     """Writes the simulator state into numpy arrays.
 
     Args:
@@ -8366,16 +8366,18 @@ def to_numpy(
     Examples:
         >>> import stim
         >>> sim = stim.FlipSimulator(batch_size=9)
-        >>> sim.do(stim.Circuit('M 0 1 2'))
+        >>> sim.do(stim.Circuit('M(1) 0 1 2'))
 
+        >>> ms_buf = np.empty(shape=(9, 1), dtype=np.uint8)
         >>> xs, zs, ms, ds, os = sim.to_numpy(
         ...     transpose=True,
         ...     bit_packed=True,
-        ...     output_measure_flips=True,
+        ...     output_zs=True,
+        ...     output_measure_flips=ms_buf,
         ... )
+        >>> assert ms is ms_buf
         >>> xs
         >>> zs
-        >>> ms
         array([[0],
                [0],
                [0],
@@ -8385,6 +8387,16 @@ def to_numpy(
                [0],
                [0],
                [0]], dtype=uint8)
+        >>> ms
+        array([[7],
+               [7],
+               [7],
+               [7],
+               [7],
+               [7],
+               [7],
+               [7],
+               [7]], dtype=uint8)
         >>> ds
         >>> os
     """

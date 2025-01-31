@@ -613,7 +613,7 @@ void stim_pybind::pybind_frame_simulator_methods(
         pybind11::arg("output_detector_flips") = false,
         pybind11::arg("output_observable_flips") = false,
         clean_doc_string(R"DOC(
-            @signature def to_numpy(self, *, bit_packed: bool = False, transpose: bool = False, output_xs: bool | np.ndarray = False, output_zs: bool | np.ndarray = False, output_measure_flips: bool | np.ndarray = False, output_detector_flips: bool | np.ndarray = False, output_observable_flips: bool | np.ndarray = False) -> tuple[np.ndarray, np.ndarray]:
+            @signature def to_numpy(self, *, bit_packed: bool = False, transpose: bool = False, output_xs: bool | np.ndarray = False, output_zs: bool | np.ndarray = False, output_measure_flips: bool | np.ndarray = False, output_detector_flips: bool | np.ndarray = False, output_observable_flips: bool | np.ndarray = False) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
             Writes the simulator state into numpy arrays.
 
             Args:
@@ -719,17 +719,19 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             Examples:
                 >>> import stim
+                >>> import numpy as np
                 >>> sim = stim.FlipSimulator(batch_size=9)
-                >>> sim.do(stim.Circuit('M 0 1 2'))
+                >>> sim.do(stim.Circuit('M(1) 0 1 2'))
 
+                >>> ms_buf = np.empty(shape=(9, 1), dtype=np.uint8)
                 >>> xs, zs, ms, ds, os = sim.to_numpy(
                 ...     transpose=True,
                 ...     bit_packed=True,
-                ...     output_measure_flips=True,
+                ...     output_xs=True,
+                ...     output_measure_flips=ms_buf,
                 ... )
+                >>> assert ms is ms_buf
                 >>> xs
-                >>> zs
-                >>> ms
                 array([[0],
                        [0],
                        [0],
@@ -739,6 +741,17 @@ void stim_pybind::pybind_frame_simulator_methods(
                        [0],
                        [0],
                        [0]], dtype=uint8)
+                >>> zs
+                >>> ms
+                array([[7],
+                       [7],
+                       [7],
+                       [7],
+                       [7],
+                       [7],
+                       [7],
+                       [7],
+                       [7]], dtype=uint8)
                 >>> ds
                 >>> os
         )DOC")

@@ -711,6 +711,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.c_xyz(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +Y +Z +X
         )DOC")
             .data());
 
@@ -725,6 +737,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.c_zyx(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +Z +X +Y
         )DOC")
             .data());
 
@@ -739,6 +763,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.h_xy(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +Y +X -Z
         )DOC")
             .data());
 
@@ -753,6 +789,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.h_yz(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                -X +Z +Y
         )DOC")
             .data());
 
@@ -766,6 +814,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.x(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X -Y -Z
         )DOC")
             .data());
 
@@ -779,6 +839,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.y(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                -X +Y -Z
         )DOC")
             .data());
 
@@ -792,6 +864,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.z(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                -X -Y +Z
         )DOC")
             .data());
 
@@ -805,6 +889,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.s(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +Y -X +Z
         )DOC")
             .data());
 
@@ -819,6 +915,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.s_dag(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                -Y +X +Z
         )DOC")
             .data());
 
@@ -833,6 +941,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.sqrt_x(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Z -Y
         )DOC")
             .data());
 
@@ -847,6 +967,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.sqrt_x_dag(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X -Z +Y
         )DOC")
             .data());
 
@@ -861,6 +993,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.sqrt_y(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                -Z +Y +X
         )DOC")
             .data());
 
@@ -875,6 +1019,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +X +Y +Z
+                >>> s.sqrt_y_dag(0, 1, 2)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
+                +Z +Y -X
         )DOC")
             .data());
 
@@ -890,6 +1046,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.swap(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +Y +X +X +Z
         )DOC")
             .data());
 
@@ -905,6 +1073,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.iswap(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Y +Z
         )DOC")
             .data());
 
@@ -921,6 +1101,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.iswap_dag(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ -Y +Z
         )DOC")
             .data());
 
@@ -936,6 +1128,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.cnot(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -951,6 +1155,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.zcx(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -966,6 +1182,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.cx(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -981,6 +1209,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.cz(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -996,6 +1236,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.zcz(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -1011,6 +1263,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.cy(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
         )DOC")
             .data());
 
@@ -1026,6 +1290,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.zcy(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
         )DOC")
             .data());
 
@@ -1041,6 +1317,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.xcx(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
         )DOC")
             .data());
 
@@ -1056,6 +1344,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.xcy(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +_ +_
         )DOC")
             .data());
 
@@ -1071,6 +1371,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.xcz(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +_ +_
         )DOC")
             .data());
 
@@ -1086,6 +1398,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.ycx(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +Z +X
         )DOC")
             .data());
 
@@ -1101,6 +1425,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.ycy(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +_ +_
         )DOC")
             .data());
 
@@ -1116,6 +1452,18 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets,
                     and so forth. There must be an even number of targets.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0, 3)
+                >>> s.reset_y(1)
+
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +X +Y +Z +X
+                >>> s.ycz(0, 1, 2, 3)
+                >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
+                +_ +_ +_ +_
         )DOC")
             .data());
 
