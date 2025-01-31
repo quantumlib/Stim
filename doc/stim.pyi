@@ -6350,7 +6350,7 @@ class FlipSimulator:
             >>> r.shape
             (7,)
             >>> r[6] & 0b1110_0000  # zero'd padding bits
-            0
+            np.uint8(0)
 
             >>> r2 = sim.generate_bernoulli_samples(53, p=0.2, bit_packed=True, out=r)
             >>> r is r2  # Check request to reuse r worked.
