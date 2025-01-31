@@ -39,10 +39,10 @@ static void generate_biased_samples_bit_packed_contiguous(uint8_t *out, size_t n
     uintptr_t aligned64_start = start & ~0b111ULL;
     uintptr_t aligned64_end = end & ~0b111ULL;
     if (aligned64_start != start) {
-        aligned64_start += 1;
+        aligned64_start += 8;
     }
     biased_randomize_bits(p, (uint64_t *)aligned64_start, (uint64_t *)aligned64_end, rng);
-    if (start != aligned64_start) {
+    if (start < aligned64_start) {
         uint64_t pad;
         biased_randomize_bits(p, &pad, &pad + 1, rng);
         for (size_t k = 0; k < aligned64_start - start; k++) {
@@ -50,11 +50,12 @@ static void generate_biased_samples_bit_packed_contiguous(uint8_t *out, size_t n
             pad >>= 8;
         }
     }
-    if (end != aligned64_end) {
+    if (aligned64_end < end) {
         uint64_t pad;
         biased_randomize_bits(p, &pad, &pad + 1, rng);
-        for (size_t k = 0; k < end - aligned64_end; k++) {
-            ((uint8_t *)aligned64_end)[k] = (uint8_t)(pad & 0xFF);
+        while (aligned64_end < end) {
+            *(uint8_t *)aligned64_end = (uint8_t)(pad & 0xFF);
+            aligned64_end++;
             pad >>= 8;
         }
     }
@@ -119,7 +120,7 @@ pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_
         auto stride = buf.strides(0);
         void *start_of_data = (void *)buf.mutable_data();
 
-        if (stride == 1 && num_bytes > 0) {
+        if (stride == 1) {
             generate_biased_samples_bit_packed_contiguous(
                 (uint8_t *)start_of_data,
                 num_bytes,

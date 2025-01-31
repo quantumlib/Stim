@@ -37,6 +37,7 @@ keep = {
 }
 skip = {
     "__firstlineno__",
+    "__replace__",
     "__builtins__",
     "__cached__",
     "__getstate__",

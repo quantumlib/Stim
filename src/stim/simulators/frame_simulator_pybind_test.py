@@ -583,6 +583,17 @@ def test_generate_bernoulli_samples():
     assert np.sum(np.unpackbits(v, count=1001, bitorder='little')) == 1001
     assert np.sum(np.unpackbits(v, count=1008, bitorder='little')) == 1001
 
+    v = sim.generate_bernoulli_samples(256, p=0, bit_packed=True)
+    assert np.all(v == 0)
+
+    sim.generate_bernoulli_samples(256 - 101, p=1, bit_packed=True, out=v[1:-11])
+    for k in v:
+        print(k)
+    assert np.all(v[1:-12] == 0xFF)
+    assert v[-12] == 7
+    assert np.all(v[-11:] == 0)
+    assert np.all(v[:1] == 0)
+
     v = sim.generate_bernoulli_samples(2**16, p=0.25, bit_packed=True)
     assert abs(np.sum(np.unpackbits(v, count=2**16)) - 2**16*0.25) < 2**12
 
@@ -590,7 +601,6 @@ def test_generate_bernoulli_samples():
     sim.generate_bernoulli_samples(2**16 - 1, p=1, bit_packed=True, out=v)
     assert np.all(v[:-1] == 0xFF)
     assert v[-1] == 0x7F
-
 
     v[:] = 0
     sim.generate_bernoulli_samples(2**15, p=1, bit_packed=True, out=v[::2])
