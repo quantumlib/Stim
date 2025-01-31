@@ -22,6 +22,11 @@ using namespace stim_pybind;
 
 GateTarget handle_to_gate_target(const pybind11::handle &obj) {
     try {
+        std::string_view text = pybind11::cast<std::string_view>(obj);
+        return GateTarget::from_target_str(text);
+    } catch (const pybind11::cast_error &ex) {
+    }
+    try {
         return pybind11::cast<GateTarget>(obj);
     } catch (const pybind11::cast_error &ex) {
     }
@@ -65,7 +70,21 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
             Initializes a `stim.GateTarget`.
 
             Args:
-                value: A target like `5` or `stim.target_rec(-1)`.
+                value: A value to convert into a gate target, like an integer
+                    to interpret as a qubit target or a string to parse.
+
+            Examples:
+                >>> import stim
+                >>> stim.GateTarget(stim.GateTarget(5))
+                stim.GateTarget(5)
+                >>> stim.GateTarget("X7")
+                stim.target_x(7)
+                >>> stim.GateTarget("rec[-3]")
+                stim.target_rec(-3)
+                >>> stim.GateTarget("!Z7")
+                stim.target_z(7, invert=True)
+                >>> stim.GateTarget("*")
+                stim.GateTarget.combiner()
         )DOC")
             .data());
 
@@ -339,7 +358,6 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
         &GateTarget::is_sweep_bit_target,
         clean_doc_string(R"DOC(
             Returns whether or not this is a sweep bit target like `sweep[4]`.
-
 
             Examples:
                 >>> import stim

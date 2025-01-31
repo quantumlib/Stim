@@ -123,12 +123,18 @@ static pybind11::object simd_bit_table_to_numpy_uint8(
         throw std::invalid_argument(ss.str());
     }
 
+    uint8_t mask = 0b11111111;
+    if (num_minor & 7) {
+        mask = (1 << (num_minor & 7)) - 1;
+    }
+
     if (num_major && num_minor) {
         auto stride = buf.strides(1);
         if (stride == 1) {
             for (size_t major = 0; major < num_major; major++) {
                 auto row = table[major];
                 memcpy(buf.mutable_data(major, 0), row.u8, num_minor_bytes);
+                *buf.mutable_data(major, num_minor_bytes - 1) &= mask;
             }
         } else {
             for (size_t major = 0; major < num_major; major++) {
@@ -138,6 +144,7 @@ static pybind11::object simd_bit_table_to_numpy_uint8(
                     *ptr = row.u8[minor];
                     ptr += stride;
                 }
+                *(ptr - stride) &= mask;
             }
         }
     }

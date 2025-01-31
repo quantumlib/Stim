@@ -36,6 +36,9 @@ keep = {
     "__next__",
 }
 skip = {
+    "__firstlineno__",
+    "__static_attributes__",
+    "__replace__",
     "__builtins__",
     "__cached__",
     "__getstate__",
@@ -99,6 +102,7 @@ def splay_signature(sig: str) -> List[str]:
     sig = sig.replace('dict[', 'Dict[')
     sig = sig.replace('tuple[', 'Tuple[')
     sig = sig.replace('set[', 'Set[')
+    sig = sig.replace('pathlib._local.Path', 'pathlib.Path')
 
     assert sig.startswith('def')
     out = []
