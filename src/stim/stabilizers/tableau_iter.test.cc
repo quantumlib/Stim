@@ -116,26 +116,30 @@ TEST_EACH_WORD_SIZE_W(tableau_iter, iter_tableau, {
     TableauIterator<W> iter1_signs(1, true);
     TableauIterator<W> iter2(2, false);
     TableauIterator<W> iter3(3, false);
-    int s1 = 0;
     int n1 = 0;
-    int n2 = 0;
-    int n3 = 0;
     while (iter1.iter_next()) {
         n1++;
     }
+    ASSERT_EQ(n1, 6);
+
+    int s1 = 0;
     while (iter1_signs.iter_next()) {
         s1++;
     }
+    ASSERT_EQ(s1, 24);
+
+    int n2 = 0;
     while (iter2.iter_next()) {
         n2++;
     }
-    while (iter3.iter_next()) {
-        n3++;
-    }
-    ASSERT_EQ(n1, 6);
-    ASSERT_EQ(s1, 24);
     ASSERT_EQ(n2, 720);
-    // ASSERT_EQ(n3, 1451520);  // Note: disabled because it takes 2-3 seconds.
+
+    // Note: disabled because it takes 2-3 seconds.
+    // int n3 = 0;
+    // while (iter3.iter_next()) {
+    //     n3++;
+    // }
+    // ASSERT_EQ(n3, 1451520);
 })
 
 TEST_EACH_WORD_SIZE_W(tableau_iter, iter_tableau_distinct, {

@@ -14,9 +14,9 @@
 
 #include "stim/simulators/frame_simulator.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 
@@ -32,7 +32,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
         targets.push_back(GateTarget{k});
     }
-    CircuitInstruction op_data{GateType::DEPOLARIZE1, &probability, targets};
+    CircuitInstruction op_data{GateType::DEPOLARIZE1, &probability, targets, ""};
     benchmark_go([&]() {
         sim.do_DEPOLARIZE1(op_data);
     })
@@ -52,7 +52,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
         targets.push_back({k});
     }
-    CircuitInstruction op_data{GateType::DEPOLARIZE2, &probability, targets};
+    CircuitInstruction op_data{GateType::DEPOLARIZE2, &probability, targets, ""};
 
     benchmark_go([&]() {
         sim.do_DEPOLARIZE2(op_data);
@@ -72,7 +72,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
         targets.push_back({k});
     }
-    CircuitInstruction op_data{GateType::H, {}, targets};
+    CircuitInstruction op_data{GateType::H, {}, targets, ""};
 
     benchmark_go([&]() {
         sim.do_H_XZ(op_data);
@@ -92,7 +92,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     for (uint32_t k = 0; k < stats.num_qubits; k++) {
         targets.push_back({k});
     }
-    CircuitInstruction op_data{GateType::CX, {}, targets};
+    CircuitInstruction op_data{GateType::CX, {}, targets, ""};
 
     benchmark_go([&]() {
         sim.do_ZCX(op_data);

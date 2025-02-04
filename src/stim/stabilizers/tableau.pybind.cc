@@ -14,14 +14,16 @@
 
 #include "stim/stabilizers/tableau.pybind.h"
 
+#include "flex_pauli_string.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau_iter.h"
+#include "stim/util_top/circuit_vs_amplitudes.h"
+#include "stim/util_top/stabilizers_to_tableau.h"
+#include "stim/util_top/stabilizers_vs_amplitudes.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -205,7 +207,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "iter_all",
-        [](size_t num_qubits, bool unsigned_only) {
+        [](size_t num_qubits, bool unsigned_only) -> TableauIterator<MAX_BITWORD_WIDTH> {
             return TableauIterator<MAX_BITWORD_WIDTH>(num_qubits, !unsigned_only);
         },
         pybind11::arg("num_qubits"),
@@ -242,7 +244,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_unitary_matrix",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -318,10 +320,10 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             auto n = self.num_qubits;
 
             return pybind11::make_tuple(
-                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed),
-                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed, false, pybind11::none()),
+                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed, false, pybind11::none()),
                 simd_bits_to_numpy(self.xs.signs, n, bit_packed),
                 simd_bits_to_numpy(self.zs.signs, n, bit_packed));
         },
@@ -665,7 +667,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_circuit",
-        [](Tableau<MAX_BITWORD_WIDTH> &self, const std::string &method) {
+        [](Tableau<MAX_BITWORD_WIDTH> &self, std::string_view method) {
             return tableau_to_circuit(self, method);
         },
         pybind11::arg("method") = "elimination",
@@ -836,7 +838,16 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](const Tableau<MAX_BITWORD_WIDTH> &self) {
             return self.num_qubits;
         },
-        "Returns the number of qubits operated on by the tableau.");
+        clean_doc_string(R"DOC(
+            Returns the number of qubits operated on by the tableau.
+
+            Examples:
+                >>> import stim
+                >>> t = stim.Tableau.from_named_gate("CNOT")
+                >>> len(t)
+                2
+        )DOC")
+            .data());
 
     c.def("__str__", &Tableau<MAX_BITWORD_WIDTH>::str, "Returns a text description.");
 
@@ -1708,7 +1719,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_unitary_matrix",
-        [](const pybind11::object &matrix, const std::string &endian) {
+        [](const pybind11::object &matrix, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -1872,10 +1883,19 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::arg("pauli_string"),
         clean_doc_string(R"DOC(
-             Returns the conjugation of a PauliString by the Tableau's Clifford operation.
+             Returns the equivalent PauliString after the Tableau's Clifford operation.
 
-             The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
-             before C, then P2 = C**-1 * P * C is an equivalent Pauli product after C.
+             If P is a Pauli product before a Clifford operation C, then this method returns
+             Q = C * P * C**-1 (the conjugation of P by C). Q is the equivalent Pauli product
+             after C. This works because:
+            
+                 C*P
+                 = C*P * I
+                 = C*P * (C**-1 * C)
+                 = (C*P*C**-1) * C
+                 = Q*C
+
+            (Keep in mind that A*B means first B is applied, then A is applied.)
 
              Args:
                  pauli_string: The pauli string to conjugate.
@@ -1949,55 +1969,56 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const Tableau<MAX_BITWORD_WIDTH> &self) {
-            pybind11::dict d;
-            std::vector<FlexPauliString> xs;
-            std::vector<FlexPauliString> zs;
-            for (size_t q = 0; q < self.num_qubits; q++) {
-                xs.push_back(FlexPauliString(self.xs[q]));
-            }
-            for (size_t q = 0; q < self.num_qubits; q++) {
-                zs.push_back(FlexPauliString(self.zs[q]));
-            }
-            d["xs"] = xs;
-            d["zs"] = zs;
-            return d;
-        },
-        [](const pybind11::dict &d) {
-            std::vector<FlexPauliString> xs;
-            std::vector<FlexPauliString> zs;
-            for (const auto &e : d["xs"]) {
-                xs.push_back(pybind11::cast<FlexPauliString>(e));
-            }
-            for (const auto &e : d["zs"]) {
-                zs.push_back(pybind11::cast<FlexPauliString>(e));
-            }
+    c.def(
+        pybind11::pickle(
+            [](const Tableau<MAX_BITWORD_WIDTH> &self) {
+                pybind11::dict d;
+                std::vector<FlexPauliString> xs;
+                std::vector<FlexPauliString> zs;
+                for (size_t q = 0; q < self.num_qubits; q++) {
+                    xs.push_back(FlexPauliString(self.xs[q]));
+                }
+                for (size_t q = 0; q < self.num_qubits; q++) {
+                    zs.push_back(FlexPauliString(self.zs[q]));
+                }
+                d["xs"] = xs;
+                d["zs"] = zs;
+                return d;
+            },
+            [](const pybind11::dict &d) {
+                std::vector<FlexPauliString> xs;
+                std::vector<FlexPauliString> zs;
+                for (const auto &e : d["xs"]) {
+                    xs.push_back(pybind11::cast<FlexPauliString>(e));
+                }
+                for (const auto &e : d["zs"]) {
+                    zs.push_back(pybind11::cast<FlexPauliString>(e));
+                }
 
-            size_t n = xs.size();
-            bool correct_shape = zs.size() == n;
-            for (const auto &e : xs) {
-                correct_shape &= !e.imag;
-                correct_shape &= e.value.num_qubits == n;
-            }
-            for (const auto &e : zs) {
-                correct_shape &= !e.imag;
-                correct_shape &= e.value.num_qubits == n;
-            }
-            if (!correct_shape) {
-                throw std::invalid_argument("Invalid pickle.");
-            }
+                size_t n = xs.size();
+                bool correct_shape = zs.size() == n;
+                for (const auto &e : xs) {
+                    correct_shape &= !e.imag;
+                    correct_shape &= e.value.num_qubits == n;
+                }
+                for (const auto &e : zs) {
+                    correct_shape &= !e.imag;
+                    correct_shape &= e.value.num_qubits == n;
+                }
+                if (!correct_shape) {
+                    throw std::invalid_argument("Invalid pickle.");
+                }
 
-            Tableau<MAX_BITWORD_WIDTH> result(n);
-            for (size_t q = 0; q < n; q++) {
-                result.xs[q] = xs[q].value;
-                result.zs[q] = zs[q].value;
-            }
-            if (!result.satisfies_invariants()) {
-                throw std::invalid_argument("Pickled tableau was invalid. It doesn't preserve commutativity.");
-            }
-            return result;
-        }));
+                Tableau<MAX_BITWORD_WIDTH> result(n);
+                for (size_t q = 0; q < n; q++) {
+                    result.xs[q] = xs[q].value;
+                    result.zs[q] = zs[q].value;
+                }
+                if (!result.satisfies_invariants()) {
+                    throw std::invalid_argument("Pickled tableau was invalid. It doesn't preserve commutativity.");
+                }
+                return result;
+            }));
 
     c.def_static(
         "from_stabilizers",
@@ -2099,7 +2120,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def_static(
         "from_state_vector",
-        [](pybind11::object &state_vector, const std::string &endian) {
+        [](pybind11::object &state_vector, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -2115,7 +2136,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             }
 
             return circuit_to_tableau<MAX_BITWORD_WIDTH>(
-                stabilizer_state_vector_to_circuit<MAX_BITWORD_WIDTH>(v, little_endian), false, false, false);
+                stabilizer_state_vector_to_circuit(v, little_endian), false, false, false);
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
@@ -2127,7 +2148,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             Args:
                 state_vector: A list of complex amplitudes specifying a superposition. The
                     vector must correspond to a state that is reachable using Clifford
-                    operations, and must be normalized (i.e. it must be a unit vector).
+                    operations, and can be unnormalized.
                 endian:
                     "little": state vector is in little endian order, where higher index
                         qubits correspond to larger changes in the state index.
@@ -2181,7 +2202,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
     c.def(
         "to_state_vector",
-        [](const Tableau<MAX_BITWORD_WIDTH> &self, const std::string &endian) {
+        [](const Tableau<MAX_BITWORD_WIDTH> &self, std::string_view endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;

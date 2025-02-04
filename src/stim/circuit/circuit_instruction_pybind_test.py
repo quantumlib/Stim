@@ -50,3 +50,55 @@ def test_hashable():
     c = stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])
     assert hash(a) == hash(c)
     assert len({a, b, c}) == 2
+
+
+def test_num_measurements():
+    assert stim.CircuitInstruction("X", [1, 2, 3]).num_measurements == 0
+    assert stim.CircuitInstruction("MXX", [1, 2]).num_measurements == 1
+    assert stim.CircuitInstruction("M", [1, 2]).num_measurements == 2
+    assert stim.CircuitInstruction("MPAD", [0, 1, 0]).num_measurements == 3
+
+
+def test_target_groups():
+    assert stim.CircuitInstruction("MPAD", [0, 1, 0]).target_groups() == [
+        [stim.GateTarget(0)],
+        [stim.GateTarget(1)],
+        [stim.GateTarget(0)],
+    ]
+    assert stim.CircuitInstruction("H", []).target_groups() == []
+    assert stim.CircuitInstruction("H", [1]).target_groups() == [[stim.GateTarget(1)]]
+    assert stim.CircuitInstruction("H", [2, 3]).target_groups() == [[stim.GateTarget(2)], [stim.GateTarget(3)]]
+    assert stim.CircuitInstruction("CX", []).target_groups() == []
+    assert stim.CircuitInstruction("CX", [0, 1]).target_groups() == [[stim.GateTarget(0), stim.GateTarget(1)]]
+    assert stim.CircuitInstruction("CX", [2, 3, 5, 7]).target_groups() == [[stim.GateTarget(2), stim.GateTarget(3)], [stim.GateTarget(5), stim.GateTarget(7)]]
+    assert stim.CircuitInstruction("DETECTOR", []).target_groups() == []
+    assert stim.CircuitInstruction("CORRELATED_ERROR", [], [0.001]).target_groups() == []
+    assert stim.CircuitInstruction("MPP", []).target_groups() == []
+    assert stim.CircuitInstruction("MPAD", []).target_groups() == []
+    assert stim.CircuitInstruction("QUBIT_COORDS", [1, 2]).target_groups() == [[stim.GateTarget(1)], [stim.GateTarget(2)]]
+
+
+def test_eager_validate():
+    with pytest.raises(ValueError, match="0, 1, 2"):
+        stim.CircuitInstruction("CX", [0, 1, 2])
+
+
+def test_init_from_str():
+    assert stim.CircuitInstruction("CX", [0, 1]) == stim.CircuitInstruction("CX 0 1")
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("")
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("""
+            REPEAT 5 {
+                H 0
+                X 1
+            }
+        """)
+
+    with pytest.raises(ValueError, match="single CircuitInstruction"):
+        stim.CircuitInstruction("""
+            H 0 
+            X 1
+        """)

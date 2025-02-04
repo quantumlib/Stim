@@ -94,11 +94,17 @@ void measurements_to_detection_events_helper(
                 simd_bits_range_ref<W> obs_row = frame_sim.obs_record[(uint64_t)op.args[0]];
                 bool expectation = false;
                 for (const auto &t : op.targets) {
-                    uint32_t lookback = t.data & TARGET_VALUE_MASK;
-                    // Include dependence from physical measurement results.
-                    obs_row ^= measurements__minor_shot_index[measure_count_so_far - lookback];
-                    // Include dependence from reference sample expectation.
-                    expectation ^= reference_sample[measure_count_so_far - lookback];
+                    if (t.is_classical_bit_target()) {
+                        uint32_t lookback = t.data & TARGET_VALUE_MASK;
+                        // Include dependence from physical measurement results.
+                        obs_row ^= measurements__minor_shot_index[measure_count_so_far - lookback];
+                        // Include dependence from reference sample expectation.
+                        expectation ^= reference_sample[measure_count_so_far - lookback];
+                    } else if (t.is_pauli_target()) {
+                        // Ignored.
+                    } else {
+                        throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
+                    }
                 }
                 if (expectation) {
                     obs_row.invert_bits();

@@ -75,3 +75,23 @@ def test_hashable():
     c = stim.DemTarget.relative_detector_id(3)
     assert hash(a) == hash(c)
     assert len({a, b, c}) == 2
+
+
+def test_init():
+    assert stim.DemTarget("D0") == stim.target_relative_detector_id(0)
+    assert stim.DemTarget("D5") == stim.target_relative_detector_id(5)
+    assert stim.DemTarget("L0") == stim.target_logical_observable_id(0)
+    assert stim.DemTarget("L5") == stim.target_logical_observable_id(5)
+    assert stim.DemTarget("^") == stim.target_separator()
+    assert stim.DemTarget(f"D{2**62 - 1}") == stim.target_relative_detector_id(2**62 - 1)
+    assert stim.DemTarget(f"L{0xFFFFFFFF}") == stim.target_logical_observable_id(0xFFFFFFFF)
+    with pytest.raises(ValueError, match="Failed to parse"):
+        _ = stim.DemTarget(f"D{2**62}")
+    with pytest.raises(ValueError, match="Failed to parse"):
+        _ = stim.DemTarget(f"L{0x100000000}")
+    with pytest.raises(ValueError, match="Failed to parse"):
+        _ = stim.DemTarget(f"L-1")
+    with pytest.raises(ValueError, match="Failed to parse"):
+        _ = stim.DemTarget(f"X5")
+    with pytest.raises(ValueError, match="Failed to parse"):
+        _ = stim.DemTarget(f"5")

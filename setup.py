@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
+import platform
 
 from setuptools import setup, Extension
 import glob
@@ -25,9 +25,9 @@ MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
-__version__ = '1.14.dev0'
+__version__ = '1.15.dev0'
 
-if sys.platform.startswith('win'):
+if platform.system().startswith('Win'):
     common_compile_args = [
         '/std:c++20',
         '/O2',
@@ -97,6 +97,17 @@ stim_sse2 = Extension(
 with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
+def _get_extensions():
+    archs=["x86", "i686", "i386", "amd64"]
+    if any(_ext in platform.processor().lower() for _ext in archs):
+        # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
+        # stim_avx2,
+        return [stim_detect_machine_architecture, stim_polyfill,
+                # stim_avx2,
+                stim_sse2]
+    else:
+        return [stim_detect_machine_architecture, stim_polyfill]
+
 setup(
     name='stim',
     version=__version__,
@@ -107,13 +118,7 @@ setup(
     description='A fast library for analyzing with quantum stabilizer circuits.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    ext_modules=[
-        stim_detect_machine_architecture,
-        stim_polyfill,
-        stim_sse2,
-        # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-        # stim_avx2,
-    ],
+    ext_modules=_get_extensions(),
     python_requires='>=3.6.0',
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},

@@ -18,8 +18,6 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 
@@ -45,22 +43,22 @@ std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
 }
 
 void CompiledMeasurementsToDetectionEventsConverter::convert_file(
-    const std::string &measurements_filepath,
-    const std::string &measurements_format,
+    std::string_view measurements_filepath,
+    std::string_view measurements_format,
     const char *sweep_bits_filepath,
-    const std::string &sweep_bits_format,
-    const std::string &detection_events_filepath,
-    const std::string &detection_events_format,
+    std::string_view sweep_bits_format,
+    std::string_view detection_events_filepath,
+    std::string_view detection_events_format,
     bool append_observables,
     const char *obs_out_filepath,
-    const std::string &obs_out_format) {
+    std::string_view obs_out_format) {
     auto format_in = format_to_enum(measurements_format);
     auto format_sweep_bits = format_to_enum(sweep_bits_format);
     auto format_out = format_to_enum(detection_events_format);
-    RaiiFile file_in(measurements_filepath.data(), "rb");
+    RaiiFile file_in(measurements_filepath, "rb");
     RaiiFile obs_out(obs_out_filepath, "wb");
     RaiiFile sweep_bits_in(sweep_bits_filepath, "rb");
-    RaiiFile detections_out(detection_events_filepath.data(), "wb");
+    RaiiFile detections_out(detection_events_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
 
     stream_measurements_to_detection_events_helper<MAX_BITWORD_WIDTH>(
@@ -131,13 +129,13 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
                 obs_slice.clear();
             }
         }
-        obs_data =
-            transposed_simd_bit_table_to_numpy(obs_table, circuit_stats.num_observables, num_shots, bit_pack_result);
+        obs_data = simd_bit_table_to_numpy(
+            obs_table, circuit_stats.num_observables, num_shots, bit_pack_result, true, pybind11::none());
     }
 
     // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.
-    pybind11::object det_data = transposed_simd_bit_table_to_numpy(
-        out_detection_results_minor_shot_index, num_output_bits, num_shots, bit_pack_result);
+    pybind11::object det_data = simd_bit_table_to_numpy(
+        out_detection_results_minor_shot_index, num_output_bits, num_shots, bit_pack_result, true, pybind11::none());
 
     if (separate_observables) {
         return pybind11::make_tuple(det_data, obs_data);

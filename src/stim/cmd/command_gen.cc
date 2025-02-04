@@ -1,16 +1,16 @@
 #include "stim/cmd/command_gen.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/util_bot/arg_parse.h"
 
 using namespace stim;
 
 int stim::command_gen(int argc, const char **argv) {
-    std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
+    std::map<std::string_view, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
         {"color_code", &generate_color_code_circuit},
         {"repetition_code", &generate_rep_code_circuit},
         {"surface_code", &generate_surface_code_circuit}};
@@ -130,12 +130,13 @@ SubCommandHelp stim::command_gen_help() {
             OBSERVABLE_INCLUDE(0) rec[-1]
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--code",
-        "surface_code|repetition_code|color_code",
-        "",
-        {"surface_code|repetition_code|color_code"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--code",
+            "surface_code|repetition_code|color_code",
+            "",
+            {"surface_code|repetition_code|color_code"},
+            clean_doc_string(R"PARAGRAPH(
             The error correcting code to use.
 
             The available error correcting codes are:
@@ -149,14 +150,15 @@ SubCommandHelp stim::command_gen_help() {
                 The color code. A quantum code with a hexagonal pattern of
                 overlapping X and Z stabilizers.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--task",
-        "name",
-        "",
-        {"name"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--task",
+            "name",
+            "",
+            {"name"},
+            clean_doc_string(R"PARAGRAPH(
             What the generated circuit should do; the experiment it should run.
 
             Different error correcting codes support different tasks. The
@@ -188,14 +190,15 @@ SubCommandHelp stim::command_gen_help() {
                 then measure. Use a color code that alternates between measuring
                 X, then Y, then Z stabilizers.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--distance",
-        "int",
-        "",
-        {"int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--distance",
+            "int",
+            "",
+            {"int"},
+            clean_doc_string(R"PARAGRAPH(
             The minimum number of physical errors that cause a logical error.
 
             The code distance determines how spatially large the generated
@@ -207,14 +210,15 @@ SubCommandHelp stim::command_gen_help() {
             codes/tasks may place additional constraints on the distance (e.g.
             must be larger than 2 or must be odd or etc).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--rounds",
-        "int",
-        "",
-        {"int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--rounds",
+            "int",
+            "",
+            {"int"},
+            clean_doc_string(R"PARAGRAPH(
             The number of times the circuit's measurement qubits are measured.
 
             The number of rounds must be an integer between 1 and a quintillion
@@ -222,14 +226,15 @@ SubCommandHelp stim::command_gen_help() {
             the number of rounds (e.g. enough rounds to have measured all the
             stabilizers at least once).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--after_clifford_depolarization",
-        "probability",
-        "0",
-        {"[none]", "probability"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--after_clifford_depolarization",
+            "probability",
+            "0",
+            {"[none]", "probability"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a depolarizing noise level for unitary gates.
 
             Defaults to 0 when not specified.
@@ -240,14 +245,15 @@ SubCommandHelp stim::command_gen_help() {
             two-qubit Clifford operation. When set to 0 or not set, these noise
             operations are not inserted at all.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--after_reset_flip_probability",
-        "probability",
-        "0",
-        {"[none]", "probability"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--after_reset_flip_probability",
+            "probability",
+            "0",
+            {"[none]", "probability"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a reset noise level.
 
             Defaults to 0 when not specified.
@@ -257,14 +263,15 @@ SubCommandHelp stim::command_gen_help() {
             `Z_ERROR(p)` after `RX` operations. When set to 0 or not set,
             these noise operations are not inserted at all.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--before_measure_flip_probability",
-        "probability",
-        "0",
-        {"[none]", "probability"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--before_measure_flip_probability",
+            "probability",
+            "0",
+            {"[none]", "probability"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a measurement noise level.
 
             Defaults to 0 when not specified.
@@ -274,14 +281,15 @@ SubCommandHelp stim::command_gen_help() {
             `Z_ERROR(p)` before `MX` operations. When set to 0 or not set,
             these noise operations are not inserted at all.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--before_round_data_depolarization",
-        "probability",
-        "0",
-        {"[none]", "probability"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--before_round_data_depolarization",
+            "probability",
+            "0",
+            {"[none]", "probability"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies a quantum phenomenological noise level.
 
             Defaults to 0 when not specified.
@@ -291,14 +299,15 @@ SubCommandHelp stim::command_gen_help() {
             each round of stabilizer measurements. When set to 0 or not set,
             these noise operations are not inserted at all.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the generated circuit to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -307,7 +316,7 @@ SubCommandHelp stim::command_gen_help() {
             The output is a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }

@@ -71,8 +71,13 @@ struct CircuitInstruction {
     /// Encoded data indicating the qubits and other targets acted on by the gate.
     SpanRef<const GateTarget> targets;
 
+    /// Arbitrary string associated with the instruction.
+    /// No effect on simulations or analysis steps within stim, but user code may use it.
+    std::string_view tag;
+
     CircuitInstruction() = delete;
-    CircuitInstruction(GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets);
+    CircuitInstruction(
+        GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
 
     /// Computes number of qubits, number of measurements, etc.
     CircuitStats compute_stats(const Circuit *host) const;
@@ -109,7 +114,45 @@ struct CircuitInstruction {
     /// Raises:
     ///     std::invalid_argument: Validation failed.
     void validate() const;
+
+    template <typename CALLBACK>
+    inline void for_combined_target_groups(CALLBACK callback) const {
+        auto flags = GATE_DATA[gate_type].flags;
+        size_t start = 0;
+        while (start < targets.size()) {
+            size_t end;
+            if (flags & stim::GateFlags::GATE_TARGETS_COMBINERS) {
+                end = start + 1;
+                while (end < targets.size() && targets[end].is_combiner()) {
+                    end += 2;
+                }
+            } else if (flags & stim::GateFlags::GATE_IS_SINGLE_QUBIT_GATE) {
+                end = start + 1;
+            } else if (flags & stim::GateFlags::GATE_TARGETS_PAIRS) {
+                end = start + 2;
+            } else if (
+                (flags & stim::GateFlags::GATE_TARGETS_PAULI_STRING) &&
+                !(flags & stim::GateFlags::GATE_TARGETS_COMBINERS)) {
+                // like CORRELATED_ERROR
+                end = targets.size();
+            } else if (flags & stim::GateFlags::GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
+                // like DETECTOR
+                end = start + 1;
+            } else if (gate_type == GateType::MPAD || gate_type == GateType::QUBIT_COORDS) {
+                end = start + 1;
+            } else {
+                throw std::invalid_argument("Not implemented: splitting " + str());
+            }
+            std::span<const GateTarget> group = targets.sub(start, end);
+            callback(group);
+            start = end;
+        }
+    }
 };
+
+void write_tag_escaped_string_to(std::string_view tag, std::ostream &out);
+
+std::ostream &operator<<(std::ostream &out, const CircuitInstruction &op);
 
 }  // namespace stim
 

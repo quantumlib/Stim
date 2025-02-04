@@ -75,9 +75,11 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
     def _stim_conversion_(
         self,
+        *,
         edit_circuit: stim.Circuit,
         edit_measurement_key_lengths: List[Tuple[str, int]],
         have_seen_loop: bool = False,
+        tag: str,
         **kwargs,
     ):
         # Ideally these references would all be resolved ahead of time, to avoid the redundant
@@ -109,4 +111,4 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 f" in an earlier moment (or earlier in the same moment's operation order)."
             )
 
-        edit_circuit.append_operation("OBSERVABLE_INCLUDE", rec_targets, self.observable_index)
+        edit_circuit.append("OBSERVABLE_INCLUDE", rec_targets, self.observable_index, tag=tag)

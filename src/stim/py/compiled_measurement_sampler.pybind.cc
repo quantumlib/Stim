@@ -29,17 +29,16 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
 }
 
 pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, true);
+    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, false);
     size_t bits_per_sample = circuit.count_measurements();
-    return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
+    return simd_bit_table_to_numpy(sample, bits_per_sample, num_shots, bit_packed, true, pybind11::none());
 }
 
-void CompiledMeasurementSampler::sample_write(
-    size_t num_samples, const std::string &filepath, const std::string &format) {
+void CompiledMeasurementSampler::sample_write(size_t num_samples, std::string_view filepath, std::string_view format) {
     auto f = format_to_enum(format);
-    FILE *out = fopen(filepath.data(), "wb");
+    FILE *out = fopen(std::string(filepath).c_str(), "wb");
     if (out == nullptr) {
-        throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
+        throw std::invalid_argument("Failed to open '" + std::string(filepath) + "' to write.");
     }
     sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
     fclose(out);

@@ -69,7 +69,7 @@ struct CircuitTimelineHelper {
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::CircuitInstruction &op);
-    void skip_loop_iterations(CircuitTimelineLoopData loop_data, uint64_t skipped_reps);
+    void skip_loop_iterations(const CircuitTimelineLoopData &loop_data, uint64_t skipped_reps);
     void do_record_measure_result(uint32_t target_qubit);
     void do_repeat_block(const stim::Circuit &circuit, const stim::CircuitInstruction &op);
     void do_next_operation(const stim::Circuit &circuit, const stim::CircuitInstruction &op);

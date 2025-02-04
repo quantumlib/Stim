@@ -10,6 +10,9 @@
 
 namespace stim {
 
+constexpr uint64_t MAX_OBS = 0xFFFFFFFF;
+constexpr uint64_t MAX_DET = (uint64_t{1} << 62) - 1;
+
 enum class DemInstructionType : uint8_t {
     DEM_ERROR,
     DEM_SHIFT_DETECTORS,
@@ -58,6 +61,20 @@ struct DemInstruction {
     uint64_t repeat_block_rep_count() const;
     const DetectorErrorModel &repeat_block_body(const DetectorErrorModel &host) const;
     DetectorErrorModel &repeat_block_body(DetectorErrorModel &host) const;
+
+    template <typename CALLBACK>
+    inline void for_separated_targets(CALLBACK callback) const {
+        size_t start = 0;
+        do {
+            size_t end = start + 1;
+            while (end < target_data.size() && !target_data[end].is_separator()) {
+                end++;
+            }
+            std::span<const DemTarget> group = target_data.sub(start, std::min(end, target_data.size()));
+            callback(group);
+            start = end + 1;
+        } while (start < target_data.size());
+    }
 };
 
 std::ostream &operator<<(std::ostream &out, const DemInstructionType &type);

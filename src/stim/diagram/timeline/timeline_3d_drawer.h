@@ -47,14 +47,14 @@ struct DiagramTimeline3DDrawer {
     void start_next_moment();
     void reserve_drawing_room_for_targets(stim::SpanRef<const stim::GateTarget> targets);
     Coord<3> mq2xyz(size_t m, size_t q) const;
-    void draw_two_qubit_gate_end_point(Coord<3> center, const std::string &type);
+    void draw_two_qubit_gate_end_point(Coord<3> center, std::string_view type);
     void draw_gate_connecting_line(Coord<3> a, Coord<3> b);
 
     void do_resolved_operation(const ResolvedTimelineOperation &op);
     void do_tick();
     void do_two_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_feedback(
-        const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+        std::string_view gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
     void do_single_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op);

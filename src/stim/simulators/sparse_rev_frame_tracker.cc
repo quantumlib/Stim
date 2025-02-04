@@ -200,31 +200,47 @@ SparseUnsignedRevFrameTracker::SparseUnsignedRevFrameTracker(
       anticommutations() {
 }
 
+void SparseUnsignedRevFrameTracker::fail_due_to_anticommutation(const CircuitInstruction &inst) {
+    std::stringstream ss;
+    ss << "While running backwards through the circuit, during reverse-execution of the instruction\n";
+    ss << "    " << inst << "\n";
+    ss << "the following detecting region vs dissipation anticommutations occurred\n";
+    for (auto &[d, g] : anticommutations) {
+        ss << "    " << d << " vs " << g << "\n";
+    }
+    ss << "Therefore invalid detectors/observables are present in the circuit.\n";
+    throw std::invalid_argument(ss.str());
+}
+
 void SparseUnsignedRevFrameTracker::handle_xor_gauge(
-    SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2) {
+    SpanRef<const DemTarget> sorted1,
+    SpanRef<const DemTarget> sorted2,
+    const CircuitInstruction &inst,
+    GateTarget location) {
     if (sorted1 == sorted2) {
         return;
-    }
-    if (fail_on_anticommute) {
-        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
     }
     SparseXorVec<DemTarget> dif;
     dif.xor_sorted_items(sorted1);
     dif.xor_sorted_items(sorted2);
     for (const auto &d : dif) {
-        anticommutations.insert(d);
+        anticommutations.insert({d, location});
+    }
+    if (fail_on_anticommute) {
+        fail_due_to_anticommutation(inst);
     }
 }
 
-void SparseUnsignedRevFrameTracker::handle_gauge(SpanRef<const DemTarget> sorted) {
+void SparseUnsignedRevFrameTracker::handle_gauge(
+    SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location) {
     if (sorted.empty()) {
         return;
     }
-    if (fail_on_anticommute) {
-        throw std::invalid_argument("A detector or observable anticommuted with a dissipative operation.");
-    }
     for (const auto &d : sorted) {
-        anticommutations.insert(d);
+        anticommutations.insert({d, location});
+    }
+    if (fail_on_anticommute) {
+        fail_due_to_anticommutation(inst);
     }
 }
 
@@ -305,30 +321,30 @@ void SparseUnsignedRevFrameTracker::undo_ZCZ_single(GateTarget c, GateTarget t) 
 void SparseUnsignedRevFrameTracker::handle_x_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_gauge(xs[q].range());
+        handle_gauge(xs[q].range(), dat, GateTarget::x(q));
     }
 }
 void SparseUnsignedRevFrameTracker::handle_y_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_xor_gauge(xs[q].range(), zs[q].range());
+        handle_xor_gauge(xs[q].range(), zs[q].range(), dat, GateTarget::y(q));
     }
 }
 void SparseUnsignedRevFrameTracker::handle_z_gauges(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        handle_gauge(zs[q].range());
+        handle_gauge(zs[q].range(), dat, GateTarget::z(q));
     }
 }
-void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_mpp_operation(
-        CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
         xs.size(),
         [&](const CircuitInstruction &inst) {
             if (inst.gate_type == GateType::M) {
@@ -336,22 +352,22 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &target_da
                 for (size_t k = inst.targets.size(); k--;) {
                     reversed_measure_targets.push_back(inst.targets[k]);
                 }
-                undo_MZ({GateType::M, inst.args, reversed_measure_targets});
+                undo_MZ({GateType::M, inst.args, reversed_measure_targets, inst.tag});
             } else {
                 undo_gate(inst);
             }
         });
 }
 
-void SparseUnsignedRevFrameTracker::undo_SPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void SparseUnsignedRevFrameTracker::undo_SPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_spp_or_spp_dag_operation(
-        CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
         xs.size(),
         false,
         [&](const CircuitInstruction &inst) {
@@ -445,43 +461,43 @@ void SparseUnsignedRevFrameTracker::undo_MZ(const CircuitInstruction &dat) {
     }
 }
 
-void SparseUnsignedRevFrameTracker::undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MXX_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        undo_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 }
 
-void SparseUnsignedRevFrameTracker::undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MYY_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        undo_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 }
 
-void SparseUnsignedRevFrameTracker::undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
+void SparseUnsignedRevFrameTracker::undo_MZZ_disjoint_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        undo_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        undo_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 }
 
 void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
@@ -492,9 +508,11 @@ void SparseUnsignedRevFrameTracker::undo_MXX(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MXX_disjoint_controls_segment(segment);
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, ""},
+        xs.size(),
+        [&](CircuitInstruction segment) {
+            undo_MXX_disjoint_segment(segment);
         });
 }
 
@@ -506,9 +524,11 @@ void SparseUnsignedRevFrameTracker::undo_MYY(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MYY_disjoint_controls_segment(segment);
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, ""},
+        xs.size(),
+        [&](CircuitInstruction segment) {
+            undo_MYY_disjoint_segment(segment);
         });
 }
 
@@ -520,9 +540,11 @@ void SparseUnsignedRevFrameTracker::undo_MZZ(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, xs.size(), [&](CircuitInstruction segment) {
-            undo_MZZ_disjoint_controls_segment(segment);
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, ""},
+        xs.size(),
+        [&](CircuitInstruction segment) {
+            undo_MZZ_disjoint_segment(segment);
         });
 }
 
@@ -806,11 +828,22 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const CircuitInstruction &dat)
 void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
     auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
-        int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
-        if (index < 0) {
-            throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+        if (t.is_measurement_record_target()) {
+            int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
+            if (index < 0) {
+                throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+            }
+            rec_bits[index].xor_item(obs);
+        } else if (t.is_pauli_target()) {
+            if (t.data & TARGET_PAULI_X_BIT) {
+                xs[t.qubit_value()].xor_item(obs);
+            }
+            if (t.data & TARGET_PAULI_Z_BIT) {
+                zs[t.qubit_value()].xor_item(obs);
+            }
+        } else {
+            throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
         }
-        rec_bits[index].xor_item(obs);
     }
 }
 

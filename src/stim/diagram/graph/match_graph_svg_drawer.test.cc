@@ -23,12 +23,12 @@
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_graph_svg_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, const std::string &key) {
+void expect_graph_svg_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, std::string_view key) {
     std::stringstream actual_ss;
     dem_match_graph_to_svg_diagram_write_to(dem, actual_ss);
     auto actual = actual_ss.str();

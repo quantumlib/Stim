@@ -313,18 +313,15 @@ struct simd_bits_range_ref {
         }
     }
 
-    template <typename FUNC>
-    inline void for_each_set_bit(FUNC body) {
-        size_t n = num_bits_padded();
-        for (size_t k = 0; k < n; k += 64) {
-            auto v = u64[k >> 6];
-            if (!v) {
-                continue;
-            }
-            for (size_t j = 0; j < 64; j++) {
-                if ((v >> j) & 1) {
-                    body(k + j);
-                }
+    template <typename CALLBACK>
+    void for_each_set_bit(CALLBACK callback) {
+        size_t n = num_u64_padded();
+        for (size_t w = 0; w < n; w++) {
+            uint64_t v = u64[w];
+            while (v) {
+                size_t q = w * 64 + std::countr_zero(v);
+                v &= v - 1;
+                callback(q);
             }
         }
     }

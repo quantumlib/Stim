@@ -16,12 +16,12 @@ char u6_to_base64_char(uint8_t v) {
     }
 }
 
-void stim_draw_internal::write_data_as_base64_to(const char *data, size_t n, std::ostream &out) {
+void stim_draw_internal::write_data_as_base64_to(std::string_view data, std::ostream &out) {
     uint32_t buf = 0;
     size_t bits_in_buf = 0;
-    for (size_t k = 0; k < n; k++) {
+    for (char c : data) {
         buf <<= 8;
-        buf |= (uint8_t)data[k];
+        buf |= (uint8_t)c;
         bits_in_buf += 8;
         if (bits_in_buf == 24) {
             out << u6_to_base64_char((buf >> 18) & 0x3F);

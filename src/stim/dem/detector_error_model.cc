@@ -20,7 +20,7 @@
 #include <iomanip>
 #include <limits>
 
-#include "stim/str_util.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
@@ -51,10 +51,10 @@ void DetectorErrorModel::append_dem_instruction(const DemInstruction &instructio
 }
 
 void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body) {
-    DemTarget data[2];
+    std::array<DemTarget, 2> data;
     data[0].data = repeat_count;
     data[1].data = blocks.size();
-    auto stored_targets = target_buf.take_copy({&data[0], &data[2]});
+    auto stored_targets = target_buf.take_copy(data);
     blocks.push_back(std::move(body));
     instructions.push_back({{}, stored_targets, DemInstructionType::DEM_REPEAT_BLOCK});
 }
@@ -337,12 +337,12 @@ void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
                   : DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
 
-void DetectorErrorModel::append_from_text(const char *text) {
+void DetectorErrorModel::append_from_text(std::string_view text) {
     size_t k = 0;
     model_read_operations(
         *this,
         [&]() {
-            return text[k] != 0 ? text[k++] : EOF;
+            return k < text.size() ? text[k++] : EOF;
         },
         DEM_READ_CONDITION::DEM_READ_UNTIL_END_OF_FILE);
 }
@@ -353,7 +353,7 @@ DetectorErrorModel DetectorErrorModel::from_file(FILE *file) {
     return result;
 }
 
-DetectorErrorModel::DetectorErrorModel(const char *text) {
+DetectorErrorModel::DetectorErrorModel(std::string_view text) {
     append_from_text(text);
 }
 void DetectorErrorModel::clear() {

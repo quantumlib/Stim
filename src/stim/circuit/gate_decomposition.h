@@ -105,7 +105,7 @@ void decompose_spp_or_spp_dag_operation(
 ///         instruction must be less than this.
 ///     inst: The circuit instruction to decompose.
 ///     callback: The method called with each decomposed segment.
-void decompose_pair_instruction_into_segments_with_single_use_controls(
+void decompose_pair_instruction_into_disjoint_segments(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback);
 
 bool accumulate_next_obs_terms_to_pauli_string_helper(
@@ -115,7 +115,13 @@ bool accumulate_next_obs_terms_to_pauli_string_helper(
     std::vector<GateTarget> *bits,
     bool allow_imaginary = false);
 
-Circuit simplified_circuit(const Circuit &circuit);
+void for_each_disjoint_target_segment_in_instruction_reversed(
+    const CircuitInstruction &inst,
+    simd_bits_range_ref<64> workspace,
+    const std::function<void(CircuitInstruction)> &callback);
+
+void for_each_combined_targets_group(
+    const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback);
 
 }  // namespace stim
 

@@ -1,5 +1,4 @@
 import dataclasses
-import sys
 import types
 from typing import Any
 from typing import Optional, Iterator, List
@@ -9,6 +8,7 @@ from typing import Tuple
 
 keep = {
     "__add__",
+    "__radd__",
     "__eq__",
     "__call__",
     "__ge__",
@@ -36,6 +36,9 @@ keep = {
     "__next__",
 }
 skip = {
+    "__firstlineno__",
+    "__static_attributes__",
+    "__replace__",
     "__builtins__",
     "__cached__",
     "__getstate__",
@@ -94,6 +97,13 @@ class DescribedObject:
 
 
 def splay_signature(sig: str) -> List[str]:
+    # Maintain backwards compatibility with python 3.6
+    sig = sig.replace('list[', 'List[')
+    sig = sig.replace('dict[', 'Dict[')
+    sig = sig.replace('tuple[', 'Tuple[')
+    sig = sig.replace('set[', 'Set[')
+    sig = sig.replace('pathlib._local.Path', 'pathlib.Path')
+
     assert sig.startswith('def')
     out = []
 
@@ -218,17 +228,6 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
             text += '@abc.abstractmethod\n'
         sig_name = f'{term_name}{inspect.signature(obj)}'
         text += "\n".join(splay_signature(f"def {sig_name}:"))
-        text = text.replace('''ForwardRef('sinter.TaskStats')''', 'sinter.TaskStats')
-        text = text.replace('''ForwardRef('sinter.Task')''', 'sinter.Task')
-        text = text.replace('''ForwardRef('sinter.Progress')''', 'sinter.Progress')
-        text = text.replace('''ForwardRef('sinter.Decoder')''', 'sinter.Decoder')
-        text = text.replace("'AnonTaskStats'", "sinter.AnonTaskStats")
-        text = text.replace('sinter._decoding_decoder_class.CompiledDecoder', 'sinter.CompiledDecoder')
-        text = text.replace("'AnonTaskStats'", "sinter.AnonTaskStats")
-        text = text.replace("'stim.Circuit'", "stim.Circuit")
-        text = text.replace("'stim.DetectorErrorModel'", "stim.DetectorErrorModel")
-        text = text.replace("'sinter.CollectionOptions'", "sinter.CollectionOptions")
-        text = text.replace("'sinter.Fit'", 'sinter.Fit')
 
         # Replace default value lambdas with their source.
         if 'lambda' in str(text):

@@ -60,6 +60,7 @@ struct PauliStringRef {
     bool operator==(const PauliStringRef<W> &other) const;
     /// Inequality.
     bool operator!=(const PauliStringRef<W> &other) const;
+    bool operator<(const PauliStringRef<W> &other) const;
 
     /// Overwrite assignment.
     PauliStringRef<W> &operator=(const PauliStringRef<W> &other);
@@ -142,10 +143,24 @@ struct PauliStringRef {
     bool has_no_pauli_terms() const;
     bool intersects(PauliStringRef<W> other) const;
 
+    template <typename CALLBACK>
+    void for_each_active_pauli(CALLBACK callback) const {
+        size_t n = xs.num_u64_padded();
+        for (size_t w = 0; w < n; w++) {
+            uint64_t v = xs.u64[w] | zs.u64[w];
+            while (v) {
+                size_t q = w * 64 + std::countr_zero(v);
+                v &= v - 1;
+                callback(q);
+            }
+        }
+    }
+
    private:
     void check_avoids_MPP(const CircuitInstruction &inst);
     void check_avoids_reset(const CircuitInstruction &inst);
     void check_avoids_measurement(const CircuitInstruction &inst);
+    void undo_reset_xyz(const CircuitInstruction &inst);
 
     void do_single_cx(const CircuitInstruction &inst, uint32_t c, uint32_t t);
     void do_single_cy(const CircuitInstruction &inst, uint32_t c, uint32_t t);

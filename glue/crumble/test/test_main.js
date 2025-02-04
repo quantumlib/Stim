@@ -23,8 +23,14 @@ status.textContent = "Running tests...";
 let total = await run_tests(progress => {
     status.textContent = `${progress.num_tests_left - progress.num_tests}/${progress.num_tests} ${progress.name} ${progress.passed ? 'passed' : 'failed'} (${progress.num_tests_failed} failed)`;
     if (!progress.passed) {
-        let d = document.createElement("pre");
+        let d = document.createElement("div");
         d.textContent = `Test '${progress.name}' failed:`;
+        acc.appendChild(d);
+        let a = document.createElement("a");
+        a.textContent = `(click here to only run this test)`;
+        a.style.marginLeft = '5px';
+        a.href = `#test=${progress.name}`;
+        d.appendChild(a);
         acc.appendChild(d);
 
         let p = document.createElement("pre");

@@ -41,7 +41,7 @@ struct SparseUnsignedRevFrameTracker {
     /// If true, an exception is raised if anticommutation is detected.
     bool fail_on_anticommute;
     /// Where anticommuting dets and obs are stored.
-    std::set<DemTarget> anticommutations;
+    std::set<std::pair<DemTarget, GateTarget>> anticommutations;
 
     SparseUnsignedRevFrameTracker(
         uint64_t num_qubits,
@@ -62,8 +62,13 @@ struct SparseUnsignedRevFrameTracker {
     void undo_gate(const CircuitInstruction &inst);
     void undo_gate(const CircuitInstruction &op, const Circuit &parent);
 
-    void handle_xor_gauge(SpanRef<const DemTarget> sorted1, SpanRef<const DemTarget> sorted2);
-    void handle_gauge(SpanRef<const DemTarget> sorted);
+    void handle_xor_gauge(
+        SpanRef<const DemTarget> sorted1,
+        SpanRef<const DemTarget> sorted2,
+        const CircuitInstruction &inst,
+        GateTarget location);
+    void handle_gauge(SpanRef<const DemTarget> sorted, const CircuitInstruction &inst, GateTarget location);
+    void fail_due_to_anticommutation(const CircuitInstruction &inst);
     void undo_classical_pauli(GateTarget classical_control, GateTarget target);
     void undo_ZCX_single(GateTarget c, GateTarget t);
     void undo_ZCY_single(GateTarget c, GateTarget t);
@@ -170,9 +175,9 @@ struct SparseUnsignedRevFrameTracker {
     std::string str() const;
 
    private:
-    void undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst);
-    void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
+    void undo_MXX_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MYY_disjoint_segment(const CircuitInstruction &inst);
+    void undo_MZZ_disjoint_segment(const CircuitInstruction &inst);
 };
 std::ostream &operator<<(std::ostream &out, const SparseUnsignedRevFrameTracker &tracker);
 

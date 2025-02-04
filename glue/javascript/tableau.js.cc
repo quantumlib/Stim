@@ -19,7 +19,7 @@ ExposedTableau ExposedTableau::random(int n) {
 }
 
 ExposedTableau ExposedTableau::from_named_gate(const std::string &name) {
-    const Gate &gate = GATE_DATA.at(name.data());
+    const Gate &gate = GATE_DATA.at(name);
     if (!(gate.flags & GATE_IS_UNITARY)) {
         throw std::out_of_range("Recognized name, but not unitary: " + name);
     }

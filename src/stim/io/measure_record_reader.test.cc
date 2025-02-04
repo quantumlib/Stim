@@ -21,14 +21,14 @@
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_writer.h"
 #include "stim/mem/simd_word.test.h"
-#include "stim/probability_util.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/probability_util.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
-FILE *tmpfile_with_contents(const std::string &contents) {
+FILE *tmpfile_with_contents(std::string_view contents) {
     FILE *tmp = tmpfile();
-    size_t written = fwrite(contents.c_str(), 1, contents.size(), tmp);
+    size_t written = fwrite(contents.data(), 1, contents.size(), tmp);
     if (written != contents.size()) {
         int en = errno;
         std::cerr << "Failed to write to tmpfile: " << strerror(en) << std::endl;
@@ -57,7 +57,7 @@ TEST(read_unsigned_int, ValueTooBig) {
 }
 
 template <size_t W>
-void assert_contents_load_correctly(SampleFormat format, const std::string &contents) {
+void assert_contents_load_correctly(SampleFormat format, std::string_view contents) {
     FILE *tmp = tmpfile_with_contents(contents);
     auto reader = MeasureRecordReader<W>::make(tmp, format, 18);
     simd_bits<W> buf(18);

@@ -35,7 +35,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_pair_measure(failed);
     add_gate_data_pauli_product(failed);
     for (size_t k = 1; k < NUM_DEFINED_GATES; k++) {
-        if (items[k].name == nullptr) {
+        if (items[k].name.empty()) {
             std::cerr << "Uninitialized gate id: " << k << ".\n";
             failed = true;
         }
@@ -43,6 +43,148 @@ GateDataMap::GateDataMap() {
     if (failed) {
         throw std::out_of_range("Failed to initialize gate data.");
     }
+}
+
+GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
+    switch (id) {
+        case GateType::DETECTOR:
+        case GateType::OBSERVABLE_INCLUDE:
+        case GateType::TICK:
+        case GateType::QUBIT_COORDS:
+        case GateType::SHIFT_COORDS:
+        case GateType::MPAD:
+        case GateType::H:
+        case GateType::DEPOLARIZE1:
+        case GateType::DEPOLARIZE2:
+        case GateType::Y_ERROR:
+        case GateType::I:
+        case GateType::Y:
+        case GateType::SQRT_YY:
+        case GateType::SQRT_YY_DAG:
+        case GateType::MYY:
+        case GateType::SWAP:
+            return id;
+
+        case GateType::MY:
+        case GateType::MRY:
+        case GateType::RY:
+        case GateType::YCY:
+            return ignoring_sign ? id : GateType::NOT_A_GATE;
+
+        case GateType::ISWAP:
+        case GateType::CZSWAP:
+        case GateType::ISWAP_DAG:
+            return GateType::NOT_A_GATE;
+
+        case GateType::XCY:
+            return ignoring_sign ? GateType::CY : GateType::NOT_A_GATE;
+        case GateType::CY:
+            return ignoring_sign ? GateType::XCY : GateType::NOT_A_GATE;
+        case GateType::YCX:
+            return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
+        case GateType::YCZ:
+            return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
+        case GateType::C_XYZ:
+            return ignoring_sign ? GateType::C_ZYX : GateType::NOT_A_GATE;
+        case GateType::C_ZYX:
+            return ignoring_sign ? GateType::C_XYZ : GateType::NOT_A_GATE;
+        case GateType::H_XY:
+            return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
+        case GateType::H_YZ:
+            return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
+
+        case GateType::X:
+            return GateType::Z;
+        case GateType::Z:
+            return GateType::X;
+        case GateType::SQRT_Y:
+            return GateType::SQRT_Y_DAG;
+        case GateType::SQRT_Y_DAG:
+            return GateType::SQRT_Y;
+        case GateType::MX:
+            return GateType::M;
+        case GateType::M:
+            return GateType::MX;
+        case GateType::MRX:
+            return GateType::MR;
+        case GateType::MR:
+            return GateType::MRX;
+        case GateType::RX:
+            return GateType::R;
+        case GateType::R:
+            return GateType::RX;
+        case GateType::XCX:
+            return GateType::CZ;
+        case GateType::XCZ:
+            return GateType::CX;
+        case GateType::CX:
+            return GateType::XCZ;
+        case GateType::CZ:
+            return GateType::XCX;
+        case GateType::X_ERROR:
+            return GateType::Z_ERROR;
+        case GateType::Z_ERROR:
+            return GateType::X_ERROR;
+        case GateType::SQRT_X:
+            return GateType::S;
+        case GateType::SQRT_X_DAG:
+            return GateType::S_DAG;
+        case GateType::S:
+            return GateType::SQRT_X;
+        case GateType::S_DAG:
+            return GateType::SQRT_X_DAG;
+        case GateType::SQRT_XX:
+            return GateType::SQRT_ZZ;
+        case GateType::SQRT_XX_DAG:
+            return GateType::SQRT_ZZ_DAG;
+        case GateType::SQRT_ZZ:
+            return GateType::SQRT_XX;
+        case GateType::SQRT_ZZ_DAG:
+            return GateType::SQRT_XX_DAG;
+        case GateType::CXSWAP:
+            return GateType::SWAPCX;
+        case GateType::SWAPCX:
+            return GateType::CXSWAP;
+        case GateType::MXX:
+            return GateType::MZZ;
+        case GateType::MZZ:
+            return GateType::MXX;
+        default:
+            return GateType::NOT_A_GATE;
+    }
+}
+
+bool Gate::is_symmetric() const {
+    if (flags & GATE_IS_SINGLE_QUBIT_GATE) {
+        return true;
+    }
+
+    if (flags & GATE_TARGETS_PAIRS) {
+        switch (id) {
+            case GateType::XCX:
+            case GateType::YCY:
+            case GateType::CZ:
+            case GateType::DEPOLARIZE2:
+            case GateType::SWAP:
+            case GateType::ISWAP:
+            case GateType::CZSWAP:
+            case GateType::ISWAP_DAG:
+            case GateType::MXX:
+            case GateType::MYY:
+            case GateType::MZZ:
+            case GateType::SQRT_XX:
+            case GateType::SQRT_YY:
+            case GateType::SQRT_ZZ:
+            case GateType::SQRT_XX_DAG:
+            case GateType::SQRT_YY_DAG:
+            case GateType::SQRT_ZZ_DAG:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    return false;
 }
 
 std::array<float, 3> Gate::to_euler_angles() const {
@@ -125,6 +267,11 @@ std::array<float, 4> Gate::to_axis_angle() const {
     return {rx, ry, rz, acosf(rs) * 2};
 }
 
+bool Gate::has_known_unitary_matrix() const {
+    return (flags & GateFlags::GATE_IS_UNITARY) &&
+           (flags & (GateFlags::GATE_IS_SINGLE_QUBIT_GATE | GateFlags::GATE_TARGETS_PAIRS));
+}
+
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
@@ -141,19 +288,17 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
 }
 
 const Gate &Gate::inverse() const {
-    std::string inv_name = name;
     if ((flags & GATE_IS_UNITARY) || id == GateType::TICK) {
         return GATE_DATA[best_candidate_inverse_id];
     }
-    throw std::out_of_range(inv_name + " has no inverse.");
+    throw std::out_of_range(std::string(name) + " has no inverse.");
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     assert((size_t)gate.id < NUM_DEFINED_GATES);
-    const char *c = gate.name;
-    auto h = gate_name_to_hash(c);
+    auto h = gate_name_to_hash(gate.name);
     auto &hash_loc = hashed_name_to_gate_type_table[h];
-    if (hash_loc.expected_name_len != 0) {
+    if (!hash_loc.expected_name.empty()) {
         std::cerr << "GATE COLLISION " << gate.name << " vs " << items[(size_t)hash_loc.id].name << "\n";
         failed = true;
         return;
@@ -161,20 +306,19 @@ void GateDataMap::add_gate(bool &failed, const Gate &gate) {
     items[(size_t)gate.id] = gate;
     hash_loc.id = gate.id;
     hash_loc.expected_name = gate.name;
-    hash_loc.expected_name_len = strlen(gate.name);
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
     auto h_alt = gate_name_to_hash(alt_name);
     auto &hash_loc = hashed_name_to_gate_type_table[h_alt];
-    if (hash_loc.expected_name_len != 0) {
+    if (!hash_loc.expected_name.empty()) {
         std::cerr << "GATE COLLISION " << alt_name << " vs " << items[(size_t)hash_loc.id].name << "\n";
         failed = true;
         return;
     }
 
     auto h_canon = gate_name_to_hash(canon_name);
-    if (hashed_name_to_gate_type_table[h_canon].expected_name_len == 0) {
+    if (hashed_name_to_gate_type_table[h_canon].expected_name.empty()) {
         std::cerr << "MISSING CANONICAL GATE " << canon_name << "\n";
         failed = true;
         return;
@@ -182,7 +326,6 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
 
     hash_loc.id = hashed_name_to_gate_type_table[h_canon].id;
     hash_loc.expected_name = alt_name;
-    hash_loc.expected_name_len = strlen(alt_name);
 }
 
 extern const GateDataMap stim::GATE_DATA = GateDataMap();

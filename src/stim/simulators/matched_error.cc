@@ -18,6 +18,8 @@
 #include <queue>
 #include <sstream>
 
+#include "stim/util_bot/str_util.h"
+
 using namespace stim;
 
 void print_pauli_product(std::ostream &out, const std::vector<GateTargetWithCoords> &pauli_terms) {
@@ -366,7 +368,7 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
     if (gate_type == GateType::NOT_A_GATE || other.gate_type == GateType::NOT_A_GATE) {
         return gate_type < other.gate_type;
     }
-    return strcmp(GATE_DATA[gate_type].name, GATE_DATA[other.gate_type].name) < 0;
+    return GATE_DATA[gate_type].name < GATE_DATA[other.gate_type].name;
 }
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {

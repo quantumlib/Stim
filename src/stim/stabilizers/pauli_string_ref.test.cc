@@ -19,7 +19,7 @@
 #include "stim/mem/simd_word.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -31,7 +31,7 @@ void check_pauli_string_do_instruction_agrees_with_tableau_sim(Gate gate, Tablea
         GateTarget::qubit(8),
         GateTarget::qubit(5),
     };
-    CircuitInstruction inst{gate.id, {}, targets};
+    CircuitInstruction inst{gate.id, {}, targets, ""};
 
     std::vector<PauliString<W>> before;
     for (size_t k = 0; k < 16; k++) {
@@ -71,7 +71,7 @@ TEST_EACH_WORD_SIZE_W(pauli_string, do_instruction_agrees_with_tableau_sim, {
     sim.inv_state = Tableau<W>::random(sim.inv_state.num_qubits, sim.rng);
 
     for (const auto &gate : GATE_DATA.items) {
-        if (gate.flags & GATE_IS_UNITARY) {
+        if (gate.has_known_unitary_matrix()) {
             check_pauli_string_do_instruction_agrees_with_tableau_sim<W>(gate, sim);
         }
     }
@@ -152,4 +152,23 @@ TEST_EACH_WORD_SIZE_W(pauli_string, has_no_pauli_terms, {
     ASSERT_FALSE(p.ref().has_no_pauli_terms());
     p.xs[700] = false;
     ASSERT_FALSE(p.ref().has_no_pauli_terms());
+})
+
+TEST_EACH_WORD_SIZE_W(pauli_string, for_each_active_pauli, {
+    auto v = PauliString<W>(500);
+    v.zs[0] = true;
+    v.xs[20] = true;
+    v.xs[50] = true;
+    v.zs[50] = true;
+    v.xs[63] = true;
+    v.zs[63] = true;
+    v.zs[100] = true;
+    v.xs[200] = true;
+    v.xs[301] = true;
+    v.zs[301] = true;
+    std::vector<size_t> indices;
+    v.ref().for_each_active_pauli([&](size_t index) {
+        indices.push_back(index);
+    });
+    ASSERT_EQ(indices, (std::vector<size_t>{0, 20, 50, 63, 100, 200, 301}));
 })

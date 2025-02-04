@@ -17,7 +17,7 @@
 #ifndef _STIM_CMD_COMMAND_EXPLAIN_ERRORS_H
 #define _STIM_CMD_COMMAND_EXPLAIN_ERRORS_H
 
-#include "stim/arg_parse.h"
+#include "stim/util_bot/arg_parse.h"
 
 namespace stim {
 

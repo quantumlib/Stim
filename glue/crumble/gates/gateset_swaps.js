@@ -20,6 +20,7 @@ function *iter_gates_swaps() {
             ['ZI', 'IZ'],
         ]),
         (frame, targets) => frame.do_iswap(targets),
+        (frame, targets) => frame.do_iswap(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -39,6 +40,7 @@ function *iter_gates_swaps() {
             ['XI', 'ZY'],
             ['ZI', 'IZ'],
         ]),
+        (frame, targets) => frame.do_iswap(targets),
         (frame, targets) => frame.do_iswap(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
@@ -60,6 +62,7 @@ function *iter_gates_swaps() {
             ['ZI', 'IZ'],
         ]),
         (frame, targets) => frame.do_swap(targets),
+        (frame, targets) => frame.do_swap(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -80,6 +83,7 @@ function *iter_gates_swaps() {
             ['ZI', 'IZ'],
         ]),
         (frame, targets) => frame.do_cx_swap(targets),
+        (frame, targets) => frame.do_swap_cx(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);
             let [x2, y2] = coordFunc(op.id_targets[1]);
@@ -99,6 +103,7 @@ function *iter_gates_swaps() {
             ['XI', 'ZX'],
             ['ZI', 'IZ'],
         ]),
+        (frame, targets) => frame.do_cz_swap(targets),
         (frame, targets) => frame.do_cz_swap(targets),
         (op, coordFunc, ctx) => {
             let [x1, y1] = coordFunc(op.id_targets[0]);

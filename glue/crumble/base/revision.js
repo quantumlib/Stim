@@ -109,8 +109,8 @@ class Revision {
      * the previous state.
      * @returns {void}
      */
-    startedWorkingOnCommit() {
-        this.isWorkingOnCommit = true;
+    startedWorkingOnCommit(newCheckpoint) {
+        this.isWorkingOnCommit = newCheckpoint !== this.history[this.index];
         this._changes.send(undefined);
     }
 

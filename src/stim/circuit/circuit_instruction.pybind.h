@@ -27,11 +27,18 @@ struct PyCircuitInstruction {
     stim::GateType gate_type;
     std::vector<stim::GateTarget> targets;
     std::vector<double> gate_args;
+    pybind11::str tag;
 
+    PyCircuitInstruction() = delete;
     PyCircuitInstruction(
-        const char *name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
+        std::string_view name, std::span<pybind11::object> targets, std::span<double> gate_args, pybind11::str tag);
     PyCircuitInstruction(
-        stim::GateType gate_type, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
+        stim::GateType gate_type,
+        std::vector<stim::GateTarget> targets,
+        std::vector<double> gate_args,
+        pybind11::str tag);
+    static PyCircuitInstruction from_str(std::string_view text);
+    static PyCircuitInstruction from_instruction(stim::CircuitInstruction instruction);
 
     stim::CircuitInstruction as_operation_ref() const;
     operator stim::CircuitInstruction() const;
@@ -39,6 +46,7 @@ struct PyCircuitInstruction {
     std::vector<stim::GateTarget> targets_copy() const;
     std::vector<double> gate_args_copy() const;
     std::vector<uint32_t> raw_targets() const;
+    std::vector<std::vector<stim::GateTarget>> target_groups() const;
     bool operator==(const PyCircuitInstruction &other) const;
     bool operator!=(const PyCircuitInstruction &other) const;
 

@@ -16,9 +16,9 @@
 #include <cstring>
 
 #include "stim/circuit/gate_decomposition.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 
@@ -234,8 +234,19 @@ void FrameSimulator<W>::do_OBSERVABLE_INCLUDE(const CircuitInstruction &inst) {
     if (keeping_detection_data) {
         auto r = obs_record[(size_t)inst.args[0]];
         for (auto t : inst.targets) {
-            uint32_t lookback = t.data & TARGET_VALUE_MASK;
-            r ^= m_record.lookback(lookback);
+            if (t.is_measurement_record_target()) {
+                uint32_t lookback = t.data & TARGET_VALUE_MASK;
+                r ^= m_record.lookback(lookback);
+            } else if (t.is_pauli_target()) {
+                if (t.data & TARGET_PAULI_X_BIT) {
+                    r ^= x_table[t.qubit_value()];
+                }
+                if (t.data & TARGET_PAULI_Z_BIT) {
+                    r ^= z_table[t.qubit_value()];
+                }
+            } else {
+                throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
+            }
         }
     }
 }
@@ -685,12 +696,9 @@ void FrameSimulator<W>::do_Z_ERROR(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void FrameSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
-    decompose_mpp_operation(
-        target_data,
-        num_qubits,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_mpp_operation(target_data, num_qubits, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>
@@ -705,24 +713,16 @@ void FrameSimulator<W>::do_CPP(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void FrameSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, num_qubits, false, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_SPP_DAG(const CircuitInstruction &target_data) {
-    decompose_spp_or_spp_dag_operation(
-        target_data,
-        num_qubits,
-        false,
-        [&](const CircuitInstruction &inst) {
-            safe_do_instruction(inst);
-        });
+    decompose_spp_or_spp_dag_operation(target_data, num_qubits, false, [&](const CircuitInstruction &inst) {
+        safe_do_instruction(inst);
+    });
 }
 
 template <size_t W>
@@ -851,67 +851,64 @@ void FrameSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
 template <size_t W>
 void FrameSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MX(CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    do_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MY(CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    do_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
-        do_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}});
+        do_MZ(CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, ""});
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    do_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, ""});
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MXX(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MXX_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MXX_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MYY(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MYY_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MYY_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>
 void FrameSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        inst, num_qubits, [&](CircuitInstruction segment) {
-            do_MZZ_disjoint_controls_segment(segment);
-        });
+    decompose_pair_instruction_into_disjoint_segments(inst, num_qubits, [&](CircuitInstruction segment) {
+        do_MZZ_disjoint_controls_segment(segment);
+    });
 }
 
 template <size_t W>

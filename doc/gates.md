@@ -3110,7 +3110,7 @@ Decomposition (into H, S, CX, M, R):
     
 
 <a name="SPP"></a>
-### The 'SPP' Instruction
+### The 'SPP' Gate
 
 The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
 
@@ -3176,9 +3176,9 @@ Decomposition (into H, S, CX, M, R):
     
 
 <a name="SPP_DAG"></a>
-### The 'SPP_DAG' Instruction
+### The 'SPP_DAG' Gate
 
-The generalized S gate. Phases the -1 eigenspace of Pauli product observables by i.
+The generalized S_DAG gate. Phases the -1 eigenspace of Pauli product observables by -i.
 
 Parens Arguments:
 
@@ -3411,6 +3411,15 @@ determining the expected value, and `X_ERROR` is noise, causing deviations from 
 It is not recommended for the measurement set of an observable to have inconsistent parity. For example, the
 circuit-to-detector-error-model conversion will refuse to operate on circuits containing such observables.
 
+In addition to targeting measurements, observables can target Pauli operators. This has no effect when running the
+quantum computation, but is used when configuring the decoder. For example, when performing a logical Z initialization,
+it allows a logical X operator to be introduced (by marking its Pauli terms) despite the fact that it anticommutes
+with the initialization. In practice, when physically sampling a circuit or simulating sampling its measurements and
+then computing the observables from the measurements, these Pauli terms are effectively ignored. However, they affect
+detection event simulations and affect whether the observable is included in errors in the detector error model. This
+makes it easier to benchmark all observables of a code, without having to introduce noiseless qubits entangled with the
+logical qubit to avoid the testing of the X observable anticommuting with the testing of the Z observable.
+
 Parens Arguments:
 
     A non-negative integer specifying the index of the logical observable to add the measurement records to.
@@ -3436,6 +3445,22 @@ Example:
     OBSERVABLE_INCLUDE(1) rec[-1]
     # ...and the one before that.
     OBSERVABLE_INCLUDE(1) rec[-2]
+
+    # Unphysically tracking two anticommuting observables of a 2x2 surface code.
+    QUBIT_COORDS(0, 0) 0
+    QUBIT_COORDS(1, 0) 1
+    QUBIT_COORDS(0, 1) 2
+    QUBIT_COORDS(1, 1) 3
+    OBSERVABLE_INCLUDE(0) X0 X1
+    OBSERVABLE_INCLUDE(1) Z0 Z2
+    MPP X0*X1*X2*X3 Z0*Z1 Z2*Z3
+    DEPOLARIZE1(0.001) 0 1 2 3
+    MPP X0*X1*X2*X3 Z0*Z1 Z2*Z3
+    DETECTOR rec[-1] rec[-4]
+    DETECTOR rec[-2] rec[-5]
+    DETECTOR rec[-3] rec[-6]
+    OBSERVABLE_INCLUDE(0) X0 X1
+    OBSERVABLE_INCLUDE(1) Z0 Z2
 
 <a name="QUBIT_COORDS"></a>
 ### The 'QUBIT_COORDS' Instruction

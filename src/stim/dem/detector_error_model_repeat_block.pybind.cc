@@ -14,8 +14,8 @@
 
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 
+#include "stim/dem/dem_instruction.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
-#include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
@@ -78,6 +78,18 @@ void stim_pybind::pybind_detector_error_model_repeat_block_methods(
         &ExposedDemRepeatBlock::body_copy,
         clean_doc_string(R"DOC(
             Returns a copy of the block's body, as a stim.DetectorErrorModel.
+
+            Examples:
+                >>> import stim
+                >>> body = stim.DetectorErrorModel('''
+                ...     error(0.125) D0 D1
+                ...     shift_detectors 1
+                ... ''')
+                >>> repeat_block = stim.DemRepeatBlock(100, body)
+                >>> repeat_block.body_copy() == body
+                True
+                >>> repeat_block.body_copy() is repeat_block.body_copy()
+                False
         )DOC")
             .data());
     c.def_property_readonly(

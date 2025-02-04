@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -43,7 +43,7 @@ TEST(command_convert, convert_measurements_with_circuit_to_dets) {
                  "--out_format",
                  "dets",
                  "--circuit",
-                 tmp.path.data(),
+                 tmp.path.c_str(),
                  "--types=M"},
                 in_data),
             "shot\nshot M1\nshot M0\nshot M0 M1\n");
@@ -92,7 +92,7 @@ TEST(command_convert, convert_detections_observables_with_circuit_to_dets) {
                  "--out_format",
                  "dets",
                  "--circuit",
-                 tmp.path.data(),
+                 tmp.path.c_str(),
                  "--types=DL"},
                 in_data),
             "shot\nshot D0 D1\nshot D1 D2\nshot D2 D3\nshot D3\nshot D3 L0\n");
@@ -144,9 +144,9 @@ TEST(command_convert, convert_detections_observables_with_circuit_to_dets_with_o
                  "--obs_out_format",
                  "dets",
                  "--obs_out",
-                 tmp_obs.path.data(),
+                 tmp_obs.path.c_str(),
                  "--circuit",
-                 tmp.path.data(),
+                 tmp.path.c_str(),
                  "--types=DL"},
                 in_data),
             "shot\nshot D0 D1\nshot D1 D2\nshot D2 D3\nshot D3\nshot D3\n");
@@ -189,7 +189,7 @@ TEST(command_convert, convert_detections_observables_with_circuit_no_dets) {
                      "--out_format",
                      out_format.c_str(),
                      "--circuit",
-                     tmp.path.data(),
+                     tmp.path.c_str(),
                      "--types=DL"},
                     in_data),
                 out_data);
@@ -221,7 +221,7 @@ TEST(command_convert, convert_detections_observables_with_dem) {
                      "--out_format",
                      out_format.c_str(),
                      "--dem",
-                     tmp.path.data()},
+                     tmp.path.c_str()},
                     in_data),
                 out_data);
         }
@@ -320,7 +320,13 @@ TEST(command_convert, convert_circuit_fail_without_types) {
 
     ASSERT_TRUE(matches(
         run_captured_stim_main(
-            {"convert", "--in_format=01", "--out_format", "dets", "--circuit", tmp.path.data(), "--num_measurements=2"},
+            {"convert",
+             "--in_format=01",
+             "--out_format",
+             "dets",
+             "--circuit",
+             tmp.path.c_str(),
+             "--num_measurements=2"},
             ""),
         ".*--types required when passing circuit.*"));
 }
@@ -342,11 +348,11 @@ TEST(command_convert, convert_invalid_types) {
 
     ASSERT_TRUE(matches(
         run_captured_stim_main(
-            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.data(), "--types=N"}, ""),
+            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.c_str(), "--types=N"}, ""),
         ".*Unknown type passed to --types.*"));
 
     ASSERT_TRUE(matches(
         run_captured_stim_main(
-            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.data(), "--types=MM"}, ""),
+            {"convert", "--in_format=dets", "--out_format=dets", "--circuit", tmp.path.c_str(), "--types=MM"}, ""),
         ".*Each type in types should only be specified once.*"));
 }

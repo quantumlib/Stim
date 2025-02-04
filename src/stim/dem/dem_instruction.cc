@@ -2,18 +2,14 @@
 
 #include <cmath>
 
-#include "stim/arg_parse.h"
 #include "stim/dem/detector_error_model.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/str_util.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
 constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
 constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
-
-constexpr uint64_t MAX_OBS = 0xFFFFFFFF;
-constexpr uint64_t MAX_DET = (uint64_t{1} << 62) - 1;
 
 DemTarget DemTarget::observable_id(uint64_t id) {
     if (id > MAX_OBS) {
@@ -80,6 +76,9 @@ void DemTarget::shift_if_detector_id(int64_t offset) {
     }
 }
 DemTarget DemTarget::from_text(std::string_view text) {
+    if (text == "^") {
+        return DemTarget::separator();
+    }
     if (!text.empty()) {
         bool is_det = text[0] == 'D';
         bool is_obs = text[0] == 'L';
@@ -87,9 +86,9 @@ DemTarget DemTarget::from_text(std::string_view text) {
             int64_t parsed = 0;
             if (parse_int64(text.substr(1), &parsed)) {
                 if (parsed >= 0) {
-                    if (is_det && parsed <= (int64_t)MAX_DET) {
+                    if (is_det && (uint64_t)parsed <= MAX_DET) {
                         return DemTarget::relative_detector_id(parsed);
-                    } else if (is_obs && parsed <= (int64_t)MAX_OBS) {
+                    } else if (is_obs && (uint64_t)parsed <= MAX_OBS) {
                         return DemTarget::observable_id(parsed);
                     }
                 }

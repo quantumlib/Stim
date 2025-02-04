@@ -22,8 +22,8 @@ class CZSwapGate(cirq.Gate):
         yield cirq.SWAP(a, b)
         yield cirq.CZ(a, b)
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], **kwargs):
-        edit_circuit.append_operation('CZSWAP', targets)
+    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs):
+        edit_circuit.append('CZSWAP', targets, tag=tag)
 
     def __pow__(self, power: int) -> 'CZSwapGate':
         if power == +1:

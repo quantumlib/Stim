@@ -19,8 +19,8 @@
 #include <sstream>
 
 #include "stim/circuit/gate_decomposition.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/util_bot/error_decomp.h"
 
 using namespace stim;
 
@@ -310,7 +310,7 @@ void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const ch
 }
 
 void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_ERASE", dat.args);
+    check_can_approximate_disjoint("HERALDED_ERASE", dat.args, false);
     double p = dat.args[0] * 0.25;
     double i = std::max(0.0, 1.0 - 4 * p);
 
@@ -330,7 +330,7 @@ void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
 }
 
 void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args);
+    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args, true);
     double hi = dat.args[0];
     double hx = dat.args[1];
     double hy = dat.args[2];
@@ -344,7 +344,7 @@ void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat)
         SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
         if (accumulate_errors) {
             add_error_combinations<3>(
-                {i, 0, 0, 0, hi, hx, hy, hz},
+                {i, 0, 0, 0, hi, hz, hx, hy},
                 {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
                 true);
         }
@@ -417,12 +417,32 @@ void ErrorAnalyzer::check_for_gauge(
     has_detectors &= !allow_gauge_detectors;
     if (has_observables) {
         error_msg << "The circuit contains non-deterministic observables.\n";
-        error_msg << "(Error analysis requires deterministic observables.)\n";
     }
     if (has_detectors) {
         error_msg << "The circuit contains non-deterministic detectors.\n";
-        error_msg << "(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)\n";
     }
+    size_t range_start = num_ticks_in_past - std::min((size_t)num_ticks_in_past, size_t{5});
+    size_t range_end = num_ticks_in_past + 5;
+    error_msg << "\nTo make an SVG picture of the problem, you can use the python API like this:\n    ";
+    error_msg << "your_circuit.diagram('detslice-with-ops-svg'";
+    error_msg << ", tick=range(" << range_start << ", " << range_end << ")";
+    error_msg << ", filter_coords=[";
+    for (auto d : potential_gauge) {
+        error_msg << "'" << d << "', ";
+    }
+    error_msg << "])";
+    error_msg << "\nor the command line API like this:\n    ";
+    error_msg << "stim diagram --in your_circuit_file.stim";
+    error_msg << " --type detslice-with-ops-svg";
+    error_msg << " --tick " << range_start << ":" << range_end;
+    error_msg << " --filter_coords ";
+    for (size_t k = 0; k < potential_gauge.size(); k++) {
+        if (k) {
+            error_msg << ':';
+        }
+        error_msg << potential_gauge.sorted_items[k];
+    }
+    error_msg << " > output_image.svg\n";
 
     std::map<uint64_t, std::vector<double>> qubit_coords_map;
     if (current_circuit_being_analyzed != nullptr) {
@@ -470,12 +490,10 @@ void ErrorAnalyzer::check_for_gauge(
         error_msg << "\n\n";
         error_msg << "The backward-propagating error sensitivity for " << t << " was:";
         auto sensitivity = current_error_sensitivity_for(t);
-        for (size_t q = 0; q < sensitivity.num_qubits; q++) {
+        sensitivity.ref().for_each_active_pauli([&](size_t q) {
             uint8_t p = sensitivity.xs[q] + sensitivity.zs[q] * 2;
-            if (p) {
-                error_msg_qubit_with_coords(q, p);
-            }
-        }
+            error_msg_qubit_with_coords(q, p);
+        });
     }
 
     throw std::invalid_argument(error_msg.str());
@@ -510,24 +528,24 @@ void ErrorAnalyzer::undo_MZ(const CircuitInstruction &dat) {
 void ErrorAnalyzer::undo_MRX(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        undo_RX_with_context({GateType::RX, dat.args, &q}, "an X-basis demolition measurement (MRX)");
-        undo_MX_with_context({GateType::MX, dat.args, &q}, "an X-basis demolition measurement (MRX)");
+        undo_RX_with_context({GateType::RX, dat.args, &q, dat.tag}, "an X-basis demolition measurement (MRX)");
+        undo_MX_with_context({GateType::MX, dat.args, &q, dat.tag}, "an X-basis demolition measurement (MRX)");
     }
 }
 
 void ErrorAnalyzer::undo_MRY(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        undo_RY_with_context({GateType::RY, dat.args, &q}, "a Y-basis demolition measurement (MRY)");
-        undo_MY_with_context({GateType::MY, dat.args, &q}, "a Y-basis demolition measurement (MRY)");
+        undo_RY_with_context({GateType::RY, dat.args, &q, dat.tag}, "a Y-basis demolition measurement (MRY)");
+        undo_MY_with_context({GateType::MY, dat.args, &q, dat.tag}, "a Y-basis demolition measurement (MRY)");
     }
 }
 
 void ErrorAnalyzer::undo_MRZ(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        undo_RZ_with_context({GateType::R, dat.args, &q}, "a Z-basis demolition measurement (MR)");
-        undo_MZ_with_context({GateType::M, dat.args, &q}, "a Z-basis demolition measurement (MR)");
+        undo_RZ_with_context({GateType::R, dat.args, &q, dat.tag}, "a Z-basis demolition measurement (MR)");
+        undo_MZ_with_context({GateType::M, dat.args, &q, dat.tag}, "a Z-basis demolition measurement (MR)");
     }
 }
 
@@ -755,7 +773,7 @@ void ErrorAnalyzer::correlated_error_block(const std::vector<CircuitInstruction>
         add_composite_error(dats[0].args[0], dats[0].targets);
         return;
     }
-    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {});
+    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {}, false);
 
     double remaining_p = 1;
     for (size_t k = dats.size(); k--;) {
@@ -825,7 +843,18 @@ void ErrorAnalyzer::undo_ELSE_CORRELATED_ERROR(const CircuitInstruction &dat) {
     }
 }
 
-void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name, SpanRef<const double> probabilities) const {
+void ErrorAnalyzer::check_can_approximate_disjoint(
+    const char *op_name, SpanRef<const double> probabilities, bool allow_single_component) const {
+    if (allow_single_component) {
+        size_t num_specified = 0;
+        for (double p : probabilities) {
+            num_specified += p > 0;
+        }
+        if (num_specified <= 1) {
+            return;
+        }
+    }
+
     if (approximate_disjoint_errors_threshold == 0) {
         std::stringstream msg;
         msg << "Encountered the operation " << op_name
@@ -859,7 +888,7 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
     double iz;
     bool is_independent = try_disjoint_to_independent_xyz_errors_approx(dx, dy, dz, &ix, &iy, &iz);
     if (!is_independent) {
-        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args);
+        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args, true);
         ix = dx;
         iy = dy;
         iz = dz;
@@ -880,7 +909,7 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
 }
 
 void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args);
+    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args, true);
 
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
@@ -1116,13 +1145,13 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             if (remaining_shift.data > 0) {
                 if (body.instructions.empty() ||
                     body.instructions.front().type != DemInstructionType::DEM_SHIFT_DETECTORS) {
-                    auto shift_targets = body.target_buf.take_copy({&remaining_shift});
+                    auto shift_targets = body.target_buf.take_copy(SpanRef<const DemTarget>(&remaining_shift));
                     body.instructions.insert(
                         body.instructions.begin(),
                         DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
-                    auto shift_targets = body.target_buf.take_copy({&remaining_shift});
+                    auto shift_targets = body.target_buf.take_copy(SpanRef<const DemTarget>(&remaining_shift));
                     body.instructions[0].target_data = shift_targets;
                 }
             }
@@ -1486,7 +1515,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
                           "`--ignore_decomposition_failures` to `stim analyze_errors`.";
                     if (block_decomposition_from_introducing_remnant_edges) {
                         ss << "\n\nNote: `block_decomposition_from_introducing_remnant_edges` is ON.\n";
-                        ss << "Turning it off may prevent this error.\n";
+                        ss << "Turning it off may prevent this error.";
                     }
                     throw std::invalid_argument(ss.str());
                 }
@@ -1532,12 +1561,16 @@ void ErrorAnalyzer::add_error_combinations(
                             std::stringstream message;
                             message
                                 << "An error case in a composite error exceeded the max supported number of symptoms "
-                                   "(<=15). ";
+                                   "(<=15).";
                             message << "\nThe " << std::to_string(s)
                                     << " basis error cases (e.g. X, Z) used to form the combined ";
                             message << "error cases (e.g. Y = X*Z) are:\n";
                             for (size_t k2 = 0; k2 < s; k2++) {
-                                message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+                                message << std::to_string(k2) << ":";
+                                if (!basis_errors[k2].empty()) {
+                                    message << ' ';
+                                }
+                                message << comma_sep_workaround(basis_errors[k2]) << "\n";
                             }
                             throw std::invalid_argument(message.str());
                         }
@@ -1586,15 +1619,15 @@ void ErrorAnalyzer::add_error_combinations(
     }
 }
 
-void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void ErrorAnalyzer::undo_MPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_mpp_operation(
-        CircuitInstruction{GateType::MPP, target_data.args, reversed_targets},
+        CircuitInstruction{GateType::MPP, inst.args, reversed_targets, inst.tag},
         tracker.xs.size(),
         [&](const CircuitInstruction &inst) {
             if (inst.gate_type == GateType::M) {
@@ -1603,7 +1636,7 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &target_data) {
                     reversed_measure_targets.push_back(inst.targets[k]);
                 }
                 undo_MZ_with_context(
-                    CircuitInstruction{GateType::M, inst.args, reversed_measure_targets},
+                    CircuitInstruction{GateType::M, inst.args, reversed_measure_targets, inst.tag},
                     "a Pauli product measurement (MPP)");
             } else {
                 undo_gate(inst);
@@ -1626,15 +1659,15 @@ void ErrorAnalyzer::undo_CPP(const CircuitInstruction &target_data) {
         });
 }
 
-void ErrorAnalyzer::undo_SPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void ErrorAnalyzer::undo_SPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_spp_or_spp_dag_operation(
-        CircuitInstruction{GateType::SPP, target_data.args, reversed_targets},
+        CircuitInstruction{GateType::SPP, inst.args, reversed_targets, inst.tag},
         tracker.xs.size(),
         false,
         [&](const CircuitInstruction &inst) {
@@ -1644,47 +1677,47 @@ void ErrorAnalyzer::undo_SPP(const CircuitInstruction &target_data) {
 
 void ErrorAnalyzer::undo_MXX_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, inst.tag});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
         undo_MX_with_context(
-            CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            CircuitInstruction{GateType::MX, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, inst.tag},
             "an X-basis pair measurement (MXX)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets});
+    undo_ZCX(CircuitInstruction{GateType::CX, {}, inst.targets, inst.tag});
 }
 
 void ErrorAnalyzer::undo_MYY_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, inst.tag});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
         undo_MY_with_context(
-            CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            CircuitInstruction{GateType::MY, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, inst.tag},
             "a Y-basis pair measurement (MYY)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets});
+    undo_ZCY(CircuitInstruction{GateType::CY, {}, inst.targets, inst.tag});
 }
 
 void ErrorAnalyzer::undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst) {
     // Transform from 2 qubit measurements to single qubit measurements.
-    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, inst.tag});
 
     // Record measurement results.
     for (size_t k = 0; k < inst.targets.size(); k += 2) {
         undo_MZ_with_context(
-            CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}},
+            CircuitInstruction{GateType::M, inst.args, SpanRef<const GateTarget>{&inst.targets[k]}, inst.tag},
             "a Z-basis pair measurement (MZ)");
     }
 
     // Untransform from single qubit measurements back to 2 qubit measurements.
-    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets});
+    undo_XCZ(CircuitInstruction{GateType::XCZ, {}, inst.targets, inst.tag});
 }
 
 void ErrorAnalyzer::undo_MXX(const CircuitInstruction &inst) {
@@ -1695,8 +1728,10 @@ void ErrorAnalyzer::undo_MXX(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MXX_disjoint_controls_segment(segment);
         });
 }
@@ -1709,8 +1744,10 @@ void ErrorAnalyzer::undo_MYY(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MYY_disjoint_controls_segment(segment);
         });
 }
@@ -1723,8 +1760,10 @@ void ErrorAnalyzer::undo_MZZ(const CircuitInstruction &inst) {
         reversed_targets[k] = inst.targets[n - k - 1];
     }
 
-    decompose_pair_instruction_into_segments_with_single_use_controls(
-        {inst.gate_type, inst.args, reversed_targets}, tracker.xs.size(), [&](CircuitInstruction segment) {
+    decompose_pair_instruction_into_disjoint_segments(
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
+        tracker.xs.size(),
+        [&](CircuitInstruction segment) {
             undo_MZZ_disjoint_controls_segment(segment);
         });
 }

@@ -1,11 +1,9 @@
 #include "stim/diagram/circuit_timeline_helper.h"
 
-#include "stim/diagram/diagram_util.h"
-
 using namespace stim;
 using namespace stim_draw_internal;
 
-void CircuitTimelineHelper::skip_loop_iterations(CircuitTimelineLoopData loop_data, uint64_t skipped_reps) {
+void CircuitTimelineHelper::skip_loop_iterations(const CircuitTimelineLoopData &loop_data, uint64_t skipped_reps) {
     if (loop_data.num_repetitions > 0) {
         vec_pad_add_mul(cur_coord_shift, loop_data.shift_per_iteration, skipped_reps);
         measure_offset += loop_data.measurements_per_iteration * skipped_reps;
@@ -95,6 +93,11 @@ GateTarget CircuitTimelineHelper::rec_to_qubit(const GateTarget &target) {
 }
 
 GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(const CircuitInstruction &op) {
+    for (const auto &t : op.targets) {
+        if (t.is_qubit_target() || t.is_pauli_target()) {
+            return t;
+        }
+    }
     // First check if coordinates prefix-match a qubit's coordinates.
     if (!op.args.empty()) {
         auto coords = shifted_coordinates_in_workspace(op.args);
@@ -104,7 +107,7 @@ GateTarget CircuitTimelineHelper::pick_pseudo_target_representing_measurements(c
             if (!v.empty() && v.size() <= coords.size()) {
                 SpanRef<const double> prefix = {coords.ptr_start, coords.ptr_start + v.size()};
                 if (prefix == v) {
-                    return GateTarget::qubit(q);
+                    return GateTarget::qubit((uint32_t)q);
                 }
             }
         }

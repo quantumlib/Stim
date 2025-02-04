@@ -20,7 +20,7 @@ These notes generally assume you are on a Linux system.
 - [running performance benchmarks](#perf)
     - [with cmake](#perf.cmake)
     - [with bazel](#perf.bazel)
-    - [interpreting output from `stim_benchmark`](#perf.output)
+    - [interpreting output from `stim_perf`](#perf.output)
     - [profiling with gcc and perf](#perf.profile)
 - [creating a python dev environment](#venv)
 - [running python unit tests](#test.pytest)
@@ -68,10 +68,7 @@ A *spandrel* is an implementation detail that has observable effects, but which 
 
 - Create an off-main-branch release commit
     - [ ] `git checkout main -b SOMEBRANCHNAME`
-    - [ ] Update version to `version = 'X.Y.0'` in `setup.py` (at repo root)
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/cirq/setup.py`
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/sinter/setup.py`
-    - [ ] Update version to `version = 'X.Y.0'` in `glue/stimzx/setup.py`
+    - [ ] Global search replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.Y.0'`
     - [ ] `git commit -a -m "Bump to vX.Y.0"`
     - [ ] `git tag vX.Y.0`
     - [ ] Push tag to github
@@ -79,11 +76,10 @@ A *spandrel* is an implementation detail that has observable effects, but which 
     - [ ] Wait for ci to finish validating and producing artifacts for the tag
     - [ ] Get `stim`, `stimcirq`, and `sinter` wheels/sdists [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
 - Bump to next dev version on main branch
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `setup.py` (at repo root)
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/cirq/setup.py`
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/sinter/setup.py`
-    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/stimzx/setup.py`
-    - [ ] Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - [ ] `git checkout main -b SOMEBRANCHNAME`
+    - [ ] Global search replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.(Y+1).dev0'`
+    - [ ] Increment `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - [ ] `git commit -a -m "Start vX.(Y+1).dev"`
     - [ ] Push to github as a branch and merge into main using a pull request
 - Write release notes on github
     - [ ] In title, use two-word theming of most important changes
@@ -348,19 +344,19 @@ bazel test stim_test
 
 ```bash
 cmake .
-make stim_benchmark
-./out/stim_benchmark
+make stim_perf
+./out/stim_perf
 ```
 
 ## <a name="perf.cmake"></a>Running performance benchmarks with bazel
 
 ```bash
-bazel run stim_benchmark
+bazel run stim_perf
 ```
 
-## <a name="perf.output"></a>Interpreting output from `stim_benchmark`
+## <a name="perf.output"></a>Interpreting output from `stim_perf`
 
-When you run `stim_benchmark` you will see output like:
+When you run `stim_perf` you will see output like:
 
 ```
 [....................*....................] 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
@@ -377,7 +373,7 @@ Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` 
 Basically, if you see `[......*<<<<<<<<<<<<<|....................]` then something is *seriously* wrong, because the
 code is running 25x slower than expected.
 
-The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
+The `stim_perf` binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 

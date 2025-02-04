@@ -14,8 +14,8 @@
 
 #include "stim/mem/simd_word.h"
 
-#include "stim/benchmark_util.perf.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 

@@ -358,8 +358,8 @@ class PauliFrame {
      */
     do_swap(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let a = k;
-            let b = k + 1;
+            let a = targets[k];
+            let b = targets[k + 1];
             let xa = this.xs[a];
             let za = this.zs[a];
             let xb = this.xs[b];
@@ -376,8 +376,8 @@ class PauliFrame {
      */
     do_iswap(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let a = k;
-            let b = k + 1;
+            let a = targets[k];
+            let b = targets[k + 1];
 
             let xa = this.xs[a];
             let za = this.zs[a];
@@ -396,8 +396,8 @@ class PauliFrame {
      */
     do_sqrt_xx(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let a = k;
-            let b = k + 1;
+            let a = targets[k];
+            let b = targets[k + 1];
             let zab = this.zs[a] ^ this.zs[b];
             this.xs[a] ^= zab;
             this.xs[b] ^= zab;
@@ -409,8 +409,8 @@ class PauliFrame {
      */
     do_sqrt_yy(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let a = k;
-            let b = k + 1;
+            let a = targets[k];
+            let b = targets[k + 1];
 
             let xa = this.xs[a];
             let za = this.zs[a];
@@ -436,8 +436,8 @@ class PauliFrame {
      */
     do_sqrt_zz(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let a = k;
-            let b = k + 1;
+            let a = targets[k];
+            let b = targets[k + 1];
             let xab = this.xs[a] ^ this.xs[b];
             this.zs[a] ^= xab;
             this.zs[b] ^= xab;
@@ -449,8 +449,8 @@ class PauliFrame {
      */
     do_xcx(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             this.xs[target] ^= this.zs[control];
             this.xs[control] ^= this.zs[target];
         }
@@ -461,8 +461,8 @@ class PauliFrame {
      */
     do_xcy(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             this.xs[target] ^= this.zs[control];
             this.zs[target] ^= this.zs[control];
             this.xs[control] ^= this.xs[target];
@@ -475,8 +475,8 @@ class PauliFrame {
      */
     do_ycy(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             let y = this.xs[control] ^ this.zs[control];
             this.xs[target] ^= y;
             this.zs[target] ^= y;
@@ -491,8 +491,8 @@ class PauliFrame {
      */
     do_cx(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             this.xs[target] ^= this.xs[control];
             this.zs[control] ^= this.zs[target];
         }
@@ -503,8 +503,8 @@ class PauliFrame {
      */
     do_cx_swap(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let c = k;
-            let t = k + 1;
+            let c = targets[k];
+            let t = targets[k + 1];
             let xc = this.xs[c];
             let zc = this.zs[c];
             let xt = this.xs[t];
@@ -519,10 +519,28 @@ class PauliFrame {
     /**
      * @param {!Array<!int>} targets
      */
+    do_swap_cx(targets) {
+        for (let k = 0; k < targets.length; k += 2) {
+            let c = targets[k];
+            let t = targets[k + 1];
+            let xc = this.xs[c];
+            let zc = this.zs[c];
+            let xt = this.xs[t];
+            let zt = this.zs[t];
+            this.xs[c] = xt;
+            this.zs[c] = zc ^ zt;
+            this.xs[t] = xt ^ xc;
+            this.zs[t] = zc;
+        }
+    }
+
+    /**
+     * @param {!Array<!int>} targets
+     */
     do_cz_swap(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let c = k;
-            let t = k + 1;
+            let c = targets[k];
+            let t = targets[k + 1];
             let xc = this.xs[c];
             let zc = this.zs[c];
             let xt = this.xs[t];
@@ -539,8 +557,8 @@ class PauliFrame {
      */
     do_cy(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             this.xs[target] ^= this.xs[control];
             this.zs[target] ^= this.xs[control];
             this.zs[control] ^= this.zs[target];
@@ -553,8 +571,8 @@ class PauliFrame {
      */
     do_cz(targets) {
         for (let k = 0; k < targets.length; k += 2) {
-            let control = k;
-            let target = k + 1;
+            let control = targets[k];
+            let target = targets[k + 1];
             this.zs[target] ^= this.xs[control];
             this.zs[control] ^= this.xs[target];
         }
@@ -566,6 +584,14 @@ class PauliFrame {
      */
     do_gate(gate, targets) {
         gate.frameDo(this, targets);
+    }
+
+    /**
+     * @param {!Gate} gate
+     * @param {!Array<!int>} targets
+     */
+    undo_gate(gate, targets) {
+        gate.frameUndo(this, targets);
     }
 
     /**

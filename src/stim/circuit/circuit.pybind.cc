@@ -18,7 +18,6 @@
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/circuit/export_qasm.h"
 #include "stim/circuit/gate_target.pybind.h"
 #include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -33,15 +32,22 @@
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/search/search.h"
-#include "stim/simulators/count_determined_measurements.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/transform_without_feedback.h"
-#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/flow.h"
-#include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/util_top/circuit_flow_generators.h"
+#include "stim/util_top/circuit_inverse_qec.h"
+#include "stim/util_top/circuit_to_detecting_regions.h"
+#include "stim/util_top/circuit_vs_tableau.h"
+#include "stim/util_top/count_determined_measurements.h"
+#include "stim/util_top/export_crumble_url.h"
+#include "stim/util_top/export_qasm.h"
+#include "stim/util_top/export_quirk_url.h"
+#include "stim/util_top/has_flow.h"
+#include "stim/util_top/simplified_circuit.h"
+#include "stim/util_top/transform_without_feedback.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -84,7 +90,7 @@ std::set<DemTarget> py_dem_filter_to_dem_target_set(
         if (pybind11::isinstance<ExposedDemTarget>(filter)) {
             result.insert(pybind11::cast<ExposedDemTarget>(filter));
         } else if (pybind11::isinstance<pybind11::str>(filter)) {
-            std::string s = pybind11::cast<std::string>(filter);
+            std::string_view s = pybind11::cast<std::string_view>(filter);
             if (s == "D") {
                 add_all_dets();
             } else if (s == "L") {
@@ -121,7 +127,7 @@ std::set<DemTarget> py_dem_filter_to_dem_target_set(
         if (fail) {
             std::stringstream ss;
             ss << "Don't know how to interpret '";
-            ss << pybind11::cast<std::string>(pybind11::repr(filter));
+            ss << pybind11::cast<std::string_view>(pybind11::repr(filter));
             ss << "' as a dem target filter.";
             throw std::invalid_argument(ss.str());
         }
@@ -135,7 +141,7 @@ std::string circuit_repr(const Circuit &self) {
     }
     std::stringstream ss;
     ss << "stim.Circuit('''\n";
-    print_circuit(ss, self, "    ");
+    print_circuit(ss, self, 4);
     ss << "\n''')";
     return ss.str();
 }
@@ -163,14 +169,79 @@ std::vector<ExplainedError> py_find_undetectable_logical_error(
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
-std::string py_shortest_error_sat_problem(const Circuit &self, std::string format) {
+std::string py_shortest_error_sat_problem(const Circuit &self, std::string_view format) {
     DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
     return stim::shortest_error_sat_problem(dem, format);
 }
 
-std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization, std::string format) {
+std::string py_likeliest_error_sat_problem(const Circuit &self, int quantization, std::string_view format) {
     DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
     return stim::likeliest_error_sat_problem(dem, quantization, format);
+}
+
+pybind11::object circuit_get_item(const Circuit &self, const pybind11::object &index_or_slice) {
+    pybind11::ssize_t index, step, slice_length;
+    if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
+        return pybind11::cast(self.py_get_slice(index, step, slice_length));
+    }
+
+    auto &op = self.operations[index];
+    if (op.gate_type == GateType::REPEAT) {
+        return pybind11::cast(
+            CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self), pybind11::str(op.tag)});
+    }
+    std::vector<GateTarget> targets;
+    for (const auto &e : op.targets) {
+        targets.push_back(GateTarget(e));
+    }
+    std::vector<double> args;
+    for (const auto &e : op.args) {
+        args.push_back(e);
+    }
+    return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args, op.tag));
+}
+
+pybind11::object circuit_pop(Circuit &self, pybind11::ssize_t index) {
+    if (index < -(pybind11::ssize_t)self.operations.size() || index >= (pybind11::ssize_t)self.operations.size()) {
+        std::stringstream ss;
+        ss << "not -len(circuit) < index=" << index << " < len(circuit)=" << self.operations.size();
+        throw std::out_of_range(ss.str());
+    }
+    if (index < 0) {
+        index += self.operations.size();
+    }
+
+    pybind11::object result = circuit_get_item(self, pybind11::cast(index));
+    self.operations.erase(self.operations.begin() + (size_t)index);
+    return result;
+}
+void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &operation) {
+    if (index < 0) {
+        index += self.operations.size();
+    }
+    if (index < 0 || (uint64_t)index > self.operations.size()) {
+        std::stringstream ss;
+        ss << "Index is out of range. Need -len(circuit) <= index <= len(circuit).";
+        ss << "\n    index=" << index;
+        ss << "\n    len(circuit)=" << self.operations.size();
+        throw std::invalid_argument(ss.str());
+    }
+    if (pybind11::isinstance<PyCircuitInstruction>(operation)) {
+        const PyCircuitInstruction &v = pybind11::cast<const PyCircuitInstruction &>(operation);
+        self.safe_insert(index, v.as_operation_ref());
+    } else if (pybind11::isinstance<CircuitRepeatBlock>(operation)) {
+        const CircuitRepeatBlock &v = pybind11::cast<const CircuitRepeatBlock &>(operation);
+        self.safe_insert_repeat_block(index, v.repeat_count, v.body, pybind11::cast<std::string_view>(v.tag));
+    } else if (pybind11::isinstance<Circuit>(operation)) {
+        const Circuit &v = pybind11::cast<const Circuit &>(operation);
+        self.safe_insert(index, v);
+    } else {
+        std::stringstream ss;
+        ss << "Don't know how to insert an object of type ";
+        ss << pybind11::str(pybind11::module_::import("builtins").attr("type")(operation));
+        ss << "\nExpected a stim.CircuitInstruction, stim.CircuitRepeatBlock, or stim.Circuit.";
+        throw std::invalid_argument(ss.str());
+    }
 }
 
 void circuit_append(
@@ -178,19 +249,20 @@ void circuit_append(
     const pybind11::object &obj,
     const pybind11::object &targets,
     const pybind11::object &arg,
+    std::string_view tag,
     bool backwards_compat) {
     // Extract single target or list of targets.
     std::vector<uint32_t> raw_targets;
     try {
         raw_targets.push_back(obj_to_gate_target(targets).data);
-    } catch (const std::invalid_argument &ex) {
+    } catch (const std::invalid_argument &) {
         for (const auto &t : targets) {
             raw_targets.push_back(handle_to_gate_target(t).data);
         }
     }
 
     if (pybind11::isinstance<pybind11::str>(obj)) {
-        const std::string &gate_name = pybind11::cast<std::string>(obj);
+        std::string_view gate_name = pybind11::cast<std::string_view>(obj);
 
         // Maintain backwards compatibility to when there was always exactly one argument.
         pybind11::object used_arg;
@@ -205,31 +277,37 @@ void circuit_append(
         // Extract single argument or list of arguments.
         try {
             auto d = pybind11::cast<double>(used_arg);
-            self.safe_append_ua(gate_name, raw_targets, d);
+            self.safe_append_ua(gate_name, raw_targets, d, tag);
             return;
-        } catch (const pybind11::cast_error &ex) {
+        } catch (const pybind11::cast_error &) {
         }
         try {
             auto args = pybind11::cast<std::vector<double>>(used_arg);
-            self.safe_append_u(gate_name, raw_targets, args);
+            self.safe_append_u(gate_name, raw_targets, args, tag);
             return;
-        } catch (const pybind11::cast_error &ex) {
+        } catch (const pybind11::cast_error &) {
         }
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
-        if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+        if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
+            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
-        self.safe_append(instruction.gate_type, instruction.targets, instruction.gate_args);
+        self.safe_append(
+            CircuitInstruction{
+                instruction.gate_type,
+                instruction.gate_args,
+                instruction.targets,
+                pybind11::cast<std::string_view>(instruction.tag),
+            });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
-        if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+        if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
+            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
-        self.append_repeat_block(block.repeat_count, block.body);
+        self.append_repeat_block(block.repeat_count, block.body, pybind11::cast<std::string_view>(block.tag));
     } else {
         throw std::invalid_argument(
             "First argument of append_operation must be a str (a gate name), "
@@ -238,12 +316,12 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
-    circuit_append(self, obj, targets, arg, true);
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    circuit_append(self, obj, targets, arg, tag, true);
 }
 void circuit_append_strict(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
-    circuit_append(self, obj, targets, arg, false);
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    circuit_append(self, obj, targets, arg, tag, false);
 }
 
 pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
@@ -335,7 +413,7 @@ std::set<uint64_t> obj_to_abs_detector_id_set(
 
 void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Circuit> &c) {
     c.def(
-        pybind11::init([](const char *stim_program_text) {
+        pybind11::init([](std::string_view stim_program_text) {
             Circuit self;
             self.append_from_text(stim_program_text);
             return self;
@@ -682,6 +760,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
             Returns:
                 reference_sample: reference sample sampled from the given circuit.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X 1
+                ...     M 0 1
+                ... ''').reference_sample()
+                array([False,  True])
         )DOC")
             .data());
 
@@ -1022,10 +1108,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("name"),
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
+            pybind11::kw_only(),
+            pybind11::arg("tag") = "",
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
                    : clean_doc_string(R"DOC(
                 Appends an operation into the circuit.
-                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]]) -> None:
+                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]], *, tag: str = "") -> None:
                 @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
@@ -1075,9 +1163,100 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         compatibility reasons, `cirq.append_operation` (but not
                         `cirq.append`) will default to a single 0.0 argument for gates that
                         take exactly one argument.
+                    tag: A customizable string attached to the instruction.
             )DOC")
                          .data());
     }
+
+    c.def(
+        "insert",
+        &circuit_insert,
+        pybind11::arg("index"),
+        pybind11::arg("operation"),
+        clean_doc_string(R"DOC(
+            Inserts an operation at the given index, pushing existing operations forward.
+            @signature def insert(self, index: int, operation: Union[stim.CircuitInstruction, stim.Circuit]) -> None:
+
+            Beware that inserted operations are automatically fused with the preceding
+            and following operations, if possible. This can make it complex to reason
+            about how the indices of operations change in response to insertions.
+
+            Args:
+                index: The index to insert at.
+
+                    Must satisfy -len(circuit) <= index < len(circuit). Negative indices
+                    are made non-negative by adding len(circuit) to them, so they refer to
+                    indices relative to the end of the circuit instead of the start.
+
+                    Instructions before the index are not shifted. Instructions that
+                    were at or after the index are shifted forwards as needed.
+                operation: The object to insert. This can be a single
+                    stim.CircuitInstruction or an entire stim.Circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...     H 0
+                ...     S 1
+                ...     X 2
+                ... ''')
+                >>> c.insert(1, stim.CircuitInstruction("Y", [3, 4, 5]))
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    Y 3 4 5
+                    S 1
+                    X 2
+                ''')
+                >>> c.insert(-1, stim.Circuit("S 999\nCX 0 1\nCZ 2 3"))
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    Y 3 4 5
+                    S 1 999
+                    CX 0 1
+                    CZ 2 3
+                    X 2
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "pop",
+        &circuit_pop,
+        pybind11::arg("index") = -1,
+        clean_doc_string(R"DOC(
+            @signature def pop(self, index: int = -1) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+            Pops an operation from the end of the circuit, or at the given index.
+
+            Args:
+                index: Defaults to -1 (end of circuit). The index to pop from.
+
+            Returns:
+                The popped instruction.
+
+            Raises:
+                IndexError: The given index is outside the bounds of the circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...     H 0
+                ...     S 1
+                ...     X 2
+                ...     Y 3
+                ... ''')
+                >>> c.pop()
+                stim.CircuitInstruction('Y', [stim.GateTarget(3)], [])
+                >>> c.pop(1)
+                stim.CircuitInstruction('S', [stim.GateTarget(1)], [])
+                >>> c
+                stim.Circuit('''
+                    H 0
+                    X 2
+                ''')
+        )DOC")
+            .data());
 
     c.def(
         "append_from_stim_program_text",
@@ -1142,7 +1321,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def_static(
         "generated",
-        [](const std::string &type,
+        [](std::string_view type,
            size_t distance,
            size_t rounds,
            double after_clifford_depolarization,
@@ -1150,8 +1329,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
            double before_measure_flip_probability,
            double after_reset_flip_probability) {
             auto r = type.find(':');
-            std::string code;
-            std::string task;
+            std::string_view code;
+            std::string_view task;
             if (r == std::string::npos) {
                 code = "";
                 task = type;
@@ -1160,7 +1339,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 task = type.substr(r + 1);
             }
 
-            CircuitGenParameters params(rounds, distance, task);
+            CircuitGenParameters params(rounds, distance, std::string(task));
             params.after_clifford_depolarization = after_clifford_depolarization;
             params.after_reset_flip_probability = after_reset_flip_probability;
             params.before_measure_flip_probability = before_measure_flip_probability;
@@ -1281,28 +1460,30 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_static(
         "from_file",
         [](pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
-                RaiiFile f(path.data(), "rb");
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string_view path = pybind11::cast<std::string_view>(obj);
+                RaiiFile f(path, "rb");
                 return Circuit::from_file(f.f);
-            } catch (pybind11::cast_error &ex) {
             }
 
-            auto py_path = pybind11::module::import("pathlib").attr("Path");
+            pybind11::object py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
-                auto path = pybind11::cast<std::string>(pybind11::str(obj));
-                RaiiFile f(path.data(), "rb");
+                pybind11::object obj_str = pybind11::str(obj);
+                std::string_view path = pybind11::cast<std::string_view>(obj_str);
+                RaiiFile f(path, "rb");
                 return Circuit::from_file(f.f);
             }
 
-            auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
+            pybind11::object py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
             if (pybind11::isinstance(obj, py_text_io_base)) {
-                auto contents = obj.attr("read")();
-                return Circuit(pybind11::cast<std::string>(pybind11::str(contents)).data());
+                pybind11::object contents = obj.attr("read")();
+                return Circuit(pybind11::cast<std::string_view>(contents));
             }
 
-            throw std::invalid_argument(
-                "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to read from ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -1348,15 +1529,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "to_file",
         [](const Circuit &self, pybind11::object &obj) {
-            try {
-                auto path = pybind11::cast<std::string>(obj);
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                std::string path = pybind11::cast<std::string>(obj);
                 std::ofstream out(path, std::ofstream::out);
                 if (!out.is_open()) {
                     throw std::invalid_argument("Failed to open " + path);
                 }
                 out << self << '\n';
                 return;
-            } catch (pybind11::cast_error &ex) {
             }
 
             auto py_path = pybind11::module::import("pathlib").attr("Path");
@@ -1377,8 +1557,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 return;
             }
 
-            throw std::invalid_argument(
-                "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
+            std::stringstream ss;
+            ss << "Don't know how to write to ";
+            ss << pybind11::repr(obj);
+            throw std::invalid_argument(ss.str());
         },
         pybind11::arg("file"),
         clean_doc_string(R"DOC(
@@ -1492,8 +1674,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     This should be set to 2 or to 3.
 
                     Differences between the versions are:
-                        - Support for operations on classical bits operations (only version
-                            3). This means DETECTOR and OBSERVABLE_INCLUDE only work with
+                        - Support for operations on classical bits (only version 3).
+                            This means DETECTOR and OBSERVABLE_INCLUDE only work with
                             version 3.
                         - Support for feedback operations (only version 3).
                         - Support for subroutines (only version 3). Without subroutines,
@@ -1575,26 +1757,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "__getitem__",
-        [](const Circuit &self, const pybind11::object &index_or_slice) -> pybind11::object {
-            pybind11::ssize_t index, step, slice_length;
-            if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
-                return pybind11::cast(self.py_get_slice(index, step, slice_length));
-            }
-
-            auto &op = self.operations[index];
-            if (op.gate_type == GateType::REPEAT) {
-                return pybind11::cast(CircuitRepeatBlock{op.repeat_block_rep_count(), op.repeat_block_body(self)});
-            }
-            std::vector<GateTarget> targets;
-            for (const auto &e : op.targets) {
-                targets.push_back(GateTarget(e));
-            }
-            std::vector<double> args;
-            for (const auto &e : op.args) {
-                args.push_back(e);
-            }
-            return pybind11::cast(PyCircuitInstruction(op.gate_type, targets, args));
-        },
+        &circuit_get_item,
         pybind11::arg("index_or_slice"),
         clean_doc_string(R"DOC(
             Returns copies of instructions from the circuit.
@@ -1757,7 +1920,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         [](const Circuit &self, const pybind11::object &obj, double atol) -> bool {
             try {
                 return self.approx_equals(pybind11::cast<Circuit>(obj), atol);
-            } catch (const pybind11::cast_error &ex) {
+            } catch (const pybind11::cast_error &) {
                 return false;
             }
         },
@@ -1883,13 +2046,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         )DOC")
             .data());
 
-    c.def(pybind11::pickle(
-        [](const Circuit &self) -> pybind11::str {
-            return self.str();
-        },
-        [](const pybind11::str &text) {
-            return Circuit(pybind11::cast<std::string>(text).data());
-        }));
+    c.def(
+        pybind11::pickle(
+            [](const Circuit &self) -> pybind11::str {
+                return self.str();
+            },
+            [](const pybind11::str &text) {
+                return Circuit(pybind11::cast<std::string_view>(text));
+            }));
 
     c.def(
         "shortest_graphlike_error",
@@ -2137,8 +2301,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("quantization") = 100,
         pybind11::arg("format") = "WDIMACS",
         clean_doc_string(R"DOC(
-            Makes a maxSAT problem of the circuit's most likely undetectable logical
-            error, that other tools can solve.
+            Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
             The output is a string describing the maxSAT problem in WDIMACS format
             (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
@@ -2719,6 +2882,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             A flow like P -> 1 means the circuit measures P.
             A flow like 1 -> 1 means the circuit contains a check (could be a DETECTOR).
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flow: The flow to check for.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2754,6 +2919,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                 >>> stim.Circuit('''
                 ...     RY 0
+                ... ''').has_flow(stim.Flow(
+                ...     output=stim.PauliString("Y"),
+                ... ))
+                True
+
+                >>> stim.Circuit('''
+                ...     RY 0
+                ...     X_ERROR(0.1) 0
                 ... ''').has_flow(stim.Flow(
                 ...     output=stim.PauliString("Y"),
                 ... ))
@@ -2840,6 +3013,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             because, behind the scenes, the circuit can be iterated once instead of once
             per flow.
 
+            This method ignores any noise in the circuit.
+
             Args:
                 flows: An iterable of `stim.Flow` instances representing the flows to check.
                 unsigned: Defaults to False. When False, the flows must be correct including
@@ -2884,25 +3059,283 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
+        "flow_generators",
+        &circuit_flow_generators<MAX_BITWORD_WIDTH>,
+        clean_doc_string(R"DOC(
+            @signature def flow_generators(self) -> List[stim.Flow]:
+            Returns a list of flows that generate all of the circuit's flows.
+
+            Every stabilizer flow that the circuit implements is a product of some
+            subset of the returned generators. Every returned flow will be a flow
+            of the circuit.
+
+            Returns:
+                A list of flow generators for the circuit.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit("H 0").flow_generators()
+                [stim.Flow("X -> Z"), stim.Flow("Z -> X")]
+
+                >>> stim.Circuit("M 0").flow_generators()
+                [stim.Flow("1 -> Z xor rec[0]"), stim.Flow("Z -> rec[0]")]
+
+                >>> stim.Circuit("RX 0").flow_generators()
+                [stim.Flow("1 -> X")]
+
+                >>> for flow in stim.Circuit("MXX 0 1").flow_generators():
+                ...     print(flow)
+                1 -> XX xor rec[0]
+                _X -> _X
+                X_ -> _X xor rec[0]
+                ZZ -> ZZ
+
+                >>> for flow in stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=2,
+                ...     distance=3,
+                ...     after_clifford_depolarization=1e-3,
+                ... ).flow_generators():
+                ...     print(flow)
+                1 -> rec[0]
+                1 -> rec[1]
+                1 -> rec[2]
+                1 -> rec[3]
+                1 -> rec[4]
+                1 -> rec[5]
+                1 -> rec[6]
+                1 -> ____Z
+                1 -> ___Z_
+                1 -> __Z__
+                1 -> _Z___
+                1 -> Z____
+        )DOC")
+            .data());
+
+    c.def(
+        "time_reversed_for_flows",
+        [](const Circuit &self,
+           const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows,
+           bool dont_turn_measurements_into_resets) -> pybind11::object {
+            auto [inv_circuit, inv_flows] =
+                circuit_inverse_qec<MAX_BITWORD_WIDTH>(self, flows, dont_turn_measurements_into_resets);
+            return pybind11::make_tuple(inv_circuit, inv_flows);
+        },
+        pybind11::arg("flows"),
+        pybind11::kw_only(),
+        pybind11::arg("dont_turn_measurements_into_resets") = false,
+        clean_doc_string(R"DOC(
+            @signature def time_reversed_for_flows(self, flows: Iterable[stim.Flow], *, dont_turn_measurements_into_resets: bool = False) -> Tuple[stim.Circuit, List[stim.Flow]]:
+            Time-reverses the circuit while preserving error correction structure.
+
+            This method returns a circuit that has the same internal detecting regions
+            as the given circuit, as well as the same internal-to-external flows given
+            in the `flows` argument, except they are all time-reversed. For example, if
+            you pass a fault tolerant preparation circuit into this method (1 -> Z), the
+            result will be a fault tolerant *measurement* circuit (Z -> 1). Or, if you
+            pass a fault tolerant C_XYZ circuit into this method (X->Y, Y->Z, and Z->X),
+            the result will be a fault tolerant C_ZYX circuit (X->Z, Y->X, and Z->Y).
+
+            Note that this method doesn't guarantee that it will preserve the *sign* of the
+            detecting regions or stabilizer flows. For example, inverting a memory circuit
+            that preserves a logical observable (X->X and Z->Z) may produce a
+            memory circuit that always bit flips the logical observable (X->X and Z->-Z) or
+            that dynamically adjusts the logical observable in response to measurements
+            (like "X -> X xor rec[-1]" and "Z -> Z xor rec[-2]").
+
+            This method will turn time-reversed resets into measurements, and attempts to
+            turn time-reversed measurements into resets. A measurement will time-reverse
+            into a reset if some annotated detectors, annotated observables, or given flows
+            have detecting regions with sensitivity just before the measurement but none
+            have detecting regions with sensitivity after the measurement.
+
+            In some cases this method will have to introduce new operations. In particular,
+            when a measurement-reset operation has a noisy result, time-reversing this
+            measurement noise produces reset noise. But the measure-reset operations don't
+            have built-in reset noise, so the reset noise is specified by adding an X_ERROR
+            or Z_ERROR noise instruction after the time-reversed measure-reset operation.
+
+            Args:
+                flows: Flows you care about, that reach past the start/end of the given
+                    circuit. The result will contain an inverted flow for each of these
+                    given flows. You need this information because it reveals the
+                    measurements needed to produce the inverted flows that you care
+                    about.
+
+                    An exception will be raised if the circuit doesn't have all these
+                    flows. The inverted circuit will have the inverses of these flows
+                    (ignoring sign).
+                dont_turn_measurements_into_resets: Defaults to False. When set to
+                    True, measurements will time-reverse into measurements even if
+                    nothing is sensitive to the measured qubit after the measurement
+                    completes. This guarantees the output circuit has *all* flows
+                    that the input circuit has (up to sign and feedback), even ones
+                    that aren't annotated.
+
+            Returns:
+                An (inverted_circuit, inverted_flows) tuple.
+
+                inverted_circuit is the qec inverse of the given circuit.
+
+                inverted_flows is a list of flows, matching up by index with the flows
+                given as arguments to the method. The input, output, and sign fields
+                of these flows are boring. The useful field is measurement_indices,
+                because it's difficult to predict which measurements are needed for
+                the inverted flow due to effects such as implicitly-included resets
+                inverting into explicitly-included measurements.
+
+            Caveats:
+                Currently, this method doesn't compute the sign of the inverted flows.
+                It unconditionally sets the sign to False.
+
+            Examples:
+                >>> import stim
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     R 0
+                ...     H 0
+                ...     S 0
+                ...     MY 0
+                ...     DETECTOR rec[-1]
+                ... ''').time_reversed_for_flows([])
+                >>> inv_circuit
+                stim.Circuit('''
+                    RY 0
+                    S_DAG 0
+                    H 0
+                    M 0
+                    DETECTOR rec[-1]
+                ''')
+                >>> inv_flows
+                []
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows([
+                ...     stim.Flow("Z -> rec[-1]"),
+                ... ])
+                >>> inv_circuit
+                stim.Circuit('''
+                    R 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("1 -> Z")]
+                >>> inv_circuit.has_all_flows(inv_flows, unsigned=True)
+                True
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     R 0
+                ... ''').time_reversed_for_flows([
+                ...     stim.Flow("1 -> Z"),
+                ... ])
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("Z -> rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows([
+                ...     stim.Flow("1 -> Z xor rec[-1]"),
+                ... ])
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("Z -> rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     M 0
+                ... ''').time_reversed_for_flows(
+                ...     flows=[stim.Flow("Z -> rec[-1]")],
+                ...     dont_turn_measurements_into_resets=True,
+                ... )
+                >>> inv_circuit
+                stim.Circuit('''
+                    M 0
+                ''')
+                >>> inv_flows
+                [stim.Flow("1 -> Z xor rec[-1]")]
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     MR(0.125) 0
+                ... ''').time_reversed_for_flows([])
+                >>> inv_circuit
+                stim.Circuit('''
+                    MR 0
+                    X_ERROR(0.125) 0
+                ''')
+                >>> inv_flows
+                []
+
+                >>> inv_circuit, inv_flows = stim.Circuit('''
+                ...     MXX 0 1
+                ...     H 0
+                ... ''').time_reversed_for_flows([
+                ...     stim.Flow("ZZ -> YY xor rec[-1]"),
+                ...     stim.Flow("ZZ -> XZ"),
+                ... ])
+                >>> inv_circuit
+                stim.Circuit('''
+                    H 0
+                    MXX 0 1
+                ''')
+                >>> inv_flows
+                [stim.Flow("YY -> ZZ xor rec[-1]"), stim.Flow("XZ -> ZZ")]
+
+                >>> stim.Circuit.generated(
+                ...     "surface_code:rotated_memory_x",
+                ...     distance=2,
+                ...     rounds=1,
+                ... ).time_reversed_for_flows([])[0]
+                stim.Circuit('''
+                    QUBIT_COORDS(1, 1) 1
+                    QUBIT_COORDS(2, 0) 2
+                    QUBIT_COORDS(3, 1) 3
+                    QUBIT_COORDS(1, 3) 6
+                    QUBIT_COORDS(2, 2) 7
+                    QUBIT_COORDS(3, 3) 8
+                    QUBIT_COORDS(2, 4) 12
+                    RX 8 6 3 1
+                    MR 12 7 2
+                    TICK
+                    H 12 2
+                    TICK
+                    CX 1 7 12 6
+                    TICK
+                    CX 6 7 12 8
+                    TICK
+                    CX 3 7 2 1
+                    TICK
+                    CX 8 7 2 3
+                    TICK
+                    H 12 2
+                    TICK
+                    M 12 7 2
+                    DETECTOR(2, 0, 1) rec[-1]
+                    DETECTOR(2, 4, 1) rec[-3]
+                    MX 8 6 3 1
+                    DETECTOR(2, 0, 0) rec[-5] rec[-2] rec[-1]
+                    DETECTOR(2, 4, 0) rec[-7] rec[-4] rec[-3]
+                    OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
         "diagram",
         &circuit_diagram,
         pybind11::arg("type") = "timeline-text",
         pybind11::kw_only(),
         pybind11::arg("tick") = pybind11::none(),
+        pybind11::arg("rows") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @overload def diagram(self, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["timeline-svg"]', *, tick: Union[None, int, range] = None) -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["timeline-3d", "timeline-3d-html"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["matchgraph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["matchgraph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["matchgraph-3d-html"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["detslice-text"]', *, tick: int, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["detslice-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["detslice-with-ops-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["timeslice-svg"]', *, tick: Union[int, range], filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
-            @overload def diagram(self, type: 'Literal["interactive", "interactive-html"]') -> 'stim._DiagramHelper':
-            @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),)) -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
@@ -2916,6 +3349,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         the circuit over time. Includes annotations showing the
                         measurement record index that each measurement writes
                         to, and the measurements used by detectors.
+                    "timeline-svg-html": A resizable SVG image viewer of the
+                        operations applied by the circuit over time. Includes
+                        annotations showing the measurement record index that
+                        each measurement writes to, and the measurements used
+                        by detectors.
                     "timeline-3d": A 3d model, in GLTF format, of the operations
                         applied by the circuit over time.
                     "timeline-3d-html": Same 3d model as 'timeline-3d' but
@@ -2934,8 +3372,12 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         usual diagram of a surface code.
 
                         Uses the Pauli color convention XYZ=RGB.
+                    "detslice-svg-html": Same as detslice-svg but the SVG image
+                        is inside a resizable HTML iframe.
                     "matchgraph-svg": An SVG image of the match graph extracted
                         from the circuit by stim.Circuit.detector_error_model.
+                    "matchgraph-svg-html": Same as matchgraph-svg but the SVG image
+                        is inside a resizable HTML iframe.
                     "matchgraph-3d": An 3D model of the match graph extracted
                         from the circuit by stim.Circuit.detector_error_model.
                     "matchgraph-3d-html": Same 3d model as 'match-graph-3d' but
@@ -2944,10 +3386,14 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     "timeslice-svg": An SVG image of the operations applied
                         between two TICK instructions in the circuit, with the
                         operations laid out in 2d.
+                    "timeslice-svg-html": Same as timeslice-svg but the SVG image
+                        is inside a resizable HTML iframe.
                     "detslice-with-ops-svg": A combination of timeslice-svg
                         and detslice-svg, with the operations overlaid
                         over the detector slices taken from the TICK after the
                         operations were applied.
+                    "detslice-with-ops-svg-html": Same as detslice-with-ops-svg
+                        but the SVG image is inside a resizable HTML iframe.
                     "interactive" or "interactive-html": An HTML web page
                         containing Crumble (an interactive editor for 2D
                         stabilizer circuits) initialized with the given circuit
@@ -2963,11 +3409,19 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
                     Passing `range(A, B)` for a time slice will show the
                     operations between tick A and tick B.
-                filter_coords: A set of acceptable coordinate prefixes, or
-                    desired stim.DemTargets. For detector slice diagrams, only
-                    detectors match one of the filters are included. If no filter
-                    is specified, all detectors are included (but no observables).
-                    To include an observable, add it as one of the filters.
+                rows: In diagrams that have multiple separate pieces, such as timeslice
+                    diagrams and detslice diagrams, this controls how many rows of
+                    pieces there will be. If not specified, a number of rows that creates
+                    a roughly square layout will be chosen.
+                filter_coords: A list of things to include in the diagram. Different
+                    effects depending on the diagram.
+
+                    For detslice diagrams, the filter defaults to showing all detectors
+                    and no observables. When specified, each list entry can be a collection
+                    of floats (detectors whose coordinates start with the same numbers will
+                    be included), a stim.DemTarget (specifying a detector or observable
+                    to include), a string like "D5" or "L0" specifying a detector or
+                    observable to include.
 
             Returns:
                 An object whose `__str__` method returns the diagram, so that
@@ -3002,6 +3456,90 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 q0: -Z:D0-
                      |
                 q1: -Z:D0-
+        )DOC")
+            .data());
+
+    c.def(
+        "to_crumble_url",
+        [](const Circuit &self, bool skip_detectors, pybind11::object &obj_mark) {
+            std::map<int, std::vector<ExplainedError>> mark;
+            if (!obj_mark.is_none()) {
+                mark = pybind11::cast<std::map<int, std::vector<ExplainedError>>>(obj_mark);
+            }
+            return export_crumble_url(self, skip_detectors, mark);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("skip_detectors") = false,
+        pybind11::arg("mark") = pybind11::none(),
+        clean_doc_string(R"DOC(
+            @signature def to_crumble_url(self, *, skip_detectors: bool = False, mark: Optional[dict[int, list[stim.ExplainedError]]] = None) -> str:
+            Returns a URL that opens up crumble and loads this circuit into it.
+
+            Crumble is a tool for editing stabilizer circuits, and visualizing their
+            stabilizer flows. Its source code is in the `glue/crumble` directory of
+            the stim code repository on github. A prebuilt version is made available
+            at https://algassert.com/crumble, which is what the URL returned by this
+            method will point to.
+
+            Args:
+                skip_detectors: Defaults to False. If set to True, detectors from the
+                    circuit aren't included in the crumble URL. This can reduce visual
+                    clutter in crumble, and improve its performance, since it doesn't
+                    need to indicate or track the sensitivity regions of detectors.
+                mark: Defaults to None (no marks). If set to a dictionary from int to
+                    errors, such as `mark={1: circuit.shortest_graphlike_error()}`,
+                    then the errors will be highlighted and tracked forward by crumble.
+
+            Returns:
+                A URL that can be opened in a web browser.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ...     S 1
+                ... ''').to_crumble_url()
+                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+
+                >>> circuit = stim.Circuit('''
+                ...     M(0.25) 0 1 2
+                ...     DETECTOR rec[-1] rec[-2]
+                ...     DETECTOR rec[-2] rec[-3]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''')
+                >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
+                >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
+                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
+        )DOC")
+            .data());
+
+    c.def(
+        "to_quirk_url",
+        &export_quirk_url,
+        clean_doc_string(R"DOC(
+            Returns a URL that opens up quirk and loads this circuit into it.
+
+            Quirk is an open source drag and drop circuit editor with support for up to 16
+            qubits. Its source code is available at https://github.com/strilanc/quirk
+            and a prebuilt version is available at https://algassert.com/quirk, which is
+            what the URL returned by this method will point to.
+
+            Quirk doesn't support features like noise, feedback, or detectors. This method
+            will simply drop any unsupported operations from the circuit when producing
+            the URL.
+
+            Returns:
+                A URL that can be opened in a web browser.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ...     S 1
+                ... ''').to_quirk_url()
+                'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
         )DOC")
             .data());
 }

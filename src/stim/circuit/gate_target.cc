@@ -14,8 +14,6 @@
 
 #include "stim/circuit/gate_target.h"
 
-#include "stim/circuit/circuit.h"
-
 using namespace stim;
 
 GateTarget GateTarget::pauli_xz(uint32_t qubit, bool x, bool z, bool inverted) {
@@ -23,6 +21,18 @@ GateTarget GateTarget::pauli_xz(uint32_t qubit, bool x, bool z, bool inverted) {
         throw std::invalid_argument("qubit target larger than " + std::to_string(TARGET_VALUE_MASK));
     }
     return {qubit | (TARGET_INVERTED_BIT * inverted) | (TARGET_PAULI_X_BIT * x) | (TARGET_PAULI_Z_BIT * z)};
+}
+
+GateTarget GateTarget::from_target_str(std::string_view text) {
+    int c = text[0];
+    size_t k = 1;
+    auto t = read_single_gate_target(c, [&]() {
+        return k < text.size() ? text[k++] : EOF;
+    });
+    if (c != EOF) {
+        throw std::invalid_argument("Unparsed text at end of " + std::string(text));
+    }
+    return t;
 }
 
 GateTarget GateTarget::x(uint32_t qubit, bool inverted) {
@@ -168,9 +178,14 @@ std::string GateTarget::str() const {
 
 std::string GateTarget::repr() const {
     std::stringstream ss;
-    ss << "stim.GateTarget(";
+    bool need_wrap = is_qubit_target() && !is_inverted_result_target();
+    if (need_wrap) {
+        ss << "stim.GateTarget(";
+    }
     ss << *this;
-    ss << ")";
+    if (need_wrap) {
+        ss << ")";
+    }
     return ss.str();
 }
 

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import random
 import re
 
 import numpy as np
@@ -55,6 +56,14 @@ def test_from_named_gate():
         stim.Tableau.from_named_gate("not a gate")
     with pytest.raises(IndexError, match="not unitary"):
         stim.Tableau.from_named_gate("X_ERROR")
+
+
+def test_from_state_vector_fuzz():
+    for n in range(1, 7):
+        t = stim.Tableau.random(n)
+        v = t.to_state_vector() * (random.random() + 1j*random.random())
+        t2 = stim.Tableau.from_state_vector(v, endian='little')
+        np.testing.assert_array_equal(t.to_stabilizers(canonicalize=True), t2.to_stabilizers(canonicalize=True))
 
 
 def test_identity():
@@ -975,3 +984,31 @@ def test_to_circuit_mpp_unsigned_preserves_stabilizers():
     for e in reconstructed:
         e.sign = +1
     assert original == reconstructed
+
+
+def test_from_stabilizers_error_messages():
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X"),
+        ])
+    with pytest.raises(ValueError, match="anticommute"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z"),
+            stim.PauliString("X" + "_"*500),
+        ])
+    with pytest.raises(ValueError, match="contradict"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("Z_"),
+            stim.PauliString("-_Z"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("ZZ"),
+        ])
+    with pytest.raises(ValueError, match="redundant"):
+        stim.Tableau.from_stabilizers([
+            stim.PauliString("-Z_"),
+            stim.PauliString("Z" + "_"*500 + "X"),
+            stim.PauliString("-__Z"),
+            stim.PauliString("_Z_"),
+            stim.PauliString("Z_Z"),
+        ])

@@ -19,11 +19,11 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
-std::string stim::run_captured_stim_main(std::vector<const char *> flags, const std::string &std_in_content) {
+std::string stim::run_captured_stim_main(std::vector<const char *> flags, std::string_view std_in_content) {
     // Setup input.
     RaiiTempNamedFile raii_temp_file(std_in_content);
     flags.push_back("--in");
@@ -57,7 +57,7 @@ std::string stim::run_captured_stim_main(std::vector<const char *> flags) {
     return out;
 }
 
-std::string stim::trim(std::string text) {
+std::string_view stim::trim(std::string_view text) {
     size_t s = 0;
     size_t e = text.size();
     while (s < e && std::isspace(text[s])) {
@@ -90,17 +90,18 @@ TEST(main, help_modes) {
 TEST(main, bad_flag) {
     ASSERT_EQ(
         trim(run_captured_stim_main({"--gen", "--unknown"})),
-        trim("[stderr=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
-             "Recognized command line arguments for `stim gen`:\n"
-             "    --after_clifford_depolarization\n"
-             "    --after_reset_flip_probability\n"
-             "    --before_measure_flip_probability\n"
-             "    --before_round_data_depolarization\n"
-             "    --code\n"
-             "    --distance\n"
-             "    --in\n"
-             "    --out\n"
-             "    --rounds\n"
-             "    --task\n"
-             "\033[0m]\n"));
+        trim(
+            "[stderr=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
+            "Recognized command line arguments for `stim gen`:\n"
+            "    --after_clifford_depolarization\n"
+            "    --after_reset_flip_probability\n"
+            "    --before_measure_flip_probability\n"
+            "    --before_round_data_depolarization\n"
+            "    --code\n"
+            "    --distance\n"
+            "    --in\n"
+            "    --out\n"
+            "    --rounds\n"
+            "    --task\n"
+            "\033[0m]\n"));
 }

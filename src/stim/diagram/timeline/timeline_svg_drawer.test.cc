@@ -22,12 +22,12 @@
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, const std::string &key) {
+void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, std::string_view key) {
     std::stringstream ss;
     CoordFilter filter;
     DiagramTimelineSvgDrawer::make_diagram_write_to(
@@ -361,4 +361,42 @@ TEST(diagram_timeline_svg_drawer, test_circuit_all_ops_detslice) {
     DiagramTimelineSvgDrawer::make_diagram_write_to(
         circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
     expect_string_is_identical_to_saved_file(ss.str(), "circuit_all_ops_detslice.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, anticommuting_detector_circuit) {
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    auto circuit = Circuit(R"CIRCUIT(
+        TICK
+        R 0
+        TICK
+        R 0
+        TICK
+        MXX 0 1
+        M 2
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    )CIRCUIT");
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "anticommuting_detslice.svg");
+}
+
+TEST(diagram_timeline_svg_drawer, bezier_curves) {
+    CoordFilter empty_filter;
+    std::stringstream ss;
+    auto circuit = Circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        QUBIT_COORDS(2, 0) 2
+        QUBIT_COORDS(3, 0) 3
+        CX 0 1
+        CX 2 3
+        TICK
+        CX 0 2
+        CX 1 3
+    )CIRCUIT");
+    DiagramTimelineSvgDrawer::make_diagram_write_to(
+        circuit, ss, 0, UINT64_MAX, DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "bezier_time_slice.svg");
 }

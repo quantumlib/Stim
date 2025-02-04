@@ -18,7 +18,7 @@ struct JsCircuitInstruction {
         }
     }
     operator CircuitInstruction() const {
-        return {gate_type, {}, targets};
+        return {gate_type, {}, targets, ""};
     }
 };
 

@@ -2,6 +2,8 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/dem/detector_error_model.h"
+
 using namespace stim;
 
 TEST(dem_instruction, from_str) {
@@ -28,4 +30,55 @@ TEST(dem_instruction, from_str) {
     ASSERT_THROW({ DemTarget::from_text("0"); }, std::invalid_argument);
     ASSERT_THROW({ DemTarget::from_text("'"); }, std::invalid_argument);
     ASSERT_THROW({ DemTarget::from_text(" "); }, std::invalid_argument);
+}
+
+TEST(dem_instruction, for_separated_targets) {
+    DetectorErrorModel dem("error(0.1) D0 ^ D2 L0 ^ D1 D2 D3");
+    std::vector<std::vector<DemTarget>> results;
+    dem.instructions[0].for_separated_targets([&](std::span<const DemTarget> group) {
+        std::vector<DemTarget> items;
+        for (auto g : group) {
+            items.push_back(g);
+        }
+        results.push_back(items);
+    });
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {DemTarget::relative_detector_id(0)},
+            {DemTarget::relative_detector_id(2), DemTarget::observable_id(0)},
+            {DemTarget::relative_detector_id(1),
+             DemTarget::relative_detector_id(2),
+             DemTarget::relative_detector_id(3)},
+        }));
+
+    dem = DetectorErrorModel("error(0.1) D0");
+    results.clear();
+    dem.instructions[0].for_separated_targets([&](std::span<const DemTarget> group) {
+        std::vector<DemTarget> items;
+        for (auto g : group) {
+            items.push_back(g);
+        }
+        results.push_back(items);
+    });
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {DemTarget::relative_detector_id(0)},
+        }));
+
+    dem = DetectorErrorModel("error(0.1)");
+    results.clear();
+    dem.instructions[0].for_separated_targets([&](std::span<const DemTarget> group) {
+        std::vector<DemTarget> items;
+        for (auto g : group) {
+            items.push_back(g);
+        }
+        results.push_back(items);
+    });
+    ASSERT_EQ(
+        results,
+        (std::vector<std::vector<DemTarget>>{
+            {},
+        }));
 }

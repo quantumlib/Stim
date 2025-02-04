@@ -35,7 +35,6 @@ venv
 .cmake/*
 coverage/*
 cmake-build-debug-coverage/*
-# clangd generated files
 compile_commands.json
 .cache
 build.ninja
@@ -43,3 +42,5 @@ build.ninja
 .ninja_log
 .pytest_cache
 node_modules
+MODULE.bazel.lock
+bazel-stim

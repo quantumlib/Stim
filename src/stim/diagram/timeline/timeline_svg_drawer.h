@@ -25,6 +25,7 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/gate_data_svg.h"
 #include "stim/diagram/lattice_map.h"
+#include "stim/util_bot/str_util.h"
 
 namespace stim_draw_internal {
 
@@ -52,7 +53,7 @@ struct DiagramTimelineSvgDrawer {
     DiagramTimelineSvgDrawerMode mode;
     DetectorSliceSet detector_slice_set;
     FlattenedCoords coord_sys;
-    std::map<std::string, SvgGateData> gate_data_map;
+    std::map<std::string_view, SvgGateData> gate_data_map;
 
     DiagramTimelineSvgDrawer(std::ostream &out, size_t num_qubits, bool has_ticks);
 
@@ -63,7 +64,8 @@ struct DiagramTimelineSvgDrawer {
         uint64_t tick_slice_start,
         uint64_t tick_slice_num,
         DiagramTimelineSvgDrawerMode mode,
-        stim::SpanRef<const CoordFilter> det_coord_filter);
+        stim::SpanRef<const CoordFilter> det_coord_filter,
+        size_t num_rows = 0);
 
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);
@@ -86,15 +88,15 @@ struct DiagramTimelineSvgDrawer {
     void draw_z_control(float cx, float cy);
     void draw_swap_control(float cx, float cy);
     void draw_iswap_control(float cx, float cy, bool inverse);
-    void draw_generic_box(float cx, float cy, const std::string &text, stim::SpanRef<const double> end_args);
-    void draw_two_qubit_gate_end_point(float cx, float cy, const std::string &type, stim::SpanRef<const double> args);
+    void draw_generic_box(float cx, float cy, std::string_view text, stim::SpanRef<const double> end_args);
+    void draw_two_qubit_gate_end_point(float cx, float cy, std::string_view type, stim::SpanRef<const double> args);
     void draw_rec(float cx, float cy);
 
     void do_resolved_operation(const ResolvedTimelineOperation &op);
     void do_tick();
     void do_two_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_feedback(
-        const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+        std::string_view gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
     void do_single_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op);

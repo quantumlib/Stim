@@ -187,7 +187,7 @@ class AssertSubject {
     /**
      * @param {*} value
      * @param {!int} index
-     * @param {!string} info
+     * @param {!*} info
      */
     constructor(value, index, info) {
         this.value = value;
@@ -196,7 +196,7 @@ class AssertSubject {
     }
 
     /**
-     * @param {!string} info
+     * @param {!*} info
      * @returns {!AssertSubject}
      */
     withInfo(info) {
@@ -224,7 +224,7 @@ class AssertSubject {
         if (this.info === undefined) {
             return `Assertion #${this.index}`;
         }
-        return `Assertion #${this.index} with info '${this.info}'`;
+        return `Assertion #${this.index} with info ${describe(this.info)}`;
     }
 
     runsWithoutThrowingAnException() {

@@ -351,7 +351,7 @@ R 0
         Gate{
             .name = "RX",
             .id = GateType::RX,
-            .best_candidate_inverse_id = GateType::MRX,
+            .best_candidate_inverse_id = GateType::MX,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             .category = "L_Collapsing Gates",
@@ -388,7 +388,7 @@ H 0
         Gate{
             .name = "RY",
             .id = GateType::RY,
-            .best_candidate_inverse_id = GateType::MRY,
+            .best_candidate_inverse_id = GateType::MY,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             .category = "L_Collapsing Gates",
@@ -426,7 +426,7 @@ S 0
         Gate{
             .name = "R",
             .id = GateType::R,
-            .best_candidate_inverse_id = GateType::MR,
+            .best_candidate_inverse_id = GateType::M,
             .arg_count = 0,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_RESET),
             .category = "L_Collapsing Gates",

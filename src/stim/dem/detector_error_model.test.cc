@@ -18,7 +18,7 @@
 
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -608,7 +608,7 @@ TEST(detector_error_model, iadd) {
     // Aliased.
     a = original;
     a += a;
-    a = DetectorErrorModel(a.str().data());  // Remove memory deduplication, because it affects equality.
+    a = DetectorErrorModel(a.str());  // Remove memory deduplication, because it affects equality.
     ASSERT_EQ(a, original + original);
 }
 

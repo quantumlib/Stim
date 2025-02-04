@@ -14,7 +14,8 @@
 
 #include "stim/simulators/tableau_simulator.h"
 
-#include "stim/benchmark_util.perf.h"
+#include "stim/gen/circuit_gen_params.h"
+#include "stim/perf.perf.h"
 
 using namespace stim;
 
@@ -26,7 +27,7 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back(GateTarget{k});
     }
-    CircuitInstruction op_data{GateType::CX, {}, targets};
+    CircuitInstruction op_data{GateType::CX, {}, targets, ""};
 
     benchmark_go([&]() {
         sim.do_ZCX(op_data);

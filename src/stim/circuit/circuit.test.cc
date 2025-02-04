@@ -278,6 +278,69 @@ TEST(circuit, parse_spp_dag) {
         ((SpanRef<const GateTarget>)std::vector<GateTarget>{GateTarget::x(1), GateTarget::z(2)}));
 }
 
+TEST(circuit, parse_tag) {
+    Circuit c;
+
+    c = Circuit("H[test] 3 5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].gate_type, GateType::H);
+    ASSERT_EQ(c.operations[0].tag, "test");
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(c.operations[0].targets[0], GateTarget::qubit(3));
+    ASSERT_EQ(c.operations[0].targets[1], GateTarget::qubit(5));
+
+    c = Circuit("H[] 3 5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].gate_type, GateType::H);
+    ASSERT_EQ(c.operations[0].tag, "");
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+
+    c = Circuit("H 3 5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].gate_type, GateType::H);
+    ASSERT_EQ(c.operations[0].tag, "");
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+
+    c = Circuit("H[test \\B\\C\\r\\n] 3 5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].gate_type, GateType::H);
+    ASSERT_EQ(c.operations[0].tag, "test \\]\r\n");
+    ASSERT_EQ(c.operations[0].targets.size(), 2);
+    ASSERT_EQ(c.operations[0].str(), "H[test \\B\\C\\r\\n] 3 5");
+
+    c = Circuit(R"CIRCUIT(
+        X_ERROR[test](0.125)
+        X_ERROR[no_fuse](0.125) 1
+        X_ERROR(0.125) 2
+        X_ERROR[](0.125) 3
+        REPEAT[looper] 5 {
+            CX[within] 0 1
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.operations.size(), 4);
+    ASSERT_EQ(c.operations[0].gate_type, GateType::X_ERROR);
+    ASSERT_EQ(c.operations[1].gate_type, GateType::X_ERROR);
+    ASSERT_EQ(c.operations[2].gate_type, GateType::X_ERROR);
+    ASSERT_EQ(c.operations[0].tag, "test");
+    ASSERT_EQ(c.operations[1].tag, "no_fuse");
+    ASSERT_EQ(c.operations[2].tag, "");
+    ASSERT_EQ(c.operations[0].targets.size(), 0);
+    ASSERT_EQ(c.operations[1].targets.size(), 1);
+    ASSERT_EQ(c.operations[2].targets.size(), 2);
+    ASSERT_EQ(c.operations[1].targets[0], GateTarget::qubit(1));
+    ASSERT_EQ(c.operations[2].targets[0], GateTarget::qubit(2));
+    ASSERT_EQ(c.operations[2].targets[1], GateTarget::qubit(3));
+    ASSERT_EQ(c.operations[3].gate_type, GateType::REPEAT);
+    ASSERT_EQ(c.operations[3].tag, "looper");
+    ASSERT_EQ(c.operations[3].repeat_block_rep_count(), 5);
+    ASSERT_EQ(c.str(), R"CIRCUIT(X_ERROR[test](0.125)
+X_ERROR[no_fuse](0.125) 1
+X_ERROR(0.125) 2 3
+REPEAT[looper] 5 {
+    CX[within] 0 1
+})CIRCUIT");
+}
+
 TEST(circuit, parse_sweep_bits) {
     ASSERT_THROW({ Circuit("H sweep[0]"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("X sweep[0]"); }, std::invalid_argument);
@@ -1087,14 +1150,14 @@ TEST(circuit, append_repeat_block) {
     Circuit b("X 0");
     Circuit a("Y 0");
 
-    c.append_repeat_block(100, b);
+    c.append_repeat_block(100, b, "");
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
         REPEAT 100 {
             X 0
         }
     )CIRCUIT"));
 
-    c.append_repeat_block(200, a);
+    c.append_repeat_block(200, a, "");
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
         REPEAT 100 {
             X 0
@@ -1104,7 +1167,7 @@ TEST(circuit, append_repeat_block) {
         }
     )CIRCUIT"));
 
-    c.append_repeat_block(400, std::move(b));
+    c.append_repeat_block(400, std::move(b), "");
     ASSERT_TRUE(b.operations.empty());
     ASSERT_FALSE(a.operations.empty());
     ASSERT_EQ(c, Circuit(R"CIRCUIT(
@@ -1119,8 +1182,8 @@ TEST(circuit, append_repeat_block) {
         }
     )CIRCUIT"));
 
-    ASSERT_THROW({ c.append_repeat_block(0, a); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_repeat_block(0, std::move(a)); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_repeat_block(0, a, ""); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_repeat_block(0, std::move(a), ""); }, std::invalid_argument);
 }
 
 TEST(circuit, aliased_noiseless_circuit) {
@@ -1636,9 +1699,9 @@ TEST(circuit, inverse) {
             .inverse(true),
         Circuit(R"CIRCUIT(
             MPP(0.125) Y6*Z5 Y4*Y3*Y2 X1*X0
-            MR 20 19
-            MRY 18 17
-            MRX 16 15
+            M 20 19
+            MY 18 17
+            MX 16 15
             MR(0.125) 14 13
             MRY(0.125) 12 11
             MRX(0.125) 10 9
@@ -1772,12 +1835,14 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         DETECTOR(1, 2, 3) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
         MPAD 0 1 0
+        OBSERVABLE_INCLUDE(1) Z2 Z3
         TICK
 
         # Inverted measurements.
         MRX !0
         MY !1
         MZZ !2 3
+        OBSERVABLE_INCLUDE(1) rec[-1]
         MYY !4 !5
         MPP X6*!Y7*Z8
         TICK
@@ -1796,4 +1861,143 @@ TEST(circuit, generate_test_circuit_with_all_operations) {
         seen.insert(instruction.gate_type);
     }
     ASSERT_EQ(seen.size(), NUM_DEFINED_GATES);
+}
+
+TEST(circuit, insert_circuit) {
+    Circuit c(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c.operations.size(), 5);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        X 3
+        S 2 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit(R"CIRCUIT(
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        H 1
+        X 3
+        S 2
+    )CIRCUIT"));
+}
+
+TEST(circuit, insert_instruction) {
+    Circuit c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("H 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("S 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 1 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(2, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        X 1
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(0, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        X 1
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT"));
+
+    c = Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+    )CIRCUIT");
+    c.safe_insert(4, Circuit("X 1").operations[0]);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        CX 0 1
+        H 0
+        S 0
+        CX 0 1
+        X 1
+    )CIRCUIT"));
 }

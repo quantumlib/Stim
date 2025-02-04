@@ -155,7 +155,7 @@ def test_append_bad():
     m.append("shift_detectors", [], [5])
     m += m * 3
 
-    with pytest.raises(ValueError, match="Bad target 'D0' for instruction 'shift_detectors'"):
+    with pytest.raises(ValueError, match=r"Bad target 'stim.DemTarget\('D0'\)' for instruction 'shift_detectors'"):
         m.append("shift_detectors", [0.125, 0.25], [stim.target_relative_detector_id(0)])
     with pytest.raises(ValueError, match="takes 1 argument"):
         m.append("error", [0.125, 0.25], [stim.target_relative_detector_id(0)])
@@ -499,6 +499,7 @@ def test_diagram():
     assert dem.diagram(type="match-graph-svg") is not None
     assert dem.diagram(type="match-graph-3d") is not None
     assert dem.diagram(type="match-graph-3d-html") is not None
+    assert "iframe" in str(dem.diagram(type="match-graph-svg-html"))
 
 
 def test_shortest_graphlike_error_remnant():
@@ -535,3 +536,7 @@ def test_shortest_graphlike_error_remnant():
     assert len(d.shortest_graphlike_error(ignore_ungraphlike_errors=True)) == 8
     assert len(c.shortest_graphlike_error()) == 8
     assert len(d.shortest_graphlike_error()) == 8
+
+
+def test_init_parse():
+    assert stim.DemInstruction("error(0.125) D0 D1") == stim.DemInstruction("error", [0.125], [stim.DemTarget("D0"), stim.DemTarget("D1")])

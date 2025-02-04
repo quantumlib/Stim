@@ -59,18 +59,21 @@ def test_gate_data_repr():
 def test_gate_data_inverse():
     for v in stim.gate_data().values():
         assert v.is_unitary == (v.inverse is not None)
-        if v.is_unitary:
-            assert np.allclose(v.unitary_matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6)
+        matrix = v.unitary_matrix
+        if matrix is not None:
+            assert v.is_unitary
+            assert np.allclose(matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6)
             assert v.inverse == v.generalized_inverse
 
     assert stim.gate_data('H').inverse == stim.gate_data('H')
     assert stim.gate_data('S').inverse == stim.gate_data('S_DAG')
     assert stim.gate_data('M').inverse is None
     assert stim.gate_data('CXSWAP').inverse == stim.gate_data('SWAPCX')
+    assert stim.gate_data('SPP').inverse == stim.gate_data('SPP_DAG')
 
     assert stim.gate_data('S').generalized_inverse == stim.gate_data('S_DAG')
     assert stim.gate_data('M').generalized_inverse == stim.gate_data('M')
-    assert stim.gate_data('R').generalized_inverse == stim.gate_data('MR')
+    assert stim.gate_data('R').generalized_inverse == stim.gate_data('M')
     assert stim.gate_data('MR').generalized_inverse == stim.gate_data('MR')
     assert stim.gate_data('MPP').generalized_inverse == stim.gate_data('MPP')
     assert stim.gate_data('ELSE_CORRELATED_ERROR').generalized_inverse == stim.gate_data('ELSE_CORRELATED_ERROR')
@@ -81,3 +84,20 @@ def test_gate_data_flows():
         stim.Flow("X -> Z"),
         stim.Flow("Z -> X"),
     ]
+
+
+def test_gate_is_symmetric():
+    assert stim.GateData('SWAP').is_symmetric_gate
+    assert stim.GateData('H').is_symmetric_gate
+    assert stim.GateData('MYY').is_symmetric_gate
+    assert stim.GateData('DEPOLARIZE2').is_symmetric_gate
+    assert not stim.GateData('PAULI_CHANNEL_2').is_symmetric_gate
+    assert not stim.GateData('DETECTOR').is_symmetric_gate
+    assert not stim.GateData('TICK').is_symmetric_gate
+
+
+def test_gate_hadamard_conjugated():
+    assert stim.GateData('CZSWAP').hadamard_conjugated(unsigned=True) is None
+    assert stim.GateData('TICK').hadamard_conjugated() == stim.GateData('TICK')
+    assert stim.GateData('MYY').hadamard_conjugated() == stim.GateData('MYY')
+    assert stim.GateData('XCZ').hadamard_conjugated() == stim.GateData('CX')

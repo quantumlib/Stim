@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -30,7 +30,7 @@ TEST(command_m2d, m2d) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--append_observables"},
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str(), "--append_observables"},
             "00\n01\n10\n11\n")),
         trim(R"output(
 shot D0
@@ -41,7 +41,7 @@ shot D1 L2
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data()}, "00\n01\n10\n11\n")),
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str()}, "00\n01\n10\n11\n")),
         trim(R"output(
 shot D0
 shot D0 D1
@@ -51,7 +51,7 @@ shot D1
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--skip_reference_sample"},
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.c_str(), "--skip_reference_sample"},
             "00\n01\n10\n11\n")),
         trim(R"output(
 shot
@@ -88,7 +88,7 @@ TEST(command_m2d, m2d_without_feedback) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.data()},
+            {"m2d", "--in_format=01", "--append_observables", "--out_format=dets", "--circuit", tmp.path.c_str()},
             "00000\n10000\n01000\n00100\n00010\n00001\n")),
         trim(R"output(
 shot
@@ -106,7 +106,7 @@ shot D3 L0
              "--append_observables",
              "--out_format=dets",
              "--circuit",
-             tmp.path.data(),
+             tmp.path.c_str(),
              "--ran_without_feedback"},
             "00000\n11100\n01100\n00100\n00010\n00001\n")),
         trim(R"output(
@@ -131,7 +131,8 @@ TEST(command_m2d, m2d_obs_size_misalign_1_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "0\n");
 }
@@ -148,7 +149,35 @@ TEST(command_m2d, m2d_obs_size_misalign_11_obs) {
 
     ASSERT_EQ(
         trim(run_captured_stim_main(
-            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.data(), "--circuit", tmp_circuit.path.data()}, "0\n")),
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "0\n")),
         trim(std::string(1024, '0') + "\n"));
     ASSERT_EQ(tmp_obs.read_contents(), "00000000000\n");
+}
+
+TEST(command_m2d, unphysical_observable_annotations) {
+    RaiiTempNamedFile tmp_circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        QUBIT_COORDS(0, 1) 2
+        QUBIT_COORDS(1, 1) 3
+        OBSERVABLE_INCLUDE(0) X0 X1
+        OBSERVABLE_INCLUDE(1) Z0 Z2
+        MPP X0*X1*X2*X3 Z0*Z1 Z2*Z3
+        DEPOLARIZE1(0.001) 0 1 2 3
+        MPP X0*X1*X2*X3 Z0*Z1 Z2*Z3
+        DETECTOR rec[-1] rec[-4]
+        DETECTOR rec[-2] rec[-5]
+        DETECTOR rec[-3] rec[-6]
+        OBSERVABLE_INCLUDE(0) X0 X1
+        OBSERVABLE_INCLUDE(1) Z0 Z2
+    )CIRCUIT");
+    RaiiTempNamedFile tmp_obs;
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"m2d", "--in_format=01", "--obs_out", tmp_obs.path.c_str(), "--circuit", tmp_circuit.path.c_str()},
+            "000000\n100100\n000110\n")),
+        trim("000\n000\n011\n"));
+    ASSERT_EQ(tmp_obs.read_contents(), "00\n00\n00\n");
 }

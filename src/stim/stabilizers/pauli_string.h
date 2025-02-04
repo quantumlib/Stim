@@ -78,10 +78,17 @@ struct PauliString {
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
     simd_bits<W> xs, zs;
 
-    /// Identity constructor.
+    /// Standard constructors.
     explicit PauliString(size_t num_qubits);
+    PauliString(const PauliStringRef<W> &other);  // NOLINT(google-explicit-constructor)
+    PauliString(const PauliString<W> &other);
+    PauliString(PauliString<W> &&other) noexcept;
+    PauliString &operator=(const PauliStringRef<W> &other);
+    PauliString &operator=(const PauliString<W> &other);
+    PauliString &operator=(PauliString<W> &&other);
+
     /// Parse constructor.
-    explicit PauliString(const std::string &text);
+    explicit PauliString(std::string_view text);
     /// Factory method for creating a PauliString whose Pauli entries are returned by a function.
     static PauliString<W> from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     /// Factory method for creating a PauliString by parsing a string (e.g. "-XIIYZ").
@@ -89,17 +96,14 @@ struct PauliString {
     /// Factory method for creating a PauliString with uniformly random sign and Pauli entries.
     static PauliString<W> random(size_t num_qubits, std::mt19937_64 &rng);
 
-    /// Copy constructor.
-    PauliString(const PauliStringRef<W> &other);  // NOLINT(google-explicit-constructor)
-    /// Overwrite assignment.
-    PauliString &operator=(const PauliStringRef<W> &other) noexcept;
-
     /// Equality.
     bool operator==(const PauliStringRef<W> &other) const;
     bool operator==(const PauliString<W> &other) const;
     /// Inequality.
     bool operator!=(const PauliStringRef<W> &other) const;
     bool operator!=(const PauliString<W> &other) const;
+    bool operator<(const PauliStringRef<W> &other) const;
+    bool operator<(const PauliString<W> &other) const;
 
     /// Implicit conversion to a reference.
     operator PauliStringRef<W>();

@@ -14,11 +14,10 @@
 
 #include "stim/circuit/circuit_instruction.h"
 
-#include <utility>
-
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
+#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
@@ -63,8 +62,10 @@ void CircuitInstruction::add_stats_to(CircuitStats &out, const Circuit *host) co
     for (auto t : targets) {
         auto v = t.data & TARGET_VALUE_MASK;
         // Qubit counting.
-        if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-            out.num_qubits = std::max(out.num_qubits, v + 1);
+        if (gate_type != GateType::MPAD) {
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+                out.num_qubits = std::max(out.num_qubits, v + 1);
+            }
         }
         // Lookback counting.
         if (t.data & TARGET_RECORD_BIT) {
@@ -105,8 +106,8 @@ const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const 
 }
 
 CircuitInstruction::CircuitInstruction(
-    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets)
-    : gate_type(gate_type), args(args), targets(targets) {
+    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag)
+    : gate_type(gate_type), args(args), targets(targets), tag(tag) {
 }
 
 void CircuitInstruction::validate() const {
@@ -137,7 +138,7 @@ void CircuitInstruction::validate() const {
                     "Two qubit gate " + std::string(gate.name) +
                     " requires an even number of targets but was given "
                     "(" +
-                    comma_sep(args).str() + ").");
+                    comma_sep(targets).str() + ").");
             }
             for (size_t k = 0; k < targets.size(); k += 2) {
                 if (targets[k] == targets[k + 1]) {
@@ -227,9 +228,17 @@ void CircuitInstruction::validate() const {
         valid_target_mask |= TARGET_RECORD_BIT | TARGET_SWEEP_BIT;
     }
     if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
-        for (GateTarget q : targets) {
-            if (!(q.data & TARGET_RECORD_BIT)) {
-                throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes rec[-k] targets.");
+        if (gate.flags & GATE_TARGETS_PAULI_STRING) {
+            for (GateTarget q : targets) {
+                if (!q.is_measurement_record_target() && !q.is_pauli_target()) {
+                    throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes measurement record targets and Pauli targets (rec[-k], Xk, Yk, Zk).");
+                }
+            }
+        } else {
+            for (GateTarget q : targets) {
+                if (!q.is_measurement_record_target()) {
+                    throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes measurement record targets (rec[-k]).");
+                }
             }
         }
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
@@ -294,14 +303,15 @@ uint64_t CircuitInstruction::count_measurement_results() const {
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
     auto flags = GATE_DATA[gate_type].flags;
-    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE);
+    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE) && tag == other.tag;
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate_type == other.gate_type && args == other.args && targets == other.targets;
+    return gate_type == other.gate_type && args == other.args && targets == other.targets && tag == other.tag;
 }
 bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double atol) const {
-    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size()) {
+    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size() ||
+        tag != other.tag) {
         return false;
     }
     for (size_t k = 0; k < args.size(); k++) {
@@ -314,6 +324,55 @@ bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double a
 
 bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
     return !(*this == other);
+}
+
+std::ostream &stim::operator<<(std::ostream &out, const CircuitInstruction &instruction) {
+    out << GATE_DATA[instruction.gate_type].name;
+    if (!instruction.tag.empty()) {
+        out << '[';
+        write_tag_escaped_string_to(instruction.tag, out);
+        out << ']';
+    }
+    if (!instruction.args.empty()) {
+        out << '(';
+        bool first = true;
+        for (auto e : instruction.args) {
+            if (first) {
+                first = false;
+            } else {
+                out << ", ";
+            }
+            if (e > (double)INT64_MIN && e < (double)INT64_MAX && (int64_t)e == e) {
+                out << (int64_t)e;
+            } else {
+                out << e;
+            }
+        }
+        out << ')';
+    }
+    write_targets(out, instruction.targets);
+    return out;
+}
+
+void stim::write_tag_escaped_string_to(std::string_view tag, std::ostream &out) {
+    for (char c : tag) {
+        switch (c) {
+            case '\n':
+                out << "\\n";
+                break;
+            case '\r':
+                out << "\\r";
+                break;
+            case '\\':
+                out << "\\B";
+                break;
+            case ']':
+                out << "\\C";
+                break;
+            default:
+                out << c;
+        }
+    }
 }
 
 std::string CircuitInstruction::str() const {

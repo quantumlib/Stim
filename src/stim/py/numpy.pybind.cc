@@ -17,110 +17,195 @@
 using namespace stim;
 using namespace stim_pybind;
 
-pybind11::object transposed_simd_bit_table_to_numpy_uint8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
+static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major_in,
+    size_t num_minor_in,
+    pybind11::object out_buffer) {
     size_t num_major_bytes_in = (num_major_in + 7) / 8;
-    uint8_t *buffer = new uint8_t[num_major_bytes_in * num_minor_in];
-    size_t t = 0;
-    for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
-        for (size_t major_in = 0; major_in < num_major_in; major_in += 8) {
-            uint8_t v = 0;
-            for (size_t b = 0; b < 8; b++) {
-                bool bit = table[major_in + b][minor_in];
-                v |= bit << b;
+
+    if (out_buffer.is_none()) {
+        auto numpy = pybind11::module::import("numpy");
+        out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_minor_in, num_major_bytes_in), numpy.attr("uint8"));
+    }
+
+    if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(out_buffer)) {
+        throw std::invalid_argument("Output buffer wasn't a numpy.ndarray[np.uint8].");
+    }
+    auto buf = pybind11::cast<pybind11::array_t<uint8_t>>(out_buffer);
+    if (buf.ndim() != 2) {
+        throw std::invalid_argument("Output buffer wasn't two dimensional.");
+    }
+    if ((size_t)buf.shape(0) != num_minor_in || (size_t)buf.shape(1) != num_major_bytes_in) {
+        std::stringstream ss;
+        ss << "Expected output buffer to have shape=(" << num_minor_in << ", " << num_major_bytes_in << ")";
+        ss << " but its shape is (" << buf.shape(0) << ", " << buf.shape(1) << ").";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (num_major_in && num_minor_in) {
+        auto stride = buf.strides(1);
+        for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
+            auto ptr = buf.mutable_data(minor_in, 0);
+            for (size_t major_in = 0; major_in < num_major_in; major_in += 8) {
+                uint8_t v = 0;
+                for (size_t b = 0; b < 8 && major_in + b < num_major_in; b++) {
+                    bool bit = table[major_in + b][minor_in];
+                    v |= bit << b;
+                }
+                *ptr = v;
+                ptr += stride;
             }
-            buffer[t++] = v;
         }
     }
 
-    pybind11::capsule free_when_done(buffer, [](void *f) {
-        delete[] reinterpret_cast<uint8_t *>(f);
-    });
-
-    return pybind11::array_t<uint8_t>(
-        {(pybind11::ssize_t)num_minor_in, (pybind11::ssize_t)num_major_bytes_in},
-        {(pybind11::ssize_t)num_major_bytes_in, (pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+    return out_buffer;
 }
 
-pybind11::object transposed_simd_bit_table_to_numpy_bool8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
-    bool *buffer = new bool[num_major_in * num_minor_in];
-    size_t t = 0;
-    for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
-        for (size_t major_in = 0; major_in < num_major_in; major_in++) {
-            buffer[t++] = table[major_in][minor_in];
+static pybind11::object transposed_simd_bit_table_to_numpy_bool8(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major_in,
+    size_t num_minor_in,
+    pybind11::object out_buffer) {
+    if (out_buffer.is_none()) {
+        auto numpy = pybind11::module::import("numpy");
+        out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_minor_in, num_major_in), numpy.attr("bool_"));
+    }
+
+    if (!pybind11::isinstance<pybind11::array_t<bool>>(out_buffer)) {
+        throw std::invalid_argument("Output buffer wasn't a numpy.ndarray[np.bool_].");
+    }
+    auto buf = pybind11::cast<pybind11::array_t<bool>>(out_buffer);
+    if (buf.ndim() != 2) {
+        throw std::invalid_argument("Output buffer wasn't two dimensional.");
+    }
+    if ((size_t)buf.shape(0) != num_minor_in || (size_t)buf.shape(1) != num_major_in) {
+        std::stringstream ss;
+        ss << "Expected output buffer to have shape=(" << num_minor_in << ", " << num_major_in << ")";
+        ss << " but its shape is (" << buf.shape(0) << ", " << buf.shape(1) << ").";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (num_major_in && num_minor_in) {
+        auto stride = buf.strides(0);
+        for (size_t major = 0; major < num_major_in; major++) {
+            auto row = table[major];
+            auto ptr = buf.mutable_data(0, major);
+            for (size_t minor = 0; minor < num_minor_in; minor++) {
+                *ptr = row[minor];
+                ptr += stride;
+            }
         }
     }
 
-    pybind11::capsule free_when_done(buffer, [](void *f) {
-        delete[] reinterpret_cast<bool *>(f);
-    });
-
-    return pybind11::array_t<bool>(
-        {(pybind11::ssize_t)num_minor_in, (pybind11::ssize_t)num_major_in},
-        {(pybind11::ssize_t)num_major_in, (pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+    return out_buffer;
 }
 
-pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in, bool bit_pack_result) {
-    if (bit_pack_result) {
-        return transposed_simd_bit_table_to_numpy_uint8(table, num_major_in, num_minor_in);
-    } else {
-        return transposed_simd_bit_table_to_numpy_bool8(table, num_major_in, num_minor_in);
-    }
-}
-
-pybind11::object simd_bit_table_to_numpy_uint8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
+static pybind11::object simd_bit_table_to_numpy_uint8(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, pybind11::object out_buffer) {
     size_t num_minor_bytes = (num_minor + 7) / 8;
-    uint8_t *buffer = new uint8_t[num_major * num_minor_bytes];
-    for (size_t k = 0; k < num_major; k++) {
-        memcpy(&buffer[num_minor_bytes * k], table[k].u8, num_minor_bytes);
+    if (out_buffer.is_none()) {
+        auto numpy = pybind11::module::import("numpy");
+        out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_major, num_minor_bytes), numpy.attr("uint8"));
     }
 
-    pybind11::capsule free_when_done(buffer, [](void *f) {
-        delete[] reinterpret_cast<uint8_t *>(f);
-    });
+    if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(out_buffer)) {
+        throw std::invalid_argument("Output buffer wasn't a numpy.ndarray[np.uint8].");
+    }
+    auto buf = pybind11::cast<pybind11::array_t<uint8_t>>(out_buffer);
+    if (buf.ndim() != 2) {
+        throw std::invalid_argument("Output buffer wasn't two dimensional.");
+    }
+    if ((size_t)buf.shape(0) != num_major || (size_t)buf.shape(1) != num_minor_bytes) {
+        std::stringstream ss;
+        ss << "Expected output buffer to have shape=(" << num_major << ", " << num_minor_bytes << ")";
+        ss << " but its shape is (" << buf.shape(0) << ", " << buf.shape(1) << ").";
+        throw std::invalid_argument(ss.str());
+    }
 
-    return pybind11::array_t<uint8_t>(
-        {(pybind11::ssize_t)num_major, (pybind11::ssize_t)num_minor_bytes},
-        {(pybind11::ssize_t)num_minor_bytes, (pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
-}
+    uint8_t mask = 0b11111111;
+    if (num_minor & 7) {
+        mask = (1 << (num_minor & 7)) - 1;
+    }
 
-pybind11::object simd_bit_table_to_numpy_bool8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
-    bool *buffer = new bool[num_major * num_minor];
-    size_t t = 0;
-    for (size_t major = 0; major < num_major; major++) {
-        auto row = table[major];
-        for (size_t minor = 0; minor < num_minor; minor++) {
-            buffer[t++] = row[minor];
+    if (num_major && num_minor) {
+        auto stride = buf.strides(1);
+        if (stride == 1) {
+            for (size_t major = 0; major < num_major; major++) {
+                auto row = table[major];
+                memcpy(buf.mutable_data(major, 0), row.u8, num_minor_bytes);
+                *buf.mutable_data(major, num_minor_bytes - 1) &= mask;
+            }
+        } else {
+            for (size_t major = 0; major < num_major; major++) {
+                auto row = table[major];
+                auto ptr = buf.mutable_data(major, 0);
+                for (size_t minor = 0; minor < num_minor_bytes; minor += 1) {
+                    *ptr = row.u8[minor];
+                    ptr += stride;
+                }
+                *(ptr - stride) &= mask;
+            }
         }
     }
 
-    pybind11::capsule free_when_done(buffer, [](void *f) {
-        delete[] reinterpret_cast<bool *>(f);
-    });
+    return out_buffer;
+}
 
-    return pybind11::array_t<bool>(
-        {(pybind11::ssize_t)num_major, (pybind11::ssize_t)num_minor},
-        {(pybind11::ssize_t)num_minor, (pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+static pybind11::object simd_bit_table_to_numpy_bool8(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, pybind11::object out_buffer) {
+    if (out_buffer.is_none()) {
+        auto numpy = pybind11::module::import("numpy");
+        out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_major, num_minor), numpy.attr("bool_"));
+    }
+    if (!pybind11::isinstance<pybind11::array_t<bool>>(out_buffer)) {
+        throw std::invalid_argument("Output buffer wasn't a numpy.ndarray[np.bool_].");
+    }
+    auto buf = pybind11::cast<pybind11::array_t<bool>>(out_buffer);
+    if (buf.ndim() != 2) {
+        throw std::invalid_argument("Output buffer wasn't two dimensional.");
+    }
+    if ((size_t)buf.shape(0) != num_major || (size_t)buf.shape(1) != num_minor) {
+        std::stringstream ss;
+        ss << "Expected output buffer to have shape=(" << num_major << ", " << num_minor << ")";
+        ss << " but its shape is (" << buf.shape(0) << ", " << buf.shape(1) << ").";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (num_major && num_minor) {
+        auto stride = buf.strides(1);
+        for (size_t major = 0; major < num_major; major++) {
+            auto row = table[major];
+            auto out_ptr = buf.mutable_data(major, 0);
+            for (size_t minor = 0; minor < num_minor; minor++) {
+                *out_ptr = row[minor];
+                out_ptr += stride;
+            }
+        }
+    }
+
+    return out_buffer;
 }
 
 pybind11::object stim_pybind::simd_bit_table_to_numpy(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor, bool bit_pack_result) {
-    if (bit_pack_result) {
-        return simd_bit_table_to_numpy_uint8(table, num_major, num_minor);
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    size_t num_major,
+    size_t num_minor,
+    bool bit_pack_result,
+    bool transposed,
+    pybind11::object out_buffer) {
+    if (transposed) {
+        if (bit_pack_result) {
+            return transposed_simd_bit_table_to_numpy_uint8(table, num_major, num_minor, out_buffer);
+        } else {
+            return transposed_simd_bit_table_to_numpy_bool8(table, num_major, num_minor, out_buffer);
+        }
     } else {
-        return simd_bit_table_to_numpy_bool8(table, num_major, num_minor);
+        if (bit_pack_result) {
+            return simd_bit_table_to_numpy_uint8(table, num_major, num_minor, out_buffer);
+        } else {
+            return simd_bit_table_to_numpy_bool8(table, num_major, num_minor, out_buffer);
+        }
     }
 }
 

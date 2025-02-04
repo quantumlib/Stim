@@ -7,8 +7,18 @@ import cirq
 import stim
 
 
+def _forward_single_str_tag(op: cirq.CircuitOperation) -> str:
+    tags = [tag for tag in op.tags if isinstance(tag, str)]
+    if len(tags) == 1:
+        return tags[0]
+    return ""
+
+
 def cirq_circuit_to_stim_circuit(
-    circuit: cirq.AbstractCircuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None
+    circuit: cirq.AbstractCircuit,
+    *,
+    qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None,
+    tag_func: Callable[[cirq.Operation], str] = _forward_single_str_tag,
 ) -> stim.Circuit:
     """Converts a cirq circuit into an equivalent stim circuit.
 
@@ -33,6 +43,10 @@ def cirq_circuit_to_stim_circuit(
         circuit: The circuit to convert.
         qubit_to_index_dict: Optional. Which integer each qubit should get mapped to. If not specified, defaults to
             indexing qubits in the circuit in sorted order.
+        tag_func: Controls the tag attached to the stim instructions the cirq operation turns
+            into. If not specified, defaults to checking for string tags on the circuit operation
+            and if there is exactly one string tag then using that tag (otherwise not specifying a
+            tag).
 
     Returns:
         The converted circuit.
@@ -85,21 +99,29 @@ def cirq_circuit_to_stim_circuit(
                 # The indices of qubits the gate is operating on.
                 targets: List[int],
 
+                # A custom string associated with the operation, which can be tagged
+                # onto any operations appended to the stim circuit.
+                tag: str,
+
                 # Forward compatibility with future arguments.
                 **kwargs):
 
             edit_circuit.append_operation("H", targets)
     """
-    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict, flatten=False)[0]
+    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict, flatten=False, tag_func=tag_func)[0]
 
 
 def cirq_circuit_to_stim_data(
-    circuit: cirq.AbstractCircuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool = False,
+    circuit: cirq.AbstractCircuit,
+    *,
+    q2i: Optional[Dict[cirq.Qid, int]] = None,
+    flatten: bool = False,
+    tag_func: Callable[[cirq.Operation], str] = _forward_single_str_tag,
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
-    helper = CirqToStimHelper()
+    helper = CirqToStimHelper(tag_func=tag_func)
     helper.q2i = q2i
     helper.flatten = flatten
 
@@ -115,11 +137,11 @@ def cirq_circuit_to_stim_data(
     return helper.out, helper.key_out
 
 
-StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int]], None]
+StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int], str], None]
 
 
 @functools.lru_cache(maxsize=1)
-def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[int]], None]]:
+def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[int], str], None]]:
     """A dictionary mapping specific gate instances to stim circuit appending functions."""
     x = (cirq.X, False)
     y = (cirq.Y, False)
@@ -128,29 +150,29 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
     ny = (cirq.Y, True)
     nz = (cirq.Z, True)
 
-    def do_nothing(c, t):
+    def do_nothing(_gates, _targets, tag):
         pass
 
     def use(
         *gates: str, individuals: Sequence[Tuple[str, int]] = ()
-    ) -> Callable[[stim.Circuit, List[int]], None]:
+    ) -> Callable[[stim.Circuit, List[int], str], None]:
         if len(gates) == 1 and not individuals:
             (g,) = gates
-            return lambda c, t: c.append_operation(g, t)
+            return lambda c, t, tag: c.append(g, t, tag=tag)
 
         if not individuals:
 
-            def do(c, t):
+            def do(c, t, tag: str):
                 for g in gates:
-                    c.append_operation(g, t)
+                    c.append(g, t, tag=tag)
 
         else:
 
-            def do(c, t):
+            def do(c, t, tag: str):
                 for g in gates:
-                    c.append_operation(g, t)
+                    c.append(g, t, tag=tag)
                 for g, k in individuals:
-                    c.append_operation(g, [t[k]])
+                    c.append(g, [t[k]], tag=tag)
 
         return do
 
@@ -238,14 +260,14 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
         cirq.AsymmetricDepolarizingChannel: cast(
             StimTypeHandler, _stim_append_asymmetric_depolarizing_channel
         ),
-        cirq.BitFlipChannel: lambda c, g, t: c.append_operation(
-            "X_ERROR", t, cast(cirq.BitFlipChannel, g).p
+        cirq.BitFlipChannel: lambda c, g, t, tag: c.append(
+            "X_ERROR", t, cast(cirq.BitFlipChannel, g).p, tag=tag
         ),
-        cirq.PhaseFlipChannel: lambda c, g, t: c.append_operation(
-            "Z_ERROR", t, cast(cirq.PhaseFlipChannel, g).p
+        cirq.PhaseFlipChannel: lambda c, g, t, tag: c.append(
+            "Z_ERROR", t, cast(cirq.PhaseFlipChannel, g).p, tag=tag
         ),
-        cirq.PhaseDampingChannel: lambda c, g, t: c.append_operation(
-            "Z_ERROR", t, 0.5 - math.sqrt(1 - cast(cirq.PhaseDampingChannel, g).gamma) / 2
+        cirq.PhaseDampingChannel: lambda c, g, t, tag: c.append(
+            "Z_ERROR", t, 0.5 - math.sqrt(1 - cast(cirq.PhaseDampingChannel, g).gamma) / 2, tag=tag
         ),
         cirq.RandomGateChannel: cast(StimTypeHandler, _stim_append_random_gate_channel),
         cirq.DepolarizingChannel: cast(StimTypeHandler, _stim_append_depolarizing_channel),
@@ -253,16 +275,16 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
 
 
 def _stim_append_measurement_gate(
-    circuit: stim.Circuit, gate: cirq.MeasurementGate, targets: List[int]
+    circuit: stim.Circuit, gate: cirq.MeasurementGate, targets: List[int], tag: str
 ):
     for i, b in enumerate(gate.invert_mask):
         if b:
             targets[i] = stim.target_inv(targets[i])
-    circuit.append_operation("M", targets)
+    circuit.append("M", targets, tag=tag)
 
 
 def _stim_append_pauli_measurement_gate(
-    circuit: stim.Circuit, gate: cirq.PauliMeasurementGate, targets: List[int]
+    circuit: stim.Circuit, gate: cirq.PauliMeasurementGate, targets: List[int], tag: str
 ):
     obs: cirq.DensePauliString = gate.observable()
 
@@ -287,11 +309,11 @@ def _stim_append_pauli_measurement_gate(
     if obs.coefficient != 1 and obs.coefficient != -1:
         raise NotImplementedError(f"obs.coefficient={obs.coefficient!r} not in [1, -1]")
 
-    circuit.append_operation("MPP", new_targets)
+    circuit.append("MPP", new_targets, tag=tag)
 
 
 def _stim_append_spp_gate(
-    circuit: stim.Circuit, gate: cirq.PauliStringPhasorGate, targets: List[int]
+    circuit: stim.Circuit, gate: cirq.PauliStringPhasorGate, targets: List[int], tag: str
 ):
     obs: cirq.DensePauliString = gate.dense_pauli_string
     a = gate.exponent_neg
@@ -312,26 +334,26 @@ def _stim_append_spp_gate(
         return False
     new_targets.pop()
 
-    circuit.append_operation("SPP" if d == 0.5 else "SPP_DAG", new_targets)
+    circuit.append("SPP" if d == 0.5 else "SPP_DAG", new_targets, tag=tag)
     return True
 
 
 def _stim_append_dense_pauli_string_gate(
-    c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int]
+    c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int], tag: str
 ):
     gates = [None, "X", "Y", "Z"]
     for p, k in zip(g.pauli_mask, t):
         if p:
-            c.append_operation(gates[p], [k])
+            c.append(gates[p], [k], tag=tag)
 
 
 def _stim_append_asymmetric_depolarizing_channel(
-    c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int]
+    c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int], tag: str
 ):
     if cirq.num_qubits(g) == 1:
-        c.append_operation("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z])
+        c.append("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z], tag=tag)
     elif cirq.num_qubits(g) == 2:
-        c.append_operation(
+        c.append(
             "PAULI_CHANNEL_2",
             t,
             [
@@ -350,33 +372,34 @@ def _stim_append_asymmetric_depolarizing_channel(
                 g.error_probabilities.get('ZX', 0),
                 g.error_probabilities.get('ZY', 0),
                 g.error_probabilities.get('ZZ', 0),
-            ]
+            ],
+            tag=tag,
         )
     else:
         raise NotImplementedError(f'cirq-to-stim gate {g!r}')
 
 
-def _stim_append_depolarizing_channel(c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int]):
+def _stim_append_depolarizing_channel(c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int], tag: str):
     if g.num_qubits() == 1:
-        c.append_operation("DEPOLARIZE1", t, g.p)
+        c.append("DEPOLARIZE1", t, g.p, tag=tag)
     elif g.num_qubits() == 2:
-        c.append_operation("DEPOLARIZE2", t, g.p)
+        c.append("DEPOLARIZE2", t, g.p, tag=tag)
     else:
         raise TypeError(f"Don't know how to turn {g!r} into Stim operations.")
 
 
-def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: List[int]):
+def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: List[int], tag: str):
     if isinstance(g.sub_gate, cirq.BaseDensePauliString) and g.num_controls() == 1:
         gates = [None, "CX", "CY", "CZ"]
         for p, k in zip(g.sub_gate.pauli_mask, t[1:]):
             if p:
-                c.append_operation(gates[p], [t[0], k])
+                c.append(gates[p], [t[0], k], tag=tag)
         if g.sub_gate.coefficient == 1j:
-            c.append_operation("S", t[:1])
+            c.append("S", t[:1], tag=tag)
         elif g.sub_gate.coefficient == -1:
-            c.append_operation("Z", t[:1])
+            c.append("Z", t[:1], tag=tag)
         elif g.sub_gate.coefficient == -1j:
-            c.append_operation("S_DAG", t[:1])
+            c.append("S_DAG", t[:1], tag=tag)
         elif g.sub_gate.coefficient == 1:
             pass
         else:
@@ -386,13 +409,13 @@ def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: Lis
     raise TypeError(f"Don't know how to turn controlled gate {g!r} into Stim operations.")
 
 
-def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int]):
+def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int], tag: str):
     if g.sub_gate in [cirq.X, cirq.Y, cirq.Z]:
-        c.append_operation(f"{g.sub_gate}_ERROR", t, g.probability)
+        c.append(f"{g.sub_gate}_ERROR", t, g.probability, tag=tag)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
         target_p = [None, stim.target_x, stim.target_y, stim.target_z]
         pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask) if p]
-        c.append_operation(f"CORRELATED_ERROR", pauli_targets, g.probability)
+        c.append(f"CORRELATED_ERROR", pauli_targets, g.probability, tag=tag)
     else:
         raise NotImplementedError(
             f"Don't know how to turn probabilistic {g!r} into Stim operations."
@@ -400,31 +423,35 @@ def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel,
 
 
 class CirqToStimHelper:
-    def __init__(self):
+    def __init__(self, tag_func: Callable[[cirq.Operation], str]):
         self.key_out: List[Tuple[str, int]] = []
         self.out = stim.Circuit()
         self.q2i = {}
         self.have_seen_loop = False
         self.flatten = False
+        self.tag_func = tag_func
 
-    def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
+    def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation, tag: str) -> None:
         if self.flatten or op.repetitions == 1:
-            self.process_operations(cirq.decompose_once(op))
+            moments = cirq.unroll_circuit_op(cirq.Circuit(op), deep=False, tags_to_check=None).moments
+            self.process_moments(moments)
+            self.out = self.out[:-1] # Remove a trailing TICK (to avoid double TICK)
             return
 
-        child = CirqToStimHelper()
+        child = CirqToStimHelper(tag_func=self.tag_func)
         child.key_out = self.key_out
         child.q2i = self.q2i
         child.have_seen_loop = True
         self.have_seen_loop = True
         child.process_moments(op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit)
-        self.out += child.out * op.repetitions
+        self.out.append(stim.CircuitRepeatBlock(op.repetitions, child.out, tag=tag))
 
     def process_operations(self, operations: Iterable[cirq.Operation]) -> None:
         g2f = gate_to_stim_append_func()
         t2f = gate_type_to_stim_append_func()
         for op in operations:
             assert isinstance(op, cirq.Operation)
+            tag = self.tag_func(op)
             op = op.untagged
             gate = op.gate
             targets = [self.q2i[q] for q in op.qubits]
@@ -439,36 +466,37 @@ class CirqToStimHelper:
                     edit_measurement_key_lengths=self.key_out,
                     targets=targets,
                     have_seen_loop=self.have_seen_loop,
+                    tag=tag,
                 )
                 continue
 
             if isinstance(op, cirq.CircuitOperation):
-                self.process_circuit_operation_into_repeat_block(op)
+                self.process_circuit_operation_into_repeat_block(op, tag=tag)
                 continue
 
             # Special case measurement, because of its metadata.
             if isinstance(gate, cirq.PauliStringPhasorGate):
-                if _stim_append_spp_gate(self.out, gate, targets):
+                if _stim_append_spp_gate(self.out, gate, targets, tag=tag):
                     continue
             if isinstance(gate, cirq.PauliMeasurementGate):
                 self.key_out.append((gate.key, len(targets)))
-                _stim_append_pauli_measurement_gate(self.out, gate, targets)
+                _stim_append_pauli_measurement_gate(self.out, gate, targets, tag=tag)
                 continue
             if isinstance(gate, cirq.MeasurementGate):
                 self.key_out.append((gate.key, len(targets)))
-                _stim_append_measurement_gate(self.out, gate, targets)
+                _stim_append_measurement_gate(self.out, gate, targets, tag=tag)
                 continue
 
             # Look for recognized gate values like cirq.H.
             val_append_func = g2f.get(gate)
             if val_append_func is not None:
-                val_append_func(self.out, targets)
+                val_append_func(self.out, targets, tag=tag)
                 continue
 
             # Look for recognized gate types like cirq.DepolarizingChannel.
             type_append_func = t2f.get(type(gate))
             if type_append_func is not None:
-                type_append_func(self.out, gate, targets)
+                type_append_func(self.out, gate, targets, tag=tag)
                 continue
 
             # Ask unrecognized operations to decompose themselves into simpler operations.
@@ -487,7 +515,7 @@ class CirqToStimHelper:
 
         # Append a TICK, unless it was already handled by an internal REPEAT block.
         if length_before == len(self.out) or not isinstance(self.out[-1], stim.CircuitRepeatBlock):
-            self.out.append_operation("TICK", [])
+            self.out.append("TICK", [])
 
     def process_moments(self, moments: Iterable[cirq.Moment]):
         for moment in moments:

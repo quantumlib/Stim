@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -29,7 +29,7 @@ TEST(main, sample_dem) {
             {
                 "sample_dem",
                 "--obs_out",
-                obs_out.path.data(),
+                obs_out.path.c_str(),
                 "--out_format",
                 "01",
                 "--obs_out_format",

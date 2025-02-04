@@ -117,7 +117,7 @@ static Flow<MAX_BITWORD_WIDTH> py_init_flow(
     if (pybind11::isinstance<Flow<MAX_BITWORD_WIDTH>>(arg)) {
         return pybind11::cast<Flow<MAX_BITWORD_WIDTH>>(arg);
     } else if (pybind11::isinstance<pybind11::str>(arg)) {
-        return Flow<MAX_BITWORD_WIDTH>::from_str(pybind11::cast<std::string>(arg));
+        return Flow<MAX_BITWORD_WIDTH>::from_str(pybind11::cast<std::string_view>(arg));
     }
 
     std::stringstream ss;

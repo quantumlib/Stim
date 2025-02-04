@@ -15,12 +15,12 @@
 #include "stim/cmd/command_sample.h"
 
 #include "command_help.h"
-#include "stim/arg_parse.h"
 #include "stim/io/stim_data_formats.h"
-#include "stim/probability_util.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/frame_simulator_util.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/util_bot/arg_parse.h"
+#include "stim/util_bot/probability_util.h"
 
 using namespace stim;
 
@@ -98,12 +98,13 @@ SubCommandHelp stim::command_sample_help() {
             shot M2 M3 M5
         )PARAGRAPH"));
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--skip_reference_sample",
-        "bool",
-        "false",
-        {"[none]", "[switch]"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--skip_reference_sample",
+            "bool",
+            "false",
+            {"[none]", "[switch]"},
+            clean_doc_string(R"PARAGRAPH(
             Asserts the circuit can produce a noiseless sample that is just 0s.
 
             When this argument is specified, the reference sample (that is used
@@ -125,14 +126,15 @@ SubCommandHelp stim::command_sample_help() {
             output measurement bits will be whether each measurement was
             *FLIPPED* instead of the actual absolute value of the measurement.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out_format",
-        "01|b8|r8|ptb64|hits|dets",
-        "01",
-        {"[none]", "format"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out_format",
+            "01|b8|r8|ptb64|hits|dets",
+            "01",
+            {"[none]", "format"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the data format to use when writing output data.
 
             The available formats are:
@@ -148,14 +150,15 @@ SubCommandHelp stim::command_sample_help() {
             format reference:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--seed",
-        "int",
-        "system_entropy",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--seed",
+            "int",
+            "system_entropy",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Makes simulation results PARTIALLY deterministic.
 
             The seed integer must be a non-negative 64 bit signed integer.
@@ -190,27 +193,29 @@ SubCommandHelp stim::command_sample_help() {
             `stim sample` and `stim detect` will not result in detection events
             corresponding to the measurement results.
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--shots",
-        "int",
-        "1",
-        {"[none]", "int"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--shots",
+            "int",
+            "1",
+            {"[none]", "int"},
+            clean_doc_string(R"PARAGRAPH(
             Specifies the number of samples to take from the circuit.
 
             Defaults to 1.
             Must be an integer between 0 and a quintillion (10^18).
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--in",
-        "filepath",
-        "{stdin}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--in",
+            "filepath",
+            "{stdin}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses the stim circuit file to read the circuit to sample from.
 
             By default, the circuit is read from stdin. When `--in $FILEPATH` is
@@ -219,14 +224,15 @@ SubCommandHelp stim::command_sample_help() {
             The input should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
         )PARAGRAPH"),
-    });
+        });
 
-    result.flags.push_back(SubCommandHelpFlag{
-        "--out",
-        "filepath",
-        "{stdout}",
-        {"[none]", "filepath"},
-        clean_doc_string(R"PARAGRAPH(
+    result.flags.push_back(
+        SubCommandHelpFlag{
+            "--out",
+            "filepath",
+            "{stdout}",
+            {"[none]", "filepath"},
+            clean_doc_string(R"PARAGRAPH(
             Chooses where to write the sampled data to.
 
             By default, the output is written to stdout. When `--out $FILEPATH`
@@ -235,7 +241,7 @@ SubCommandHelp stim::command_sample_help() {
             The output is in a format specified by `--out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
-    });
+        });
 
     return result;
 }
