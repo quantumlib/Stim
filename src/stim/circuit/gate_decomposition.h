@@ -123,6 +123,9 @@ void for_each_disjoint_target_segment_in_instruction_reversed(
 void for_each_combined_targets_group(
     const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback);
 
+void for_each_pair_combined_targets_group(
+    const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback);
+
 }  // namespace stim
 
 #endif

@@ -338,9 +338,16 @@ void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
         case GateType::SWAPCX:
         case GateType::CZSWAP:
         case GateType::ISWAP_DAG:
+            // Gates that can't interact with the measure record just directly rewrite the flow inputs.
             for (auto &row : table) {
                 row.input.ref().undo_instruction(inst);
             }
+            break;
+
+        case GateType::CPP:
+            decompose_cpp_operation_with_reverse_independence(inst, num_qubits, [&](CircuitInstruction sub_inst) {
+                undo_instruction(sub_inst);
+            });
             break;
 
         case GateType::MPP:

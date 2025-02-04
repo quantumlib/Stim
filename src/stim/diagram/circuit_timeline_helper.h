@@ -44,6 +44,7 @@ struct ResolvedTimelineOperation {
     stim::GateType gate_type;
     stim::SpanRef<const double> args;
     stim::SpanRef<const stim::GateTarget> targets;
+    std::string_view tag;
 };
 
 struct CircuitTimelineHelper {
@@ -63,9 +64,10 @@ struct CircuitTimelineHelper {
     LatticeMap measure_index_to_qubit;
 
     void do_atomic_operation(
-        const stim::GateType gate_type,
+        stim::GateType gate_type,
         stim::SpanRef<const double> args,
-        stim::SpanRef<const stim::GateTarget> targets);
+        stim::SpanRef<const stim::GateTarget> targets,
+        std::string_view tag);
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::CircuitInstruction &op);

@@ -3,6 +3,7 @@
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/util_bot/str_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -317,9 +318,9 @@ void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_paired_pauli_targets(c
 
     size_t start = 0;
     accumulate_next_obs_terms_to_pauli_string_helper(
-        CircuitInstruction{op.gate_type, op.args, op.targets}, &start, &obs1, &bits1, true);
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs1, &bits1, true);
     accumulate_next_obs_terms_to_pauli_string_helper(
-        CircuitInstruction{op.gate_type, op.args, op.targets}, &start, &obs2, &bits2, true);
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs2, &bits2, true);
 
     const auto &gate_data = GATE_DATA[op.gate_type];
     for (size_t q = 0; q < num_qubits; q++) {

@@ -271,19 +271,19 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
 
     auto reduce = [&](PauliStringRef<64> target_obs) {
         // Turn all non-identity terms into Z terms.
-        for_each_active_qubit_in<true, false>(target_obs, [&](uint32_t q) {
+        target_obs.xs.for_each_set_bit([&](uint32_t q) {
             GateTarget t = GateTarget::qubit(q);
-            apply_fixup({target_obs.zs[q] ? GateType::H_YZ : GateType::H, {}, &t});
+            apply_fixup(CircuitInstruction{target_obs.zs[q] ? GateType::H_YZ : GateType::H, {}, &t, {}});
         });
 
         // Cancel any extra Z terms.
         uint64_t pivot = UINT64_MAX;
-        for_each_active_qubit_in<true, true>(target_obs, [&](uint32_t q) {
+        target_obs.for_each_active_pauli([&](uint32_t q) {
             if (pivot == UINT64_MAX) {
                 pivot = q;
             } else {
                 std::array<GateTarget, 2> ts{GateTarget::qubit(q), GateTarget::qubit(pivot)};
-                apply_fixup({GateType::CX, {}, ts});
+                apply_fixup({GateType::CX, {}, ts, {}});
             }
         });
 
@@ -320,18 +320,18 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
     if (pivot1 != UINT64_MAX && pivot2 != UINT64_MAX) {
         assert(pivot1 != pivot2);
         std::array<GateTarget, 2> ts{GateTarget::qubit(pivot1), GateTarget::qubit(pivot2)};
-        do_instruction_callback({GateType::CZ, {}, ts});
+        do_instruction_callback({GateType::CZ, {}, ts, cpp_op.tag});
     }
 
     // Handle sign and classical feedback into obs1.
     if (pivot1 != UINT64_MAX) {
         for (const auto &t : classical_bits2) {
             std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot1)};
-            do_instruction_callback({GateType::CZ, {}, ts});
+            do_instruction_callback({GateType::CZ, {}, ts, cpp_op.tag});
         }
         if (obs2.sign) {
             GateTarget t = GateTarget::qubit(pivot1);
-            do_instruction_callback({GateType::Z, {}, &t});
+            do_instruction_callback({GateType::Z, {}, &t, cpp_op.tag});
         }
     }
 
@@ -339,11 +339,11 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
     if (pivot2 != UINT64_MAX) {
         for (const auto &t : classical_bits1) {
             std::array<GateTarget, 2> ts{t, GateTarget::qubit(pivot2)};
-            do_instruction_callback({GateType::CZ, {}, ts});
+            do_instruction_callback({GateType::CZ, {}, ts, cpp_op.tag});
         }
         if (obs1.sign) {
             GateTarget t = GateTarget::qubit(pivot2);
-            do_instruction_callback({GateType::Z, {}, &t});
+            do_instruction_callback({GateType::Z, {}, &t, cpp_op.tag});
         }
     }
 
@@ -357,7 +357,7 @@ static void decompose_cpp_operation_with_reverse_independence_helper(
                 buf->push_back(inst.targets[k]);
                 buf->push_back(inst.targets[k + 1]);
             }
-            do_instruction_callback({GateType::CX, {}, *buf});
+            do_instruction_callback({GateType::CX, {}, *buf, cpp_op.tag});
         } else {
             assert(inst.gate_type == GATE_DATA[inst.gate_type].inverse().id);
             do_instruction_callback(inst);
@@ -392,7 +392,7 @@ void stim::decompose_cpp_operation_with_reverse_independence(
     }
 }
 
-void stim::decompose_pair_instruction_into_segments_with_single_use_controls(
+void stim::decompose_pair_instruction_into_disjoint_segments(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(num_qubits);
     size_t num_flushed = 0;
@@ -464,6 +464,37 @@ void stim::for_each_combined_targets_group(
             next_start = start + 1;
             if (next_start > inst.targets.size()) {
                 return;
+            }
+        } else {
+            next_start += 2;
+        }
+    }
+}
+
+void stim::for_each_pair_combined_targets_group(
+    const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback) {
+    if (inst.targets.empty()) {
+        return;
+    }
+    size_t start = 0;
+    size_t next_start = 1;
+    bool parity = false;
+    while (true) {
+        if (next_start >= inst.targets.size() || !inst.targets[next_start].is_combiner()) {
+            if (parity) {
+                callback(CircuitInstruction(inst.gate_type, inst.args, inst.targets.sub(start, next_start), inst.tag));
+                start = next_start;
+                next_start = start + 1;
+                parity = false;
+                if (next_start > inst.targets.size()) {
+                    return;
+                }
+            } else {
+                if (next_start >= inst.targets.size()) {
+                    throw std::invalid_argument("Missing combined target partner: " + inst.str());
+                }
+                parity = true;
+                next_start += 1;
             }
         } else {
             next_start += 2;

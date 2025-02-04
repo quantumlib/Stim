@@ -1644,18 +1644,18 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &inst) {
         });
 }
 
-void ErrorAnalyzer::undo_CPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void ErrorAnalyzer::undo_CPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_cpp_operation_with_reverse_independence(
-        CircuitInstruction{GateType::CPP, target_data.args, reversed_targets},
+        CircuitInstruction{GateType::CPP, inst.args, reversed_targets, inst.tag},
         tracker.xs.size(),
-        [&](const CircuitInstruction &inst) {
-            undo_gate(inst);
+        [&](const CircuitInstruction &sub_inst) {
+            undo_gate(sub_inst);
         });
 }
 

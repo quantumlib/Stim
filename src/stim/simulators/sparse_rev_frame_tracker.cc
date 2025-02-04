@@ -346,15 +346,15 @@ void SparseUnsignedRevFrameTracker::undo_MPP(const CircuitInstruction &inst) {
     decompose_mpp_operation(
         CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
         xs.size(),
-        [&](const CircuitInstruction &inst) {
-            if (inst.gate_type == GateType::M) {
+        [&](const CircuitInstruction &sub_inst) {
+            if (sub_inst.gate_type == GateType::M) {
                 reversed_measure_targets.clear();
-                for (size_t k = inst.targets.size(); k--;) {
-                    reversed_measure_targets.push_back(inst.targets[k]);
+                for (size_t k = sub_inst.targets.size(); k--;) {
+                    reversed_measure_targets.push_back(sub_inst.targets[k]);
                 }
-                undo_MZ({GateType::M, inst.args, reversed_measure_targets, inst.tag});
+                undo_MZ({GateType::M, sub_inst.args, reversed_measure_targets, sub_inst.tag});
             } else {
-                undo_gate(inst);
+                undo_gate(sub_inst);
             }
         });
 }
@@ -370,23 +370,23 @@ void SparseUnsignedRevFrameTracker::undo_SPP(const CircuitInstruction &inst) {
         CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
         xs.size(),
         false,
-        [&](const CircuitInstruction &inst) {
-            undo_gate(inst);
+        [&](const CircuitInstruction &sub_inst) {
+            undo_gate(sub_inst);
         });
 }
 
-void SparseUnsignedRevFrameTracker::undo_CPP(const CircuitInstruction &target_data) {
-    size_t n = target_data.targets.size();
+void SparseUnsignedRevFrameTracker::undo_CPP(const CircuitInstruction &inst) {
+    size_t n = inst.targets.size();
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n - k - 1];
+        reversed_targets[k] = inst.targets[n - k - 1];
     }
     decompose_cpp_operation_with_reverse_independence(
-        CircuitInstruction{target_data.gate_type, target_data.args, reversed_targets},
+        CircuitInstruction{inst.gate_type, inst.args, reversed_targets, inst.tag},
         xs.size(),
-        [&](const CircuitInstruction &inst) {
-            undo_gate(inst);
+        [&](const CircuitInstruction &sub_inst) {
+            undo_gate(sub_inst);
         });
 }
 

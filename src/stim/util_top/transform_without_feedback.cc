@@ -67,10 +67,10 @@ struct WithoutFeedbackHelper {
             reversed_targets[k] = inst.targets[n - k - 1];
         }
         decompose_cpp_operation_with_reverse_independence(
-            CircuitInstruction{inst.gate_type, inst.args, reversed_targets},
+            CircuitInstruction{inst.gate_type, inst.args, reversed_targets,inst.tag},
             tracker.xs.size(),
-            [&](const CircuitInstruction &inst) {
-                undo_gate(inst);
+            [&](const CircuitInstruction &sub_inst) {
+                undo_gate(sub_inst);
             });
     }
 

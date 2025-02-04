@@ -283,9 +283,9 @@ void DiagramTimeline3DDrawer::do_multi_qubit_gate_with_paired_pauli_targets(cons
 
     size_t start = 0;
     accumulate_next_obs_terms_to_pauli_string_helper(
-        CircuitInstruction{op.gate_type, op.args, op.targets}, &start, &obs1, &bits1, true);
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs1, &bits1, true);
     accumulate_next_obs_terms_to_pauli_string_helper(
-        CircuitInstruction{op.gate_type, op.args, op.targets}, &start, &obs2, &bits2, true);
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs2, &bits2, true);
 
     Coord<3> prev{};
     bool has_prev = false;
@@ -408,11 +408,11 @@ std::pair<std::vector<Coord<2>>, std::pair<Coord<2>, Coord<2>>> pick_coords_for_
     set.coordinates = circuit.get_final_qubit_coords();
     auto coords = FlattenedCoords::from(set, 1).qubit_coords;
     float default_y = 0;
-    for (auto e : set.coordinates) {
+    for (const auto &e : set.coordinates) {
         default_y = std::min(default_y, coords[e.first].xyz[1] - 1);
     }
     for (uint64_t q = 0; q < set.num_qubits; q++) {
-        if (set.coordinates.find(q) == set.coordinates.end()) {
+        if (!set.coordinates.contains(q)) {
             coords[q].xyz = {(float)q, default_y};
         }
     }

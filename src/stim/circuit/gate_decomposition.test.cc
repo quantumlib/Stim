@@ -542,3 +542,35 @@ TEST(gate_decomposition, for_each_combined_targets_group) {
         TICK
     )CIRCUIT"));
 }
+
+TEST(gate_decomposition, for_each_pair_combined_targets_group) {
+    Circuit out;
+    auto append_into_circuit = [&](const CircuitInstruction &segment) {
+        out.safe_append(segment);
+        out.append_from_text("TICK");
+    };
+    for_each_pair_combined_targets_group(Circuit("CPP X0 Z1 Y2*Z3 Y4*Z5*Z6 Z8 Y8").operations[0], append_into_circuit);
+    for_each_pair_combined_targets_group(Circuit("CPP X0 Y1 Z2 Y2").operations[0], append_into_circuit);
+    for_each_pair_combined_targets_group(Circuit("CPP X0*Y1 Z2*Z3").operations[0], append_into_circuit);
+    EXPECT_THROW({
+        for_each_pair_combined_targets_group(Circuit("CPP X0").operations[0], append_into_circuit);
+    }, std::invalid_argument);
+    EXPECT_THROW({
+        for_each_pair_combined_targets_group(Circuit("CPP X0*Y1").operations[0], append_into_circuit);
+    }, std::invalid_argument);
+
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CPP X0 Z1
+        TICK
+        CPP Y2*Z3 Y4*Z5*Z6
+        TICK
+        CPP Z8 Y8
+        TICK
+        CPP X0 Y1
+        TICK
+        CPP Z2 Y2
+        TICK
+        CPP X0*Y1 Z2*Z3
+        TICK
+    )CIRCUIT"));
+}
