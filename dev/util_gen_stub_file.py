@@ -150,6 +150,7 @@ def _handle_pybind_method(
     sig_handled = False
     has_setter = False
     doc_lines_left = []
+    term_name = full_name.split(".")[-1]
     for line in doc_lines:
         if was_args and line.strip().startswith('*') and ':' in line:
             new_args_name = line[line.index('*'):line.index(':')]
@@ -164,6 +165,8 @@ def _handle_pybind_method(
         elif '@signature ' in line:
             _, sig = line.split('@signature ')
             is_static = '(self' not in sig and inspect.isclass(parent)
+            if term_name not in sig:
+                raise ValueError(f"Expected name {term_name!r} to appear in signature override for {full_name!r}:\n    {line}")
             if is_static:
                 out_obj.lines.append("@staticmethod")
             out_obj.lines.extend(splay_signature(sig))
@@ -172,7 +175,6 @@ def _handle_pybind_method(
             doc_lines_left.append(line)
         was_args = 'Args:' in line
 
-    term_name = full_name.split(".")[-1]
     if is_property:
         if hasattr(obj, 'fget'):
             sig_name = term_name + obj.fget.__doc__.replace('arg0', 'self').strip()

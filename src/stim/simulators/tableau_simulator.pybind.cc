@@ -694,7 +694,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
                 build_single_qubit_gate_instruction_ensure_size<MAX_BITWORD_WIDTH>(self, GateType::Z_ERROR, args, &p));
         },
         clean_doc_string(R"DOC(
-            @signature def y_error(self, *targets: int, p: float):
+            @signature def z_error(self, *targets: int, p: float):
             Probabilistically applies Z errors to targets.
 
             Args:
