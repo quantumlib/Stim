@@ -12789,7 +12789,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -X -Y +Z
         """
-    def y_error(
+    def z_error(
         self,
         *targets: int,
         p: float,
