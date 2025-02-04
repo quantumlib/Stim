@@ -43,3 +43,4 @@ build.ninja
 .pytest_cache
 node_modules
 MODULE.bazel.lock
+bazel-stim

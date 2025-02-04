@@ -66,6 +66,7 @@ TEST(export_crumble, all_operations) {
         "HERALDED_PAULI_CHANNEL_1(0.01,0.02,0.03,0.04)6;"
         "TICK;"
         "MPP_X0*Y1*Z2_Z0*Z1;"
+        "CPP_X3*X4*X5_Z3*Z4*Y6_Y7_Y8;"
         "SPP_X0*Y1*Z2_X3;"
         "SPP_DAG_X0*Y1*Z2_X2;"
         "TICK;"

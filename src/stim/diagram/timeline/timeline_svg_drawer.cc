@@ -659,6 +659,59 @@ void DiagramTimelineSvgDrawer::do_spp(const ResolvedTimelineOperation &op) {
     do_multi_qubit_gate_with_pauli_targets(op);
 }
 
+void DiagramTimelineSvgDrawer::do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op) {
+    reserve_drawing_room_for_targets(op.targets);
+    auto minmax_q = compute_minmax_q(op.targets);
+
+    PauliString<64> obs1(num_qubits);
+    PauliString<64> obs2(num_qubits);
+    std::vector<GateTarget> bits1;
+    std::vector<GateTarget> bits2;
+
+    size_t start = 0;
+    accumulate_next_obs_terms_to_pauli_string_helper(
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs1, &bits1, true);
+    accumulate_next_obs_terms_to_pauli_string_helper(
+        CircuitInstruction{op.gate_type, op.args, op.targets, op.tag}, &start, &obs2, &bits2, true);
+
+    const auto &gate_data = GATE_DATA[op.gate_type];
+    for (size_t q = 0; q < num_qubits; q++) {
+        uint8_t p1 = obs1.xs[q] + obs1.zs[q] * 2;
+        uint8_t p2 = obs2.xs[q] + obs2.zs[q] * 2;
+        if (p1 | p2) {
+            std::stringstream ss;
+            ss << gate_data.name;
+            ss << "[";
+            ss << "IXZY"[p1];
+            // TODO: show bits
+            // for (auto t : bits1) {
+            //     ss << "*" << t;
+            // }
+            bits1.clear();
+            ss << ":";
+            ss << "IXZY"[p2];
+            // TODO: show bits
+            // for (auto t : bits2) {
+            //     ss << "*" << t;
+            // }
+            bits2.clear();
+            ss << "]";
+            if (!op.args.empty()) {
+                ss << "(" << comma_sep(op.args, ",") << ")";
+            }
+            auto c = q2xy(q);
+            draw_generic_box(c.xyz[0], c.xyz[1], ss.str(), q == minmax_q.second ? op.args : SpanRef<const double>{});
+            if (gate_data.flags & GATE_PRODUCES_RESULTS && q == minmax_q.first) {
+                draw_rec(c.xyz[0], c.xyz[1]);
+            }
+        }
+    }
+}
+
+void DiagramTimelineSvgDrawer::do_cpp(const ResolvedTimelineOperation &op) {
+    do_multi_qubit_gate_with_paired_pauli_targets(op);
+}
+
 void DiagramTimelineSvgDrawer::do_correlated_error(const ResolvedTimelineOperation &op) {
     if (cur_moment_is_used) {
         start_next_moment();
@@ -814,6 +867,8 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
         do_mpp(op);
     } else if (op.gate_type == GateType::SPP || op.gate_type == GateType::SPP_DAG) {
         do_spp(op);
+    } else if (op.gate_type == GateType::CPP) {
+        do_cpp(op);
     } else if (op.gate_type == GateType::DETECTOR) {
         do_detector(op);
     } else if (op.gate_type == GateType::OBSERVABLE_INCLUDE) {

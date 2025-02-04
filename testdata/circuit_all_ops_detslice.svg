@@ -437,6 +437,20 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="190" y="641.6" fill="white">MPP<tspan baseline-shift="sub" font-size="10">Z</tspan></text>
 <rect x="78" y="449.6" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="94" y="465.6" fill="white">MPP<tspan baseline-shift="sub" font-size="10">Z</tspan></text>
+<path d="M222,465.6 L286,465.6 L350,465.6 C324.4 491.2,247.6 491.2,222 465.6 L286,465.6 C311.6 491.2,388.4 491.2,414 465.6 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="206" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="222" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">Z</tspan><tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<rect x="270" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="286" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">Z</tspan><tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<rect x="334" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="350" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">I</tspan><tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<rect x="398" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="414" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">Y</tspan><tspan baseline-shift="sub" font-size="10">I</tspan></text>
+<path d="M478,465.6 L542,465.6 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="462" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="478" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">I</tspan><tspan baseline-shift="sub" font-size="10">Y</tspan></text>
+<rect x="526" y="449.6" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="542" y="465.6" fill="white">CPP<tspan baseline-shift="super" font-size="10">Y</tspan><tspan baseline-shift="sub" font-size="10">I</tspan></text>
 <path d="M204,657.6 C220 603.2,162.4 497.6,108 481.6 L172,481.6 " fill="none" stroke="black" stroke-width="5"/>
 <rect x="188" y="641.6" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="204" y="657.6" fill="white">SPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>

@@ -8,6 +8,9 @@ static void for_each_target_group(
     CircuitInstruction instruction, const std::function<void(CircuitInstruction)> &callback) {
     Gate g = GATE_DATA[instruction.gate_type];
     if (g.flags & GATE_TARGETS_COMBINERS) {
+        if (g.flags & GATE_TARGETS_PAIRS) {
+            return for_each_pair_combined_targets_group(instruction, callback);
+        }
         return for_each_combined_targets_group(instruction, callback);
     } else if (g.flags & GATE_TARGETS_PAIRS) {
         for (size_t k = 0; k < instruction.targets.size(); k += 2) {
@@ -235,104 +238,115 @@ struct QuirkExporter {
         }
     }
 
+
+    void do_instruction(CircuitInstruction full_instruction) {
+        used[(int)full_instruction.gate_type] = true;
+        for_each_target_group(full_instruction, [&](CircuitInstruction inst) {
+            switch (inst.gate_type) {
+                case GateType::DETECTOR:
+                case GateType::OBSERVABLE_INCLUDE:
+                case GateType::QUBIT_COORDS:
+                case GateType::SHIFT_COORDS:
+                case GateType::MPAD:
+                case GateType::DEPOLARIZE1:
+                case GateType::DEPOLARIZE2:
+                case GateType::X_ERROR:
+                case GateType::Y_ERROR:
+                case GateType::Z_ERROR:
+                case GateType::PAULI_CHANNEL_1:
+                case GateType::PAULI_CHANNEL_2:
+                case GateType::E:
+                case GateType::ELSE_CORRELATED_ERROR:
+                case GateType::HERALDED_ERASE:
+                case GateType::HERALDED_PAULI_CHANNEL_1:
+                    // Ignored.
+                    break;
+
+                case GateType::TICK:
+                    col_offset += 3;
+                    break;
+
+                case GateType::MX:
+                case GateType::MY:
+                case GateType::M:
+                case GateType::MRX:
+                case GateType::MRY:
+                case GateType::MR:
+                case GateType::RX:
+                case GateType::RY:
+                case GateType::R:
+                case GateType::H:
+                case GateType::H_XY:
+                case GateType::H_YZ:
+                case GateType::I:
+                case GateType::X:
+                case GateType::Y:
+                case GateType::Z:
+                case GateType::C_XYZ:
+                case GateType::C_ZYX:
+                case GateType::SQRT_X:
+                case GateType::SQRT_X_DAG:
+                case GateType::SQRT_Y:
+                case GateType::SQRT_Y_DAG:
+                case GateType::S:
+                case GateType::S_DAG:
+                    do_single_qubit_gate(inst.gate_type, inst.targets[0]);
+                    break;
+
+                case GateType::CPP:
+                    decompose_cpp_operation_with_reverse_independence(inst, num_qubits, [&](CircuitInstruction sub_inst) {
+                        do_instruction(sub_inst);
+                    });
+                    break;
+
+                case GateType::SQRT_XX:
+                case GateType::SQRT_YY:
+                case GateType::SQRT_ZZ:
+                case GateType::SQRT_XX_DAG:
+                case GateType::SQRT_YY_DAG:
+                case GateType::SQRT_ZZ_DAG:
+                case GateType::SPP:
+                case GateType::SPP_DAG:
+                    do_multi_phase_gate(inst.gate_type, inst.targets);
+                    break;
+
+                case GateType::XCX:
+                case GateType::XCY:
+                case GateType::XCZ:
+                case GateType::YCX:
+                case GateType::YCY:
+                case GateType::YCZ:
+                case GateType::CX:
+                case GateType::CY:
+                case GateType::CZ:
+                    do_controlled_gate(inst.gate_type, inst.targets[0], inst.targets[1]);
+                    break;
+
+                case GateType::SWAP:
+                case GateType::ISWAP:
+                case GateType::CXSWAP:
+                case GateType::SWAPCX:
+                case GateType::CZSWAP:
+                case GateType::ISWAP_DAG:
+                    do_swap_plus_gate(inst.gate_type, inst.targets[0], inst.targets[1]);
+                    break;
+
+                case GateType::MXX:
+                case GateType::MYY:
+                case GateType::MZZ:
+                case GateType::MPP:
+                    do_multi_measure_gate(inst.gate_type, inst.targets);
+                    break;
+
+                default:
+                    throw std::invalid_argument("Not supported in export_quirk_url: " + full_instruction.str());
+            }
+        });
+    }
+
     void do_circuit(const Circuit &circuit) {
         circuit.for_each_operation([&](CircuitInstruction full_instruction) {
-            used[(int)full_instruction.gate_type] = true;
-            for_each_target_group(full_instruction, [&](CircuitInstruction inst) {
-                switch (inst.gate_type) {
-                    case GateType::DETECTOR:
-                    case GateType::OBSERVABLE_INCLUDE:
-                    case GateType::QUBIT_COORDS:
-                    case GateType::SHIFT_COORDS:
-                    case GateType::MPAD:
-                    case GateType::DEPOLARIZE1:
-                    case GateType::DEPOLARIZE2:
-                    case GateType::X_ERROR:
-                    case GateType::Y_ERROR:
-                    case GateType::Z_ERROR:
-                    case GateType::PAULI_CHANNEL_1:
-                    case GateType::PAULI_CHANNEL_2:
-                    case GateType::E:
-                    case GateType::ELSE_CORRELATED_ERROR:
-                    case GateType::HERALDED_ERASE:
-                    case GateType::HERALDED_PAULI_CHANNEL_1:
-                        // Ignored.
-                        break;
-
-                    case GateType::TICK:
-                        col_offset += 3;
-                        break;
-
-                    case GateType::MX:
-                    case GateType::MY:
-                    case GateType::M:
-                    case GateType::MRX:
-                    case GateType::MRY:
-                    case GateType::MR:
-                    case GateType::RX:
-                    case GateType::RY:
-                    case GateType::R:
-                    case GateType::H:
-                    case GateType::H_XY:
-                    case GateType::H_YZ:
-                    case GateType::I:
-                    case GateType::X:
-                    case GateType::Y:
-                    case GateType::Z:
-                    case GateType::C_XYZ:
-                    case GateType::C_ZYX:
-                    case GateType::SQRT_X:
-                    case GateType::SQRT_X_DAG:
-                    case GateType::SQRT_Y:
-                    case GateType::SQRT_Y_DAG:
-                    case GateType::S:
-                    case GateType::S_DAG:
-                        do_single_qubit_gate(inst.gate_type, inst.targets[0]);
-                        break;
-
-                    case GateType::SQRT_XX:
-                    case GateType::SQRT_YY:
-                    case GateType::SQRT_ZZ:
-                    case GateType::SQRT_XX_DAG:
-                    case GateType::SQRT_YY_DAG:
-                    case GateType::SQRT_ZZ_DAG:
-                    case GateType::SPP:
-                    case GateType::SPP_DAG:
-                        do_multi_phase_gate(inst.gate_type, inst.targets);
-                        break;
-
-                    case GateType::XCX:
-                    case GateType::XCY:
-                    case GateType::XCZ:
-                    case GateType::YCX:
-                    case GateType::YCY:
-                    case GateType::YCZ:
-                    case GateType::CX:
-                    case GateType::CY:
-                    case GateType::CZ:
-                        do_controlled_gate(inst.gate_type, inst.targets[0], inst.targets[1]);
-                        break;
-
-                    case GateType::SWAP:
-                    case GateType::ISWAP:
-                    case GateType::CXSWAP:
-                    case GateType::SWAPCX:
-                    case GateType::CZSWAP:
-                    case GateType::ISWAP_DAG:
-                        do_swap_plus_gate(inst.gate_type, inst.targets[0], inst.targets[1]);
-                        break;
-
-                    case GateType::MXX:
-                    case GateType::MYY:
-                    case GateType::MZZ:
-                    case GateType::MPP:
-                        do_multi_measure_gate(inst.gate_type, inst.targets);
-                        break;
-
-                    default:
-                        throw std::invalid_argument("Not supported in export_quirk_url: " + full_instruction.str());
-                }
-            });
+            do_instruction(full_instruction);
         });
     }
 };
