@@ -1,4 +1,4 @@
-matplotlib ~= 3.5
-numpy ~= 1.22
+matplotlib
+numpy
 stim
-scipy ~= 1.9
+scipy
