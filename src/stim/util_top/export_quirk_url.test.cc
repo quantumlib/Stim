@@ -128,6 +128,7 @@ TEST(export_quirk, all_operations) {
         R"URL(["X","zpar"],)URL"
         R"URL(["ZDetector"],)URL"
         R"URL(["X","zpar"],)URL"
+        R"URL([1,1,1,"H","H","H"],[1,1,1,"X","•"],[1,1,1,"X",1,"•"],[1,1,1,1,"H",1,"~Hyz"],[1,1,1,1,"X",1,"•"],[1,1,1,"•","Z"],[1,1,1,1,"X",1,"•"],[1,1,1,1,"H",1,"~Hyz"],[1,1,1,"X",1,"•"],[1,1,1,"X","•"],[1,1,1,"H","H","H",1,"~Hyz","~Hyz"],[1,1,1,1,1,1,1,"•","Z"],[1,1,1,1,1,1,1,"~Hyz","~Hyz"],)URL"
         R"URL(["xpar","ypar","zpar","i"],)URL"
         R"URL(["i",1,1,"xpar"],)URL"
         R"URL(["xpar","ypar","zpar","-i"],)URL"

@@ -101,6 +101,7 @@ struct DiagramTimelineSvgDrawer {
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_paired_pauli_targets(const ResolvedTimelineOperation &op);
     void do_mpp(const ResolvedTimelineOperation &op);
+    void do_cpp(const ResolvedTimelineOperation &op);
     void do_spp(const ResolvedTimelineOperation &op);
     void do_correlated_error(const ResolvedTimelineOperation &op);
     void do_qubit_coords(const ResolvedTimelineOperation &op);

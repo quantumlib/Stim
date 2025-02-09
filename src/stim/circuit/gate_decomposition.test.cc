@@ -160,6 +160,179 @@ TEST(gate_decomposition, decompose_pair_instruction_into_disjoint_segments) {
     )CIRCUIT"));
 }
 
+TEST(gate_decomposition, decompose_cpp_operation_with_reverse_independence_swap) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*X1 Z0*Z1").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0 1
+        CX 1 0
+        H 1
+        CZ 0 1
+        H 1
+        CX 1 0
+        H 0 1
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_with_reverse_independence_swap_big_qubit) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*X1001 Z0*Z1001").operations[0], 1002, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0 1001
+        CX 1001 0
+        H 1001
+        CZ 0 1001
+        H 1001
+        CX 1001 0
+        H 0 1001
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_classical_feedback) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP rec[-1] X0*Y1*Z2").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0
+        H_YZ 1
+        CX 1 0 2 0
+        CZ rec[-1] 0
+        CX 2 0 1 0
+        H_YZ 1
+        H 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_same_obs) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP Z0 Z0").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        Z 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_opposite_obs) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP Z0 !Z0").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_same_obs_complex) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*Y1*Z2 X0*Y1*Z2").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0
+        H_YZ 1
+        CX 1 0 2 0
+        Z 0
+        CX 2 0 1 0
+        H_YZ 1
+        H 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_opposite_obs_complex) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*Y1*Z2 !X0*Y1*Z2").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 0
+        H_YZ 1
+        CX 1 0 2 0 2 0 1 0
+        H_YZ 1
+        H 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_inversion_1) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP !Z0 Z1").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CZ 0 1
+        Z 1
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_inversion_2) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP Z0 !Z1").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CZ 0 1
+        Z 0
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_inversion_3) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP !Z0 !Z1").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CZ 0 1
+        Z 0 1
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_only_classical) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP rec[-1] rec[-1]").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_only_classical_complex) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP X0*Y0*Z0*X1*Y1*Z1*rec[-1] rec[-1]").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, decompose_cpp_operation_mixed_quantum_classical) {
+    Circuit out;
+    decompose_cpp_operation_with_reverse_independence(
+        Circuit("CPP rec[-1]*Z0 rec[-2]*X1").operations[0], 10, [&](const CircuitInstruction &inst) {
+            out.safe_append(inst);
+        });
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        H 1
+        CZ 0 1 rec[-2] 0 rec[-1] 1
+        H 1
+    )CIRCUIT"));
+}
+
 TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_simple) {
     Circuit out;
     decompose_spp_or_spp_dag_operation(Circuit("SPP Z0").operations[0], 10, false, [&](const CircuitInstruction &inst) {
@@ -285,6 +458,32 @@ TEST(gate_decomposition, decompose_spp_or_spp_dag_operation_bad) {
         std::invalid_argument);
 }
 
+TEST(gate_decomposition, decompose_cpp_operation_bad) {
+    ASSERT_THROW(
+        {
+            decompose_cpp_operation_with_reverse_independence(
+                Circuit("CPP X0*Z0 X0").operations[0], 10, [](const CircuitInstruction &inst) {
+                });
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            decompose_cpp_operation_with_reverse_independence(
+                Circuit("CPP X0 Z0").operations[0], 10, [](const CircuitInstruction &inst) {
+                });
+        },
+        std::invalid_argument);
+
+    ASSERT_THROW(
+        {
+            decompose_cpp_operation_with_reverse_independence(
+                Circuit("CPP X0*X1 Z0*X1").operations[0], 10, [](const CircuitInstruction &inst) {
+                });
+        },
+        std::invalid_argument);
+}
+
 TEST(gate_decomposition, for_each_disjoint_target_segment_in_instruction_reversed) {
     simd_bits<64> buf(100);
 
@@ -340,6 +539,38 @@ TEST(gate_decomposition, for_each_combined_targets_group) {
         MPP(0.25) X0*Y1
         TICK
         MPP(0.25) Z2*Z3
+        TICK
+    )CIRCUIT"));
+}
+
+TEST(gate_decomposition, for_each_pair_combined_targets_group) {
+    Circuit out;
+    auto append_into_circuit = [&](const CircuitInstruction &segment) {
+        out.safe_append(segment);
+        out.append_from_text("TICK");
+    };
+    for_each_pair_combined_targets_group(Circuit("CPP X0 Z1 Y2*Z3 Y4*Z5*Z6 Z8 Y8").operations[0], append_into_circuit);
+    for_each_pair_combined_targets_group(Circuit("CPP X0 Y1 Z2 Y2").operations[0], append_into_circuit);
+    for_each_pair_combined_targets_group(Circuit("CPP X0*Y1 Z2*Z3").operations[0], append_into_circuit);
+    EXPECT_THROW({
+        for_each_pair_combined_targets_group(Circuit("CPP X0").operations[0], append_into_circuit);
+    }, std::invalid_argument);
+    EXPECT_THROW({
+        for_each_pair_combined_targets_group(Circuit("CPP X0*Y1").operations[0], append_into_circuit);
+    }, std::invalid_argument);
+
+    ASSERT_EQ(out, Circuit(R"CIRCUIT(
+        CPP X0 Z1
+        TICK
+        CPP Y2*Z3 Y4*Z5*Z6
+        TICK
+        CPP Z8 Y8
+        TICK
+        CPP X0 Y1
+        TICK
+        CPP Z2 Y2
+        TICK
+        CPP X0*Y1 Z2*Z3
         TICK
     )CIRCUIT"));
 }

@@ -59,6 +59,21 @@ struct WithoutFeedbackHelper {
         }
     }
 
+    void undo_cpp(const CircuitInstruction &inst) {
+        size_t n = inst.targets.size();
+        std::vector<GateTarget> reversed_targets(n);
+        std::vector<GateTarget> reversed_measure_targets;
+        for (size_t k = 0; k < n; k++) {
+            reversed_targets[k] = inst.targets[n - k - 1];
+        }
+        decompose_cpp_operation_with_reverse_independence(
+            CircuitInstruction{inst.gate_type, inst.args, reversed_targets,inst.tag},
+            tracker.xs.size(),
+            [&](const CircuitInstruction &sub_inst) {
+                undo_gate(sub_inst);
+            });
+    }
+
     void undo_feedback_capable_pcp_operation(const CircuitInstruction &op) {
         for (size_t k = op.targets.size(); k > 0;) {
             k -= 2;
@@ -129,7 +144,11 @@ struct WithoutFeedbackHelper {
 
     void undo_gate(const CircuitInstruction &op) {
         if (GATE_DATA[op.gate_type].flags & GATE_CAN_TARGET_BITS) {
-            undo_feedback_capable_pcp_operation(op);
+            if (op.gate_type == GateType::CPP) {
+                undo_cpp(op);
+            } else {
+                undo_feedback_capable_pcp_operation(op);
+            }
         } else {
             reversed_semi_flattened_output.safe_append(op, true);
             tracker.undo_gate(op);

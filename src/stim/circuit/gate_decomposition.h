@@ -59,6 +59,15 @@ void decompose_mpp_operation(
     size_t num_qubits,
     const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
 
+/// Decomposes CPP operations into sequences of simpler operations with the same effect.
+///
+/// The output is guaranteed to only use self-inverse operations, and to have the same
+/// effect if run in order or in reverse order.
+void decompose_cpp_operation_with_reverse_independence(
+    const CircuitInstruction &cpp_op,
+    size_t num_qubits,
+    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback);
+
 /// Decomposes SPP operations into sequences of simpler operations with the same effect.
 void decompose_spp_or_spp_dag_operation(
     const CircuitInstruction &spp_op,
@@ -112,6 +121,9 @@ void for_each_disjoint_target_segment_in_instruction_reversed(
     const std::function<void(CircuitInstruction)> &callback);
 
 void for_each_combined_targets_group(
+    const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback);
+
+void for_each_pair_combined_targets_group(
     const CircuitInstruction &inst, const std::function<void(CircuitInstruction)> &callback);
 
 }  // namespace stim
