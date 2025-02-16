@@ -299,7 +299,7 @@ jobs:
     - run: ./a.out test
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | install_dir/bin/stim --sample
   benchmark_windows:
-    runs-on: windows-2202
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
       - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2
