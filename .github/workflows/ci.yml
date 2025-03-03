@@ -29,16 +29,16 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp312-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp36-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp37-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp38-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp39-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp311-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp312-manylinux_x86_64},
 
-          {os: ubuntu-latest, dist: cp36-manylinux_i686},
-          {os: ubuntu-latest, dist: cp37-manylinux_i686},
+          {os: ubuntu-24.04, dist: cp36-manylinux_i686},
+          {os: ubuntu-24.04, dist: cp37-manylinux_i686},
           # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
           # {os: ubuntu-latest, dist: cp38-manylinux_i686},
           # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
@@ -87,19 +87,19 @@ jobs:
           # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macos-latest, dist: cp36-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp37-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp38-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp39-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp310-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp311-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp36-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp37-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp38-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp39-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
 
-          {os: macos-latest, dist: cp38-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp39-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp38-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp39-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -150,109 +150,109 @@ jobs:
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
       - run: python dev/overwrite_dev_versions_with_date.py
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir dist
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-stim-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
           path: dist/*
   build_sdist:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
       - run: python -m pip install setuptools pybind11~=2.11.1
       - run: python dev/overwrite_dev_versions_with_date.py
       - run: mkdir output
       - run: python setup.py sdist
       - run: cd glue/cirq && python setup.py sdist
       - run: cd glue/sample && python setup.py sdist
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-sinter"
           path: glue/sample/dist/*.tar.gz
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-stimcirq"
           path: glue/cirq/dist/*.tar.gz
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-stim-sdist"
           path: dist/*.tar.gz
   check_sdist_installs_stim:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+    - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
     - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
     - run: python setup.py sdist
     - run: pip install dist/*.tar.gz
   check_sdist_installs_sinter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+    - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
     - run: python -m pip install setuptools
     - run: cd glue/sample && python setup.py sdist
     - run: pip install glue/sample/dist/*
     - run: python -c "import sinter"
   merge_upload_artifacts:
     needs: ["build_dist", "build_sdist"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
         with:
           name: dist-stim
           pattern: dist-stim-*
   upload_dev_release_to_pypi:
     needs: ["merge_upload_artifacts"]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: dist-stim
           path: dist-stim
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: dist-stimcirq
           path: dist-stimcirq
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: dist-sinter
           path: dist-sinter
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
         with:
           user: __token__
           packages_dir: dist-stim
           password: ${{ secrets.pypi_token_stim }}
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
         with:
           user: __token__
           packages_dir: dist-stimcirq
           password: ${{ secrets.pypi_token_stimcirq }}
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
         with:
           user: __token__
           packages_dir: dist-sinter
           password: ${{ secrets.pypi_token_sinter }}
   run_main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
     - run: make stim -j 2
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v1
-    - uses: bazel-contrib/setup-bazel@0.8.5
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+    - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -263,7 +263,7 @@ jobs:
   build_clang:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -271,25 +271,25 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - uses: egor-tensin/setup-clang@v1
+    - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
       with:
         version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
     - run: cmake --build .
   build_lib:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
     - run: make libstim -j 2
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++20 test.cc out/libstim.a -I src
     - run: ./a.out test
   build_lib_install:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: mkdir install_dir
     - run: cmake . -DCMAKE_INSTALL_PREFIX=install_dir
     - run: make -j 2
@@ -299,30 +299,30 @@ jobs:
     - run: ./a.out test
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | install_dir/bin/stim --sample
   benchmark_windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v1
-      - uses: microsoft/setup-msbuild@v1.0.2
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2
       - run: cmake .
       - run: MSBuild.exe stim_perf.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
       - run: msbuild_out/stim_perf.exe
   benchmark:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
     - run: make stim_perf -j 2
     - run: out/stim_perf
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -334,9 +334,9 @@ jobs:
     - run: make stim_test -j 2
     - run: out/stim_test
   test_o3:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -348,17 +348,17 @@ jobs:
     - run: make stim_test_o3 -j 2
     - run: out/stim_test_o3
   test_generated_docs_are_fresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+      - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
           repository-cache: true
           bazelisk-version: 1.x
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
         with:
           node-version: 16.x
       - run: bazel build :stim_dev_wheel
@@ -376,20 +376,20 @@ jobs:
       - run: pip install -e glue/sample
       - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
   test_generated_file_lists_are_fresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - run: dev/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
       - run: diff /tmp/source_files_no_main file_lists/source_files_no_main
       - run: diff /tmp/test_files file_lists/test_files
   test_pybind:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+      - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -401,11 +401,11 @@ jobs:
       - run: pytest src
       - run: dev/doctest_proper.py --module stim
   test_stimcirq:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+      - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -418,11 +418,11 @@ jobs:
       - run: pytest glue/cirq
       - run: dev/doctest_proper.py --module stimcirq --import cirq sympy
   test_sinter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+      - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -436,11 +436,11 @@ jobs:
       - run: dev/doctest_proper.py --module sinter
       - run: sinter help
   test_stimzx:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+      - uses: bazel-contrib/setup-bazel@e403ad507104847c3539436f64a9e9eecc73eeec # 0.8.5
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -455,22 +455,22 @@ jobs:
   test_stimjs:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
         with:
           version: 4.0.1
           actions-cache-folder: 'emsdk-cache'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
         with:
           node-version: 18.x
       - run: npm install
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
   test_crumble:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+    - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3
       with:
         node-version: 16
     - run: node glue/crumble/run_tests_headless.js
