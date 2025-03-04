@@ -42,6 +42,9 @@ class Layer {
             if (key.startsWith('SPP_DAG:') && !GATE_MAP.has(key)) {
                 key = 'SPP_DAG';
             }
+            if (op.tag !== '') {
+                key += '[' + op.tag.replace('\\', '\\B').replace('\r', '\\r').replace('\n', '\\n').replace(']', '\\C') + ']';
+            }
             if (op.args.length > 0) {
                 key += '(' + [...op.args].join(',') + ')';
             }

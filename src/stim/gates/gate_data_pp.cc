@@ -22,6 +22,48 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
     add_gate(
         failed,
         Gate{
+            .name = "II",
+            .id = GateType::II,
+            .best_candidate_inverse_id = GateType::II,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
+            .category = "C_Two Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+A two-qubit identity gate.
+
+Twice as much doing-nothing as the I gate! This gate only exists because it
+can be useful as a communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Examples:
+
+    II 0 1
+
+    R 0
+    II[ACTUALLY_A_LEAKAGE_ISWAP] 0 1
+    R 0
+    CX 1 0
+)MARKDOWN",
+            .unitary_data =
+                {{1, 0, 0, 0},
+                 {0, 1, 0, 0},
+                 {0, 0, 1, 0},
+                 {0, 0, 0, 1}},
+            .flow_data = {"+XI", "+ZI", "+IX", "+IZ"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
             .name = "SQRT_XX",
             .id = GateType::SQRT_XX,
             .best_candidate_inverse_id = GateType::SQRT_XX_DAG,

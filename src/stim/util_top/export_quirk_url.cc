@@ -37,20 +37,49 @@ struct QuirkExporter {
             R"URL({"id":"~Hxy","name":"Hxy","matrix":"{{0,-√½-√½i},{√½-√½i,0}}"})URL";
         custom_gate_definition[(int)GateType::H_YZ] =
             R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"})URL";
+        custom_gate_definition[(int)GateType::H_NXY] =
+            R"URL({"id":"~Hnxy","name":"Hnxy","matrix":"{{0,√½+√½i},{√½-√½i,0}}"})URL";
+        custom_gate_definition[(int)GateType::H_NXZ] =
+            R"URL({"id":"~Hnxz","name":"Hnxz","matrix":"{{-√½,√½},{√½,√½}}"})URL";
+        custom_gate_definition[(int)GateType::H_NYZ] =
+            R"URL({"id":"~Hnyz","name":"Hnyz","matrix":"{{-√½,-√½i},{√½i,√½}}"})URL";
+
         custom_gate_definition[(int)GateType::C_XYZ] =
             R"URL({"id":"~Cxyz","name":"Cxyz","matrix":"{{½-½i,-½-½i},{½-½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_NXYZ] =
+            R"URL({"id":"~Cnxyz","name":"Cnxyz","matrix":"{{½+½i,½-½i},{-½-½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_XNYZ] =
+            R"URL({"id":"~Cxnyz","name":"Cxnyz","matrix":"{{½+½i,-½+½i},{½+½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_XYNZ] =
+            R"URL({"id":"~Cxynz","name":"Cxynz","matrix":"{{½-½i,½+½i},{-½+½i,½+½i}}"})URL";
+
         custom_gate_definition[(int)GateType::C_ZYX] =
             R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_ZYNX] =
+            R"URL({"id":"~Czynx","name":"Czynx","matrix":"{{½-½i,-½+½i},{½+½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_ZNYX] =
+            R"URL({"id":"~Cznyx","name":"Cznyx","matrix":"{{½-½i,½-½i},{-½-½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_NZYX] =
+            R"URL({"id":"~Cnzyx","name":"Cnzyx","matrix":"{{½+½i,-½-½i},{½-½i,½-½i}}"})URL";
 
         stim_name_to_quirk_name[(int)GateType::H] = "H";
         stim_name_to_quirk_name[(int)GateType::H_XY] = "~Hxy";
         stim_name_to_quirk_name[(int)GateType::H_YZ] = "~Hyz";
+        stim_name_to_quirk_name[(int)GateType::H_NXY] = "~Hnxy";
+        stim_name_to_quirk_name[(int)GateType::H_NXZ] = "~Hnxz";
+        stim_name_to_quirk_name[(int)GateType::H_NYZ] = "~Hnyz";
         stim_name_to_quirk_name[(int)GateType::I] = "…";
         stim_name_to_quirk_name[(int)GateType::X] = "X";
         stim_name_to_quirk_name[(int)GateType::Y] = "Y";
         stim_name_to_quirk_name[(int)GateType::Z] = "Z";
         stim_name_to_quirk_name[(int)GateType::C_XYZ] = "~Cxyz";
+        stim_name_to_quirk_name[(int)GateType::C_NXYZ] = "~Cnxyz";
+        stim_name_to_quirk_name[(int)GateType::C_XNYZ] = "~Cxnyz";
+        stim_name_to_quirk_name[(int)GateType::C_XYNZ] = "~Cxynz";
         stim_name_to_quirk_name[(int)GateType::C_ZYX] = "~Czyx";
+        stim_name_to_quirk_name[(int)GateType::C_NZYX] = "~Cnzyx";
+        stim_name_to_quirk_name[(int)GateType::C_ZNYX] = "~Cznyx";
+        stim_name_to_quirk_name[(int)GateType::C_ZYNX] = "~Czynx";
         stim_name_to_quirk_name[(int)GateType::SQRT_X] = "X^½";
         stim_name_to_quirk_name[(int)GateType::SQRT_X_DAG] = "X^-½";
         stim_name_to_quirk_name[(int)GateType::SQRT_Y] = "Y^½";
@@ -256,6 +285,9 @@ struct QuirkExporter {
                     case GateType::ELSE_CORRELATED_ERROR:
                     case GateType::HERALDED_ERASE:
                     case GateType::HERALDED_PAULI_CHANNEL_1:
+                    case GateType::II:
+                    case GateType::I_ERROR:
+                    case GateType::II_ERROR:
                         // Ignored.
                         break;
 
@@ -275,12 +307,21 @@ struct QuirkExporter {
                     case GateType::H:
                     case GateType::H_XY:
                     case GateType::H_YZ:
+                    case GateType::H_NXY:
+                    case GateType::H_NXZ:
+                    case GateType::H_NYZ:
                     case GateType::I:
                     case GateType::X:
                     case GateType::Y:
                     case GateType::Z:
                     case GateType::C_XYZ:
+                    case GateType::C_NXYZ:
+                    case GateType::C_XNYZ:
+                    case GateType::C_XYNZ:
                     case GateType::C_ZYX:
+                    case GateType::C_NZYX:
+                    case GateType::C_ZNYX:
+                    case GateType::C_ZYNX:
                     case GateType::SQRT_X:
                     case GateType::SQRT_X_DAG:
                     case GateType::SQRT_Y:

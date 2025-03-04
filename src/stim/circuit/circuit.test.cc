@@ -1716,10 +1716,19 @@ Circuit stim::generate_test_circuit_with_all_operations() {
 
         # Single Qubit Clifford Gates
         C_XYZ 0
-        C_ZYX 1
-        H_XY 2
-        H_XZ 3
-        H_YZ 4
+        C_NXYZ 1
+        C_XNYZ 2
+        C_XYNZ 3
+        C_ZYX 4
+        C_NZYX 5
+        C_ZNYX 6
+        C_ZYNX 7
+        H_XY 0
+        H_XZ 1
+        H_YZ 2
+        H_NXY 3
+        H_NXZ 4
+        H_NYZ 5
         SQRT_X 0
         SQRT_X_DAG 1
         SQRT_Y 2
@@ -1741,6 +1750,7 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         SQRT_YY_DAG 6 7
         SQRT_ZZ 8 9
         SQRT_ZZ_DAG 10 11
+        II 12 13
         XCX 0 1
         XCY 2 3
         XCZ 4 5
@@ -1764,6 +1774,8 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         Z_ERROR(0.03) 2
         HERALDED_ERASE(0.04) 3
         HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 6
+        I_ERROR(0.06) 7
+        II_ERROR(0.07) 8 9
         TICK
 
         # Pauli Product Gates

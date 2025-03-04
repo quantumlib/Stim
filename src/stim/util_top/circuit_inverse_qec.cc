@@ -197,11 +197,20 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
             break;
         case GateType::TICK:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::X:
         case GateType::Y:
         case GateType::Z:
         case GateType::C_XYZ:
+        case GateType::C_NXYZ:
+        case GateType::C_XNYZ:
+        case GateType::C_XYNZ:
         case GateType::C_ZYX:
+        case GateType::C_NZYX:
+        case GateType::C_ZNYX:
+        case GateType::C_ZYNX:
         case GateType::SQRT_X:
         case GateType::SQRT_X_DAG:
         case GateType::SQRT_Y:
@@ -229,6 +238,9 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
         case GateType::H:
         case GateType::H_XY:
         case GateType::H_YZ:
+        case GateType::H_NXZ:
+        case GateType::H_NXY:
+        case GateType::H_NYZ:
         case GateType::DEPOLARIZE1:
         case GateType::DEPOLARIZE2:
         case GateType::X_ERROR:

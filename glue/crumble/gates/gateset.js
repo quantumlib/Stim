@@ -74,6 +74,8 @@ function make_gate_alias_map() {
     result.set("PAULI_CHANNEL_1", {ignore: true});
     result.set("PAULI_CHANNEL_2", {ignore: true});
     result.set("X_ERROR", {ignore: true});
+    result.set("I_ERROR", {ignore: true});
+    result.set("II_ERROR", {ignore: true});
     result.set("Y_ERROR", {ignore: true});
     result.set("Z_ERROR", {ignore: true});
     result.set("HERALDED_ERASE", {ignore: true});

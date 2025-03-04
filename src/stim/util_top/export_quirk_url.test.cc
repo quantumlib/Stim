@@ -93,7 +93,8 @@ TEST(export_quirk, all_operations) {
     auto expected =
         R"URL(https://algassert.com/quirk#circuit={"cols":[)URL"
         R"URL(["…","X","Y","Z"],)URL"
-        R"URL(["~Cxyz","~Czyx","~Hxy","H","~Hyz"],)URL"
+        R"URL(["~Cxyz","~Cnxyz","~Cxnyz","~Cxynz","~Czyx","~Cnzyx","~Cznyx","~Czynx"],)URL"
+        R"URL(["~Hxy","H","~Hyz","~Hnxy","~Hnxz","~Hnyz"],)URL"
         R"URL(["X^½","X^-½","Y^½","Y^-½","Z^½","Z^-½"],)URL"
         R"URL(["Swap","Swap"],)URL"
         R"URL(["⊖","Z"],)URL"
@@ -170,7 +171,16 @@ TEST(export_quirk, all_operations) {
         R"URL([1,1,1,1,1,1,"Z","ypar","zpar"]],"gates":)URL"
         R"URL([{"id":"~Hxy","name":"Hxy","matrix":"{{0,-√½-√½i},{√½-√½i,0}}"},)URL"
         R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"},)URL"
+        R"URL({"id":"~Hnxy","name":"Hnxy","matrix":"{{0,√½+√½i},{√½-√½i,0}}"},)URL"
+        R"URL({"id":"~Hnxz","name":"Hnxz","matrix":"{{-√½,√½},{√½,√½}}"},)URL"
+        R"URL({"id":"~Hnyz","name":"Hnyz","matrix":"{{-√½,-√½i},{√½i,√½}}"},)URL"
         R"URL({"id":"~Cxyz","name":"Cxyz","matrix":"{{½-½i,-½-½i},{½-½i,½+½i}}"},)URL"
-        R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"}]})URL";
+        R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"},)URL"
+        R"URL({"id":"~Cnxyz","name":"Cnxyz","matrix":"{{½+½i,½-½i},{-½-½i,½-½i}}"},)URL"
+        R"URL({"id":"~Cxnyz","name":"Cxnyz","matrix":"{{½+½i,-½+½i},{½+½i,½-½i}}"},)URL"
+        R"URL({"id":"~Cxynz","name":"Cxynz","matrix":"{{½-½i,½+½i},{-½+½i,½+½i}}"},)URL"
+        R"URL({"id":"~Cnzyx","name":"Cnzyx","matrix":"{{½+½i,-½-½i},{½-½i,½-½i}}"},)URL"
+        R"URL({"id":"~Cznyx","name":"Cznyx","matrix":"{{½-½i,½-½i},{-½-½i,½+½i}}"},)URL"
+        R"URL({"id":"~Czynx","name":"Czynx","matrix":"{{½-½i,-½+½i},{½+½i,½+½i}}"}]})URL";
     ASSERT_EQ(actual, expected);
 }
