@@ -305,8 +305,17 @@ TEST(export_qasm, export_qasm_all_operations_v3) {
 include "stdgates.inc";
 gate cxyz q0 { U(pi/2, 0, pi/2) q0; }
 gate czyx q0 { U(pi/2, pi/2, pi/2) q0; }
+gate cnxyz q0 { U(pi/2, pi/2, pi/2) q0; }
+gate cxnyz q0 { U(pi/2, 0, -pi/2) q0; }
+gate cxynz q0 { U(pi/2, pi/2, -pi/2) q0; }
+gate cnzyx q0 { U(pi/2, -pi/2, 0) q0; }
+gate cznyx q0 { U(pi/2, -pi/2, pi/2) q0; }
+gate czynx q0 { U(pi/2, pi/2, 0) q0; }
 gate hxy q0 { U(pi/2, 0, pi/2) q0; }
 gate hyz q0 { U(pi/2, pi/2, pi/2) q0; }
+gate hnxy q0 { U(pi/2, 0, -pi/2) q0; }
+gate hnxz q0 { U(pi/2, pi/2, 0) q0; }
+gate hnyz q0 { U(pi/2, -pi/2, -pi/2) q0; }
 gate sy q0 { U(pi/2, 0, 0) q0; }
 gate sydg q0 { U(pi/2, pi/2, pi/2) q0; }
 gate cxswap q0, q1 { cx q1, q0; cx q0, q1; }
@@ -350,10 +359,19 @@ z q[3];
 barrier q;
 
 cxyz q[0];
-czyx q[1];
-hxy q[2];
-h q[3];
-hyz q[4];
+cnxyz q[1];
+cxnyz q[2];
+cxynz q[3];
+czyx q[4];
+cnzyx q[5];
+cznyx q[6];
+czynx q[7];
+hxy q[0];
+h q[1];
+hyz q[2];
+hnxy q[3];
+hnxz q[4];
+hnyz q[5];
 sx q[0];
 sxdg q[1];
 sy q[2];
@@ -531,8 +549,17 @@ TEST(export_qasm, export_qasm_all_operations_v2) {
 include "qelib1.inc";
 gate cxyz q0 { U(pi/2, 0, pi/2) q0; }
 gate czyx q0 { U(pi/2, pi/2, pi/2) q0; }
+gate cnxyz q0 { U(pi/2, pi/2, pi/2) q0; }
+gate cxnyz q0 { U(pi/2, 0, -pi/2) q0; }
+gate cxynz q0 { U(pi/2, pi/2, -pi/2) q0; }
+gate cnzyx q0 { U(pi/2, -pi/2, 0) q0; }
+gate cznyx q0 { U(pi/2, -pi/2, pi/2) q0; }
+gate czynx q0 { U(pi/2, pi/2, 0) q0; }
 gate hxy q0 { U(pi/2, 0, pi/2) q0; }
 gate hyz q0 { U(pi/2, pi/2, pi/2) q0; }
+gate hnxy q0 { U(pi/2, 0, -pi/2) q0; }
+gate hnxz q0 { U(pi/2, pi/2, 0) q0; }
+gate hnyz q0 { U(pi/2, -pi/2, -pi/2) q0; }
 gate sy q0 { U(pi/2, 0, 0) q0; }
 gate sydg q0 { U(pi/2, pi/2, pi/2) q0; }
 gate cxswap q0, q1 { cx q1, q0; cx q0, q1; }
@@ -563,10 +590,19 @@ z q[3];
 barrier q;
 
 cxyz q[0];
-czyx q[1];
-hxy q[2];
-h q[3];
-hyz q[4];
+cnxyz q[1];
+cxnyz q[2];
+cxynz q[3];
+czyx q[4];
+cnzyx q[5];
+cznyx q[6];
+czynx q[7];
+hxy q[0];
+h q[1];
+hyz q[2];
+hnxy q[3];
+hnxz q[4];
+hnyz q[5];
 sx q[0];
 sxdg q[1];
 sy q[2];

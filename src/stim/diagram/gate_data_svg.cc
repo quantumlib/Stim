@@ -12,6 +12,9 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"H_YZ", {1, "H", "YZ", "", "white", "black", 22, 12, 0}});
     result.insert({"H", {1, "H", "", "", "white", "black", 0, 10, 0}});
     result.insert({"H_XY", {1, "H", "XY", "", "white", "black", 22, 12, 0}});
+    result.insert({"H_NXY", {1, "H", "NXY", "", "white", "black", 22, 10, 0}});
+    result.insert({"H_NXZ", {1, "H", "NXZ", "", "white", "black", 22, 10, 0}});
+    result.insert({"H_NYZ", {1, "H", "NYZ", "", "white", "black", 22, 10, 0}});
 
     result.insert({"SQRT_X", {1, "√X", "", "", "white", "black", 24, 0}});
     result.insert({"SQRT_Y", {1, "√Y", "", "", "white", "black", 24, 0}});
@@ -67,7 +70,13 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
 
     result.insert({"I", {1, "I", "", "", "white", "black", 0, 10, 0}});
     result.insert({"C_XYZ", {1, "C", "XYZ", "", "white", "black", 18, 10, 0}});
+    result.insert({"C_NXYZ", {1, "C", "NXYZ", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_XNYZ", {1, "C", "XNYZ", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_XYNZ", {1, "C", "XYNZ", "", "white", "black", 18, 8, 0}});
     result.insert({"C_ZYX", {1, "C", "ZYX", "", "white", "black", 18, 10, 0}});
+    result.insert({"C_NZYX", {1, "C", "NZYX", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_ZNYX", {1, "C", "ZNYX", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_ZYNX", {1, "C", "ZYNX", "", "white", "black", 18, 8, 0}});
 
     result.insert({"DEPOLARIZE1", {1, "DEP", "1", "", "pink", "black", 0, 10, 0}});
     result.insert({"DEPOLARIZE2", {1, "DEP", "2", "", "pink", "black", 0, 10, 0}});

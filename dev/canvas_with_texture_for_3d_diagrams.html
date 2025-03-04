@@ -49,47 +49,60 @@ function drawRect(ctx, text, fill, stroke, i) {
         [sub, sup] = sub.split("^");
     }
     let vert = Math.max(sub.length, sup.length, main.length) >= 3 && sub.length > 0;
-    let fontSize = 18;
-    while (fontSize > 6) {
-        let bigFont = fontSize + 'pt serif';
-        let smallFont = (fontSize * 0.75) + 'pt serif';
+    let bigFontSize = 18;
+    let smallFontSize = 18 * 0.75;
+    while (bigFontSize > 6) {
+        let bigFont = bigFontSize + 'pt serif';
+        let smallFont = (smallFontSize * 0.75) + 'pt serif';
         ctx.font = bigFont;
         let w_main = ctx.measureText(main).width;
         ctx.font = smallFont;
         let w_sub = ctx.measureText(sub).width;
         let w_sup = ctx.measureText(sup).width;
         let w_subsup = Math.max(ctx.measureText(sub).width, ctx.measureText(sup).width);
-        let w_total = vert ? Math.max(w_main, w_subsup) : w_main + w_subsup;
-        if (w_total < 32) {
-            if (vert) {
-                let dy = 0;
-                if (w_sub < w_main * 0.8) {
-                    smallFont = bigFont;
-                    dy = -2;
-                }
-                ctx.fillStyle = stroke;
-                ctx.font = bigFont;
-                ctx.textBaseline = 'middle'
-                ctx.fillText(main, x * 32 + 16 - w_main / 2, y * 32 + 11);
-                ctx.font = smallFont;
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(sub, x * 32 + 16 - w_sub / 2, y * 32 + 34 + dy);
-                ctx.textBaseline = 'hanging';
-                ctx.fillText(sup, x * 32 + 16 - w_sup / 2, y * 32);
-            } else {
-                ctx.fillStyle = stroke;
-                ctx.font = bigFont;
-                ctx.textBaseline = 'middle'
-                ctx.fillText(main, x * 32 + 16 - w_main / 2 - w_subsup / 2, y * 32 + 18);
-                ctx.font = smallFont;
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(sub, x * 32 + 16 + w_main / 2 - w_sub / 2, y * 32 + (sup !== "" ? 34 : 32));
-                ctx.textBaseline = 'hanging';
-                ctx.fillText(sup, x * 32 + 16 + w_main / 2 - w_sup / 2, y * 32);
+        if (vert) {
+            if (w_main > 32) {
+                bigFontSize -= 1;
+                smallFontSize -= 0.75;
+                continue;
+            } else if (w_subsup > 32) {
+                smallFontSize -= 0.75;
+                continue;
             }
-            break;
+        } else {
+            if (w_main + w_subsup > 32) {
+                bigFontSize -= 1;
+                smallFontSize -= 0.75;
+                continue;
+            }
         }
-        fontSize--;
+        if (vert) {
+            let dy = 0;
+            if (w_sub < w_main * 0.8) {
+                smallFont = bigFont;
+                dy = -2;
+            }
+            ctx.fillStyle = stroke;
+            ctx.font = bigFont;
+            ctx.textBaseline = 'middle'
+            ctx.fillText(main, x * 32 + 16 - w_main / 2, y * 32 + 11);
+            ctx.font = smallFont;
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(sub, x * 32 + 16 - w_sub / 2, y * 32 + 34 + dy);
+            ctx.textBaseline = 'hanging';
+            ctx.fillText(sup, x * 32 + 16 - w_sup / 2, y * 32);
+        } else {
+            ctx.fillStyle = stroke;
+            ctx.font = bigFont;
+            ctx.textBaseline = 'middle'
+            ctx.fillText(main, x * 32 + 16 - w_main / 2 - w_subsup / 2, y * 32 + 18);
+            ctx.font = smallFont;
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(sub, x * 32 + 16 + w_main / 2 - w_sub / 2, y * 32 + (sup !== "" ? 34 : 32));
+            ctx.textBaseline = 'hanging';
+            ctx.fillText(sup, x * 32 + 16 + w_main / 2 - w_sup / 2, y * 32);
+        }
+        break;
     }
 }
 
@@ -223,6 +236,15 @@ function draw(ctx) {
     drawRect(ctx, "SPP_X†", "#F44", "#000", n++);
     drawRect(ctx, "SPP_Y†", "#4F4", "#000", n++);
     drawRect(ctx, "SPP_Z†", "#44F", "#000", n++);
+    drawRect(ctx, "C_NXYZ", "#FFA", "#000", n++);
+    drawRect(ctx, "C_XNYZ", "#FFA", "#000", n++);
+    drawRect(ctx, "C_XYNZ", "#FFA", "#000", n++);
+    drawRect(ctx, "C_NZYX", "#AFF", "#000", n++);
+    drawRect(ctx, "C_ZNYX", "#AFF", "#000", n++);
+    drawRect(ctx, "C_ZYNX", "#AFF", "#000", n++);
+    drawRect(ctx, "H_NXY", "#FAA", "#000", n++);
+    drawRect(ctx, "H_NXZ", "#AFA", "#000", n++);
+    drawRect(ctx, "H_NYZ", "#AAF", "#000", n++);
 
     n = 128 + 48;
     drawCpp(ctx, 'I', 'X', n++);
