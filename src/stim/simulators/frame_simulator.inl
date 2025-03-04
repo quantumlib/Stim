@@ -1101,6 +1101,9 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::Y:
         case GateType::Z:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             do_I(inst);
             break;
 

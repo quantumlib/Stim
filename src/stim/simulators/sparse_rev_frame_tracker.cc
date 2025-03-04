@@ -179,6 +179,9 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::Y:
         case GateType::Z:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             undo_I(inst);
             break;
 

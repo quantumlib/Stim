@@ -88,7 +88,7 @@ constexpr inline uint16_t gate_name_to_hash(std::string_view text) {
     return result & 0x1FF;
 }
 
-constexpr size_t NUM_DEFINED_GATES = 79;
+constexpr size_t NUM_DEFINED_GATES = 82;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -134,6 +134,8 @@ enum class GateType : uint8_t {
     X_ERROR,
     Y_ERROR,
     Z_ERROR,
+    I_ERROR,
+    II_ERROR,
     PAULI_CHANNEL_1,
     PAULI_CHANNEL_2,
     E,  // alias when parsing: CORRELATED_ERROR
@@ -162,7 +164,8 @@ enum class GateType : uint8_t {
     SQRT_Y_DAG,
     S,      // alias when parsing: SQRT_Z
     S_DAG,  // alias when parsing: SQRT_Z_DAG
-    // Pair measurement gates
+    // Parity phasing gates.
+    II,
     SQRT_XX,
     SQRT_XX_DAG,
     SQRT_YY,

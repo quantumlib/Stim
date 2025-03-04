@@ -476,6 +476,11 @@ struct Simplifier {
         const Gate &g = GATE_DATA[inst.gate_type];
 
         switch (inst.gate_type) {
+            case GateType::I:
+            case GateType::II:
+                // Dropped.
+                break;
+
             case GateType::MPP:
                 decompose_mpp_operation(inst, num_qubits, [&](const CircuitInstruction sub) {
                     simplify_instruction(sub);
@@ -507,6 +512,8 @@ struct Simplifier {
             case GateType::X_ERROR:
             case GateType::Y_ERROR:
             case GateType::Z_ERROR:
+            case GateType::I_ERROR:
+            case GateType::II_ERROR:
             case GateType::PAULI_CHANNEL_1:
             case GateType::PAULI_CHANNEL_2:
             case GateType::E:
@@ -516,6 +523,7 @@ struct Simplifier {
                 // Noise isn't simplified.
                 yield(inst);
                 break;
+
             default: {
                 if (g.flags & GATE_IS_SINGLE_QUBIT_GATE) {
                     simplify_potentially_overlapping_1q_instruction(inst);

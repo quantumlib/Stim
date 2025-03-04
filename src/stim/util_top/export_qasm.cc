@@ -439,6 +439,9 @@ struct QasmExporter {
         switch (instruction.gate_type) {
             case GateType::QUBIT_COORDS:
             case GateType::SHIFT_COORDS:
+            case GateType::II:
+            case GateType::I_ERROR:
+            case GateType::II_ERROR:
                 // Skipped.
                 return;
 

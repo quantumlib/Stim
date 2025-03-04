@@ -59,6 +59,9 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
         case GateType::DEPOLARIZE2:
         case GateType::Y_ERROR:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::Y:
         case GateType::SQRT_YY:
         case GateType::SQRT_YY_DAG:
@@ -184,6 +187,8 @@ bool Gate::is_symmetric() const {
 
     if (flags & GATE_TARGETS_PAIRS) {
         switch (id) {
+            case GateType::II:
+            case GateType::II_ERROR:
             case GateType::XCX:
             case GateType::YCY:
             case GateType::CZ:

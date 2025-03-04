@@ -454,6 +454,9 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             // No effect.
             break;
 
@@ -672,6 +675,9 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             // No effect.
             break;
 

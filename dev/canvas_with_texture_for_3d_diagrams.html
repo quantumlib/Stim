@@ -210,6 +210,8 @@ function draw(ctx) {
     drawRect(ctx, "sweep_X", "#FEE", "#000", n++);
     drawRect(ctx, "sweep_Y", "#EFE", "#000", n++);
     drawRect(ctx, "sweep_Z", "#EEF", "#000", n++);
+    n += 2;
+    drawRect(ctx, "I_ERR", "#FFF", "#000", n++);
 
     n = 128 + 16;
     drawRect(ctx, "I", "#FFF", "#000", n++);
@@ -245,6 +247,7 @@ function draw(ctx) {
     drawRect(ctx, "H_NXY", "#FAA", "#000", n++);
     drawRect(ctx, "H_NXZ", "#AFA", "#000", n++);
     drawRect(ctx, "H_NYZ", "#AAF", "#000", n++);
+    drawRect(ctx, "II", "#FFF", "#000", n++);
 
     n = 128 + 48;
     drawCpp(ctx, 'I', 'X', n++);
@@ -262,6 +265,7 @@ function draw(ctx) {
     drawCpp(ctx, 'Z', 'X', n++);
     drawCpp(ctx, 'Z', 'Y', n++);
     drawCpp(ctx, 'Z', 'Z', n++);
+    drawRect(ctx, "II_ERR", "#FFF", "#000", n++);
 }
 
 draw(document.getElementById('cv').getContext('2d'))

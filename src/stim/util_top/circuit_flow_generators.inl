@@ -316,6 +316,9 @@ void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
         case GateType::H_NXZ:
         case GateType::H_NYZ:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::X:
         case GateType::Y:
         case GateType::Z:

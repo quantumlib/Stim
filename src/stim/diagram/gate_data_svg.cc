@@ -36,6 +36,8 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"MRY", {1, "MR", "Y", "", "black", "white", 0, 14, 0}});
     result.insert({"MR", {1, "MR", "", "", "black", "white", 24, 16, 0}});
 
+    result.insert({"I_ERROR", {1, "ERR", "I", "", "white", "black", 0, 10, 0}});
+    result.insert({"II_ERROR", {1, "ERR", "II", "", "white", "black", 10, 10, 0}});
     result.insert({"X_ERROR", {1, "ERR", "X", "", "pink", "black", 0, 10, 0}});
     result.insert({"Y_ERROR", {1, "ERR", "Y", "", "pink", "black", 0, 10, 0}});
     result.insert({"Z_ERROR", {1, "ERR", "Z", "", "pink", "black", 0, 10, 0}});
@@ -67,6 +69,7 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"SQRT_XX_DAG", {1, "√XX", "", "†", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_YY_DAG", {1, "√YY", "", "†", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_ZZ_DAG", {1, "√ZZ", "", "†", "white", "black", 0, 10, 0}});
+    result.insert({"II", {1, "II", "", "", "white", "gray", 0, 10, 0}});
 
     result.insert({"I", {1, "I", "", "", "white", "black", 0, 10, 0}});
     result.insert({"C_XYZ", {1, "C", "XYZ", "", "white", "black", 18, 10, 0}});

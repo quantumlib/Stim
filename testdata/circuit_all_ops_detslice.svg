@@ -361,6 +361,11 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="3274.8" y="96">√ZZ<tspan baseline-shift="super" font-size="10">†</tspan></text>
 <rect x="3322.8" y="80" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="3338.8" y="96">√ZZ<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<path d="M3402.8,96 L3466.8,96 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="3386.8" y="80" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="3402.8" y="96" fill="gray">II</text>
+<rect x="3450.8" y="80" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="3466.8" y="96" fill="gray">II</text>
 <path d="M2808.8,288 C2824.8 233.6,2767.2 128,2712.8 112 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="2808.8" cy="288" r="12" stroke="black" fill="white"/>
 <path d="M2796.8,288 L2820.8,288 M2808.8,276 L2808.8,300 " stroke="black"/>
@@ -443,6 +448,15 @@
 <rect x="4361.2" y="144" width="224" height="32" stroke="black" fill="#800000"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="14" x="4473.2" y="160" fill="white">HERALDED_PAULI_CHANNEL_1</text>
 <text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4473.2" y="180">0.01,0.02,0.03,0.04</text>
+<rect x="4425.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="4441.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">I</tspan></text>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4441.2" y="180">0.06</text>
+<path d="M4505.2,160 L4569.2,160 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="4489.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="10" x="4505.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">II</tspan></text>
+<rect x="4553.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="10" x="4569.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">II</tspan></text>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4569.2" y="180">0.07</text>
 <path d="M176,625.6 C192 571.2,134.4 465.6,80 449.6 L144,449.6 " fill="none" stroke="black" stroke-width="5"/>
 <rect x="160" y="609.6" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="176" y="625.6" fill="white">MPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>

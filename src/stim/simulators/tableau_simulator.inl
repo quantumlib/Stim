@@ -1708,6 +1708,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             do_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             do_I(inst);
             break;
         case GateType::X:

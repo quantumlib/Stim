@@ -151,6 +151,9 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::X:
         case GateType::Y:
         case GateType::Z:
