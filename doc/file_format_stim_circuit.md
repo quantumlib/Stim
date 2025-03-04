@@ -56,8 +56,9 @@ An *instruction* is composed of a name,
 then (introduced in stim v1.15) an optional tag inside square brackets,
 then an optional comma-separated list of arguments inside of parentheses,
 then a list of space-separated targets.
-For example, the line `X_ERROR(0.1) 5 6` is an instruction with a name (`X_ERROR`),
-one argument (`0.1`), and two targets (`5` and `6`).
+For example, the line `X_ERROR[test](0.1) 5 6` is an instruction with a
+name (`X_ERROR`), a tag (`test`), one argument (`0.1`), and two targets
+(`5` and `6`).
 
 ```
 <INSTRUCTION> ::= <NAME> <TAG>? <PARENS_ARGUMENTS>? <TARGETS>

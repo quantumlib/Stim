@@ -46,13 +46,16 @@ Also, each line may be indented with spacing characters and may end with a comme
 ```
 
 An *instruction* is composed of a name,
+then (introduced in stim v1.15) an optional tag inside square brackets,
 then an optional comma-separated list of arguments inside of parentheses,
 then a list of space-separated targets.
-For example, the line `error(0.1) D5 D6 L0` is an instruction with a name (`error`),
-one argument (`0.1`), and three targets (`D5`, `D6`, and `L0`).
+For example, the line `error[test](0.1) D5 D6 L0` is an instruction with
+a name (`error`), a tag (`test`), one argument (`0.1`), and three targets
+(`D5`, `D6`, and `L0`).
 
 ```
-<INSTRUCTION> ::= <NAME> <PARENS_ARGUMENTS>? <TARGETS>
+<INSTRUCTION> ::= <NAME> <TAG>? <PARENS_ARGUMENTS>? <TARGETS>
+<TAG> ::= '[' /[^\r\]\n]/* ']'
 <PARENS_ARGUMENTS> ::= '(' <ARGUMENTS> ')' 
 <ARGUMENTS> ::= /[ \t]*/ <ARG> /[ \t]*/ (',' <ARGUMENTS>)?
 <TARGETS> ::= /[ \t]+/ <TARG> <TARGETS>?
@@ -60,6 +63,14 @@ one argument (`0.1`), and three targets (`D5`, `D6`, and `L0`).
 
 An instruction *name* starts with a letter and then contains a series of letters, digits, and underscores.
 Names are case-insensitive.
+
+An instruction *tag* is an arbitrary string enclosed by square brackets.
+Certain characters cannot appear directly in the tag, and must instead be included using escape sequences.
+The closing square bracket character `]` cannot appear directly, and is instead encoded using the escape sequence `\C`.
+The carriage return character cannot appear directly, and is instead encoded using the escape sequence `\r`.
+The line feed character cannot appear directly, and is instead encoded using the escape sequence `\n`.
+The backslash character `\` cannot appear directly, and is instead encoded using the escape sequence `\B`.
+(This backslash escape sequence differs from the common escape sequence `\\` because that sequence causes exponential explosions when escaping multiple times.)
 
 An *argument* is a double precision floating point number.
 
