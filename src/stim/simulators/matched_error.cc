@@ -35,6 +35,9 @@ void print_pauli_product(std::ostream &out, const std::vector<GateTargetWithCoor
 void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocation &e, const char *indent) {
     out << indent << "CircuitErrorLocation {\n";
 
+    if (!e.noise_tag.empty()) {
+        out << indent << "    noise_tag: " << e.noise_tag << "\n";
+    }
     if (!e.flipped_pauli_product.empty()) {
         out << indent << "    flipped_pauli_product: ";
         print_pauli_product(out, e.flipped_pauli_product);
@@ -159,6 +162,11 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitTargetsInsideInst
     } else {
         out << gate_data.name;
     }
+    if (!e.gate_tag.empty()) {
+        out << '[';
+        write_tag_escaped_string_to(e.gate_tag, out);
+        out << ']';
+    }
     if (!e.args.empty()) {
         out << '(' << comma_sep(e.args) << ')';
     }
@@ -201,7 +209,7 @@ bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
            stack_frames == other.stack_frames;
 }
 bool CircuitTargetsInsideInstruction::operator==(const CircuitTargetsInsideInstruction &other) const {
-    return gate_type == other.gate_type && target_range_start == other.target_range_start &&
+    return gate_type == other.gate_type && gate_tag == other.gate_tag && target_range_start == other.target_range_start &&
            target_range_end == other.target_range_end && targets_in_range == other.targets_in_range &&
            args == other.args;
 }

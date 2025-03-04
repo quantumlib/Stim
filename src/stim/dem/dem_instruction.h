@@ -48,6 +48,7 @@ struct DetectorErrorModel;
 struct DemInstruction {
     SpanRef<const double> arg_data;
     SpanRef<const DemTarget> target_data;
+    std::string_view tag;
     DemInstructionType type;
 
     bool operator<(const DemInstruction &other) const;

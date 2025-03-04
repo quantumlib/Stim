@@ -93,6 +93,7 @@ struct FlippedMeasurement {
 struct CircuitTargetsInsideInstruction {
     /// The instruction type.
     GateType gate_type;
+    std::string gate_tag;
 
     /// The parens arguments for the instruction.
     std::vector<double> args;
@@ -116,6 +117,9 @@ struct CircuitTargetsInsideInstruction {
 /// Describes the location of an error within a circuit, with as much extra information
 /// as possible in order to make it easier for users to grok the location.
 struct CircuitErrorLocation {
+    /// The tag on the noise instruction.
+    std::string noise_tag;
+
     /// The number of ticks that have been executed by this point.
     uint64_t tick_offset;
 

@@ -368,7 +368,12 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
             } else {
                 ss << "line feed character (0x0A)";
             }
-            ss << " while trying to parse the tag of a '" << name << "' instruction.\n";
+            ss << " while trying to parse the tag of ";
+            if (name.empty()) {
+                ss << "an instruction.\n";
+            } else {
+                ss << "a '" << name << "' instruction.\n";
+            }
             ss << "In tags, use the escape sequence '\\r' for carriage returns and '\\n' for line feeds.";
             throw std::invalid_argument(ss.str());
         } else if (c == '\\') {

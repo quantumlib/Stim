@@ -2106,10 +2106,10 @@ def test_tag_detector_error_model():
         M[test3](0.25) 0
         DETECTOR[test4](1, 2) rec[-1]
     """).detector_error_model()
-    # TODO: propagate tags into detector error model
     assert dem == stim.DetectorErrorModel("""
-        error(0.375) D0
-        detector(1, 2) D0
+        error[test2](0.25) D0
+        error[test3](0.25) D0
+        detector[test4](1, 2) D0
     """)
 
 

@@ -91,7 +91,7 @@ struct ErrorMatcher {
     /// Processes entire circuits.
     void rev_process_circuit(uint64_t reps, const Circuit &block);
 
-    void add_dem_error_terms(SpanRef<const DemTarget> dem_error_terms);
+    void add_dem_error(ErrorEquivalenceClass dem_error);
 };
 
 }  // namespace stim

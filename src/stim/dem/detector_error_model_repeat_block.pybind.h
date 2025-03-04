@@ -24,6 +24,7 @@ namespace stim_pybind {
 struct ExposedDemRepeatBlock {
     uint64_t repeat_count;
     stim::DetectorErrorModel body;
+    std::string tag;
 
     stim::DetectorErrorModel body_copy();
     std::string repr() const;

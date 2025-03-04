@@ -132,11 +132,15 @@ stim::DetectorErrorModel ExposedDemRepeatBlock::body_copy() {
 }
 std::string ExposedDemRepeatBlock::repr() const {
     std::stringstream out;
-    out << "stim.DemRepeatBlock(" << repeat_count << ", " << detector_error_model_repr(body) << ")";
+    out << "stim.DemRepeatBlock(" << repeat_count << ", " << detector_error_model_repr(body);
+    if (!tag.empty()) {
+        out << ", tag=" << pybind11::cast<std::string>(pybind11::repr(pybind11::cast(tag)));
+    }
+    out << ")";
     return out.str();
 }
 bool ExposedDemRepeatBlock::operator==(const ExposedDemRepeatBlock &other) const {
-    return repeat_count == other.repeat_count && body == other.body;
+    return repeat_count == other.repeat_count && body == other.body && tag == other.tag;
 }
 bool ExposedDemRepeatBlock::operator!=(const ExposedDemRepeatBlock &other) const {
     return !(*this == other);

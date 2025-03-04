@@ -20,8 +20,6 @@
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <queue>
-#include <set>
 #include <stim/stabilizers/pauli_string.h>
 #include <vector>
 
@@ -30,10 +28,30 @@
 #include "stim/dem/detector_error_model.h"
 #include "stim/mem/fixed_cap_vector.h"
 #include "stim/mem/monotonic_buffer.h"
-#include "stim/mem/simd_util.h"
 #include "stim/mem/sparse_xor_vec.h"
 
 namespace stim {
+
+struct ErrorEquivalenceClass {
+    SpanRef<const DemTarget> targets;
+    std::string_view tag;
+
+    inline bool operator==(const ErrorEquivalenceClass &other) const {
+        return targets == other.targets && tag == other.tag;
+    }
+    inline bool operator!=(const ErrorEquivalenceClass &other) const {
+        return !(*this == other);
+    }
+    inline bool operator<(const ErrorEquivalenceClass &other) const {
+        if (targets != other.targets) {
+            return targets < other.targets;
+        }
+        if (tag != other.tag) {
+            return tag < other.tag;
+        }
+        return false;
+    }
+};
 
 /// This class is responsible for iterating backwards over a circuit, tracking which detectors are currently
 /// sensitive to an X or Z error on each qubit. This is done by having a SparseXorVec for the X and Z
@@ -108,7 +126,7 @@ struct ErrorAnalyzer {
     DetectorErrorModel flushed_reversed_model;
 
     /// Recorded errors. Independent probabilities of flipping various sets of detectors.
-    std::map<SpanRef<const DemTarget>, double> error_class_probabilities;
+    std::map<ErrorEquivalenceClass, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 
@@ -241,7 +259,7 @@ struct ErrorAnalyzer {
 
     /// Processes the instructions in a circuit multiple times.
     /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
-    void run_loop(const Circuit &loop, uint64_t iterations);
+    void run_loop(const Circuit &loop, uint64_t iterations, std::string_view tag);
 
    private:
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
@@ -253,33 +271,34 @@ struct ErrorAnalyzer {
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
     void check_for_gauge(
-        const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit);
+        const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit, std::string_view tag);
     /// Checks if the given sparse vectors are equal. If they aren't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
     void check_for_gauge(
         SparseXorVec<DemTarget> &potential_gauge_summand_1,
-        SparseXorVec<DemTarget> &potential_gauge_summand_2,
+        const SparseXorVec<DemTarget> &potential_gauge_summand_2,
         const char *context_op,
-        uint64_t context_qubit);
+        uint64_t context_qubit,
+        std::string_view tag);
 
     /// Empties error_class_probabilities into flushed_reversed_model.
     void flush();
     /// Adds (or folds) an error mechanism into error_class_probabilities.
-    SpanRef<const DemTarget> add_error(double probability, SpanRef<const DemTarget> flipped_sorted);
+    ErrorEquivalenceClass add_error(double probability, SpanRef<const DemTarget> flipped_sorted, std::string_view tag);
     /// Adds (or folds) an error mechanism equal into error_class_probabilities.
     /// The error is defined as the xor of two sparse vectors, because this is a common situation.
     /// Deals with the details of efficiently computing the xor of the vectors with minimal allocations.
-    SpanRef<const DemTarget> add_xored_error(
-        double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2);
+    ErrorEquivalenceClass add_xored_error(
+        double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2, std::string_view tag);
     /// Adds an error mechanism into error_class_probabilities.
     /// The error mechanism is not passed as an argument but is instead the current tail of `this->mono_buf`.
-    SpanRef<const DemTarget> add_error_in_sorted_jagged_tail(double probability);
+    ErrorEquivalenceClass add_error_in_sorted_jagged_tail(double probability, std::string_view tag);
     /// Saves the current tail of the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Returns:
     ///    A range over the stored data.
-    SpanRef<const DemTarget> mono_dedupe_store_tail();
+    ErrorEquivalenceClass mono_dedupe_store_tail(std::string_view tag);
     /// Saves data to the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Args:
@@ -287,7 +306,7 @@ struct ErrorAnalyzer {
     ///
     /// Returns:
     ///    A range over the stored data.
-    SpanRef<const DemTarget> mono_dedupe_store(SpanRef<const DemTarget> sorted);
+    ErrorEquivalenceClass mono_dedupe_store(ErrorEquivalenceClass sorted);
 
     /// Adds each given error, and also each possible combination of the given errors, to the possible errors.
     ///
@@ -301,7 +320,8 @@ struct ErrorAnalyzer {
     void add_error_combinations(
         std::array<double, 1 << s> probabilities,
         std::array<SpanRef<const DemTarget>, s> basis_errors,
-        bool probabilities_are_disjoint = false);
+        bool probabilities_are_disjoint,
+        std::string_view tag);
 
     /// Handles local decomposition of errors.
     /// When an error has multiple channels, eg. a DEPOLARIZE2 error, this method attempts to express the more complex
@@ -309,7 +329,7 @@ struct ErrorAnalyzer {
     /// Works by rewriting the `stored_ids` argument.
     template <size_t s>
     void decompose_helper_add_error_combinations(
-        const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids);
+        const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids, std::string_view tag);
 
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as
@@ -331,7 +351,7 @@ struct ErrorAnalyzer {
     void undo_MZZ_disjoint_controls_segment(const CircuitInstruction &inst);
     void check_can_approximate_disjoint(
         const char *op_name, SpanRef<const double> probabilities, bool allow_single_component) const;
-    void add_composite_error(double probability, SpanRef<const GateTarget> targets);
+    void add_composite_error(double probability, SpanRef<const GateTarget> targets, std::string_view tag);
     void correlated_error_block(const std::vector<CircuitInstruction> &dats);
 };
 

@@ -67,6 +67,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitErrorLocation.flipped_measurement`](#stim.CircuitErrorLocation.flipped_measurement)
     - [`stim.CircuitErrorLocation.flipped_pauli_product`](#stim.CircuitErrorLocation.flipped_pauli_product)
     - [`stim.CircuitErrorLocation.instruction_targets`](#stim.CircuitErrorLocation.instruction_targets)
+    - [`stim.CircuitErrorLocation.noise_tag`](#stim.CircuitErrorLocation.noise_tag)
     - [`stim.CircuitErrorLocation.stack_frames`](#stim.CircuitErrorLocation.stack_frames)
     - [`stim.CircuitErrorLocation.tick_offset`](#stim.CircuitErrorLocation.tick_offset)
 - [`stim.CircuitErrorLocationStackFrame`](#stim.CircuitErrorLocationStackFrame)
@@ -100,6 +101,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitTargetsInsideInstruction.__init__`](#stim.CircuitTargetsInsideInstruction.__init__)
     - [`stim.CircuitTargetsInsideInstruction.args`](#stim.CircuitTargetsInsideInstruction.args)
     - [`stim.CircuitTargetsInsideInstruction.gate`](#stim.CircuitTargetsInsideInstruction.gate)
+    - [`stim.CircuitTargetsInsideInstruction.tag`](#stim.CircuitTargetsInsideInstruction.tag)
     - [`stim.CircuitTargetsInsideInstruction.target_range_end`](#stim.CircuitTargetsInsideInstruction.target_range_end)
     - [`stim.CircuitTargetsInsideInstruction.target_range_start`](#stim.CircuitTargetsInsideInstruction.target_range_start)
     - [`stim.CircuitTargetsInsideInstruction.targets_in_range`](#stim.CircuitTargetsInsideInstruction.targets_in_range)
@@ -128,6 +130,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemInstruction.__repr__`](#stim.DemInstruction.__repr__)
     - [`stim.DemInstruction.__str__`](#stim.DemInstruction.__str__)
     - [`stim.DemInstruction.args_copy`](#stim.DemInstruction.args_copy)
+    - [`stim.DemInstruction.tag`](#stim.DemInstruction.tag)
     - [`stim.DemInstruction.target_groups`](#stim.DemInstruction.target_groups)
     - [`stim.DemInstruction.targets_copy`](#stim.DemInstruction.targets_copy)
     - [`stim.DemInstruction.type`](#stim.DemInstruction.type)
@@ -3627,6 +3630,7 @@ def __init__(
     flipped_measurement: object,
     instruction_targets: stim.CircuitTargetsInsideInstruction,
     stack_frames: List[stim.CircuitErrorLocationStackFrame],
+    noise_tag: str = '',
 ) -> None:
     """Creates a stim.CircuitErrorLocation.
 
@@ -3661,9 +3665,11 @@ def __init__(
         ...             instruction_repetitions_arg=0,
         ...         ),
         ...     ),
+        ...     noise_tag='test-tag',
         ... )
         >>> print(err)
         CircuitErrorLocation {
+            noise_tag: test-tag
             flipped_pauli_product: X0
             Circuit location stack trace:
                 (after 1 TICKs)
@@ -3759,6 +3765,30 @@ def instruction_targets(
         ...     targets_in_range=(stim.GateTargetWithCoords(0, []),),
         ... )
         True
+    """
+```
+
+<a name="stim.CircuitErrorLocation.noise_tag"></a>
+```python
+# stim.CircuitErrorLocation.noise_tag
+
+# (in class stim.CircuitErrorLocation)
+@property
+def noise_tag(
+    self,
+) -> str:
+    """The tag on the noise instruction that caused the error.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0
+        ...     Y_ERROR[test-tag](0.125) 0
+        ...     M 0
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> err[0].circuit_error_locations[0].noise_tag
+        'test-tag'
     """
 ```
 
@@ -4515,6 +4545,7 @@ def __init__(
     self,
     *,
     gate: str,
+    tag: str = '',
     args: List[float],
     target_range_start: int,
     target_range_end: int,
@@ -4526,6 +4557,7 @@ def __init__(
         >>> import stim
         >>> val = stim.CircuitTargetsInsideInstruction(
         ...     gate='X_ERROR',
+        ...     tag='',
         ...     args=[0.25],
         ...     target_range_start=0,
         ...     target_range_end=1,
@@ -4583,6 +4615,32 @@ def gate(
         >>> loc: stim.CircuitErrorLocation = err[0].circuit_error_locations[0]
         >>> loc.instruction_targets.gate
         'X_ERROR'
+    """
+```
+
+<a name="stim.CircuitTargetsInsideInstruction.tag"></a>
+```python
+# stim.CircuitTargetsInsideInstruction.tag
+
+# (in class stim.CircuitTargetsInsideInstruction)
+@property
+def tag(
+    self,
+) -> str:
+    """Returns the tag of the gate / instruction that was being executed.
+
+    Examples:
+        >>> import stim
+        >>> err = stim.Circuit('''
+        ...     R 0 1
+        ...     X_ERROR[look-at-me-imma-tag](0.25) 0 1
+        ...     M 0 1
+        ...     DETECTOR(2, 3) rec[-1] rec[-2]
+        ...     OBSERVABLE_INCLUDE(0) rec[-1]
+        ... ''').shortest_graphlike_error()
+        >>> loc: stim.CircuitErrorLocation = err[0].circuit_error_locations[0]
+        >>> loc.instruction_targets.tag
+        'look-at-me-imma-tag'
     """
 ```
 
@@ -5693,6 +5751,8 @@ def __init__(
     type: str,
     args: Optional[Iterable[float]] = None,
     targets: Optional[Iterable[stim.DemTarget]] = None,
+    *,
+    tag: str = "",
 ) -> None:
     """Creates or parses a stim.DemInstruction.
 
@@ -5704,15 +5764,18 @@ def __init__(
             "error(0.1)").
         targets: The objects the instruction involves (e.g. the "D0" and "L1" in
             "error(0.1) D0 L1").
+        tag: An arbitrary piece of text attached to the instruction.
 
     Examples:
         >>> import stim
         >>> instruction = stim.DemInstruction(
         ...     'error',
         ...     [0.125],
-        ...     [stim.target_relative_detector_id(5)])
+        ...     [stim.target_relative_detector_id(5)],
+        ...     tag='test-tag',
+        ... )
         >>> print(instruction)
-        error(0.125) D5
+        error[test-tag](0.125) D5
 
         >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
         error(0.125) D5 L6 ^ D4
@@ -5782,6 +5845,30 @@ def args_copy(
         True
         >>> instruction.args_copy() is instruction.args_copy()
         False
+    """
+```
+
+<a name="stim.DemInstruction.tag"></a>
+```python
+# stim.DemInstruction.tag
+
+# (in class stim.DemInstruction)
+@property
+def tag(
+    self,
+) -> str:
+    """Returns the arbitrary text tag attached to the instruction.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error[test-tag](0.125) D0
+        ...     error(0.125) D0
+        ... ''')
+        >>> dem[0].tag
+        'test-tag'
+        >>> dem[1].tag
+        ''
     """
 ```
 
@@ -6795,18 +6882,21 @@ def append(
     instruction: object,
     parens_arguments: object = None,
     targets: List[object] = (),
+    *,
+    tag: str = '',
 ) -> None:
     """Appends an instruction to the detector error model.
 
     Args:
         instruction: Either the name of an instruction, a stim.DemInstruction, or a
-            stim.DemRepeatBlock. The `parens_arguments` and `targets` arguments are
-            given if and only if the instruction is a name.
+            stim.DemRepeatBlock. The `parens_arguments`, `targets`, and 'tag'
+            arguments should be given if and only if the instruction is a name.
         parens_arguments: Numeric values parameterizing the instruction. The numbers
             inside parentheses in a detector error model file (eg. the `0.25` in
             `error(0.25) D0`). This argument can be given either a list of doubles,
             or a single double (which will be implicitly wrapped into a list).
         targets: The instruction targets, such as the `D0` in `error(0.25) D0`.
+        tag: An arbitrary piece of text attached to the repeat instruction.
 
     Examples:
         >>> import stim
@@ -6819,18 +6909,18 @@ def append(
         ...     stim.DemTarget.separator(),
         ...     stim.DemTarget.relative_detector_id(2),
         ...     stim.DemTarget.logical_observable_id(3),
-        ... ])
+        ... ], tag='test-tag')
         >>> print(repr(m))
         stim.DetectorErrorModel('''
             error(0.125) D1
-            error(0.25) D1 ^ D2 L3
+            error[test-tag](0.25) D1 ^ D2 L3
         ''')
 
         >>> m.append("shift_detectors", (1, 2, 3), [5])
         >>> print(repr(m))
         stim.DetectorErrorModel('''
             error(0.125) D1
-            error(0.25) D1 ^ D2 L3
+            error[test-tag](0.25) D1 ^ D2 L3
             shift_detectors(1, 2, 3) 5
         ''')
 
@@ -6840,17 +6930,17 @@ def append(
         >>> print(repr(m))
         stim.DetectorErrorModel('''
             error(0.125) D1
-            error(0.25) D1 ^ D2 L3
+            error[test-tag](0.25) D1 ^ D2 L3
             shift_detectors(1, 2, 3) 5
             repeat 3 {
                 error(0.125) D1
-                error(0.25) D1 ^ D2 L3
+                error[test-tag](0.25) D1 ^ D2 L3
                 shift_detectors(1, 2, 3) 5
             }
             error(0.125) D1
             repeat 3 {
                 error(0.125) D1
-                error(0.25) D1 ^ D2 L3
+                error[test-tag](0.25) D1 ^ D2 L3
                 shift_detectors(1, 2, 3) 5
             }
         ''')
