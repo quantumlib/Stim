@@ -6,6 +6,8 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 import cirq
 import stim
 
+from ._ii_gate import IIGate
+
 
 def _forward_single_str_tag(op: cirq.CircuitOperation) -> str:
     tags = [tag for tag in op.tags if isinstance(tag, str)]
@@ -410,8 +412,10 @@ def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: Lis
 
 
 def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int], tag: str):
-    if g.sub_gate in [cirq.X, cirq.Y, cirq.Z]:
+    if g.sub_gate in [cirq.X, cirq.Y, cirq.Z, cirq.I]:
         c.append(f"{g.sub_gate}_ERROR", t, g.probability, tag=tag)
+    elif isinstance(g.sub_gate, IIGate):
+        c.append(f"II_ERROR", t, g.probability, tag=tag)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
         target_p = [None, stim.target_x, stim.target_y, stim.target_z]
         pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask) if p]

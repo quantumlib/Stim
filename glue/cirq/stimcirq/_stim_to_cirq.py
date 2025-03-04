@@ -18,6 +18,7 @@ import stim
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
+from ._ii_gate import IIGate
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
@@ -499,6 +500,7 @@ class CircuitTranslationTracker:
             ),
             "RZ": gate(cirq.ResetChannel()),
             "I": gate(cirq.I),
+            "II": gate(IIGate()),
             "X": gate(cirq.X),
             "Y": gate(cirq.Y),
             "Z": gate(cirq.Z),
@@ -578,6 +580,8 @@ class CircuitTranslationTracker:
             "X_ERROR": noise(cirq.X.with_probability),
             "Y_ERROR": noise(cirq.Y.with_probability),
             "Z_ERROR": noise(cirq.Z.with_probability),
+            "I_ERROR": noise(cirq.I.with_probability),
+            "II_ERROR": noise(IIGate().with_probability),
             "PAULI_CHANNEL_1": CircuitTranslationTracker.process_pauli_channel_1,
             "PAULI_CHANNEL_2": CircuitTranslationTracker.process_pauli_channel_2,
             "ELSE_CORRELATED_ERROR": not_impl(
