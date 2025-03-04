@@ -1726,6 +1726,9 @@ Circuit stim::generate_test_circuit_with_all_operations() {
         H_XY 0
         H_XZ 1
         H_YZ 2
+        H_NXY 3
+        H_NXZ 4
+        H_NYZ 5
         SQRT_X 0
         SQRT_X_DAG 1
         SQRT_Y 2

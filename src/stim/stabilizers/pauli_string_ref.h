@@ -169,6 +169,9 @@ struct PauliStringRef {
     void do_H_XZ(const CircuitInstruction &inst);
     void do_H_YZ(const CircuitInstruction &inst);
     void do_H_XY(const CircuitInstruction &inst);
+    void do_H_NXY(const CircuitInstruction &inst);
+    void do_H_NXZ(const CircuitInstruction &inst);
+    void do_H_NYZ(const CircuitInstruction &inst);
     void do_C_XYZ(const CircuitInstruction &inst);
     void do_C_NXYZ(const CircuitInstruction &inst);
     void do_C_XNYZ(const CircuitInstruction &inst);

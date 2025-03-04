@@ -532,6 +532,30 @@ void TableauSimulator<W>::do_H_YZ(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_H_NXY(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        inv_state.prepend_H_NXY(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_H_NXZ(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        inv_state.prepend_H_NXZ(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_H_NYZ(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        inv_state.prepend_H_NYZ(q.data);
+    }
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_C_XYZ(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
@@ -1646,6 +1670,15 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::H_YZ:
             do_H_YZ(inst);
+            break;
+        case GateType::H_NXY:
+            do_H_NXY(inst);
+            break;
+        case GateType::H_NXZ:
+            do_H_NXZ(inst);
+            break;
+        case GateType::H_NYZ:
+            do_H_NYZ(inst);
             break;
         case GateType::DEPOLARIZE1:
             do_DEPOLARIZE1(inst);

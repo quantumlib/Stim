@@ -15,6 +15,9 @@
     - [C_ZYNX](#C_ZYNX)
     - [C_ZYX](#C_ZYX)
     - [H](#H)
+    - [H_NXY](#H_NXY)
+    - [H_NXZ](#H_NXZ)
+    - [H_NYZ](#H_NYZ)
     - [H_XY](#H_XY)
     - [H_XZ](#H_XZ)
     - [H_YZ](#H_YZ)
@@ -777,6 +780,165 @@ Decomposition (into H, S, CX, M, R):
     H 0
     
     # (The decomposition is trivial because this gate is in the target gate set.)
+    
+
+<a name="H_NXY"></a>
+### The 'H_NXY' Gate
+
+A variant of the Hadamard gate that swaps the -X and +Y axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    H_NXY 5
+    H_NXY 42
+    H_NXY 5 42
+    
+Stabilizer Generators:
+
+    X -> -Y
+    Z -> -Z
+    
+Bloch Rotation (axis angle):
+
+    Axis: -X+Y
+    Angle: 180°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 180°
+        phi = 0°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(180°) * RotZ(-90°)
+    unitary = I * Y * S_DAG
+
+Unitary Matrix:
+
+    [    , +1  ]
+    [  -i,     ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `H_NXY 0`
+    S 0
+    H 0
+    S 0
+    S 0
+    H 0
+    
+
+<a name="H_NXZ"></a>
+### The 'H_NXZ' Gate
+
+A variant of the Hadamard gate that swaps the -X and +Z axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    H_NXZ 5
+    H_NXZ 42
+    H_NXZ 5 42
+    
+Stabilizer Generators:
+
+    X -> -Z
+    Z -> -X
+    
+Bloch Rotation (axis angle):
+
+    Axis: +X-Z
+    Angle: 180°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 180°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(180°) * RotY(90°) * RotZ(0°)
+    unitary = Z * SQRT_Y * I
+
+Unitary Matrix:
+
+    [-1  , +1  ]
+    [+1  , +1  ] / sqrt(2)
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `H_NXZ 0`
+    S 0
+    S 0
+    H 0
+    S 0
+    S 0
+    
+
+<a name="H_NYZ"></a>
+### The 'H_NYZ' Gate
+
+A variant of the Hadamard gate that swaps the -Y and +Z axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    H_NYZ 5
+    H_NYZ 42
+    H_NYZ 5 42
+    
+Stabilizer Generators:
+
+    X -> -X
+    Z -> -Y
+    
+Bloch Rotation (axis angle):
+
+    Axis: +Y-Z
+    Angle: 180°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = -90°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(-90°) * RotY(90°) * RotZ(-90°)
+    unitary = S_DAG * SQRT_Y * S_DAG
+
+Unitary Matrix:
+
+    [-1  ,   -i]
+    [  +i, +1  ] / sqrt(2)
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `H_NYZ 0`
+    S 0
+    S 0
+    H 0
+    S 0
+    H 0
     
 
 <a name="H_XY"></a>

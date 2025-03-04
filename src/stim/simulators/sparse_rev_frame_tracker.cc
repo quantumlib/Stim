@@ -139,18 +139,21 @@ void SparseUnsignedRevFrameTracker::undo_gate(const CircuitInstruction &inst) {
         case GateType::SQRT_X:
         case GateType::SQRT_X_DAG:
         case GateType::H_YZ:
+        case GateType::H_NYZ:
             undo_H_YZ(inst);
             break;
 
         case GateType::SQRT_Y:
         case GateType::SQRT_Y_DAG:
         case GateType::H:
+        case GateType::H_NXZ:
             undo_H_XZ(inst);
             break;
 
         case GateType::S:
         case GateType::S_DAG:
         case GateType::H_XY:
+        case GateType::H_NXY:
             undo_H_XY(inst);
             break;
 

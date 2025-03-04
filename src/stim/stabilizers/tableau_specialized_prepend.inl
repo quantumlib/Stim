@@ -71,6 +71,24 @@ void Tableau<W>::prepend_H_XY(const size_t q) {
 }
 
 template <size_t W>
+void Tableau<W>::prepend_H_NXY(const size_t q) {
+    xs[q] *= IgnoreAntiCommute<W>(zs[q]);
+    prepend_X(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_H_NXZ(const size_t q) {
+    xs[q].swap_with(zs[q]);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_H_NYZ(const size_t q) {
+    zs[q] *= IgnoreAntiCommute<W>(xs[q]);
+    prepend_Y(q);
+}
+
+template <size_t W>
 void Tableau<W>::prepend_C_XYZ(const size_t q) {
     PauliStringRef<W> x = xs[q];
     PauliStringRef<W> z = zs[q];

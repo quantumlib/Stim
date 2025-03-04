@@ -168,6 +168,27 @@ struct Simplifier {
                 yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::S, {}, ts, inst.tag});
                 break;
+            case GateType::H_NXY:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                break;
+            case GateType::H_NXZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::H_NYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                break;
             case GateType::S:
                 yield({GateType::S, {}, ts, inst.tag});
                 break;

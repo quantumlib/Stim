@@ -1076,18 +1076,21 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::SQRT_X:
         case GateType::SQRT_X_DAG:
         case GateType::H_YZ:
+        case GateType::H_NYZ:
             do_H_YZ(inst);
             break;
 
         case GateType::SQRT_Y:
         case GateType::SQRT_Y_DAG:
         case GateType::H:
+        case GateType::H_NXZ:
             do_H_XZ(inst);
             break;
 
         case GateType::S:
         case GateType::S_DAG:
         case GateType::H_XY:
+        case GateType::H_NXY:
             do_H_XY(inst);
             break;
 

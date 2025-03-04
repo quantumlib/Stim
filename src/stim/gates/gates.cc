@@ -54,6 +54,7 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::H:
+        case GateType::H_NXZ:
         case GateType::DEPOLARIZE1:
         case GateType::DEPOLARIZE2:
         case GateType::Y_ERROR:
@@ -84,11 +85,16 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
             return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
         case GateType::YCZ:
             return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
-        case GateType::H_XY:
-            return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
-        case GateType::H_YZ:
-            return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
 
+        case GateType::H_XY:
+            return GateType::H_NYZ;
+        case GateType::H_NYZ:
+            return GateType::H_XY;
+
+        case GateType::H_YZ:
+            return GateType::H_NXY;
+        case GateType::H_NXY:
+            return GateType::H_YZ;
 
         case GateType::C_XYZ:
             return GateType::C_ZNYX;
