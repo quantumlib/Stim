@@ -9201,8 +9201,8 @@ def hadamard_conjugated(
         stim.gate_data('DEPOLARIZE1')
         >>> stim.gate_data('X_ERROR').hadamard_conjugated()
         stim.gate_data('Z_ERROR')
-        >>> stim.gate_data('H_XY').hadamard_conjugated(unsigned=True)
-        stim.gate_data('H_YZ')
+        >>> stim.gate_data('H_XY').hadamard_conjugated()
+        stim.gate_data('H_NYZ')
         >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
         stim.gate_data('DETECTOR')
     """

@@ -410,6 +410,7 @@ class EditorState {
             let gate = GATE_MAP.get(`MARK${basis}`).withDefaultArgument(markIndex);
             layer.put(new Operation(
                 gate,
+                '',
                 new Float32Array([markIndex]),
                 new Uint32Array([q]),
             ));
@@ -454,6 +455,7 @@ class EditorState {
         for (let key of this.focusedSet.keys()) {
             newCircuit.layers[this.curLayer].put(new Operation(
                 gate,
+                '',
                 new Float32Array(gate_args),
                 new Uint32Array([c2q.get(key)]),
             ));
@@ -494,6 +496,7 @@ class EditorState {
                 let q1 = c2q.get(`${x1},${y1}`);
                 newCircuit.layers[this.curLayer].put(new Operation(
                     gate,
+                    '',
                     new Float32Array(gate_args),
                     new Uint32Array([q0, q1]),
                 ));
@@ -537,7 +540,7 @@ class EditorState {
             qs[k] = c2q.get(`${x},${y}`);
         }
 
-        newCircuit.layers[this.curLayer].put(new Operation(gate, new Float32Array(gate_args), qs));
+        newCircuit.layers[this.curLayer].put(new Operation(gate, '', new Float32Array(gate_args), qs));
         this.commit_or_preview(newCircuit, preview);
     }
 
@@ -603,6 +606,7 @@ class EditorState {
                 if (transition !== undefined) {
                     layer.markers.push(new Operation(
                         GATE_MAP.get(isDet ? 'DETECTOR' : 'OBSERVABLE_INCLUDE'),
+                        '',
                         new Float32Array([argIndex]),
                         op.id_targets,
                     ));
@@ -622,7 +626,11 @@ class EditorState {
         let before = k === 0 ? new PropagatedPauliFrameLayer(new Map(), new Set(), []) : prop.atLayer(k - 0.5);
         let after = prop.atLayer(k + 0.5);
         let layer = newCircuit.layers[k];
+        let processedQubits = new Set();
         for (let q of new Set([...before.bases.keys(), ...after.bases.keys()])) {
+            if (processedQubits.has(q)) {
+                continue;
+            }
             let b1 = before.bases.get(q);
             let b2 = after.bases.get(q);
             let op = layer.id_ops.get(q);
@@ -632,20 +640,69 @@ class EditorState {
             let name = op.gate.name;
             let basis = undefined;
             if (name === 'R' || name === 'M' || name === 'MR') {
-                basis = 'Z'
+                basis = 'Z';
             } else if (name === 'RX' || name === 'MX' || name === 'MRX') {
-                basis = 'X'
+                basis = 'X';
             } else if (name === 'RY' || name === 'MY' || name === 'MRY') {
-                basis = 'Y'
+                basis = 'Y';
+            } else if (name === 'MXX' || name === 'MYY' || name === 'MZZ') {
+                basis = name[1];
+                let score = 0;
+                for (let q2 of op.id_targets) {
+                    if (processedQubits.has(q2)) {
+                        score = -1;
+                        break;
+                    }
+                    score += before.bases.get(q2) === basis;
+                }
+                if (score === 2) {
+                    for (let q2 of op.id_targets) {
+                        processedQubits.add(q2);
+                        layer.markers.push(new Operation(
+                            GATE_MAP.get(`MARK${basis}`),
+                            '',
+                            new Float32Array([marker_index]),
+                            new Uint32Array([q2]),
+                        ));
+                    }
+                }
+                continue;
+            } else if (name.startsWith('MPP:')) {
+                let score = 0;
+                for (let k = 0; k < op.id_targets.length; k++) {
+                    let q2 = op.id_targets[k];
+                    basis = name[k + 4];
+                    if (processedQubits.has(q2)) {
+                        score = -1;
+                        break;
+                    }
+                    score += before.bases.get(q2) === basis;
+                }
+                if (score > op.id_targets.length / 2) {
+                    for (let k = 0; k < op.id_targets.length; k++) {
+                        let q2 = op.id_targets[k];
+                        basis = name[k + 4];
+                        processedQubits.add(q2);
+                        layer.markers.push(new Operation(
+                            GATE_MAP.get(`MARK${basis}`),
+                            '',
+                            new Float32Array([marker_index]),
+                            new Uint32Array([q2]),
+                        ));
+                    }
+                }
+                continue;
             } else {
                 continue;
             }
             if (b1 !== undefined || b2 !== undefined) {
                 layer.markers.push(new Operation(
                     GATE_MAP.get(`MARK${basis}`),
+                    '',
                     new Float32Array([marker_index]),
                     new Uint32Array([q]),
                 ));
+                processedQubits.add(q);
             }
         }
 
@@ -666,13 +723,13 @@ class EditorState {
             for (let det_id = 0; det_id < dets.length; det_id++) {
                 let prop = PropagatedPauliFrames.fromMeasurements(circuit, dets[det_id].mids);
                 if (prop.atLayer(this.curLayer + 0.5).touchesQidSet(focusSetQids)) {
-                    return [prop, new Operation(GATE_MAP.get('DETECTOR'), new Float32Array([det_id]), new Uint32Array([]))];
+                    return [prop, new Operation(GATE_MAP.get('DETECTOR'), '', new Float32Array([det_id]), new Uint32Array([]))];
                 }
             }
             for (let [obs_id, obs_val] of obs.entries()) {
                 let prop = PropagatedPauliFrames.fromMeasurements(circuit, obs_val);
                 if (prop.atLayer(this.curLayer + 0.5).touchesQidSet(focusSetQids)) {
-                    return [prop, new Operation(GATE_MAP.get('OBSERVABLE_INCLUDE'), new Float32Array([obs_id]), new Uint32Array([]))];
+                    return [prop, new Operation(GATE_MAP.get('OBSERVABLE_INCLUDE'), '', new Float32Array([obs_id]), new Uint32Array([]))];
                 }
             }
             return undefined;
@@ -711,6 +768,7 @@ class EditorState {
                 if (transition !== undefined) {
                     layer.markers.push(new Operation(
                         GATE_MAP.get(`MARK${transition}`),
+                        '',
                         new Float32Array([marker_index]),
                         new Uint32Array([q]),
                     ))

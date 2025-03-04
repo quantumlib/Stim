@@ -18,6 +18,7 @@ import stim
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
+from ._ii_gate import IIGate
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
@@ -499,6 +500,7 @@ class CircuitTranslationTracker:
             ),
             "RZ": gate(cirq.ResetChannel()),
             "I": gate(cirq.I),
+            "II": gate(IIGate()),
             "X": gate(cirq.X),
             "Y": gate(cirq.Y),
             "Z": gate(cirq.Z),
@@ -507,8 +509,17 @@ class CircuitTranslationTracker:
             ),
             "H": gate(cirq.H),
             "H_XZ": gate(cirq.H),
+            "H_NXZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.X, True))
+            ),
             "H_YZ": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False))
+            ),
+            "H_NXY": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.Z, True))
+            ),
+            "H_NYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, True))
             ),
             "SQRT_X": gate(cirq.X ** 0.5),
             "SQRT_X_DAG": gate(cirq.X ** -0.5),
@@ -517,8 +528,26 @@ class CircuitTranslationTracker:
             "C_XYZ": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False))
             ),
+            "C_NXYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.X, True))
+            ),
+            "C_XNYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.X, False))
+            ),
+            "C_XYNZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, True))
+            ),
             "C_ZYX": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False))
+            ),
+            "C_NZYX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.Y, True))
+            ),
+            "C_ZNYX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, True))
+            ),
+            "C_ZYNX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.Y, False))
             ),
             "SQRT_XX": gate(cirq.XX ** 0.5),
             "SQRT_YY": gate(cirq.YY ** 0.5),
@@ -551,6 +580,8 @@ class CircuitTranslationTracker:
             "X_ERROR": noise(cirq.X.with_probability),
             "Y_ERROR": noise(cirq.Y.with_probability),
             "Z_ERROR": noise(cirq.Z.with_probability),
+            "I_ERROR": noise(cirq.I.with_probability),
+            "II_ERROR": noise(IIGate().with_probability),
             "PAULI_CHANNEL_1": CircuitTranslationTracker.process_pauli_channel_1,
             "PAULI_CHANNEL_2": CircuitTranslationTracker.process_pauli_channel_2,
             "ELSE_CORRELATED_ERROR": not_impl(

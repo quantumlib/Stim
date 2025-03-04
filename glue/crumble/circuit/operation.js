@@ -22,12 +22,13 @@ function expandBase(base) {
 class Operation {
     /**
      * @param {!Gate} gate
+     * @param {!string} tag
      * @param {!Float32Array} args
      * @param {!Uint32Array} targets
      */
-    constructor(gate, args, targets) {
+    constructor(gate, tag, args, targets) {
         if (!(gate instanceof Gate)) {
-            throw new Error('!(gate instanceof Gate)');
+            throw new Error(`!(gate instanceof Gate) gate=${gate}`);
         }
         if (!(args instanceof Float32Array)) {
             throw new Error('!(args instanceof Float32Array)');
@@ -36,6 +37,7 @@ class Operation {
             throw new Error('!(targets instanceof Uint32Array)');
         }
         this.gate = gate;
+        this.tag = tag;
         this.args = args;
         this.id_targets = targets;
     }
@@ -44,7 +46,7 @@ class Operation {
      * @returns {!string}
      */
     toString() {
-        return `${this.gate.name}(${[...this.args].join(', ')}) ${[...this.id_targets].join(' ')}`;
+        return `${this.gate.name}[${this.tag}](${[...this.args].join(', ')}) ${[...this.id_targets].join(' ')}`;
     }
 
     /**
@@ -150,6 +152,10 @@ class Operation {
         ctx.save();
         try {
             this.gate.drawer(this, qubitCoordsFunc, ctx);
+            if (this.tag !== '' && this.id_targets.length > 0) {
+                let [x, y] = qubitCoordsFunc(this.id_targets[0]);
+                ctx.fillText(this.tag, x, y + 16);
+            }
         } finally {
             ctx.restore();
         }

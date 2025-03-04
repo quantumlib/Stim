@@ -55,7 +55,7 @@ Pauli Mixture:
 Examples:
 
     # Apply 1-qubit depolarization to qubit 0 using p=1%
-    DEPOLARIZE2(0.01) 0
+    DEPOLARIZE1(0.01) 0
 
     # Apply 1-qubit depolarization to qubit 2
     # Separately apply 1-qubit depolarization to qubits 3 and 5
@@ -125,6 +125,84 @@ Examples:
 
     # Maximally mix qubits 0 through 3
     DEPOLARIZE2(0.9375) 0 1 2 3
+)MARKDOWN",
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "I_ERROR",
+            .id = GateType::I_ERROR,
+            .best_candidate_inverse_id = GateType::I_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
+Applies an identity with a given probability.
+
+This gate has no effect. It only exists because it can be useful as a
+communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    A single float specifying the probability of applying an I operation.
+
+Targets:
+
+    Qubits to apply identity noise to.
+
+Pauli Mixture:
+
+    1-p: I
+     p : I
+
+Examples:
+
+    I_ERROR(0.1) 0
+
+    I_ERROR[ACTUALLY_I_AM_LEAKAGE_NOISE_IN_AN_ADVANCED_SIMULATOR](0.1) 0 2 4
+)MARKDOWN",
+            .unitary_data = {},
+            .flow_data = {},
+            .h_s_cx_m_r_decomposition = nullptr,
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "II_ERROR",
+            .id = GateType::II_ERROR,
+            .best_candidate_inverse_id = GateType::II_ERROR,
+            .arg_count = 1,
+            .flags = (GateFlags)(GATE_TARGETS_PAIRS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            .category = "F_Noise Channels",
+            .help = R"MARKDOWN(
+Applies a two-qubit identity with a given probability.
+
+This gate has no effect. It only exists because it can be useful as a
+communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    A single float specifying the probability of applying an II operation.
+
+Targets:
+
+    Qubits to apply identity noise to.
+
+Pauli Mixture:
+
+    1-p: II
+     p : II
+
+Examples:
+
+    II_ERROR(0.1) 0 1
+
+    II_ERROR[ACTUALLY_I_SPECIFY_LEAKAGE_TRANSPORT_FOR_AN_ADVANCED_SIMULATOR](0.1) 0 2 4 6
 )MARKDOWN",
             .unitary_data = {},
             .flow_data = {},

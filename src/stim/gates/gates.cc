@@ -54,10 +54,14 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::H:
+        case GateType::H_NXZ:
         case GateType::DEPOLARIZE1:
         case GateType::DEPOLARIZE2:
         case GateType::Y_ERROR:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::Y:
         case GateType::SQRT_YY:
         case GateType::SQRT_YY_DAG:
@@ -84,14 +88,36 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
             return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
         case GateType::YCZ:
             return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
-        case GateType::C_XYZ:
-            return ignoring_sign ? GateType::C_ZYX : GateType::NOT_A_GATE;
-        case GateType::C_ZYX:
-            return ignoring_sign ? GateType::C_XYZ : GateType::NOT_A_GATE;
+
         case GateType::H_XY:
-            return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
+            return GateType::H_NYZ;
+        case GateType::H_NYZ:
+            return GateType::H_XY;
+
         case GateType::H_YZ:
-            return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
+            return GateType::H_NXY;
+        case GateType::H_NXY:
+            return GateType::H_YZ;
+
+        case GateType::C_XYZ:
+            return GateType::C_ZNYX;
+        case GateType::C_ZNYX:
+            return GateType::C_XYZ;
+
+        case GateType::C_XNYZ:
+            return GateType::C_ZYX;
+        case GateType::C_ZYX:
+            return GateType::C_XNYZ;
+
+        case GateType::C_NXYZ:
+            return GateType::C_ZYNX;
+        case GateType::C_ZYNX:
+            return GateType::C_NXYZ;
+
+        case GateType::C_XYNZ:
+            return GateType::C_NZYX;
+        case GateType::C_NZYX:
+            return GateType::C_XYNZ;
 
         case GateType::X:
             return GateType::Z;
@@ -161,6 +187,8 @@ bool Gate::is_symmetric() const {
 
     if (flags & GATE_TARGETS_PAIRS) {
         switch (id) {
+            case GateType::II:
+            case GateType::II_ERROR:
             case GateType::XCX:
             case GateType::YCY:
             case GateType::CZ:
@@ -262,6 +290,12 @@ std::array<float, 4> Gate::to_axis_angle() const {
         rx /= r;
         ry /= r;
         rz /= r;
+    }
+    if ((rx < 0) + (ry < 0) + (rz < 0) > 1) {
+        rx = -rx;
+        ry = -ry;
+        rz = -rz;
+        rs = -rs;
     }
 
     return {rx, ry, rz, acosf(rs) * 2};

@@ -109,8 +109,46 @@ struct Simplifier {
                 yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::H, {}, ts, inst.tag});
                 break;
+            case GateType::C_NXYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_XNYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                break;
+            case GateType::C_XYNZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
             case GateType::C_ZYX:
                 yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_ZYNX:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_ZNYX:
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_NZYX:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::H:
@@ -129,6 +167,27 @@ struct Simplifier {
                 yield({GateType::H, {}, ts, inst.tag});
                 yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::H_NXY:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                break;
+            case GateType::H_NXZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::H_NYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
                 break;
             case GateType::S:
                 yield({GateType::S, {}, ts, inst.tag});
@@ -417,6 +476,11 @@ struct Simplifier {
         const Gate &g = GATE_DATA[inst.gate_type];
 
         switch (inst.gate_type) {
+            case GateType::I:
+            case GateType::II:
+                // Dropped.
+                break;
+
             case GateType::MPP:
                 decompose_mpp_operation(inst, num_qubits, [&](const CircuitInstruction sub) {
                     simplify_instruction(sub);
@@ -448,6 +512,8 @@ struct Simplifier {
             case GateType::X_ERROR:
             case GateType::Y_ERROR:
             case GateType::Z_ERROR:
+            case GateType::I_ERROR:
+            case GateType::II_ERROR:
             case GateType::PAULI_CHANNEL_1:
             case GateType::PAULI_CHANNEL_2:
             case GateType::E:
@@ -457,6 +523,7 @@ struct Simplifier {
                 // Noise isn't simplified.
                 yield(inst);
                 break;
+
             default: {
                 if (g.flags & GATE_IS_SINGLE_QUBIT_GATE) {
                     simplify_potentially_overlapping_1q_instruction(inst);

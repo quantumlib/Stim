@@ -12,6 +12,9 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"H_YZ", {1, "H", "YZ", "", "white", "black", 22, 12, 0}});
     result.insert({"H", {1, "H", "", "", "white", "black", 0, 10, 0}});
     result.insert({"H_XY", {1, "H", "XY", "", "white", "black", 22, 12, 0}});
+    result.insert({"H_NXY", {1, "H", "NXY", "", "white", "black", 22, 10, 0}});
+    result.insert({"H_NXZ", {1, "H", "NXZ", "", "white", "black", 22, 10, 0}});
+    result.insert({"H_NYZ", {1, "H", "NYZ", "", "white", "black", 22, 10, 0}});
 
     result.insert({"SQRT_X", {1, "√X", "", "", "white", "black", 24, 0}});
     result.insert({"SQRT_Y", {1, "√Y", "", "", "white", "black", 24, 0}});
@@ -33,6 +36,8 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"MRY", {1, "MR", "Y", "", "black", "white", 0, 14, 0}});
     result.insert({"MR", {1, "MR", "", "", "black", "white", 24, 16, 0}});
 
+    result.insert({"I_ERROR", {1, "ERR", "I", "", "white", "black", 0, 10, 0}});
+    result.insert({"II_ERROR", {1, "ERR", "II", "", "white", "black", 10, 10, 0}});
     result.insert({"X_ERROR", {1, "ERR", "X", "", "pink", "black", 0, 10, 0}});
     result.insert({"Y_ERROR", {1, "ERR", "Y", "", "pink", "black", 0, 10, 0}});
     result.insert({"Z_ERROR", {1, "ERR", "Z", "", "pink", "black", 0, 10, 0}});
@@ -64,10 +69,17 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"SQRT_XX_DAG", {1, "√XX", "", "†", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_YY_DAG", {1, "√YY", "", "†", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_ZZ_DAG", {1, "√ZZ", "", "†", "white", "black", 0, 10, 0}});
+    result.insert({"II", {1, "II", "", "", "white", "gray", 0, 10, 0}});
 
     result.insert({"I", {1, "I", "", "", "white", "black", 0, 10, 0}});
     result.insert({"C_XYZ", {1, "C", "XYZ", "", "white", "black", 18, 10, 0}});
+    result.insert({"C_NXYZ", {1, "C", "NXYZ", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_XNYZ", {1, "C", "XNYZ", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_XYNZ", {1, "C", "XYNZ", "", "white", "black", 18, 8, 0}});
     result.insert({"C_ZYX", {1, "C", "ZYX", "", "white", "black", 18, 10, 0}});
+    result.insert({"C_NZYX", {1, "C", "NZYX", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_ZNYX", {1, "C", "ZNYX", "", "white", "black", 18, 8, 0}});
+    result.insert({"C_ZYNX", {1, "C", "ZYNX", "", "white", "black", 18, 8, 0}});
 
     result.insert({"DEPOLARIZE1", {1, "DEP", "1", "", "pink", "black", 0, 10, 0}});
     result.insert({"DEPOLARIZE2", {1, "DEP", "2", "", "pink", "black", 0, 10, 0}});

@@ -264,25 +264,43 @@
 <rect x="1462.4" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1478.4" y="256">C<tspan baseline-shift="sub" font-size="10">XYZ</tspan></text>
 <rect x="1366.4" y="64" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1382.4" y="80">C<tspan baseline-shift="sub" font-size="10">ZYX</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1382.4" y="80">C<tspan baseline-shift="sub" font-size="8">NXYZ</tspan></text>
 <rect x="1430.4" y="64" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1446.4" y="80">H<tspan baseline-shift="sub" font-size="12">XY</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1446.4" y="80">C<tspan baseline-shift="sub" font-size="8">XNYZ</tspan></text>
 <rect x="1494.4" y="64" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1510.4" y="80">H</text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1510.4" y="80">C<tspan baseline-shift="sub" font-size="8">XYNZ</tspan></text>
 <rect x="1558.4" y="64" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1574.4" y="80">H<tspan baseline-shift="sub" font-size="12">YZ</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1574.4" y="80">C<tspan baseline-shift="sub" font-size="10">ZYX</tspan></text>
+<rect x="1622.4" y="64" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1638.4" y="80">C<tspan baseline-shift="sub" font-size="8">NZYX</tspan></text>
+<rect x="1686.4" y="64" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1702.4" y="80">C<tspan baseline-shift="sub" font-size="8">ZNYX</tspan></text>
+<rect x="1750.4" y="64" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1766.4" y="80">C<tspan baseline-shift="sub" font-size="8">ZYNX</tspan></text>
 <rect x="1476.4" y="256" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="1492.4" y="272">√X</text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1492.4" y="272">H<tspan baseline-shift="sub" font-size="12">XY</tspan></text>
 <rect x="1380.4" y="80" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1396.4" y="96">√X<tspan baseline-shift="super" font-size="14">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1396.4" y="96">H</text>
 <rect x="1444.4" y="80" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="1460.4" y="96">√Y</text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1460.4" y="96">H<tspan baseline-shift="sub" font-size="12">YZ</tspan></text>
 <rect x="1508.4" y="80" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1524.4" y="96">√Y<tspan baseline-shift="super" font-size="14">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1524.4" y="96">H<tspan baseline-shift="sub" font-size="10">NXY</tspan></text>
 <rect x="1572.4" y="80" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1588.4" y="96">S</text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1588.4" y="96">H<tspan baseline-shift="sub" font-size="10">NXZ</tspan></text>
 <rect x="1636.4" y="80" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="26" x="1652.4" y="96">S<tspan baseline-shift="super" font-size="14">†</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="22" x="1652.4" y="96">H<tspan baseline-shift="sub" font-size="10">NYZ</tspan></text>
+<rect x="1490.4" y="272" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="1506.4" y="288">√X</text>
+<rect x="1394.4" y="96" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1410.4" y="112">√X<tspan baseline-shift="super" font-size="14">†</tspan></text>
+<rect x="1458.4" y="96" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="1474.4" y="112">√Y</text>
+<rect x="1522.4" y="96" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="1538.4" y="112">√Y<tspan baseline-shift="super" font-size="14">†</tspan></text>
+<rect x="1586.4" y="96" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1602.4" y="112">S</text>
+<rect x="1650.4" y="96" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="26" x="1666.4" y="112">S<tspan baseline-shift="super" font-size="14">†</tspan></text>
 <path d="M2780.8,256 C2796.8 201.6,2739.2 96,2684.8 80 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="2780.8" cy="256" r="12" stroke="none" fill="black"/>
 <path d="M2775.35,250.545 L2786.25,261.455 M2786.25,250.545 L2775.35,261.455 " stroke="white" stroke-width="4"/>
@@ -343,6 +361,11 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="3274.8" y="96">√ZZ<tspan baseline-shift="super" font-size="10">†</tspan></text>
 <rect x="3322.8" y="80" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="3338.8" y="96">√ZZ<tspan baseline-shift="super" font-size="10">†</tspan></text>
+<path d="M3402.8,96 L3466.8,96 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="3386.8" y="80" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="3402.8" y="96" fill="gray">II</text>
+<rect x="3450.8" y="80" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="3466.8" y="96" fill="gray">II</text>
 <path d="M2808.8,288 C2824.8 233.6,2767.2 128,2712.8 112 " fill="none" stroke="black" stroke-width="5"/>
 <circle cx="2808.8" cy="288" r="12" stroke="black" fill="white"/>
 <path d="M2796.8,288 L2820.8,288 M2808.8,276 L2808.8,300 " stroke="black"/>
@@ -425,6 +448,15 @@
 <rect x="4361.2" y="144" width="224" height="32" stroke="black" fill="#800000"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="14" x="4473.2" y="160" fill="white">HERALDED_PAULI_CHANNEL_1</text>
 <text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4473.2" y="180">0.01,0.02,0.03,0.04</text>
+<rect x="4425.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="4441.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">I</tspan></text>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4441.2" y="180">0.06</text>
+<path d="M4505.2,160 L4569.2,160 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="4489.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="10" x="4505.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">II</tspan></text>
+<rect x="4553.2" y="144" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="10" x="4569.2" y="160">ERR<tspan baseline-shift="sub" font-size="10">II</tspan></text>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="10" stroke="red" x="4569.2" y="180">0.07</text>
 <path d="M176,625.6 C192 571.2,134.4 465.6,80 449.6 L144,449.6 " fill="none" stroke="black" stroke-width="5"/>
 <rect x="160" y="609.6" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="176" y="625.6" fill="white">MPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>

@@ -314,6 +314,10 @@ void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
             cur_loc.flipped_pauli_product.clear();
             break;
         }
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
+            // No effect.
+            break;
         case GateType::X_ERROR:
             err_xyz(op, TARGET_PAULI_X_BIT);
             break;

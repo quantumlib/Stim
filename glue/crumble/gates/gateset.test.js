@@ -29,6 +29,7 @@ test("gateset.expected_gates", () => {
     expectedGates.add("RZ");
     expectedGates.add("MZ");
     expectedGates.add("MRZ");
+    expectedGates.add("ERR");
 
     // Special handling.
     expectedGates.delete("MPP");
@@ -43,7 +44,12 @@ test("gateset.allDrawCallsRun", () => {
 
     let ctx = document.createElement('canvas').getContext('2d');
     for (let gate of GATE_MAP.values()) {
-        let op = new Operation(gate, new Float32Array([1e-3]), new Uint32Array([5, 6]));
+        let op = new Operation(
+            gate,
+            '',
+            new Float32Array([1e-3]),
+            new Uint32Array([5, 6]),
+        );
         assertThat(() => {
             gate.drawer(op, q => [2 * q, q + 1], ctx);
         }).withInfo(gate.name).runsWithoutThrowingAnException();

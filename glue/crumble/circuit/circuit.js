@@ -64,12 +64,13 @@ function splitUncombinedTargets(targets) {
 }
 
 /**
+ * @param {!string} tag
  * @param {!Float32Array} args
  * @param {!Array.<!string>} combinedTargets
  * @param {!boolean} convertIntoOtherGates
  * @returns {!Operation}
  */
-function simplifiedMPP(args, combinedTargets, convertIntoOtherGates) {
+function simplifiedMPP(tag, args, combinedTargets, convertIntoOtherGates) {
     let bases = '';
     let qubits = [];
     for (let t of combinedTargets) {
@@ -98,16 +99,17 @@ function simplifiedMPP(args, combinedTargets, convertIntoOtherGates) {
     if (gate === undefined) {
         gate = make_mpp_gate(bases);
     }
-    return new Operation(gate, args, new Uint32Array(qubits));
+    return new Operation(gate, tag, args, new Uint32Array(qubits));
 }
 
 /**
+ * @param {!string} tag
  * @param {!Float32Array} args
  * @param {!boolean} dag
  * @param {!Array.<!string>} combinedTargets
  * @returns {!Operation}
  */
-function simplifiedSPP(args, dag, combinedTargets) {
+function simplifiedSPP(tag, args, dag, combinedTargets) {
     let bases = '';
     let qubits = [];
     for (let t of combinedTargets) {
@@ -130,7 +132,7 @@ function simplifiedSPP(args, dag, combinedTargets) {
     if (gate === undefined) {
         gate = make_spp_gate(bases, dag);
     }
-    return new Operation(gate, args, new Uint32Array(qubits));
+    return new Operation(gate, tag, args, new Uint32Array(qubits));
 }
 
 
@@ -159,6 +161,7 @@ class Circuit {
      */
     static fromStimCircuit(stimCircuit) {
         let lines = stimCircuit.replaceAll(';', '\n').
+            replaceAll('#!pragma ERR', 'ERR').
             replaceAll('#!pragma MARK', 'MARK').
             replaceAll('#!pragma POLYGON', 'POLYGON').
             replaceAll('_', ' ').
@@ -168,13 +171,23 @@ class Circuit {
             replaceAll(' COORDS', '_COORDS').
             replaceAll(' ERROR', '_ERROR').
             replaceAll('C XYZ', 'C_XYZ').
+            replaceAll('C NXYZ', 'C_NXYZ').
+            replaceAll('C XNYZ', 'C_XNYZ').
+            replaceAll('C XYNZ', 'C_XYNZ').
             replaceAll('H XY', 'H_XY').
             replaceAll('H XZ', 'H_XZ').
             replaceAll('H YZ', 'H_YZ').
+            replaceAll('H NXY', 'H_NXY').
+            replaceAll('H NXZ', 'H_NXZ').
+            replaceAll('H NYZ', 'H_NYZ').
             replaceAll(' INCLUDE', '_INCLUDE').
             replaceAll('SQRT ', 'SQRT_').
             replaceAll(' DAG ', '_DAG ').
-            replaceAll('C ZYX', 'C_ZYX').split('\n');
+            replaceAll('C ZYX', 'C_ZYX').
+            replaceAll('C NZYX', 'C_NZYX').
+            replaceAll('C ZNYX', 'C_ZNYX').
+            replaceAll('C ZYNX', 'C_ZYNX').
+            split('\n');
         let layers = [new Layer()];
         let num_detectors = 0;
         let i2q = new Map();
@@ -224,7 +237,22 @@ class Circuit {
         let processLine = line => {
             let args = [];
             let targets = [];
+            let tag = '';
             let name = '';
+            let firstSpace = line.indexOf(' ');
+            let firstParens = line.indexOf('(');
+            let tagStart = line.indexOf('[');
+            let tagEnd = line.indexOf(']');
+            if (tagStart !== -1 && firstSpace !== -1 && firstSpace < tagStart) {
+                tagStart = -1;
+            }
+            if (tagStart !== -1 && firstParens !== -1 && firstParens < tagStart) {
+                tagStart = -1;
+            }
+            if (tagStart !== -1 && tagEnd > tagStart) {
+                tag = line.substring(tagStart + 1, tagEnd).replaceAll('\\C', ']').replaceAll('\\r', '\r').replaceAll('\\n', '\n').replaceAll('\\B', '\\');
+                line = line.substring(0, tagStart) + ' ' + line.substring(tagEnd + 1)
+            }
             if (line.indexOf(')') !== -1) {
                 let [ab, c] = line.split(')');
                 let [a, b] = ab.split('(');
@@ -265,7 +293,7 @@ class Circuit {
                 let combinedTargets = splitUncombinedTargets(targets);
                 let layer = layers[layers.length - 1]
                 for (let combo of combinedTargets) {
-                    let op = simplifiedMPP(new Float32Array(args), combo);
+                    let op = simplifiedMPP(tag, new Float32Array(args), combo, false);
                     try {
                         layer.put(op, false);
                     } catch (_) {
@@ -292,6 +320,7 @@ class Circuit {
                     let loc = measurement_locs[index];
                     layers[loc.layer].markers.push(
                         new Operation(GATE_MAP.get(name),
+                            tag,
                             new Float32Array([argIndex]),
                             new Uint32Array([loc.targets[0]]),
                         ));
@@ -304,11 +333,11 @@ class Circuit {
                 let layer = layers[layers.length - 1]
                 for (let combo of combinedTargets) {
                     try {
-                        layer.put(simplifiedSPP(new Float32Array(args), dag, combo), false);
+                        layer.put(simplifiedSPP(tag, new Float32Array(args), dag, combo), false);
                     } catch (_) {
                         layers.push(new Layer());
                         layer = layers[layers.length - 1];
-                        layer.put(simplifiedSPP(new Float32Array(args), dag, combo), false);
+                        layer.put(simplifiedSPP(tag, new Float32Array(args), dag, combo), false);
                     }
                 }
                 return;
@@ -342,7 +371,25 @@ class Circuit {
             if (has_feedback) {
                 let clean_targets = [];
                 for (let k = 0; k < targets.length; k += 2) {
-                    if (targets[k].startsWith("rec[") || targets[k + 1].startsWith("rec[")) {
+                    let b0 = targets[k].startsWith("rec[");
+                    let b1 = targets[k + 1].startsWith("rec[");
+                    if (b0 || b1) {
+                        if (!b0) {
+                            layers[layers.length - 1].put(new Operation(
+                                GATE_MAP.get("ERR"),
+                                tag,
+                                new Float32Array([]),
+                                new Uint32Array([targets[k]]),
+                            ));
+                        }
+                        if (!b1) {
+                            layers[layers.length - 1].put(new Operation(
+                                GATE_MAP.get("ERR"),
+                                tag,
+                                new Float32Array([]),
+                                new Uint32Array([targets[k + 1]]),
+                            ));
+                        }
                         console.warn("Feedback isn't supported yet. Ignoring", name, targets[k], targets[k + 1]);
                     } else {
                         clean_targets.push(targets[k]);
@@ -364,7 +411,7 @@ class Circuit {
 
             let layer = layers[layers.length - 1];
             if (gate.num_qubits === undefined) {
-                layer.put(new Operation(gate, a, new Uint32Array(targets)));
+                layer.put(new Operation(gate, tag, a, new Uint32Array(targets)));
             } else {
                 if (targets.length % gate.num_qubits !== 0) {
                     throw new Error("Incorrect number of targets in line " + line);
@@ -375,7 +422,7 @@ class Circuit {
                         sub_targets.reverse();
                     }
                     let qs = new Uint32Array(sub_targets);
-                    let op = new Operation(gate, a, qs);
+                    let op = new Operation(gate, tag, a, qs);
                     try {
                         layer.put(op, false);
                     } catch (_) {
@@ -665,7 +712,7 @@ class Circuit {
             for (let [nameWithArgs, group] of opsByName.entries()) {
                 let targetGroups = [];
 
-                let gateName = nameWithArgs.split('(')[0];
+                let gateName = nameWithArgs.split('(')[0].split('[')[0];
                 if (gateName === 'DETECTOR' || gateName === 'OBSERVABLE_INCLUDE') {
                     continue;
                 }
