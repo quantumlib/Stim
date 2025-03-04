@@ -507,8 +507,17 @@ class CircuitTranslationTracker:
             ),
             "H": gate(cirq.H),
             "H_XZ": gate(cirq.H),
+            "H_NXZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.X, True))
+            ),
             "H_YZ": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False))
+            ),
+            "H_NXY": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.Z, True))
+            ),
+            "H_NYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, True))
             ),
             "SQRT_X": gate(cirq.X ** 0.5),
             "SQRT_X_DAG": gate(cirq.X ** -0.5),
@@ -517,8 +526,26 @@ class CircuitTranslationTracker:
             "C_XYZ": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False))
             ),
+            "C_NXYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.X, True))
+            ),
+            "C_XNYZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, True), z_to=(cirq.X, False))
+            ),
+            "C_XYNZ": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, True))
+            ),
             "C_ZYX": gate(
                 cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False))
+            ),
+            "C_NZYX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.Y, True))
+            ),
+            "C_ZNYX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, True))
+            ),
+            "C_ZYNX": gate(
+                cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, True), z_to=(cirq.Y, False))
             ),
             "SQRT_XX": gate(cirq.XX ** 0.5),
             "SQRT_YY": gate(cirq.YY ** 0.5),
