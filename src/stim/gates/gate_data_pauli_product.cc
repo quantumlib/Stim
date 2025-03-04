@@ -95,6 +95,82 @@ S 1
     add_gate(
         failed,
         Gate{
+            .name = "CPP",
+            .id = GateType::CPP,
+            .best_candidate_inverse_id = GateType::CPP,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_CAN_TARGET_BITS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS |
+                                 GATE_TARGETS_PAIRS),
+            .category = "P_Generalized Pauli Product Gates",
+            .help = R"MARKDOWN(
+The generalized CNOT gate. Negates states in the intersection of Pauli product observables.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    A series of pairs of Pauli products to intersect.
+
+    Each Pauli product is a series of Pauli targets (`[XYZ]#`), record targets (`rec[-#]`),
+    or sweep targets (`sweep[#]`) separated by combiners (`*`). Each product can be negated
+    by prefixing a Pauli target in the product with an inverter (`!`).
+
+    The number of products must be even. CPP X1 Y2 Z3 isn't allowed.
+    Within each pair of products, the pair must commute. CPP X1 Z1 isn't allowed.
+
+Examples:
+
+    # Perform a CNOT gate with qubit 1 as the control and qubit 2 as the target.
+    CPP X1 Z2
+
+    # Perform a CZ gate between qubit 2 and qubit 5, then between qubit 3 and 4.
+    CPP Z2 Z5 Z3 Z4
+
+    # Perform many CX gates, all controlled by qubit 2, targeting qubits 5 through 10.
+    CPP Z2 X5*X6*X7*X8*X9*X10
+
+    # Swap qubit 1 and qubit 5 by negating their overlap with the singlet state.
+    CPP X1*X5 Z1*Z5
+
+    # Negate the amplitude of the |00> state.
+    CPP !Z0 !Z1
+
+    # Measure qubit 0 and do Pauli operations conditioned on the measurement returning TRUE.
+    M 0
+    CPP rec[-1] X1*Y2*Z3
+
+)MARKDOWN",
+            .unitary_data = {},
+            .flow_data =
+                {
+                    // For "CPP X0*Y1 Z2*Z3"
+                    "X___ -> X___",
+                    "Z___ -> Z_ZZ",
+                    "_X__ -> _XZZ",
+                    "_Z__ -> _ZZZ",
+                    "__X_ -> XYX_",
+                    "__Z_ -> __Z_",
+                    "___X -> XY_X",
+                    "___Z -> ___Z",
+                },
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+CX 3 2
+CX 1 0
+S 1
+S 1
+S 1
+CX 2 1
+S 1
+CX 1 0
+CX 3 2
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
             .name = "SPP",
             .id = GateType::SPP,
             .best_candidate_inverse_id = GateType::SPP_DAG,

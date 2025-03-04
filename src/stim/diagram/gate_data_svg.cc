@@ -57,6 +57,22 @@ std::map<std::string_view, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"SPP_DAG[Y]", {1, "SPP†", "Y", "", "black", "white", 0, 10, 0}});
     result.insert({"SPP_DAG[Z]", {1, "SPP†", "Z", "", "black", "white", 0, 10, 0}});
 
+    result.insert({"CPP[I:X]", {1, "CPP", "I", "X", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[I:Y]", {1, "CPP", "I", "Y", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[I:Z]", {1, "CPP", "I", "Z", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[X:I]", {1, "CPP", "X", "I", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[X:X]", {1, "CPP", "X", "X", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[X:Y]", {1, "CPP", "X", "Y", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[X:Z]", {1, "CPP", "X", "Z", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Y:I]", {1, "CPP", "Y", "I", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Y:X]", {1, "CPP", "Y", "X", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Y:Y]", {1, "CPP", "Y", "Y", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Y:Z]", {1, "CPP", "Y", "Z", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Z:I]", {1, "CPP", "Z", "I", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Z:X]", {1, "CPP", "Z", "X", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Z:Y]", {1, "CPP", "Z", "Y", "black", "white", 0, 10, 0}});
+    result.insert({"CPP[Z:Z]", {1, "CPP", "Z", "Z", "black", "white", 0, 10, 0}});
+
     result.insert({"SQRT_XX", {1, "√XX", "", "", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_YY", {1, "√YY", "", "", "white", "black", 0, 10, 0}});
     result.insert({"SQRT_ZZ", {1, "√ZZ", "", "", "white", "black", 0, 10, 0}});

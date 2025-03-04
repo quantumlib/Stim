@@ -403,6 +403,30 @@ cx q[1], q[0];
 measure q[0] -> rec[3];
 cx q[1], q[0];
 // --- end decomposed MPP
+// --- begin decomposed CPP X3*X4*X5 Z3*Z4*Y6 Y7 Y8
+h q[3];
+h q[4];
+h q[5];
+cx q[4], q[3];
+cx q[5], q[3];
+h q[4];
+hyz q[6];
+cx q[6], q[4];
+cz q[3], q[4];
+cx q[6], q[4];
+hyz q[6];
+h q[4];
+cx q[5], q[3];
+cx q[4], q[3];
+h q[3];
+h q[4];
+h q[5];
+hyz q[7];
+hyz q[8];
+cz q[7], q[8];
+hyz q[7];
+hyz q[8];
+// --- end decomposed CPP
 // --- begin decomposed SPP X0*Y1*Z2 X3
 h q[0];
 hyz q[1];
@@ -614,6 +638,24 @@ cx q[1], q[0];
 measure q[0] -> rec[3];
 cx q[1], q[0];
 // --- end decomposed MPP
+hyz q[6];
+cx q[6], q[3];
+cx q[4], q[3];
+h q[4];
+h q[5];
+cx q[5], q[4];
+cz q[3], q[4];
+cx q[5], q[4];
+h q[4];
+h q[5];
+cx q[4], q[3];
+cx q[6], q[3];
+hyz q[6];
+hyz q[8];
+hyz q[7];
+cz q[8], q[7];
+hyz q[8];
+hyz q[7];
 // --- begin decomposed SPP X0*Y1*Z2 X3
 h q[0];
 hyz q[1];

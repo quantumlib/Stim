@@ -60,7 +60,7 @@ def test_targets():
 
 def test_gate_data():
     data = stim.gate_data()
-    assert len(data) == 69
+    assert len(data) == 70
     assert data["CX"].name == "CX"
     assert data["CX"].aliases == ["CNOT", "CX", "ZCX"]
     assert data["X"].is_unitary

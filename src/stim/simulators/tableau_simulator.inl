@@ -63,6 +63,16 @@ void TableauSimulator<W>::do_MPP(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_CPP(const CircuitInstruction &target_data) {
+    decompose_cpp_operation_with_reverse_independence(
+        target_data,
+        inv_state.num_qubits,
+        [&](const CircuitInstruction &inst) {
+            do_gate(inst);
+        });
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_SPP(const CircuitInstruction &target_data) {
     decompose_spp_or_spp_dag_operation(target_data, inv_state.num_qubits, false, [&](const CircuitInstruction &inst) {
         do_gate(inst);
@@ -1539,6 +1549,9 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::MPP:
             do_MPP(inst);
+            break;
+        case GateType::CPP:
+            do_CPP(inst);
             break;
         case GateType::SPP:
             do_SPP(inst);

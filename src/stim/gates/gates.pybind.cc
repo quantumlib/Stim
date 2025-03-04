@@ -609,13 +609,19 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 stim.gate_data('H_YZ')
                 >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
                 stim.gate_data('DETECTOR')
+                >>> stim.gate_data('MPP').hadamard_conjugated()
+                stim.gate_data('MPP')
+                >>> stim.gate_data('CPP').hadamard_conjugated()
+                stim.gate_data('CPP')
+                >>> stim.gate_data('SPP').hadamard_conjugated()
+                stim.gate_data('SPP')
         )DOC")
             .data());
 
     c.def_property_readonly(
         "is_two_qubit_gate",
         [](const Gate &self) -> bool {
-            return self.flags & GATE_TARGETS_PAIRS;
+            return (self.flags & GATE_TARGETS_PAIRS) && !(self.flags & GATE_TARGETS_COMBINERS);
         },
         clean_doc_string(R"DOC(
             Returns whether or not the gate is a two qubit gate.
@@ -650,6 +656,8 @@ void stim_pybind::pybind_gate_data_methods(pybind11::module &m, pybind11::class_
                 >>> stim.gate_data('MPP').is_two_qubit_gate
                 False
                 >>> stim.gate_data('DETECTOR').is_two_qubit_gate
+                False
+                >>> stim.gate_data('CPP').is_two_qubit_gate
                 False
         )DOC")
             .data());

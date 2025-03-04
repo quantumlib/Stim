@@ -428,6 +428,11 @@ struct Simplifier {
                     simplify_instruction(sub);
                 });
                 break;
+            case GateType::CPP:
+                decompose_cpp_operation_with_reverse_independence(inst, num_qubits, [&](const CircuitInstruction sub) {
+                    simplify_instruction(sub);
+                });
+                break;
 
             case GateType::MPAD:
                 // Can't be easily simplified into M.

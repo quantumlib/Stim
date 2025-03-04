@@ -312,7 +312,7 @@ TEST(gate_data, is_symmetric_vs_flow_generators_of_two_qubit_gates) {
         if ((g.flags & stim::GATE_IS_NOISY) && !(g.flags & stim::GATE_PRODUCES_RESULTS)) {
             continue;
         }
-        if (g.flags & GATE_TARGETS_PAIRS) {
+        if ((g.flags & GATE_TARGETS_PAIRS) && !(g.flags & GATE_TARGETS_COMBINERS)) {
             Circuit c1;
             Circuit c2;
             c1.safe_append_u(g.name, {0, 1}, {});
@@ -344,7 +344,7 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
         if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {
             continue;
         }
-        if ((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+        if (((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) && !(g.flags & GATE_TARGETS_COMBINERS)) {
             Circuit c;
             c.safe_append_u(g.name, {0, 1}, {});
             auto key_s = flow_key(c, false);
@@ -358,7 +358,7 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
         if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {
             continue;
         }
-        if ((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+        if (((g.flags & GATE_TARGETS_PAIRS) || (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) && !(g.flags & GATE_TARGETS_COMBINERS)) {
             Circuit c;
             c.safe_append_u("H", {0, 1}, {});
             c.safe_append_u(g.name, {0, 1}, {});
