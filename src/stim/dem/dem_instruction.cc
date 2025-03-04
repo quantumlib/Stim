@@ -105,6 +105,9 @@ bool DemInstruction::operator<(const DemInstruction &other) const {
     if (target_data != other.target_data) {
         return target_data < other.target_data;
     }
+    if (tag != other.tag) {
+        return tag < other.tag;
+    }
     return arg_data < other.arg_data;
 }
 
@@ -119,6 +122,9 @@ bool DemInstruction::approx_equals(const DemInstruction &other, double atol) con
         return false;
     }
     if (type != other.type) {
+        return false;
+    }
+    if (tag != other.tag) {
         return false;
     }
     if (arg_data.size() != other.arg_data.size()) {
@@ -163,6 +169,11 @@ std::ostream &stim::operator<<(std::ostream &out, const DemInstructionType &type
 
 std::ostream &stim::operator<<(std::ostream &out, const DemInstruction &op) {
     out << op.type;
+    if (!op.tag.empty()) {
+        out << '[';
+        write_tag_escaped_string_to(op.tag, out);
+        out << ']';
+    }
     if (!op.arg_data.empty()) {
         out << "(" << comma_sep(op.arg_data) << ")";
     }

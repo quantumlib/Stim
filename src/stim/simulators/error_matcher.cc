@@ -59,16 +59,17 @@ ErrorMatcher::ErrorMatcher(
     }
 }
 
-void ErrorMatcher::add_dem_error_terms(SpanRef<const DemTarget> dem_error_terms) {
-    auto entry = output_map.find(dem_error_terms);
-    if (!dem_error_terms.empty() && (allow_adding_new_dem_errors_to_output_map || entry != output_map.end())) {
+void ErrorMatcher::add_dem_error(ErrorEquivalenceClass dem_error) {
+    auto entry = output_map.find(dem_error.targets);
+    if (!dem_error.targets.empty() && (allow_adding_new_dem_errors_to_output_map || entry != output_map.end())) {
         // We have a desired match! Record it.
         CircuitErrorLocation new_loc = cur_loc;
+        new_loc.noise_tag = dem_error.tag;
         if (cur_op != nullptr) {
             new_loc.instruction_targets.fill_args_and_targets_in_range(*cur_op, qubit_coords_map);
         }
         if (entry == output_map.end()) {
-            dem_targets_buf.append_tail(dem_error_terms);
+            dem_targets_buf.append_tail(dem_error.targets);
             auto stored_key = dem_targets_buf.commit_tail();
             entry = output_map.insert({stored_key, {{}, {}}}).first;
         }
@@ -90,8 +91,8 @@ void ErrorMatcher::err_atom(const CircuitInstruction &effect) {
     }
 
     assert(error_analyzer.error_class_probabilities.size() == 1);
-    SpanRef<const DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
-    add_dem_error_terms(dem_error_terms);
+    ErrorEquivalenceClass dem_error = error_analyzer.error_class_probabilities.begin()->first;
+    add_dem_error(dem_error);
 
     // Restore the pristine state.
     error_analyzer.mono_buf.clear();
@@ -145,14 +146,14 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
         SpanRef<const DemTarget> x_symptoms = error_analyzer.tracker.zs[q].range();
         SpanRef<const DemTarget> z_symptoms = error_analyzer.tracker.xs[q].range();
         if (op.args[0] != 0) {
-            add_dem_error_terms(herald_symptoms);
+            add_dem_error(ErrorEquivalenceClass{herald_symptoms, op.tag});
         }
         if (op.args[1] != 0) {
             error_analyzer.mono_buf.append_tail(herald_symptoms);
             error_analyzer.mono_buf.append_tail(x_symptoms);
             error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
             resolve_paulis_into(&op.targets[k], TARGET_PAULI_X_BIT, cur_loc.flipped_pauli_product);
-            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            add_dem_error(ErrorEquivalenceClass{error_analyzer.mono_buf.tail, op.tag});
             cur_loc.flipped_pauli_product.clear();
             error_analyzer.mono_buf.discard_tail();
         }
@@ -162,7 +163,7 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
             error_analyzer.mono_buf.append_tail(z_symptoms);
             error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
             resolve_paulis_into(&op.targets[k], TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT, cur_loc.flipped_pauli_product);
-            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            add_dem_error(ErrorEquivalenceClass{error_analyzer.mono_buf.tail, op.tag});
             cur_loc.flipped_pauli_product.clear();
             error_analyzer.mono_buf.discard_tail();
         }
@@ -171,7 +172,7 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
             error_analyzer.mono_buf.append_tail(z_symptoms);
             error_analyzer.mono_buf.tail = inplace_xor_sort(error_analyzer.mono_buf.tail);
             resolve_paulis_into(&op.targets[k], TARGET_PAULI_Z_BIT, cur_loc.flipped_pauli_product);
-            add_dem_error_terms(error_analyzer.mono_buf.tail);
+            add_dem_error(ErrorEquivalenceClass{error_analyzer.mono_buf.tail, op.tag});
             cur_loc.flipped_pauli_product.clear();
             error_analyzer.mono_buf.discard_tail();
         }
@@ -271,6 +272,7 @@ void ErrorMatcher::err_m(const CircuitInstruction &op, uint32_t obs_mask) {
 
 void ErrorMatcher::rev_process_instruction(const CircuitInstruction &op) {
     cur_loc.instruction_targets.gate_type = op.gate_type;
+    cur_loc.instruction_targets.gate_tag = op.tag;
     auto flags = GATE_DATA[op.gate_type].flags;
     cur_loc.tick_offset = error_analyzer.num_ticks_in_past;
     cur_op = &op;
