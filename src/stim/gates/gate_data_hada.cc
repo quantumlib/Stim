@@ -132,7 +132,7 @@ Targets:
 
     Qubits to operate on.
 )MARKDOWN",
-            .unitary_data = {{0, 1}, {-i, 0}},
+            .unitary_data = {{0, s + s*i}, {s - s*i, 0}},
             .flow_data = {"-Y", "-Z"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0

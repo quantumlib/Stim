@@ -62,7 +62,7 @@ def test_gate_data_inverse():
         matrix = v.unitary_matrix
         if matrix is not None:
             assert v.is_unitary
-            assert np.allclose(matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6)
+            assert np.allclose(matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6), (v.name, v.inverse.name)
             assert v.inverse == v.generalized_inverse
 
     assert stim.gate_data('H').inverse == stim.gate_data('H')

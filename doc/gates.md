@@ -36,6 +36,7 @@
     - [CY](#CY)
     - [CZ](#CZ)
     - [CZSWAP](#CZSWAP)
+    - [II](#II)
     - [ISWAP](#ISWAP)
     - [ISWAP_DAG](#ISWAP_DAG)
     - [SQRT_XX](#SQRT_XX)
@@ -64,6 +65,8 @@
     - [ELSE_CORRELATED_ERROR](#ELSE_CORRELATED_ERROR)
     - [HERALDED_ERASE](#HERALDED_ERASE)
     - [HERALDED_PAULI_CHANNEL_1](#HERALDED_PAULI_CHANNEL_1)
+    - [II_ERROR](#II_ERROR)
+    - [I_ERROR](#I_ERROR)
     - [PAULI_CHANNEL_1](#PAULI_CHANNEL_1)
     - [PAULI_CHANNEL_2](#PAULI_CHANNEL_2)
     - [X_ERROR](#X_ERROR)
@@ -808,7 +811,7 @@ Stabilizer Generators:
     
 Bloch Rotation (axis angle):
 
-    Axis: -X+Y
+    Axis: +X-Y
     Angle: 180°
     
 Bloch Rotation (Euler angles):
@@ -822,8 +825,8 @@ Bloch Rotation (Euler angles):
 
 Unitary Matrix:
 
-    [    , +1  ]
-    [  -i,     ]
+    [    , +1+i]
+    [+1-i,     ] / sqrt(2)
     
 Decomposition (into H, S, CX, M, R):
 
@@ -1633,6 +1636,49 @@ Decomposition (into H, S, CX, M, R):
     CX 0 1
     CX 1 0
     H 1
+    
+
+<a name="II"></a>
+### The 'II' Gate
+
+A two-qubit identity gate.
+
+Twice as much doing-nothing as the I gate! This gate only exists because it
+can be useful as a communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubit pairs to operate on.
+
+Examples:
+
+    II 0 1
+
+    R 0
+    II[ACTUALLY_A_LEAKAGE_ISWAP] 0 1
+    R 0
+    CX 1 0
+Stabilizer Generators:
+
+    X_ -> X_
+    Z_ -> Z_
+    _X -> _X
+    _Z -> _Z
+    
+Unitary Matrix (little endian):
+
+    [+1  ,     ,     ,     ]
+    [    , +1  ,     ,     ]
+    [    ,     , +1  ,     ]
+    [    ,     ,     , +1  ]
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `II 0 1`
     
 
 <a name="ISWAP"></a>
@@ -2450,7 +2496,7 @@ Pauli Mixture:
 Examples:
 
     # Apply 1-qubit depolarization to qubit 0 using p=1%
-    DEPOLARIZE2(0.01) 0
+    DEPOLARIZE1(0.01) 0
 
     # Apply 1-qubit depolarization to qubit 2
     # Separately apply 1-qubit depolarization to qubits 3 and 5
@@ -2705,6 +2751,60 @@ Examples:
     DETECTOR rec[-2] rec[-6]  # Did XX stabilizer change?
     DETECTOR rec[-3]    # Did the herald on qubit 1 fire?
     DETECTOR rec[-4]    # Did the herald on qubit 0 fire?
+
+<a name="II_ERROR"></a>
+### The 'II_ERROR' Instruction
+
+Applies a two-qubit identity with a given probability.
+
+This gate has no effect. It only exists because it can be useful as a
+communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    A single float specifying the probability of applying an II operation.
+
+Targets:
+
+    Qubits to apply identity noise to.
+
+Pauli Mixture:
+
+    1-p: II
+     p : II
+
+Examples:
+
+    II_ERROR(0.1) 0 1
+
+    II_ERROR[ACTUALLY_I_SPECIFY_LEAKAGE_TRANSPORT_FOR_AN_ADVANCED_SIMULATOR](0.1) 0 2 4 6
+
+<a name="I_ERROR"></a>
+### The 'I_ERROR' Instruction
+
+Applies an identity with a given probability.
+
+This gate has no effect. It only exists because it can be useful as a
+communication mechanism for systems built on top of stim.
+
+Parens Arguments:
+
+    A single float specifying the probability of applying an I operation.
+
+Targets:
+
+    Qubits to apply identity noise to.
+
+Pauli Mixture:
+
+    1-p: I
+     p : I
+
+Examples:
+
+    I_ERROR(0.1) 0
+
+    I_ERROR[ACTUALLY_I_AM_LEAKAGE_NOISE_IN_AN_ADVANCED_SIMULATOR](0.1) 0 2 4
 
 <a name="PAULI_CHANNEL_1"></a>
 ### The 'PAULI_CHANNEL_1' Instruction
