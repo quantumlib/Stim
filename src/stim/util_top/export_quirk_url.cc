@@ -37,10 +37,24 @@ struct QuirkExporter {
             R"URL({"id":"~Hxy","name":"Hxy","matrix":"{{0,-√½-√½i},{√½-√½i,0}}"})URL";
         custom_gate_definition[(int)GateType::H_YZ] =
             R"URL({"id":"~Hyz","name":"Hyz","matrix":"{{-√½i,-√½},{√½,√½i}}"})URL";
+
         custom_gate_definition[(int)GateType::C_XYZ] =
             R"URL({"id":"~Cxyz","name":"Cxyz","matrix":"{{½-½i,-½-½i},{½-½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_NXYZ] =
+            R"URL({"id":"~Cnxyz","name":"Cnxyz","matrix":"{{½+½i,½-½i},{-½-½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_XNYZ] =
+            R"URL({"id":"~Cxnyz","name":"Cxnyz","matrix":"{{½+½i,-½+½i},{½+½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_XYNZ] =
+            R"URL({"id":"~Cxynz","name":"Cxynz","matrix":"{{½-½i,½+½i},{-½+½i,½+½i}}"})URL";
+
         custom_gate_definition[(int)GateType::C_ZYX] =
             R"URL({"id":"~Czyx","name":"Czyx","matrix":"{{½+½i,½+½i},{-½+½i,½-½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_ZYNX] =
+            R"URL({"id":"~Czynx","name":"Czynx","matrix":"{{½-½i,-½+½i},{½+½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_ZNYX] =
+            R"URL({"id":"~Cznyx","name":"Cznyx","matrix":"{{½-½i,½-½i},{-½-½i,½+½i}}"})URL";
+        custom_gate_definition[(int)GateType::C_NZYX] =
+            R"URL({"id":"~Cnzyx","name":"Cnzyx","matrix":"{{½+½i,-½-½i},{½-½i,½-½i}}"})URL";
 
         stim_name_to_quirk_name[(int)GateType::H] = "H";
         stim_name_to_quirk_name[(int)GateType::H_XY] = "~Hxy";
@@ -50,7 +64,13 @@ struct QuirkExporter {
         stim_name_to_quirk_name[(int)GateType::Y] = "Y";
         stim_name_to_quirk_name[(int)GateType::Z] = "Z";
         stim_name_to_quirk_name[(int)GateType::C_XYZ] = "~Cxyz";
+        stim_name_to_quirk_name[(int)GateType::C_NXYZ] = "~Cnxyz";
+        stim_name_to_quirk_name[(int)GateType::C_XNYZ] = "~Cxnyz";
+        stim_name_to_quirk_name[(int)GateType::C_XYNZ] = "~Cxynz";
         stim_name_to_quirk_name[(int)GateType::C_ZYX] = "~Czyx";
+        stim_name_to_quirk_name[(int)GateType::C_NZYX] = "~Cnzyx";
+        stim_name_to_quirk_name[(int)GateType::C_ZNYX] = "~Cznyx";
+        stim_name_to_quirk_name[(int)GateType::C_ZYNX] = "~Czynx";
         stim_name_to_quirk_name[(int)GateType::SQRT_X] = "X^½";
         stim_name_to_quirk_name[(int)GateType::SQRT_X_DAG] = "X^-½";
         stim_name_to_quirk_name[(int)GateType::SQRT_Y] = "Y^½";
@@ -280,7 +300,13 @@ struct QuirkExporter {
                     case GateType::Y:
                     case GateType::Z:
                     case GateType::C_XYZ:
+                    case GateType::C_NXYZ:
+                    case GateType::C_XNYZ:
+                    case GateType::C_XYNZ:
                     case GateType::C_ZYX:
+                    case GateType::C_NZYX:
+                    case GateType::C_ZNYX:
+                    case GateType::C_ZYNX:
                     case GateType::SQRT_X:
                     case GateType::SQRT_X_DAG:
                     case GateType::SQRT_Y:

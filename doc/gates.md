@@ -6,7 +6,13 @@
     - [Y](#Y)
     - [Z](#Z)
 - Single Qubit Clifford Gates
+    - [C_NXYZ](#C_NXYZ)
+    - [C_NZYX](#C_NZYX)
+    - [C_XNYZ](#C_XNYZ)
+    - [C_XYNZ](#C_XYNZ)
     - [C_XYZ](#C_XYZ)
+    - [C_ZNYX](#C_ZNYX)
+    - [C_ZYNX](#C_ZYNX)
     - [C_ZYX](#C_ZYX)
     - [H](#H)
     - [H_XY](#H_XY)
@@ -303,6 +309,216 @@ Decomposition (into H, S, CX, M, R):
 
 ## Single Qubit Clifford Gates
 
+<a name="C_NXYZ"></a>
+### The 'C_NXYZ' Gate
+
+Performs the period-3 cycle -X -> Y -> Z -> -X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_NXYZ 5
+    C_NXYZ 42
+    C_NXYZ 5 42
+    
+Stabilizer Generators:
+
+    X -> -Y
+    Z -> -X
+    
+Bloch Rotation (axis angle):
+
+    Axis: -X+Y+Z
+    Angle: -120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 180°
+     lambda = 90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(180°) * RotY(90°) * RotZ(90°)
+    unitary = Z * SQRT_Y * S
+
+Unitary Matrix:
+
+    [+1+i, +1-i]
+    [-1-i, +1-i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_NXYZ 0`
+    S 0
+    S 0
+    S 0
+    H 0
+    S 0
+    S 0
+    
+
+<a name="C_NZYX"></a>
+### The 'C_NZYX' Gate
+
+Performs the period-3 cycle X -> -Z -> Y -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_NZYX 5
+    C_NZYX 42
+    C_NZYX 5 42
+    
+Stabilizer Generators:
+
+    X -> -Z
+    Z -> -Y
+    
+Bloch Rotation (axis angle):
+
+    Axis: +X+Y-Z
+    Angle: 120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = -90°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(-90°) * RotY(90°) * RotZ(0°)
+    unitary = S_DAG * SQRT_Y * I
+
+Unitary Matrix:
+
+    [+1+i, -1-i]
+    [+1-i, +1-i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_NZYX 0`
+    S 0
+    S 0
+    H 0
+    S 0
+    S 0
+    S 0
+    
+
+<a name="C_XNYZ"></a>
+### The 'C_XNYZ' Gate
+
+Performs the period-3 cycle X -> -Y -> Z -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_XNYZ 5
+    C_XNYZ 42
+    C_XNYZ 5 42
+    
+Stabilizer Generators:
+
+    X -> -Y
+    Z -> X
+    
+Bloch Rotation (axis angle):
+
+    Axis: +X-Y+Z
+    Angle: -120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 0°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(0°) * RotY(90°) * RotZ(-90°)
+    unitary = I * SQRT_Y * S_DAG
+
+Unitary Matrix:
+
+    [+1+i, -1+i]
+    [+1+i, +1-i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_XNYZ 0`
+    S 0
+    H 0
+    
+
+<a name="C_XYNZ"></a>
+### The 'C_XYNZ' Gate
+
+Performs the period-3 cycle X -> Y -> -Z -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_XYNZ 5
+    C_XYNZ 42
+    C_XYNZ 5 42
+    
+Stabilizer Generators:
+
+    X -> Y
+    Z -> -X
+    
+Bloch Rotation (axis angle):
+
+    Axis: +X+Y-Z
+    Angle: -120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 180°
+     lambda = -90°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(180°) * RotY(90°) * RotZ(-90°)
+    unitary = Z * SQRT_Y * S_DAG
+
+Unitary Matrix:
+
+    [+1-i, +1+i]
+    [-1+i, +1+i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_XYNZ 0`
+    S 0
+    H 0
+    S 0
+    S 0
+    
+
 <a name="C_XYZ"></a>
 ### The 'C_XYZ' Gate
 
@@ -353,6 +569,110 @@ Decomposition (into H, S, CX, M, R):
     S 0
     S 0
     H 0
+    
+
+<a name="C_ZNYX"></a>
+### The 'C_ZNYX' Gate
+
+Performs the period-3 cycle X -> Z -> -Y -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_ZNYX 5
+    C_ZNYX 42
+    C_ZNYX 5 42
+    
+Stabilizer Generators:
+
+    X -> Z
+    Z -> -Y
+    
+Bloch Rotation (axis angle):
+
+    Axis: +X-Y+Z
+    Angle: 120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = -90°
+     lambda = 180°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(-90°) * RotY(90°) * RotZ(180°)
+    unitary = S_DAG * SQRT_Y * Z
+
+Unitary Matrix:
+
+    [+1-i, +1-i]
+    [-1-i, +1+i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_ZNYX 0`
+    H 0
+    S 0
+    S 0
+    S 0
+    
+
+<a name="C_ZYNX"></a>
+### The 'C_ZYNX' Gate
+
+Performs the period-3 cycle -X -> Z -> Y -> -X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+
+Example:
+
+    C_ZYNX 5
+    C_ZYNX 42
+    C_ZYNX 5 42
+    
+Stabilizer Generators:
+
+    X -> -Z
+    Z -> Y
+    
+Bloch Rotation (axis angle):
+
+    Axis: -X+Y+Z
+    Angle: 120°
+    
+Bloch Rotation (Euler angles):
+
+      theta = 90°
+        phi = 90°
+     lambda = 0°
+    unitary = RotZ(phi) * RotY(theta) * RotZ(lambda)
+    unitary = RotZ(90°) * RotY(90°) * RotZ(0°)
+    unitary = S * SQRT_Y * I
+
+Unitary Matrix:
+
+    [+1-i, -1+i]
+    [+1+i, +1+i] / 2
+    
+Decomposition (into H, S, CX, M, R):
+
+    # The following circuit is equivalent (up to global phase) to `C_ZYNX 0`
+    S 0
+    S 0
+    H 0
+    S 0
     
 
 <a name="C_ZYX"></a>
@@ -886,9 +1206,9 @@ Decomposition (into H, S, CX, M, R):
 <a name="CX"></a>
 ### The 'CX' Gate
 
-Alternate name: <a name="ZCX"></a>`ZCX`
-
 Alternate name: <a name="CNOT"></a>`CNOT`
+
+Alternate name: <a name="ZCX"></a>`ZCX`
 
 The Z-controlled X gate.
 Applies an X gate to the target if the control is in the |1> state.

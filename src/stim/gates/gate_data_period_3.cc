@@ -52,6 +52,96 @@ H 0
     add_gate(
         failed,
         Gate{
+            .name = "C_NXYZ",
+            .id = GateType::C_NXYZ,
+            .best_candidate_inverse_id = GateType::C_ZYNX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle -X -> Y -> Z -> -X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f + i * 0.5f, 0.5f - 0.5f * i}, {-0.5f - 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"-Y", "-X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+S 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "C_XNYZ",
+            .id = GateType::C_XNYZ,
+            .best_candidate_inverse_id = GateType::C_ZNYX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle X -> -Y -> Z -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f + i * 0.5f, -0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"-Y", "X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+H 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "C_XYNZ",
+            .id = GateType::C_XYNZ,
+            .best_candidate_inverse_id = GateType::C_NZYX,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle X -> Y -> -Z -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f - i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"Y", "-X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+H 0
+S 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
             .name = "C_ZYX",
             .id = GateType::C_ZYX,
             .best_candidate_inverse_id = GateType::C_XYZ,
@@ -73,6 +163,98 @@ Targets:
             .flow_data = {"Z", "Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "C_ZYNX",
+            .id = GateType::C_ZYNX,
+            .best_candidate_inverse_id = GateType::C_NXYZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle -X -> Z -> Y -> -X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f - i * 0.5f, -0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"-Z", "Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+S 0
+H 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "C_ZNYX",
+            .id = GateType::C_ZNYX,
+            .best_candidate_inverse_id = GateType::C_XNYZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle X -> Z -> -Y -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f - i * 0.5f, 0.5f - 0.5f * i}, {-0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            .flow_data = {"Z", "-Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+H 0
+S 0
+S 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "C_NZYX",
+            .id = GateType::C_NZYX,
+            .best_candidate_inverse_id = GateType::C_XYNZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+Performs the period-3 cycle X -> -Z -> Y -> X.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0.5f + i * 0.5f, -0.5f + -0.5f * i}, {0.5f - 0.5f * i, 0.5f - 0.5f * i}},
+            .flow_data = {"-Z", "-Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+S 0
+H 0
+S 0
+S 0
 S 0
 )CIRCUIT",
         });

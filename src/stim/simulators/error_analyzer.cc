@@ -157,9 +157,15 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_I(inst);
             break;
         case GateType::C_XYZ:
+        case GateType::C_NXYZ:
+        case GateType::C_XNYZ:
+        case GateType::C_XYNZ:
             undo_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
+        case GateType::C_NZYX:
+        case GateType::C_ZNYX:
+        case GateType::C_ZYNX:
             undo_C_ZYX(inst);
             break;
         case GateType::H_YZ:

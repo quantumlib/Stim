@@ -79,12 +79,65 @@ void Tableau<W>::prepend_C_XYZ(const size_t q) {
 }
 
 template <size_t W>
+void Tableau<W>::prepend_C_NXYZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_XNYZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_Z(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_XYNZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_X(q);
+}
+
+template <size_t W>
 void Tableau<W>::prepend_C_ZYX(const size_t q) {
     PauliStringRef<W> x = xs[q];
     PauliStringRef<W> z = zs[q];
     x.swap_with(z);
     z *= IgnoreAntiCommute<W>(x);
     prepend_X(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_ZYNX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_ZNYX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_NZYX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+    prepend_Z(q);
 }
 
 template <size_t W>

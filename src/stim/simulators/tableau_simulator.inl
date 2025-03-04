@@ -541,11 +541,64 @@ void TableauSimulator<W>::do_C_XYZ(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
+void TableauSimulator<W>::do_C_NXYZ(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_ZYNX(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_C_XNYZ(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_ZNYX(q.data);
+    }
+}
+template <size_t W>
+void TableauSimulator<W>::do_C_XYNZ(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_NZYX(q.data);
+    }
+}
+
+template <size_t W>
 void TableauSimulator<W>::do_C_ZYX(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_C_XYZ(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_C_NZYX(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_XYNZ(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_C_ZNYX(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_XNYZ(q.data);
+    }
+}
+
+template <size_t W>
+void TableauSimulator<W>::do_C_ZYNX(const CircuitInstruction &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_NXYZ(q.data);
     }
 }
 
@@ -1636,8 +1689,26 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::C_XYZ:
             do_C_XYZ(inst);
             break;
+        case GateType::C_NXYZ:
+            do_C_NXYZ(inst);
+            break;
+        case GateType::C_XNYZ:
+            do_C_XNYZ(inst);
+            break;
+        case GateType::C_XYNZ:
+            do_C_XYNZ(inst);
+            break;
         case GateType::C_ZYX:
             do_C_ZYX(inst);
+            break;
+        case GateType::C_NZYX:
+            do_C_NZYX(inst);
+            break;
+        case GateType::C_ZNYX:
+            do_C_ZNYX(inst);
+            break;
+        case GateType::C_ZYNX:
+            do_C_ZYNX(inst);
             break;
         case GateType::SQRT_X:
             do_SQRT_X(inst);

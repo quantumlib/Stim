@@ -84,14 +84,31 @@ GateType Gate::hadamard_conjugated(bool ignoring_sign) const {
             return ignoring_sign ? GateType::YCZ : GateType::NOT_A_GATE;
         case GateType::YCZ:
             return ignoring_sign ? GateType::YCX : GateType::NOT_A_GATE;
-        case GateType::C_XYZ:
-            return ignoring_sign ? GateType::C_ZYX : GateType::NOT_A_GATE;
-        case GateType::C_ZYX:
-            return ignoring_sign ? GateType::C_XYZ : GateType::NOT_A_GATE;
         case GateType::H_XY:
             return ignoring_sign ? GateType::H_YZ : GateType::NOT_A_GATE;
         case GateType::H_YZ:
             return ignoring_sign ? GateType::H_XY : GateType::NOT_A_GATE;
+
+
+        case GateType::C_XYZ:
+            return GateType::C_ZNYX;
+        case GateType::C_ZNYX:
+            return GateType::C_XYZ;
+
+        case GateType::C_XNYZ:
+            return GateType::C_ZYX;
+        case GateType::C_ZYX:
+            return GateType::C_XNYZ;
+
+        case GateType::C_NXYZ:
+            return GateType::C_ZYNX;
+        case GateType::C_ZYNX:
+            return GateType::C_NXYZ;
+
+        case GateType::C_XYNZ:
+            return GateType::C_NZYX;
+        case GateType::C_NZYX:
+            return GateType::C_XYNZ;
 
         case GateType::X:
             return GateType::Z;
@@ -262,6 +279,12 @@ std::array<float, 4> Gate::to_axis_angle() const {
         rx /= r;
         ry /= r;
         rz /= r;
+    }
+    if ((rx < 0) + (ry < 0) + (rz < 0) > 1) {
+        rx = -rx;
+        ry = -ry;
+        rz = -rz;
+        rs = -rs;
     }
 
     return {rx, ry, rz, acosf(rs) * 2};

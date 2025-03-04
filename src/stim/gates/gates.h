@@ -52,30 +52,43 @@ constexpr inline uint16_t gate_name_to_hash(std::string_view text) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
+    constexpr uint16_t const1 = 2126;
+    constexpr uint16_t const2 = 9883;
+    constexpr uint16_t const3 = 8039;
+    constexpr uint16_t const4 = 9042;
+    constexpr uint16_t const5 = 4916;
+    constexpr uint16_t const6 = 4048;
+    constexpr uint16_t const7 = 7081;
+
     size_t n = text.size();
     const char *v = text.data();
     size_t result = n;
     if (n > 0) {
         auto c_first = v[0] | 0x20;
         auto c_last = v[n - 1] | 0x20;
-        result += c_first ^ (c_last << 1);
+        result ^= c_first * const1;
+        result += c_last * const2;
     }
     if (n > 2) {
         auto c1 = v[1] | 0x20;
         auto c2 = v[2] | 0x20;
-        result ^= c1;
-        result += c2 * 11;
+        result ^= c1 * const3;
+        result += c2 * const4;
+    }
+    if (n > 4) {
+        auto c3 = v[3] | 0x20;
+        auto c4 = v[4] | 0x20;
+        result ^= c3 * const5;
+        result += c4 * const6;
     }
     if (n > 5) {
-        auto c3 = v[3] | 0x20;
         auto c5 = v[5] | 0x20;
-        result ^= c3 * 61;
-        result += c5 * 77;
+        result ^= c5 * const7;
     }
     return result & 0x1FF;
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 70;
+constexpr size_t NUM_DEFINED_GATES = 76;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -133,6 +146,12 @@ enum class GateType : uint8_t {
     // Period 3 gates
     C_XYZ,
     C_ZYX,
+    C_NXYZ,
+    C_XNYZ,
+    C_XYNZ,
+    C_NZYX,
+    C_ZNYX,
+    C_ZYNX,
     // Period 4 gates
     SQRT_X,
     SQRT_X_DAG,

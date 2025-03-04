@@ -109,8 +109,46 @@ struct Simplifier {
                 yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::H, {}, ts, inst.tag});
                 break;
+            case GateType::C_NXYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_XNYZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                break;
+            case GateType::C_XYNZ:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
             case GateType::C_ZYX:
                 yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_ZYNX:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_ZNYX:
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                break;
+            case GateType::C_NZYX:
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::H, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
+                yield({GateType::S, {}, ts, inst.tag});
                 yield({GateType::S, {}, ts, inst.tag});
                 break;
             case GateType::H:

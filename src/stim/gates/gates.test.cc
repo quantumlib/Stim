@@ -349,7 +349,7 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
             c.safe_append_u(g.name, {0, 1}, {});
             auto key_s = flow_key(c, false);
             auto key_u = flow_key(c, true);
-            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end());
+            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end()) << g.name;
             known_flows_s[key_s] = g.id;
             known_flows_u[key_u].push_back(g.id);
         }

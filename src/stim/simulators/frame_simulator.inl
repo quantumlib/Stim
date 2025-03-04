@@ -1023,9 +1023,15 @@ void FrameSimulator<W>::do_gate(const CircuitInstruction &inst) {
             do_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::C_XYZ:
+        case GateType::C_NXYZ:
+        case GateType::C_XNYZ:
+        case GateType::C_XYNZ:
             do_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
+        case GateType::C_NZYX:
+        case GateType::C_ZNYX:
+        case GateType::C_ZYNX:
             do_C_ZYX(inst);
             break;
         case GateType::SWAP:

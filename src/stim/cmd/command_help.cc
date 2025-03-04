@@ -309,10 +309,10 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         out << "+-"[rx < 0] << 'X';
     }
     if (ry != 0) {
-        out << "+-"[rx < 0] << 'Y';
+        out << "+-"[ry < 0] << 'Y';
     }
     if (rz != 0) {
-        out << "+-"[rx < 0] << 'Z';
+        out << "+-"[rz < 0] << 'Z';
     }
     out << "\n";
     out << "Angle: " << angle << "°\n";

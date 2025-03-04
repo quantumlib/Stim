@@ -1716,10 +1716,16 @@ Circuit stim::generate_test_circuit_with_all_operations() {
 
         # Single Qubit Clifford Gates
         C_XYZ 0
-        C_ZYX 1
-        H_XY 2
-        H_XZ 3
-        H_YZ 4
+        C_NXYZ 1
+        C_XNYZ 2
+        C_XYNZ 3
+        C_ZYX 4
+        C_NZYX 5
+        C_ZNYX 6
+        C_ZYNX 7
+        H_XY 0
+        H_XZ 1
+        H_YZ 2
         SQRT_X 0
         SQRT_X_DAG 1
         SQRT_Y 2
