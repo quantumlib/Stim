@@ -71,11 +71,56 @@ void Tableau<W>::prepend_H_XY(const size_t q) {
 }
 
 template <size_t W>
+void Tableau<W>::prepend_H_NXY(const size_t q) {
+    xs[q] *= IgnoreAntiCommute<W>(zs[q]);
+    prepend_X(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_H_NXZ(const size_t q) {
+    xs[q].swap_with(zs[q]);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_H_NYZ(const size_t q) {
+    zs[q] *= IgnoreAntiCommute<W>(xs[q]);
+    prepend_Y(q);
+}
+
+template <size_t W>
 void Tableau<W>::prepend_C_XYZ(const size_t q) {
     PauliStringRef<W> x = xs[q];
     PauliStringRef<W> z = zs[q];
     z *= IgnoreAntiCommute<W>(x);
     x.swap_with(z);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_NXYZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_XNYZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_Z(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_XYNZ(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    z *= IgnoreAntiCommute<W>(x);
+    x.swap_with(z);
+    prepend_X(q);
 }
 
 template <size_t W>
@@ -85,6 +130,32 @@ void Tableau<W>::prepend_C_ZYX(const size_t q) {
     x.swap_with(z);
     z *= IgnoreAntiCommute<W>(x);
     prepend_X(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_ZYNX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+    prepend_Y(q);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_ZNYX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+}
+
+template <size_t W>
+void Tableau<W>::prepend_C_NZYX(const size_t q) {
+    PauliStringRef<W> x = xs[q];
+    PauliStringRef<W> z = zs[q];
+    x.swap_with(z);
+    z *= IgnoreAntiCommute<W>(x);
+    prepend_Z(q);
 }
 
 template <size_t W>

@@ -323,11 +323,38 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
         case GateType::H_XY:
             do_H_XY(inst);
             break;
+        case GateType::H_NXY:
+            do_H_NXY(inst);
+            break;
+        case GateType::H_NXZ:
+            do_H_NXZ(inst);
+            break;
+        case GateType::H_NYZ:
+            do_H_NYZ(inst);
+            break;
         case GateType::C_XYZ:
             do_C_XYZ(inst);
             break;
+        case GateType::C_NXYZ:
+            do_C_NXYZ(inst);
+            break;
+        case GateType::C_XNYZ:
+            do_C_XNYZ(inst);
+            break;
+        case GateType::C_XYNZ:
+            do_C_XYNZ(inst);
+            break;
         case GateType::C_ZYX:
             do_C_ZYX(inst);
+            break;
+        case GateType::C_NZYX:
+            do_C_NZYX(inst);
+            break;
+        case GateType::C_ZNYX:
+            do_C_ZNYX(inst);
+            break;
+        case GateType::C_ZYNX:
+            do_C_ZYNX(inst);
             break;
         case GateType::SQRT_X:
             do_SQRT_X(inst);
@@ -427,6 +454,9 @@ void PauliStringRef<W>::do_instruction(const CircuitInstruction &inst) {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             // No effect.
             break;
 
@@ -499,11 +529,38 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::H_XY:
             do_H_XY(inst);
             break;
+        case GateType::H_NXY:
+            do_H_NXY(inst);
+            break;
+        case GateType::H_NXZ:
+            do_H_NXZ(inst);
+            break;
+        case GateType::H_NYZ:
+            do_H_NYZ(inst);
+            break;
         case GateType::C_XYZ:
             do_C_ZYX(inst);
             break;
+        case GateType::C_NXYZ:
+            do_C_ZYNX(inst);
+            break;
+        case GateType::C_XNYZ:
+            do_C_ZNYX(inst);
+            break;
+        case GateType::C_XYNZ:
+            do_C_NZYX(inst);
+            break;
         case GateType::C_ZYX:
             do_C_XYZ(inst);
+            break;
+        case GateType::C_NZYX:
+            do_C_XYNZ(inst);
+            break;
+        case GateType::C_ZNYX:
+            do_C_XNYZ(inst);
+            break;
+        case GateType::C_ZYNX:
+            do_C_NXYZ(inst);
             break;
         case GateType::SQRT_X:
             do_SQRT_X_DAG(inst);
@@ -618,6 +675,9 @@ void PauliStringRef<W>::undo_instruction(const CircuitInstruction &inst) {
         case GateType::SHIFT_COORDS:
         case GateType::MPAD:
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
             // No effect.
             break;
 
@@ -770,6 +830,36 @@ void PauliStringRef<W>::do_H_XZ(const CircuitInstruction &inst) {
 }
 
 template <size_t W>
+void PauliStringRef<W>::do_H_NXY(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        zs[q] ^= xs[q];
+        sign ^= !xs[q] && !zs[q];
+        sign ^= true;
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_H_NXZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        xs[q].swap_with(zs[q]);
+        sign ^= !xs[q] && !zs[q];
+        sign ^= true;
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_H_NYZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        xs[q] ^= zs[q];
+        sign ^= !xs[q] && !zs[q];
+        sign ^= true;
+    }
+}
+
+template <size_t W>
 void PauliStringRef<W>::do_SQRT_Y(const CircuitInstruction &inst) {
     for (auto t : inst.targets) {
         auto q = t.data;
@@ -851,9 +941,71 @@ void PauliStringRef<W>::do_C_XYZ(const CircuitInstruction &inst) {
 }
 
 template <size_t W>
+void PauliStringRef<W>::do_C_NXYZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= xs[q];
+        sign ^= zs[q];
+        xs[q] ^= zs[q];
+        zs[q] ^= xs[q];
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_C_XNYZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= xs[q];
+        xs[q] ^= zs[q];
+        zs[q] ^= xs[q];
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_C_XYNZ(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= zs[q];
+        xs[q] ^= zs[q];
+        zs[q] ^= xs[q];
+    }
+}
+
+template <size_t W>
 void PauliStringRef<W>::do_C_ZYX(const CircuitInstruction &inst) {
     for (auto t : inst.targets) {
         auto q = t.data;
+        zs[q] ^= xs[q];
+        xs[q] ^= zs[q];
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_C_ZYNX(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= xs[q];
+        zs[q] ^= xs[q];
+        xs[q] ^= zs[q];
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_C_ZNYX(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= zs[q];
+        zs[q] ^= xs[q];
+        xs[q] ^= zs[q];
+    }
+}
+
+template <size_t W>
+void PauliStringRef<W>::do_C_NZYX(const CircuitInstruction &inst) {
+    for (auto t : inst.targets) {
+        auto q = t.data;
+        sign ^= xs[q];
+        sign ^= zs[q];
         zs[q] ^= xs[q];
         xs[q] ^= zs[q];
     }

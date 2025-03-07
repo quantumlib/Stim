@@ -20,7 +20,7 @@ std::vector<std::vector<ExposedDemTarget>> ExposedDemInstruction::target_groups(
 }
 
 DemInstruction ExposedDemInstruction::as_dem_instruction() const {
-    return DemInstruction{arguments, targets, type};
+    return DemInstruction{arguments, targets, tag, type};
 }
 
 ExposedDemInstruction ExposedDemInstruction::from_dem_instruction(stim::DemInstruction instruction) {
@@ -28,7 +28,7 @@ ExposedDemInstruction ExposedDemInstruction::from_dem_instruction(stim::DemInstr
     std::vector<DemTarget> targets;
     arguments.insert(arguments.begin(), instruction.arg_data.begin(), instruction.arg_data.end());
     targets.insert(targets.begin(), instruction.target_data.begin(), instruction.target_data.end());
-    return ExposedDemInstruction{arguments, targets, instruction.type};
+    return ExposedDemInstruction{arguments, targets, std::string(instruction.tag), instruction.type};
 }
 
 ExposedDemInstruction ExposedDemInstruction::from_str(std::string_view text) {
@@ -37,7 +37,7 @@ ExposedDemInstruction ExposedDemInstruction::from_str(std::string_view text) {
     if (host.instructions.size() != 1 || host.instructions[0].type == DemInstructionType::DEM_REPEAT_BLOCK) {
         throw std::invalid_argument("Given text didn't parse to a single DemInstruction.");
     }
-    return ExposedDemInstruction::from_dem_instruction(host.instructions[0]);
+    return from_dem_instruction(host.instructions[0]);
 }
 
 std::string ExposedDemInstruction::type_name() const {
@@ -72,12 +72,16 @@ std::string ExposedDemInstruction::repr() const {
             out << "stim.target_logical_observable_id(" << e.raw_id() << ")";
         }
     }
-    out << "])";
+    out << "]";
+    if (!tag.empty()) {
+        out << ", tag=" << pybind11::cast<std::string>(pybind11::repr(pybind11::cast(tag)));
+    }
+    out << ")";
     return out.str();
 }
 
 bool ExposedDemInstruction::operator==(const ExposedDemInstruction &other) const {
-    return type == other.type && arguments == other.arguments && targets == other.targets;
+    return type == other.type && arguments == other.arguments && targets == other.targets && tag == other.tag;
 }
 bool ExposedDemInstruction::operator!=(const ExposedDemInstruction &other) const {
     return !(*this == other);
@@ -125,7 +129,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     pybind11::module &m, pybind11::class_<ExposedDemInstruction> &c) {
     c.def(
         pybind11::init(
-            [](std::string_view type, pybind11::object &arguments, pybind11::object &targets) -> ExposedDemInstruction {
+            [](std::string_view type, pybind11::object &arguments, pybind11::object &targets, std::string_view tag) -> ExposedDemInstruction {
                 if (arguments.is_none() && targets.is_none()) {
                     return ExposedDemInstruction::from_str(type);
                 }
@@ -152,7 +156,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                         for (const auto &e : targets) {
                             try {
                                 conv_targets.push_back(DemTarget{pybind11::cast<uint64_t>(e)});
-                            } catch (pybind11::cast_error &ex) {
+                            } catch (pybind11::cast_error &) {
                                 throw std::invalid_argument(
                                     "Instruction '" + lower + "' only takes unsigned integer targets.");
                             }
@@ -161,7 +165,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                         for (const auto &e : targets) {
                             try {
                                 conv_targets.push_back(pybind11::cast<ExposedDemTarget>(e).internal());
-                            } catch (pybind11::cast_error &ex) {
+                            } catch (pybind11::cast_error &) {
                                 throw std::invalid_argument(
                                     "Instruction '" + lower +
                                     "' only takes stim.target_relative_detector_id(k), "
@@ -176,15 +180,17 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 if (!arguments.is_none()) {
                     conv_args = pybind11::cast<std::vector<double>>(arguments);
                 }
-                ExposedDemInstruction result{std::move(conv_args), std::move(conv_targets), conv_type};
+                ExposedDemInstruction result{std::move(conv_args), std::move(conv_targets), std::string(tag), conv_type};
                 result.as_dem_instruction().validate();
                 return result;
             }),
         pybind11::arg("type"),
         pybind11::arg("args") = pybind11::none(),
         pybind11::arg("targets") = pybind11::none(),
+        pybind11::kw_only(),
+        pybind11::arg("tag") = "",
         clean_doc_string(R"DOC(
-            @signature def __init__(self, type: str, args: Optional[Iterable[float]] = None, targets: Optional[Iterable[stim.DemTarget]] = None) -> None:
+            @signature def __init__(self, type: str, args: Optional[Iterable[float]] = None, targets: Optional[Iterable[stim.DemTarget]] = None, *, tag: str = "") -> None:
             Creates or parses a stim.DemInstruction.
 
             Args:
@@ -195,15 +201,18 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                     "error(0.1)").
                 targets: The objects the instruction involves (e.g. the "D0" and "L1" in
                     "error(0.1) D0 L1").
+                tag: An arbitrary piece of text attached to the instruction.
 
             Examples:
                 >>> import stim
                 >>> instruction = stim.DemInstruction(
                 ...     'error',
                 ...     [0.125],
-                ...     [stim.target_relative_detector_id(5)])
+                ...     [stim.target_relative_detector_id(5)],
+                ...     tag='test-tag',
+                ... )
                 >>> print(instruction)
-                error(0.125) D5
+                error[test-tag](0.125) D5
 
                 >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
                 error(0.125) D5 L6 ^ D4
@@ -233,6 +242,25 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 True
                 >>> instruction.args_copy() is instruction.args_copy()
                 False
+        )DOC")
+            .data());
+
+    c.def_readonly(
+        "tag",
+        &ExposedDemInstruction::tag,
+        clean_doc_string(R"DOC(
+            Returns the arbitrary text tag attached to the instruction.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error[test-tag](0.125) D0
+                ...     error(0.125) D0
+                ... ''')
+                >>> dem[0].tag
+                'test-tag'
+                >>> dem[1].tag
+                ''
         )DOC")
             .data());
 

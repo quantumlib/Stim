@@ -22,18 +22,23 @@ test("circuit.fromStimCircuit", () => {
         QUBIT_COORDS(2, 0) 2
         QUBIT_COORDS(2, 4) 3
         QUBIT_COORDS(2, 3) 4
+        QUBIT_COORDS(3, 5) 5
+        QUBIT_COORDS(3, 6) 6
         H 0
-        S 1 2
-        CX 3 4
+        S 3 4
+        S[test] 1 2
+        CX 5 6
     `);
-    assertThat(c2.qubitCoordData).isEqualTo(new Float64Array([0, 0, 0, 1, 2, 0, 2, 4, 2, 3]));
+    assertThat(c2.qubitCoordData).isEqualTo(new Float64Array([0, 0, 0, 1, 2, 0, 2, 4, 2, 3, 3, 5, 3, 6]));
     assertThat(c2.layers.length).isEqualTo(1);
     assertThat(c2.layers[0].id_ops).isEqualTo(new Map([
-        [0, new Operation(GATE_MAP.get('H'), new Float32Array(), new Uint32Array([0]))],
-        [1, new Operation(GATE_MAP.get('S'), new Float32Array(), new Uint32Array([1]))],
-        [2, new Operation(GATE_MAP.get('S'), new Float32Array(), new Uint32Array([2]))],
-        [3, new Operation(GATE_MAP.get('CX'), new Float32Array(), new Uint32Array([3, 4]))],
-        [4, new Operation(GATE_MAP.get('CX'), new Float32Array(), new Uint32Array([3, 4]))],
+        [0, new Operation(GATE_MAP.get('H'), '', new Float32Array(), new Uint32Array([0]))],
+        [1, new Operation(GATE_MAP.get('S'), 'test', new Float32Array(), new Uint32Array([1]))],
+        [2, new Operation(GATE_MAP.get('S'), 'test', new Float32Array(), new Uint32Array([2]))],
+        [3, new Operation(GATE_MAP.get('S'), '', new Float32Array(), new Uint32Array([3]))],
+        [4, new Operation(GATE_MAP.get('S'), '', new Float32Array(), new Uint32Array([4]))],
+        [5, new Operation(GATE_MAP.get('CX'), '', new Float32Array(), new Uint32Array([5, 6]))],
+        [6, new Operation(GATE_MAP.get('CX'), '', new Float32Array(), new Uint32Array([5, 6]))],
     ]));
     assertThat(c2.toStimCircuit()).isEqualTo(`
 QUBIT_COORDS(0, 0) 0
@@ -41,9 +46,12 @@ QUBIT_COORDS(0, 1) 1
 QUBIT_COORDS(2, 0) 2
 QUBIT_COORDS(2, 3) 3
 QUBIT_COORDS(2, 4) 4
-CX 4 3
+QUBIT_COORDS(3, 5) 5
+QUBIT_COORDS(3, 6) 6
+CX 5 6
 H 0
-S 1 2
+S 4 3
+S[test] 1 2
     `.trim());
 });
 
@@ -104,13 +112,13 @@ test("circuit.fromStimCircuit_mpp", () => {
     assertThat(c1.qubitCoordData).isEqualTo(
         new Float64Array([1, 2, 3, 4, 5, 6]));
     assertThat(c1.layers.length).isEqualTo(2);
-    let op1 = new Operation(make_mpp_gate("XZY"), new Float32Array([]), new Uint32Array([0, 1, 2]));
+    let op1 = new Operation(make_mpp_gate("XZY"), '', new Float32Array([]), new Uint32Array([0, 1, 2]));
     assertThat(c1.layers[0].id_ops).isEqualTo(new Map([
         [0, op1],
         [1, op1],
         [2, op1],
     ]));
-    let op2 = new Operation(make_mpp_gate("XY"), new Float32Array([]), new Uint32Array([2, 1]));
+    let op2 = new Operation(make_mpp_gate("XY"), '', new Float32Array([]), new Uint32Array([2, 1]));
     assertThat(c1.layers[1].id_ops).isEqualTo(new Map([
         [1, op2],
         [2, op2],

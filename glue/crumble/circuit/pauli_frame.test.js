@@ -79,7 +79,7 @@ test("pauli_frame.do_gate_vs_old_frame_updates", () => {
             }
         }
 
-        let op = new Operation(g, new Float32Array(0), new Uint32Array([0, 1]));
+        let op = new Operation(g, '', new Float32Array(0), new Uint32Array([0, 1]));
         let expected_after_strings = [];
         for (let f = 0; f < before_strings.length; f++) {
             let t = op.pauliFrameAfter(before_strings[f].replaceAll('_', 'I'));

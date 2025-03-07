@@ -99,3 +99,14 @@ def test_init_from_str():
             detector D0
             detector D1
         """)
+
+
+def test_tag():
+    assert stim.DemInstruction("error[test](0.25) D1").tag == 'test'
+    assert stim.DemInstruction("error", [0.25], [stim.DemTarget("D1")], tag="test").tag == 'test'
+    dem = stim.DetectorErrorModel('''
+        error[test-tag](0.125) D0
+        error(0.125) D0
+    ''')
+    assert dem[0].tag == 'test-tag'
+    assert dem[1].tag == ''

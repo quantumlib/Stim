@@ -111,4 +111,97 @@ S 0
 S 0
 )CIRCUIT",
         });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "H_NXY",
+            .id = GateType::H_NXY,
+            .best_candidate_inverse_id = GateType::H_NXY,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+A variant of the Hadamard gate that swaps the -X and +Y axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{0, s + s*i}, {s - s*i, 0}},
+            .flow_data = {"-Y", "-Z"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+H 0
+S 0
+S 0
+H 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "H_NXZ",
+            .id = GateType::H_NXZ,
+            .best_candidate_inverse_id = GateType::H_NXZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+A variant of the Hadamard gate that swaps the -X and +Z axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{-s, s}, {s, s}},
+            .flow_data = {"-Z", "-X"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+S 0
+H 0
+S 0
+S 0
+)CIRCUIT",
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            .name = "H_NYZ",
+            .id = GateType::H_NYZ,
+            .best_candidate_inverse_id = GateType::H_NYZ,
+            .arg_count = 0,
+            .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_UNITARY),
+            .category = "B_Single Qubit Clifford Gates",
+            .help = R"MARKDOWN(
+A variant of the Hadamard gate that swaps the -Y and +Z axes.
+
+Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+Targets:
+
+    Qubits to operate on.
+)MARKDOWN",
+            .unitary_data = {{-s, -i*s}, {i*s, s}},
+            .flow_data = {"-X", "-Y"},
+            .h_s_cx_m_r_decomposition = R"CIRCUIT(
+S 0
+S 0
+H 0
+S 0
+H 0
+)CIRCUIT",
+        });
 }

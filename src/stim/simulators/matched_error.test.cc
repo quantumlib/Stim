@@ -77,6 +77,7 @@ TEST(matched_error, CircuitErrorLocationStackFrame_basics) {
 TEST(matched_error, CircuitTargetsInsideInstruction_basics) {
     CircuitTargetsInsideInstruction targets{
         GateType::X_ERROR,
+        "",
         {0.125},
         11,
         17,
@@ -100,6 +101,7 @@ TEST(matched_error, CircuitTargetsInsideInstruction_basics) {
 TEST(matched_error, CircuitTargetsInsideInstruction_fill) {
     CircuitTargetsInsideInstruction not_filled{
         GateType::X_ERROR,
+        "",
         {0.125},
         2,
         5,
@@ -112,6 +114,7 @@ TEST(matched_error, CircuitTargetsInsideInstruction_fill) {
 
 TEST(matched_error, CircuitErrorLocation_basics) {
     CircuitErrorLocation loc{
+        "",
         6,
         {
             {GateTarget::x(3), {11, 12}},
@@ -126,6 +129,7 @@ TEST(matched_error, CircuitErrorLocation_basics) {
         },
         CircuitTargetsInsideInstruction{
             GateType::X_ERROR,
+            "",
             {0.125},
             11,
             17,
@@ -164,6 +168,7 @@ TEST(matched_error, CircuitErrorLocation_basics) {
 
 TEST(matched_error, MatchedError_basics) {
     CircuitErrorLocation loc{
+        "",
         6,
         {
             {GateTarget::x(3), {11, 12}},
@@ -178,6 +183,7 @@ TEST(matched_error, MatchedError_basics) {
         },
         CircuitTargetsInsideInstruction{
             GateType::X_ERROR,
+            "",
             {0.125},
             11,
             17,

@@ -13,6 +13,8 @@ import {PropagatedPauliFrames} from './circuit/propagated_pauli_frames.js';
 const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
 const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
 
+const btnInsertLayer = /** @type{!HTMLButtonElement} */ document.getElementById('btnInsertLayer');
+const btnDeleteLayer = /** @type{!HTMLButtonElement} */ document.getElementById('btnDeleteLayer');
 const btnUndo = /** @type{!HTMLButtonElement} */ document.getElementById('btnUndo');
 const btnRedo = /** @type{!HTMLButtonElement} */ document.getElementById('btnRedo');
 const btnClearMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearMarkers');
@@ -110,6 +112,13 @@ btnRotate45Counter.addEventListener('click', _ev => {
     editorState.rotate45(-1, false);
 });
 
+btnInsertLayer.addEventListener('click', _ev => {
+    editorState.insertLayer(false);
+});
+btnDeleteLayer.addEventListener('click', _ev => {
+    editorState.deleteCurLayer(false);
+});
+
 btnNextLayer.addEventListener('click', _ev => {
     editorState.changeCurLayerTo(editorState.curLayer + 1);
 });
@@ -126,6 +135,7 @@ window.addEventListener('resize', _ev => {
 function exportCurrentState() {
     let validStimCircuit = editorState.copyOfCurCircuit().toStimCircuit().
         replaceAll('\nPOLYGON', '\n#!pragma POLYGON').
+        replaceAll('\nERR', '\n#!pragma ERR').
         replaceAll('\nMARK', '\n#!pragma MARK');
     let txt = txtStimCircuit;
     txt.value = validStimCircuit + '\n';
@@ -406,6 +416,7 @@ async function pasteFromClipboard(preview) {
         }
         newCircuit.layers[editorState.curLayer].put(new Operation(
             op.gate,
+            op.tag,
             op.args,
             new Uint32Array(newTargets),
         ));

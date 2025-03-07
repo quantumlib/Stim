@@ -10,6 +10,7 @@ namespace stim_pybind {
 struct ExposedDemInstruction {
     std::vector<double> arguments;
     std::vector<stim::DemTarget> targets;
+    std::string tag;
     stim::DemInstructionType type;
 
     static ExposedDemInstruction from_str(std::string_view text);

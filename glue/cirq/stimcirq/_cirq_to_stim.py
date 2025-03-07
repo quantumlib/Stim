@@ -6,6 +6,8 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 import cirq
 import stim
 
+from ._ii_gate import IIGate
+
 
 def _forward_single_str_tag(op: cirq.CircuitOperation) -> str:
     tags = [tag for tag in op.tags if isinstance(tag, str)]
@@ -219,27 +221,27 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
         sqcg(x, y): use("SQRT_X_DAG"),
         sqcg(x, ny): use("SQRT_X"),
         sqcg(nx, y): use("H_YZ"),
-        sqcg(nx, ny): use("H_YZ", "X"),
+        sqcg(nx, ny): use("H_NYZ"),
         sqcg(x, z): do_nothing,
         sqcg(x, nz): use("X"),
         sqcg(nx, z): use("Z"),
         sqcg(nx, nz): use("Y"),
         sqcg(y, x): use("C_XYZ"),
-        sqcg(y, nx): use("S", "SQRT_Y_DAG"),
-        sqcg(ny, x): use("S_DAG", "SQRT_Y"),
-        sqcg(ny, nx): use("S_DAG", "SQRT_Y_DAG"),
+        sqcg(y, nx): use("C_XYNZ"),
+        sqcg(ny, x): use("C_XNYZ"),
+        sqcg(ny, nx): use("C_NXYZ"),
         sqcg(y, z): use("S"),
         sqcg(y, nz): use("H_XY"),
         sqcg(ny, z): use("S_DAG"),
-        sqcg(ny, nz): use("H_XY", "Z"),
+        sqcg(ny, nz): use("H_NXY"),
         sqcg(z, x): use("H"),
         sqcg(z, nx): use("SQRT_Y_DAG"),
         sqcg(nz, x): use("SQRT_Y"),
-        sqcg(nz, nx): use("H", "Y"),
+        sqcg(nz, nx): use("H_NXZ"),
         sqcg(z, y): use("C_ZYX"),
-        sqcg(z, ny): use("SQRT_Y_DAG", "S"),
-        sqcg(nz, y): use("SQRT_Y", "S"),
-        sqcg(nz, ny): use("SQRT_Y", "S_DAG"),
+        sqcg(z, ny): use("C_ZNYX"),
+        sqcg(nz, y): use("C_ZYNX"),
+        sqcg(nz, ny): use("C_NZYX"),
         # All 36 cirq.PauliInteractionGate instances.
         **{
             cirq.PauliInteractionGate(p0, s0, p1, s1): use(
@@ -410,8 +412,10 @@ def _stim_append_controlled_gate(c: stim.Circuit, g: cirq.ControlledGate, t: Lis
 
 
 def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel, t: List[int], tag: str):
-    if g.sub_gate in [cirq.X, cirq.Y, cirq.Z]:
+    if g.sub_gate in [cirq.X, cirq.Y, cirq.Z, cirq.I]:
         c.append(f"{g.sub_gate}_ERROR", t, g.probability, tag=tag)
+    elif isinstance(g.sub_gate, IIGate):
+        c.append(f"II_ERROR", t, g.probability, tag=tag)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
         target_p = [None, stim.target_x, stim.target_y, stim.target_z]
         pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask) if p]

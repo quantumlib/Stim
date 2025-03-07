@@ -3728,3 +3728,49 @@ TEST(ErrorAnalyzer, OBS_INCLUDE_PAULIS) {
         logical_observable L2
     )DEM"));
 }
+
+TEST(ErrorAnalyzer, tagged_noise) {
+    ASSERT_EQ(circuit_to_dem(Circuit(R"CIRCUIT(
+        R[test-tag-0] 0
+        X_ERROR[test-tag-1](0.25) 0
+        M[test-tag-2] 0
+        DETECTOR[test-tag-3] rec[-1]
+        OBSERVABLE_INCLUDE[test-tag-4](0) rec[-1]
+        SHIFT_COORDS[test-tag-5](1)
+    )CIRCUIT")), DetectorErrorModel(R"DEM(
+        error[test-tag-1](0.25) D0 L0
+        detector[test-tag-3] D0
+        logical_observable[test-tag-4] L0
+        shift_detectors[test-tag-5](1.0) 0
+    )DEM"));
+
+    ASSERT_EQ(circuit_to_dem(Circuit(R"CIRCUIT(
+        OBSERVABLE_INCLUDE[test-tag-1](0)
+        OBSERVABLE_INCLUDE[test-tag-2](0)
+    )CIRCUIT")), DetectorErrorModel(R"DEM(
+        logical_observable[test-tag-1] L0
+        logical_observable[test-tag-2] L0
+    )DEM"));
+
+    ASSERT_EQ(circuit_to_dem(Circuit(R"CIRCUIT(
+        R 0
+        X_ERROR[test-tag-0](0.25) 0
+        REPEAT[test-tag-1] 100 {
+            X_ERROR[test-tag-2](0.125) 0
+            MR 0
+            DETECTOR[test-tag-3] rec[-1]
+            OBSERVABLE_INCLUDE[test-tag-4](0) rec[-1]
+        }
+    )CIRCUIT"), {.decompose_errors=false, .flatten_loops=false}), DetectorErrorModel(R"DEM(
+        error[test-tag-0](0.25) D0 L0
+        repeat[test-tag-1] 99 {
+            error[test-tag-2](0.125) D0 L0
+            detector[test-tag-3] D0
+            logical_observable[test-tag-4] L0
+            shift_detectors 1
+        }
+        error[test-tag-2](0.125) D0 L0
+        detector[test-tag-3] D0
+        logical_observable[test-tag-4] L0
+    )DEM"));
+}

@@ -52,30 +52,43 @@ constexpr inline uint16_t gate_name_to_hash(std::string_view text) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
+    constexpr uint16_t const1 = 2126;
+    constexpr uint16_t const2 = 9883;
+    constexpr uint16_t const3 = 8039;
+    constexpr uint16_t const4 = 9042;
+    constexpr uint16_t const5 = 4916;
+    constexpr uint16_t const6 = 4048;
+    constexpr uint16_t const7 = 7081;
+
     size_t n = text.size();
     const char *v = text.data();
     size_t result = n;
     if (n > 0) {
         auto c_first = v[0] | 0x20;
         auto c_last = v[n - 1] | 0x20;
-        result += c_first ^ (c_last << 1);
+        result ^= c_first * const1;
+        result += c_last * const2;
     }
     if (n > 2) {
         auto c1 = v[1] | 0x20;
         auto c2 = v[2] | 0x20;
-        result ^= c1;
-        result += c2 * 11;
+        result ^= c1 * const3;
+        result += c2 * const4;
+    }
+    if (n > 4) {
+        auto c3 = v[3] | 0x20;
+        auto c4 = v[4] | 0x20;
+        result ^= c3 * const5;
+        result += c4 * const6;
     }
     if (n > 5) {
-        auto c3 = v[3] | 0x20;
         auto c5 = v[5] | 0x20;
-        result ^= c3 * 61;
-        result += c5 * 77;
+        result ^= c5 * const7;
     }
     return result & 0x1FF;
 }
 
-constexpr const size_t NUM_DEFINED_GATES = 70;
+constexpr size_t NUM_DEFINED_GATES = 82;
 
 enum class GateType : uint8_t {
     NOT_A_GATE = 0,
@@ -112,12 +125,17 @@ enum class GateType : uint8_t {
     H,  // alias when parsing: H_XZ
     H_XY,
     H_YZ,
+    H_NXY,
+    H_NXZ,
+    H_NYZ,
     // Noise channels
     DEPOLARIZE1,
     DEPOLARIZE2,
     X_ERROR,
     Y_ERROR,
     Z_ERROR,
+    I_ERROR,
+    II_ERROR,
     PAULI_CHANNEL_1,
     PAULI_CHANNEL_2,
     E,  // alias when parsing: CORRELATED_ERROR
@@ -133,6 +151,12 @@ enum class GateType : uint8_t {
     // Period 3 gates
     C_XYZ,
     C_ZYX,
+    C_NXYZ,
+    C_XNYZ,
+    C_XYNZ,
+    C_NZYX,
+    C_ZNYX,
+    C_ZYNX,
     // Period 4 gates
     SQRT_X,
     SQRT_X_DAG,
@@ -140,7 +164,8 @@ enum class GateType : uint8_t {
     SQRT_Y_DAG,
     S,      // alias when parsing: SQRT_Z
     S_DAG,  // alias when parsing: SQRT_Z_DAG
-    // Pair measurement gates
+    // Parity phasing gates.
+    II,
     SQRT_XX,
     SQRT_XX_DAG,
     SQRT_YY,

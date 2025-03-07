@@ -151,30 +151,42 @@ void ErrorAnalyzer::undo_gate(const CircuitInstruction &inst) {
             undo_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::I:
+        case GateType::II:
+        case GateType::I_ERROR:
+        case GateType::II_ERROR:
         case GateType::X:
         case GateType::Y:
         case GateType::Z:
             undo_I(inst);
             break;
         case GateType::C_XYZ:
+        case GateType::C_NXYZ:
+        case GateType::C_XNYZ:
+        case GateType::C_XYNZ:
             undo_C_XYZ(inst);
             break;
         case GateType::C_ZYX:
+        case GateType::C_NZYX:
+        case GateType::C_ZNYX:
+        case GateType::C_ZYNX:
             undo_C_ZYX(inst);
             break;
         case GateType::H_YZ:
         case GateType::SQRT_X:
         case GateType::SQRT_X_DAG:
+        case GateType::H_NYZ:
             undo_H_YZ(inst);
             break;
         case GateType::SQRT_Y:
         case GateType::SQRT_Y_DAG:
         case GateType::H:
+        case GateType::H_NXZ:
             undo_H_XZ(inst);
             break;
         case GateType::S:
         case GateType::S_DAG:
         case GateType::H_XY:
+        case GateType::H_NXY:
             undo_H_XY(inst);
             break;
         case GateType::SQRT_XX:
@@ -242,77 +254,77 @@ void ErrorAnalyzer::undo_RZ(const CircuitInstruction &dat) {
 void ErrorAnalyzer::undo_RX_with_context(const CircuitInstruction &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(tracker.zs[q], context_op, q);
+        check_for_gauge(tracker.zs[q], context_op, q, dat.tag);
         tracker.xs[q].clear();
         tracker.zs[q].clear();
     }
 }
 
-void ErrorAnalyzer::undo_RY_with_context(const CircuitInstruction &dat, const char *context_op) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q);
+void ErrorAnalyzer::undo_RY_with_context(const CircuitInstruction &inst, const char *context_op) {
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
+        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q, inst.tag);
         tracker.xs[q].clear();
         tracker.zs[q].clear();
     }
 }
 
-void ErrorAnalyzer::undo_RZ_with_context(const CircuitInstruction &dat, const char *context_op) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        check_for_gauge(tracker.xs[q], context_op, q);
+void ErrorAnalyzer::undo_RZ_with_context(const CircuitInstruction &inst, const char *context_op) {
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
+        check_for_gauge(tracker.xs[q], context_op, q, inst.tag);
         tracker.xs[q].clear();
         tracker.zs[q].clear();
     }
 }
 
-void ErrorAnalyzer::undo_MX_with_context(const CircuitInstruction &dat, const char *context_op) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
+void ErrorAnalyzer::undo_MX_with_context(const CircuitInstruction &inst, const char *context_op) {
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
         SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
-        xor_sorted_measurement_error(d.range(), dat);
+        xor_sorted_measurement_error(d.range(), inst);
         tracker.xs[q].xor_sorted_items(d.range());
-        check_for_gauge(tracker.zs[q], context_op, q);
+        check_for_gauge(tracker.zs[q], context_op, q, inst.tag);
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
-void ErrorAnalyzer::undo_MY_with_context(const CircuitInstruction &dat, const char *context_op) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
+void ErrorAnalyzer::undo_MY_with_context(const CircuitInstruction &inst, const char *context_op) {
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
         SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
-        xor_sorted_measurement_error(d.range(), dat);
+        xor_sorted_measurement_error(d.range(), inst);
         tracker.xs[q].xor_sorted_items(d.range());
         tracker.zs[q].xor_sorted_items(d.range());
-        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q);
+        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q, inst.tag);
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
-void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &dat, const char *context_op) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
+void ErrorAnalyzer::undo_MZ_with_context(const CircuitInstruction &inst, const char *context_op) {
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
         SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
-        xor_sorted_measurement_error(d.range(), dat);
+        xor_sorted_measurement_error(d.range(), inst);
         tracker.zs[q].xor_sorted_items(d.range());
-        check_for_gauge(tracker.xs[q], context_op, q);
+        check_for_gauge(tracker.xs[q], context_op, q, inst.tag);
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
-void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_ERASE", dat.args, false);
-    double p = dat.args[0] * 0.25;
+void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &inst) {
+    check_can_approximate_disjoint("HERALDED_ERASE", inst.args, false);
+    double p = inst.args[0] * 0.25;
     double i = std::max(0.0, 1.0 - 4 * p);
 
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
         SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
@@ -320,22 +332,23 @@ void ErrorAnalyzer::undo_HERALDED_ERASE(const CircuitInstruction &dat) {
             add_error_combinations<3>(
                 {i, 0, 0, 0, p, p, p, p},
                 {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
-                true);
+                true,
+                inst.tag);
         }
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
-void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", dat.args, true);
-    double hi = dat.args[0];
-    double hx = dat.args[1];
-    double hy = dat.args[2];
-    double hz = dat.args[3];
+void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    check_can_approximate_disjoint("HERALDED_PAULI_CHANNEL_1", inst.args, true);
+    double hi = inst.args[0];
+    double hx = inst.args[1];
+    double hy = inst.args[2];
+    double hz = inst.args[3];
     double i = std::max(0.0, 1.0 - hi - hx - hy - hz);
 
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
+    for (size_t k = inst.targets.size(); k-- > 0;) {
+        auto q = inst.targets[k].qubit_value();
         tracker.num_measurements_in_past--;
 
         SparseXorVec<DemTarget> &herald_symptoms = tracker.rec_bits[tracker.num_measurements_in_past];
@@ -343,7 +356,8 @@ void ErrorAnalyzer::undo_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &dat)
             add_error_combinations<3>(
                 {i, 0, 0, 0, hi, hz, hx, hy},
                 {tracker.xs[q].range(), tracker.zs[q].range(), herald_symptoms.range()},
-                true);
+                true,
+                inst.tag);
         }
         tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
@@ -361,14 +375,15 @@ void ErrorAnalyzer::undo_MPAD(const CircuitInstruction &inst) {
 
 void ErrorAnalyzer::check_for_gauge(
     SparseXorVec<DemTarget> &potential_gauge_summand_1,
-    SparseXorVec<DemTarget> &potential_gauge_summand_2,
+    const SparseXorVec<DemTarget> &potential_gauge_summand_2,
     const char *context_op,
-    uint64_t context_qubit) {
+    uint64_t context_qubit,
+    std::string_view tag) {
     if (potential_gauge_summand_1 == potential_gauge_summand_2) {
         return;
     }
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
-    check_for_gauge(potential_gauge_summand_1, context_op, context_qubit);
+    check_for_gauge(potential_gauge_summand_1, context_op, context_qubit, tag);
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
 }
 
@@ -391,7 +406,7 @@ std::string comma_sep_workaround(const TIter &iterable) {
 }
 
 void ErrorAnalyzer::check_for_gauge(
-    const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit) {
+    const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit, std::string_view tag) {
     if (potential_gauge.empty()) {
         return;
     }
@@ -403,7 +418,7 @@ void ErrorAnalyzer::check_for_gauge(
         has_detectors |= t.is_relative_detector_id();
     }
     if (allow_gauge_detectors && !has_observables) {
-        remove_gauge(add_error(0.5, potential_gauge.range()));
+        remove_gauge(add_error(0.5, potential_gauge.range(), tag).targets);
         return;
     }
 
@@ -499,8 +514,8 @@ void ErrorAnalyzer::check_for_gauge(
 PauliString<MAX_BITWORD_WIDTH> ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
     PauliString<MAX_BITWORD_WIDTH> result(tracker.xs.size());
     for (size_t q = 0; q < tracker.xs.size(); q++) {
-        result.xs[q] = std::find(tracker.xs[q].begin(), tracker.xs[q].end(), t) != tracker.xs[q].end();
-        result.zs[q] = std::find(tracker.zs[q].begin(), tracker.zs[q].end(), t) != tracker.zs[q].end();
+        result.xs[q] = std::ranges::find(tracker.xs[q], t) != tracker.xs[q].end();
+        result.zs[q] = std::ranges::find(tracker.zs[q], t) != tracker.zs[q].end();
     }
     return result;
 }
@@ -508,7 +523,7 @@ PauliString<MAX_BITWORD_WIDTH> ErrorAnalyzer::current_error_sensitivity_for(DemT
 void ErrorAnalyzer::xor_sorted_measurement_error(SpanRef<const DemTarget> targets, const CircuitInstruction &inst) {
     // Measurement error.
     if (!inst.args.empty() && inst.args[0] > 0) {
-        add_error(inst.args[0], targets);
+        add_error(inst.args[0], targets, inst.tag);
     }
 }
 
@@ -620,13 +635,13 @@ void ErrorAnalyzer::undo_SWAPCX(const CircuitInstruction &dat) {
 void ErrorAnalyzer::undo_DETECTOR(const CircuitInstruction &dat) {
     tracker.undo_DETECTOR(dat);
     auto id = DemTarget::relative_detector_id(tracker.num_detectors_in_past);
-    flushed_reversed_model.append_detector_instruction(dat.args, id);
+    flushed_reversed_model.append_detector_instruction(dat.args, id, dat.tag);
 }
 
 void ErrorAnalyzer::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
     tracker.undo_OBSERVABLE_INCLUDE(dat);
     auto id = DemTarget::observable_id((int32_t)dat.args[0]);
-    flushed_reversed_model.append_logical_observable_instruction(id);
+    flushed_reversed_model.append_logical_observable_instruction(id, dat.tag);
 }
 
 ErrorAnalyzer::ErrorAnalyzer(
@@ -668,7 +683,7 @@ void ErrorAnalyzer::undo_circuit(const Circuit &circuit) {
             } else if (op.gate_type == GateType::REPEAT) {
                 const auto &loop_body = op.repeat_block_body(circuit);
                 uint64_t repeats = op.repeat_block_rep_count();
-                run_loop(loop_body, repeats);
+                run_loop(loop_body, repeats, op.tag);
             } else {
                 undo_gate(op);
             }
@@ -706,34 +721,34 @@ void ErrorAnalyzer::undo_circuit(const Circuit &circuit) {
 
 void ErrorAnalyzer::post_check_initialization() {
     for (uint32_t q = 0; q < tracker.xs.size(); q++) {
-        check_for_gauge(tracker.xs[q], "qubit initialization into |0> at the start of the circuit", q);
+        check_for_gauge(tracker.xs[q], "qubit initialization into |0> at the start of the circuit", q, "");
     }
 }
 
-void ErrorAnalyzer::undo_X_ERROR(const CircuitInstruction &dat) {
+void ErrorAnalyzer::undo_X_ERROR(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    for (auto q : dat.targets) {
-        add_error(dat.args[0], tracker.zs[q.data].range());
+    for (auto q : inst.targets) {
+        add_error(inst.args[0], tracker.zs[q.data].range(), inst.tag);
     }
 }
 
-void ErrorAnalyzer::undo_Y_ERROR(const CircuitInstruction &dat) {
+void ErrorAnalyzer::undo_Y_ERROR(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    for (auto q : dat.targets) {
-        add_xored_error(dat.args[0], tracker.xs[q.data].range(), tracker.zs[q.data].range());
+    for (auto q : inst.targets) {
+        add_xored_error(inst.args[0], tracker.xs[q.data].range(), tracker.zs[q.data].range(), inst.tag);
     }
 }
 
-void ErrorAnalyzer::undo_Z_ERROR(const CircuitInstruction &dat) {
+void ErrorAnalyzer::undo_Z_ERROR(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    for (auto q : dat.targets) {
-        add_error(dat.args[0], tracker.xs[q.data].range());
+    for (auto q : inst.targets) {
+        add_error(inst.args[0], tracker.xs[q.data].range(), inst.tag);
     }
 }
 
@@ -747,7 +762,7 @@ inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src
     });
 }
 
-void ErrorAnalyzer::add_composite_error(double probability, SpanRef<const GateTarget> targets) {
+void ErrorAnalyzer::add_composite_error(double probability, SpanRef<const GateTarget> targets, std::string_view tag) {
     if (!accumulate_errors) {
         return;
     }
@@ -760,14 +775,14 @@ void ErrorAnalyzer::add_composite_error(double probability, SpanRef<const GateTa
             inplace_xor_tail(mono_buf, tracker.zs[q]);
         }
     }
-    add_error_in_sorted_jagged_tail(probability);
+    add_error_in_sorted_jagged_tail(probability, tag);
 }
 
 void ErrorAnalyzer::correlated_error_block(const std::vector<CircuitInstruction> &dats) {
     assert(!dats.empty());
 
     if (dats.size() == 1) {
-        add_composite_error(dats[0].args[0], dats[0].targets);
+        add_composite_error(dats[0].args[0], dats[0].targets, dats[0].tag);
         return;
     }
     check_can_approximate_disjoint("ELSE_CORRELATED_ERROR", {}, false);
@@ -786,43 +801,45 @@ void ErrorAnalyzer::correlated_error_block(const std::vector<CircuitInstruction>
                 "'" +
                 std::to_string(approximate_disjoint_errors_threshold) + "'.");
         }
-        add_composite_error(actual_p, dat.targets);
+        add_composite_error(actual_p, dat.targets, dat.tag);
     }
 }
 
-void ErrorAnalyzer::undo_CORRELATED_ERROR(const CircuitInstruction &dat) {
-    add_composite_error(dat.args[0], dat.targets);
+void ErrorAnalyzer::undo_CORRELATED_ERROR(const CircuitInstruction &inst) {
+    add_composite_error(inst.args[0], inst.targets, inst.tag);
 }
 
-void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &dat) {
+void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] > 0.75) {
+    if (inst.args[0] > 0.75) {
         throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).");
     }
-    double p = depolarize1_probability_to_independent_per_channel_probability(dat.args[0]);
-    for (auto q : dat.targets) {
+    double p = depolarize1_probability_to_independent_per_channel_probability(inst.args[0]);
+    for (auto q : inst.targets) {
         add_error_combinations<2>(
             {0, p, p, p},
             {
                 tracker.xs[q.data].range(),
                 tracker.zs[q.data].range(),
-            });
+            },
+            false,
+            inst.tag);
     }
 }
 
-void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
+void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.args[0] > 15.0 / 16.0) {
+    if (inst.args[0] > 15.0 / 16.0) {
         throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability > 15/16).");
     }
-    double p = depolarize2_probability_to_independent_per_channel_probability(dat.args[0]);
-    for (size_t i = 0; i < dat.targets.size(); i += 2) {
-        auto a = dat.targets[i];
-        auto b = dat.targets[i + 1];
+    double p = depolarize2_probability_to_independent_per_channel_probability(inst.args[0]);
+    for (size_t i = 0; i < inst.targets.size(); i += 2) {
+        auto a = inst.targets[i];
+        auto b = inst.targets[i + 1];
         add_error_combinations<4>(
             {0, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p},
             {
@@ -830,7 +847,9 @@ void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &dat) {
                 tracker.zs[a.data].range(),
                 tracker.xs[b.data].range(),
                 tracker.zs[b.data].range(),
-            });
+            },
+            false,
+            inst.tag);
     }
 }
 
@@ -876,16 +895,16 @@ void ErrorAnalyzer::check_can_approximate_disjoint(
     }
 }
 
-void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
-    double dx = dat.args[0];
-    double dy = dat.args[1];
-    double dz = dat.args[2];
+void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
+    double dx = inst.args[0];
+    double dy = inst.args[1];
+    double dz = inst.args[2];
     double ix;
     double iy;
     double iz;
     bool is_independent = try_disjoint_to_independent_xyz_errors_approx(dx, dy, dz, &ix, &iy, &iz);
     if (!is_independent) {
-        check_can_approximate_disjoint("PAULI_CHANNEL_1", dat.args, true);
+        check_can_approximate_disjoint("PAULI_CHANNEL_1", inst.args, true);
         ix = dx;
         iy = dy;
         iz = dz;
@@ -894,31 +913,32 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_1(const CircuitInstruction &dat) {
     if (!accumulate_errors) {
         return;
     }
-    for (auto q : dat.targets) {
+    for (auto q : inst.targets) {
         add_error_combinations<2>(
             {0, ix, iz, iy},
             {
                 tracker.zs[q.data].range(),
                 tracker.xs[q.data].range(),
             },
-            !is_independent);
+            !is_independent,
+            inst.tag);
     }
 }
 
-void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
-    check_can_approximate_disjoint("PAULI_CHANNEL_2", dat.args, true);
+void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &inst) {
+    check_can_approximate_disjoint("PAULI_CHANNEL_2", inst.args, true);
 
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
         size_t k2 = pauli_xyz_to_xz((k + 1) & 3) | (pauli_xyz_to_xz(((k + 1) >> 2) & 3) << 2);
-        probabilities[k2] = dat.args[k];
+        probabilities[k2] = inst.args[k];
     }
     if (!accumulate_errors) {
         return;
     }
-    for (size_t i = 0; i < dat.targets.size(); i += 2) {
-        auto a = dat.targets[i];
-        auto b = dat.targets[i + 1];
+    for (size_t i = 0; i < inst.targets.size(); i += 2) {
+        auto a = inst.targets[i];
+        auto b = inst.targets[i + 1];
         add_error_combinations<4>(
             probabilities,
             {
@@ -927,7 +947,8 @@ void ErrorAnalyzer::undo_PAULI_CHANNEL_2(const CircuitInstruction &dat) {
                 tracker.zs[a.data].range(),
                 tracker.xs[a.data].range(),
             },
-            true);
+            true,
+            inst.tag);
     }
 }
 
@@ -936,10 +957,16 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
     auto conv_append = [&](const DemInstruction &e) {
         auto stored_targets = out.target_buf.take_copy(e.target_data);
         auto stored_args = out.arg_buf.take_copy(e.arg_data);
+        auto stored_tag = out.tag_buf.take_copy(e.tag);
         for (auto &t : stored_targets) {
             t.shift_if_detector_id(-(int64_t)base_detector_id);
         }
-        out.instructions.push_back(DemInstruction{stored_args, stored_targets, e.type});
+        out.instructions.push_back(DemInstruction{
+            .arg_data=stored_args,
+            .target_data=stored_targets,
+            .tag=stored_tag,
+            .type=e.type,
+        });
     };
 
     for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
@@ -947,7 +974,7 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
         switch (e.type) {
             case DemInstructionType::DEM_SHIFT_DETECTORS:
                 base_detector_id += e.target_data[0].data;
-                out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
+                out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data, e.tag);
                 break;
             case DemInstructionType::DEM_ERROR:
                 for (auto &t : e.target_data) {
@@ -957,7 +984,7 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 break;
             case DemInstructionType::DEM_DETECTOR:
             case DemInstructionType::DEM_LOGICAL_OBSERVABLE:
-                if (!e.arg_data.empty() || seen.find(e.target_data[0]) == seen.end()) {
+                if (!e.arg_data.empty() || !e.tag.empty() || !seen.contains(e.target_data[0])) {
                     conv_append(e);
                 }
                 break;
@@ -966,7 +993,9 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 if (repetitions) {
                     uint64_t old_base_detector_id = base_detector_id;
                     out.append_repeat_block(
-                        e.repeat_block_rep_count(), unreversed(e.repeat_block_body(rev), base_detector_id, seen));
+                        e.repeat_block_rep_count(),
+                        unreversed(e.repeat_block_body(rev), base_detector_id, seen),
+                        e.tag);
                     uint64_t loop_shift = base_detector_id - old_base_detector_id;
                     base_detector_id += loop_shift * (repetitions - 1);
                 }
@@ -1009,58 +1038,60 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
 void ErrorAnalyzer::flush() {
     do_global_error_decomposition_pass();
     for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
-        if (kv->first.empty() || kv->second == 0) {
+        const ErrorEquivalenceClass &key = kv->first;
+        const double &probability = kv->second;
+        if (key.targets.empty() || probability == 0) {
             continue;
         }
-        flushed_reversed_model.append_error_instruction(kv->second, kv->first);
+        flushed_reversed_model.append_error_instruction(probability, key.targets, key.tag);
     }
     error_class_probabilities.clear();
 }
 
-SpanRef<const DemTarget> ErrorAnalyzer::add_xored_error(
-    double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2) {
+ErrorEquivalenceClass ErrorAnalyzer::add_xored_error(
+    double probability, SpanRef<const DemTarget> flipped1, SpanRef<const DemTarget> flipped2, std::string_view tag) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
     mono_buf.tail.ptr_end = xor_merge_sort(flipped1, flipped2, mono_buf.tail.ptr_end);
-    return add_error_in_sorted_jagged_tail(probability);
+    return add_error_in_sorted_jagged_tail(probability, tag);
 }
 
-SpanRef<const DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
-    auto v = error_class_probabilities.find(mono_buf.tail);
+ErrorEquivalenceClass ErrorAnalyzer::mono_dedupe_store_tail(std::string_view tag) {
+    auto v = error_class_probabilities.find(ErrorEquivalenceClass{mono_buf.tail, tag});
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
         return v->first;
     }
-    auto result = mono_buf.commit_tail();
+    auto result = ErrorEquivalenceClass{mono_buf.commit_tail(), tag};
     error_class_probabilities.insert({result, 0});
     return result;
 }
 
-SpanRef<const DemTarget> ErrorAnalyzer::mono_dedupe_store(SpanRef<const DemTarget> sorted) {
+ErrorEquivalenceClass ErrorAnalyzer::mono_dedupe_store(ErrorEquivalenceClass sorted) {
     auto v = error_class_probabilities.find(sorted);
     if (v != error_class_probabilities.end()) {
         return v->first;
     }
-    mono_buf.append_tail(sorted);
-    auto result = mono_buf.commit_tail();
+    mono_buf.append_tail(sorted.targets);
+    auto result = ErrorEquivalenceClass{mono_buf.commit_tail(), sorted.tag};
     error_class_probabilities.insert({result, 0});
     return result;
 }
 
-SpanRef<const DemTarget> ErrorAnalyzer::add_error(double probability, SpanRef<const DemTarget> flipped_sorted) {
-    auto key = mono_dedupe_store(flipped_sorted);
+ErrorEquivalenceClass ErrorAnalyzer::add_error(double probability, SpanRef<const DemTarget> flipped_sorted, std::string_view tag) {
+    auto key = mono_dedupe_store(ErrorEquivalenceClass{flipped_sorted, tag});
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-SpanRef<const DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability) {
-    auto key = mono_dedupe_store_tail();
+ErrorEquivalenceClass ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability, std::string_view tag) {
+    auto key = mono_dedupe_store_tail(tag);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
+void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations, std::string_view loop_tag) {
     if (!fold_loops) {
         // If loop folding is disabled, just manually run each iteration.
         for (size_t k = 0; k < iterations; k++) {
@@ -1089,7 +1120,7 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     while (hare_iter < iterations) {
         try {
             hare.undo_circuit(loop);
-        } catch (const std::invalid_argument &ex) {
+        } catch (const std::invalid_argument &) {
             // Encountered an error. Abort loop folding so it can be re-triggered in a normal way.
             hare_iter = iterations;
             break;
@@ -1145,7 +1176,12 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
                     auto shift_targets = body.target_buf.take_copy(SpanRef<const DemTarget>(&remaining_shift));
                     body.instructions.insert(
                         body.instructions.begin(),
-                        DemInstruction{{}, shift_targets, DemInstructionType::DEM_SHIFT_DETECTORS});
+                        DemInstruction{
+                            .arg_data={},
+                            .target_data=shift_targets,
+                            .tag="",
+                            .type=DemInstructionType::DEM_SHIFT_DETECTORS,
+                        });
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
                     auto shift_targets = body.target_buf.take_copy(SpanRef<const DemTarget>(&remaining_shift));
@@ -1154,7 +1190,7 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             }
 
             // Append the loop to the growing error model and put the error model back in its proper place.
-            tmp.append_repeat_block(period_iterations, std::move(body));
+            tmp.append_repeat_block(period_iterations, std::move(body), loop_tag);
             flushed_reversed_model = std::move(tmp);
         }
     }
@@ -1166,13 +1202,13 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     }
 }
 
-void ErrorAnalyzer::undo_SHIFT_COORDS(const CircuitInstruction &dat) {
-    flushed_reversed_model.append_shift_detectors_instruction(dat.args, 0);
+void ErrorAnalyzer::undo_SHIFT_COORDS(const CircuitInstruction &inst) {
+    flushed_reversed_model.append_shift_detectors_instruction(inst.args, 0, inst.tag);
 }
 
 template <size_t s>
 void ErrorAnalyzer::decompose_helper_add_error_combinations(
-    const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids) {
+    const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids, std::string_view tag) {
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {
@@ -1259,7 +1295,7 @@ void ErrorAnalyzer::decompose_helper_add_error_combinations(
             if (!mono_buf.tail.empty()) {
                 mono_buf.tail.ptr_end -= 1;
             }
-            stored_ids[k] = mono_dedupe_store_tail();
+            stored_ids[k] = mono_dedupe_store_tail(tag).targets;
         }
     }
 }
@@ -1282,7 +1318,7 @@ bool stim::is_graphlike(const SpanRef<const DemTarget> &components) {
 bool ErrorAnalyzer::has_unflushed_ungraphlike_errors() const {
     for (const auto &kv : error_class_probabilities) {
         const auto &component = kv.first;
-        if (kv.second != 0 && !is_graphlike(component)) {
+        if (kv.second != 0 && !is_graphlike(component.targets)) {
             return true;
         }
     }
@@ -1450,10 +1486,10 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
     // Make a map from all known symptoms singlets and pairs to actual components including frame changes.
     std::map<FixedCapVector<DemTarget, 2>, SpanRef<const DemTarget>> known_symptoms;
     for (const auto &kv : error_class_probabilities) {
-        if (kv.second == 0 || kv.first.empty()) {
+        if (kv.second == 0 || kv.first.targets.empty()) {
             continue;
         }
-        const auto &targets = kv.first;
+        const auto &targets = kv.first.targets;
         size_t start = 0;
         for (size_t k = 0; k <= targets.size(); k++) {
             if (k == targets.size() || targets[k].is_separator()) {
@@ -1471,13 +1507,13 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
     }
 
     // Find how to rewrite hyper errors into graphlike errors.
-    std::vector<std::pair<SpanRef<const DemTarget>, SpanRef<const DemTarget>>> rewrites;
+    std::vector<std::pair<ErrorEquivalenceClass, ErrorEquivalenceClass>> rewrites;
     for (const auto &kv : error_class_probabilities) {
-        if (kv.second == 0 || kv.first.empty()) {
+        if (kv.second == 0 || kv.first.targets.empty()) {
             continue;
         }
 
-        const auto &targets = kv.first;
+        const auto &targets = kv.first.targets;
         if (is_graphlike(targets)) {
             continue;
         }
@@ -1525,13 +1561,13 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
             mono_buf.tail.ptr_end -= 1;
         }
 
-        rewrites.push_back({kv.first, mono_buf.commit_tail()});
+        rewrites.push_back({kv.first, ErrorEquivalenceClass{mono_buf.commit_tail(), kv.first.tag}});
     }
 
     for (const auto &rewrite : rewrites) {
         double p = error_class_probabilities[rewrite.first];
         error_class_probabilities.erase(rewrite.first);
-        add_error(p, rewrite.second);
+        add_error(p, rewrite.second.targets, rewrite.second.tag);
     }
 }
 
@@ -1539,13 +1575,14 @@ template <size_t s>
 void ErrorAnalyzer::add_error_combinations(
     std::array<double, 1 << s> probabilities,
     std::array<SpanRef<const DemTarget>, s> basis_errors,
-    bool probabilities_are_disjoint) {
+    bool probabilities_are_disjoint,
+    std::string_view tag) {
     std::array<uint64_t, 1 << s> detector_masks{};
     FixedCapVector<DemTarget, 16> involved_detectors{};
     std::array<SpanRef<const DemTarget>, 1 << s> stored_ids;
 
     for (size_t k = 0; k < s; k++) {
-        stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
+        stored_ids[1 << k] = mono_dedupe_store(ErrorEquivalenceClass{basis_errors[k], tag}).targets;
 
         if (decompose_errors) {
             for (const auto &id : basis_errors[k]) {
@@ -1554,7 +1591,7 @@ void ErrorAnalyzer::add_error_combinations(
                     if (r == involved_detectors.end()) {
                         try {
                             involved_detectors.push_back(id);
-                        } catch (const std::out_of_range &ex) {
+                        } catch (const std::out_of_range &) {
                             std::stringstream message;
                             message
                                 << "An error case in a composite error exceeded the max supported number of symptoms "
@@ -1585,14 +1622,14 @@ void ErrorAnalyzer::add_error_combinations(
         if (c1) {
             mono_buf.ensure_available(stored_ids[c1].size() + stored_ids[c2].size());
             mono_buf.tail.ptr_end = xor_merge_sort(stored_ids[c1], stored_ids[c2], mono_buf.tail.ptr_end);
-            stored_ids[k] = mono_dedupe_store_tail();
+            stored_ids[k] = mono_dedupe_store_tail(tag).targets;
             detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];
         }
     }
 
     // Determine involved detectors while creating basis masks and storing added data.
     if (decompose_errors) {
-        decompose_helper_add_error_combinations<s>(detector_masks, stored_ids);
+        decompose_helper_add_error_combinations<s>(detector_masks, stored_ids, tag);
     }
     if (probabilities_are_disjoint) {
         // Merge indistinguishable cases.
@@ -1612,7 +1649,7 @@ void ErrorAnalyzer::add_error_combinations(
 
     // Include errors in the record.
     for (size_t k = 1; k < 1 << s; k++) {
-        add_error(probabilities[k], stored_ids[k]);
+        add_error(probabilities[k], stored_ids[k], tag);
     }
 }
 
@@ -1626,17 +1663,17 @@ void ErrorAnalyzer::undo_MPP(const CircuitInstruction &inst) {
     decompose_mpp_operation(
         CircuitInstruction{GateType::MPP, inst.args, reversed_targets, inst.tag},
         tracker.xs.size(),
-        [&](const CircuitInstruction &inst) {
-            if (inst.gate_type == GateType::M) {
+        [&](const CircuitInstruction &sub_inst) {
+            if (sub_inst.gate_type == GateType::M) {
                 reversed_measure_targets.clear();
-                for (size_t k = inst.targets.size(); k--;) {
-                    reversed_measure_targets.push_back(inst.targets[k]);
+                for (size_t k = sub_inst.targets.size(); k--;) {
+                    reversed_measure_targets.push_back(sub_inst.targets[k]);
                 }
                 undo_MZ_with_context(
-                    CircuitInstruction{GateType::M, inst.args, reversed_measure_targets, inst.tag},
+                    CircuitInstruction{GateType::M, sub_inst.args, reversed_measure_targets, sub_inst.tag},
                     "a Pauli product measurement (MPP)");
             } else {
-                undo_gate(inst);
+                undo_gate(sub_inst);
             }
         });
 }
@@ -1652,8 +1689,8 @@ void ErrorAnalyzer::undo_SPP(const CircuitInstruction &inst) {
         CircuitInstruction{GateType::SPP, inst.args, reversed_targets, inst.tag},
         tracker.xs.size(),
         false,
-        [&](const CircuitInstruction &inst) {
-            undo_gate(inst);
+        [&](const CircuitInstruction &sub_inst) {
+            undo_gate(sub_inst);
         });
 }
 

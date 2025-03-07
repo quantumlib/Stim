@@ -642,6 +642,30 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "tag",
+        [](const CircuitTargetsInsideInstruction &self) {
+            return self.gate_tag;
+        },
+        clean_doc_string(R"DOC(
+            Returns the tag of the gate / instruction that was being executed.
+            @signature def tag(self) -> str:
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0 1
+                ...     X_ERROR[look-at-me-imma-tag](0.25) 0 1
+                ...     M 0 1
+                ...     DETECTOR(2, 3) rec[-1] rec[-2]
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> loc: stim.CircuitErrorLocation = err[0].circuit_error_locations[0]
+                >>> loc.instruction_targets.tag
+                'look-at-me-imma-tag'
+        )DOC")
+            .data());
+
     c.def_readonly(
         "target_range_start",
         &CircuitTargetsInsideInstruction::target_range_start,
@@ -740,16 +764,18 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def(
         pybind11::init(
             [](std::string_view gate,
+               std::string_view tag,
                const std::vector<double> &args,
                size_t target_range_start,
                size_t target_range_end,
                const std::vector<GateTargetWithCoords> &targets_in_range) -> CircuitTargetsInsideInstruction {
                 CircuitTargetsInsideInstruction result{
-                    GATE_DATA.at(gate).id, args, target_range_start, target_range_end, targets_in_range};
+                    GATE_DATA.at(gate).id, std::string(tag), args, target_range_start, target_range_end, targets_in_range};
                 return result;
             }),
         pybind11::kw_only(),
         pybind11::arg("gate"),
+        pybind11::arg("tag") = "",
         pybind11::arg("args"),
         pybind11::arg("target_range_start"),
         pybind11::arg("target_range_end"),
@@ -761,6 +787,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
                 >>> import stim
                 >>> val = stim.CircuitTargetsInsideInstruction(
                 ...     gate='X_ERROR',
+                ...     tag='',
                 ...     args=[0.25],
                 ...     target_range_start=0,
                 ...     target_range_end=1,
@@ -824,6 +851,25 @@ void stim_pybind::pybind_circuit_error_location_methods(
                 ... ''').shortest_graphlike_error()
                 >>> err[0].circuit_error_locations[0].tick_offset
                 3
+        )DOC")
+            .data());
+
+    c.def_readonly(
+        "noise_tag",
+        &CircuitErrorLocation::noise_tag,
+        clean_doc_string(R"DOC(
+            The tag on the noise instruction that caused the error.
+
+            Examples:
+                >>> import stim
+                >>> err = stim.Circuit('''
+                ...     R 0
+                ...     Y_ERROR[test-tag](0.125) 0
+                ...     M 0
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''').shortest_graphlike_error()
+                >>> err[0].circuit_error_locations[0].noise_tag
+                'test-tag'
         )DOC")
             .data());
 
@@ -952,12 +998,13 @@ void stim_pybind::pybind_circuit_error_location_methods(
                const std::vector<GateTargetWithCoords> &flipped_pauli_product,
                const pybind11::object &flipped_measurement,
                const CircuitTargetsInsideInstruction &instruction_targets,
-               const std::vector<CircuitErrorLocationStackFrame> &stack_frames) -> CircuitErrorLocation {
+               const std::vector<CircuitErrorLocationStackFrame> &stack_frames,
+               std::string_view noise_tag) -> CircuitErrorLocation {
                 FlippedMeasurement m{0, {}};
                 if (!flipped_measurement.is_none()) {
                     m = pybind11::cast<FlippedMeasurement>(flipped_measurement);
                 }
-                CircuitErrorLocation result{tick_offset, flipped_pauli_product, m, instruction_targets, stack_frames};
+                CircuitErrorLocation result{std::string(noise_tag), tick_offset, flipped_pauli_product, m, instruction_targets, stack_frames};
                 return result;
             }),
         pybind11::kw_only(),
@@ -966,6 +1013,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
         pybind11::arg("flipped_measurement"),
         pybind11::arg("instruction_targets"),
         pybind11::arg("stack_frames"),
+        pybind11::arg("noise_tag") = "",
         clean_doc_string(R"DOC(
             Creates a stim.CircuitErrorLocation.
 
@@ -1000,9 +1048,11 @@ void stim_pybind::pybind_circuit_error_location_methods(
                 ...             instruction_repetitions_arg=0,
                 ...         ),
                 ...     ),
+                ...     noise_tag='test-tag',
                 ... )
                 >>> print(err)
                 CircuitErrorLocation {
+                    noise_tag: test-tag
                     flipped_pauli_product: X0
                     Circuit location stack trace:
                         (after 1 TICKs)
