@@ -18,8 +18,8 @@ and annotations for tasks such as detection event sampling and drawing the circu
 - [Examples](#Examples)
     - [Teleportation Circuit](#Teleportation-Circuit)
     - [Repetition Code Circuit](#Repetition-Code-Circuit)
-    - [Annotated Noisy Repetition Code Circuit](#Annotated-Noisy-Repetition-Code-Circuit)
-    - [Annotated Noisy Surface Code Circuit](#Annotated-Noisy-Surface-Code-Circuit)
+    - [Fully Annotated Noisy Repetition Code Circuit](#Fully-Annotated-Noisy-Repetition-Code-Circuit)
+    - [Fully Annotated Noisy Surface Code Circuit](#Fully-Annotated-Noisy-Surface-Code-Circuit)
 
 
 ## Encoding
