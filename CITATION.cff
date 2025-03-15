@@ -1,0 +1,70 @@
+cff-version: 1.2.0
+message: If you use Stim, please cite it using this metadata.
+
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Gidney
+      given-names: Craig
+  title: 'Stim: a fast stabilizer circuit simulator'
+  journal: Quantum
+  year: 2021
+  month: 7
+  volume: 5
+  start: 497
+  issn: 2521-327X
+  url: https://doi.org/10.22331/q-2021-07-06-497
+  publisher:
+    name: >-
+      Verein zur Förderung des Open Access Publizierens in den
+      Quantenwissenschaften
+
+title: Stim
+abstract: >-
+  Stim is a tool for high performance simulation and analysis of quantum
+  stabilizer circuits, especially quantum error correction (QEC) circuits.
+authors:
+  - family-names: Gidney
+    given-names: Craig
+version: 1.14.0
+date-released: 2024-09-24
+url: https://github.com/quantumlib/stim
+repository-code: https://github.com/quantumlib/stim
+license: Apache-2.0
+type: software
+identifiers:
+  - description: The GitHub repository for Stim
+    value: https://quantumai.google/Stim
+    type: url
+  - description: PyPI project for Stim
+    value: https://pypi.org/project/Stim
+    type: url
+keywords:
+  - algorithms
+  - API
+  - application programming interface
+  - Clifford gates
+  - Clifford operations
+  - high performance
+  - open-source software
+  - physics
+  - Python
+  - QEC
+  - quantum
+  - quantum algorithms
+  - quantum circuits
+  - quantum computing
+  - quantum error correction
+  - quantum error decoder
+  - quantum gates
+  - quantum programming
+  - quantum simulation
+  - quantum state
+  - qubit
+  - science
+  - SDK
+  - simulation
+  - simulator
+  - software
+  - software development toolkit
+  - stabilizer circuits
