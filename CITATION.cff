@@ -1,6 +1,21 @@
+# Citation information for this repository.                         -*- yaml -*-
+#
+# CITATION.cff files provide human- & machine-readable citation information for
+# software and datasets. GitHub, Zenodo, and the Zotero browser plugin all use
+# CFF files automatically if provided. https://citation-file-format.github.io/.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 cff-version: 1.2.0
 message: If you use Stim, please cite it using this metadata.
 
+# CITATION.cff files describe how to cite software or datasets, with the goal of
+# making software and data be citable in their own right. However, sometimes
+# projects want citations to go to a paper instead. 'Preferred-citation' serves
+# to communicate that. The distinction matters in different situations. If this
+# field is present, GitHub uses the value for the "cite this repository" button
+# and ignores the rest of this file; conversely, the Zenodo-GitHub integration
+# ignores this field when creating an entry for a new software release because
+# the Zenodo entry is specifically about the software in this repository.
 preferred-citation:
   type: article
   authors:
@@ -18,6 +33,8 @@ preferred-citation:
     name: >-
       Verein zur Förderung des Open Access Publizierens in den
       Quantenwissenschaften
+
+# The remaining metadata describes the current software release.
 
 title: Stim
 abstract: >-
