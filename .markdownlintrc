@@ -1,4 +1,4 @@
-{ // Markdownlint config file for this project.                    -*- jsonc -*-
+{ // Project Markdownlint configuration.    -*- mode: jsonc; fill-column: 80 -*-
   //
   // Note: there are multiple programs programs named "markdownlint". We use
   // https://github.com/igorshubovych/markdownlint-cli/, which is the one you
