@@ -34,7 +34,7 @@ preferred-citation:
       Verein zur Förderung des Open Access Publizierens in den
       Quantenwissenschaften
 
-# The remaining metadata describes the current software release.
+# The remaining metadata in this file describes the current software release.
 
 title: Stim
 abstract: >-
@@ -51,11 +51,14 @@ license: Apache-2.0
 type: software
 identifiers:
   - description: The GitHub repository for Stim
-    value: https://quantumai.google/Stim
+    value: https://github.com/quantumlib/Stim
     type: url
   - description: PyPI project for Stim
     value: https://pypi.org/project/Stim
     type: url
+  - description: Publication about Stim
+    value: 10.22331/q-2021-07-06-497
+    type: doi
 keywords:
   - algorithms
   - API
