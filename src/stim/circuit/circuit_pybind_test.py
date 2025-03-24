@@ -2320,3 +2320,43 @@ def test_append_tag():
         c.append(stim.CircuitRepeatBlock(10, stim.Circuit()), tag="newtag")
 
     assert c == stim.Circuit("H[test] 2 3")
+
+
+def test_append_pauli_string():
+    c = stim.Circuit()
+    c.append("MPP", [
+        stim.PauliString("X1*Y2*Z3"),
+        stim.target_y(4),
+        stim.PauliString("Z5"),
+    ])
+    assert c == stim.Circuit("""
+        MPP X1*Y2*Z3 Y4 Z5
+    """)
+    c.append("MPP", stim.PauliString("X1*X2"))
+    assert c == stim.Circuit("""
+        MPP X1*Y2*Z3 Y4 Z5 X1*X2
+    """)
+
+    with pytest.raises(ValueError, match="empty stim.PauliString"):
+        c.append("MPP", stim.PauliString(""))
+    with pytest.raises(ValueError, match="empty stim.PauliString"):
+        c.append("MPP", [stim.PauliString("")])
+    with pytest.raises(ValueError, match="empty stim.PauliString"):
+        c.append("MPP", [stim.PauliString("X1"), stim.PauliString("")])
+    assert c == stim.Circuit("""
+        MPP X1*Y2*Z3 Y4 Z5 X1*X2
+    """)
+
+    with pytest.raises(ValueError, match="Don't know how to target"):
+        c.append("MPP", object())
+    with pytest.raises(ValueError, match="Don't know how to target"):
+        c.append("MPP", object())
+
+
+def test_without_tags():
+    circuit = stim.Circuit("""
+        H[tag] 5
+    """)
+    assert circuit.without_tags() == stim.Circuit("""
+        H 5
+    """)

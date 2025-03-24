@@ -23,6 +23,7 @@ namespace stim_pybind {
 
 pybind11::class_<stim::Circuit> pybind_circuit(pybind11::module &m);
 void pybind_circuit_methods(pybind11::module &m, pybind11::class_<stim::Circuit> &c);
+void pybind_circuit_methods_extra(pybind11::module &m, pybind11::class_<stim::Circuit> &c);
 
 }  // namespace stim_pybind
 

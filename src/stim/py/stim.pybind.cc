@@ -628,6 +628,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_gate_data_methods(m, c_gate_data);
     pybind_circuit_repeat_block_methods(m, c_circuit_repeat_block);
     pybind_circuit_methods(m, c_circuit);
+    pybind_circuit_methods_extra(m, c_circuit);
 
     pybind_tableau_iter_methods(m, c_tableau_iter);
     pybind_dem_sampler_methods(m, c_dem_sampler);
