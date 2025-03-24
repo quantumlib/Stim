@@ -39,22 +39,22 @@ inline CliffordWord<W> operator*(const CliffordWord<W> &lhs, const CliffordWord<
     // I don't have a simple explanation of why this is correct. It was produced by starting from something that was
     // obviously correct, having tests to check all 24*24 cases, then iteratively applying simple rewrites to reduce
     // the number of operations. So the result is correct, but somewhat incomprehensible.
-    result.inv_x2x = (lhs.inv_x2x | rhs.inv_x2x) ^ lhs.z2x & rhs.x2z;
+    result.inv_x2x = (lhs.inv_x2x | rhs.inv_x2x) ^ (lhs.z2x & rhs.x2z);
     result.x2z = rhs.inv_x2x.andnot(lhs.x2z) ^ lhs.inv_z2z.andnot(rhs.x2z);
     result.z2x = lhs.inv_x2x.andnot(rhs.z2x) ^ rhs.inv_z2z.andnot(lhs.z2x);
-    result.inv_z2z = lhs.x2z & rhs.z2x ^ (lhs.inv_z2z | rhs.inv_z2z);
+    result.inv_z2z = (lhs.x2z & rhs.z2x) ^ (lhs.inv_z2z | rhs.inv_z2z);
 
     // I *especially* don't have an explanation of why this part is correct. But every case is tested and verified.
     simd_word<W> rhs_x2y = rhs.inv_x2x.andnot(rhs.x2z);
     simd_word<W> rhs_z2y = rhs.inv_z2z.andnot(rhs.z2x);
-    simd_word<W> dy = lhs.x2z & lhs.z2x ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
+    simd_word<W> dy = (lhs.x2z & lhs.z2x) ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
     result.x_signs = rhs.x_signs
         ^ rhs.inv_x2x.andnot(lhs.x_signs)
         ^ rhs_x2y & dy
         ^ rhs.x2z & lhs.z_signs;
     result.z_signs = rhs.z_signs
-        ^ rhs.z2x & lhs.x_signs
-        ^ rhs_z2y & dy
+        ^ (rhs.z2x & lhs.x_signs)
+        ^ (rhs_z2y & dy)
         ^ rhs.inv_z2z.andnot(lhs.z_signs);
 
     return result;
@@ -302,7 +302,7 @@ std::ostream &operator<<(std::ostream &out, const CliffordString<W> &v) {
         }
         int c = v.inv_x2x[q] + v.x2z[q] * 2 + v.z2x[q] * 4 + v.inv_z2z[q] * 8;
         int p = v.z_signs[q] + v.x_signs[q] * 2;
-        out << "_?S?V??D??????UH"[c];
+        out << "_?S?V??d??????uH"[c];
         out << "IXZY"[p];
     }
     return out;

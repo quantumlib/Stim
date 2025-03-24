@@ -52,7 +52,7 @@ TEST_EACH_WORD_SIZE_W(clifford_string, set_gate_at_vs_str_vs_gate_at, {
     p.set_gate_at(x++, GateType::C_NZYX);
     p.set_gate_at(x++, GateType::C_ZYNX);
 
-    ASSERT_EQ(p.str(), "_I _X _Y _Z HI HX HY HZ SI SX SY SZ VI VX VY VZ UI UX UY UZ DI DX DY DZ");
+    ASSERT_EQ(p.str(), "_I _X _Y _Z HI HX HY HZ SI SX SY SZ VI VX VY VZ uI uX uY uZ dI dX dY dZ");
 
     x = 0;
 
