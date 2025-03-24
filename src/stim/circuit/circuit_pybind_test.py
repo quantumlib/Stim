@@ -2351,3 +2351,38 @@ def test_append_pauli_string():
         c.append("MPP", object())
     with pytest.raises(ValueError, match="Don't know how to target"):
         c.append("MPP", object())
+
+
+def test_reference_detector_and_observable_signs():
+    det, obs = stim.Circuit("""
+        X 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+    """).reference_detector_and_observable_signs()
+    assert det.dtype == np.bool_
+    assert obs.dtype == np.bool_
+    np.testing.assert_array_equal(det, [True, False])
+    np.testing.assert_array_equal(obs, [False, False, False, True])
+
+    det, obs = stim.Circuit("""
+        X 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+    """).reference_detector_and_observable_signs(bit_packed=True)
+    assert det.dtype == np.uint8
+    assert obs.dtype == np.uint8
+    np.testing.assert_array_equal(det, [0b01])
+    np.testing.assert_array_equal(obs, [0b1000])
+
+    circuit = stim.Circuit.generated("surface_code:rotated_memory_x", rounds=3, distance=3)
+    det, obs = circuit.reference_detector_and_observable_signs(bit_packed=True)
+    assert det.dtype == np.uint8
+    assert obs.dtype == np.uint8
+    assert not np.any(det)
+    assert not np.any(obs)
+    assert len(det) == (circuit.num_detectors + 7) // 8
+    assert len(obs) == 1
