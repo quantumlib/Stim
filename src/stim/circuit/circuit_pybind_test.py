@@ -2353,6 +2353,15 @@ def test_append_pauli_string():
         c.append("MPP", object())
 
 
+def test_without_tags():
+    circuit = stim.Circuit("""
+        H[tag] 5
+    """)
+    assert circuit.without_tags() == stim.Circuit("""
+        H 5
+    """)
+
+
 def test_reference_detector_and_observable_signs():
     det, obs = stim.Circuit("""
         X 1
