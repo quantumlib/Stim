@@ -62,6 +62,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
+    - [`stim.Circuit.without_tags`](#stim.Circuit.without_tags)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
     - [`stim.CircuitErrorLocation.__init__`](#stim.CircuitErrorLocation.__init__)
     - [`stim.CircuitErrorLocation.flipped_measurement`](#stim.CircuitErrorLocation.flipped_measurement)
@@ -187,6 +188,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DetectorErrorModel.rounded`](#stim.DetectorErrorModel.rounded)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
     - [`stim.DetectorErrorModel.to_file`](#stim.DetectorErrorModel.to_file)
+    - [`stim.DetectorErrorModel.without_tags`](#stim.DetectorErrorModel.without_tags)
 - [`stim.ExplainedError`](#stim.ExplainedError)
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
@@ -3589,6 +3591,33 @@ def without_noise(
         stim.Circuit('''
             CX 0 1
             M 0
+        ''')
+    """
+```
+
+<a name="stim.Circuit.without_tags"></a>
+```python
+# stim.Circuit.without_tags
+
+# (in class stim.Circuit)
+def without_tags(
+    self,
+) -> stim.Circuit:
+    """Returns a copy of the circuit with all tags removed.
+
+    Returns:
+        A `stim.Circuit` with the same instructions except all tags have been
+        removed.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     X[test-tag] 0
+        ...     M[test-tag-2](0.125) 0
+        ... ''').without_tags()
+        stim.Circuit('''
+            X 0
+            M(0.125) 0
         ''')
     """
 ```
@@ -7586,6 +7615,31 @@ def to_file(
         ...         contents = f.read()
         >>> contents
         'error(0.25) D2 D3\n'
+    """
+```
+
+<a name="stim.DetectorErrorModel.without_tags"></a>
+```python
+# stim.DetectorErrorModel.without_tags
+
+# (in class stim.DetectorErrorModel)
+def without_tags(
+    self,
+) -> stim.DetectorErrorModel:
+    """Returns a copy of the detector error model with all tags removed.
+
+    Returns:
+        A `stim.DetectorErrorModel` with the same instructions except all tags have
+        been removed.
+
+    Examples:
+        >>> import stim
+        >>> stim.DetectorErrorModel('''
+        ...     error[test-tag](0.25) D0
+        ... ''').without_tags()
+        stim.DetectorErrorModel('''
+            error(0.25) D0
+        ''')
     """
 ```
 

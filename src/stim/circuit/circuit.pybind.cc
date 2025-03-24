@@ -2237,6 +2237,29 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
+        "without_tags",
+        &Circuit::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the circuit with all tags removed.
+
+            Returns:
+                A `stim.Circuit` with the same instructions except all tags have been
+                removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X[test-tag] 0
+                ...     M[test-tag-2](0.125) 0
+                ... ''').without_tags()
+                stim.Circuit('''
+                    X 0
+                    M(0.125) 0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
         "flattened",
         &Circuit::flattened,
         clean_doc_string(R"DOC(
