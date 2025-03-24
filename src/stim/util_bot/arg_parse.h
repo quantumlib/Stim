@@ -17,12 +17,9 @@
 #ifndef _STIM_UTIL_BOT_ARG_PARSE_H
 #define _STIM_UTIL_BOT_ARG_PARSE_H
 
-#include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <map>
 #include <memory>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -197,7 +194,7 @@ const T &find_enum_argument(
         }
         return values.at(default_key);
     }
-    if (values.find(text) == values.end()) {
+    if (!values.contains(text)) {
         std::stringstream msg;
         msg << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
         msg << "Recognized values are:\n";
@@ -240,7 +237,7 @@ struct ostream_else_cout {
     std::unique_ptr<std::ostream> held;
 
    public:
-    ostream_else_cout(std::unique_ptr<std::ostream> &&held);
+    explicit ostream_else_cout(std::unique_ptr<std::ostream> &&held);
     std::ostream &stream();
 };
 
@@ -249,7 +246,7 @@ struct ostream_else_cout {
 /// Args:
 ///     name: The name of the command line flag that will specify the file path.
 ///     default_std_out: If true, defaults to stdout when the command line argument isn't given. Otherwise exits with
-///         failure when the command line argumen tisn't given.
+///         failure when the command line argument isn't given.
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
 ///
