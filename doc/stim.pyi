@@ -2792,6 +2792,26 @@ class Circuit:
                 M 0
             ''')
         """
+    def without_tags(
+        self,
+    ) -> stim.Circuit:
+        """Returns a copy of the circuit with all tags removed.
+
+        Returns:
+            A `stim.Circuit` with the same instructions except all tags have been
+            removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     X[test-tag] 0
+            ...     M[test-tag-2](0.125) 0
+            ... ''').without_tags()
+            stim.Circuit('''
+                X 0
+                M(0.125) 0
+            ''')
+        """
 class CircuitErrorLocation:
     """Describes the location of an error mechanism from a stim circuit.
 
@@ -5968,6 +5988,24 @@ class DetectorErrorModel:
             ...         contents = f.read()
             >>> contents
             'error(0.25) D2 D3\n'
+        """
+    def without_tags(
+        self,
+    ) -> stim.DetectorErrorModel:
+        """Returns a copy of the detector error model with all tags removed.
+
+        Returns:
+            A `stim.DetectorErrorModel` with the same instructions except all tags have
+            been removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.DetectorErrorModel('''
+            ...     error[test-tag](0.25) D0
+            ... ''').without_tags()
+            stim.DetectorErrorModel('''
+                error(0.25) D0
+            ''')
         """
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
