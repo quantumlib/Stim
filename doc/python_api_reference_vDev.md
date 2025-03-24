@@ -834,7 +834,7 @@ def __str__(
 def append(
     self,
     name: str,
-    targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]],
+    targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]],
     arg: Union[float, Iterable[float]],
     *,
     tag: str = "",
@@ -867,6 +867,7 @@ def append(
         >>> c.append("CNOT", [stim.target_rec(-1), 0])
         >>> c.append("X_ERROR", [0], 0.125)
         >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+        >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
         >>> print(repr(c))
         stim.Circuit('''
             X 0
@@ -875,6 +876,7 @@ def append(
             CX rec[-1] 0
             X_ERROR(0.125) 0
             E(0.25) X0 Y2
+            MPP X1*Y2 Z3
         ''')
 
     Args:
@@ -888,11 +890,15 @@ def append(
             (The argument being called `name` is no longer quite right, but
             is being kept for backwards compatibility.)
         targets: The objects operated on by the gate. This can be either a
-            single target or an iterable of multiple targets to broadcast the
-            gate over. Each target can be an integer (a qubit), a
-            stim.GateTarget, or a special target from one of the `stim.target_*`
-            methods (such as a measurement record target like `rec[-1]` from
-            `stim.target_rec(-1)`).
+            single target or an iterable of multiple targets.
+
+            Each target can be:
+                An int: The index of a targeted qubit.
+                A `stim.GateTarget`: Could be a variety of things. Methods like
+                    `stim.target_rec`, `stim.target_sweet`, `stim.target_x`, and
+                    `stim.CircuitInstruction.__getitem__` all return this type.
+                A `stim.PauliString`: This will automatically be expanded into
+                    a product of pauli targets like `X1*Y2*Z3`.
         arg: The "parens arguments" for the gate, such as the probability for a
             noise operation. A double or list of doubles parameterizing the
             gate. Different gates take different parens arguments. For example,
