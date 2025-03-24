@@ -1960,7 +1960,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('CNOT 4 5', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.Circuit.from_file(path)
+        ...         circuit = stim.Circuit.from_file(f)
         >>> circuit
         stim.Circuit('''
             CX 4 5
@@ -7263,7 +7263,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('error(0.25) D2 D3', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.DetectorErrorModel.from_file(path)
+        ...         circuit = stim.DetectorErrorModel.from_file(f)
         >>> circuit
         stim.DetectorErrorModel('''
             error(0.25) D2 D3

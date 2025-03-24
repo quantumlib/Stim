@@ -930,7 +930,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     with open(path, 'w') as f:
                 ...         print('error(0.25) D2 D3', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.DetectorErrorModel.from_file(path)
+                ...         circuit = stim.DetectorErrorModel.from_file(f)
                 >>> circuit
                 stim.DetectorErrorModel('''
                     error(0.25) D2 D3
