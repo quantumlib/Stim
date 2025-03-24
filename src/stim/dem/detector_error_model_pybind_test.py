@@ -546,6 +546,6 @@ def test_without_tags():
     dem = stim.DetectorErrorModel("""
         error[tag](0.25) D5
     """)
-    assert dem.without_tags() == stim.Circuit("""
+    assert dem.without_tags() == stim.DetectorErrorModel("""
         error(0.25) D5
     """)
