@@ -2351,3 +2351,12 @@ def test_append_pauli_string():
         c.append("MPP", object())
     with pytest.raises(ValueError, match="Don't know how to target"):
         c.append("MPP", object())
+
+
+def test_without_tags():
+    circuit = stim.Circuit("""
+        H[tag] 5
+    """)
+    assert circuit.without_tags() == stim.Circuit("""
+        H 5
+    """)

@@ -1204,4 +1204,25 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...         print(diagram, file=f)
         )DOC")
             .data());
+
+    c.def(
+        "without_tags",
+        &DetectorErrorModel::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the detector error model with all tags removed.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same instructions except all tags have
+                been removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.DetectorErrorModel('''
+                ...     error[test-tag](0.25) D0
+                ... ''').without_tags()
+                stim.DetectorErrorModel('''
+                    error(0.25) D0
+                ''')
+        )DOC")
+            .data());
 }

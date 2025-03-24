@@ -147,6 +147,8 @@ struct Circuit {
 
     /// Returns a copy of the circuit with all noise processes removed.
     Circuit without_noise() const;
+    /// Returns a copy of the circuit with all tags removed.
+    Circuit without_tags() const;
 
     /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
     Circuit flattened() const;
