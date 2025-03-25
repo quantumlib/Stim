@@ -1,18 +1,15 @@
-<!-- H1 title omitted because our logo acts as the title. -->
+# Stim
 
-<div align="center">
-<h1><img width="300em" alt="Stim logo" src="./doc/stim_lockup_512.png"></h1>
+<img align="right" width="120em" alt="Stim logo" src="./doc/logo_128x128.svg">
 
 High-performance simulation of quantum stabilizer circuits for quantum error correction.
 
-[What is Stim?](#what-is-stim)<br>
-[How do I use Stim?](#how-use-stim)<br>
-[How does Stim work?](#how-stim-work)<br>
-[How do I cite Stim?](#how-cite-stim)<br>
-[*Subproject*: Sinter decoding sampler](glue/sample)<br>
-[*Subproject*: Crumble interactive editor](glue/crumble)<br>
-
-</div>
+◼︎︎&nbsp;&nbsp;[What is Stim?](#what-is-stim)<br>
+◼︎︎&nbsp;&nbsp;[How do I use Stim?](#how-use-stim)<br>
+◼︎&nbsp;&nbsp;[How does Stim work?](#how-stim-work)<br>
+◼︎&nbsp;&nbsp;[How do I cite Stim?](#how-cite-stim)<br>
+◼︎&nbsp;&nbsp;[*Subproject*: Sinter decoding sampler](glue/sample)<br>
+◼︎&nbsp;&nbsp;[*Subproject*: Crumble interactive editor](glue/crumble)<br>
 
 ## <a name="what-is-stim"></a>What is Stim?
 
