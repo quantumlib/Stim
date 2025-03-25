@@ -50,6 +50,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.pop`](#stim.Circuit.pop)
+    - [`stim.Circuit.reference_detector_and_observable_signs`](#stim.Circuit.reference_detector_and_observable_signs)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
@@ -1962,7 +1963,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('CNOT 4 5', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.Circuit.from_file(path)
+        ...         circuit = stim.Circuit.from_file(f)
         >>> circuit
         stim.Circuit('''
             CX 4 5
@@ -2754,6 +2755,61 @@ def pop(
     """
 ```
 
+<a name="stim.Circuit.reference_detector_and_observable_signs"></a>
+```python
+# stim.Circuit.reference_detector_and_observable_signs
+
+# (in class stim.Circuit)
+def reference_detector_and_observable_signs(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Determines noiseless parities of the measurement sets of detector/observable.
+
+    BEWARE: the returned values are NOT the "expected value of the
+    detector/observable". Stim consistently defines the value of a
+    detector/observable as whether or not it flipped, so the expected value of a
+    detector/observable is vacuously always 0 (not flipped). This method instead
+    returns the expected parity of the measurement set declared by the
+    detector/observable, which is the baselines used to determine if a flip
+    occurred. A detector/observable's value is the parity of it's measurement set
+    xored with its sign (the value returned by this method).
+
+    Note that this method doesn't account for sweep bits. It will effectively ignore
+    instructions like `CX sweep[0] 0`.
+
+    Args:
+        bit_packed: Defaults to False. Determines whether the output numpy arrays
+            use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+    Returns:
+        A (det, obs) tuple with numpy arrays containing the reference parities.
+
+        if bit_packed:
+            det.shape == (math.ceil(num_detectors / 8),)
+            det.dtype == np.uint8
+            obs.shape == (math.ceil(num_observables / 8),)
+            obs.dtype == np.uint8
+        else:
+            det.shape == (num_detectors,)
+            det.dtype == np.bool_
+            obs.shape == (num_observables,)
+            obs.dtype == np.bool_
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     X 1
+        ...     M 0 1
+        ...     DETECTOR rec[-1]
+        ...     DETECTOR rec[-2]
+        ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+        ... ''').reference_detector_and_observable_signs()
+        (array([ True, False]), array([False, False, False,  True]))
+    """
+```
+
 <a name="stim.Circuit.reference_sample"></a>
 ```python
 # stim.Circuit.reference_sample
@@ -2770,12 +2826,18 @@ def reference_sample(
     towards +Z instead of randomly +Z/-Z.
 
     Args:
-        circuit: The circuit to "sample" from.
         bit_packed: Defaults to False. Determines whether the output numpy arrays
             use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
     Returns:
-        reference_sample: reference sample sampled from the given circuit.
+        A numpy array containing the reference sample.
+
+        if bit_packed:
+            shape == (math.ceil(num_measurements / 8),)
+            dtype == np.uint8
+        else:
+            shape == (num_measurements,)
+            dtype == np.bool_
 
     Examples:
         >>> import stim
@@ -7292,7 +7354,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('error(0.25) D2 D3', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.DetectorErrorModel.from_file(path)
+        ...         circuit = stim.DetectorErrorModel.from_file(f)
         >>> circuit
         stim.DetectorErrorModel('''
             error(0.25) D2 D3
