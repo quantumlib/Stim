@@ -50,8 +50,8 @@ inline CliffordWord<W> operator*(const CliffordWord<W> &lhs, const CliffordWord<
     simd_word<W> dy = (lhs.x2z & lhs.z2x) ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
     result.x_signs = rhs.x_signs
         ^ rhs.inv_x2x.andnot(lhs.x_signs)
-        ^ rhs_x2y & dy
-        ^ rhs.x2z & lhs.z_signs;
+        ^ (rhs_x2y & dy)
+        ^ (rhs.x2z & lhs.z_signs);
     result.z_signs = rhs.z_signs
         ^ (rhs.z2x & lhs.x_signs)
         ^ (rhs_z2y & dy)
