@@ -200,6 +200,14 @@ TableauIterator<W>::constraints_for_pauli_iterator(size_t k) const {
 
 template <size_t W>
 bool TableauIterator<W>::iter_next() {
+    if (result.num_qubits == 0) {
+        if (cur_k == 0) {
+            cur_k = 1;
+            return true;
+        }
+        return false;
+    }
+
     if (result.xs.signs.u64[0] > 0) {
         result.xs.signs.u64[0]--;
         return true;

@@ -930,7 +930,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     with open(path, 'w') as f:
                 ...         print('error(0.25) D2 D3', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.DetectorErrorModel.from_file(path)
+                ...         circuit = stim.DetectorErrorModel.from_file(f)
                 >>> circuit
                 stim.DetectorErrorModel('''
                     error(0.25) D2 D3
@@ -1202,6 +1202,27 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     diagram = circuit.diagram("match-graph-3d")
                 ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
                 ...         print(diagram, file=f)
+        )DOC")
+            .data());
+
+    c.def(
+        "without_tags",
+        &DetectorErrorModel::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the detector error model with all tags removed.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same instructions except all tags have
+                been removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.DetectorErrorModel('''
+                ...     error[test-tag](0.25) D0
+                ... ''').without_tags()
+                stim.DetectorErrorModel('''
+                    error(0.25) D0
+                ''')
         )DOC")
             .data());
 }
