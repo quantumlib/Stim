@@ -247,9 +247,9 @@ struct Gate {
     GateFlags flags;
 
     /// A word describing what sort of gate this is.
-    const char *category;
+    std::string_view category;
     /// Prose summary of what the gate is, how it fits into Stim, and how to use it.
-    const char *help;
+    std::string_view help;
     /// A unitary matrix describing the gate. (Size 0 if the gate is not unitary.)
     FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data;
     /// A shorthand description of the stabilizer flows of the gate.

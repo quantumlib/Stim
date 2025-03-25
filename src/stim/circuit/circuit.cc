@@ -802,6 +802,22 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     return result;
 }
 
+Circuit Circuit::without_tags() const {
+    Circuit result;
+    for (CircuitInstruction inst : operations) {
+        if (inst.gate_type == GateType::REPEAT) {
+            result.append_repeat_block(
+                inst.repeat_block_rep_count(),
+                inst.repeat_block_body(*this).without_tags(),
+                "");
+        } else {
+            inst.tag = "";
+            result.safe_append(inst);
+        }
+    }
+    return result;
+}
+
 Circuit Circuit::without_noise() const {
     Circuit result;
     for (const auto &op : operations) {

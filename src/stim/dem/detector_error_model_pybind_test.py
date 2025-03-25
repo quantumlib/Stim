@@ -540,3 +540,12 @@ def test_shortest_graphlike_error_remnant():
 
 def test_init_parse():
     assert stim.DemInstruction("error(0.125) D0 D1") == stim.DemInstruction("error", [0.125], [stim.DemTarget("D0"), stim.DemTarget("D1")])
+
+
+def test_without_tags():
+    dem = stim.DetectorErrorModel("""
+        error[tag](0.25) D5
+    """)
+    assert dem.without_tags() == stim.DetectorErrorModel("""
+        error(0.25) D5
+    """)
