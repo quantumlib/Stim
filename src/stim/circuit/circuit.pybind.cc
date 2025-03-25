@@ -1487,7 +1487,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     with open(path, 'w') as f:
                 ...         print('CNOT 4 5', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.Circuit.from_file(path)
+                ...         circuit = stim.Circuit.from_file(f)
                 >>> circuit
                 stim.Circuit('''
                     CX 4 5
