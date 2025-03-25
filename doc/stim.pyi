@@ -1350,7 +1350,7 @@ class Circuit:
             ...     with open(path, 'w') as f:
             ...         print('CNOT 4 5', file=f)
             ...     with open(path) as f:
-            ...         circuit = stim.Circuit.from_file(path)
+            ...         circuit = stim.Circuit.from_file(f)
             >>> circuit
             stim.Circuit('''
                 CX 4 5
@@ -2035,6 +2035,54 @@ class Circuit:
                 X 2
             ''')
         """
+    def reference_detector_and_observable_signs(
+        self,
+        *,
+        bit_packed: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Determines noiseless parities of the measurement sets of detector/observable.
+
+        BEWARE: the returned values are NOT the "expected value of the
+        detector/observable". Stim consistently defines the value of a
+        detector/observable as whether or not it flipped, so the expected value of a
+        detector/observable is vacuously always 0 (not flipped). This method instead
+        returns the expected parity of the measurement set declared by the
+        detector/observable, which is the baselines used to determine if a flip
+        occurred. A detector/observable's value is the parity of it's measurement set
+        xored with its sign (the value returned by this method).
+
+        Note that this method doesn't account for sweep bits. It will effectively ignore
+        instructions like `CX sweep[0] 0`.
+
+        Args:
+            bit_packed: Defaults to False. Determines whether the output numpy arrays
+                use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+        Returns:
+            A (det, obs) tuple with numpy arrays containing the reference parities.
+
+            if bit_packed:
+                det.shape == (math.ceil(num_detectors / 8),)
+                det.dtype == np.uint8
+                obs.shape == (math.ceil(num_observables / 8),)
+                obs.dtype == np.uint8
+            else:
+                det.shape == (num_detectors,)
+                det.dtype == np.bool_
+                obs.shape == (num_observables,)
+                obs.dtype == np.bool_
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     X 1
+            ...     M 0 1
+            ...     DETECTOR rec[-1]
+            ...     DETECTOR rec[-2]
+            ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+            ... ''').reference_detector_and_observable_signs()
+            (array([ True, False]), array([False, False, False,  True]))
+        """
     def reference_sample(
         self,
         *,
@@ -2046,12 +2094,18 @@ class Circuit:
         towards +Z instead of randomly +Z/-Z.
 
         Args:
-            circuit: The circuit to "sample" from.
             bit_packed: Defaults to False. Determines whether the output numpy arrays
                 use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
         Returns:
-            reference_sample: reference sample sampled from the given circuit.
+            A numpy array containing the reference sample.
+
+            if bit_packed:
+                shape == (math.ceil(num_measurements / 8),)
+                dtype == np.uint8
+            else:
+                shape == (num_measurements,)
+                dtype == np.bool_
 
         Examples:
             >>> import stim
@@ -2790,6 +2844,26 @@ class Circuit:
             stim.Circuit('''
                 CX 0 1
                 M 0
+            ''')
+        """
+    def without_tags(
+        self,
+    ) -> stim.Circuit:
+        """Returns a copy of the circuit with all tags removed.
+
+        Returns:
+            A `stim.Circuit` with the same instructions except all tags have been
+            removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     X[test-tag] 0
+            ...     M[test-tag-2](0.125) 0
+            ... ''').without_tags()
+            stim.Circuit('''
+                X 0
+                M(0.125) 0
             ''')
         """
 class CircuitErrorLocation:
@@ -5694,7 +5768,7 @@ class DetectorErrorModel:
             ...     with open(path, 'w') as f:
             ...         print('error(0.25) D2 D3', file=f)
             ...     with open(path) as f:
-            ...         circuit = stim.DetectorErrorModel.from_file(path)
+            ...         circuit = stim.DetectorErrorModel.from_file(f)
             >>> circuit
             stim.DetectorErrorModel('''
                 error(0.25) D2 D3
@@ -5968,6 +6042,24 @@ class DetectorErrorModel:
             ...         contents = f.read()
             >>> contents
             'error(0.25) D2 D3\n'
+        """
+    def without_tags(
+        self,
+    ) -> stim.DetectorErrorModel:
+        """Returns a copy of the detector error model with all tags removed.
+
+        Returns:
+            A `stim.DetectorErrorModel` with the same instructions except all tags have
+            been removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.DetectorErrorModel('''
+            ...     error[test-tag](0.25) D0
+            ... ''').without_tags()
+            stim.DetectorErrorModel('''
+                error(0.25) D0
+            ''')
         """
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.

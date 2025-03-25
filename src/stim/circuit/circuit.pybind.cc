@@ -636,12 +636,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             towards +Z instead of randomly +Z/-Z.
 
             Args:
-                circuit: The circuit to "sample" from.
                 bit_packed: Defaults to False. Determines whether the output numpy arrays
                     use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
             Returns:
-                reference_sample: reference sample sampled from the given circuit.
+                A numpy array containing the reference sample.
+
+                if bit_packed:
+                    shape == (math.ceil(num_measurements / 8),)
+                    dtype == np.uint8
+                else:
+                    shape == (num_measurements,)
+                    dtype == np.bool_
 
             Examples:
                 >>> import stim
@@ -650,6 +656,81 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     M 0 1
                 ... ''').reference_sample()
                 array([False,  True])
+        )DOC")
+            .data());
+
+    c.def(
+        "reference_detector_and_observable_signs",
+        [](const Circuit &self, bool bit_packed) -> pybind11::object {
+            simd_bits<MAX_BITWORD_WIDTH> ref = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(self);
+            size_t num_det = self.count_detectors();
+            size_t num_obs = self.count_observables();
+            simd_bits<MAX_BITWORD_WIDTH> dets(num_det);
+            simd_bits<MAX_BITWORD_WIDTH> obs(num_obs);
+            size_t offset = 0;
+            size_t k_det = 0;
+            self.for_each_operation([&](CircuitInstruction inst) {
+                if (inst.gate_type == GateType::DETECTOR || inst.gate_type == GateType::OBSERVABLE_INCLUDE) {
+                    bit_ref d = inst.gate_type == GateType::DETECTOR ? dets[k_det++] : obs[(int)inst.args[0]];
+                    for (const auto &t : inst.targets) {
+                        if (t.is_measurement_record_target()) {
+                            d ^= ref[offset + t.value()];
+                        }
+                    }
+                } else {
+                    offset += inst.count_measurement_results();
+                }
+            });
+            auto det_py = simd_bits_to_numpy(dets, num_det, bit_packed);
+            auto obs_py = simd_bits_to_numpy(obs, num_obs, bit_packed);
+            return pybind11::make_tuple(det_py, obs_py);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(R"DOC(
+            @signature def reference_detector_and_observable_signs(self, *, bit_packed: bool = False) -> tuple[np.ndarray, np.ndarray]:
+            Determines noiseless parities of the measurement sets of detector/observable.
+
+            BEWARE: the returned values are NOT the "expected value of the
+            detector/observable". Stim consistently defines the value of a
+            detector/observable as whether or not it flipped, so the expected value of a
+            detector/observable is vacuously always 0 (not flipped). This method instead
+            returns the expected parity of the measurement set declared by the
+            detector/observable, which is the baselines used to determine if a flip
+            occurred. A detector/observable's value is the parity of it's measurement set
+            xored with its sign (the value returned by this method).
+
+            Note that this method doesn't account for sweep bits. It will effectively ignore
+            instructions like `CX sweep[0] 0`.
+
+            Args:
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                A (det, obs) tuple with numpy arrays containing the reference parities.
+
+                if bit_packed:
+                    det.shape == (math.ceil(num_detectors / 8),)
+                    det.dtype == np.uint8
+                    obs.shape == (math.ceil(num_observables / 8),)
+                    obs.dtype == np.uint8
+                else:
+                    det.shape == (num_detectors,)
+                    det.dtype == np.bool_
+                    obs.shape == (num_observables,)
+                    obs.dtype == np.bool_
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X 1
+                ...     M 0 1
+                ...     DETECTOR rec[-1]
+                ...     DETECTOR rec[-2]
+                ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+                ... ''').reference_detector_and_observable_signs()
+                (array([ True, False]), array([False, False, False,  True]))
         )DOC")
             .data());
 
@@ -1406,7 +1487,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     with open(path, 'w') as f:
                 ...         print('CNOT 4 5', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.Circuit.from_file(path)
+                ...         circuit = stim.Circuit.from_file(f)
                 >>> circuit
                 stim.Circuit('''
                     CX 4 5
@@ -2232,6 +2313,29 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 stim.Circuit('''
                     CX 0 1
                     M 0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "without_tags",
+        &Circuit::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the circuit with all tags removed.
+
+            Returns:
+                A `stim.Circuit` with the same instructions except all tags have been
+                removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X[test-tag] 0
+                ...     M[test-tag-2](0.125) 0
+                ... ''').without_tags()
+                stim.Circuit('''
+                    X 0
+                    M(0.125) 0
                 ''')
         )DOC")
             .data());
