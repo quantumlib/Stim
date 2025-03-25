@@ -51,10 +51,6 @@ indent_size = 2
 # Google style guidelines use 4.
 indent_size = 4
 
-[*.rst]
-# Google doesn't have a style guideline for reStructuredText. Many people use 3.
-indent_size = 3
-
 [*.sh]
 # Google style guidelines use 2.
 indent_size = 4
