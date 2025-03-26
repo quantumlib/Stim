@@ -1,6 +1,6 @@
 # Stim
 
-<img align="right" width="120em" alt="Stim logo" src="./doc/logo_128x128.svg">
+<img align="right" width="125em" alt="Stim logo" src="https://raw.githubusercontent.com/quantumlib/Stim/refs/heads/main/doc/logo_128x128.svg">
 
 High-performance simulation of quantum stabilizer circuits for quantum error correction.
 
