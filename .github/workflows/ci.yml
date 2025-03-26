@@ -261,7 +261,7 @@ jobs:
     - run: bazel build :all
     - run: bazel test :stim_test
   build_clang:
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: |
