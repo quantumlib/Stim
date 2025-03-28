@@ -160,6 +160,14 @@ jobs:
         with:
           name: "dist-stim-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
           path: dist/*
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: "dist-sinter-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
+          path: dist/*
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: "dist-stimcirq-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
+          path: dist/*
   build_sdist:
     runs-on: ubuntu-24.04
     steps:
