@@ -774,3 +774,19 @@ std::map<uint64_t, std::vector<double>> DetectorErrorModel::get_detector_coordin
 
     return out;
 }
+
+DetectorErrorModel DetectorErrorModel::without_tags() const {
+    DetectorErrorModel result;
+    for (DemInstruction inst : instructions) {
+        if (inst.type == DemInstructionType::DEM_REPEAT_BLOCK) {
+            result.append_repeat_block(
+                inst.repeat_block_rep_count(),
+                inst.repeat_block_body(*this).without_tags(),
+                "");
+        } else {
+            inst.tag = "";
+            result.append_dem_instruction(inst);
+        }
+    }
+    return result;
+}
