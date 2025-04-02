@@ -18,7 +18,7 @@ import stim
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
-from ._ii_gate import IIGate
+from ._i_gates import IIGate, IIErrorGate, IErrorGate
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
@@ -457,6 +457,17 @@ class CircuitTranslationTracker:
                 self.prob_to_gate(instruction.gate_args_copy()[0]), instruction
             )
 
+    class MultiArgumentGateHandler:
+        def __init__(self, args_to_gate: Callable[[list[float]], cirq.Gate]):
+            self.args_to_gate = args_to_gate
+
+        def __call__(
+            self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction
+        ) -> None:
+            tracker.process_gate_instruction(
+                self.args_to_gate(instruction.gate_args_copy()), instruction
+            )
+
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_handler_table() -> Dict[
@@ -465,6 +476,7 @@ class CircuitTranslationTracker:
         gate = CircuitTranslationTracker.OneToOneGateHandler
         measure_gate = CircuitTranslationTracker.OneToOneMeasurementHandler
         noise = CircuitTranslationTracker.OneToOneNoisyGateHandler
+        multi_arg = CircuitTranslationTracker.MultiArgumentGateHandler
         sweep_gate = CircuitTranslationTracker.SweepableGateHandler
 
         def not_impl(message) -> Callable[[Any, Any], None]:
@@ -580,8 +592,8 @@ class CircuitTranslationTracker:
             "X_ERROR": noise(cirq.X.with_probability),
             "Y_ERROR": noise(cirq.Y.with_probability),
             "Z_ERROR": noise(cirq.Z.with_probability),
-            "I_ERROR": noise(cirq.I.with_probability),
-            "II_ERROR": noise(IIGate().with_probability),
+            "I_ERROR": multi_arg(IErrorGate().from_args),
+            "II_ERROR": multi_arg(IIErrorGate().from_args),
             "PAULI_CHANNEL_1": CircuitTranslationTracker.process_pauli_channel_1,
             "PAULI_CHANNEL_2": CircuitTranslationTracker.process_pauli_channel_2,
             "ELSE_CORRELATED_ERROR": not_impl(
