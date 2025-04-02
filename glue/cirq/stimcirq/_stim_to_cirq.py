@@ -592,8 +592,8 @@ class CircuitTranslationTracker:
             "X_ERROR": noise(cirq.X.with_probability),
             "Y_ERROR": noise(cirq.Y.with_probability),
             "Z_ERROR": noise(cirq.Z.with_probability),
-            "I_ERROR": multi_arg(IErrorGate().from_args),
-            "II_ERROR": multi_arg(IIErrorGate().from_args),
+            "I_ERROR": multi_arg(IErrorGate.from_args),
+            "II_ERROR": multi_arg(IIErrorGate.from_args),
             "PAULI_CHANNEL_1": CircuitTranslationTracker.process_pauli_channel_1,
             "PAULI_CHANNEL_2": CircuitTranslationTracker.process_pauli_channel_2,
             "ELSE_CORRELATED_ERROR": not_impl(

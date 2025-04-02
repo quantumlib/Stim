@@ -45,7 +45,7 @@ class IIErrorGate(cirq.Gate):
     """Handles explaining stim's II_ERROR gate to cirq."""
 
     @staticmethod
-    def from_args(args_list) -> 'IIErrorGate | IIGate':
+    def from_args(args_list: list[float]) -> 'IIErrorGate | IIGate':
         """given the args list, return the appropriate cirq gate."""
         if len(args_list) == 1:
             return IIGate.with_probability(args_list[0])
@@ -93,7 +93,7 @@ class IErrorGate(cirq.Gate):
     """Handles explaining stim's I_ERROR gate to cirq."""
 
     @staticmethod
-    def from_args(cls, args_list) -> 'IIErrorGate | IIGate':
+    def from_args(args_list: list[float]) -> 'IIErrorGate | IIGate':
         """given the args list, return the appropriate cirq gate."""
         if len(args_list) == 1:
             return cirq.I.with_probability(args_list[0])
