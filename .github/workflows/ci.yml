@@ -431,7 +431,12 @@ jobs:
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
       - run: pip install -e glue/sample
-      - run: pip install pytest pymatching fusion-blossom~=0.1.4 mwpf~=0.1.5
+      # TODO: remove the echo & export lines below after PyMatching is updated
+      # to use a more recent pybind11. C.f. issue #920.
+      - run: |
+          echo 'cmake<4.0.0' > constraint.txt
+          export PIP_CONSTRAINT=constraint.txt
+          pip install pytest pymatching fusion-blossom~=0.1.4 mwpf~=0.1.5
       - run: pytest glue/sample
       - run: dev/doctest_proper.py --module sinter
       - run: sinter help
