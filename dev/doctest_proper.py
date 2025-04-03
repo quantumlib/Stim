@@ -8,6 +8,17 @@ import sys
 from typing import Dict
 
 
+# TODO: fix issue https://github.com/quantumlib/Stim/issues/924
+# The tests of code samples inside docstrings were written with NumPy 1.x in
+# mind. The expected results contain numbers printed in plain form like
+# "1.225568", whereas NumPy 2 change the defqult printed format to (e.g.)
+# np.float64(1.225568). The following is a temporary workaround.
+import numpy
+from packaging.version import Version
+if Version(numpy.version.version) > Version('2'):
+    numpy.set_printoptions(legacy='1.25')
+
+
 SKIPPED_FIELDS = {
     '__base__',
     '__name__',
