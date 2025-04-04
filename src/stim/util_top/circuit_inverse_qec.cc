@@ -192,9 +192,6 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
             break;
         }
         case GateType::OBSERVABLE_INCLUDE:
-            rev.undo_gate(inst);
-            d2tag[DemTarget::observable_id((uint64_t)inst.args[0])] = inst.tag;
-            break;
         case GateType::TICK:
         case GateType::I:
         case GateType::II:
