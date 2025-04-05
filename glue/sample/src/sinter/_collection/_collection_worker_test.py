@@ -163,7 +163,15 @@ def test_worker_finish_work():
     handler.expected_task = ta
     _put_wait_not_empty(inp, ('change_job', (ta, sinter.CollectionOptions(max_errors=100_000_000), 100_000_000)))
     _put_wait_not_empty(inp, ('accept_shots', (ta.strong_id(), 10000)))
-    assert worker.process_messages() == 2
+    t0 = time.monotonic()
+    num_processed = 0
+    while True:
+        num_processed += worker.process_messages()
+        if num_processed >= 2:
+            break
+        if time.monotonic() - t0 > 1:
+            raise ValueError("Messages not processed")
+    assert num_processed == 2
     _assert_drain_queue(out, [
         ('changed_job', 5, (ta.strong_id(),)),
         ('accepted_shots', 5, (ta.strong_id(), 10000)),
