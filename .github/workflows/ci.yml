@@ -280,7 +280,7 @@ jobs:
         version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-    - run: cmake --build stim_test
+    - run: cmake --build . --target stim_test
   build_clang_stim:
     runs-on: 'ubuntu-24.04'
     steps:
@@ -297,7 +297,7 @@ jobs:
           version: latest
           platform: x64
       - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-      - run: cmake --build stim
+      - run: cmake --build . --target stim
   build_clang_stim_perf:
     runs-on: 'ubuntu-24.04'
     steps:
@@ -314,7 +314,7 @@ jobs:
           version: latest
           platform: x64
       - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-      - run: cmake --build stim_perf
+      - run: cmake --build . --target stim_perf
   build_lib:
     runs-on: ubuntu-24.04
     steps:
