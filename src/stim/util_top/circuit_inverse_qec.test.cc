@@ -335,3 +335,22 @@ TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, flow_past_end_of_circuit, {
             Flow<W>::from_str("X300*X0 -> X300*Z0"),
         }));
 })
+
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, obs_include_pauli, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            RX 1
+            OBSERVABLE_INCLUDE[test](1) X1
+        )CIRCUIT"),
+        {std::vector<Flow<W>>{
+        }});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        OBSERVABLE_INCLUDE[test](1) X1
+        MX 1
+        OBSERVABLE_INCLUDE(1) rec[-1]
+    )CIRCUIT"));
+    ASSERT_EQ(
+        actual.second,
+        (std::vector<Flow<W>>{
+        }));
+})
