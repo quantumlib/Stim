@@ -19,43 +19,154 @@
 
 #include "stim/mem/simd_bits.h"
 #include "stim/gates/gates.h"
+#include "stim/circuit/circuit.h"
 
 namespace stim {
 
-template <size_t W>
+/// A fixed-size list of W single-qubit Clifford rotations.
+template <typename Word>
 struct CliffordWord {
-    bitword<W> x_signs;
-    bitword<W> z_signs;
-    bitword<W> inv_x2x;
-    bitword<W> x2z;
-    bitword<W> z2x;
-    bitword<W> inv_z2z;
+    Word x_signs;
+    Word z_signs;
+    Word inv_x2x;  // Inverted so that zero-initializing gives the identity gate.
+    Word x2z;
+    Word z2x;
+    Word inv_z2z;  // Inverted so that zero-initializing gives the identity gate.
 };
 
-template <size_t W>
-inline CliffordWord<W> operator*(const CliffordWord<W> &lhs, const CliffordWord<W> &rhs) {
-    CliffordWord<W> result;
+inline GateType bits2gate(std::array<bool, 6> bits) {
+    constexpr std::array<GateType, 64> table{
+        GateType::I,
+        GateType::X,
+        GateType::Z,
+        GateType::Y,
+
+        GateType::NOT_A_GATE,  // These should be impossible if the class is in a good state.
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::S,
+        GateType::H_XY,
+        GateType::S_DAG,
+        GateType::H_NXY,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::SQRT_X_DAG,
+        GateType::SQRT_X,
+        GateType::H_YZ,
+        GateType::H_NYZ,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::C_ZYX,
+        GateType::C_ZNYX,
+        GateType::C_ZYNX,
+        GateType::C_NZYX,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+        GateType::NOT_A_GATE,
+
+        GateType::C_XYZ,
+        GateType::C_XYNZ,
+        GateType::C_XNYZ,
+        GateType::C_NXYZ,
+
+        GateType::H,
+        GateType::SQRT_Y_DAG,
+        GateType::SQRT_Y,
+        GateType::H_NXZ,
+    };
+    int k = (bits[0] << 0)
+          | (bits[1] << 1)
+          | (bits[2] << 2)
+          | (bits[3] << 3)
+          | (bits[4] << 4)
+          | (bits[5] << 5);
+    return table[k];
+}
+
+inline std::array<bool, 6> gate_to_bits(GateType gate_type) {
+    Gate g = GATE_DATA[gate_type];
+    if (!(g.flags & GATE_IS_SINGLE_QUBIT_GATE) || !(g.flags & GATE_IS_UNITARY)) {
+        throw std::invalid_argument("Not a single qubit gate: " + std::string(g.name));
+    }
+    const auto &flows = g.flow_data;
+    std::string_view tx = flows[0];
+    std::string_view tz = flows[1];
+    bool z_sign = tz[0] == '-';
+    bool inv_x2x = !(tx[1] == 'X' || tx[1] == 'Y');
+    bool x2z = tx[1] == 'Z' || tx[1] == 'Y';
+    bool x_sign = tx[0] == '-';
+    bool z2x = tz[1] == 'X' || tz[1] == 'Y';
+    bool inv_z2z = !(tz[1] == 'Z' || tz[1] == 'Y');
+    return {z_sign, x_sign, inv_x2x, x2z, z2x, inv_z2z};
+}
+
+/// Returns the result of multiplying W rotations pair-wise.
+template <typename Word>
+inline CliffordWord<Word> operator*(const CliffordWord<Word> &lhs, const CliffordWord<Word> &rhs) {
+    CliffordWord<Word> result;
 
     // I don't have a simple explanation of why this is correct. It was produced by starting from something that was
     // obviously correct, having tests to check all 24*24 cases, then iteratively applying simple rewrites to reduce
     // the number of operations. So the result is correct, but somewhat incomprehensible.
     result.inv_x2x = (lhs.inv_x2x | rhs.inv_x2x) ^ (lhs.z2x & rhs.x2z);
-    result.x2z = rhs.inv_x2x.andnot(lhs.x2z) ^ lhs.inv_z2z.andnot(rhs.x2z);
-    result.z2x = lhs.inv_x2x.andnot(rhs.z2x) ^ rhs.inv_z2z.andnot(lhs.z2x);
+    result.x2z = andnot(rhs.inv_x2x, lhs.x2z) ^ andnot(lhs.inv_z2z, rhs.x2z);
+    result.z2x = andnot(lhs.inv_x2x, rhs.z2x) ^ andnot(rhs.inv_z2z, lhs.z2x);
     result.inv_z2z = (lhs.x2z & rhs.z2x) ^ (lhs.inv_z2z | rhs.inv_z2z);
 
     // I *especially* don't have an explanation of why this part is correct. But every case is tested and verified.
-    simd_word<W> rhs_x2y = rhs.inv_x2x.andnot(rhs.x2z);
-    simd_word<W> rhs_z2y = rhs.inv_z2z.andnot(rhs.z2x);
-    simd_word<W> dy = (lhs.x2z & lhs.z2x) ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
+    Word rhs_x2y = andnot(rhs.inv_x2x, rhs.x2z);
+    Word rhs_z2y = andnot(rhs.inv_z2z, rhs.z2x);
+    Word dy = (lhs.x2z & lhs.z2x) ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
     result.x_signs = rhs.x_signs
-        ^ rhs.inv_x2x.andnot(lhs.x_signs)
+        ^ andnot(rhs.inv_x2x, lhs.x_signs)
         ^ (rhs_x2y & dy)
         ^ (rhs.x2z & lhs.z_signs);
     result.z_signs = rhs.z_signs
         ^ (rhs.z2x & lhs.x_signs)
         ^ (rhs_z2y & dy)
-        ^ rhs.inv_z2z.andnot(lhs.z_signs);
+        ^ andnot(rhs.inv_z2z, lhs.z_signs);
 
     return result;
 }
@@ -93,8 +204,9 @@ struct CliffordString {
           inv_z2z(num_qubits) {
     }
 
-    inline CliffordWord<W> word_at(size_t k) const {
-        return CliffordWord<W>{
+    /// Extracts rotations k*W through (k+1)*W into a CliffordWord<W>.
+    inline CliffordWord<bitword<W>> word_at(size_t k) const {
+        return CliffordWord<bitword<W>>{
             x_signs.ptr_simd[k],
             z_signs.ptr_simd[k],
             inv_x2x.ptr_simd[k],
@@ -103,7 +215,8 @@ struct CliffordString {
             inv_z2z.ptr_simd[k],
         };
     }
-    inline void set_word_at(size_t k, CliffordWord<W> new_value) const {
+    /// Writes rotations k*W through (k+1)*W from a CliffordWord<W>.
+    inline void set_word_at(size_t k, CliffordWord<bitword<W>> new_value) const {
         x_signs.ptr_simd[k] = new_value.x_signs;
         z_signs.ptr_simd[k] = new_value.z_signs;
         inv_x2x.ptr_simd[k] = new_value.inv_x2x;
@@ -112,116 +225,23 @@ struct CliffordString {
         inv_z2z.ptr_simd[k] = new_value.inv_z2z;
     }
 
+    /// Converts the internal rotation representation into a GateType.
     GateType gate_at(size_t q) const {
-        constexpr std::array<GateType, 64> table{
-            GateType::I,
-            GateType::X,
-            GateType::Z,
-            GateType::Y,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::S,
-            GateType::H_XY,
-            GateType::S_DAG,
-            GateType::H_NXY,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::SQRT_X_DAG,
-            GateType::SQRT_X,
-            GateType::H_YZ,
-            GateType::H_NYZ,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::C_ZYX,
-            GateType::C_ZNYX,
-            GateType::C_ZYNX,
-            GateType::C_NZYX,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-            GateType::NOT_A_GATE,
-
-            GateType::C_XYZ,
-            GateType::C_XYNZ,
-            GateType::C_XNYZ,
-            GateType::C_NXYZ,
-
-            GateType::H,
-            GateType::SQRT_Y_DAG,
-            GateType::SQRT_Y,
-            GateType::H_NXZ,
-        };
-        int k = x_signs[q]*2 + z_signs[q] + inv_x2x[q]*4 + x2z[q]*8 + z2x[q]*16 + inv_z2z[q]*32;
-        return table[k];
+        return bits2gate(std::array<bool, 6>{z_signs[q], x_signs[q], inv_x2x[q], x2z[q], z2x[q], inv_z2z[q]});
     }
 
-    void set_gate_at(size_t index, GateType gate_type) {
-        Gate g = GATE_DATA[gate_type];
-        if (!(g.flags & GATE_IS_SINGLE_QUBIT_GATE) || !(g.flags & GATE_IS_UNITARY)) {
-            throw std::invalid_argument("Not a single qubit gate: " + std::string(g.name));
-        }
-        const auto &flows = g.flow_data;
-        std::string_view tx = flows[0];
-        std::string_view tz = flows[1];
-        bool new_inv_x2x = !(tx[1] == 'X' || tx[1] == 'Y');
-        bool new_x2z = tx[1] == 'Z' || tx[1] == 'Y';
-        bool new_x_sign = tx[0] == '-';
-
-        bool new_z2x = tz[1] == 'X' || tz[1] == 'Y';
-        bool new_inv_z2z = !(tz[1] == 'Z' || tz[1] == 'Y');
-        bool new_z_sign = tz[0] == '-';
-
-        x_signs[index] = new_x_sign;
-        z_signs[index] = new_z_sign;
-        inv_x2x[index] = new_inv_x2x;
-        x2z[index] = new_x2z;
-        z2x[index] = new_z2x;
-        inv_z2z[index] = new_inv_z2z;
+    /// Sets an internal rotation from a GateType.
+    void set_gate_at(size_t q, GateType gate_type) {
+        std::array<bool, 6> bits = gate_to_bits(gate_type);;
+        z_signs[q] = bits[0];
+        x_signs[q] = bits[1];
+        inv_x2x[q] = bits[2];
+        x2z[q] = bits[3];
+        z2x[q] = bits[4];
+        inv_z2z[q] = bits[5];
     }
 
+    /// Inplace right-multiplication of rotations.
     CliffordString &operator*=(const CliffordString &rhs) {
         if (num_qubits < rhs.num_qubits) {
             throw std::invalid_argument("Can't inplace-multiply by a larger Clifford string.");
@@ -233,6 +253,51 @@ struct CliffordString {
         }
         return *this;
     }
+
+    void inplace_then(CircuitInstruction inst) {
+        std::array<bool, 6> v = gate_to_bits(inst.gate_type);
+        for (const auto &t : inst.targets) {
+            if (!t.is_qubit_target()) {
+                continue;
+            }
+            uint32_t q = t.qubit_value();
+            if (q >= num_qubits) {
+                throw std::invalid_argument("Circuit acted on qubit past end of string.");
+            }
+            size_t w = q / W;
+            size_t k = q % W;
+            CliffordWord<bitword<W>> tmp{};
+            bit_ref(&tmp.z_signs, k) ^= v[0];
+            bit_ref(&tmp.x_signs, k) ^= v[1];
+            bit_ref(&tmp.inv_x2x, k) ^= v[2];
+            bit_ref(&tmp.x2z, k) ^= v[3];
+            bit_ref(&tmp.z2x, k) ^= v[4];
+            bit_ref(&tmp.inv_z2z, k) ^= v[5];
+            set_word_at(w, tmp * word_at(w));
+        }
+    }
+
+    static CliffordString<W> from_circuit(const Circuit &circuit) {
+        CliffordString<W> result(circuit.count_qubits());
+        circuit.for_each_operation([&](CircuitInstruction inst) {
+            result.inplace_then(inst);
+        });
+        return result;
+    }
+
+    Circuit to_circuit() const {
+        Circuit result;
+        for (size_t q = 0; q < num_qubits; q++) {
+            GateType g = gate_at(q);
+            if (g != GateType::I || q + 1 == num_qubits) {
+                GateTarget t = GateTarget::qubit(q);
+                result.safe_append(CircuitInstruction{g, {}, &t, {}});
+            }
+        }
+        return result;
+    }
+
+    /// Inplace left-multiplication of rotations.
     CliffordString &inplace_left_mul_by(const CliffordString &lhs) {
         if (num_qubits < lhs.num_qubits) {
             throw std::invalid_argument("Can't inplace-multiply by a larger Clifford string.");
@@ -244,6 +309,8 @@ struct CliffordString {
         }
         return *this;
     }
+
+    /// Out-of-place multiplication of rotations.
     CliffordString operator*(const CliffordString &rhs) const {
         CliffordString<W> result = CliffordString<W>(std::max(num_qubits, rhs.num_qubits));
         size_t min_words = std::min(x_signs.num_simd_words, rhs.x_signs.num_simd_words);
@@ -275,6 +342,7 @@ struct CliffordString {
         return result;
     }
 
+    /// Determines if two Clifford strings have the same length and contents.
     bool operator==(const CliffordString<W> &other) const {
         return x_signs == other.x_signs
             && z_signs == other.z_signs
@@ -283,10 +351,12 @@ struct CliffordString {
             && z2x == other.z2x
             && inv_z2z == other.inv_z2z;
     }
+    /// Determines if two Clifford strings have different lengths or contents.
     bool operator!=(const CliffordString<W> &other) const {
         return !(*this == other);
     }
 
+    /// Returns a description of the Clifford string.
     std::string str() const {
         std::stringstream ss;
         ss << *this;
