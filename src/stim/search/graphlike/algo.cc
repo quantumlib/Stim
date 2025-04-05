@@ -27,16 +27,17 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, const SearchState &final_state) {
+DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, const SearchState &final_state, const SearchState &previous_state) {
     DetectorErrorModel out;
     auto cur_state = final_state;
+    auto prev_state = previous_state;
     while (true) {
-        const auto &prev_state = back_map.at(cur_state);
         cur_state.append_transition_as_error_instruction_to(prev_state, out);
         if (prev_state.is_undetected()) {
             break;
         }
         cur_state = prev_state;
+        prev_state = back_map.at(cur_state);
     }
     std::sort(out.instructions.begin(), out.instructions.end());
     return out;
@@ -82,7 +83,7 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
             }
             if (next.is_undetected()) {
                 assert(next.obs_mask.not_zero());  // Otherwise, it would have already been in back_map.
-                return backtrack_path(back_map, next);
+                return backtrack_path(back_map, next, curr);
             } else {
                 if (next.det_active == NO_NODE_INDEX) {
                     // Just resolved one out of two excitations. Move on to the second excitation.
