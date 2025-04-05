@@ -36,6 +36,7 @@ jobs:
           {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp311-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp312-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
 
           {os: ubuntu-24.04, dist: cp36-manylinux_i686},
           {os: ubuntu-24.04, dist: cp37-manylinux_i686},
@@ -94,12 +95,14 @@ jobs:
           {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp313-macosx_x86_64, macosarch: x86_64},
 
           {os: macos-14, dist: cp38-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp39-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp313-macosx_arm64, macosarch: arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -123,6 +126,7 @@ jobs:
           {os: windows-2019, dist: cp310-win_amd64},
           {os: windows-2019, dist: cp311-win_amd64},
           {os: windows-2019, dist: cp312-win_amd64},
+          {os: windows-2019, dist: cp313-win_amd64},
 
           {os: windows-2019, dist: cp36-win32},
           {os: windows-2019, dist: cp37-win32},
