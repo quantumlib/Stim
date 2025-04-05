@@ -275,8 +275,6 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
         ),
         cirq.RandomGateChannel: cast(StimTypeHandler, _stim_append_random_gate_channel),
         cirq.DepolarizingChannel: cast(StimTypeHandler, _stim_append_depolarizing_channel),
-        IErrorGate: cast(StimTypeHandler, _stim_append_i_error_gate),
-        IIErrorGate: cast(StimTypeHandler,_stim_append_i_error_gate),
     }
 
 
@@ -429,8 +427,6 @@ def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel,
             f"Don't know how to turn probabilistic {g!r} into Stim operations."
         )
 
-def _stim_append_i_error_gate(c: stim.Circuit, ie: IErrorGate | IIErrorGate, t: List[int], tag: str):
-    c.append("I_ERROR", targets=t, arg=iie.gate_args, tag=tag)
 
 class CirqToStimHelper:
     def __init__(self, tag_func: Callable[[cirq.Operation], str]):
