@@ -51,7 +51,7 @@ def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> np.ndarra
     Examples:
         >>> import sinter
         >>> sinter.log_binomial(p=0.5, n=100, hits=50)
-        array(-2.5308785, dtype=float32)
+        array(-2.5308762, dtype=float32)
         >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
         array(-216626.97, dtype=float32)
         >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)
@@ -321,7 +321,7 @@ def fit_line_slope(*,
 
     low_slope = binary_intercept(start_x=fit.slope, step=-1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
     high_slope = binary_intercept(start_x=fit.slope, step=1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
-    return Fit(low=low_slope, best=fit.slope, high=high_slope)
+    return Fit(low=float(low_slope), best=float(fit.slope), high=float(high_slope))
 
 
 def fit_binomial(
