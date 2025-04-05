@@ -460,7 +460,7 @@ class CircuitTranslationTracker:
             )
 
     class MultiArgumentGateHandler:
-        def __init__(self, args_to_gate: Callable[[list[float]], cirq.Gate]):
+        def __init__(self, args_to_gate: Callable[[List[float]], cirq.Gate]):
             self.args_to_gate = args_to_gate
 
         def __call__(
