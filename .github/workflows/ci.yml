@@ -36,6 +36,7 @@ jobs:
           {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp311-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp312-manylinux_x86_64},
+          {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
 
           {os: ubuntu-24.04, dist: cp36-manylinux_i686},
           {os: ubuntu-24.04, dist: cp37-manylinux_i686},
@@ -94,12 +95,14 @@ jobs:
           {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: macos-14, dist: cp313-macosx_x86_64, macosarch: x86_64},
 
           {os: macos-14, dist: cp38-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp39-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp313-macosx_arm64, macosarch: arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -116,16 +119,19 @@ jobs:
           # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2019, dist: cp36-win_amd64},
-          {os: windows-2019, dist: cp37-win_amd64},
-          {os: windows-2019, dist: cp38-win_amd64},
-          {os: windows-2019, dist: cp39-win_amd64},
-          {os: windows-2019, dist: cp310-win_amd64},
-          {os: windows-2019, dist: cp311-win_amd64},
-          {os: windows-2019, dist: cp312-win_amd64},
+          {os: windows-2025, dist: cp36-win_amd64},
+          {os: windows-2025, dist: cp37-win_amd64},
+          {os: windows-2025, dist: cp38-win_amd64},
+          {os: windows-2025, dist: cp39-win_amd64},
+          {os: windows-2025, dist: cp310-win_amd64},
+          {os: windows-2025, dist: cp311-win_amd64},
+          {os: windows-2025, dist: cp312-win_amd64},
 
-          {os: windows-2019, dist: cp36-win32},
-          {os: windows-2019, dist: cp37-win32},
+          # (April 2024) disabled because numpy fails to build. Unsure why it's not using a prebuilt wheel.
+          # {os: windows-2025, dist: cp313-win_amd64},
+
+          {os: windows-2025, dist: cp36-win32},
+          {os: windows-2025, dist: cp37-win32},
           # cp38-win32 and cp39-win32 disabled because scipy fails to build.
           #
           # The actual error seen in github actions:
@@ -133,8 +139,8 @@ jobs:
           #    Need python for 64-bit, but found 32-bit
           #    ..\..\meson.build:82:0: ERROR: Python dependency not found
           #
-          #{os: windows-2019, dist: cp38-win32},
-          #{os: windows-2019, dist: cp39-win32},
+          #{os: windows-2025, dist: cp38-win32},
+          #{os: windows-2025, dist: cp39-win32},
 
           # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
           #
@@ -142,18 +148,20 @@ jobs:
           #
           #     CCompiler_spawn() got an unexpected keyword argument 'env'
           #
-          # {os: windows-2019, dist: cp310-win32},
+          # {os: windows-2025, dist: cp310-win32},
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: cirq-core pytest
+      # (April 2015): The >=0.11.dev0 is to allow pip to pick 1.5.0.dev, because cirq-core v1.4 doesn't allow numpy v2.
+      #               But it also allows older versions of python to pick versions before 1.4 as needed.
+      CIBW_TEST_REQUIRES: cirq-core>=0.11.dev0 pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
       - run: python dev/overwrite_dev_versions_with_date.py
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
+      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.23.2 setuptools wheel
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir dist
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
@@ -188,7 +196,7 @@ jobs:
     steps:
     - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
     - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
-    - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools wheel
+    - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.23.2 setuptools wheel
     - run: python setup.py sdist
     - run: pip install dist/*.tar.gz
   check_sdist_installs_sinter:
@@ -260,7 +268,7 @@ jobs:
         bazelisk-version: 1.x
     - run: bazel build :all
     - run: bazel test :stim_test
-  build_clang:
+  build_clang_stim_test:
     runs-on: 'ubuntu-24.04'
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
@@ -276,7 +284,41 @@ jobs:
         version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-    - run: cmake --build .
+    - run: cmake --build . --target stim_test
+  build_clang_stim:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - run: |
+          cd ..
+          git clone https://github.com/google/googletest.git -b release-1.12.1
+          mkdir googletest/build && cd googletest/build
+          cmake .. -DBUILD_GMOCK=OFF
+          make
+          sudo make install
+      - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
+        with:
+          version: latest
+          platform: x64
+      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake --build . --target stim
+  build_clang_stim_perf:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - run: |
+          cd ..
+          git clone https://github.com/google/googletest.git -b release-1.12.1
+          mkdir googletest/build && cd googletest/build
+          cmake .. -DBUILD_GMOCK=OFF
+          make
+          sudo make install
+      - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
+        with:
+          version: latest
+          platform: x64
+      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake --build . --target stim_perf
   build_lib:
     runs-on: ubuntu-24.04
     steps:
