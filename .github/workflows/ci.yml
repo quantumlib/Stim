@@ -264,7 +264,7 @@ jobs:
         bazelisk-version: 1.x
     - run: bazel build :all
     - run: bazel test :stim_test
-  build_clang:
+  build_clang_stim_test:
     runs-on: 'ubuntu-24.04'
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
@@ -280,7 +280,41 @@ jobs:
         version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-    - run: cmake --build .
+    - run: cmake --build stim_test
+  build_clang_stim:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - run: |
+          cd ..
+          git clone https://github.com/google/googletest.git -b release-1.12.1
+          mkdir googletest/build && cd googletest/build
+          cmake .. -DBUILD_GMOCK=OFF
+          make
+          sudo make install
+      - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
+        with:
+          version: latest
+          platform: x64
+      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake --build stim
+  build_clang_stim_perf:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - run: |
+          cd ..
+          git clone https://github.com/google/googletest.git -b release-1.12.1
+          mkdir googletest/build && cd googletest/build
+          cmake .. -DBUILD_GMOCK=OFF
+          make
+          sudo make install
+      - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
+        with:
+          version: latest
+          platform: x64
+      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake --build stim_perf
   build_lib:
     runs-on: ubuntu-24.04
     steps:
