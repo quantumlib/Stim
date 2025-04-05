@@ -119,17 +119,17 @@ jobs:
           # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2019, dist: cp36-win_amd64},
-          {os: windows-2019, dist: cp37-win_amd64},
-          {os: windows-2019, dist: cp38-win_amd64},
-          {os: windows-2019, dist: cp39-win_amd64},
-          {os: windows-2019, dist: cp310-win_amd64},
-          {os: windows-2019, dist: cp311-win_amd64},
-          {os: windows-2019, dist: cp312-win_amd64},
-          {os: windows-2019, dist: cp313-win_amd64},
+          {os: windows-2025, dist: cp36-win_amd64},
+          {os: windows-2025, dist: cp37-win_amd64},
+          {os: windows-2025, dist: cp38-win_amd64},
+          {os: windows-2025, dist: cp39-win_amd64},
+          {os: windows-2025, dist: cp310-win_amd64},
+          {os: windows-2025, dist: cp311-win_amd64},
+          {os: windows-2025, dist: cp312-win_amd64},
+          {os: windows-2025, dist: cp313-win_amd64},
 
-          {os: windows-2019, dist: cp36-win32},
-          {os: windows-2019, dist: cp37-win32},
+          {os: windows-2025, dist: cp36-win32},
+          {os: windows-2025, dist: cp37-win32},
           # cp38-win32 and cp39-win32 disabled because scipy fails to build.
           #
           # The actual error seen in github actions:
@@ -137,8 +137,8 @@ jobs:
           #    Need python for 64-bit, but found 32-bit
           #    ..\..\meson.build:82:0: ERROR: Python dependency not found
           #
-          #{os: windows-2019, dist: cp38-win32},
-          #{os: windows-2019, dist: cp39-win32},
+          #{os: windows-2025, dist: cp38-win32},
+          #{os: windows-2025, dist: cp39-win32},
 
           # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
           #
@@ -146,7 +146,7 @@ jobs:
           #
           #     CCompiler_spawn() got an unexpected keyword argument 'env'
           #
-          # {os: windows-2019, dist: cp310-win32},
+          # {os: windows-2025, dist: cp310-win32},
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
