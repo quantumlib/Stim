@@ -2762,8 +2762,10 @@ communication mechanism for systems built on top of stim.
 
 Parens Arguments:
 
-    A list of disjoint probabilities summing to at most 1
-    specifying the probability of applying an II operation.
+    A list of disjoint probabilities summing to at most 1.
+
+    The probabilities have no effect on stim simulations or error analysis, but may be
+    interpreted in arbitrary ways by external tools.
 
 Targets:
 
@@ -2798,8 +2800,10 @@ communication mechanism for systems built on top of stim.
 
 Parens Arguments:
 
-    A list of disjoint probabilities summing to at most 1
-    specifying the probability of applying an I operation.
+    A list of disjoint probabilities summing to at most 1.
+
+    The probabilities have no effect on stim simulations or error analysis, but may be
+    interpreted in arbitrary ways by external tools.
 
 Targets:
 
@@ -2810,7 +2814,7 @@ Pauli Mixture:
      *: I
 
 Examples:
-``
+
     # does nothing
     I_ERROR 0
 
