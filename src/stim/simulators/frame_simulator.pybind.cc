@@ -1235,8 +1235,8 @@ void stim_pybind::pybind_frame_simulator_methods(
 
     c.def(
         "broadcast_pauli_errors",
-        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, const pybind11::object &mask) {
-            uint8_t p = pybind11_object_to_pauli_ixyz(pauli);
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, const pybind11::object &mask, float p) {
+            uint8_t pb = pybind11_object_to_pauli_ixyz(pauli);
 
             if (!pybind11::isinstance<pybind11::array_t<bool>>(mask)) {
                 throw std::invalid_argument("Need isinstance(mask, np.ndarray) and mask.dtype == np.bool_");
@@ -1262,21 +1262,36 @@ void stim_pybind::pybind_frame_simulator_methods(
 
             self.ensure_safe_to_do_circuit_with_stats(CircuitStats{.num_qubits = mask_num_qubits});
             auto u = arr.unchecked<2>();
-            bool p_x = (0b0110 >> p) & 1;  // parity of 2 bit number
-            bool p_z = p & 2;
-            for (size_t i = 0; i < mask_num_qubits; i++) {
-                for (size_t j = 0; j < mask_batch_size; j++) {
-                    bool b = *u.data(i, j);
-                    self.x_table[i][j] ^= b & p_x;
-                    self.z_table[i][j] ^= b & p_z;
+            bool p_x = (0b0110 >> pb) & 1;  // parity of 2 bit number
+            bool p_z = pb & 2;
+
+            if ( p != 1 && p != 0 ) {
+                for (size_t i = 0; i < mask_num_qubits; i++) {
+                    biased_randomize_bits(p, self.rng_buffer.u64, self.rng_buffer.u64+(mask_batch_size/64), self.rng);
+                    for (size_t j = 0; j < mask_batch_size; j++) {
+                        bool b = *u.data(i, j);
+                        bool r = self.rng_buffer[j];
+                        self.x_table[i][j] ^= b & p_x & r;
+                        self.z_table[i][j] ^= b & p_z & r;
+                    }
+                }
+            } else {
+                for (size_t i = 0; i < mask_num_qubits; i++) {
+                    for (size_t j = 0; j < mask_batch_size; j++) {
+                        bool b = *u.data(i, j);
+
+                        self.x_table[i][j] ^= b & p_x;
+                        self.z_table[i][j] ^= b & p_z;
+                    }
                 }
             }
         },
         pybind11::kw_only(),
         pybind11::arg("pauli"),
         pybind11::arg("mask"),
+        pybind11::arg("p") = 1,
         clean_doc_string(R"DOC(
-            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
+            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray, p: float = 1) -> None:
             Applies a pauli error to all qubits in all instances, filtered by a mask.
 
             Args:
@@ -1296,6 +1311,9 @@ void stim_pybind::pybind_frame_simulator_methods(
                     The error is only applied to qubit q in instance k when
 
                         mask[q, k] == True.
+                p: Defaults to 1 (no effect). When specified, the error is applied
+                    probabilistically instead of deterministically to each (instance, qubit)
+                    pair matching the mask. This argument specifies the probability.
 
             Examples:
                 >>> import stim

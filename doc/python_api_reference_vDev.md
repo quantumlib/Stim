@@ -7976,6 +7976,7 @@ def broadcast_pauli_errors(
     *,
     pauli: Union[str, int],
     mask: np.ndarray,
+    p: float = 1,
 ) -> None:
     """Applies a pauli error to all qubits in all instances, filtered by a mask.
 
@@ -7996,6 +7997,9 @@ def broadcast_pauli_errors(
             The error is only applied to qubit q in instance k when
 
                 mask[q, k] == True.
+        p: Defaults to 1 (no effect). When specified, the error is applied
+            probabilistically instead of deterministically to each (instance, qubit)
+            pair matching the mask. This argument specifies the probability.
 
     Examples:
         >>> import stim
