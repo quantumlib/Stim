@@ -7996,6 +7996,7 @@ def broadcast_pauli_errors(
             The error is only applied to qubit q in instance k when
 
                 mask[q, k] == True.
+        p: The probability of applying the error to each instance.
 
     Examples:
         >>> import stim
