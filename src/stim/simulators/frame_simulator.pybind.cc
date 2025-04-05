@@ -16,7 +16,7 @@ std::optional<size_t> py_index_to_optional_size_t(
         return {};
     }
     int64_t i = pybind11::cast<int64_t>(index);
-    if (i < -(int64_t)length || (uint64_t)i >= length) {
+    if (i < -(int64_t)length || (i >= 0 && (uint64_t)i >= length)) {
         std::stringstream msg;
         msg << "not (";
         msg << "-" << len_name << " <= ";
