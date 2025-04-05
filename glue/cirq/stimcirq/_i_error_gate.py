@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Iterable
 
 import cirq
 import stim
