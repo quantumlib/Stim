@@ -183,7 +183,7 @@ def test_frame_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq.G
         allowed_variation = 5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
         if not 0 <= expected_rate - allowed_variation <= 1:
             raise ValueError("Not enough samples to bound results away from extremes.")
-        assert abs(expected_rate - actual_rate) < allowed_variation, (
+        assert abs(expected_rate - actual_rate) <= allowed_variation, (
             f"Sample rate {actual_rate} is over 5 standard deviations away from {expected_rate}.\n"
             f"Gate: {gate}\n"
             f"Test circuit:\n{circuit}\n"
@@ -230,7 +230,7 @@ def test_tableau_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq
         allowed_variation = 5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
         if not 0 <= expected_rate - allowed_variation <= 1:
             raise ValueError("Not enough samples to bound results away from extremes.")
-        assert abs(expected_rate - actual_rate) < allowed_variation, (
+        assert abs(expected_rate - actual_rate) <= allowed_variation, (
             f"Sample rate {actual_rate} is over 5 standard deviations away from {expected_rate}.\n"
             f"Gate: {gate}\n"
             f"Test circuit:\n{circuit}\n"
@@ -337,7 +337,9 @@ def test_on_loop():
         )
     )
     result = stimcirq.StimSampler().run(c)
-    assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}
+    assert result.records.keys() == {'a', 'b'}
+    assert result.records['a'].shape == (1, 3, 1)
+    assert result.records['b'].shape == (1, 3, 1)
 
 
 def test_multi_moment_circuit_operation():
