@@ -151,7 +151,9 @@ jobs:
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: cirq-core pytest
+      # (April 2025) cirq-core~=1.4.0 forces numpy v1; bumping to dev version cirq-core~=1.5.dev
+      #              once cirq-core 1.5 is released, this can be set back to just `cirq-core`
+      CIBW_TEST_REQUIRES: cirq-core~=1.5.dev pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
