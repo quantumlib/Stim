@@ -140,7 +140,7 @@ def _compile_decoder_with_disk_fallback(
 ) -> CompiledDecoder:
     try:
         return decoder.compile_decoder_for_dem(dem=task.detector_error_model)
-    except (NotImplementedError, ValueError):
+    except NotImplementedError:
         pass
     if tmp_dir is None:
         raise ValueError(f"Decoder {task.decoder=} didn't implement `compile_decoder_for_dem`, but no temporary directory was provided for falling back to `decode_via_files`.")
