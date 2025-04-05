@@ -360,7 +360,7 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
         }
     }
     for (const auto &g : GATE_DATA.items) {
-        if (g.id == GateType::II) {
+        if (g.id == GateType::II || g.id == GateType::II_ERROR || g.id == GateType::I_ERROR) {
             continue;
         }
         if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {
