@@ -336,10 +336,11 @@ def test_on_loop():
             repetitions=3,
         )
     )
-    result = stimcirq.StimSampler().run(c)
-    assert result.records.keys() == {'a', 'b'}
-    assert result.records['a'].shape == (1, 3, 1)
-    assert result.records['b'].shape == (1, 3, 1)
+    result_normal = cirq.Simulator().run(c)
+    result_stim = stimcirq.StimSampler().run(c)
+    assert result_normal.records.keys() == result_stim.records.keys()
+    for k in result_normal.records.keys():
+        assert result_stim.records[k].shape == result_normal.records[k].shape
 
 
 def test_multi_moment_circuit_operation():
