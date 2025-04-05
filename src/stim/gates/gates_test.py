@@ -101,3 +101,8 @@ def test_gate_hadamard_conjugated():
     assert stim.GateData('TICK').hadamard_conjugated() == stim.GateData('TICK')
     assert stim.GateData('MYY').hadamard_conjugated() == stim.GateData('MYY')
     assert stim.GateData('XCZ').hadamard_conjugated() == stim.GateData('CX')
+    assert stim.GateData('X_ERROR').hadamard_conjugated() == stim.GateData('Z_ERROR')
+    assert stim.GateData('Y_ERROR').hadamard_conjugated() == stim.GateData('Y_ERROR')
+    assert stim.GateData('Z_ERROR').hadamard_conjugated() == stim.GateData('X_ERROR')
+    assert stim.GateData('I_ERROR').hadamard_conjugated() == stim.GateData('I_ERROR')
+    assert stim.GateData('II_ERROR').hadamard_conjugated() == stim.GateData('II_ERROR')
