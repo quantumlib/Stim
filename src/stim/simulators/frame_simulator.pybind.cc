@@ -1291,7 +1291,7 @@ void stim_pybind::pybind_frame_simulator_methods(
         pybind11::arg("mask"),
         pybind11::arg("p") = 1,
         clean_doc_string(R"DOC(
-            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray) -> None:
+            @signature def broadcast_pauli_errors(self, *, pauli: Union[str, int], mask: np.ndarray, p: float = 1) -> None:
             Applies a pauli error to all qubits in all instances, filtered by a mask.
 
             Args:
@@ -1311,7 +1311,9 @@ void stim_pybind::pybind_frame_simulator_methods(
                     The error is only applied to qubit q in instance k when
 
                         mask[q, k] == True.
-                p: The probability of applying the error to each instance.
+                p: Defaults to 1 (no effect). When specified, the error is applied
+                    probabilistically instead of deterministically to each (instance, qubit)
+                    pair matching the mask. This argument specifies the probability.
 
             Examples:
                 >>> import stim

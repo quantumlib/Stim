@@ -6,9 +6,9 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 import cirq
 import stim
 
-from ._i_gates import IErrorGate
-from ._i_gates import IIErrorGate
-from ._i_gates import IIGate
+from ._i_error_gate import IErrorGate
+from ._ii_error_gate import IIErrorGate
+from ._ii_gate import IIGate
 
 
 def _forward_single_str_tag(op: cirq.CircuitOperation) -> str:
