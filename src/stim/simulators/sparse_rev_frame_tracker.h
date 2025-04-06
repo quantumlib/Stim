@@ -81,6 +81,7 @@ struct SparseUnsignedRevFrameTracker {
     void handle_y_gauges(const CircuitInstruction &inst);
     void handle_z_gauges(const CircuitInstruction &inst);
 
+    void undo_implicit_RZs_at_start_of_circuit();
     void undo_DETECTOR(const CircuitInstruction &inst);
     void undo_OBSERVABLE_INCLUDE(const CircuitInstruction &inst);
     void undo_RX(const CircuitInstruction &inst);
