@@ -42,5 +42,6 @@ std::map<DemTarget, std::map<uint64_t, FlexPauliString>> stim::circuit_to_detect
         }
         tracker.undo_gate(inst);
     });
+    tracker.undo_implicit_RZs_at_start_of_circuit();
     return result;
 }
