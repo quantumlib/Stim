@@ -26,7 +26,6 @@
 #include <stdexcept>
 
 #include "stim/mem/bitword.h"
-#include "stim/mem/simd_util.h"
 
 namespace stim {
 
@@ -193,9 +192,9 @@ struct bitword<128> {
             bitword<128> &x = data[stride * k];
             bitword<128> &y = data[stride * (k + shift)];
             bitword<128> a = x & mask;
-            bitword<128> b = x & ~mask;
+            bitword<128> b = _mm_andnot_si128(mask, x.val);
             bitword<128> c = y & mask;
-            bitword<128> d = y & ~mask;
+            bitword<128> d = _mm_andnot_si128(mask, y.val);
             x = a | bitword<128>(_mm_slli_epi64(c.val, shift));
             y = bitword<128>(_mm_srli_epi64(b.val, shift)) | d;
         }
