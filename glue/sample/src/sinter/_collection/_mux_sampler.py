@@ -37,15 +37,23 @@ class MuxSampler(Sampler):
         elif name in BUILT_IN_SAMPLERS:
             sub_sampler = BUILT_IN_SAMPLERS[name]
         else:
-            raise NotImplementedError(f'Not a recognized decoder or sampler: {name=}. Did you forget to specify custom_decoders?')
+            raise NotImplementedError(
+                f"Not a recognized decoder or sampler: {name=}. Did you forget to specify custom_decoders?"
+            )
 
         if isinstance(sub_sampler, Sampler):
             if self.count_detection_events:
-                raise NotImplementedError("'count_detection_events' not supported when using a custom Sampler (instead of a custom Decoder).")
+                raise NotImplementedError(
+                    "'count_detection_events' not supported when using a custom Sampler (instead of a custom Decoder)."
+                )
             if self.count_observable_error_combos:
-                raise NotImplementedError("'count_observable_error_combos' not supported when using a custom Sampler (instead of a custom Decoder).")
+                raise NotImplementedError(
+                    "'count_observable_error_combos' not supported when using a custom Sampler (instead of a custom Decoder)."
+                )
             return sub_sampler
-        elif isinstance(sub_sampler, Decoder) or hasattr(sub_sampler, 'compile_decoder_for_dem'):
+        elif isinstance(sub_sampler, Decoder) or hasattr(
+            sub_sampler, "compile_decoder_for_dem"
+        ):
             return StimThenDecodeSampler(
                 decoder=sub_sampler,
                 count_detection_events=self.count_detection_events,
@@ -53,4 +61,6 @@ class MuxSampler(Sampler):
                 tmp_dir=self.tmp_dir,
             )
         else:
-            raise NotImplementedError(f"Don't know how to turn this into a Sampler: {sub_sampler!r}")
+            raise NotImplementedError(
+                f"Don't know how to turn this into a Sampler: {sub_sampler!r}"
+            )

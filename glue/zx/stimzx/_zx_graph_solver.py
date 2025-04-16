@@ -25,7 +25,7 @@ class ZxType:
         return hash((ZxType, self.kind, self.quarter_turns))
 
     def __repr__(self):
-        return f'ZxType(kind={self.kind!r}, quarter_turns={self.quarter_turns!r})'
+        return f"ZxType(kind={self.kind!r}, quarter_turns={self.quarter_turns!r})"
 
 
 ZX_TYPES = {
@@ -100,14 +100,16 @@ def _reduced_zx_graph(graph: Union[nx.Graph, nx.MultiGraph]) -> nx.Graph:
         if n1 == n2:
             continue
         odd_parity_edges ^= {frozenset([n1, n2])}
-    for n, value in graph.nodes('value'):
+    for n, value in graph.nodes("value"):
         reduced_graph.add_node(n, value=value)
     for n1, n2 in odd_parity_edges:
         reduced_graph.add_edge(n1, n2)
     return reduced_graph
 
 
-def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> List[ExternalStabilizer]:
+def zx_graph_to_external_stabilizers(
+    graph: Union[nx.Graph, nx.MultiGraph],
+) -> List[ExternalStabilizer]:
     """Computes the external stabilizers of a ZX graph; generators of Paulis that leave it unchanged including sign.
 
     Args:
@@ -135,17 +137,17 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
         sim.cnot(qubit_ids[(n1, n2)], qubit_ids[(n2, n1)])
 
     # Interpret each internal node as a family of post-selected parity measurements.
-    for n, node_type in graph.nodes('value'):
-        if node_type.kind in 'XZ':
+    for n, node_type in graph.nodes("value"):
+        if node_type.kind in "XZ":
             # Surround X type node with Hadamards so it can be handled as if it were Z type.
-            if node_type.kind == 'X':
+            if node_type.kind == "X":
                 for neighbor in graph.neighbors(n):
                     sim.h(qubit_ids[(neighbor, n)])
-        elif node_type.kind == 'H':
+        elif node_type.kind == "H":
             # Hadamard one input so the H node can be handled as if it were Z type.
             neighbor, _ = graph.neighbors(n)
             sim.h(qubit_ids[(neighbor, n)])
-        elif node_type.kind in ['out', 'in']:
+        elif node_type.kind in ["out", "in"]:
             continue  # Don't measure qubits leaving the system.
         else:
             raise ValueError(f"Unknown node type {node_type!r}")
@@ -154,7 +156,9 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
         # - Postselects the ZZ observable over each pair of incoming qubits.
         # - Postselects the (S**quarter_turns X S**-quarter_turns)XX..X observable over all incoming qubits.
         neighbors = [n2 for n2 in graph.neighbors(n) if n2 != n]
-        center = qubit_ids[(neighbors[0], n)]  # Pick one incoming qubit to be the common control for the others.
+        center = qubit_ids[
+            (neighbors[0], n)
+        ]  # Pick one incoming qubit to be the common control for the others.
         # Handle node angle using a phasing operation.
         [id, sim.s, sim.z, sim.s_dag][node_type.quarter_turns](center)
         # Use multi-target CNOT and Hadamard to transform postselected observables into single-qubit Z observables.
@@ -166,8 +170,8 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
             _pseudo_postselect(sim, qubit_ids[(n2, n)])
 
     # Find output qubits.
-    in_nodes = sorted(n for n, value in graph.nodes('value') if value.kind == 'in')
-    out_nodes = sorted(n for n, value in graph.nodes('value') if value.kind == 'out')
+    in_nodes = sorted(n for n, value in graph.nodes("value") if value.kind == "in")
+    out_nodes = sorted(n for n, value in graph.nodes("value") if value.kind == "out")
     ext_nodes = in_nodes + out_nodes
     out_qubits = []
     for out in ext_nodes:
@@ -194,4 +198,6 @@ def _pseudo_postselect(sim: stim.TableauSimulator, target: int):
             feedback_op = [None, sim.cnot, sim.cy, sim.cz][pauli]
             if feedback_op is not None:
                 feedback_op(stim.target_rec(-1), qubit)
-    assert kickback is not None or not measurement_result, "Impossible postselection. Graph contained a contradiction."
+    assert (
+        kickback is not None or not measurement_result
+    ), "Impossible postselection. Graph contained a contradiction."

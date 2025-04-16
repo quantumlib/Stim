@@ -107,17 +107,20 @@ def test_properties():
     assert g.is_combiner
 
 
-@pytest.mark.parametrize("value", [
-    stim.GateTarget(5),
-    stim.GateTarget(stim.target_rec(-5)),
-    stim.GateTarget(stim.target_x(5)),
-    stim.GateTarget(stim.target_y(5)),
-    stim.GateTarget(stim.target_z(5)),
-    stim.GateTarget(stim.target_inv(5)),
-])
+@pytest.mark.parametrize(
+    "value",
+    [
+        stim.GateTarget(5),
+        stim.GateTarget(stim.target_rec(-5)),
+        stim.GateTarget(stim.target_x(5)),
+        stim.GateTarget(stim.target_y(5)),
+        stim.GateTarget(stim.target_z(5)),
+        stim.GateTarget(stim.target_inv(5)),
+    ],
+)
 def test_repr(value):
-    assert eval(repr(value), {'stim': stim}) == value
-    assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+    assert eval(repr(value), {"stim": stim}) == value
+    assert repr(eval(repr(value), {"stim": stim})) == repr(value)
 
 
 def test_hashable():
@@ -129,12 +132,12 @@ def test_hashable():
 
 
 def test_pauli_type():
-    assert stim.GateTarget(5).pauli_type == 'I'
-    assert stim.target_inv(5).pauli_type == 'I'
-    assert stim.target_rec(-5).pauli_type == 'I'
-    assert stim.target_sweep_bit(6).pauli_type == 'I'
+    assert stim.GateTarget(5).pauli_type == "I"
+    assert stim.target_inv(5).pauli_type == "I"
+    assert stim.target_rec(-5).pauli_type == "I"
+    assert stim.target_sweep_bit(6).pauli_type == "I"
 
-    assert stim.target_x(7).pauli_type == 'X'
-    assert stim.target_y(8).pauli_type == 'Y'
-    assert stim.target_y(8, invert=True).pauli_type == 'Y'
-    assert stim.target_z(9).pauli_type == 'Z'
+    assert stim.target_x(7).pauli_type == "X"
+    assert stim.target_y(8).pauli_type == "Y"
+    assert stim.target_y(8, invert=True).pauli_type == "Y"
+    assert stim.target_z(9).pauli_type == "Z"

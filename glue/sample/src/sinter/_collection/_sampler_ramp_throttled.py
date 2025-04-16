@@ -15,13 +15,15 @@ class RampThrottledSampler(Sampler):
     time, and then dynamically adapts to stay near it.
     """
 
-    def __init__(self, sub_sampler: Sampler, target_batch_seconds: float, max_batch_shots: int):
+    def __init__(
+        self, sub_sampler: Sampler, target_batch_seconds: float, max_batch_shots: int
+    ):
         self.sub_sampler = sub_sampler
         self.target_batch_seconds = target_batch_seconds
         self.max_batch_shots = max_batch_shots
 
     def __str__(self) -> str:
-        return f'CompiledRampThrottledSampler({self.sub_sampler})'
+        return f"CompiledRampThrottledSampler({self.sub_sampler})"
 
     def compiled_sampler_for_task(self, task: Task) -> CompiledSampler:
         compiled_sub_sampler = self.sub_sampler.compiled_sampler_for_task(task)
@@ -36,14 +38,19 @@ class RampThrottledSampler(Sampler):
 
 
 class CompiledRampThrottledSampler(CompiledSampler):
-    def __init__(self, sub_sampler: CompiledSampler, target_batch_seconds: float, max_batch_shots: int):
+    def __init__(
+        self,
+        sub_sampler: CompiledSampler,
+        target_batch_seconds: float,
+        max_batch_shots: int,
+    ):
         self.sub_sampler = sub_sampler
         self.target_batch_seconds = target_batch_seconds
         self.batch_shots = 1
         self.max_batch_shots = max_batch_shots
 
     def __str__(self) -> str:
-        return f'CompiledRampThrottledSampler({self.sub_sampler})'
+        return f"CompiledRampThrottledSampler({self.sub_sampler})"
 
     def sample(self, max_shots: int) -> AnonTaskStats:
         t0 = time.monotonic()

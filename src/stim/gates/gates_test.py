@@ -3,14 +3,16 @@ import stim
 
 
 def test_gate_data_eq():
-    assert stim.gate_data('H') == stim.GateData('H')
-    assert stim.gate_data('H') == stim.gate_data('H_XZ')
-    assert not (stim.gate_data('H') == stim.GateData('X_ERROR'))
-    assert stim.gate_data('X') != stim.GateData('H')
+    assert stim.gate_data("H") == stim.GateData("H")
+    assert stim.gate_data("H") == stim.gate_data("H_XZ")
+    assert not (stim.gate_data("H") == stim.GateData("X_ERROR"))
+    assert stim.gate_data("X") != stim.GateData("H")
 
 
 def test_gate_data_str():
-    assert str(stim.GateData('MXX')) == '''
+    assert (
+        str(stim.GateData("MXX"))
+        == """
 stim.GateData {
     .name = 'MXX'
     .aliases = ['MXX']
@@ -24,8 +26,11 @@ stim.GateData {
     .takes_measurement_record_targets = False
     .takes_pauli_targets = False
 }
-    '''.strip()
-    assert str(stim.GateData('H')) == '''
+    """.strip()
+    )
+    assert (
+        str(stim.GateData("H"))
+        == """
 stim.GateData {
     .name = 'H'
     .aliases = ['H', 'H_XZ']
@@ -48,11 +53,12 @@ stim.GateData {
     )
     .unitary_matrix = np.array([[(0.7071067690849304+0j), (0.7071067690849304+0j)], [(0.7071067690849304+0j), (-0.7071067690849304-0j)]], dtype=np.complex64)
 }
-    '''.strip()
+    """.strip()
+    )
 
 
 def test_gate_data_repr():
-    val = stim.GateData('MPP')
+    val = stim.GateData("MPP")
     assert eval(repr(val), {"stim": stim}) == val
 
 
@@ -62,47 +68,52 @@ def test_gate_data_inverse():
         matrix = v.unitary_matrix
         if matrix is not None:
             assert v.is_unitary
-            assert np.allclose(matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6), (v.name, v.inverse.name)
+            assert np.allclose(matrix.conj().T, v.inverse.unitary_matrix, atol=1e-6), (
+                v.name,
+                v.inverse.name,
+            )
             assert v.inverse == v.generalized_inverse
 
-    assert stim.gate_data('H').inverse == stim.gate_data('H')
-    assert stim.gate_data('S').inverse == stim.gate_data('S_DAG')
-    assert stim.gate_data('M').inverse is None
-    assert stim.gate_data('CXSWAP').inverse == stim.gate_data('SWAPCX')
-    assert stim.gate_data('SPP').inverse == stim.gate_data('SPP_DAG')
+    assert stim.gate_data("H").inverse == stim.gate_data("H")
+    assert stim.gate_data("S").inverse == stim.gate_data("S_DAG")
+    assert stim.gate_data("M").inverse is None
+    assert stim.gate_data("CXSWAP").inverse == stim.gate_data("SWAPCX")
+    assert stim.gate_data("SPP").inverse == stim.gate_data("SPP_DAG")
 
-    assert stim.gate_data('S').generalized_inverse == stim.gate_data('S_DAG')
-    assert stim.gate_data('M').generalized_inverse == stim.gate_data('M')
-    assert stim.gate_data('R').generalized_inverse == stim.gate_data('M')
-    assert stim.gate_data('MR').generalized_inverse == stim.gate_data('MR')
-    assert stim.gate_data('MPP').generalized_inverse == stim.gate_data('MPP')
-    assert stim.gate_data('ELSE_CORRELATED_ERROR').generalized_inverse == stim.gate_data('ELSE_CORRELATED_ERROR')
+    assert stim.gate_data("S").generalized_inverse == stim.gate_data("S_DAG")
+    assert stim.gate_data("M").generalized_inverse == stim.gate_data("M")
+    assert stim.gate_data("R").generalized_inverse == stim.gate_data("M")
+    assert stim.gate_data("MR").generalized_inverse == stim.gate_data("MR")
+    assert stim.gate_data("MPP").generalized_inverse == stim.gate_data("MPP")
+    assert stim.gate_data(
+        "ELSE_CORRELATED_ERROR"
+    ).generalized_inverse == stim.gate_data("ELSE_CORRELATED_ERROR")
 
 
 def test_gate_data_flows():
-    assert stim.GateData('H').flows == [
+    assert stim.GateData("H").flows == [
         stim.Flow("X -> Z"),
         stim.Flow("Z -> X"),
     ]
 
 
 def test_gate_is_symmetric():
-    assert stim.GateData('SWAP').is_symmetric_gate
-    assert stim.GateData('H').is_symmetric_gate
-    assert stim.GateData('MYY').is_symmetric_gate
-    assert stim.GateData('DEPOLARIZE2').is_symmetric_gate
-    assert not stim.GateData('PAULI_CHANNEL_2').is_symmetric_gate
-    assert not stim.GateData('DETECTOR').is_symmetric_gate
-    assert not stim.GateData('TICK').is_symmetric_gate
+    assert stim.GateData("SWAP").is_symmetric_gate
+    assert stim.GateData("H").is_symmetric_gate
+    assert stim.GateData("MYY").is_symmetric_gate
+    assert stim.GateData("DEPOLARIZE2").is_symmetric_gate
+    assert not stim.GateData("PAULI_CHANNEL_2").is_symmetric_gate
+    assert not stim.GateData("DETECTOR").is_symmetric_gate
+    assert not stim.GateData("TICK").is_symmetric_gate
 
 
 def test_gate_hadamard_conjugated():
-    assert stim.GateData('CZSWAP').hadamard_conjugated(unsigned=True) is None
-    assert stim.GateData('TICK').hadamard_conjugated() == stim.GateData('TICK')
-    assert stim.GateData('MYY').hadamard_conjugated() == stim.GateData('MYY')
-    assert stim.GateData('XCZ').hadamard_conjugated() == stim.GateData('CX')
-    assert stim.GateData('X_ERROR').hadamard_conjugated() == stim.GateData('Z_ERROR')
-    assert stim.GateData('Y_ERROR').hadamard_conjugated() == stim.GateData('Y_ERROR')
-    assert stim.GateData('Z_ERROR').hadamard_conjugated() == stim.GateData('X_ERROR')
-    assert stim.GateData('I_ERROR').hadamard_conjugated() == stim.GateData('I_ERROR')
-    assert stim.GateData('II_ERROR').hadamard_conjugated() == stim.GateData('II_ERROR')
+    assert stim.GateData("CZSWAP").hadamard_conjugated(unsigned=True) is None
+    assert stim.GateData("TICK").hadamard_conjugated() == stim.GateData("TICK")
+    assert stim.GateData("MYY").hadamard_conjugated() == stim.GateData("MYY")
+    assert stim.GateData("XCZ").hadamard_conjugated() == stim.GateData("CX")
+    assert stim.GateData("X_ERROR").hadamard_conjugated() == stim.GateData("Z_ERROR")
+    assert stim.GateData("Y_ERROR").hadamard_conjugated() == stim.GateData("Y_ERROR")
+    assert stim.GateData("Z_ERROR").hadamard_conjugated() == stim.GateData("X_ERROR")
+    assert stim.GateData("I_ERROR").hadamard_conjugated() == stim.GateData("I_ERROR")
+    assert stim.GateData("II_ERROR").hadamard_conjugated() == stim.GateData("II_ERROR")

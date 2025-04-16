@@ -204,7 +204,7 @@ def iter_flatten_model(
 
 
 def deduplicate_hyperedges(
-    hyperedges: List[Tuple[List[int], float, int]]
+    hyperedges: List[Tuple[List[int], float, int]],
 ) -> List[Tuple[List[int], float, int]]:
     indices: dict[frozenset[int], Tuple[int, float]] = dict()
     result: List[Tuple[List[int], float, int]] = []

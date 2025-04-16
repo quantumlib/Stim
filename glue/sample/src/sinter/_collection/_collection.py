@@ -1,7 +1,18 @@
 import contextlib
 import dataclasses
 import pathlib
-from typing import Any, Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
+from typing import (
+    Any,
+    Callable,
+    Iterator,
+    Optional,
+    Union,
+    Iterable,
+    List,
+    TYPE_CHECKING,
+    Tuple,
+    Dict,
+)
 
 import math
 import numpy as np
@@ -29,28 +40,33 @@ class Progress:
             collection status, such as the number of tasks left and the
             estimated time to completion for each task.
     """
+
     new_stats: Tuple[TaskStats, ...]
     status_message: str
 
 
-def iter_collect(*,
-                 num_workers: int,
-                 tasks: Union[Iterator['sinter.Task'],
-                              Iterable['sinter.Task']],
-                 hint_num_tasks: Optional[int] = None,
-                 additional_existing_data: Union[None, dict[str, 'TaskStats'], Iterable['TaskStats']] = None,
-                 max_shots: Optional[int] = None,
-                 max_errors: Optional[int] = None,
-                 decoders: Optional[Iterable[str]] = None,
-                 max_batch_seconds: Optional[int] = None,
-                 max_batch_size: Optional[int] = None,
-                 start_batch_size: Optional[int] = None,
-                 count_observable_error_combos: bool = False,
-                 count_detection_events: bool = False,
-                 custom_decoders: Optional[Dict[str, Union['sinter.Decoder', 'sinter.Sampler']]] = None,
-                 custom_error_count_key: Optional[str] = None,
-                 allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
-                 ) -> Iterator['sinter.Progress']:
+def iter_collect(
+    *,
+    num_workers: int,
+    tasks: Union[Iterator["sinter.Task"], Iterable["sinter.Task"]],
+    hint_num_tasks: Optional[int] = None,
+    additional_existing_data: Union[
+        None, dict[str, "TaskStats"], Iterable["TaskStats"]
+    ] = None,
+    max_shots: Optional[int] = None,
+    max_errors: Optional[int] = None,
+    decoders: Optional[Iterable[str]] = None,
+    max_batch_seconds: Optional[int] = None,
+    max_batch_size: Optional[int] = None,
+    start_batch_size: Optional[int] = None,
+    count_observable_error_combos: bool = False,
+    count_detection_events: bool = False,
+    custom_decoders: Optional[
+        Dict[str, Union["sinter.Decoder", "sinter.Sampler"]]
+    ] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
+) -> Iterator["sinter.Progress"]:
     """Iterates error correction statistics collected from worker processes.
 
     It is important to iterate until the sequence ends, or worker processes will
@@ -193,8 +209,10 @@ def iter_collect(*,
         )
 
     progress_log: list[Optional[TaskStats]] = []
+
     def log_progress(e: Optional[TaskStats]):
         progress_log.append(e)
+
     with CollectionManager(
         num_workers=num_workers,
         tasks=tasks,
@@ -216,8 +234,7 @@ def iter_collect(*,
     ) as manager:
         try:
             yield Progress(
-                new_stats=(),
-                status_message=f"Starting {num_workers} workers..."
+                new_stats=(), status_message=f"Starting {num_workers} workers..."
             )
             manager.start_workers()
             manager.start_distributing_work()
@@ -237,31 +254,34 @@ def iter_collect(*,
         except KeyboardInterrupt:
             yield Progress(
                 new_stats=(),
-                status_message='KeyboardInterrupt',
+                status_message="KeyboardInterrupt",
             )
             raise
 
 
-def collect(*,
-            num_workers: int,
-            tasks: Union[Iterator['sinter.Task'], Iterable['sinter.Task']],
-            existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
-            save_resume_filepath: Union[None, str, pathlib.Path] = None,
-            progress_callback: Optional[Callable[['sinter.Progress'], None]] = None,
-            max_shots: Optional[int] = None,
-            max_errors: Optional[int] = None,
-            count_observable_error_combos: bool = False,
-            count_detection_events: bool = False,
-            decoders: Optional[Iterable[str]] = None,
-            max_batch_seconds: Optional[int] = None,
-            max_batch_size: Optional[int] = None,
-            start_batch_size: Optional[int] = None,
-            print_progress: bool = False,
-            hint_num_tasks: Optional[int] = None,
-            custom_decoders: Optional[Dict[str, Union['sinter.Decoder', 'sinter.Sampler']]] = None,
-            custom_error_count_key: Optional[str] = None,
-            allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
-            ) -> List['sinter.TaskStats']:
+def collect(
+    *,
+    num_workers: int,
+    tasks: Union[Iterator["sinter.Task"], Iterable["sinter.Task"]],
+    existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
+    save_resume_filepath: Union[None, str, pathlib.Path] = None,
+    progress_callback: Optional[Callable[["sinter.Progress"], None]] = None,
+    max_shots: Optional[int] = None,
+    max_errors: Optional[int] = None,
+    count_observable_error_combos: bool = False,
+    count_detection_events: bool = False,
+    decoders: Optional[Iterable[str]] = None,
+    max_batch_seconds: Optional[int] = None,
+    max_batch_size: Optional[int] = None,
+    start_batch_size: Optional[int] = None,
+    print_progress: bool = False,
+    hint_num_tasks: Optional[int] = None,
+    custom_decoders: Optional[
+        Dict[str, Union["sinter.Decoder", "sinter.Sampler"]]
+    ] = None,
+    custom_error_count_key: Optional[str] = None,
+    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
+) -> List["sinter.TaskStats"]:
     """Collects statistics from the given tasks, using multiprocessing.
 
     Args:
@@ -389,11 +409,13 @@ def collect(*,
             if save_resume_filepath.exists():
                 additional_existing_data += ExistingData.from_file(save_resume_filepath)
                 save_resume_file = exit_stack.enter_context(
-                        open(save_resume_filepath, 'a'))  # type: ignore
+                    open(save_resume_filepath, "a")
+                )  # type: ignore
             else:
                 save_resume_filepath.parent.mkdir(exist_ok=True)
                 save_resume_file = exit_stack.enter_context(
-                        open(save_resume_filepath, 'w'))  # type: ignore
+                    open(save_resume_filepath, "w")
+                )  # type: ignore
                 print(CSV_HEADER, file=save_resume_file, flush=True)
         else:
             save_resume_file = None
@@ -445,7 +467,9 @@ def post_selection_mask_from_predicate(
     return post_selection_mask
 
 
-def post_selection_mask_from_4th_coord(dem: Union[stim.Circuit, stim.DetectorErrorModel]) -> np.ndarray:
+def post_selection_mask_from_4th_coord(
+    dem: Union[stim.Circuit, stim.DetectorErrorModel],
+) -> np.ndarray:
     """Returns a mask that postselects detector's with non-zero 4th coordinate.
 
     This method is a leftover from before the existence of the command line

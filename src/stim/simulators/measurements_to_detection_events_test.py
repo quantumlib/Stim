@@ -19,14 +19,16 @@ import stim
 
 
 def test_convert_file_without_sweep_bits():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         X 0
         CNOT sweep[0] 0
         M 0
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     with tempfile.TemporaryDirectory() as d:
         with open(f"{d}/measurements.01", "w") as f:
@@ -44,10 +46,10 @@ def test_convert_file_without_sweep_bits():
 
     with tempfile.TemporaryDirectory() as d:
         with open(f"{d}/measurements.b8", "wb") as f:
-            f.write((0).to_bytes(1, 'big'))
-            f.write((1).to_bytes(1, 'big'))
-            f.write((0).to_bytes(1, 'big'))
-            f.write((1).to_bytes(1, 'big'))
+            f.write((0).to_bytes(1, "big"))
+            f.write((1).to_bytes(1, "big"))
+            f.write((0).to_bytes(1, "big"))
+            f.write((1).to_bytes(1, "big"))
         with open(f"{d}/sweep.hits", "w") as f:
             print("", file=f)
             print("", file=f)
@@ -85,14 +87,16 @@ def test_convert_file_without_sweep_bits():
 
 
 def test_convert():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
        X_ERROR(0.1) 0
        X 0
        CNOT sweep[0] 0
        M 0
        DETECTOR rec[-1]
        OBSERVABLE_INCLUDE(0) rec[-1]
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     result = converter.convert(
         measurements=np.array([[0], [1]], dtype=np.bool_),
@@ -121,19 +125,23 @@ def test_convert():
 
 
 def test_convert_bit_packed():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
        REPEAT 100 {
            X_ERROR(0.1) 0
            X 0
            MR 0
            DETECTOR rec[-1]
        }
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
     expected_detections = np.array([[1] * 100, [0] * 100], dtype=np.bool_)
-    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
-    expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
+    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder="little")
+    expected_detections_packed = np.packbits(
+        expected_detections, axis=1, bitorder="little"
+    )
 
     for m in measurements, measurements_bit_packed:
         result = converter.convert(
@@ -165,7 +173,8 @@ def test_convert_bit_packed():
 
 
 def test_convert_bit_packed_swept():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
        REPEAT 100 {
            CNOT sweep[0] 0
            X_ERROR(0.1) 0
@@ -173,15 +182,18 @@ def test_convert_bit_packed_swept():
            MR 0
            DETECTOR rec[-1]
        }
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
     sweeps = np.array([[1], [0]], dtype=np.bool_)
     expected_detections = np.array([[0] * 100, [0] * 100], dtype=np.bool_)
 
-    measurements_packed = np.packbits(measurements, axis=1, bitorder='little')
-    expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
-    sweeps_packed = np.packbits(sweeps, axis=1, bitorder='little')
+    measurements_packed = np.packbits(measurements, axis=1, bitorder="little")
+    expected_detections_packed = np.packbits(
+        expected_detections, axis=1, bitorder="little"
+    )
+    sweeps_packed = np.packbits(sweeps, axis=1, bitorder="little")
 
     for m in measurements, measurements_packed:
         for s in sweeps, sweeps_packed:
@@ -206,7 +218,8 @@ def test_convert_bit_packed_swept():
 
 
 def test_convert_bit_packed_separate_observables():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
        REPEAT 100 {
            X_ERROR(0.1) 0
            X 0
@@ -216,14 +229,17 @@ def test_convert_bit_packed_separate_observables():
        OBSERVABLE_INCLUDE(0) rec[-1]
        OBSERVABLE_INCLUDE(6) rec[-2]
        OBSERVABLE_INCLUDE(14) rec[-3]
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool_)
     expected_dets = np.array([[1] * 100, [0] * 100], dtype=np.bool_)
-    expected_obs = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], [0] * 15], dtype=np.bool_)
-    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
-    expected_dets_packed = np.packbits(expected_dets, axis=1, bitorder='little')
-    expected_obs_packed = np.packbits(expected_obs, axis=1, bitorder='little')
+    expected_obs = np.array(
+        [[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], [0] * 15], dtype=np.bool_
+    )
+    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder="little")
+    expected_dets_packed = np.packbits(expected_dets, axis=1, bitorder="little")
+    expected_obs_packed = np.packbits(expected_obs, axis=1, bitorder="little")
 
     for m in measurements, measurements_bit_packed:
         actual_dets, actual_obs = converter.convert(
@@ -249,14 +265,16 @@ def test_convert_bit_packed_separate_observables():
 
 
 def test_noiseless_conversion():
-    converter = stim.Circuit('''
+    converter = stim.Circuit(
+        """
        MR 0
        DETECTOR rec[-1]
        X 0
        MR 0
        DETECTOR rec[-1]
        OBSERVABLE_INCLUDE(0) rec[-1]
-    ''').compile_m2d_converter()
+    """
+    ).compile_m2d_converter()
 
     measurements = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.bool_)
     expected_dets = np.array([[0, 1], [0, 0], [1, 1], [1, 0]], dtype=np.bool_)
@@ -280,7 +298,9 @@ def test_needs_append_or_separate():
         converter.convert(measurements=ms)
     d1 = converter.convert(measurements=ms, append_observables=True)
     d2, d3 = converter.convert(measurements=ms, separate_observables=True)
-    d4, d5 = converter.convert(measurements=ms, separate_observables=True, append_observables=True)
+    d4, d5 = converter.convert(
+        measurements=ms, separate_observables=True, append_observables=True
+    )
     np.testing.assert_array_equal(d1, d2)
     np.testing.assert_array_equal(d1, d3)
     np.testing.assert_array_equal(d1, d4)
@@ -288,12 +308,16 @@ def test_needs_append_or_separate():
 
 
 def test_anticommuting_pieces_combining_into_deterministic_observable():
-    c = stim.Circuit('''
+    c = stim.Circuit(
+        """
         MX 0
         OBSERVABLE_INCLUDE(0) rec[-1]
         MX 0
         OBSERVABLE_INCLUDE(0) rec[-1]
-    ''').without_noise()
+    """
+    ).without_noise()
     m = c.compile_sampler().sample_bit_packed(shots=1000)
-    det, obs = c.compile_m2d_converter().convert(measurements=m, separate_observables=True)
+    det, obs = c.compile_m2d_converter().convert(
+        measurements=m, separate_observables=True
+    )
     np.testing.assert_array_equal(obs, obs * 0)

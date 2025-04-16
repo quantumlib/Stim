@@ -10,16 +10,16 @@ from sinter._decoding._sampler import Sampler
 from sinter._decoding._decoding_mwpf import HyperUFDecoder, MwpfDecoder
 
 BUILT_IN_DECODERS: Dict[str, Decoder] = {
-    'vacuous': VacuousDecoder(),
-    'pymatching': PyMatchingDecoder(),
-    'fusion_blossom': FusionBlossomDecoder(),
+    "vacuous": VacuousDecoder(),
+    "pymatching": PyMatchingDecoder(),
+    "fusion_blossom": FusionBlossomDecoder(),
     # an implementation of (weighted) hypergraph UF decoder (https://arxiv.org/abs/2103.08049)
-    'hypergraph_union_find': HyperUFDecoder(),
+    "hypergraph_union_find": HyperUFDecoder(),
     # Minimum-Weight Parity Factor using similar primal-dual method the blossom algorithm (https://pypi.org/project/mwpf/)
-    'mw_parity_factor': MwpfDecoder(),
+    "mw_parity_factor": MwpfDecoder(),
 }
 
 BUILT_IN_SAMPLERS: Dict[str, Union[Decoder, Sampler]] = {
     **BUILT_IN_DECODERS,
-    'perfectionist': PerfectionistSampler(),
+    "perfectionist": PerfectionistSampler(),
 }

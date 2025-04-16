@@ -39,33 +39,41 @@ class CollectionOptions:
 
     def __post_init__(self):
         if self.max_shots is not None and self.max_shots < 0:
-            raise ValueError(f'max_shots is not None and max_shots={self.max_shots} < 0')
+            raise ValueError(
+                f"max_shots is not None and max_shots={self.max_shots} < 0"
+            )
         if self.max_errors is not None and self.max_errors < 0:
-            raise ValueError(f'max_errors is not None and max_errors={self.max_errors} < 0')
+            raise ValueError(
+                f"max_errors is not None and max_errors={self.max_errors} < 0"
+            )
         if self.start_batch_size is not None and self.start_batch_size <= 0:
-            raise ValueError(f'start_batch_size is not None and start_batch_size={self.start_batch_size} <= 0')
+            raise ValueError(
+                f"start_batch_size is not None and start_batch_size={self.start_batch_size} <= 0"
+            )
         if self.max_batch_size is not None and self.max_batch_size <= 0:
             raise ValueError(
-                f'max_batch_size={self.max_batch_size} is not None and max_batch_size <= 0')
+                f"max_batch_size={self.max_batch_size} is not None and max_batch_size <= 0"
+            )
         if self.max_batch_seconds is not None and self.max_batch_seconds <= 0:
             raise ValueError(
-                f'max_batch_seconds={self.max_batch_seconds} is not None and max_batch_seconds <= 0')
+                f"max_batch_seconds={self.max_batch_seconds} is not None and max_batch_seconds <= 0"
+            )
 
     def __repr__(self) -> str:
         terms = []
         if self.max_shots is not None:
-            terms.append(f'max_shots={self.max_shots!r}')
+            terms.append(f"max_shots={self.max_shots!r}")
         if self.max_errors is not None:
-            terms.append(f'max_errors={self.max_errors!r}')
+            terms.append(f"max_errors={self.max_errors!r}")
         if self.start_batch_size is not None:
-            terms.append(f'start_batch_size={self.start_batch_size!r}')
+            terms.append(f"start_batch_size={self.start_batch_size!r}")
         if self.max_batch_size is not None:
-            terms.append(f'max_batch_size={self.max_batch_size!r}')
+            terms.append(f"max_batch_size={self.max_batch_size!r}")
         if self.max_batch_seconds is not None:
-            terms.append(f'max_batch_seconds={self.max_batch_seconds!r}')
+            terms.append(f"max_batch_seconds={self.max_batch_seconds!r}")
         return f'sinter.CollectionOptions({", ".join(terms)})'
 
-    def combine(self, other: 'sinter.CollectionOptions') -> 'sinter.CollectionOptions':
+    def combine(self, other: "sinter.CollectionOptions") -> "sinter.CollectionOptions":
         """Returns a combination of multiple collection options.
 
         All fields are combined by taking the minimum from both collection
@@ -93,9 +101,14 @@ class CollectionOptions:
         return CollectionOptions(
             max_shots=nullable_min(self.max_shots, other.max_shots),
             max_errors=nullable_min(self.max_errors, other.max_errors),
-            start_batch_size=nullable_min(self.start_batch_size, other.start_batch_size),
+            start_batch_size=nullable_min(
+                self.start_batch_size, other.start_batch_size
+            ),
             max_batch_size=nullable_min(self.max_batch_size, other.max_batch_size),
-            max_batch_seconds=nullable_min(self.max_batch_seconds, other.max_batch_seconds))
+            max_batch_seconds=nullable_min(
+                self.max_batch_seconds, other.max_batch_seconds
+            ),
+        )
 
 
 def nullable_min(a: Optional[int], b: Optional[int]) -> Optional[int]:

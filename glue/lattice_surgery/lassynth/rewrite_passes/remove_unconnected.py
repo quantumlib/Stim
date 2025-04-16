@@ -6,11 +6,14 @@ from typing import Mapping, Any, Sequence, Union, Tuple
 
 
 def check_cubes(
-    n_i: int, n_j: int, n_k: int, ExistI: Sequence[Sequence[Sequence[int]]],
+    n_i: int,
+    n_j: int,
+    n_k: int,
+    ExistI: Sequence[Sequence[Sequence[int]]],
     ExistJ: Sequence[Sequence[Sequence[int]]],
     ExistK: Sequence[Sequence[Sequence[int]]],
     ports: Sequence[Mapping[str, Union[str, int]]],
-    NodeY: Sequence[Sequence[Sequence[int]]]
+    NodeY: Sequence[Sequence[Sequence[int]]],
 ) -> Sequence[Sequence[Sequence[int]]]:
     # we linearize the cubes, cube at (i,j,k) -> index i*n_j*n_k + j*n_k + k
     # construct adjancency list of the cubes from the pipes
@@ -19,35 +22,45 @@ def check_cubes(
         for j in range(n_j):
             for k in range(n_k):
                 if ExistI[i][j][k] and i + 1 < n_i:
-                    adj[i * n_j * n_k + j * n_k +
-                        k].append((i + 1) * n_j * n_k + j * n_k + k)
-                    adj[(i + 1) * n_j * n_k + j * n_k +
-                        k].append(i * n_j * n_k + j * n_k + k)
+                    adj[i * n_j * n_k + j * n_k + k].append(
+                        (i + 1) * n_j * n_k + j * n_k + k
+                    )
+                    adj[(i + 1) * n_j * n_k + j * n_k + k].append(
+                        i * n_j * n_k + j * n_k + k
+                    )
                 if ExistJ[i][j][k] and j + 1 < n_j:
-                    adj[i * n_j * n_k + j * n_k + k].append(i * n_j * n_k +
-                                                            (j + 1) * n_k + k)
-                    adj[i * n_j * n_k + (j + 1) * n_k +
-                        k].append(i * n_j * n_k + j * n_k + k)
+                    adj[i * n_j * n_k + j * n_k + k].append(
+                        i * n_j * n_k + (j + 1) * n_k + k
+                    )
+                    adj[i * n_j * n_k + (j + 1) * n_k + k].append(
+                        i * n_j * n_k + j * n_k + k
+                    )
                 if ExistK[i][j][k] and k + 1 < n_k:
-                    adj[i * n_j * n_k + j * n_k + k].append(i * n_j * n_k +
-                                                            j * n_k + k + 1)
-                    adj[i * n_j * n_k + j * n_k + k + 1].append(i * n_j * n_k +
-                                                                j * n_k + k)
+                    adj[i * n_j * n_k + j * n_k + k].append(
+                        i * n_j * n_k + j * n_k + k + 1
+                    )
+                    adj[i * n_j * n_k + j * n_k + k + 1].append(
+                        i * n_j * n_k + j * n_k + k
+                    )
 
     # if a cube can reach any of the vips, i.e., open cube for a port
     vips = [p["i"] * n_j * n_k + p["j"] * n_k + p["k"] for p in ports]
 
     # first assume all cubes are nonconnected
-    connected_cubes = [[[0 for _ in range(n_k)] for _ in range(n_j)]
-                       for _ in range(n_i)]
+    connected_cubes = [
+        [[0 for _ in range(n_k)] for _ in range(n_j)] for _ in range(n_i)
+    ]
 
     # a Y cube is only effective if it is connected to a cube (i,j,k) that is
     # connected to ports. In this case, (i,j,k) will be in `connected_cubes`
     # and all pipes from (i,j,k) will be selected in `check_pipes`, so we can
     # assume all the Y cubes to be nonconnected for now.
     y_cubes = [
-        i * n_j * n_k + j * n_k + k for i in range(n_i) for j in range(n_j)
-        for k in range(n_k) if NodeY[i][j][k]
+        i * n_j * n_k + j * n_k + k
+        for i in range(n_i)
+        for j in range(n_j)
+        for k in range(n_k)
+        if NodeY[i][j][k]
     ]
 
     for i in range(n_i):
@@ -74,40 +87,44 @@ def check_cubes(
 
 
 def check_pipes(
-    n_i: int, n_j: int, n_k: int, ExistI: Sequence[Sequence[Sequence[int]]],
+    n_i: int,
+    n_j: int,
+    n_k: int,
+    ExistI: Sequence[Sequence[Sequence[int]]],
     ExistJ: Sequence[Sequence[Sequence[int]]],
     ExistK: Sequence[Sequence[Sequence[int]]],
-    connected_cubes: Sequence[Sequence[Sequence[int]]]
-) -> Tuple[Sequence[Sequence[Sequence[int]]],
-           Sequence[Sequence[Sequence[int]]],
-           Sequence[Sequence[Sequence[int]]]]:
-    EffectI = [[[0 for _ in range(n_k)] for _ in range(n_j)]
-               for _ in range(n_i)]
-    EffectJ = [[[0 for _ in range(n_k)] for _ in range(n_j)]
-               for _ in range(n_i)]
-    EffectK = [[[0 for _ in range(n_k)] for _ in range(n_j)]
-               for _ in range(n_i)]
+    connected_cubes: Sequence[Sequence[Sequence[int]]],
+) -> Tuple[
+    Sequence[Sequence[Sequence[int]]],
+    Sequence[Sequence[Sequence[int]]],
+    Sequence[Sequence[Sequence[int]]],
+]:
+    EffectI = [[[0 for _ in range(n_k)] for _ in range(n_j)] for _ in range(n_i)]
+    EffectJ = [[[0 for _ in range(n_k)] for _ in range(n_j)] for _ in range(n_i)]
+    EffectK = [[[0 for _ in range(n_k)] for _ in range(n_j)] for _ in range(n_i)]
     for i in range(n_i):
         for j in range(n_j):
             for k in range(n_k):
-                if ExistI[i][j][k] and (connected_cubes[i][j][k] or
-                                        (i + 1 < n_i
-                                         and connected_cubes[i + 1][j][k])):
+                if ExistI[i][j][k] and (
+                    connected_cubes[i][j][k]
+                    or (i + 1 < n_i and connected_cubes[i + 1][j][k])
+                ):
                     EffectI[i][j][k] = 1
-                if ExistJ[i][j][k] and (connected_cubes[i][j][k] or
-                                        (j + 1 < n_j
-                                         and connected_cubes[i][j + 1][k])):
+                if ExistJ[i][j][k] and (
+                    connected_cubes[i][j][k]
+                    or (j + 1 < n_j and connected_cubes[i][j + 1][k])
+                ):
                     EffectJ[i][j][k] = 1
-                if ExistK[i][j][k] and (connected_cubes[i][j][k] or
-                                        (k + 1 < n_k
-                                         and connected_cubes[i][j][k + 1])):
+                if ExistK[i][j][k] and (
+                    connected_cubes[i][j][k]
+                    or (k + 1 < n_k and connected_cubes[i][j][k + 1])
+                ):
                     EffectK[i][j][k] = 1
     return EffectI, EffectJ, EffectK
 
 
 def array3DAnd(
-    arr0: Sequence[Sequence[Sequence[int]]],
-    arr1: Sequence[Sequence[Sequence[int]]]
+    arr0: Sequence[Sequence[Sequence[int]]], arr1: Sequence[Sequence[Sequence[int]]]
 ) -> Sequence[Sequence[Sequence[int]]]:
     """taking the AND of two arrays of bits"""
     a = len(arr0)
@@ -136,17 +153,15 @@ def remove_unconnected(lasre: Mapping[str, Any]) -> Mapping[str, Any]:
     )
     ports = lasre["ports"]
 
-    connected_cubes = check_cubes(n_i, n_j, n_k, ExistI, ExistJ, ExistK, ports,
-                                  NodeY)
-    connectedI, connectedJ, connectedK = check_pipes(n_i, n_j, n_k, ExistI,
-                                                     ExistJ, ExistK,
-                                                     connected_cubes)
+    connected_cubes = check_cubes(n_i, n_j, n_k, ExistI, ExistJ, ExistK, ports, NodeY)
+    connectedI, connectedJ, connectedK = check_pipes(
+        n_i, n_j, n_k, ExistI, ExistJ, ExistK, connected_cubes
+    )
     maskedI, maskedJ, maskedK = (
         array3DAnd(ExistI, connectedI),
         array3DAnd(ExistJ, connectedJ),
         array3DAnd(ExistK, connectedK),
     )
-    lasre["ExistI"], lasre["ExistJ"], lasre[
-        "ExistK"] = maskedI, maskedJ, maskedK
+    lasre["ExistI"], lasre["ExistJ"], lasre["ExistK"] = maskedI, maskedJ, maskedK
 
     return lasre

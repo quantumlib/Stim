@@ -7,19 +7,22 @@ from typing import Any, Mapping, Sequence, Tuple, Optional
 
 class ZXGridNode:
 
-    def __init__(self, coord3: Tuple[int, int, int],
-                 connectivity: Mapping[str, Mapping[str, int]]) -> None:
+    def __init__(
+        self,
+        coord3: Tuple[int, int, int],
+        connectivity: Mapping[str, Mapping[str, int]],
+    ) -> None:
         """initialize ZXGridNode for a cube in the LaS.
 
         self.type: type of ZX spider, 'N': no spider, 'X'/'Z': X/Z-spider,
-            'S': Y cube, 'I': identity, 'Pi': input port, 'Po': output port. 
+            'S': Y cube, 'I': identity, 'Pi': input port, 'Po': output port.
         self.i/j/k: 3D corrdinates of the cube in the LaS.
         self.exists is a dictionary with six keys corresponding to whether a
             pipe exist in the six directions to a cube in the LaS.
         self.colors are the colors of these possible pipes.
         self.y_tail_plus: if this node connects a Y on the top.
         self.y_tail_minus: if this node connects a Y on the bottom.
-        
+
         Args:
             coord3 (Tuple[int, int, int]): 3D coordinate of the cube.
             connectivity (Mapping[str, Mapping[str, int]]): contains exists
@@ -35,7 +38,7 @@ class ZXGridNode:
 
     def compute_type(self) -> None:
         """decide the type of a ZXGridNoe
-        
+
         Raises:
             ValueError: node has degree=1, which should be forbidden earlier.
             ValueError: node has degree>4, which should be forbidden earlier.
@@ -92,24 +95,23 @@ class ZXGridNode:
 
     def zigxag_str(self, n_j: int) -> str:
         zigxag_type = {
-            'Z': '@',
-            'X': 'O',
-            'S': 's',
-            'W': 'w',
-            'I': 'O',
-            'Pi': 'in',
-            'Po': 'out',
+            "Z": "@",
+            "X": "O",
+            "S": "s",
+            "W": "w",
+            "I": "O",
+            "Pi": "in",
+            "Po": "out",
         }
         (x, y) = self.zigxag_xy(n_j)
-        return str(-y) + ',' + str(-x) + ',' + str(zigxag_type[self.type])
+        return str(-y) + "," + str(-x) + "," + str(zigxag_type[self.type])
 
 
 class ZXGridEdge:
 
-    def __init__(self, if_h: bool, node0: ZXGridNode,
-                 node1: ZXGridNode) -> None:
+    def __init__(self, if_h: bool, node0: ZXGridNode, node1: ZXGridNode) -> None:
         """initialize ZXGridEdge for a pipe in the LaS.
-        
+
         Args:
             if_h (bool): if this edge is a Hadamard edge.
             node0 (ZXGridNode): one end of the edge.
@@ -120,8 +122,7 @@ class ZXGridEdge:
             ValueError: the two spiders are not neighbors.
         """
 
-        dist = abs(node0.i - node1.i) + abs(node0.j - node1.j) + abs(node0.k -
-                                                                     node1.k)
+        dist = abs(node0.i - node1.i) + abs(node0.j - node1.j) + abs(node0.k - node1.k)
         if dist == 0:
             raise ValueError(f"{node0} and {node1} are the same.")
         if dist > 1:
@@ -132,8 +133,17 @@ class ZXGridEdge:
     def zigxag_str(self, n_j: int) -> str:
         (xa, ya) = self.node0.zigxag_xy(n_j)
         (xb, yb) = self.node1.zigxag_xy(n_j)
-        return (str(-ya) + ',' + str(-xa) + ',' + str(-yb) + ',' + str(-xb) +
-                ',' + self.type)
+        return (
+            str(-ya)
+            + ","
+            + str(-xa)
+            + ","
+            + str(-yb)
+            + ","
+            + str(-xb)
+            + ","
+            + self.type
+        )
 
 
 class ZXGridGraph:
@@ -145,18 +155,25 @@ class ZXGridGraph:
             lasre["n_j"],
             lasre["n_k"],
         )
-        self.nodes = [[[
-            ZXGridNode((i, j, k), self.gather_cube_connectivity(i, j, k))
-            for k in range(self.n_k + 1)
-        ] for j in range(self.n_j + 1)] for i in range(self.n_i + 1)]
-        for (i, j, k) in self.lasre["port_cubes"]:
-            self.nodes[i][j][k].type = 'Po'
+        self.nodes = [
+            [
+                [
+                    ZXGridNode((i, j, k), self.gather_cube_connectivity(i, j, k))
+                    for k in range(self.n_k + 1)
+                ]
+                for j in range(self.n_j + 1)
+            ]
+            for i in range(self.n_i + 1)
+        ]
+        for i, j, k in self.lasre["port_cubes"]:
+            self.nodes[i][j][k].type = "Po"
         self.append_y_tails()
         self.edges = []
         self.derive_edges()
 
-    def gather_cube_connectivity(self, i: int, j: int,
-                                 k: int) -> Mapping[str, Mapping[str, int]]:
+    def gather_cube_connectivity(
+        self, i: int, j: int, k: int
+    ) -> Mapping[str, Mapping[str, int]]:
         # exists and colors for no cube
         exists = {"-I": 0, "+I": 0, "-K": 0, "+K": 0, "-J": 0, "+J": 0}
         colors = {
@@ -167,9 +184,13 @@ class ZXGridGraph:
             "-J": -1,
             "+J": -1,
         }
-        if i in range(self.n_i) and j in range(self.n_j) and k in range(
-                self.n_k) and ((i, j, k) not in self.lasre["port_cubes"]) and (
-                    self.lasre["NodeY"][i][j][k] == 0):
+        if (
+            i in range(self.n_i)
+            and j in range(self.n_j)
+            and k in range(self.n_k)
+            and ((i, j, k) not in self.lasre["port_cubes"])
+            and (self.lasre["NodeY"][i][j][k] == 0)
+        ):
             if i > 0 and self.lasre["ExistI"][i - 1][j][k]:
                 exists["-I"] = 1
                 colors["-I"] = self.lasre["ColorI"][i - 1][j][k]
@@ -195,11 +216,17 @@ class ZXGridGraph:
             for j in range(self.n_j):
                 for k in range(self.n_k):
                     if self.lasre["NodeY"][i][j][k]:
-                        if (k - 1 >= 0 and self.lasre["ExistK"][i][j][k - 1]
-                                and (not self.lasre["NodeY"][i][j][k - 1])):
+                        if (
+                            k - 1 >= 0
+                            and self.lasre["ExistK"][i][j][k - 1]
+                            and (not self.lasre["NodeY"][i][j][k - 1])
+                        ):
                             self.nodes[i][j][k - 1].y_tail_plus = True
-                        if (k + 1 < self.n_k and self.lasre["ExistK"][i][j][k]
-                                and (not self.lasre["NodeY"][i][j][k + 1])):
+                        if (
+                            k + 1 < self.n_k
+                            and self.lasre["ExistK"][i][j][k]
+                            and (not self.lasre["NodeY"][i][j][k + 1])
+                        ):
                             self.nodes[i][j][k + 1].y_tail_minus = True
 
     def derive_edges(self):
@@ -207,37 +234,46 @@ class ZXGridGraph:
         for i in range(self.n_i):
             for j in range(self.n_j):
                 for k in range(self.n_k):
-                    if (self.lasre["ExistI"][i][j][k] == 1
-                            and self.nodes[i][j][k].type in valid_types
-                            and self.nodes[i + 1][j][k].type in valid_types):
+                    if (
+                        self.lasre["ExistI"][i][j][k] == 1
+                        and self.nodes[i][j][k].type in valid_types
+                        and self.nodes[i + 1][j][k].type in valid_types
+                    ):
                         self.edges.append(
-                            ZXGridEdge(0, self.nodes[i][j][k],
-                                       self.nodes[i + 1][j][k]))
+                            ZXGridEdge(0, self.nodes[i][j][k], self.nodes[i + 1][j][k])
+                        )
 
-                    if (self.lasre["ExistJ"][i][j][k] == 1
-                            and self.nodes[i][j][k].type in valid_types
-                            and self.nodes[i][j + 1][k].type in valid_types):
+                    if (
+                        self.lasre["ExistJ"][i][j][k] == 1
+                        and self.nodes[i][j][k].type in valid_types
+                        and self.nodes[i][j + 1][k].type in valid_types
+                    ):
                         self.edges.append(
-                            ZXGridEdge(0, self.nodes[i][j][k],
-                                       self.nodes[i][j + 1][k]))
+                            ZXGridEdge(0, self.nodes[i][j][k], self.nodes[i][j + 1][k])
+                        )
 
-                    if (self.lasre["ExistK"][i][j][k] == 1
-                            and self.nodes[i][j][k].type in valid_types
-                            and self.nodes[i][j][k + 1].type in valid_types):
+                    if (
+                        self.lasre["ExistK"][i][j][k] == 1
+                        and self.nodes[i][j][k].type in valid_types
+                        and self.nodes[i][j][k + 1].type in valid_types
+                    ):
                         self.edges.append(
                             ZXGridEdge(
-                                abs(self.lasre["ColorKM"][i][j][k] -
-                                    self.lasre["ColorKP"][i][j][k]),
+                                abs(
+                                    self.lasre["ColorKM"][i][j][k]
+                                    - self.lasre["ColorKP"][i][j][k]
+                                ),
                                 self.nodes[i][j][k],
                                 self.nodes[i][j][k + 1],
-                            ))
+                            )
+                        )
 
     def to_zigxag_url(self, io_spec: Optional[Sequence[str]] = None) -> str:
         """generate a url for ZigXag
 
         Args:
             io_spec (Sequence[str], optional): specify whether each port is an
-                input port or an output port. 
+                input port or an output port.
 
         Raises:
             ValueError: len(io_spec) is not the same with the number of ports.
@@ -249,7 +285,8 @@ class ZXGridGraph:
             if len(io_spec) != len(self.lasre["port_cubes"]):
                 raise ValueError(
                     f"io_spec has length {len(io_spec)} but there are "
-                    f"{len(self.lasre['port_cubes'])} ports.")
+                    f"{len(self.lasre['port_cubes'])} ports."
+                )
             for w, (i, j, k) in enumerate(self.lasre["port_cubes"]):
                 self.nodes[i][j][k].type = io_spec[w]
 
@@ -277,16 +314,31 @@ class ZXGridGraph:
                 for k in range(self.n_k):
                     (x, y) = self.nodes[i][j][k].zigxag_xy(self.n_j)
                     if self.nodes[i][j][k].y_tail_plus:
-                        nodes_str += (";" + str(x + self.n_j - j) + "," +
-                                      str(y) + ",s")
-                        edges_str += (";" + str(x + self.n_j - j) + "," +
-                                      str(y) + "," + str(x) + "," + str(y) +
-                                      ",-")
+                        nodes_str += ";" + str(x + self.n_j - j) + "," + str(y) + ",s"
+                        edges_str += (
+                            ";"
+                            + str(x + self.n_j - j)
+                            + ","
+                            + str(y)
+                            + ","
+                            + str(x)
+                            + ","
+                            + str(y)
+                            + ",-"
+                        )
                     if self.nodes[i][j][k].y_tail_minus:
-                        nodes_str += (";" + str(x - j - 1) + "," + str(y) +
-                                      ",s")
-                        edges_str += (";" + str(x - j - 1) + "," + str(y) +
-                                      "," + str(x) + "," + str(y) + ",-")
+                        nodes_str += ";" + str(x - j - 1) + "," + str(y) + ",s"
+                        edges_str += (
+                            ";"
+                            + str(x - j - 1)
+                            + ","
+                            + str(y)
+                            + ","
+                            + str(x)
+                            + ","
+                            + str(y)
+                            + ",-"
+                        )
 
         zigxag_str = "https://algassert.com/zigxag#" + nodes_str + ":" + edges_str
         return zigxag_str

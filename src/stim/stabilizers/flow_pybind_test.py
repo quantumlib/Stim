@@ -80,10 +80,10 @@ def test_equality():
     assert stim.Flow() != "other object"
     assert stim.Flow() != object()
 
-    assert stim.Flow('X -> Y') == stim.Flow('X -> Y')
-    assert stim.Flow('X -> X') != stim.Flow('X -> Y')
-    assert not (stim.Flow('X -> Y') != stim.Flow('X -> Y'))
-    assert not (stim.Flow('X -> Y') == stim.Flow('X -> X'))
+    assert stim.Flow("X -> Y") == stim.Flow("X -> Y")
+    assert stim.Flow("X -> X") != stim.Flow("X -> Y")
+    assert not (stim.Flow("X -> Y") != stim.Flow("X -> Y"))
+    assert not (stim.Flow("X -> Y") == stim.Flow("X -> X"))
 
     assert stim.Flow("X -> X xor rec[-1]") == stim.Flow("X -> X xor rec[-1]")
     assert stim.Flow("X -> X xor rec[-1]") != stim.Flow("Y -> X xor rec[-1]")
@@ -91,16 +91,19 @@ def test_equality():
     assert stim.Flow("X -> X xor rec[-1]") != stim.Flow("X -> X xor rec[-2]")
 
 
-@pytest.mark.parametrize("value", [
-    stim.Flow(),
-    stim.Flow("X -> Y xor rec[-1]"),
-    stim.Flow("X -> 1"),
-    stim.Flow("-X -> Y"),
-    stim.Flow("X -> -Y"),
-    stim.Flow("-X -> -Y"),
-    stim.Flow("1 -> X"),
-    stim.Flow("X__________________ -> ________Y"),
-])
+@pytest.mark.parametrize(
+    "value",
+    [
+        stim.Flow(),
+        stim.Flow("X -> Y xor rec[-1]"),
+        stim.Flow("X -> 1"),
+        stim.Flow("-X -> Y"),
+        stim.Flow("X -> -Y"),
+        stim.Flow("-X -> -Y"),
+        stim.Flow("1 -> X"),
+        stim.Flow("X__________________ -> ________Y"),
+    ],
+)
 def test_repr(value):
-    assert eval(repr(value), {'stim': stim}) == value
-    assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+    assert eval(repr(value), {"stim": stim}) == value
+    assert repr(eval(repr(value), {"stim": stim})) == repr(value)

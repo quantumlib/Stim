@@ -40,7 +40,7 @@ def test_GateTargetWithCoords():
     assert len({v1, v1, v2}) == 2  # Check hashable.
     assert eval(repr(v1), {"stim": stim}) == v1
     assert eval(repr(v2), {"stim": stim}) == v2
-    assert str(v1) == 'X5[coords 1,2,3]'
+    assert str(v1) == "X5[coords 1,2,3]"
 
 
 def test_DemTargetWithCoords():
@@ -59,23 +59,19 @@ def test_DemTargetWithCoords():
     assert len({v1, v1, v2}) == 2  # Check hashable.
     assert eval(repr(v1), {"stim": stim}) == v1
     assert eval(repr(v2), {"stim": stim}) == v2
-    assert str(v1) == 'D5[coords 1,2,3]'
+    assert str(v1) == "D5[coords 1,2,3]"
 
 
 def test_FlippedMeasurement():
     v1 = stim.FlippedMeasurement(
         record_index=5,
         observable=[
-            stim.GateTargetWithCoords(
-                gate_target=stim.target_x(5),
-                coords=[1, 2, 3]),
+            stim.GateTargetWithCoords(gate_target=stim.target_x(5), coords=[1, 2, 3]),
         ],
     )
     assert v1.record_index == 5
     assert v1.observable == [
-        stim.GateTargetWithCoords(
-            gate_target=stim.target_x(5),
-            coords=[1, 2, 3]),
+        stim.GateTargetWithCoords(gate_target=stim.target_x(5), coords=[1, 2, 3]),
     ]
     v2 = stim.FlippedMeasurement(
         record_index=5,
@@ -129,15 +125,11 @@ def test_CircuitErrorLocation():
     m = stim.FlippedMeasurement(
         record_index=5,
         observable=[
-            stim.GateTargetWithCoords(
-                gate_target=stim.target_x(5),
-                coords=[1, 2, 3]),
+            stim.GateTargetWithCoords(gate_target=stim.target_x(5), coords=[1, 2, 3]),
         ],
     )
     p = [
-        stim.GateTargetWithCoords(
-            gate_target=stim.target_y(6),
-            coords=[1, 2, 3]),
+        stim.GateTargetWithCoords(gate_target=stim.target_y(6), coords=[1, 2, 3]),
     ]
     t = stim.CircuitTargetsInsideInstruction(
         gate="X_ERROR",
@@ -182,7 +174,9 @@ def test_CircuitErrorLocation():
     assert len({v1, v1, v2}) == 2  # Check hashable.
     assert eval(repr(v1), {"stim": stim}) == v1
     assert eval(repr(v2), {"stim": stim}) == v2
-    assert str(v1) == """CircuitErrorLocation {
+    assert (
+        str(v1)
+        == """CircuitErrorLocation {
     flipped_pauli_product: Y6[coords 1,2,3]
     flipped_measurement.measurement_record_index: 5
     flipped_measurement.measured_observable: X5[coords 1,2,3]
@@ -194,21 +188,18 @@ def test_CircuitErrorLocation():
         at targets #3 to #5 of the instruction
         resolving to X_ERROR(0.25) 5[coords 1,2] 6[coords 1,3] 7
 }"""
+    )
 
 
 def test_MatchedError():
     m = stim.FlippedMeasurement(
         record_index=5,
         observable=[
-            stim.GateTargetWithCoords(
-                gate_target=stim.target_x(5),
-                coords=[1, 2, 3]),
+            stim.GateTargetWithCoords(gate_target=stim.target_x(5), coords=[1, 2, 3]),
         ],
     )
     p = [
-        stim.GateTargetWithCoords(
-            gate_target=stim.target_y(6),
-            coords=[1, 2, 3]),
+        stim.GateTargetWithCoords(gate_target=stim.target_y(6), coords=[1, 2, 3]),
     ]
     t = stim.CircuitTargetsInsideInstruction(
         gate="X_ERROR",
@@ -236,16 +227,20 @@ def test_MatchedError():
         stack_frames=s,
     )
     v1 = stim.ExplainedError(
-        dem_error_terms=[stim.DemTargetWithCoords(
-            dem_target=stim.DemTarget.relative_detector_id(5),
-            coords=[1, 2, 3],
-        )],
+        dem_error_terms=[
+            stim.DemTargetWithCoords(
+                dem_target=stim.DemTarget.relative_detector_id(5),
+                coords=[1, 2, 3],
+            )
+        ],
         circuit_error_locations=[e],
     )
-    assert v1.dem_error_terms == [stim.DemTargetWithCoords(
-        dem_target=stim.DemTarget.relative_detector_id(5),
-        coords=[1, 2, 3],
-    )]
+    assert v1.dem_error_terms == [
+        stim.DemTargetWithCoords(
+            dem_target=stim.DemTarget.relative_detector_id(5),
+            coords=[1, 2, 3],
+        )
+    ]
     assert v1.circuit_error_locations == [e]
     v2 = stim.ExplainedError(
         dem_error_terms=[],
@@ -256,7 +251,9 @@ def test_MatchedError():
     assert len({v1, v1, v2}) == 2  # Check hashable.
     assert eval(repr(v1), {"stim": stim}) == v1
     assert eval(repr(v2), {"stim": stim}) == v2
-    assert str(v1) == """ExplainedError {
+    assert (
+        str(v1)
+        == """ExplainedError {
     dem_error_terms: D5[coords 1,2,3]
     CircuitErrorLocation {
         flipped_pauli_product: Y6[coords 1,2,3]
@@ -271,3 +268,4 @@ def test_MatchedError():
             resolving to X_ERROR(0.25) 5[coords 1,2] 6[coords 1,3] 7
     }
 }"""
+    )

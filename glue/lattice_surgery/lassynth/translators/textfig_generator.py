@@ -15,11 +15,16 @@ class TextLayer:
             zx_graph.n_j,
             zx_graph.n_k,
         )
-        self.chars = [[
-            " " for _ in range(2 * TextLayer.pad_i +
-                               (self.n_i - 1) * TextLayer.sep_i + 1)
-        ] + ["\n"] for _ in range(2 * TextLayer.pad_j +
-                                  (self.n_j - 1) * TextLayer.sep_j + 1)]
+        self.chars = [
+            [
+                " "
+                for _ in range(
+                    2 * TextLayer.pad_i + (self.n_i - 1) * TextLayer.sep_i + 1
+                )
+            ]
+            + ["\n"]
+            for _ in range(2 * TextLayer.pad_j + (self.n_j - 1) * TextLayer.sep_j + 1)
+        ]
         if if_middle:
             self.compute_middle(zx_graph, k)
         else:
@@ -29,14 +34,14 @@ class TextLayer:
         self.chars[j][i] = character
 
     def compute_normal(self, zx_graph: ZXGridGraph, k: int):
-        """a normal layer corresponds to a layer of cubes in LaS, e.g., 
+        """a normal layer corresponds to a layer of cubes in LaS, e.g.,
              /   /
-            X   X 
-            |  /  
-            |     
-            |/    
-            Z   . 
-           /      
+            X   X
+            |  /
+            |
+            |/
+            Z   .
+           /
         There are 2x2 tiles of surface codes. The bottom right one is not being
         used, represented by a `.`; the top right one is identity in because
         it has degree 2, but our convention is that these spiders have type `X`
@@ -109,19 +114,19 @@ class TextLayer:
     def compute_middle(self, zx_graph: ZXGridGraph, k: int):
         """a middle layer is either a Hadmard edge or a normal edge, e.g.,
                  /
-            .   X 
-               /  
-                
-             /    
-            H   . 
-           /      
+            .   X
+               /
+
+             /
+            H   .
+           /
         These layers cannot have `-` or `|`. It only has `/` which are K-pipes.
         The node is either `H` meaning the edge is a Hadamard edge, or `X`
         meaning the edge is a normal edge. We use `X` for identity here.
 
         Args:
-            zx_graph (ZXGridGraph): 
-            k (int): the height of this layer. There is a middle layer after a 
+            zx_graph (ZXGridGraph):
+            k (int): the height of this layer. There is a middle layer after a
                 normal layer.
         """
         for i in range(self.n_i):
@@ -140,32 +145,23 @@ class TextLayer:
                                 color_sum = port["c"] + spider.colors["+K"]
                                 break
                     except ValueError:
-                        print(
-                            f"KPipe({i},{j},{k}) connect outside but not port."
-                        )
+                        print(f"KPipe({i},{j},{k}) connect outside but not port.")
                 else:
                     upper_spider = zx_graph.nodes[i][j][k + 1]
-                    if spider.exists["+K"] == 1 and upper_spider.exists[
-                            "-K"] == 1:
-                        color_sum = spider.colors["+K"] + upper_spider.colors[
-                            "-K"]
-                    if spider.exists["+K"] == 0 and upper_spider.exists[
-                            "-K"] == 1:
+                    if spider.exists["+K"] == 1 and upper_spider.exists["-K"] == 1:
+                        color_sum = spider.colors["+K"] + upper_spider.colors["-K"]
+                    if spider.exists["+K"] == 0 and upper_spider.exists["-K"] == 1:
                         try:
                             for port in zx_graph.lasre["ports"]:
-                                if (port["i"], port["j"], port["k"]) == (i, j,
-                                                                         k):
-                                    color_sum = port[
-                                        "c"] + upper_spider.colors["-K"]
+                                if (port["i"], port["j"], port["k"]) == (i, j, k):
+                                    color_sum = port["c"] + upper_spider.colors["-K"]
                                     break
                         except ValueError:
                             print(f"KPipe({i},{j},{k})- should be a port.")
-                    if spider.exists["+K"] == 1 and upper_spider.exists[
-                            "-K"] == 0:
+                    if spider.exists["+K"] == 1 and upper_spider.exists["-K"] == 0:
                         try:
                             for port in zx_graph.lasre["ports"]:
-                                if (port["i"], port["j"],
-                                        port["k"]) == (i, j, k + 1):
+                                if (port["i"], port["j"], port["k"]) == (i, j, k + 1):
                                     color_sum = port["c"] + spider.colors["+K"]
                                     break
                         except ValueError:
@@ -197,10 +193,8 @@ class TextLayer:
 
     def get_text(self):
         text = ""
-        for j in range(2 * TextLayer.pad_j + (self.n_j - 1) * TextLayer.sep_j +
-                       1):
-            for i in range(2 * TextLayer.pad_i +
-                           (self.n_i - 1) * TextLayer.sep_i + 1):
+        for j in range(2 * TextLayer.pad_j + (self.n_j - 1) * TextLayer.sep_j + 1):
+            for i in range(2 * TextLayer.pad_i + (self.n_i - 1) * TextLayer.sep_i + 1):
                 text += self.chars[j][i]
             text += "\n"
         return text

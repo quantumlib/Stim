@@ -18,9 +18,13 @@ import stim
 
 def test_equality():
     assert stim.target_relative_detector_id(5) == stim.target_relative_detector_id(5)
-    assert not (stim.target_relative_detector_id(5) != stim.target_relative_detector_id(5))
+    assert not (
+        stim.target_relative_detector_id(5) != stim.target_relative_detector_id(5)
+    )
     assert stim.target_relative_detector_id(4) != stim.target_relative_detector_id(5)
-    assert not (stim.target_relative_detector_id(4) == stim.target_relative_detector_id(5))
+    assert not (
+        stim.target_relative_detector_id(4) == stim.target_relative_detector_id(5)
+    )
 
     assert stim.target_relative_detector_id(5) != stim.target_logical_observable_id(5)
     assert stim.target_logical_observable_id(5) == stim.target_logical_observable_id(5)
@@ -65,7 +69,9 @@ def test_repr():
 
 def test_static_constructors():
     assert stim.DemTarget.relative_detector_id(5) == stim.target_relative_detector_id(5)
-    assert stim.DemTarget.logical_observable_id(5) == stim.target_logical_observable_id(5)
+    assert stim.DemTarget.logical_observable_id(5) == stim.target_logical_observable_id(
+        5
+    )
     assert stim.DemTarget.separator() == stim.target_separator()
 
 
@@ -83,8 +89,12 @@ def test_init():
     assert stim.DemTarget("L0") == stim.target_logical_observable_id(0)
     assert stim.DemTarget("L5") == stim.target_logical_observable_id(5)
     assert stim.DemTarget("^") == stim.target_separator()
-    assert stim.DemTarget(f"D{2**62 - 1}") == stim.target_relative_detector_id(2**62 - 1)
-    assert stim.DemTarget(f"L{0xFFFFFFFF}") == stim.target_logical_observable_id(0xFFFFFFFF)
+    assert stim.DemTarget(f"D{2**62 - 1}") == stim.target_relative_detector_id(
+        2**62 - 1
+    )
+    assert stim.DemTarget(f"L{0xFFFFFFFF}") == stim.target_logical_observable_id(
+        0xFFFFFFFF
+    )
     with pytest.raises(ValueError, match="Failed to parse"):
         _ = stim.DemTarget(f"D{2**62}")
     with pytest.raises(ValueError, match="Failed to parse"):

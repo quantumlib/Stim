@@ -1,11 +1,27 @@
 import math
-from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union, Literal, Tuple
+from typing import (
+    Callable,
+    TypeVar,
+    List,
+    Any,
+    Iterable,
+    Optional,
+    TYPE_CHECKING,
+    Dict,
+    Union,
+    Literal,
+    Tuple,
+)
 from typing import Sequence
 from typing import cast
 
 import numpy as np
 
-from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate, Fit
+from sinter._probability_util import (
+    fit_binomial,
+    shot_error_rate_to_piece_error_rate,
+    Fit,
+)
 
 if TYPE_CHECKING:
     import sinter
@@ -14,27 +30,27 @@ if TYPE_CHECKING:
 
 MARKERS: str = "ov*sp^<>8PhH+xXDd|" * 100
 LINESTYLES: tuple[str, ...] = (
-    'solid',
-    'dotted',
-    'dashed',
-    'dashdot',
-    'loosely dotted',
-    'dotted',
-    'densely dotted',
-    'long dash with offset',
-    'loosely dashed',
-    'dashed',
-    'densely dashed',
-    'loosely dashdotted',
-    'dashdotted',
-    'densely dashdotted',
-    'dashdotdotted',
-    'loosely dashdotdotted',
-    'densely dashdotdotted',
+    "solid",
+    "dotted",
+    "dashed",
+    "dashdot",
+    "loosely dotted",
+    "dotted",
+    "densely dotted",
+    "long dash with offset",
+    "loosely dashed",
+    "dashed",
+    "densely dashed",
+    "loosely dashdotted",
+    "dashdotted",
+    "densely dashdotted",
+    "dashdotdotted",
+    "loosely dashdotdotted",
+    "densely dashdotdotted",
 )
-T = TypeVar('T')
-TVal = TypeVar('TVal')
-TKey = TypeVar('TKey')
+T = TypeVar("T")
+TVal = TypeVar("TVal")
+TKey = TypeVar("TKey")
 
 
 def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
@@ -65,7 +81,9 @@ class LooseCompare:
         if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
             return self.val < other_val
         if isinstance(self.val, (tuple, list)) and isinstance(other_val, (tuple, list)):
-            return tuple(LooseCompare(e) for e in self.val) < tuple(LooseCompare(e) for e in other_val)
+            return tuple(LooseCompare(e) for e in self.val) < tuple(
+                LooseCompare(e) for e in other_val
+            )
         return str(self.val) < str(other_val)
 
     def __gt__(self, other: Any) -> bool:
@@ -73,7 +91,9 @@ class LooseCompare:
         if isinstance(self.val, (int, float)) and isinstance(other_val, (int, float)):
             return self.val > other_val
         if isinstance(self.val, (tuple, list)) and isinstance(other_val, (tuple, list)):
-            return tuple(LooseCompare(e) for e in self.val) > tuple(LooseCompare(e) for e in other_val)
+            return tuple(LooseCompare(e) for e in self.val) > tuple(
+                LooseCompare(e) for e in other_val
+            )
         return str(self.val) > str(other_val)
 
     def __str__(self) -> str:
@@ -123,21 +143,21 @@ def better_sorted_str_terms(val: Any) -> Any:
         distance=199999, rounds=199999
     """
     if val is None:
-        return 'None'
+        return "None"
     if isinstance(val, tuple):
         return tuple(better_sorted_str_terms(e) for e in val)
     if not isinstance(val, str):
         return LooseCompare(val)
-    terms = split_by(val, lambda c: c in '.0123456789')
+    terms = split_by(val, lambda c: c in ".0123456789")
     result = []
     for term in terms:
-        term = ''.join(term)
-        if '.' in term:
+        term = "".join(term)
+        if "." in term:
             try:
                 term = float(term)
             except ValueError:
                 try:
-                    term = tuple(int(e) for e in term.split('.'))
+                    term = tuple(int(e) for e in term.split("."))
                 except ValueError:
                     pass
         else:
@@ -151,10 +171,11 @@ def better_sorted_str_terms(val: Any) -> Any:
     return tuple(LooseCompare(e) for e in result)
 
 
-def group_by(items: Iterable[TVal],
-             *,
-             key: Callable[[TVal], TKey],
-             ) -> Dict[TKey, List[TVal]]:
+def group_by(
+    items: Iterable[TVal],
+    *,
+    key: Callable[[TVal], TKey],
+) -> Dict[TKey, List[TVal]]:
     """Groups items based on whether they produce the same key from a function.
 
     Args:
@@ -183,7 +204,7 @@ def group_by(items: Iterable[TVal],
     return result
 
 
-TCurveId = TypeVar('TCurveId')
+TCurveId = TypeVar("TCurveId")
 
 
 class _FrozenDict:
@@ -193,10 +214,9 @@ class _FrozenDict:
         self._hash = hash(self._eq)
 
         terms = []
-        for k in sorted(self._v.keys(), key=lambda e: (e != 'sort', e)):
+        for k in sorted(self._v.keys(), key=lambda e: (e != "sort", e)):
             terms.append(k)
-            terms.append(better_sorted_str_terms(self._v[k])
-        )
+            terms.append(better_sorted_str_terms(self._v[k]))
         self._order = tuple(terms)
 
     def __eq__(self, other):
@@ -218,7 +238,7 @@ class _FrozenDict:
     def __getitem__(self, item):
         return self._v[item]
 
-    def get(self, item, alternate = None):
+    def get(self, item, alternate=None):
         return self._v.get(item, alternate)
 
     def __str__(self):
@@ -226,16 +246,18 @@ class _FrozenDict:
 
 
 def plot_discard_rate(
-        *,
-        ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
-        highlight_max_likelihood_factor: Optional[float] = 1e3,
-        point_label_func: Callable[['sinter.TaskStats'], Any] = lambda _: None,
+    *,
+    ax: "plt.Axes",
+    stats: "Iterable[sinter.TaskStats]",
+    x_func: Callable[["sinter.TaskStats"], Any],
+    failure_units_per_shot_func: Callable[["sinter.TaskStats"], Any] = lambda _: 1,
+    group_func: Callable[["sinter.TaskStats"], TCurveId] = lambda _: None,
+    filter_func: Callable[["sinter.TaskStats"], Any] = lambda _: True,
+    plot_args_func: Callable[
+        [int, TCurveId, List["sinter.TaskStats"]], Dict[str, Any]
+    ] = lambda index, group_key, group_stats: dict(),
+    highlight_max_likelihood_factor: Optional[float] = 1e3,
+    point_label_func: Callable[["sinter.TaskStats"], Any] = lambda _: None,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
 
@@ -284,7 +306,7 @@ def plot_discard_rate(
     if highlight_max_likelihood_factor is None:
         highlight_max_likelihood_factor = 1
 
-    def y_func(stat: 'sinter.TaskStats') -> Union[float, 'sinter.Fit']:
+    def y_func(stat: "sinter.TaskStats") -> Union[float, "sinter.Fit"]:
         result = fit_binomial(
             num_shots=stat.shots,
             num_hits=stat.discards,
@@ -315,18 +337,22 @@ def plot_discard_rate(
 
 
 def plot_error_rate(
-        *,
-        ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        failure_values_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
-        highlight_max_likelihood_factor: Optional[float] = 1e3,
-        line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
-        point_label_func: Callable[['sinter.TaskStats'], Any] = lambda _: None,
+    *,
+    ax: "plt.Axes",
+    stats: "Iterable[sinter.TaskStats]",
+    x_func: Callable[["sinter.TaskStats"], Any],
+    failure_units_per_shot_func: Callable[["sinter.TaskStats"], Any] = lambda _: 1,
+    failure_values_func: Callable[["sinter.TaskStats"], Any] = lambda _: 1,
+    group_func: Callable[["sinter.TaskStats"], TCurveId] = lambda _: None,
+    filter_func: Callable[["sinter.TaskStats"], Any] = lambda _: True,
+    plot_args_func: Callable[
+        [int, TCurveId, List["sinter.TaskStats"]], Dict[str, Any]
+    ] = lambda index, group_key, group_stats: dict(),
+    highlight_max_likelihood_factor: Optional[float] = 1e3,
+    line_fits: Optional[
+        Tuple[Literal["linear", "log", "sqrt"], Literal["linear", "log", "sqrt"]]
+    ] = None,
+    point_label_func: Callable[["sinter.TaskStats"], Any] = lambda _: None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -382,9 +408,11 @@ def plot_error_rate(
     if highlight_max_likelihood_factor is None:
         highlight_max_likelihood_factor = 1
     if not (highlight_max_likelihood_factor >= 1):
-        raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
+        raise ValueError(
+            f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)"
+        )
 
-    def y_func(stat: 'sinter.TaskStats') -> Union[float, 'sinter.Fit']:
+    def y_func(stat: "sinter.TaskStats") -> Union[float, "sinter.Fit"]:
         result = fit_binomial(
             num_shots=stat.shots - stat.discards,
             num_hits=stat.errors,
@@ -394,13 +422,19 @@ def plot_error_rate(
         pieces = failure_units_per_shot_func(stat)
         values = failure_values_func(stat)
         result = Fit(
-            low=shot_error_rate_to_piece_error_rate(result.low, pieces=pieces, values=values),
-            best=shot_error_rate_to_piece_error_rate(result.best, pieces=pieces, values=values),
-            high=shot_error_rate_to_piece_error_rate(result.high, pieces=pieces, values=values),
+            low=shot_error_rate_to_piece_error_rate(
+                result.low, pieces=pieces, values=values
+            ),
+            best=shot_error_rate_to_piece_error_rate(
+                result.best, pieces=pieces, values=values
+            ),
+            high=shot_error_rate_to_piece_error_rate(
+                result.high, pieces=pieces, values=values
+            ),
         )
 
         if stat.errors == 0:
-            result = Fit(low=result.low, high=result.high, best=float('nan'))
+            result = Fit(low=result.low, high=result.high, best=float("nan"))
 
         if highlight_max_likelihood_factor == 1:
             return result.best
@@ -420,27 +454,31 @@ def plot_error_rate(
 
 
 def _rescale(v: Sequence[float], scale: str, invert: bool) -> np.ndarray:
-    if scale == 'linear':
+    if scale == "linear":
         return np.array(v)
-    elif scale == 'log':
+    elif scale == "log":
         return np.exp(v) if invert else np.log(v)
-    elif scale == 'sqrt':
-        return np.array(v)**2 if invert else np.sqrt(v)
+    elif scale == "sqrt":
+        return np.array(v) ** 2 if invert else np.sqrt(v)
     else:
-        raise NotImplementedError(f'{scale=}')
+        raise NotImplementedError(f"{scale=}")
 
 
 def plot_custom(
-        *,
-        ax: 'plt.Axes',
-        stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], Any],
-        y_func: Callable[['sinter.TaskStats'], Union['sinter.Fit', float, int]],
-        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
-        point_label_func: Callable[['sinter.TaskStats'], Any] = lambda _: None,
-        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
-        line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
+    *,
+    ax: "plt.Axes",
+    stats: "Iterable[sinter.TaskStats]",
+    x_func: Callable[["sinter.TaskStats"], Any],
+    y_func: Callable[["sinter.TaskStats"], Union["sinter.Fit", float, int]],
+    group_func: Callable[["sinter.TaskStats"], TCurveId] = lambda _: None,
+    point_label_func: Callable[["sinter.TaskStats"], Any] = lambda _: None,
+    filter_func: Callable[["sinter.TaskStats"], Any] = lambda _: True,
+    plot_args_func: Callable[
+        [int, TCurveId, List["sinter.TaskStats"]], Dict[str, Any]
+    ] = lambda index, group_key, group_stats: dict(),
+    line_fits: Optional[
+        Tuple[Literal["linear", "log", "sqrt"], Literal["linear", "log", "sqrt"]]
+    ] = None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -488,48 +526,62 @@ def plot_custom(
             performing the fit, and can be set to 'linear', 'sqrt', or 'log'.
     """
 
-    def group_dict_func(item: 'sinter.TaskStats') -> _FrozenDict:
+    def group_dict_func(item: "sinter.TaskStats") -> _FrozenDict:
         e = group_func(item)
-        return _FrozenDict(e if isinstance(e, dict) else {'label': str(e)})
+        return _FrozenDict(e if isinstance(e, dict) else {"label": str(e)})
 
     # Backwards compatibility to when the group stats argument wasn't present.
     import inspect
+
     if len(inspect.signature(plot_args_func).parameters) == 2:
         old_plot_args_func = cast(Callable[[int, TCurveId], Any], plot_args_func)
         plot_args_func = lambda a, b, _: old_plot_args_func(a, b)
 
-    filtered_stats: List['sinter.TaskStats'] = [
-        stat
-        for stat in stats
-        if filter_func(stat)
+    filtered_stats: List["sinter.TaskStats"] = [
+        stat for stat in stats if filter_func(stat)
     ]
 
     curve_groups = group_by(filtered_stats, key=group_dict_func)
     colors = {
-        k: f'C{i}'
-        for i, k in enumerate(sorted({g.get('color', g) for g in curve_groups.keys()}, key=better_sorted_str_terms))
+        k: f"C{i}"
+        for i, k in enumerate(
+            sorted(
+                {g.get("color", g) for g in curve_groups.keys()},
+                key=better_sorted_str_terms,
+            )
+        )
     }
     markers = {
         k: MARKERS[i % len(MARKERS)]
-        for i, k in enumerate(sorted({g.get('marker', g) for g in curve_groups.keys()}, key=better_sorted_str_terms))
+        for i, k in enumerate(
+            sorted(
+                {g.get("marker", g) for g in curve_groups.keys()},
+                key=better_sorted_str_terms,
+            )
+        )
     }
     linestyles = {
         k: LINESTYLES[i % len(LINESTYLES)]
-        for i, k in enumerate(sorted({g.get('linestyle', None) for g in curve_groups.keys()}, key=better_sorted_str_terms))
+        for i, k in enumerate(
+            sorted(
+                {g.get("linestyle", None) for g in curve_groups.keys()},
+                key=better_sorted_str_terms,
+            )
+        )
     }
 
     def sort_key(a: Any) -> Any:
         if isinstance(a, _FrozenDict):
-            return a.get('sort', better_sorted_str_terms(a))
+            return a.get("sort", better_sorted_str_terms(a))
         return better_sorted_str_terms(a)
 
     for k, group_key in enumerate(sorted(curve_groups.keys(), key=sort_key)):
         group = curve_groups[group_key]
         group = sorted(group, key=x_func)
-        color = colors[group_key.get('color', group_key)]
-        marker = markers[group_key.get('marker', group_key)]
-        linestyle = linestyles[group_key.get('linestyle', None)]
-        label = str(group_key.get('label', group_key))
+        color = colors[group_key.get("color", group_key)]
+        marker = markers[group_key.get("marker", group_key)]
+        linestyle = linestyles[group_key.get("linestyle", None)]
+        label = str(group_key.get("label", group_key))
         xs_label: list[float] = []
         ys_label: list[float] = []
         vs_label: list[float] = []
@@ -543,7 +595,12 @@ def plot_custom(
             y = y_func(item)
             point_label = point_label_func(item)
             if isinstance(y, Fit):
-                if y.low is not None and y.high is not None and not math.isnan(y.low) and not math.isnan(y.high):
+                if (
+                    y.low is not None
+                    and y.high is not None
+                    and not math.isnan(y.low)
+                    and not math.isnan(y.high)
+                ):
                     xs_low_high.append(x)
                     ys_low.append(y.low)
                     ys_high.append(y.high)
@@ -569,25 +626,40 @@ def plot_custom(
                     ys_label.append(y)
                     vs_label.append(point_label)
         args = dict(plot_args_func(k, group_func(group[0]), group))
-        if 'linestyle' not in args:
-            args['linestyle'] = linestyle
-        if 'marker' not in args:
-            args['marker'] = marker
-        if 'color' not in args:
-            args['color'] = color
-        if 'label' not in args:
-            args['label'] = label
+        if "linestyle" not in args:
+            args["linestyle"] = linestyle
+        if "marker" not in args:
+            args["marker"] = marker
+        if "color" not in args:
+            args["color"] = color
+        if "label" not in args:
+            args["label"] = label
         ax.plot(xs_best, ys_best, **args)
         for x, y, lbl in zip(xs_label, ys_label, vs_label):
             if lbl:
                 ax.annotate(lbl, (x, y))
         if len(xs_low_high) > 1:
-            ax.fill_between(xs_low_high, ys_low, ys_high, color=args['color'], alpha=0.2, zorder=-100)
+            ax.fill_between(
+                xs_low_high,
+                ys_low,
+                ys_high,
+                color=args["color"],
+                alpha=0.2,
+                zorder=-100,
+            )
         elif len(xs_low_high) == 1:
-            l, = ys_low
-            h, = ys_high
+            (l,) = ys_low
+            (h,) = ys_high
             m = (l + h) / 2
-            ax.errorbar(xs_low_high, [m], yerr=([m - l], [h - m]), marker='', elinewidth=1, ecolor=color, capsize=5)
+            ax.errorbar(
+                xs_low_high,
+                [m],
+                yerr=([m - l], [h - m]),
+                marker="",
+                elinewidth=1,
+                ecolor=color,
+                capsize=5,
+            )
 
         if line_fits is not None and len(set(xs_best)) >= 2:
             x_scale, y_scale = line_fits
@@ -595,14 +667,15 @@ def plot_custom(
             fit_ys = _rescale(ys_best, y_scale, False)
 
             from scipy.stats import linregress
+
             line_fit = linregress(fit_xs, fit_ys)
 
             x0 = fit_xs[0]
             x1 = fit_xs[-1]
             dx = x1 - x0
-            x0 -= dx*10
-            x1 += dx*10
-            if x0 < 0 <= fit_xs[0] > x0 and x_scale == 'sqrt':
+            x0 -= dx * 10
+            x1 += dx * 10
+            if x0 < 0 <= fit_xs[0] > x0 and x_scale == "sqrt":
                 x0 = 0
 
             out_xs = np.linspace(x0, x1, 1000)
@@ -611,9 +684,9 @@ def plot_custom(
             out_ys = _rescale(out_ys, y_scale, True)
 
             line_fit_kwargs = args.copy()
-            line_fit_kwargs.pop('marker', None)
-            line_fit_kwargs.pop('label', None)
-            line_fit_kwargs['linestyle'] = '--'
-            line_fit_kwargs.setdefault('linewidth', 1)
-            line_fit_kwargs['linewidth'] /= 2
+            line_fit_kwargs.pop("marker", None)
+            line_fit_kwargs.pop("label", None)
+            line_fit_kwargs["linestyle"] = "--"
+            line_fit_kwargs.setdefault("linewidth", 1)
+            line_fit_kwargs["linewidth"] /= 2
             ax.plot(out_xs, out_ys, **line_fit_kwargs)

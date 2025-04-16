@@ -15,9 +15,13 @@ def _is_equal_json_values(json1: Any, json2: Any):
 
     if type(json1) == type(json2):
         if isinstance(json1, dict):
-            return json1.keys() == json2.keys() and all(_is_equal_json_values(json1[k], json2[k]) for k in json1.keys())
+            return json1.keys() == json2.keys() and all(
+                _is_equal_json_values(json1[k], json2[k]) for k in json1.keys()
+            )
         elif isinstance(json1, (list, tuple)):
-            return len(json1) == len(json2) and all(_is_equal_json_values(a, b) for a, b in zip(json1, json2))
+            return len(json1) == len(json2) and all(
+                _is_equal_json_values(a, b) for a, b in zip(json1, json2)
+            )
     elif isinstance(json1, (list, tuple)) and isinstance(json2, (list, tuple)):
         return _is_equal_json_values(tuple(json1), tuple(json2))
 
@@ -78,12 +82,17 @@ class TaskStats:
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
-        assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
+        assert self.json_metadata is None or isinstance(
+            self.json_metadata, (int, float, str, dict, list, tuple)
+        )
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
+        assert all(
+            isinstance(k, str) and isinstance(v, int)
+            for k, v in self.custom_counts.items()
+        )
 
     def with_edits(
         self,
@@ -96,32 +105,43 @@ class TaskStats:
         discards: Optional[int] = None,
         seconds: Optional[float] = None,
         custom_counts: Optional[Counter[str]] = None,
-    ) -> 'TaskStats':
+    ) -> "TaskStats":
         return TaskStats(
             strong_id=self.strong_id if strong_id is None else strong_id,
             decoder=self.decoder if decoder is None else decoder,
-            json_metadata=self.json_metadata if json_metadata is None else json_metadata,
+            json_metadata=(
+                self.json_metadata if json_metadata is None else json_metadata
+            ),
             shots=self.shots if shots is None else shots,
             errors=self.errors if errors is None else errors,
             discards=self.discards if discards is None else discards,
             seconds=self.seconds if seconds is None else seconds,
-            custom_counts=self.custom_counts if custom_counts is None else custom_counts,
+            custom_counts=(
+                self.custom_counts if custom_counts is None else custom_counts
+            ),
         )
 
     @overload
     def __add__(self, other: AnonTaskStats) -> AnonTaskStats:
         pass
+
     @overload
-    def __add__(self, other: 'TaskStats') -> 'TaskStats':
+    def __add__(self, other: "TaskStats") -> "TaskStats":
         pass
-    def __add__(self, other: Union[AnonTaskStats, 'TaskStats']) -> Union[AnonTaskStats, 'TaskStats']:
+
+    def __add__(
+        self, other: Union[AnonTaskStats, "TaskStats"]
+    ) -> Union[AnonTaskStats, "TaskStats"]:
         if isinstance(other, AnonTaskStats):
             return self.to_anon_stats() + other
 
         if isinstance(other, TaskStats):
             if self.strong_id != other.strong_id:
-                raise ValueError(f'{self.strong_id=} != {other.strong_id=}')
-            if not _is_equal_json_values(self.json_metadata, other.json_metadata) or self.decoder != other.decoder:
+                raise ValueError(f"{self.strong_id=} != {other.strong_id=}")
+            if (
+                not _is_equal_json_values(self.json_metadata, other.json_metadata)
+                or self.decoder != other.decoder
+            ):
                 raise ValueError(
                     "A stat had the same strong id as another, but their other identifying information (json_metadata, decoder) differed.\n"
                     "The strong id is supposed to be a cryptographic hash that uniquely identifies what was sampled, so this is an error.\n"
@@ -132,7 +152,8 @@ class TaskStats:
                     "In some cases this can be caused by attempting to add a value that has gone through JSON serialization+parsing to one\n"
                     "that hasn't, which causes things like tuples transforming into lists.\n"
                     "\n"
-                    f"The two stats:\n1. {self!r}\n2. {other!r}")
+                    f"The two stats:\n1. {self!r}\n2. {other!r}"
+                )
 
             total = self.to_anon_stats() + other.to_anon_stats()
             return TaskStats(
@@ -147,6 +168,7 @@ class TaskStats:
             )
 
         return NotImplemented
+
     __radd__ = __add__
 
     def to_anon_stats(self) -> AnonTaskStats:
@@ -203,24 +225,26 @@ class TaskStats:
             custom_counts=self.custom_counts,
         )
 
-    def _split_custom_counts(self, custom_keys: List[str]) -> List['TaskStats']:
+    def _split_custom_counts(self, custom_keys: List[str]) -> List["TaskStats"]:
         result = []
         for k in custom_keys:
             m = self.json_metadata
             if isinstance(m, dict):
                 m = dict(m)
-                m.setdefault('custom_error_count_key', k)
-                m.setdefault('original_error_count', self.errors)
-            result.append(TaskStats(
-                strong_id=f'{self.strong_id}:{k}',
-                decoder=self.decoder,
-                json_metadata=m,
-                shots=self.shots,
-                errors=self.custom_counts[k],
-                discards=self.discards,
-                seconds=self.seconds,
-                custom_counts=self.custom_counts,
-            ))
+                m.setdefault("custom_error_count_key", k)
+                m.setdefault("original_error_count", self.errors)
+            result.append(
+                TaskStats(
+                    strong_id=f"{self.strong_id}:{k}",
+                    decoder=self.decoder,
+                    json_metadata=m,
+                    shots=self.shots,
+                    errors=self.custom_counts[k],
+                    discards=self.discards,
+                    seconds=self.seconds,
+                    custom_counts=self.custom_counts,
+                )
+            )
         return result
 
     def __str__(self) -> str:
@@ -228,17 +252,17 @@ class TaskStats:
 
     def __repr__(self) -> str:
         terms = []
-        terms.append(f'strong_id={self.strong_id!r}')
-        terms.append(f'decoder={self.decoder!r}')
-        terms.append(f'json_metadata={self.json_metadata!r}')
+        terms.append(f"strong_id={self.strong_id!r}")
+        terms.append(f"decoder={self.decoder!r}")
+        terms.append(f"json_metadata={self.json_metadata!r}")
         if self.shots:
-            terms.append(f'shots={self.shots!r}')
+            terms.append(f"shots={self.shots!r}")
         if self.errors:
-            terms.append(f'errors={self.errors!r}')
+            terms.append(f"errors={self.errors!r}")
         if self.discards:
-            terms.append(f'discards={self.discards!r}')
+            terms.append(f"discards={self.discards!r}")
         if self.seconds:
-            terms.append(f'seconds={self.seconds!r}')
+            terms.append(f"seconds={self.seconds!r}")
         if self.custom_counts:
-            terms.append(f'custom_counts={self.custom_counts!r}')
+            terms.append(f"custom_counts={self.custom_counts!r}")
         return f'sinter.TaskStats({", ".join(terms)})'

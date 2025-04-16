@@ -50,7 +50,9 @@ class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
             result.append(str(d)[1:] + ":" + args.format_real(p))
         return "PauliMix(" + ",".join(result) + ")", "#2"
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], **kwargs):
+    def _stim_conversion_(
+        self, edit_circuit: stim.Circuit, targets: List[int], **kwargs
+    ):
         edit_circuit.append_operation("PAULI_CHANNEL_2", targets, self.probabilities)
 
     def __repr__(self):
@@ -58,7 +60,7 @@ class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
-        return {'probabilities': list(self.probabilities)}
+        return {"probabilities": list(self.probabilities)}

@@ -14,24 +14,24 @@
 
 from setuptools import setup
 
-with open('README.md', encoding='UTF-8') as f:
+with open("README.md", encoding="UTF-8") as f:
     long_description = f.read()
 
-__version__ = '1.15.dev0'
+__version__ = "1.15.dev0"
 
 setup(
-    name='stimzx',
+    name="stimzx",
     version=__version__,
-    author='Craig Gidney',
-    author_email='craig.gidney@gmail.com',
-    url='https://github.com/quantumlib/stim',
-    license='Apache 2',
-    packages=['stimzx'],
-    description='Implements utilities for analyzing ZX calculus graphs using Stim.',
+    author="Craig Gidney",
+    author_email="craig.gidney@gmail.com",
+    url="https://github.com/quantumlib/stim",
+    license="Apache 2",
+    packages=["stimzx"],
+    description="Implements utilities for analyzing ZX calculus graphs using Stim.",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    python_requires='>=3.6.0',
-    data_files=['README.md'],
-    install_requires=['stim', 'networkx~=3.0'],
-    tests_require=['pytest', 'python3-distutils'],
+    long_description_content_type="text/markdown",
+    python_requires=">=3.6.0",
+    data_files=["README.md"],
+    install_requires=["stim", "networkx~=3.0"],
+    tests_require=["pytest", "python3-distutils"],
 )

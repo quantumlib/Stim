@@ -66,13 +66,13 @@ class Task:
     def __init__(
         self,
         *,
-        circuit: Optional['stim.Circuit'] = None,
+        circuit: Optional["stim.Circuit"] = None,
         decoder: Optional[str] = None,
-        detector_error_model: Optional['stim.DetectorErrorModel'] = None,
+        detector_error_model: Optional["stim.DetectorErrorModel"] = None,
         postselection_mask: Optional[np.ndarray] = None,
         postselected_observables_mask: Optional[np.ndarray] = None,
         json_metadata: Any = None,
-        collection_options: 'sinter.CollectionOptions' = CollectionOptions(),
+        collection_options: "sinter.CollectionOptions" = CollectionOptions(),
         skip_validation: bool = False,
         circuit_path: Optional[Union[str, pathlib.Path]] = None,
         _unvalidated_strong_id: Optional[str] = None,
@@ -124,36 +124,54 @@ class Task:
         """
         if not skip_validation:
             if circuit_path is None and circuit is None:
-                raise ValueError('circuit_path is None and circuit is None')
+                raise ValueError("circuit_path is None and circuit is None")
             if _unvalidated_strong_id is not None:
-                raise ValueError("_unvalidated_strong_id is not None and not skip_validation")
+                raise ValueError(
+                    "_unvalidated_strong_id is not None and not skip_validation"
+                )
             dem = detector_error_model
             if circuit is not None:
                 num_dets = circuit.num_detectors
                 num_obs = circuit.num_observables
                 if dem is not None:
                     if circuit.num_detectors != dem.num_detectors:
-                        raise ValueError(f"circuit.num_detectors={num_dets!r} != detector_error_model.num_detectors={dem.num_detectors!r}")
+                        raise ValueError(
+                            f"circuit.num_detectors={num_dets!r} != detector_error_model.num_detectors={dem.num_detectors!r}"
+                        )
                     if num_obs != dem.num_observables:
-                        raise ValueError(f"circuit.num_observables={num_obs!r} != detector_error_model.num_observables={dem.num_observables!r}")
+                        raise ValueError(
+                            f"circuit.num_observables={num_obs!r} != detector_error_model.num_observables={dem.num_observables!r}"
+                        )
                 if postselection_mask is not None:
                     shape = (math.ceil(num_dets / 8),)
                     if postselection_mask.shape != shape:
-                        raise ValueError(f"postselection_mask.shape={postselection_mask.shape!r} != (math.ceil(circuit.num_detectors / 8),)={shape!r}")
+                        raise ValueError(
+                            f"postselection_mask.shape={postselection_mask.shape!r} != (math.ceil(circuit.num_detectors / 8),)={shape!r}"
+                        )
                 if postselected_observables_mask is not None:
                     shape = (math.ceil(num_obs / 8),)
                     if postselected_observables_mask.shape != shape:
-                        raise ValueError(f"postselected_observables_mask.shape={postselected_observables_mask.shape!r} != (math.ceil(circuit.num_observables / 8),)={shape!r}")
+                        raise ValueError(
+                            f"postselected_observables_mask.shape={postselected_observables_mask.shape!r} != (math.ceil(circuit.num_observables / 8),)={shape!r}"
+                        )
             if postselection_mask is not None:
                 if not isinstance(postselection_mask, np.ndarray):
-                    raise ValueError(f"not isinstance(postselection_mask={postselection_mask!r}, np.ndarray)")
+                    raise ValueError(
+                        f"not isinstance(postselection_mask={postselection_mask!r}, np.ndarray)"
+                    )
                 if postselection_mask.dtype != np.uint8:
-                    raise ValueError(f"postselection_mask.dtype={postselection_mask.dtype!r} != np.uint8")
+                    raise ValueError(
+                        f"postselection_mask.dtype={postselection_mask.dtype!r} != np.uint8"
+                    )
             if postselected_observables_mask is not None:
                 if not isinstance(postselected_observables_mask, np.ndarray):
-                    raise ValueError(f"not isinstance(postselected_observables_mask={postselected_observables_mask!r}, np.ndarray)")
+                    raise ValueError(
+                        f"not isinstance(postselected_observables_mask={postselected_observables_mask!r}, np.ndarray)"
+                    )
                 if postselected_observables_mask.dtype != np.uint8:
-                    raise ValueError(f"postselected_observables_mask.dtype={postselected_observables_mask.dtype!r} != np.uint8")
+                    raise ValueError(
+                        f"postselected_observables_mask.dtype={postselected_observables_mask.dtype!r} != np.uint8"
+                    )
         self.circuit_path = None if circuit_path is None else pathlib.Path(circuit_path)
         self.circuit = circuit
         self.decoder = decoder
@@ -188,19 +206,24 @@ class Task:
         if self.decoder is None:
             raise ValueError("Can't compute strong_id until `decoder` is set.")
         if self.detector_error_model is None:
-            raise ValueError("Can't compute strong_id until `detector_error_model` is set.")
+            raise ValueError(
+                "Can't compute strong_id until `detector_error_model` is set."
+            )
         result = {
-            'circuit': str(self.circuit),
-            'decoder': self.decoder,
-            'decoder_error_model': str(self.detector_error_model),
-            'postselection_mask':
+            "circuit": str(self.circuit),
+            "decoder": self.decoder,
+            "decoder_error_model": str(self.detector_error_model),
+            "postselection_mask": (
                 None
                 if self.postselection_mask is None
-                else [int(e) for e in self.postselection_mask],
-            'json_metadata': self.json_metadata,
+                else [int(e) for e in self.postselection_mask]
+            ),
+            "json_metadata": self.json_metadata,
         }
         if self.postselected_observables_mask is not None:
-            result['postselected_observables_mask'] = [int(e) for e in self.postselected_observables_mask]
+            result["postselected_observables_mask"] = [
+                int(e) for e in self.postselected_observables_mask
+            ]
         return result
 
     def strong_id_text(self) -> str:
@@ -240,7 +263,7 @@ class Task:
             >>> task.strong_id_bytes()
             b'{"circuit": "H 0", "decoder": "pymatching", "decoder_error_model": "", "postselection_mask": null, "json_metadata": null}'
         """
-        return self.strong_id_text().encode('utf8')
+        return self.strong_id_text().encode("utf8")
 
     def _recomputed_strong_id(self) -> str:
         return hashlib.sha256(self.strong_id_bytes()).hexdigest()
@@ -273,39 +296,54 @@ class Task:
     def __repr__(self) -> str:
         terms = []
         if self.circuit is not None:
-            terms.append(f'circuit={self.circuit!r}')
+            terms.append(f"circuit={self.circuit!r}")
         if self.decoder is not None:
-            terms.append(f'decoder={self.decoder!r}')
+            terms.append(f"decoder={self.decoder!r}")
         if self.detector_error_model is not None:
-            terms.append(f'detector_error_model={self.detector_error_model!r}')
+            terms.append(f"detector_error_model={self.detector_error_model!r}")
         if self.postselection_mask is not None:
             nd = self.circuit.num_detectors
-            bits = list(np.unpackbits(self.postselection_mask, count=nd, bitorder='little'))
-            terms.append(f'''postselection_mask=np.packbits({bits!r}, bitorder='little')''')
+            bits = list(
+                np.unpackbits(self.postselection_mask, count=nd, bitorder="little")
+            )
+            terms.append(
+                f"""postselection_mask=np.packbits({bits!r}, bitorder='little')"""
+            )
         if self.postselected_observables_mask is not None:
             no = self.circuit.num_observables
-            bits = list(np.unpackbits(self.postselected_observables_mask, count=no, bitorder='little'))
-            terms.append(f'''postselected_observables_mask=np.packbits({bits!r}, bitorder='little')''')
+            bits = list(
+                np.unpackbits(
+                    self.postselected_observables_mask, count=no, bitorder="little"
+                )
+            )
+            terms.append(
+                f"""postselected_observables_mask=np.packbits({bits!r}, bitorder='little')"""
+            )
         if self.json_metadata is not None:
-            terms.append(f'json_metadata={self.json_metadata!r}')
+            terms.append(f"json_metadata={self.json_metadata!r}")
         if self.collection_options != CollectionOptions():
-            terms.append(f'collection_options={self.collection_options!r}')
+            terms.append(f"collection_options={self.collection_options!r}")
         if self.circuit_path is not None:
-            terms.append(f'circuit_path={self.circuit_path!r}')
+            terms.append(f"circuit_path={self.circuit_path!r}")
         return f'sinter.Task({", ".join(terms)})'
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Task):
             return NotImplemented
-        if self._unvalidated_strong_id is not None and other._unvalidated_strong_id is not None:
+        if (
+            self._unvalidated_strong_id is not None
+            and other._unvalidated_strong_id is not None
+        ):
             return self._unvalidated_strong_id == other._unvalidated_strong_id
         return (
-            self.circuit_path == other.circuit_path and
-            self.circuit == other.circuit and
-            self.decoder == other.decoder and
-            self.detector_error_model == other.detector_error_model and
-            np.array_equal(self.postselection_mask, other.postselection_mask) and
-            np.array_equal(self.postselected_observables_mask, other.postselected_observables_mask) and
-            self.json_metadata == other.json_metadata and
-            self.collection_options == other.collection_options
+            self.circuit_path == other.circuit_path
+            and self.circuit == other.circuit
+            and self.decoder == other.decoder
+            and self.detector_error_model == other.detector_error_model
+            and np.array_equal(self.postselection_mask, other.postselection_mask)
+            and np.array_equal(
+                self.postselected_observables_mask, other.postselected_observables_mask
+            )
+            and self.json_metadata == other.json_metadata
+            and self.collection_options == other.collection_options
         )

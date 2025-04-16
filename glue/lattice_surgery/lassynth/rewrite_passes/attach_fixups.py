@@ -38,10 +38,7 @@ def attach_fixups(lasre: Mapping[str, Any]) -> Mapping[str, Any]:
                 lasre[arr][i][j].append(-1)
                 lasre[arr][i][j].append(-1)
             for s in range(n_s):
-                for arr in [
-                        "CorrIJ", "CorrIK", "CorrJK", "CorrJI", "CorrKI",
-                        "CorrKJ"
-                ]:
+                for arr in ["CorrIJ", "CorrIK", "CorrJK", "CorrJI", "CorrKI", "CorrKJ"]:
                     lasre[arr][s][i][j].append(0)
                     lasre[arr][s][i][j].append(0)
 
@@ -57,14 +54,10 @@ def attach_fixups(lasre: Mapping[str, Any]) -> Mapping[str, Any]:
             lasre["ColorKP"][ii][jj][n_k] = lasre["ColorKM"][ii][jj][n_k]
             lasre["ColorKP"][ii][jj][n_k + 1] = lasre["ColorKP"][ii][jj][n_k]
             for s in range(n_s):
-                lasre["CorrKI"][s][ii][jj][n_k] = lasre["CorrKI"][s][ii][jj][
-                    n_k - 1]
-                lasre["CorrKI"][s][ii][jj][n_k +
-                                           1] = lasre["CorrKI"][s][ii][jj][n_k]
-                lasre["CorrKJ"][s][ii][jj][n_k] = lasre["CorrKJ"][s][ii][jj][
-                    n_k - 1]
-                lasre["CorrKJ"][s][ii][jj][n_k +
-                                           1] = lasre["CorrKJ"][s][ii][jj][n_k]
+                lasre["CorrKI"][s][ii][jj][n_k] = lasre["CorrKI"][s][ii][jj][n_k - 1]
+                lasre["CorrKI"][s][ii][jj][n_k + 1] = lasre["CorrKI"][s][ii][jj][n_k]
+                lasre["CorrKJ"][s][ii][jj][n_k] = lasre["CorrKJ"][s][ii][jj][n_k - 1]
+                lasre["CorrKJ"][s][ii][jj][n_k + 1] = lasre["CorrKJ"][s][ii][jj][n_k]
             port["k"] += 2
             new_cubes = []
             for c in lasre["port_cubes"]:

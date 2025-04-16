@@ -23,6 +23,7 @@ class StimThenDecodeSampler(Sampler):
     decoder returns an extra byte of prediction data for each shot, and the
     extra byte is not zero.
     """
+
     def __init__(
         self,
         *,
@@ -67,7 +68,9 @@ def classify_discards_and_errors(
 
     # Mispredicted observables can be used for signalling discards.
     if postselected_observables_mask is not None:
-        discard_mask = np.any((actual_obs ^ predictions) & postselected_observables_mask, axis=1)
+        discard_mask = np.any(
+            (actual_obs ^ predictions) & postselected_observables_mask, axis=1
+        )
         num_discards += np.count_nonzero(discard_mask)
         discard_mask ^= True
         actual_obs = actual_obs[discard_mask]
@@ -76,8 +79,10 @@ def classify_discards_and_errors(
     fail_mask = np.any(actual_obs != predictions, axis=1)
     if out_count_observable_error_combos is not None:
         for k in np.flatnonzero(fail_mask):
-            mistakes = np.unpackbits(actual_obs[k] ^ predictions[k], count=num_obs, bitorder='little')
-            err_key = "obs_mistake_mask=" + ''.join('_E'[b] for b in mistakes)
+            mistakes = np.unpackbits(
+                actual_obs[k] ^ predictions[k], count=num_obs, bitorder="little"
+            )
+            err_key = "obs_mistake_mask=" + "".join("_E"[b] for b in mistakes)
             out_count_observable_error_combos[err_key] += 1
 
     num_errors = np.count_nonzero(fail_mask)
@@ -92,28 +97,28 @@ class DiskDecoder(CompiledDecoder):
 
         while True:
             k = random.randint(0, 2**64)
-            self.top_tmp_dir = tmp_dir / f'disk_decoder_{k}'
+            self.top_tmp_dir = tmp_dir / f"disk_decoder_{k}"
             try:
                 self.top_tmp_dir.mkdir()
                 break
             except FileExistsError:
                 pass
-        self.decoder_tmp_dir: pathlib.Path = self.top_tmp_dir / 'dec'
+        self.decoder_tmp_dir: pathlib.Path = self.top_tmp_dir / "dec"
         self.decoder_tmp_dir.mkdir()
         self.num_obs = task.detector_error_model.num_observables
         self.num_dets = task.detector_error_model.num_detectors
-        self.dem_path = self.top_tmp_dir / 'dem.dem'
-        self.dets_b8_in_path = self.top_tmp_dir / 'dets.b8'
-        self.obs_predictions_b8_out_path = self.top_tmp_dir / 'obs.b8'
+        self.dem_path = self.top_tmp_dir / "dem.dem"
+        self.dets_b8_in_path = self.top_tmp_dir / "dets.b8"
+        self.obs_predictions_b8_out_path = self.top_tmp_dir / "obs.b8"
         self.task.detector_error_model.to_file(self.dem_path)
 
     def decode_shots_bit_packed(
-            self,
-            *,
-            bit_packed_detection_event_data: np.ndarray,
+        self,
+        *,
+        bit_packed_detection_event_data: np.ndarray,
     ) -> np.ndarray:
         num_shots = bit_packed_detection_event_data.shape[0]
-        with open(self.dets_b8_in_path, 'wb') as f:
+        with open(self.dets_b8_in_path, "wb") as f:
             bit_packed_detection_event_data.tofile(f)
         self.decoder.decode_via_files(
             num_shots=num_shots,
@@ -125,7 +130,7 @@ class DiskDecoder(CompiledDecoder):
             tmp_dir=self.decoder_tmp_dir,
         )
         num_obs_bytes = (self.num_obs + 7) // 8
-        with open(self.obs_predictions_b8_out_path, 'rb') as f:
+        with open(self.obs_predictions_b8_out_path, "rb") as f:
             prediction = np.fromfile(f, dtype=np.uint8, count=num_obs_bytes * num_shots)
             assert prediction.shape == (num_obs_bytes * num_shots,)
         self.obs_predictions_b8_out_path.unlink()
@@ -143,7 +148,9 @@ def _compile_decoder_with_disk_fallback(
     except NotImplementedError:
         pass
     if tmp_dir is None:
-        raise ValueError(f"Decoder {task.decoder=} didn't implement `compile_decoder_for_dem`, but no temporary directory was provided for falling back to `decode_via_files`.")
+        raise ValueError(
+            f"Decoder {task.decoder=} didn't implement `compile_decoder_for_dem`, but no temporary directory was provided for falling back to `decode_via_files`."
+        )
     return DiskDecoder(decoder, task, tmp_dir)
 
 
@@ -158,7 +165,9 @@ class _CompiledStimThenDecodeSampler(CompiledSampler):
         tmp_dir: Optional[pathlib.Path],
     ):
         self.task = task
-        self.compiled_decoder = _compile_decoder_with_disk_fallback(decoder, task, tmp_dir)
+        self.compiled_decoder = _compile_decoder_with_disk_fallback(
+            decoder, task, tmp_dir
+        )
         self.stim_sampler = task.circuit.compile_detector_sampler()
         self.count_observable_error_combos = count_observable_error_combos
         self.count_detection_events = count_detection_events
@@ -176,9 +185,9 @@ class _CompiledStimThenDecodeSampler(CompiledSampler):
 
         custom_counts = collections.Counter()
         if self.count_detection_events:
-            custom_counts['detectors_checked'] += self.num_det * num_shots
+            custom_counts["detectors_checked"] += self.num_det * num_shots
             for b in range(8):
-                custom_counts['detection_events'] += np.count_nonzero(dets & (1 << b))
+                custom_counts["detection_events"] += np.count_nonzero(dets & (1 << b))
 
         # Discard any shots that contain a postselected detection events.
         if self.task.postselection_mask is not None:
@@ -190,7 +199,9 @@ class _CompiledStimThenDecodeSampler(CompiledSampler):
         else:
             num_discards_1 = 0
 
-        predictions = self.compiled_decoder.decode_shots_bit_packed(bit_packed_detection_event_data=dets)
+        predictions = self.compiled_decoder.decode_shots_bit_packed(
+            bit_packed_detection_event_data=dets
+        )
         if not isinstance(predictions, np.ndarray):
             raise ValueError("not isinstance(predictions, np.ndarray)")
         if predictions.dtype != np.uint8:
@@ -208,7 +219,9 @@ class _CompiledStimThenDecodeSampler(CompiledSampler):
             actual_obs=actual_obs,
             predictions=predictions,
             postselected_observables_mask=self.task.postselected_observables_mask,
-            out_count_observable_error_combos=custom_counts if self.count_observable_error_combos else None,
+            out_count_observable_error_combos=(
+                custom_counts if self.count_observable_error_combos else None
+            ),
             num_obs=self.num_obs,
         )
         t1 = time.monotonic()

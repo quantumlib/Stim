@@ -12,7 +12,7 @@ class CZSwapGate(cirq.Gate):
         return 2
 
     def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs) -> List[str]:
-        return ['ZSWAP', 'ZSWAP']
+        return ["ZSWAP", "ZSWAP"]
 
     def _value_equality_values_(self):
         return ()
@@ -22,10 +22,12 @@ class CZSwapGate(cirq.Gate):
         yield cirq.SWAP(a, b)
         yield cirq.CZ(a, b)
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs):
-        edit_circuit.append('CZSWAP', targets, tag=tag)
+    def _stim_conversion_(
+        self, edit_circuit: stim.Circuit, targets: List[int], tag: str, **kwargs
+    ):
+        edit_circuit.append("CZSWAP", targets, tag=tag)
 
-    def __pow__(self, power: int) -> 'CZSwapGate':
+    def __pow__(self, power: int) -> "CZSwapGate":
         if power == +1:
             return self
         if power == -1:
@@ -33,14 +35,14 @@ class CZSwapGate(cirq.Gate):
         return NotImplemented
 
     def __str__(self) -> str:
-        return 'CZSWAP'
+        return "CZSWAP"
 
     def __repr__(self):
-        return f'stimcirq.CZSwapGate()'
+        return f"stimcirq.CZSwapGate()"
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
         return {}

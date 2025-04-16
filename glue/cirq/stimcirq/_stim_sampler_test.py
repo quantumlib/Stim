@@ -13,12 +13,14 @@ def test_end_to_end():
             cirq.CNOT(a, b),
             cirq.X(a) ** 0.5,
             cirq.X(b) ** 0.5,
-            cirq.measure(a, key='a'),
-            cirq.measure(b, key='b'),
+            cirq.measure(a, key="a"),
+            cirq.measure(b, key="b"),
         ),
         repetitions=1000,
     )
-    np.testing.assert_array_equal(result.measurements['a'], result.measurements['b'] ^ 1)
+    np.testing.assert_array_equal(
+        result.measurements["a"], result.measurements["b"] ^ 1
+    )
 
 
 def test_end_to_end_repeated_keys():
@@ -32,7 +34,7 @@ def test_end_to_end_repeated_keys():
                     cirq.CNOT(a, b),
                     cirq.X(a) ** 0.5,
                     cirq.X(b) ** 0.5,
-                    cirq.measure(a, b, key='m'),
+                    cirq.measure(a, b, key="m"),
                     cirq.reset_each(a, b),
                 ),
                 repetitions=10,
@@ -41,19 +43,21 @@ def test_end_to_end_repeated_keys():
         ),
         repetitions=1000,
     )
-    with pytest.raises(ValueError, match='Cannot extract 2D measurements for repeated keys'):
-        _ = result.measurements['m']
-    data = result.records['m']
+    with pytest.raises(
+        ValueError, match="Cannot extract 2D measurements for repeated keys"
+    ):
+        _ = result.measurements["m"]
+    data = result.records["m"]
     assert data.shape == (1000, 10, 2)
-    np.testing.assert_array_equal(data[:,:,0], data[:,:,1] ^ 1)
+    np.testing.assert_array_equal(data[:, :, 0], data[:, :, 1] ^ 1)
 
 
 def test_endian():
     a, b = cirq.LineQubit.range(2)
-    circuit = cirq.Circuit(cirq.X(a), cirq.measure(a, b, key='out'))
+    circuit = cirq.Circuit(cirq.X(a), cirq.measure(a, b, key="out"))
     s1 = cirq.Simulator().sample(circuit)
     s2 = stimcirq.StimSampler().sample(circuit)
-    assert s1['out'][0] == s2['out'][0]
+    assert s1["out"][0] == s2["out"][0]
 
 
 def test_custom_gates():
@@ -86,11 +90,14 @@ def test_custom_gates():
             return [BadGate()]
 
     np.testing.assert_array_equal(
-        s.sample(cirq.Circuit(GoodGate().on(a), cirq.measure(a, key='out')))['out'], [True]
+        s.sample(cirq.Circuit(GoodGate().on(a), cirq.measure(a, key="out")))["out"],
+        [True],
     )
 
     np.testing.assert_array_equal(
-        s.sample(cirq.Circuit(IndirectlyGoodGate().on(a), cirq.measure(a, key='out')))['out'],
+        s.sample(cirq.Circuit(IndirectlyGoodGate().on(a), cirq.measure(a, key="out")))[
+            "out"
+        ],
         [True],
     )
 

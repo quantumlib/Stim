@@ -22,18 +22,15 @@ from lassynth.translators.networkx_generator import networkx_generator
 def check_lasre(lasre: Mapping[str, Any]) -> None:
     """check aspects of LaSRe other than SMT constraints, i.e., data layout."""
     if "n_i" not in lasre:
-        raise ValueError(
-            f"upper bound of I dimension, `n_i`, is missing in lasre.")
+        raise ValueError(f"upper bound of I dimension, `n_i`, is missing in lasre.")
     if lasre["n_i"] <= 0:
         raise ValueError("n_i <= 0.")
     if "n_j" not in lasre:
-        raise ValueError(
-            f"upper bound of J dimension, `n_j`, is missing in lasre.")
+        raise ValueError(f"upper bound of J dimension, `n_j`, is missing in lasre.")
     if lasre["n_j"] <= 0:
         raise ValueError("n_j <= 0.")
     if "n_k" not in lasre:
-        raise ValueError(
-            f"upper bound of K dimension, `n_k`, is missing in lasre.")
+        raise ValueError(f"upper bound of K dimension, `n_k`, is missing in lasre.")
     if lasre["n_k"] <= 0:
         raise ValueError("n_k <= 0.")
     if "n_p" not in lasre:
@@ -85,7 +82,7 @@ def check_lasre(lasre: Mapping[str, Any]) -> None:
         if len(stab) != lasre["n_p"]:
             raise ValueError("number of boundary corrsurf is not `n_p`.")
         for i, corrsurf in enumerate(stab):
-            for (k, v) in corrsurf.items():
+            for k, v in corrsurf.items():
                 if lasre["ports"][i]["d"] == "I" and k not in ["IJ", "IK"]:
                     raise ValueError(f"stabs[{i}] key invalid {stab}.")
                 if lasre["ports"][i]["d"] == "J" and k not in ["JI", "JK"]:
@@ -112,12 +109,12 @@ def check_lasre(lasre: Mapping[str, Any]) -> None:
         lasre["optional"] = {}
 
     for key in [
-            "NodeY",
-            "ExistI",
-            "ExistJ",
-            "ExistK",
-            "ColorI",
-            "ColorJ",
+        "NodeY",
+        "ExistI",
+        "ExistJ",
+        "ExistK",
+        "ColorI",
+        "ColorJ",
     ]:
         if key not in lasre:
             raise ValueError(f"`{key}` missing from lasre.")
@@ -132,12 +129,12 @@ def check_lasre(lasre: Mapping[str, Any]) -> None:
 
     if lasre["n_s"] > 0:
         for key in [
-                "CorrIJ",
-                "CorrIK",
-                "CorrJI",
-                "CorrJK",
-                "CorrKI",
-                "CorrKJ",
+            "CorrIJ",
+            "CorrIK",
+            "CorrJI",
+            "CorrJK",
+            "CorrKI",
+            "CorrKJ",
         ]:
             if key not in lasre:
                 raise ValueError(f"`{key}` missing from lasre.")
@@ -155,7 +152,7 @@ def check_lasre(lasre: Mapping[str, Any]) -> None:
 
 
 class LatticeSurgerySolution:
-    """A class for the result of synthesizer lattice surgery subroutine. 
+    """A class for the result of synthesizer lattice surgery subroutine.
 
     It internally saves an LaSRe (Lattice Surgery Subroutine Representation)
     and we can apply rewrite passes to it, or use translators to derive
@@ -212,13 +209,15 @@ class LatticeSurgerySolution:
         with open(file_name, "w") as f:
             json.dump(self.lasre, f)
 
-    def to_3d_model_gltf(self,
-                         output_file_name: str,
-                         stabilizer: int = -1,
-                         tube_len: float = 2.0,
-                         no_color_z: bool = False,
-                         attach_axes: bool = False,
-                         rm_dir: Optional[str] = None) -> None:
+    def to_3d_model_gltf(
+        self,
+        output_file_name: str,
+        stabilizer: int = -1,
+        tube_len: float = 2.0,
+        no_color_z: bool = False,
+        attach_axes: bool = False,
+        rm_dir: Optional[str] = None,
+    ) -> None:
         """generate gltf file (for 3D modelling).
 
         Args:
@@ -282,9 +281,9 @@ class LatticeSurgerySolution:
         """
         return networkx_generator(self.lasre)
 
-    def verify_stabilizers_stimzx(self,
-                                  specification: Mapping[str, Any],
-                                  print_stabilizers: bool = False) -> bool:
+    def verify_stabilizers_stimzx(
+        self, specification: Mapping[str, Any], print_stabilizers: bool = False
+    ) -> bool:
         """verify the stabilizer of the LaS.
 
         Use StimZX to deduce the stabilizers from the annotated networkx graph.
@@ -400,31 +399,31 @@ class LatticeSurgerySynthesizer:
     ) -> LatticeSurgerySolution:
         """find the optimal solution in terms of depth/height of the LaS.
 
-    Args:
-        specification (Mapping[str, Any]): the LaS specification to solve.
-        start_depth (int, optional): starting depth of the exploration. If not
-            provided, use the depth given in the specification
-        print_detail (bool, optional): whether to print details in SAT solving.
-            Defaults to False.
-        dimacs_file_name_prefix (Optional[str], optional): file prefix to save
-            the DIMACS. The full file name will contain the specific depth
-            after this prefix. Defaults to None.
-        sat_log_file_name_prefix (Optional[str], optional): file prefix to save
-            the SAT log. The full file name will contain the specific depth
-            after this prefix. Defaults to None.
-        result_file_name_prefix (Optional[str], optional): file prefix to save
-            the variable assignments. The full file name will contain the
-            specific depth after this prefix. Defaults to None.
-        post_optimization (str, optional): optimization to perform when
-            initializing the LatticeSurgerySubroutine object for the result.
-            Defaults to "default".
+        Args:
+            specification (Mapping[str, Any]): the LaS specification to solve.
+            start_depth (int, optional): starting depth of the exploration. If not
+                provided, use the depth given in the specification
+            print_detail (bool, optional): whether to print details in SAT solving.
+                Defaults to False.
+            dimacs_file_name_prefix (Optional[str], optional): file prefix to save
+                the DIMACS. The full file name will contain the specific depth
+                after this prefix. Defaults to None.
+            sat_log_file_name_prefix (Optional[str], optional): file prefix to save
+                the SAT log. The full file name will contain the specific depth
+                after this prefix. Defaults to None.
+            result_file_name_prefix (Optional[str], optional): file prefix to save
+                the variable assignments. The full file name will contain the
+                specific depth after this prefix. Defaults to None.
+            post_optimization (str, optional): optimization to perform when
+                initializing the LatticeSurgerySubroutine object for the result.
+                Defaults to "default".
 
-    Raises:
-        ValueError: starting depth is too low.
+        Raises:
+            ValueError: starting depth is too low.
 
-    Returns:
-        LatticeSurgerySolution: compiled result with the optimal depth.
-    """
+        Returns:
+            LatticeSurgerySolution: compiled result with the optimal depth.
+        """
         self.specification = dict(specification)
         if start_depth is None:
             depth = self.specification["max_k"]
@@ -445,10 +444,16 @@ class LatticeSurgerySynthesizer:
             result = self.solve(
                 specification=self.specification,
                 print_detail=print_detail,
-                dimacs_file_name=dimacs_file_name_prefix +
-                f"_d={depth}" if dimacs_file_name_prefix else None,
-                sat_log_file_name=sat_log_file_name_prefix +
-                f"_d={depth}" if sat_log_file_name_prefix else None,
+                dimacs_file_name=(
+                    dimacs_file_name_prefix + f"_d={depth}"
+                    if dimacs_file_name_prefix
+                    else None
+                ),
+                sat_log_file_name=(
+                    sat_log_file_name_prefix + f"_d={depth}"
+                    if sat_log_file_name_prefix
+                    else None
+                ),
             )
             if result is None:
                 checked_depth[str(depth)] = "UNSAT"
@@ -522,12 +527,16 @@ class LatticeSurgerySynthesizer:
         result = self.solve(
             specification=this_spec,
             print_detail=print_detail,
-            dimacs_file_name=dimacs_file_name_prefix + "_" +
-            perm.__repr__().replace(" ", "")
-            if dimacs_file_name_prefix else None,
-            sat_log_file_name=sat_log_file_name_prefix + "_" +
-            perm.__repr__().replace(" ", "")
-            if sat_log_file_name_prefix else None,
+            dimacs_file_name=(
+                dimacs_file_name_prefix + "_" + perm.__repr__().replace(" ", "")
+                if dimacs_file_name_prefix
+                else None
+            ),
+            sat_log_file_name=(
+                sat_log_file_name_prefix + "_" + perm.__repr__().replace(" ", "")
+                if sat_log_file_name_prefix
+                else None
+            ),
         )
         print(f"{perm}: {'SAT' if result else 'UNSAT'}")
         return result

@@ -34,13 +34,15 @@ class SweepPauli(cirq.Gate):
         self.pauli = pauli
 
     def _decomposed_into_pauli(self) -> cirq.Gate:
-        return self.pauli ** self.cirq_sweep_symbol
+        return self.pauli**self.cirq_sweep_symbol
 
-    def _resolve_parameters_(self, resolver: cirq.ParamResolver, recursive: bool) -> cirq.Gate:
+    def _resolve_parameters_(
+        self, resolver: cirq.ParamResolver, recursive: bool
+    ) -> cirq.Gate:
         new_value = resolver.value_of(self.cirq_sweep_symbol, recursive=recursive)
         if str(new_value) == str(self.cirq_sweep_symbol):
             return self
-        return self.pauli ** new_value
+        return self.pauli**new_value
 
     def _is_parameterized_(self) -> bool:
         return True
@@ -62,24 +64,27 @@ class SweepPauli(cirq.Gate):
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
         return {
-            'pauli': self.pauli,
-            'stim_sweep_bit_index': self.stim_sweep_bit_index,
-            'cirq_sweep_symbol': self.cirq_sweep_symbol,
+            "pauli": self.pauli,
+            "stim_sweep_bit_index": self.stim_sweep_bit_index,
+            "cirq_sweep_symbol": self.cirq_sweep_symbol,
         }
 
     def __repr__(self) -> str:
         return (
-            f'stimcirq.SweepPauli('
-            f'pauli={self.pauli!r}, '
-            f'stim_sweep_bit_index={self.stim_sweep_bit_index!r}, '
-            f'cirq_sweep_symbol={self.cirq_sweep_symbol!r})'
+            f"stimcirq.SweepPauli("
+            f"pauli={self.pauli!r}, "
+            f"stim_sweep_bit_index={self.stim_sweep_bit_index!r}, "
+            f"cirq_sweep_symbol={self.cirq_sweep_symbol!r})"
         )
 
-    def _stim_conversion_(self, edit_circuit: stim.Circuit, targets: List[int], **kwargs):
+    def _stim_conversion_(
+        self, edit_circuit: stim.Circuit, targets: List[int], **kwargs
+    ):
         edit_circuit.append_operation(
-            f"C{self.pauli}", [stim.target_sweep_bit(self.stim_sweep_bit_index)] + targets
+            f"C{self.pauli}",
+            [stim.target_sweep_bit(self.stim_sweep_bit_index)] + targets,
         )

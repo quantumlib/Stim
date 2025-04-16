@@ -35,20 +35,28 @@ def test_init_equality():
     assert stim.Tableau.from_named_gate("S") == stim.Tableau.from_named_gate("S")
     assert stim.Tableau.from_named_gate("S") != stim.Tableau.from_named_gate("S_DAG")
     assert stim.Tableau.from_named_gate("S") != stim.Tableau.from_named_gate("H")
-    assert stim.Tableau.from_named_gate("S_DAG") == stim.Tableau.from_named_gate("S_DAG")
+    assert stim.Tableau.from_named_gate("S_DAG") == stim.Tableau.from_named_gate(
+        "S_DAG"
+    )
 
 
 def test_from_named_gate():
-    assert str(stim.Tableau.from_named_gate("H")).strip() == """
+    assert (
+        str(stim.Tableau.from_named_gate("H")).strip()
+        == """
 +-xz-
 | ++
 | ZX
 """.strip()
-    assert str(stim.Tableau.from_named_gate("I")).strip() == """
+    )
+    assert (
+        str(stim.Tableau.from_named_gate("I")).strip()
+        == """
 +-xz-
 | ++
 | XZ
 """.strip()
+    )
 
     assert stim.Tableau.from_named_gate("H_XZ") == stim.Tableau.from_named_gate("h")
 
@@ -61,9 +69,11 @@ def test_from_named_gate():
 def test_from_state_vector_fuzz():
     for n in range(1, 7):
         t = stim.Tableau.random(n)
-        v = t.to_state_vector() * (random.random() + 1j*random.random())
-        t2 = stim.Tableau.from_state_vector(v, endian='little')
-        np.testing.assert_array_equal(t.to_stabilizers(canonicalize=True), t2.to_stabilizers(canonicalize=True))
+        v = t.to_state_vector() * (random.random() + 1j * random.random())
+        t2 = stim.Tableau.from_state_vector(v, endian="little")
+        np.testing.assert_array_equal(
+            t.to_stabilizers(canonicalize=True), t2.to_stabilizers(canonicalize=True)
+        )
 
 
 def test_identity():
@@ -112,12 +122,15 @@ def test_random():
 
 
 def test_str():
-    assert str(stim.Tableau.from_named_gate("cnot")).strip() == """
+    assert (
+        str(stim.Tableau.from_named_gate("cnot")).strip()
+        == """
 +-xz-xz-
 | ++ ++
 | XZ _Z
 | X_ XZ
 """.strip()
+    )
 
 
 def test_append():
@@ -185,7 +198,9 @@ def test_from_conjugated_generators():
         ],
     )
 
-    assert stim.Tableau.from_named_gate("S_DAG") == stim.Tableau.from_conjugated_generators(
+    assert stim.Tableau.from_named_gate(
+        "S_DAG"
+    ) == stim.Tableau.from_conjugated_generators(
         xs=[
             stim.PauliString("-Y"),
         ],
@@ -314,7 +329,9 @@ def test_from_conjugated_generators():
 def test_repr():
     v = stim.Tableau.from_named_gate("H")
     r = repr(v)
-    assert r == """stim.Tableau.from_conjugated_generators(
+    assert (
+        r
+        == """stim.Tableau.from_conjugated_generators(
     xs=[
         stim.PauliString("+Z"),
     ],
@@ -322,6 +339,7 @@ def test_repr():
         stim.PauliString("+X"),
     ],
 )"""
+    )
     assert eval(r, {"stim": stim}) == v
 
 
@@ -346,9 +364,9 @@ def test_pow():
     s_dag = stim.Tableau.from_named_gate("S_DAG")
     z = stim.Tableau.from_named_gate("Z")
     assert stim.Tableau(1) == s**0 == s**4 == s**-4
-    assert s == s**1 == s**5 == s**-3 == s**(40000 + 1) == s**(-40000 + 1)
-    assert s_dag == s**-1 == s**3 == s**7 == s**(40000 + 3) == s**(-40000 + 3)
-    assert z == s**2 == s**6 == s**-2 == s**(40000 + 2) == s**(-40000 + 2)
+    assert s == s**1 == s**5 == s**-3 == s ** (40000 + 1) == s ** (-40000 + 1)
+    assert s_dag == s**-1 == s**3 == s**7 == s ** (40000 + 3) == s ** (-40000 + 3)
+    assert z == s**2 == s**6 == s**-2 == s ** (40000 + 2) == s ** (-40000 + 2)
 
 
 def test_aliasing():
@@ -403,7 +421,9 @@ def test_add():
     swap = stim.Tableau.from_named_gate("SWAP")
     cnot = stim.Tableau.from_named_gate("CNOT")
     combo = h + swap + cnot
-    assert str(combo).strip() == """
+    assert (
+        str(combo).strip()
+        == """
 +-xz-xz-xz-xz-xz-
 | ++ ++ ++ ++ ++
 | ZX __ __ __ __
@@ -412,6 +432,7 @@ def test_add():
 | __ __ __ XZ _Z
 | __ __ __ X_ XZ
     """.strip()
+    )
 
     alias = h
     h += swap
@@ -431,36 +452,51 @@ def test_add():
     x = stim.Tableau.from_named_gate("X")
     y = stim.Tableau.from_named_gate("Y")
     z = stim.Tableau.from_named_gate("Z")
-    assert str(y + y).strip() == """
+    assert (
+        str(y + y).strip()
+        == """
 +-xz-xz-
 | -- --
 | XZ __
 | __ XZ
     """.strip()
-    assert str(x + x).strip() == """
+    )
+    assert (
+        str(x + x).strip()
+        == """
 +-xz-xz-
 | +- +-
 | XZ __
 | __ XZ
     """.strip()
-    assert str(z + z).strip() == """
+    )
+    assert (
+        str(z + z).strip()
+        == """
 +-xz-xz-
 | -+ -+
 | XZ __
 | __ XZ
     """.strip()
-    assert str(x + z).strip() == """
+    )
+    assert (
+        str(x + z).strip()
+        == """
 +-xz-xz-
 | +- -+
 | XZ __
 | __ XZ
     """.strip()
-    assert str(z + x).strip() == """
+    )
+    assert (
+        str(z + x).strip()
+        == """
 +-xz-xz-
 | -+ +-
 | XZ __
 | __ XZ
     """.strip()
+    )
 
 
 def test_xyz_output_pauli():
@@ -626,9 +662,18 @@ def test_inverse_xyz_output():
         assert t_inv.inverse_x_output(k) == t.x_output(k)
         assert t_inv.inverse_y_output(k) == t.y_output(k)
         assert t_inv.inverse_z_output(k) == t.z_output(k)
-        assert t_inv.inverse_x_output(k, unsigned=True) == t.x_output(k) / t.x_output(k).sign
-        assert t_inv.inverse_y_output(k, unsigned=True) == t.y_output(k) / t.y_output(k).sign
-        assert t_inv.inverse_z_output(k, unsigned=True) == t.z_output(k) / t.z_output(k).sign
+        assert (
+            t_inv.inverse_x_output(k, unsigned=True)
+            == t.x_output(k) / t.x_output(k).sign
+        )
+        assert (
+            t_inv.inverse_y_output(k, unsigned=True)
+            == t.y_output(k) / t.y_output(k).sign
+        )
+        assert (
+            t_inv.inverse_z_output(k, unsigned=True)
+            == t.z_output(k) / t.z_output(k).sign
+        )
 
     with pytest.raises(TypeError):
         t.inverse_x_output(-1)
@@ -659,17 +704,21 @@ def test_inverse():
             stim.PauliString("-X__"),
         ],
     )
-    assert t.inverse() == t.inverse(unsigned=False) == stim.Tableau.from_conjugated_generators(
-        xs=[
-            stim.PauliString("-__Z"),
-            stim.PauliString("-_Z_"),
-            stim.PauliString("+XZZ"),
-        ],
-        zs=[
-            stim.PauliString("+ZZX"),
-            stim.PauliString("+YX_"),
-            stim.PauliString("+ZZ_"),
-        ],
+    assert (
+        t.inverse()
+        == t.inverse(unsigned=False)
+        == stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("-__Z"),
+                stim.PauliString("-_Z_"),
+                stim.PauliString("+XZZ"),
+            ],
+            zs=[
+                stim.PauliString("+ZZX"),
+                stim.PauliString("+YX_"),
+                stim.PauliString("+ZZ_"),
+            ],
+        )
     )
 
     assert t.inverse(unsigned=True) == stim.Tableau.from_conjugated_generators(
@@ -688,6 +737,7 @@ def test_inverse():
 
 def test_pickle():
     import pickle
+
     t = stim.Tableau.random(4)
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
@@ -695,12 +745,15 @@ def test_pickle():
 
 def test_unitary():
     swap = stim.Tableau.from_named_gate("SWAP")
-    np.testing.assert_array_equal(swap.to_unitary_matrix(endian='big'), [
-        [1, 0, 0, 0],
-        [0, 0, 1, 0],
-        [0, 1, 0, 0],
-        [0, 0, 0, 1],
-    ])
+    np.testing.assert_array_equal(
+        swap.to_unitary_matrix(endian="big"),
+        [
+            [1, 0, 0, 0],
+            [0, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+        ],
+    )
 
 
 def test_to_pauli_string():
@@ -709,7 +762,9 @@ def test_to_pauli_string():
     assert p.to_tableau().to_pauli_string() == p
 
     cnot = stim.Tableau.from_named_gate("CNOT")
-    with pytest.raises(ValueError, match="The Tableau isn't equivalent to a Pauli product."):
+    with pytest.raises(
+        ValueError, match="The Tableau isn't equivalent to a Pauli product."
+    ):
         cnot.to_pauli_string()
 
 
@@ -741,17 +796,17 @@ def test_iter_3q():
 
 def test_from_unitary_matrix():
     s = 0.5**0.5
-    t = stim.Tableau.from_unitary_matrix([
-        [s, s],
-        [s, -s]
-    ], endian='little')
+    t = stim.Tableau.from_unitary_matrix([[s, s], [s, -s]], endian="little")
     assert t == stim.Tableau.from_named_gate("H")
 
     with pytest.raises(ValueError, match="Clifford operation"):
-        stim.Tableau.from_unitary_matrix([
-            [1, 0],
-            [0, 0],
-        ], endian='little')
+        stim.Tableau.from_unitary_matrix(
+            [
+                [1, 0],
+                [0, 0],
+            ],
+            endian="little",
+        )
 
 
 def test_to_circuit_vs_from_circuit():
@@ -783,58 +838,82 @@ def test_to_numpy():
     x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
     np.testing.assert_array_equal(x_signs, [0, 0, 0, 1])
     np.testing.assert_array_equal(z_signs, [0, 0, 1, 1])
-    np.testing.assert_array_equal(x2x, [
-        [0, 1, 1, 1],
-        [1, 0, 0, 1],
-        [0, 1, 0, 0],
-        [1, 1, 1, 1],
-    ])
-    np.testing.assert_array_equal(x2z, [
-        [0, 0, 0, 1],
-        [0, 0, 1, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 1],
-    ])
-    np.testing.assert_array_equal(z2x, [
-        [0, 0, 0, 1],
-        [0, 1, 0, 1],
-        [0, 0, 1, 0],
-        [1, 0, 1, 0],
-    ])
-    np.testing.assert_array_equal(z2z, [
-        [1, 0, 1, 1],
-        [0, 0, 0, 1],
-        [0, 1, 0, 1],
-        [1, 0, 0, 0],
-    ])
+    np.testing.assert_array_equal(
+        x2x,
+        [
+            [0, 1, 1, 1],
+            [1, 0, 0, 1],
+            [0, 1, 0, 0],
+            [1, 1, 1, 1],
+        ],
+    )
+    np.testing.assert_array_equal(
+        x2z,
+        [
+            [0, 0, 0, 1],
+            [0, 0, 1, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    np.testing.assert_array_equal(
+        z2x,
+        [
+            [0, 0, 0, 1],
+            [0, 1, 0, 1],
+            [0, 0, 1, 0],
+            [1, 0, 1, 0],
+        ],
+    )
+    np.testing.assert_array_equal(
+        z2z,
+        [
+            [1, 0, 1, 1],
+            [0, 0, 0, 1],
+            [0, 1, 0, 1],
+            [1, 0, 0, 0],
+        ],
+    )
 
     x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
     np.testing.assert_array_equal(x_signs, [8])
     np.testing.assert_array_equal(z_signs, [12])
-    np.testing.assert_array_equal(x2x, [
-        [14],
-        [9],
-        [2],
-        [15],
-    ])
-    np.testing.assert_array_equal(x2z, [
-        [8],
-        [4],
-        [0],
-        [8],
-    ])
-    np.testing.assert_array_equal(z2x, [
-        [8],
-        [10],
-        [4],
-        [5],
-    ])
-    np.testing.assert_array_equal(z2z, [
-        [13],
-        [8],
-        [10],
-        [1],
-    ])
+    np.testing.assert_array_equal(
+        x2x,
+        [
+            [14],
+            [9],
+            [2],
+            [15],
+        ],
+    )
+    np.testing.assert_array_equal(
+        x2z,
+        [
+            [8],
+            [4],
+            [0],
+            [8],
+        ],
+    )
+    np.testing.assert_array_equal(
+        z2x,
+        [
+            [8],
+            [10],
+            [4],
+            [5],
+        ],
+    )
+    np.testing.assert_array_equal(
+        z2z,
+        [
+            [13],
+            [8],
+            [10],
+            [1],
+        ],
+    )
 
 
 def test_from_numpy():
@@ -853,44 +932,63 @@ def test_from_numpy():
         ],
     )
 
-    assert stim.Tableau.from_numpy(
-        x_signs=np.array([0, 0, 0, 1], dtype=np.bool_),
-        z_signs=np.array([0, 0, 1, 1], dtype=np.bool_),
-        x2x=np.array([
-            [0, 1, 1, 1],
-            [1, 0, 0, 1],
-            [0, 1, 0, 0],
-            [1, 1, 1, 1],
-        ], dtype=np.bool_),
-        x2z=np.array([
-            [0, 0, 0, 1],
-            [0, 0, 1, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 1],
-        ], dtype=np.bool_),
-        z2x=np.array([
-            [0, 0, 0, 1],
-            [0, 1, 0, 1],
-            [0, 0, 1, 0],
-            [1, 0, 1, 0],
-        ], dtype=np.bool_),
-        z2z=np.array([
-            [1, 0, 1, 1],
-            [0, 0, 0, 1],
-            [0, 1, 0, 1],
-            [1, 0, 0, 0],
-        ], dtype=np.bool_),
-    ) == expected
+    assert (
+        stim.Tableau.from_numpy(
+            x_signs=np.array([0, 0, 0, 1], dtype=np.bool_),
+            z_signs=np.array([0, 0, 1, 1], dtype=np.bool_),
+            x2x=np.array(
+                [
+                    [0, 1, 1, 1],
+                    [1, 0, 0, 1],
+                    [0, 1, 0, 0],
+                    [1, 1, 1, 1],
+                ],
+                dtype=np.bool_,
+            ),
+            x2z=np.array(
+                [
+                    [0, 0, 0, 1],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 1],
+                ],
+                dtype=np.bool_,
+            ),
+            z2x=np.array(
+                [
+                    [0, 0, 0, 1],
+                    [0, 1, 0, 1],
+                    [0, 0, 1, 0],
+                    [1, 0, 1, 0],
+                ],
+                dtype=np.bool_,
+            ),
+            z2z=np.array(
+                [
+                    [1, 0, 1, 1],
+                    [0, 0, 0, 1],
+                    [0, 1, 0, 1],
+                    [1, 0, 0, 0],
+                ],
+                dtype=np.bool_,
+            ),
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize("n", [0, 1, 15, 16, 17, 301])
 def test_to_from_numpy_fuzz(n: int):
     t = stim.Tableau.random(n)
     x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
-    t1 = stim.Tableau.from_numpy(x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs)
+    t1 = stim.Tableau.from_numpy(
+        x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs
+    )
     assert t1 == t
     x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
-    t2 = stim.Tableau.from_numpy(x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs)
+    t2 = stim.Tableau.from_numpy(
+        x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs
+    )
     assert t2 == t
 
 
@@ -940,12 +1038,14 @@ def test_signs():
 
 
 def test_to_stabilizers():
-    t = stim.Tableau.from_stabilizers([
-        stim.PauliString("XXXX"),
-        stim.PauliString("YYYY"),
-        stim.PauliString("YYZZ"),
-        stim.PauliString("XXZZ"),
-    ])
+    t = stim.Tableau.from_stabilizers(
+        [
+            stim.PauliString("XXXX"),
+            stim.PauliString("YYYY"),
+            stim.PauliString("YYZZ"),
+            stim.PauliString("XXZZ"),
+        ]
+    )
     assert t.to_stabilizers() == [
         stim.PauliString("XXXX"),
         stim.PauliString("YYYY"),
@@ -963,7 +1063,7 @@ def test_to_stabilizers():
 def test_to_circuit_graph_state_preserves_stabilizers():
     t = stim.Tableau.random(10)
     c = t.to_circuit("graph_state")
-    c = stim.Circuit(str(c).replace('RX', 'H'))
+    c = stim.Circuit(str(c).replace("RX", "H"))
     original = t.to_stabilizers(canonicalize=True)
     reconstructed = c.to_tableau().to_stabilizers(canonicalize=True)
     assert original == reconstructed
@@ -993,27 +1093,35 @@ def test_to_circuit_mpp_unsigned_preserves_stabilizers():
 
 def test_from_stabilizers_error_messages():
     with pytest.raises(ValueError, match="anticommute"):
-        stim.Tableau.from_stabilizers([
-            stim.PauliString("Z"),
-            stim.PauliString("X"),
-        ])
+        stim.Tableau.from_stabilizers(
+            [
+                stim.PauliString("Z"),
+                stim.PauliString("X"),
+            ]
+        )
     with pytest.raises(ValueError, match="anticommute"):
-        stim.Tableau.from_stabilizers([
-            stim.PauliString("Z"),
-            stim.PauliString("X" + "_"*500),
-        ])
+        stim.Tableau.from_stabilizers(
+            [
+                stim.PauliString("Z"),
+                stim.PauliString("X" + "_" * 500),
+            ]
+        )
     with pytest.raises(ValueError, match="contradict"):
-        stim.Tableau.from_stabilizers([
-            stim.PauliString("Z_"),
-            stim.PauliString("-_Z"),
-            stim.PauliString("Z" + "_"*500 + "X"),
-            stim.PauliString("ZZ"),
-        ])
+        stim.Tableau.from_stabilizers(
+            [
+                stim.PauliString("Z_"),
+                stim.PauliString("-_Z"),
+                stim.PauliString("Z" + "_" * 500 + "X"),
+                stim.PauliString("ZZ"),
+            ]
+        )
     with pytest.raises(ValueError, match="redundant"):
-        stim.Tableau.from_stabilizers([
-            stim.PauliString("-Z_"),
-            stim.PauliString("Z" + "_"*500 + "X"),
-            stim.PauliString("-__Z"),
-            stim.PauliString("_Z_"),
-            stim.PauliString("Z_Z"),
-        ])
+        stim.Tableau.from_stabilizers(
+            [
+                stim.PauliString("-Z_"),
+                stim.PauliString("Z" + "_" * 500 + "X"),
+                stim.PauliString("-__Z"),
+                stim.PauliString("_Z_"),
+                stim.PauliString("Z_Z"),
+            ]
+        )

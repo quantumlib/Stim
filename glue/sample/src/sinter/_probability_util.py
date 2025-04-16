@@ -17,6 +17,7 @@ if TYPE_CHECKING:
             from scipy.stats._stats_mstats_common import LinregressResult
         except ImportError:
             from scipy.stats import linregress
+
             LinregressResult = type(linregress([0, 1], [0, 1]))
 
 
@@ -107,7 +108,9 @@ def log_factorial(n: int) -> float:
     return math.lgamma(n + 1)
 
 
-def binary_search(*, func: Callable[[int], float], min_x: int, max_x: int, target: float) -> int:
+def binary_search(
+    *, func: Callable[[int], float], min_x: int, max_x: int, target: float
+) -> int:
     """Performs an approximate granular binary search over a monotonically ascending function."""
     while max_x > min_x + 1:
         med_x = (min_x + max_x) // 2
@@ -125,7 +128,14 @@ def binary_search(*, func: Callable[[int], float], min_x: int, max_x: int, targe
     return max_x if abs(dmax) < abs(dmin) else min_x
 
 
-def binary_intercept(*, func: Callable[[float], float], start_x: float, step: float, target_y: float, atol: float) -> float:
+def binary_intercept(
+    *,
+    func: Callable[[float], float],
+    start_x: float,
+    step: float,
+    target_y: float,
+    atol: float,
+) -> float:
     """Performs an approximate granular binary search over a monotonically ascending function."""
     start_y = func(start_x)
     if abs(start_y - target_y) <= atol:
@@ -151,13 +161,17 @@ def binary_intercept(*, func: Callable[[float], float], start_x: float, step: fl
             max_x = med_x
 
 
-def least_squares_cost(*, xs: np.ndarray, ys: np.ndarray, intercept: float, slope: float) -> float:
+def least_squares_cost(
+    *, xs: np.ndarray, ys: np.ndarray, intercept: float, slope: float
+) -> float:
     assert len(xs.shape) == 1
     assert xs.shape == ys.shape
-    return np.sum((intercept + slope*xs - ys)**2)
+    return np.sum((intercept + slope * xs - ys) ** 2)
 
 
-def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: float, required_y: float) -> 'LinregressResult':
+def least_squares_through_point(
+    *, xs: np.ndarray, ys: np.ndarray, required_x: float, required_y: float
+) -> "LinregressResult":
     # Local import to reduce initial cost of importing sinter.
     from scipy.optimize import leastsq
     from scipy.stats import linregress
@@ -173,22 +187,31 @@ def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: f
 
     (best_slope,), _ = leastsq(func=err, x0=0.0)
     intercept = required_y - required_x * best_slope
-    return LinregressResult(best_slope, intercept, None, None, None, intercept_stderr=False)
+    return LinregressResult(
+        best_slope, intercept, None, None, None, intercept_stderr=False
+    )
 
 
-def least_squares_with_slope(*, xs: np.ndarray, ys: np.ndarray, required_slope: float) -> 'LinregressResult':
+def least_squares_with_slope(
+    *, xs: np.ndarray, ys: np.ndarray, required_slope: float
+) -> "LinregressResult":
     def err(intercept: float) -> float:
-        return least_squares_cost(xs=xs, ys=ys, intercept=intercept, slope=required_slope)
+        return least_squares_cost(
+            xs=xs, ys=ys, intercept=intercept, slope=required_slope
+        )
 
     # Local import to reduce initial cost of importing sinter.
     from scipy.optimize import leastsq
 
     # HACK: get scipy's linear regression result type
     from scipy.stats import linregress
+
     LinregressResult = type(linregress([0, 1], [0, 1]))
 
     (best_intercept,), _ = leastsq(func=err, x0=0.0)
-    return LinregressResult(required_slope, best_intercept, None, None, None, intercept_stderr=False)
+    return LinregressResult(
+        required_slope, best_intercept, None, None, None, intercept_stderr=False
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -209,19 +232,22 @@ class Fit:
             of the best fit's square error, or whose likelihood was within some
             maximum Bayes factor of the max likelihood hypothesis.
     """
+
     low: Optional[float]
     best: Optional[float]
     high: Optional[float]
 
     def __repr__(self) -> str:
-        return f'sinter.Fit(low={self.low!r}, best={self.best!r}, high={self.high!r})'
+        return f"sinter.Fit(low={self.low!r}, best={self.best!r}, high={self.high!r})"
 
 
-def fit_line_y_at_x(*,
-                    xs: Sequence[float],
-                    ys: Sequence[float],
-                    target_x: float,
-                    max_extra_squared_error: float) -> 'sinter.Fit':
+def fit_line_y_at_x(
+    *,
+    xs: Sequence[float],
+    ys: Sequence[float],
+    target_x: float,
+    max_extra_squared_error: float,
+) -> "sinter.Fit":
     """Performs a line fit, focusing on the line's y coord at a given x coord.
 
     Finds the y value at the given x of the best fit, but also the minimum and
@@ -259,22 +285,39 @@ def fit_line_y_at_x(*,
     xs = np.array(xs, dtype=np.float64)
     ys = np.array(ys, dtype=np.float64)
     fit = linregress(xs, ys)
-    base_cost = least_squares_cost(xs=xs, ys=ys, intercept=fit.intercept, slope=fit.slope)
+    base_cost = least_squares_cost(
+        xs=xs, ys=ys, intercept=fit.intercept, slope=fit.slope
+    )
     base_y = float(fit.intercept + target_x * fit.slope)
 
     def cost_for_y(y2: float) -> float:
-        fit2 = least_squares_through_point(xs=xs, ys=ys, required_x=target_x, required_y=y2)
-        return least_squares_cost(xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope)
+        fit2 = least_squares_through_point(
+            xs=xs, ys=ys, required_x=target_x, required_y=y2
+        )
+        return least_squares_cost(
+            xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope
+        )
 
-    low_y = binary_intercept(start_x=base_y, step=-1, target_y=base_cost + max_extra_squared_error, func=cost_for_y, atol=1e-5)
-    high_y = binary_intercept(start_x=base_y, step=1, target_y=base_cost + max_extra_squared_error, func=cost_for_y, atol=1e-5)
+    low_y = binary_intercept(
+        start_x=base_y,
+        step=-1,
+        target_y=base_cost + max_extra_squared_error,
+        func=cost_for_y,
+        atol=1e-5,
+    )
+    high_y = binary_intercept(
+        start_x=base_y,
+        step=1,
+        target_y=base_cost + max_extra_squared_error,
+        func=cost_for_y,
+        atol=1e-5,
+    )
     return Fit(low=low_y, best=base_y, high=high_y)
 
 
-def fit_line_slope(*,
-              xs: Sequence[float],
-              ys: Sequence[float],
-              max_extra_squared_error: float) -> 'sinter.Fit':
+def fit_line_slope(
+    *, xs: Sequence[float], ys: Sequence[float], max_extra_squared_error: float
+) -> "sinter.Fit":
     """Performs a line fit of the given points, focusing on the line's slope.
 
     Finds the slope of the best fit, but also the minimum and maximum slopes
@@ -313,22 +356,36 @@ def fit_line_slope(*,
     xs = np.array(xs, dtype=np.float64)
     ys = np.array(ys, dtype=np.float64)
     fit = linregress(xs, ys)
-    base_cost = least_squares_cost(xs=xs, ys=ys, intercept=fit.intercept, slope=fit.slope)
+    base_cost = least_squares_cost(
+        xs=xs, ys=ys, intercept=fit.intercept, slope=fit.slope
+    )
 
     def cost_for_slope(slope: float) -> float:
         fit2 = least_squares_with_slope(xs=xs, ys=ys, required_slope=slope)
-        return least_squares_cost(xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope)
+        return least_squares_cost(
+            xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope
+        )
 
-    low_slope = binary_intercept(start_x=fit.slope, step=-1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
-    high_slope = binary_intercept(start_x=fit.slope, step=1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
+    low_slope = binary_intercept(
+        start_x=fit.slope,
+        step=-1,
+        target_y=base_cost + max_extra_squared_error,
+        func=cost_for_slope,
+        atol=1e-5,
+    )
+    high_slope = binary_intercept(
+        start_x=fit.slope,
+        step=1,
+        target_y=base_cost + max_extra_squared_error,
+        func=cost_for_slope,
+        atol=1e-5,
+    )
     return Fit(low=float(low_slope), best=float(fit.slope), high=float(high_slope))
 
 
 def fit_binomial(
-        *,
-        num_shots: int,
-        num_hits: int,
-        max_likelihood_factor: float) -> 'sinter.Fit':
+    *, num_shots: int, num_hits: int, max_likelihood_factor: float
+) -> "sinter.Fit":
     """Determine hypothesis probabilities compatible with the given hit ratio.
 
     The result includes the best fit (the max likelihood hypothis) as well as
@@ -361,32 +418,56 @@ def fit_binomial(
         sinter.Fit(low=0.202, best=0.5, high=0.798)
     """
     if max_likelihood_factor < 1:
-        raise ValueError(f'max_likelihood_factor={max_likelihood_factor} < 1')
+        raise ValueError(f"max_likelihood_factor={max_likelihood_factor} < 1")
     if num_shots == 0:
         return Fit(low=0, high=1, best=0.5)
-    log_max_likelihood = log_binomial(p=num_hits / num_shots, n=num_shots, hits=num_hits)
+    log_max_likelihood = log_binomial(
+        p=num_hits / num_shots, n=num_shots, hits=num_hits
+    )
     target_log_likelihood = log_max_likelihood - math.log(max_likelihood_factor)
     acc = 100
-    low = binary_search(
-        func=lambda exp_err: log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits),
-        target=target_log_likelihood,
-        min_x=0,
-        max_x=num_hits * acc) / acc
-    high = binary_search(
-        func=lambda exp_err: -log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits),
-        target=-target_log_likelihood,
-        min_x=num_hits * acc,
-        max_x=num_shots * acc) / acc
+    low = (
+        binary_search(
+            func=lambda exp_err: log_binomial(
+                p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits
+            ),
+            target=target_log_likelihood,
+            min_x=0,
+            max_x=num_hits * acc,
+        )
+        / acc
+    )
+    high = (
+        binary_search(
+            func=lambda exp_err: -log_binomial(
+                p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits
+            ),
+            target=-target_log_likelihood,
+            min_x=num_hits * acc,
+            max_x=num_shots * acc,
+        )
+        / acc
+    )
     return Fit(best=num_hits / num_shots, low=low / num_shots, high=high / num_shots)
 
 
 @overload
-def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float, values: float = 1) -> float:
+def shot_error_rate_to_piece_error_rate(
+    shot_error_rate: float, *, pieces: float, values: float = 1
+) -> float:
     pass
+
+
 @overload
-def shot_error_rate_to_piece_error_rate(shot_error_rate: 'sinter.Fit', *, pieces: float, values: float = 1) -> 'sinter.Fit':
+def shot_error_rate_to_piece_error_rate(
+    shot_error_rate: "sinter.Fit", *, pieces: float, values: float = 1
+) -> "sinter.Fit":
     pass
-def shot_error_rate_to_piece_error_rate(shot_error_rate: Union[float, 'sinter.Fit'], *, pieces: float, values: float = 1) -> Union[float, 'sinter.Fit']:
+
+
+def shot_error_rate_to_piece_error_rate(
+    shot_error_rate: Union[float, "sinter.Fit"], *, pieces: float, values: float = 1
+) -> Union[float, "sinter.Fit"]:
     """Convert from total error rate to per-piece error rate.
 
     Args:
@@ -445,31 +526,39 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: Union[float, 'sinter.Fi
 
     if isinstance(shot_error_rate, Fit):
         return Fit(
-            low=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.low, pieces=pieces, values=values),
-            best=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.best, pieces=pieces, values=values),
-            high=shot_error_rate_to_piece_error_rate(shot_error_rate=shot_error_rate.high, pieces=pieces, values=values),
+            low=shot_error_rate_to_piece_error_rate(
+                shot_error_rate=shot_error_rate.low, pieces=pieces, values=values
+            ),
+            best=shot_error_rate_to_piece_error_rate(
+                shot_error_rate=shot_error_rate.best, pieces=pieces, values=values
+            ),
+            high=shot_error_rate_to_piece_error_rate(
+                shot_error_rate=shot_error_rate.high, pieces=pieces, values=values
+            ),
         )
 
     if not (0 <= shot_error_rate <= 1):
-        raise ValueError(f'need (0 <= shot_error_rate={shot_error_rate} <= 1)')
+        raise ValueError(f"need (0 <= shot_error_rate={shot_error_rate} <= 1)")
     if pieces <= 0:
-        raise ValueError('need pieces > 0')
+        raise ValueError("need pieces > 0")
     if not isinstance(pieces, (int, float)):
-        raise ValueError('need isinstance(pieces, (int, float)')
+        raise ValueError("need isinstance(pieces, (int, float)")
     if not isinstance(values, (int, float)):
-        raise ValueError('need isinstance(values, (int, float)')
+        raise ValueError("need isinstance(values, (int, float)")
     if pieces == 1:
         return shot_error_rate
     if values != 1:
-        p = 1 - (1 - shot_error_rate)**(1 / values)
+        p = 1 - (1 - shot_error_rate) ** (1 / values)
         p = shot_error_rate_to_piece_error_rate(p, pieces=pieces)
-        return 1 - (1 - p)**values
+        return 1 - (1 - p) ** values
 
     if shot_error_rate > 0.5:
-        return 1 - shot_error_rate_to_piece_error_rate(1 - shot_error_rate, pieces=pieces)
+        return 1 - shot_error_rate_to_piece_error_rate(
+            1 - shot_error_rate, pieces=pieces
+        )
     assert 0 <= shot_error_rate <= 0.5
-    randomize_rate = 2*shot_error_rate
-    round_randomize_rate = 1 - (1 - randomize_rate)**(1 / pieces)
+    randomize_rate = 2 * shot_error_rate
+    round_randomize_rate = 1 - (1 - randomize_rate) ** (1 / pieces)
     round_error_rate = round_randomize_rate / 2
 
     if round_error_rate == 0:
@@ -500,13 +589,15 @@ def comma_separated_key_values(path: str) -> Dict[str, Any]:
         {'d': 5, 'r': 3.5, 'x': 'abc'}
     """
     name = pathlib.Path(path).name
-    if '.' in name:
-        name = name[:name.rindex('.')]
+    if "." in name:
+        name = name[: name.rindex(".")]
     result = {}
-    for term in name.split(','):
-        parts = term.split('=')
+    for term in name.split(","):
+        parts = term.split("=")
         if len(parts) != 2:
-            raise ValueError(f"Expected a path with a filename containing comma-separated key=value terms like 'a=2,b=3.stim', but got {path!r}.")
+            raise ValueError(
+                f"Expected a path with a filename containing comma-separated key=value terms like 'a=2,b=3.stim', but got {path!r}."
+            )
         k, v = parts
         try:
             v = int(v)

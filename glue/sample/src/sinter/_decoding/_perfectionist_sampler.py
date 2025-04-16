@@ -8,6 +8,7 @@ from sinter._decoding._sampler import Sampler, CompiledSampler
 
 class PerfectionistSampler(Sampler):
     """Predicts obs aren't flipped. Discards shots with any detection events."""
+
     def compiled_sampler_for_task(self, task: Task) -> CompiledSampler:
         return CompiledPerfectionistSampler(task)
 

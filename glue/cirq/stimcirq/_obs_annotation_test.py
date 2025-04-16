@@ -44,7 +44,9 @@ def test_stim_conversion():
         cirq.Circuit(
             cirq.Moment(cirq.measure(b, key="earlier")),
             cirq.Moment(
-                stimcirq.CumulativeObservableAnnotation(parity_keys=["earlier"], observable_index=0)
+                stimcirq.CumulativeObservableAnnotation(
+                    parity_keys=["earlier"], observable_index=0
+                )
             ),
         )
     ) == stim.Circuit(
@@ -78,7 +80,9 @@ def test_stim_conversion():
         cirq.Circuit(
             cirq.Moment(cirq.measure(a, key="a"), cirq.measure(b, key="b")),
             cirq.Moment(
-                stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=2)
+                stimcirq.CumulativeObservableAnnotation(
+                    parity_keys=["a", "b"], observable_index=2
+                )
             ),
         )
     ) == stim.Circuit(
@@ -98,9 +102,13 @@ def test_stim_conversion():
             cirq.Moment(
                 cirq.measure(a, key="a"),
                 cirq.measure(b, key="b"),
-                stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=0),
+                stimcirq.CumulativeObservableAnnotation(
+                    parity_keys=["a", "b"], observable_index=0
+                ),
                 cirq.measure(c, key="c"),
-                stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "c"], observable_index=0),
+                stimcirq.CumulativeObservableAnnotation(
+                    parity_keys=["a", "c"], observable_index=0
+                ),
             ),
         )
     ) == stim.Circuit(
@@ -126,7 +134,9 @@ def test_simulation():
         cirq.Circuit(
             cirq.X(a),
             cirq.measure(a, key="a"),
-            stimcirq.CumulativeObservableAnnotation(parity_keys=["a"], observable_index=0),
+            stimcirq.CumulativeObservableAnnotation(
+                parity_keys=["a"], observable_index=0
+            ),
         ),
         repetitions=3,
     )
@@ -139,7 +149,9 @@ def test_diagram():
         cirq.Circuit(
             cirq.measure(a, key="a"),
             cirq.measure(b, key="b"),
-            stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=2),
+            stimcirq.CumulativeObservableAnnotation(
+                parity_keys=["a", "b"], observable_index=2
+            ),
         ),
         """
 0: ---M('a')----------
@@ -152,7 +164,9 @@ def test_diagram():
 
 
 def test_repr():
-    val = stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=2)
+    val = stimcirq.CumulativeObservableAnnotation(
+        parity_keys=["a", "b"], observable_index=2
+    )
     assert eval(repr(val), {"stimcirq": stimcirq}) == val
 
 
@@ -173,27 +187,45 @@ def test_equality():
         stimcirq.CumulativeObservableAnnotation(parity_keys=["b"], observable_index=0)
     )
     eq.add_equality_group(
-        stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=0),
-        stimcirq.CumulativeObservableAnnotation(parity_keys=["b", "a"], observable_index=0),
+        stimcirq.CumulativeObservableAnnotation(
+            parity_keys=["a", "b"], observable_index=0
+        ),
+        stimcirq.CumulativeObservableAnnotation(
+            parity_keys=["b", "a"], observable_index=0
+        ),
     )
 
 
 def test_json_serialization():
     c = cirq.Circuit(
-        stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=5),
+        stimcirq.CumulativeObservableAnnotation(
+            parity_keys=["a", "b"], observable_index=5
+        ),
         stimcirq.CumulativeObservableAnnotation(
             parity_keys=["a", "b"], relative_keys=[-1, -3], observable_index=5
         ),
         stimcirq.CumulativeObservableAnnotation(observable_index=2),
-        stimcirq.CumulativeObservableAnnotation(parity_keys=["d", "c"], observable_index=5),
+        stimcirq.CumulativeObservableAnnotation(
+            parity_keys=["d", "c"], observable_index=5
+        ),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(
+        json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]
+    )
     assert c == c2
 
 
 def test_json_backwards_compat_exact():
-    raw = stimcirq.CumulativeObservableAnnotation(parity_keys=['z'], relative_keys=[-2], observable_index=5)
+    raw = stimcirq.CumulativeObservableAnnotation(
+        parity_keys=["z"], relative_keys=[-2], observable_index=5
+    )
     packed = '{\n  "cirq_type": "CumulativeObservableAnnotation",\n  "parity_keys": [\n    "z"\n  ],\n  "observable_index": 5,\n  "relative_keys": [\n    -2\n  ]\n}'
-    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert (
+        cirq.read_json(
+            json_text=packed,
+            resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER],
+        )
+        == raw
+    )
     assert cirq.to_json(raw) == packed

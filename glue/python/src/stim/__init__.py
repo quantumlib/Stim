@@ -14,7 +14,7 @@ try:
     # if _tmp == 'avx2':
     #     from stim._stim_avx2 import _UNSTABLE_raw_format_data, __version__
     #     from stim._stim_avx2 import *
-    if _tmp == 'avx2' or _tmp == 'sse2':
+    if _tmp == "avx2" or _tmp == "sse2":
         from stim._stim_sse2 import _UNSTABLE_raw_format_data, __version__
         from stim._stim_sse2 import *
     else:
@@ -31,6 +31,8 @@ def _pytest_pycharm_pybind_repr_bug_workaround(cls):
     f = cls.__repr__
     cls.__repr__ = lambda e: f(e)
     cls.__repr__.__doc__ = f.__doc__
+
+
 _pytest_pycharm_pybind_repr_bug_workaround(Circuit)
 _pytest_pycharm_pybind_repr_bug_workaround(CircuitErrorLocation)
 _pytest_pycharm_pybind_repr_bug_workaround(CircuitErrorLocationStackFrame)
@@ -40,7 +42,9 @@ _pytest_pycharm_pybind_repr_bug_workaround(CircuitTargetsInsideInstruction)
 _pytest_pycharm_pybind_repr_bug_workaround(CompiledDemSampler)
 _pytest_pycharm_pybind_repr_bug_workaround(CompiledDetectorSampler)
 _pytest_pycharm_pybind_repr_bug_workaround(CompiledMeasurementSampler)
-_pytest_pycharm_pybind_repr_bug_workaround(CompiledMeasurementsToDetectionEventsConverter)
+_pytest_pycharm_pybind_repr_bug_workaround(
+    CompiledMeasurementsToDetectionEventsConverter
+)
 _pytest_pycharm_pybind_repr_bug_workaround(DemInstruction)
 _pytest_pycharm_pybind_repr_bug_workaround(DemRepeatBlock)
 _pytest_pycharm_pybind_repr_bug_workaround(DemTarget)

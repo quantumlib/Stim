@@ -1,12 +1,25 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
+
 # (This is a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
+from typing import (
+    overload,
+    TYPE_CHECKING,
+    List,
+    Dict,
+    Tuple,
+    Any,
+    Union,
+    Iterable,
+    Optional,
+)
+
 if TYPE_CHECKING:
     import io
     import pathlib
     import numpy as np
     import stim
+
 class Circuit:
     """A mutable stabilizer circuit.
 
@@ -41,6 +54,7 @@ class Circuit:
         ... ''').compile_detector_sampler().sample(shots=1)
         array([[False]])
     """
+
     def __add__(
         self,
         second: stim.Circuit,
@@ -63,24 +77,27 @@ class Circuit:
                 M 0 1 2
             ''')
         """
+
     def __eq__(
         self,
         arg0: stim.Circuit,
     ) -> bool:
-        """Determines if two circuits have identical contents.
-        """
+        """Determines if two circuits have identical contents."""
+
     @overload
     def __getitem__(
         self,
         index_or_slice: int,
     ) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
         pass
+
     @overload
     def __getitem__(
         self,
         index_or_slice: slice,
     ) -> stim.Circuit:
         pass
+
     def __getitem__(
         self,
         index_or_slice: object,
@@ -123,6 +140,7 @@ class Circuit:
                 DETECTOR rec[-1]
             ''')
         """
+
     def __iadd__(
         self,
         second: stim.Circuit,
@@ -146,6 +164,7 @@ class Circuit:
                 M 0 1 2
             ''')
         """
+
     def __imul__(
         self,
         repetitions: int,
@@ -173,9 +192,10 @@ class Circuit:
                 }
             ''')
         """
+
     def __init__(
         self,
-        stim_program_text: str = '',
+        stim_program_text: str = "",
     ) -> None:
         """Creates a stim.Circuit.
 
@@ -192,6 +212,7 @@ class Circuit:
             ...    M 1
             ... ''')
         """
+
     def __len__(
         self,
     ) -> int:
@@ -219,6 +240,7 @@ class Circuit:
             ... '''))
             1
         """
+
     def __mul__(
         self,
         repetitions: int,
@@ -250,17 +272,18 @@ class Circuit:
                 }
             ''')
         """
+
     def __ne__(
         self,
         arg0: stim.Circuit,
     ) -> bool:
-        """Determines if two circuits have non-identical contents.
-        """
+        """Determines if two circuits have non-identical contents."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`."""
+
     def __rmul__(
         self,
         repetitions: int,
@@ -292,34 +315,42 @@ class Circuit:
                 }
             ''')
         """
+
     def __str__(
         self,
     ) -> str:
-        """Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.
-        """
+        """Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit."""
+
     @overload
     def append(
         self,
         name: str,
-        targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]],
+        targets: Union[
+            int,
+            stim.GateTarget,
+            stim.PauliString,
+            Iterable[Union[int, stim.GateTarget, stim.PauliString]],
+        ],
         arg: Union[float, Iterable[float]],
         *,
         tag: str = "",
     ) -> None:
         pass
+
     @overload
     def append(
         self,
         name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock],
     ) -> None:
         pass
+
     def append(
         self,
         name: object,
         targets: object = (),
         arg: object = None,
         *,
-        tag: str = '',
+        tag: str = "",
     ) -> None:
         """Appends an operation into the circuit.
 
@@ -378,6 +409,7 @@ class Circuit:
                 take exactly one argument.
             tag: A customizable string attached to the instruction.
         """
+
     def append_from_stim_program_text(
         self,
         stim_program_text: str,
@@ -404,16 +436,17 @@ class Circuit:
             stim_program_text: The STIM program text containing the circuit operations
                 to append.
         """
+
     def append_operation(
         self,
         name: object,
         targets: object = (),
         arg: object = None,
         *,
-        tag: str = '',
+        tag: str = "",
     ) -> None:
-        """[DEPRECATED] use stim.Circuit.append instead
-        """
+        """[DEPRECATED] use stim.Circuit.append instead"""
+
     def approx_equals(
         self,
         other: object,
@@ -471,6 +504,7 @@ class Circuit:
             ... '''), atol=9999)
             False
         """
+
     def clear(
         self,
     ) -> None:
@@ -486,6 +520,7 @@ class Circuit:
             >>> c
             stim.Circuit()
         """
+
     def compile_detector_sampler(
         self,
         *,
@@ -531,6 +566,7 @@ class Circuit:
             >>> s.sample(shots=1)
             array([[False]])
         """
+
     def compile_m2d_converter(
         self,
         *,
@@ -572,6 +608,7 @@ class Circuit:
             array([[ True],
                    [False]])
         """
+
     def compile_sampler(
         self,
         *,
@@ -644,6 +681,7 @@ class Circuit:
             >>> s.sample(shots=1)
             array([[False, False,  True]])
         """
+
     def copy(
         self,
     ) -> stim.Circuit:
@@ -659,6 +697,7 @@ class Circuit:
             >>> c2 == c1
             True
         """
+
     def count_determined_measurements(
         self,
     ) -> int:
@@ -729,6 +768,7 @@ class Circuit:
             >>> circuit.num_detectors + circuit.num_observables
             217
         """
+
     def decomposed(
         self,
     ) -> stim.Circuit:
@@ -794,6 +834,7 @@ class Circuit:
                 H 1
             ''')
         """
+
     def detecting_regions(
         self,
         *,
@@ -922,6 +963,7 @@ class Circuit:
                 tick 13 = +_X________X________X________X______________
                 tick 14 = +_X________X________X________X______________
         """
+
     def detector_error_model(
         self,
         *,
@@ -1017,14 +1059,15 @@ class Circuit:
                 error(0.25) D1
             ''')
         """
+
     def diagram(
         self,
-        type: str = 'timeline-text',
+        type: str = "timeline-text",
         *,
         tick: Union[None, int, range] = None,
         filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
         rows: int | None = None,
-    ) -> 'stim._DiagramHelper':
+    ) -> "stim._DiagramHelper":
         """Returns a diagram of the circuit, from a variety of options.
 
         Args:
@@ -1146,6 +1189,7 @@ class Circuit:
                  |
             q1: -Z:D0-
         """
+
     def explain_detector_error_model_errors(
         self,
         *,
@@ -1202,6 +1246,7 @@ class Circuit:
                     resolving to DEPOLARIZE1(0.01) 0
             }
         """
+
     def flattened(
         self,
     ) -> stim.Circuit:
@@ -1240,6 +1285,7 @@ class Circuit:
                 DETECTOR(1, 4) rec[-1]
             ''')
         """
+
     def flattened_operations(
         self,
     ) -> list:
@@ -1265,6 +1311,7 @@ class Circuit:
             ... ''').flattened_operations()
             [('H', [6], 0), ('H', [6], 0)]
         """
+
     def flow_generators(
         self,
     ) -> List[stim.Flow]:
@@ -1316,6 +1363,7 @@ class Circuit:
             1 -> _Z___
             1 -> Z____
         """
+
     @staticmethod
     def from_file(
         file: Union[io.TextIOBase, str, pathlib.Path],
@@ -1356,6 +1404,7 @@ class Circuit:
                 CX 4 5
             ''')
         """
+
     @staticmethod
     def generated(
         code_task: str,
@@ -1455,6 +1504,7 @@ class Circuit:
             DETECTOR(5, 1) rec[-1] rec[-2] rec[-5]
             OBSERVABLE_INCLUDE(0) rec[-1]
         """
+
     def get_detector_coordinates(
         self,
         only: object = None,
@@ -1489,6 +1539,7 @@ class Circuit:
             >>> circuit.get_detector_coordinates(only=[1])
             {1: [1.0, 2.0, 3.0]}
         """
+
     def get_final_qubit_coordinates(
         self,
     ) -> Dict[int, List[float]]:
@@ -1510,6 +1561,7 @@ class Circuit:
             >>> circuit.get_final_qubit_coordinates()
             {1: [1.0, 2.0, 3.0]}
         """
+
     def has_all_flows(
         self,
         flows: Iterable[stim.Flow],
@@ -1565,6 +1617,7 @@ class Circuit:
             True, there is technically still a 2^-256 chance the circuit doesn't have
             the flow. This is lower than the chance of a cosmic ray flipping the result.
         """
+
     def has_flow(
         self,
         flow: stim.Flow,
@@ -1685,6 +1738,7 @@ class Circuit:
             True, there is technically still a 2^-256 chance the circuit doesn't have
             the flow. This is lower than the chance of a cosmic ray flipping the result.
         """
+
     def insert(
         self,
         index: int,
@@ -1734,6 +1788,7 @@ class Circuit:
                 X 2
             ''')
         """
+
     def inverse(
         self,
     ) -> stim.Circuit:
@@ -1785,11 +1840,12 @@ class Circuit:
                 H 1 0
             ''')
         """
+
     def likeliest_error_sat_problem(
         self,
         *,
         quantization: int = 100,
-        format: str = 'WDIMACS',
+        format: str = "WDIMACS",
     ) -> str:
         """Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
@@ -1864,6 +1920,7 @@ class Circuit:
             4001 -1 0
             4001 2 0
         """
+
     @property
     def num_detectors(
         self,
@@ -1884,6 +1941,7 @@ class Circuit:
             >>> c.num_detectors
             201
         """
+
     @property
     def num_measurements(
         self,
@@ -1901,6 +1959,7 @@ class Circuit:
             >>> c.num_measurements
             201
         """
+
     @property
     def num_observables(
         self,
@@ -1920,6 +1979,7 @@ class Circuit:
             >>> c.num_observables
             6
         """
+
     @property
     def num_qubits(
         self,
@@ -1942,6 +2002,7 @@ class Circuit:
             ... ''').num_qubits
             101
         """
+
     @property
     def num_sweep_bits(
         self,
@@ -1962,6 +2023,7 @@ class Circuit:
             ... ''').num_sweep_bits
             6
         """
+
     @property
     def num_ticks(
         self,
@@ -2002,6 +2064,7 @@ class Circuit:
             ... ''').num_ticks
             101
         """
+
     def pop(
         self,
         index: int = -1,
@@ -2035,6 +2098,7 @@ class Circuit:
                 X 2
             ''')
         """
+
     def reference_detector_and_observable_signs(
         self,
         *,
@@ -2083,6 +2147,7 @@ class Circuit:
             ... ''').reference_detector_and_observable_signs()
             (array([ True, False]), array([False, False, False,  True]))
         """
+
     def reference_sample(
         self,
         *,
@@ -2115,6 +2180,7 @@ class Circuit:
             ... ''').reference_sample()
             array([False,  True])
         """
+
     def search_for_undetectable_logical_errors(
         self,
         *,
@@ -2208,10 +2274,11 @@ class Circuit:
             ... )))
             5
         """
+
     def shortest_error_sat_problem(
         self,
         *,
-        format: str = 'WDIMACS',
+        format: str = "WDIMACS",
     ) -> str:
         """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
 
@@ -2275,6 +2342,7 @@ class Circuit:
             5 -1 0
             5 2 0
         """
+
     def shortest_graphlike_error(
         self,
         *,
@@ -2345,6 +2413,7 @@ class Circuit:
             >>> len(circuit.shortest_graphlike_error())
             7
         """
+
     def solve_flow_measurements(
         self,
         flows: List[stim.Flow],
@@ -2420,6 +2489,7 @@ class Circuit:
             ... ])
             [[0, 1], [0], [], None]
         """
+
     def time_reversed_for_flows(
         self,
         flows: Iterable[stim.Flow],
@@ -2623,6 +2693,7 @@ class Circuit:
                 OBSERVABLE_INCLUDE(0) rec[-3] rec[-1]
             ''')
         """
+
     def to_crumble_url(
         self,
         *,
@@ -2668,6 +2739,7 @@ class Circuit:
             >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
             'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
         """
+
     def to_file(
         self,
         file: Union[io.TextIOBase, str, pathlib.Path],
@@ -2702,6 +2774,7 @@ class Circuit:
             >>> contents
             'H 5\nX 0\n'
         """
+
     def to_qasm(
         self,
         *,
@@ -2762,6 +2835,7 @@ class Circuit:
             measure q[1] -> rec[1];
             dets[0] = rec[1] ^ rec[0] ^ 1;
         """
+
     def to_quirk_url(
         self,
     ) -> str:
@@ -2788,6 +2862,7 @@ class Circuit:
             ... ''').to_quirk_url()
             'https://algassert.com/quirk#circuit={"cols":[["H"],["•","X"],[1,"Z^½"]]}'
         """
+
     def to_tableau(
         self,
         *,
@@ -2840,6 +2915,7 @@ class Circuit:
                 ],
             )
         """
+
     def with_inlined_feedback(
         self,
     ) -> stim.Circuit:
@@ -2894,6 +2970,7 @@ class Circuit:
                 OBSERVABLE_INCLUDE(0) rec[-1]
             ''')
         """
+
     def without_noise(
         self,
     ) -> stim.Circuit:
@@ -2921,6 +2998,7 @@ class Circuit:
                 M 0
             ''')
         """
+
     def without_tags(
         self,
     ) -> stim.Circuit:
@@ -2941,6 +3019,7 @@ class Circuit:
                 M(0.125) 0
             ''')
         """
+
 class CircuitErrorLocation:
     """Describes the location of an error mechanism from a stim circuit.
 
@@ -2964,6 +3043,7 @@ class CircuitErrorLocation:
                 resolving to DEPOLARIZE1(0.001) 0
         }
     """
+
     def __init__(
         self,
         *,
@@ -2972,7 +3052,7 @@ class CircuitErrorLocation:
         flipped_measurement: object,
         instruction_targets: stim.CircuitTargetsInsideInstruction,
         stack_frames: List[stim.CircuitErrorLocationStackFrame],
-        noise_tag: str = '',
+        noise_tag: str = "",
     ) -> None:
         """Creates a stim.CircuitErrorLocation.
 
@@ -3020,6 +3100,7 @@ class CircuitErrorLocation:
                     resolving to DEPOLARIZE1(0.001) 0
             }
         """
+
     @property
     def flipped_measurement(
         self,
@@ -3041,6 +3122,7 @@ class CircuitErrorLocation:
                 observable=(stim.GateTargetWithCoords(stim.target_z(0), []),),
             )
         """
+
     @property
     def flipped_pauli_product(
         self,
@@ -3060,6 +3142,7 @@ class CircuitErrorLocation:
             >>> err[0].circuit_error_locations[0].flipped_pauli_product
             [stim.GateTargetWithCoords(stim.target_y(0), [])]
         """
+
     @property
     def instruction_targets(
         self,
@@ -3087,6 +3170,7 @@ class CircuitErrorLocation:
             ... )
             True
         """
+
     @property
     def noise_tag(
         self,
@@ -3104,6 +3188,7 @@ class CircuitErrorLocation:
             >>> err[0].circuit_error_locations[0].noise_tag
             'test-tag'
         """
+
     @property
     def stack_frames(
         self,
@@ -3129,6 +3214,7 @@ class CircuitErrorLocation:
                 instruction_repetitions_arg=0,
             )]
         """
+
     @property
     def tick_offset(
         self,
@@ -3151,6 +3237,7 @@ class CircuitErrorLocation:
             >>> err[0].circuit_error_locations[0].tick_offset
             3
         """
+
 class CircuitErrorLocationStackFrame:
     """Describes the location of an instruction being executed within a
     circuit or loop, distinguishing between separate loop iterations.
@@ -3183,6 +3270,7 @@ class CircuitErrorLocationStackFrame:
             instruction_repetitions_arg=0,
         )
     """
+
     def __init__(
         self,
         *,
@@ -3200,6 +3288,7 @@ class CircuitErrorLocationStackFrame:
             ...     instruction_repetitions_arg=3,
             ... )
         """
+
     @property
     def instruction_offset(
         self,
@@ -3222,6 +3311,7 @@ class CircuitErrorLocationStackFrame:
             >>> err[0].circuit_error_locations[0].stack_frames[0].instruction_offset
             2
         """
+
     @property
     def instruction_repetitions_arg(
         self,
@@ -3247,6 +3337,7 @@ class CircuitErrorLocationStackFrame:
             >>> loop.instruction_repetitions_arg
             0
         """
+
     @property
     def iteration_index(
         self,
@@ -3272,6 +3363,7 @@ class CircuitErrorLocationStackFrame:
             >>> loop.iteration_index
             4
         """
+
 class CircuitInstruction:
     """An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
 
@@ -3289,12 +3381,13 @@ class CircuitInstruction:
         >>> circuit[2]
         stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5)], [0.125])
     """
+
     def __eq__(
         self,
         arg0: stim.CircuitInstruction,
     ) -> bool:
-        """Determines if two `stim.CircuitInstruction`s are identical.
-        """
+        """Determines if two `stim.CircuitInstruction`s are identical."""
+
     def __init__(
         self,
         name: str,
@@ -3333,22 +3426,23 @@ class CircuitInstruction:
             >>> print(stim.CircuitInstruction('I', [2], tag='100ns'))
             I[100ns] 2
         """
+
     def __ne__(
         self,
         arg0: stim.CircuitInstruction,
     ) -> bool:
-        """Determines if two `stim.CircuitInstruction`s are different.
-        """
+        """Determines if two `stim.CircuitInstruction`s are different."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns a text description of the instruction as a stim circuit file line.
-        """
+        """Returns a text description of the instruction as a stim circuit file line."""
+
     def gate_args_copy(
         self,
     ) -> List[float]:
@@ -3369,12 +3463,13 @@ class CircuitInstruction:
             >>> instruction.gate_args_copy() is instruction.gate_args_copy()
             False
         """
+
     @property
     def name(
         self,
     ) -> str:
-        """The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
-        """
+        """The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`)."""
+
     @property
     def num_measurements(
         self,
@@ -3396,6 +3491,7 @@ class CircuitInstruction:
             >>> stim.CircuitInstruction('HERALDED_ERASE', [0], [0.25]).num_measurements
             1
         """
+
     @property
     def tag(
         self,
@@ -3412,6 +3508,7 @@ class CircuitInstruction:
             >>> stim.Circuit("H 0")[0].tag
             ''
         """
+
     def target_groups(
         self,
     ) -> List[List[stim.GateTarget]]:
@@ -3451,6 +3548,7 @@ class CircuitInstruction:
             ...     print(repr(g))
             [stim.target_x(0), stim.target_y(1)]
         """
+
     def targets_copy(
         self,
     ) -> List[stim.GateTarget]:
@@ -3467,6 +3565,7 @@ class CircuitInstruction:
             >>> instruction.targets_copy() is instruction.targets_copy()
             False
         """
+
 class CircuitRepeatBlock:
     """A REPEAT block from a circuit.
 
@@ -3488,18 +3587,19 @@ class CircuitRepeatBlock:
             CZ 1 2
         ''')
     """
+
     def __eq__(
         self,
         arg0: stim.CircuitRepeatBlock,
     ) -> bool:
-        """Determines if two `stim.CircuitRepeatBlock`s are identical.
-        """
+        """Determines if two `stim.CircuitRepeatBlock`s are identical."""
+
     def __init__(
         self,
         repeat_count: int,
         body: stim.Circuit,
         *,
-        tag: str = '',
+        tag: str = "",
     ) -> None:
         """Initializes a `stim.CircuitRepeatBlock`.
 
@@ -3519,17 +3619,18 @@ class CircuitRepeatBlock:
                 }
             ''')
         """
+
     def __ne__(
         self,
         arg0: stim.CircuitRepeatBlock,
     ) -> bool:
-        """Determines if two `stim.CircuitRepeatBlock`s are different.
-        """
+        """Determines if two `stim.CircuitRepeatBlock`s are different."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.CircuitRepeatBlock`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.CircuitRepeatBlock`."""
+
     def body_copy(
         self,
     ) -> stim.Circuit:
@@ -3554,6 +3655,7 @@ class CircuitRepeatBlock:
                 CZ 1 2
             ''')
         """
+
     @property
     def name(
         self,
@@ -3576,6 +3678,7 @@ class CircuitRepeatBlock:
             >>> [instruction.name for instruction in circuit]
             ['H', 'REPEAT', 'S']
         """
+
     @property
     def num_measurements(
         self,
@@ -3590,6 +3693,7 @@ class CircuitRepeatBlock:
             ... ).num_measurements
             50
         """
+
     @property
     def repeat_count(
         self,
@@ -3609,6 +3713,7 @@ class CircuitRepeatBlock:
             >>> repeat_block.repeat_count
             5
         """
+
     @property
     def tag(
         self,
@@ -3635,14 +3740,15 @@ class CircuitRepeatBlock:
             ... ''')[0].tag
             ''
         """
+
 class CircuitTargetsInsideInstruction:
-    """Describes a range of targets within a circuit instruction.
-    """
+    """Describes a range of targets within a circuit instruction."""
+
     def __init__(
         self,
         *,
         gate: str,
-        tag: str = '',
+        tag: str = "",
         args: List[float],
         target_range_start: int,
         target_range_end: int,
@@ -3661,6 +3767,7 @@ class CircuitTargetsInsideInstruction:
             ...     targets_in_range=[stim.GateTargetWithCoords(0, [])],
             ... )
         """
+
     @property
     def args(
         self,
@@ -3680,6 +3787,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.args
             [0.25]
         """
+
     @property
     def gate(
         self,
@@ -3699,6 +3807,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.gate
             'X_ERROR'
         """
+
     @property
     def tag(
         self,
@@ -3718,6 +3827,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.tag
             'look-at-me-imma-tag'
         """
+
     @property
     def target_range_end(
         self,
@@ -3740,6 +3850,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.target_range_end
             1
         """
+
     @property
     def target_range_start(
         self,
@@ -3762,6 +3873,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.target_range_end
             1
         """
+
     @property
     def targets_in_range(
         self,
@@ -3783,6 +3895,7 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.targets_in_range
             [stim.GateTargetWithCoords(0, [])]
         """
+
 class CompiledDemSampler:
     """A helper class for efficiently sampler from a detector error model.
 
@@ -3812,6 +3925,7 @@ class CompiledDemSampler:
                [False,  True],
                [False,  True]])
     """
+
     def sample(
         self,
         shots: int,
@@ -3962,6 +4076,7 @@ class CompiledDemSampler:
             >>> np.array_equal(obs_data, replay_obs_data)
             True
         """
+
     def sample_write(
         self,
         shots: int,
@@ -4040,9 +4155,10 @@ class CompiledDemSampler:
             ...     with open(d / 'err.hits') as f:
             ...         assert f.read() == "3\n"
         """
+
 class CompiledDetectorSampler:
-    """An analyzed stabilizer circuit whose detection events can be sampled quickly.
-    """
+    """An analyzed stabilizer circuit whose detection events can be sampled quickly."""
+
     def __init__(
         self,
         circuit: stim.Circuit,
@@ -4094,11 +4210,12 @@ class CompiledDetectorSampler:
             >>> s.sample(shots=1)
             array([[ True]])
         """
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.CompiledDetectorSampler`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.CompiledDetectorSampler`."""
+
     def sample(
         self,
         shots: int,
@@ -4194,6 +4311,7 @@ class CompiledDetectorSampler:
             >>> s.sample(shots=1)
             array([[ True]])
         """
+
     def sample_bit_packed(
         self,
         shots: int,
@@ -4222,14 +4340,15 @@ class CompiledDetectorSampler:
             The bit for detection event `m` in shot `s` is at
             `result[s, (m // 8)] & 2**(m % 8)`.
         """
+
     def sample_write(
         self,
         shots: int,
         *,
         filepath: Union[str, pathlib.Path],
-        format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = "01",
         obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
-        obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = "01",
         prepend_observables: bool = False,
         append_observables: bool = False,
     ) -> None:
@@ -4278,9 +4397,10 @@ class CompiledDetectorSampler:
             shot D0
             shot D0
         """
+
 class CompiledMeasurementSampler:
-    """An analyzed stabilizer circuit whose measurements can be sampled quickly.
-    """
+    """An analyzed stabilizer circuit whose measurements can be sampled quickly."""
+
     def __init__(
         self,
         circuit: stim.Circuit,
@@ -4359,11 +4479,12 @@ class CompiledMeasurementSampler:
             >>> s.sample(shots=1)
             array([[ True, False,  True,  True]])
         """
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`."""
+
     def sample(
         self,
         shots: int,
@@ -4401,6 +4522,7 @@ class CompiledMeasurementSampler:
             >>> s.sample(shots=1)
             array([[ True, False,  True,  True]])
         """
+
     def sample_bit_packed(
         self,
         shots: int,
@@ -4429,12 +4551,13 @@ class CompiledMeasurementSampler:
             >>> s.sample_bit_packed(shots=1)
             array([[255,   4]], dtype=uint8)
         """
+
     def sample_write(
         self,
         shots: int,
         *,
         filepath: str,
-        format: str = '01',
+        format: str = "01",
     ) -> None:
         """Samples measurements from the circuit and writes them to a file.
 
@@ -4466,9 +4589,10 @@ class CompiledMeasurementSampler:
         Returns:
             None.
         """
+
 class CompiledMeasurementsToDetectionEventsConverter:
-    """A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events.
-    """
+    """A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events."""
+
     def __init__(
         self,
         circuit: stim.Circuit,
@@ -4512,11 +4636,12 @@ class CompiledMeasurementsToDetectionEventsConverter:
             array([[ True],
                    [False]])
         """
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`."""
+
     @overload
     def convert(
         self,
@@ -4527,17 +4652,19 @@ class CompiledMeasurementsToDetectionEventsConverter:
         bit_packed: bool = False,
     ) -> np.ndarray:
         pass
+
     @overload
     def convert(
         self,
         *,
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
-        separate_observables: 'Literal[True]',
+        separate_observables: "Literal[True]",
         append_observables: bool = False,
         bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
+
     def convert(
         self,
         *,
@@ -4622,18 +4749,19 @@ class CompiledMeasurementsToDetectionEventsConverter:
                    [ True],
                    [False]])
         """
+
     def convert_file(
         self,
         *,
         measurements_filepath: str,
-        measurements_format: str = '01',
+        measurements_format: str = "01",
         sweep_bits_filepath: str = None,
-        sweep_bits_format: str = '01',
+        sweep_bits_format: str = "01",
         detection_events_filepath: str,
-        detection_events_format: str = '01',
+        detection_events_format: str = "01",
         append_observables: bool = False,
         obs_out_filepath: str = None,
-        obs_out_format: str = '01',
+        obs_out_format: str = "01",
     ) -> None:
         """Reads measurement data from a file and writes detection events to another file.
 
@@ -4688,6 +4816,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             1
             0
         """
+
 class DemInstruction:
     """An instruction from a detector error model.
 
@@ -4704,12 +4833,13 @@ class DemInstruction:
         >>> instruction
         stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(0)])
     """
+
     def __eq__(
         self,
         arg0: stim.DemInstruction,
     ) -> bool:
-        """Determines if two instructions have identical contents.
-        """
+        """Determines if two instructions have identical contents."""
+
     def __init__(
         self,
         type: str,
@@ -4744,22 +4874,23 @@ class DemInstruction:
             >>> print(stim.DemInstruction('error(0.125) D5 L6 ^ D4  # comment'))
             error(0.125) D5 L6 ^ D4
         """
+
     def __ne__(
         self,
         arg0: stim.DemInstruction,
     ) -> bool:
-        """Determines if two instructions have non-identical contents.
-        """
+        """Determines if two instructions have non-identical contents."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.
-        """
+        """Returns detector error model (.dem) instructions (that can be parsed by stim) for the model."""
+
     def args_copy(
         self,
     ) -> List[float]:
@@ -4782,6 +4913,7 @@ class DemInstruction:
             >>> instruction.args_copy() is instruction.args_copy()
             False
         """
+
     @property
     def tag(
         self,
@@ -4799,6 +4931,7 @@ class DemInstruction:
             >>> dem[1].tag
             ''
         """
+
     def target_groups(
         self,
     ) -> List[List[stim.DemTarget]]:
@@ -4828,6 +4961,7 @@ class DemInstruction:
             >>> dem[2].target_groups()
             [[]]
         """
+
     def targets_copy(
         self,
     ) -> List[Union[int, stim.DemTarget]]:
@@ -4849,12 +4983,13 @@ class DemInstruction:
             >>> instruction.targets_copy() is instruction.targets_copy()
             False
         """
+
     @property
     def type(
         self,
     ) -> str:
-        """The name of the instruction type (e.g. "error" or "shift_detectors").
-        """
+        """The name of the instruction type (e.g. "error" or "shift_detectors")."""
+
 class DemRepeatBlock:
     """A repeat block from a detector error model.
 
@@ -4872,12 +5007,13 @@ class DemRepeatBlock:
             shift_detectors 1
         '''))
     """
+
     def __eq__(
         self,
         arg0: stim.DemRepeatBlock,
     ) -> bool:
-        """Determines if two repeat blocks are identical.
-        """
+        """Determines if two repeat blocks are identical."""
+
     def __init__(
         self,
         repeat_count: int,
@@ -4898,17 +5034,18 @@ class DemRepeatBlock:
             ...     shift_detectors 1
             ... '''))
         """
+
     def __ne__(
         self,
         arg0: stim.DemRepeatBlock,
     ) -> bool:
-        """Determines if two repeat blocks are different.
-        """
+        """Determines if two repeat blocks are different."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.DemRepeatBlock`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.DemRepeatBlock`."""
+
     def body_copy(
         self,
     ) -> stim.DetectorErrorModel:
@@ -4926,12 +5063,13 @@ class DemRepeatBlock:
             >>> repeat_block.body_copy() is repeat_block.body_copy()
             False
         """
+
     @property
     def repeat_count(
         self,
     ) -> int:
-        """The number of times the repeat block's body is supposed to execute.
-        """
+        """The number of times the repeat block's body is supposed to execute."""
+
     @property
     def type(
         self,
@@ -4955,15 +5093,16 @@ class DemRepeatBlock:
             >>> [instruction.type for instruction in dem]
             ['error', 'repeat', 'logical_observable']
         """
+
 class DemTarget:
-    """An instruction target from a detector error model (.dem) file.
-    """
+    """An instruction target from a detector error model (.dem) file."""
+
     def __eq__(
         self,
         arg0: stim.DemTarget,
     ) -> bool:
-        """Determines if two `stim.DemTarget`s are identical.
-        """
+        """Determines if two `stim.DemTarget`s are identical."""
+
     def __init__(
         self,
         arg: object,
@@ -4984,22 +5123,23 @@ class DemTarget:
             >>> stim.DemTarget("^") == stim.target_separator()
             True
         """
+
     def __ne__(
         self,
         arg0: stim.DemTarget,
     ) -> bool:
-        """Determines if two `stim.DemTarget`s are different.
-        """
+        """Determines if two `stim.DemTarget`s are different."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.DemTarget`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.DemTarget`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns a text description of the detector error model target.
-        """
+        """Returns a text description of the detector error model target."""
+
     def is_logical_observable_id(
         self,
     ) -> bool:
@@ -5017,6 +5157,7 @@ class DemTarget:
             >>> stim.DemTarget("^").is_logical_observable_id()
             False
         """
+
     def is_relative_detector_id(
         self,
     ) -> bool:
@@ -5034,6 +5175,7 @@ class DemTarget:
             >>> stim.DemTarget("^").is_relative_detector_id()
             False
         """
+
     def is_separator(
         self,
     ) -> bool:
@@ -5051,6 +5193,7 @@ class DemTarget:
             >>> stim.DemTarget("^").is_separator()
             True
         """
+
     @staticmethod
     def logical_observable_id(
         index: int,
@@ -5074,6 +5217,7 @@ class DemTarget:
                 error(0.25) L13
             ''')
         """
+
     @staticmethod
     def relative_detector_id(
         index: int,
@@ -5097,9 +5241,9 @@ class DemTarget:
                 error(0.25) D13
             ''')
         """
+
     @staticmethod
-    def separator(
-    ) -> stim.DemTarget:
+    def separator() -> stim.DemTarget:
         """Returns a target separator (e.g. "^" in a .dem file).
 
         Examples:
@@ -5115,6 +5259,7 @@ class DemTarget:
                 error(0.25) D1 ^ D2
             ''')
         """
+
     @property
     def val(
         self,
@@ -5128,6 +5273,7 @@ class DemTarget:
             >>> stim.DemTarget("L6").val
             6
         """
+
 class DemTargetWithCoords:
     """A detector error model instruction target with associated coords.
 
@@ -5152,6 +5298,7 @@ class DemTargetWithCoords:
         >>> t.coords
         [1.5, 2.0]
     """
+
     def __init__(
         self,
         dem_target: stim.DemTarget,
@@ -5171,6 +5318,7 @@ class DemTargetWithCoords:
             >>> err[0].dem_error_terms[0]
             stim.DemTargetWithCoords(dem_target=stim.DemTarget('D0'), coords=[2, 3])
         """
+
     @property
     def coords(
         self,
@@ -5191,6 +5339,7 @@ class DemTargetWithCoords:
             >>> err[0].dem_error_terms[0].coords
             [2.0, 3.0]
         """
+
     @property
     def dem_target(
         self,
@@ -5209,6 +5358,7 @@ class DemTargetWithCoords:
             >>> err[0].dem_error_terms[0].dem_target
             stim.DemTarget('D0')
         """
+
 class DetectorErrorModel:
     """An error model built out of independent error mechanics.
 
@@ -5270,6 +5420,7 @@ class DetectorErrorModel:
             error(0.25) D1
         ''')
     """
+
     def __add__(
         self,
         second: stim.DetectorErrorModel,
@@ -5290,24 +5441,27 @@ class DetectorErrorModel:
                 error(0.25) D1
             ''')
         """
+
     def __eq__(
         self,
         arg0: stim.DetectorErrorModel,
     ) -> bool:
-        """Determines if two detector error models have identical contents.
-        """
+        """Determines if two detector error models have identical contents."""
+
     @overload
     def __getitem__(
         self,
         index_or_slice: int,
     ) -> Union[stim.DemInstruction, stim.DemRepeatBlock]:
         pass
+
     @overload
     def __getitem__(
         self,
         index_or_slice: slice,
     ) -> stim.DetectorErrorModel:
         pass
+
     def __getitem__(
         self,
         index_or_slice: object,
@@ -5346,6 +5500,7 @@ class DetectorErrorModel:
                 detector D5
             ''')
         """
+
     def __iadd__(
         self,
         second: stim.DetectorErrorModel,
@@ -5367,6 +5522,7 @@ class DetectorErrorModel:
                 error(0.25) D1
             ''')
         """
+
     def __imul__(
         self,
         repetitions: int,
@@ -5392,9 +5548,10 @@ class DetectorErrorModel:
                 shift_detectors 1
             }
         """
+
     def __init__(
         self,
-        detector_error_model_text: str = '',
+        detector_error_model_text: str = "",
     ) -> None:
         """Creates a stim.DetectorErrorModel.
 
@@ -5409,6 +5566,7 @@ class DetectorErrorModel:
             ...    error(0.125) D0 L0
             ... ''')
         """
+
     def __len__(
         self,
     ) -> int:
@@ -5434,6 +5592,7 @@ class DetectorErrorModel:
             ... '''))
             1
         """
+
     def __mul__(
         self,
         repetitions: int,
@@ -5465,17 +5624,18 @@ class DetectorErrorModel:
                 }
             ''')
         """
+
     def __ne__(
         self,
         arg0: stim.DetectorErrorModel,
     ) -> bool:
-        """Determines if two detector error models have non-identical contents.
-        """
+        """Determines if two detector error models have non-identical contents."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.DetectorErrorModel`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.DetectorErrorModel`."""
+
     def __rmul__(
         self,
         repetitions: int,
@@ -5507,18 +5667,19 @@ class DetectorErrorModel:
                 }
             ''')
         """
+
     def __str__(
         self,
     ) -> str:
-        """Returns the contents of a detector error model file (.dem) encoding the model.
-        """
+        """Returns the contents of a detector error model file (.dem) encoding the model."""
+
     def append(
         self,
         instruction: object,
         parens_arguments: object = None,
         targets: List[object] = (),
         *,
-        tag: str = '',
+        tag: str = "",
     ) -> None:
         """Appends an instruction to the detector error model.
 
@@ -5580,6 +5741,7 @@ class DetectorErrorModel:
                 }
             ''')
         """
+
     def approx_equals(
         self,
         other: object,
@@ -5632,6 +5794,7 @@ class DetectorErrorModel:
             ... '''), atol=9999)
             False
         """
+
     def clear(
         self,
     ) -> None:
@@ -5646,6 +5809,7 @@ class DetectorErrorModel:
             >>> model
             stim.DetectorErrorModel()
         """
+
     def compile_sampler(
         self,
         *,
@@ -5708,6 +5872,7 @@ class DetectorErrorModel:
                    [False,  True],
                    [False,  True]])
         """
+
     def copy(
         self,
     ) -> stim.DetectorErrorModel:
@@ -5725,6 +5890,7 @@ class DetectorErrorModel:
             >>> c2 == c1
             True
         """
+
     def diagram(
         self,
         type: str,
@@ -5779,6 +5945,7 @@ class DetectorErrorModel:
             ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
             ...         print(diagram, file=f)
         """
+
     def flattened(
         self,
     ) -> stim.DetectorErrorModel:
@@ -5809,6 +5976,7 @@ class DetectorErrorModel:
                 error(0.125) D5 L0
             ''')
         """
+
     @staticmethod
     def from_file(
         file: Union[io.TextIOBase, str, pathlib.Path],
@@ -5849,6 +6017,7 @@ class DetectorErrorModel:
                 error(0.25) D2 D3
             ''')
         """
+
     def get_detector_coordinates(
         self,
         only: object = None,
@@ -5878,6 +6047,7 @@ class DetectorErrorModel:
             >>> dem.get_detector_coordinates(only=[1])
             {1: [1.0, 2.0, 3.0]}
         """
+
     @property
     def num_detectors(
         self,
@@ -5912,6 +6082,7 @@ class DetectorErrorModel:
             ... ''').num_detectors
             1200
         """
+
     @property
     def num_errors(
         self,
@@ -5934,6 +6105,7 @@ class DetectorErrorModel:
             ... ''').num_errors
             501
         """
+
     @property
     def num_observables(
         self,
@@ -5959,6 +6131,7 @@ class DetectorErrorModel:
             ... ''').num_observables
             400
         """
+
     def rounded(
         self,
         arg0: int,
@@ -5995,6 +6168,7 @@ class DetectorErrorModel:
                 error(0) D0 D1
             ''')
         """
+
     def shortest_graphlike_error(
         self,
         ignore_ungraphlike_errors: bool = True,
@@ -6084,6 +6258,7 @@ class DetectorErrorModel:
             >>> len(model.shortest_graphlike_error())
             7
         """
+
     def to_file(
         self,
         file: Union[io.TextIOBase, str, pathlib.Path],
@@ -6118,6 +6293,7 @@ class DetectorErrorModel:
             >>> contents
             'error(0.25) D2 D3\n'
         """
+
     def without_tags(
         self,
     ) -> stim.DetectorErrorModel:
@@ -6136,6 +6312,7 @@ class DetectorErrorModel:
                 error(0.25) D0
             ''')
         """
+
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
 
@@ -6161,6 +6338,7 @@ class ExplainedError:
             }
         }
     """
+
     def __init__(
         self,
         *,
@@ -6191,6 +6369,7 @@ class ExplainedError:
                 }
             }
         """
+
     @property
     def circuit_error_locations(
         self,
@@ -6224,12 +6403,13 @@ class ExplainedError:
                     resolving to Y_ERROR(0.125) 0
             }
         """
+
     @property
     def dem_error_terms(
         self,
     ) -> List[stim.DemTargetWithCoords]:
-        """The detectors and observables flipped by this error mechanism.
-        """
+        """The detectors and observables flipped by this error mechanism."""
+
 class FlipSimulator:
     """A simulator that tracks whether things are flipped, instead of what they are.
 
@@ -6243,6 +6423,7 @@ class FlipSimulator:
         >>> import stim
         >>> sim = stim.FlipSimulator(batch_size=256)
     """
+
     def __init__(
         self,
         *,
@@ -6333,6 +6514,7 @@ class FlipSimulator:
             >>> import stim
             >>> sim = stim.FlipSimulator(batch_size=256)
         """
+
     @property
     def batch_size(
         self,
@@ -6348,6 +6530,7 @@ class FlipSimulator:
             >>> sim.batch_size
             42
         """
+
     def broadcast_pauli_errors(
         self,
         *,
@@ -6400,6 +6583,7 @@ class FlipSimulator:
             >>> sim.peek_pauli_flips()
             [stim.PauliString("+X_Y"), stim.PauliString("+Z_Y")]
         """
+
     def clear(
         self,
     ) -> None:
@@ -6429,6 +6613,7 @@ class FlipSimulator:
             >>> sim.get_measurement_flips().shape
             (0, 256)
         """
+
     def copy(
         self,
         *,
@@ -6499,6 +6684,7 @@ class FlipSimulator:
             >>> np.array_equal(s1.get_measurement_flips(), s2.get_measurement_flips())
             True
         """
+
     def do(
         self,
         obj: Union[stim.Circuit, stim.CircuitInstruction, stim.CircuitRepeatBlock],
@@ -6536,6 +6722,7 @@ class FlipSimulator:
             >>> sim.peek_pauli_flips()
             [stim.PauliString("+YX__")]
         """
+
     def generate_bernoulli_samples(
         self,
         num_samples: int,
@@ -6599,6 +6786,7 @@ class FlipSimulator:
             >>> r is r2  # Check request to reuse r worked.
             True
         """
+
     def get_detector_flips(
         self,
         *,
@@ -6667,6 +6855,7 @@ class FlipSimulator:
             >>> sim.get_detector_flips(instance_index=2, detector_index=1)
             array(False)
         """
+
     def get_measurement_flips(
         self,
         *,
@@ -6736,6 +6925,7 @@ class FlipSimulator:
             >>> sim.get_measurement_flips(instance_index=1, record_index=2)
             array(False)
         """
+
     def get_observable_flips(
         self,
         *,
@@ -6804,6 +6994,7 @@ class FlipSimulator:
             >>> sim.get_observable_flips(instance_index=2, observable_index=1)
             array(False)
         """
+
     @property
     def num_detectors(
         self,
@@ -6822,6 +7013,7 @@ class FlipSimulator:
             >>> sim.num_detectors
             1
         """
+
     @property
     def num_measurements(
         self,
@@ -6837,6 +7029,7 @@ class FlipSimulator:
             >>> sim.num_measurements
             2
         """
+
     @property
     def num_observables(
         self,
@@ -6855,6 +7048,7 @@ class FlipSimulator:
             >>> sim.num_observables
             5
         """
+
     @property
     def num_qubits(
         self,
@@ -6873,11 +7067,13 @@ class FlipSimulator:
             >>> sim.num_qubits
             6
         """
+
     @overload
     def peek_pauli_flips(
         self,
     ) -> List[stim.PauliString]:
         pass
+
     @overload
     def peek_pauli_flips(
         self,
@@ -6885,6 +7081,7 @@ class FlipSimulator:
         instance_index: int,
     ) -> stim.PauliString:
         pass
+
     def peek_pauli_flips(
         self,
         *,
@@ -6935,6 +7132,7 @@ class FlipSimulator:
             >>> sorted(set(str(flips)))  # Should have Zs from stabilizer randomization
             ['+', 'Z', '_']
         """
+
     def set_pauli_flip(
         self,
         pauli: Union[str, int],
@@ -6964,6 +7162,7 @@ class FlipSimulator:
             >>> sim.peek_pauli_flips()
             [stim.PauliString("+___"), stim.PauliString("+__X")]
         """
+
     def to_numpy(
         self,
         *,
@@ -7116,6 +7315,7 @@ class FlipSimulator:
             >>> ds
             >>> os
         """
+
 class FlippedMeasurement:
     """Describes a measurement that was flipped.
 
@@ -7134,6 +7334,7 @@ class FlippedMeasurement:
             observable=(stim.GateTargetWithCoords(stim.target_z(10), []),),
         )
     """
+
     def __init__(
         self,
         measurement_record_index: Optional[int],
@@ -7152,6 +7353,7 @@ class FlippedMeasurement:
                 observable=(),
             )
         """
+
     @property
     def observable(
         self,
@@ -7169,6 +7371,7 @@ class FlippedMeasurement:
             >>> err[0].circuit_error_locations[0].flipped_measurement.observable
             [stim.GateTargetWithCoords(stim.target_z(10), [])]
         """
+
     @property
     def record_index(
         self,
@@ -7186,6 +7389,7 @@ class FlippedMeasurement:
             >>> err[0].circuit_error_locations[0].flipped_measurement.record_index
             1
         """
+
 class Flow:
     """A stabilizer flow (e.g. "XI -> XX xor rec[-1]").
 
@@ -7226,12 +7430,13 @@ class Flow:
         >>> c.has_flow(stim.Flow("Z4 -> Z4"))
         False
     """
+
     def __eq__(
         self,
         arg0: stim.Flow,
     ) -> bool:
-        """Determines if two flows have identical contents.
-        """
+        """Determines if two flows have identical contents."""
+
     def __init__(
         self,
         arg: Union[None, str, stim.Flow] = None,
@@ -7278,22 +7483,23 @@ class Flow:
             ... )
             stim.Flow("XX -> _X")
         """
+
     def __ne__(
         self,
         arg0: stim.Flow,
     ) -> bool:
-        """Determines if two flows have non-identical contents.
-        """
+        """Determines if two flows have non-identical contents."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.Flow`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.Flow`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns a shorthand description of the flow.
-        """
+        """Returns a shorthand description of the flow."""
+
     def input_copy(
         self,
     ) -> stim.PauliString:
@@ -7308,6 +7514,7 @@ class Flow:
             >>> f.input_copy() is f.input_copy()
             False
         """
+
     def measurements_copy(
         self,
     ) -> List[int]:
@@ -7322,6 +7529,7 @@ class Flow:
             >>> f.measurements_copy() is f.measurements_copy()
             False
         """
+
     def output_copy(
         self,
     ) -> stim.PauliString:
@@ -7336,6 +7544,7 @@ class Flow:
             >>> f.output_copy() is f.output_copy()
             False
         """
+
 class GateData:
     """Details about a gate supported by stim.
 
@@ -7355,12 +7564,13 @@ class GateData:
             ],
         )
     """
+
     def __eq__(
         self,
         arg0: stim.GateData,
     ) -> bool:
-        """Determines if two GateData instances are identical.
-        """
+        """Determines if two GateData instances are identical."""
+
     def __init__(
         self,
         name: str,
@@ -7372,22 +7582,23 @@ class GateData:
             >>> stim.GateData('H').is_unitary
             True
         """
+
     def __ne__(
         self,
         arg0: stim.GateData,
     ) -> bool:
-        """Determines if two GateData instances are not identical.
-        """
+        """Determines if two GateData instances are not identical."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateData`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns text describing the gate data.
-        """
+        """Returns text describing the gate data."""
+
     @property
     def aliases(
         self,
@@ -7404,6 +7615,7 @@ class GateData:
             >>> stim.gate_data('cnot').aliases
             ['CNOT', 'CX', 'ZCX']
         """
+
     @property
     def flows(
         self,
@@ -7441,6 +7653,7 @@ class GateData:
             ZZ -> ZZ
             XX -> rec[-1]
         """
+
     @property
     def generalized_inverse(
         self,
@@ -7486,6 +7699,7 @@ class GateData:
             >>> stim.gate_data('TICK').generalized_inverse
             stim.gate_data('TICK')
         """
+
     def hadamard_conjugated(
         self,
         *,
@@ -7540,6 +7754,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').hadamard_conjugated(unsigned=True)
             stim.gate_data('DETECTOR')
         """
+
     @property
     def inverse(
         self,
@@ -7580,6 +7795,7 @@ class GateData:
             >>> stim.gate_data('TICK').inverse is None
             True
         """
+
     @property
     def is_noisy_gate(
         self,
@@ -7613,6 +7829,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').is_noisy_gate
             False
         """
+
     @property
     def is_reset(
         self,
@@ -7650,6 +7867,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').is_reset
             False
         """
+
     @property
     def is_single_qubit_gate(
         self,
@@ -7688,6 +7906,7 @@ class GateData:
             >>> stim.gate_data('REPEAT').is_single_qubit_gate
             False
         """
+
     @property
     def is_symmetric_gate(
         self,
@@ -7737,6 +7956,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').is_symmetric_gate
             False
         """
+
     @property
     def is_two_qubit_gate(
         self,
@@ -7775,6 +7995,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').is_two_qubit_gate
             False
         """
+
     @property
     def is_unitary(
         self,
@@ -7804,6 +8025,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').is_unitary
             False
         """
+
     @property
     def name(
         self,
@@ -7817,6 +8039,7 @@ class GateData:
             >>> stim.gate_data('cnot').name
             'CX'
         """
+
     @property
     def num_parens_arguments_range(
         self,
@@ -7845,6 +8068,7 @@ class GateData:
             >>> list(stim.gate_data('OBSERVABLE_INCLUDE').num_parens_arguments_range)
             [1]
         """
+
     @property
     def produces_measurements(
         self,
@@ -7878,6 +8102,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').produces_measurements
             False
         """
+
     @property
     def tableau(
         self,
@@ -7909,6 +8134,7 @@ class GateData:
                 ],
             )
         """
+
     @property
     def takes_measurement_record_targets(
         self,
@@ -7945,6 +8171,7 @@ class GateData:
             >>> stim.gate_data('MPP').takes_measurement_record_targets
             False
         """
+
     @property
     def takes_pauli_targets(
         self,
@@ -7979,6 +8206,7 @@ class GateData:
             >>> stim.gate_data('DETECTOR').takes_pauli_targets
             False
         """
+
     @property
     def unitary_matrix(
         self,
@@ -8001,6 +8229,7 @@ class GateData:
                    [0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
                    [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j]], dtype=complex64)
         """
+
 class GateTarget:
     """Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 
@@ -8014,12 +8243,13 @@ class GateTarget:
         >>> circuit[0].targets_copy()[1]
         stim.target_inv(1)
     """
+
     def __eq__(
         self,
         arg0: stim.GateTarget,
     ) -> bool:
-        """Determines if two `stim.GateTarget`s are identical.
-        """
+        """Determines if two `stim.GateTarget`s are identical."""
+
     def __init__(
         self,
         value: object,
@@ -8043,17 +8273,18 @@ class GateTarget:
             >>> stim.GateTarget("*")
             stim.GateTarget.combiner()
         """
+
     def __ne__(
         self,
         arg0: stim.GateTarget,
     ) -> bool:
-        """Determines if two `stim.GateTarget`s are different.
-        """
+        """Determines if two `stim.GateTarget`s are different."""
+
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`.
-        """
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`."""
+
     @property
     def is_combiner(
         self,
@@ -8079,6 +8310,7 @@ class GateTarget:
             >>> stim.target_combiner().is_combiner
             True
         """
+
     @property
     def is_inverted_result_target(
         self,
@@ -8104,6 +8336,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_inverted_result_target
             False
         """
+
     @property
     def is_measurement_record_target(
         self,
@@ -8127,6 +8360,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_measurement_record_target
             True
         """
+
     @property
     def is_qubit_target(
         self,
@@ -8150,6 +8384,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_qubit_target
             False
         """
+
     @property
     def is_sweep_bit_target(
         self,
@@ -8173,6 +8408,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_sweep_bit_target
             False
         """
+
     @property
     def is_x_target(
         self,
@@ -8196,6 +8432,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_x_target
             False
         """
+
     @property
     def is_y_target(
         self,
@@ -8219,6 +8456,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_y_target
             False
         """
+
     @property
     def is_z_target(
         self,
@@ -8242,6 +8480,7 @@ class GateTarget:
             >>> stim.target_rec(-5).is_z_target
             False
         """
+
     @property
     def pauli_type(
         self,
@@ -8267,6 +8506,7 @@ class GateTarget:
             >>> stim.target_rec(-5).pauli_type
             'I'
         """
+
     @property
     def qubit_value(
         self,
@@ -8290,6 +8530,7 @@ class GateTarget:
             >>> print(stim.target_rec(-5).qubit_value)
             None
         """
+
     @property
     def value(
         self,
@@ -8316,6 +8557,7 @@ class GateTarget:
             >>> stim.target_rec(-5).value
             -5
         """
+
 class GateTargetWithCoords:
     """A gate target with associated coordinate information.
 
@@ -8336,6 +8578,7 @@ class GateTargetWithCoords:
         >>> t.coords
         [1.5, 2.0]
     """
+
     def __init__(
         self,
         gate_target: object,
@@ -8351,6 +8594,7 @@ class GateTargetWithCoords:
             >>> t.coords
             [1.5, 2.0]
         """
+
     @property
     def coords(
         self,
@@ -8365,6 +8609,7 @@ class GateTargetWithCoords:
             >>> t.coords
             [1.5, 2.0]
         """
+
     @property
     def gate_target(
         self,
@@ -8377,6 +8622,7 @@ class GateTargetWithCoords:
             >>> t.gate_target
             stim.GateTarget(0)
         """
+
 class PauliString:
     """A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
@@ -8390,6 +8636,7 @@ class PauliString:
         >>> print(stim.PauliString(5))
         +_____
     """
+
     def __add__(
         self,
         rhs: stim.PauliString,
@@ -8413,24 +8660,27 @@ class PauliString:
         Returns:
             The tensor product.
         """
+
     def __eq__(
         self,
         arg0: stim.PauliString,
     ) -> bool:
-        """Determines if two Pauli strings have identical contents.
-        """
+        """Determines if two Pauli strings have identical contents."""
+
     @overload
     def __getitem__(
         self,
         index_or_slice: int,
     ) -> int:
         pass
+
     @overload
     def __getitem__(
         self,
         index_or_slice: slice,
     ) -> stim.PauliString:
         pass
+
     def __getitem__(
         self,
         index_or_slice: object,
@@ -8462,6 +8712,7 @@ class PauliString:
             2: Pauli Y.
             3: Pauli Z.
         """
+
     def __iadd__(
         self,
         rhs: stim.PauliString,
@@ -8488,6 +8739,7 @@ class PauliString:
         Returns:
             The mutated pauli string.
         """
+
     def __imul__(
         self,
         rhs: object,
@@ -8532,9 +8784,16 @@ class PauliString:
         Returns:
             The mutated Pauli string.
         """
+
     def __init__(
         self,
-        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+        arg: Union[
+            None,
+            int,
+            str,
+            stim.PauliString,
+            Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']],
+        ] = None,
         /,
     ) -> None:
         """Initializes a stim.PauliString from the given argument.
@@ -8584,6 +8843,7 @@ class PauliString:
             >>> stim.PauliString("X6*Y6")
             stim.PauliString("+i______Z")
         """
+
     def __itruediv__(
         self,
         rhs: complex,
@@ -8607,6 +8867,7 @@ class PauliString:
         Raises:
             ValueError: The divisor isn't 1, -1, 1j, or -1j.
         """
+
     def __len__(
         self,
     ) -> int:
@@ -8619,6 +8880,7 @@ class PauliString:
             >>> len(stim.PauliString("X0*Z99"))
             100
         """
+
     def __mul__(
         self,
         rhs: object,
@@ -8671,12 +8933,13 @@ class PauliString:
             TypeError: The right hand side isn't a stim.PauliString, a non-negative
                 integer, or a complex unit (1, -1, 1j, or -1j).
         """
+
     def __ne__(
         self,
         arg0: stim.PauliString,
     ) -> bool:
-        """Determines if two Pauli strings have non-identical contents.
-        """
+        """Determines if two Pauli strings have non-identical contents."""
+
     def __neg__(
         self,
     ) -> stim.PauliString:
@@ -8691,6 +8954,7 @@ class PauliString:
             >>> -stim.PauliString("iZZZ")
             stim.PauliString("-iZZZ")
         """
+
     def __pos__(
         self,
     ) -> stim.PauliString:
@@ -8705,11 +8969,12 @@ class PauliString:
             >>> +stim.PauliString("iZZZ")
             stim.PauliString("+iZZZ")
         """
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equivalent `stim.PauliString`.
-        """
+        """Returns valid python code evaluating to an equivalent `stim.PauliString`."""
+
     def __rmul__(
         self,
         lhs: object,
@@ -8761,6 +9026,7 @@ class PauliString:
         Raises:
             ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
         """
+
     def __setitem__(
         self,
         index: int,
@@ -8793,11 +9059,12 @@ class PauliString:
             >>> print(p)
             +_XYY
         """
+
     def __str__(
         self,
     ) -> str:
-        """Returns a text description.
-        """
+        """Returns a text description."""
+
     def __truediv__(
         self,
         rhs: complex,
@@ -8819,12 +9086,14 @@ class PauliString:
         Raises:
             ValueError: The divisor isn't 1, -1, 1j, or -1j.
         """
+
     @overload
     def after(
         self,
         operation: Union[stim.Circuit, stim.CircuitInstruction],
     ) -> stim.PauliString:
         pass
+
     @overload
     def after(
         self,
@@ -8832,6 +9101,7 @@ class PauliString:
         targets: Iterable[int],
     ) -> stim.PauliString:
         pass
+
     def after(
         self,
         operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
@@ -8867,12 +9137,14 @@ class PauliString:
             operation that is exactly equivalent to the given Pauli
             string before the operation.
         """
+
     @overload
     def before(
         self,
         operation: Union[stim.Circuit, stim.CircuitInstruction],
     ) -> stim.PauliString:
         pass
+
     @overload
     def before(
         self,
@@ -8880,6 +9152,7 @@ class PauliString:
         targets: Iterable[int],
     ) -> stim.PauliString:
         pass
+
     def before(
         self,
         operation: Union[stim.Circuit, stim.Tableau, stim.CircuitInstruction],
@@ -8915,6 +9188,7 @@ class PauliString:
             operation that is exactly equivalent to the given Pauli
             string after the operation.
         """
+
     def commutes(
         self,
         other: stim.PauliString,
@@ -8948,6 +9222,7 @@ class PauliString:
         Returns:
             True if the Pauli strings commute, False if they anti-commute.
         """
+
     def copy(
         self,
     ) -> stim.PauliString:
@@ -8964,12 +9239,13 @@ class PauliString:
             >>> p2 == p1
             True
         """
+
     def extended_product(
         self,
         other: stim.PauliString,
     ) -> Tuple[complex, stim.PauliString]:
-        """[DEPRECATED] Use multiplication (__mul__ or *) instead.
-        """
+        """[DEPRECATED] Use multiplication (__mul__ or *) instead."""
+
     @staticmethod
     def from_numpy(
         *,
@@ -9020,11 +9296,12 @@ class PauliString:
             >>> stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=9)
             stim.PauliString("+XXXXYYYZZ")
         """
+
     @staticmethod
     def from_unitary_matrix(
         matrix: Iterable[Iterable[Union[int, float, complex]]],
         *,
-        endian: str = 'little',
+        endian: str = "little",
         unsigned: bool = False,
     ) -> stim.PauliString:
         """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
@@ -9073,13 +9350,14 @@ class PauliString:
             ... ], endian='little')
             stim.PauliString("+XZ")
         """
+
     @staticmethod
     def iter_all(
         num_qubits: int,
         *,
         min_weight: int = 0,
         max_weight: object = None,
-        allowed_paulis: str = 'XYZ',
+        allowed_paulis: str = "XYZ",
     ) -> stim.PauliStringIterator:
         """Returns an iterator that iterates over all matching pauli strings.
 
@@ -9128,6 +9406,7 @@ class PauliString:
             +_ZX
             +_ZZ
         """
+
     def pauli_indices(
         self,
         included_paulis: str = "XYZ",
@@ -9165,6 +9444,7 @@ class PauliString:
             >>> stim.PauliString("-X103*Y100").pauli_indices()
             [100, 103]
         """
+
     @staticmethod
     def random(
         num_qubits: int,
@@ -9196,6 +9476,7 @@ class PauliString:
         Returns:
             The sampled Pauli string.
         """
+
     @property
     def sign(
         self,
@@ -9213,9 +9494,11 @@ class PauliString:
             >>> stim.PauliString("-iX").sign
             (-0-1j)
         """
+
     @sign.setter
     def sign(self, value: complex):
         pass
+
     def to_numpy(
         self,
         *,
@@ -9268,6 +9551,7 @@ class PauliString:
             >>> zs
             array([240,   1], dtype=uint8)
         """
+
     def to_tableau(
         self,
     ) -> stim.Tableau:
@@ -9311,6 +9595,7 @@ class PauliString:
                 ],
             )
         """
+
     def to_unitary_matrix(
         self,
         *,
@@ -9337,6 +9622,7 @@ class PauliString:
                    [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
                    [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
         """
+
     @property
     def weight(
         self,
@@ -9354,6 +9640,7 @@ class PauliString:
             >>> stim.PauliString("-XXX___XXYZ").weight
             7
         """
+
 class PauliStringIterator:
     """Iterates over all pauli strings matching specified patterns.
 
@@ -9372,6 +9659,7 @@ class PauliStringIterator:
         +_X
         +_Z
     """
+
     def __iter__(
         self,
     ) -> stim.PauliStringIterator:
@@ -9381,11 +9669,12 @@ class PauliStringIterator:
         iterate, this effectively allows the iterator to be iterated
         multiple times.
         """
+
     def __next__(
         self,
     ) -> stim.PauliString:
-        """Returns the next iterated pauli string.
-        """
+        """Returns the next iterated pauli string."""
+
 class Tableau:
     """A stabilizer tableau.
 
@@ -9419,6 +9708,7 @@ class Tableau:
         >>> t_inv(x2z3)
         stim.PauliString("+__XZ_")
     """
+
     def __add__(
         self,
         rhs: stim.Tableau,
@@ -9443,6 +9733,7 @@ class Tableau:
         Returns:
             The direct sum.
         """
+
     def __call__(
         self,
         pauli_string: stim.PauliString,
@@ -9475,12 +9766,13 @@ class Tableau:
             >>> print(result)
             +X_
         """
+
     def __eq__(
         self,
         arg0: stim.Tableau,
     ) -> bool:
-        """Determines if two tableaus have identical contents.
-        """
+        """Determines if two tableaus have identical contents."""
+
     def __iadd__(
         self,
         rhs: stim.Tableau,
@@ -9509,6 +9801,7 @@ class Tableau:
         Returns:
             The mutated tableau.
         """
+
     def __init__(
         self,
         num_qubits: int,
@@ -9528,6 +9821,7 @@ class Tableau:
         Args:
             num_qubits: The number of qubits the tableau's operation acts on.
         """
+
     def __len__(
         self,
     ) -> int:
@@ -9539,6 +9833,7 @@ class Tableau:
             >>> len(t)
             2
         """
+
     def __mul__(
         self,
         rhs: stim.Tableau,
@@ -9561,12 +9856,13 @@ class Tableau:
             >>> t3(p) == t2(t1(p))
             True
         """
+
     def __ne__(
         self,
         arg0: stim.Tableau,
     ) -> bool:
-        """Determines if two tableaus have non-identical contents.
-        """
+        """Determines if two tableaus have non-identical contents."""
+
     def __pow__(
         self,
         exponent: int,
@@ -9597,16 +9893,17 @@ class Tableau:
             >>> s**(-400000000 + 1) == s
             True
         """
+
     def __repr__(
         self,
     ) -> str:
-        """Returns valid python code evaluating to an equal `stim.Tableau`.
-        """
+        """Returns valid python code evaluating to an equal `stim.Tableau`."""
+
     def __str__(
         self,
     ) -> str:
-        """Returns a text description.
-        """
+        """Returns a text description."""
+
     def append(
         self,
         gate: stim.Tableau,
@@ -9630,6 +9927,7 @@ class Tableau:
             >>> t == stim.Tableau.from_named_gate("SWAP")
             True
         """
+
     def copy(
         self,
     ) -> stim.Tableau:
@@ -9644,6 +9942,7 @@ class Tableau:
             >>> t2 == t1
             True
         """
+
     @staticmethod
     def from_circuit(
         circuit: stim.Circuit,
@@ -9698,6 +9997,7 @@ class Tableau:
                 ],
             )
         """
+
     @staticmethod
     def from_conjugated_generators(
         *,
@@ -9736,6 +10036,7 @@ class Tableau:
             >>> identity3 == stim.Tableau(3)
             True
         """
+
     @staticmethod
     def from_named_gate(
         name: str,
@@ -9764,6 +10065,7 @@ class Tableau:
             | ++
             | YZ
         """
+
     def from_numpy(
         self,
         *,
@@ -9862,6 +10164,7 @@ class Tableau:
                 ],
             )
         """
+
     @staticmethod
     def from_stabilizers(
         stabilizers: Iterable[stim.PauliString],
@@ -9945,6 +10248,7 @@ class Tableau:
                 ],
             )
         """
+
     @staticmethod
     def from_state_vector(
         state_vector: Iterable[float],
@@ -10006,11 +10310,12 @@ class Tableau:
                 ],
             )
         """
+
     @staticmethod
     def from_unitary_matrix(
         matrix: Iterable[Iterable[float]],
         *,
-        endian: str = 'little',
+        endian: str = "little",
     ) -> stim.Tableau:
         """Creates a tableau from the unitary matrix of a Clifford operation.
 
@@ -10062,6 +10367,7 @@ class Tableau:
                 ],
             )
         """
+
     def inverse(
         self,
         *,
@@ -10128,6 +10434,7 @@ class Tableau:
             | XZ Z_ X_
             | X_ YX Y_
         """
+
     def inverse_x_output(
         self,
         input_index: int,
@@ -10162,6 +10469,7 @@ class Tableau:
             >>> t.inverse_x_output(0, unsigned=True) == expected
             True
         """
+
     def inverse_x_output_pauli(
         self,
         input_index: int,
@@ -10198,6 +10506,7 @@ class Tableau:
             >>> t_inv.inverse_x_output_pauli(1, 1)
             3
         """
+
     def inverse_y_output(
         self,
         input_index: int,
@@ -10232,6 +10541,7 @@ class Tableau:
             >>> t.inverse_y_output(0, unsigned=True) == expected
             True
         """
+
     def inverse_y_output_pauli(
         self,
         input_index: int,
@@ -10268,6 +10578,7 @@ class Tableau:
             >>> t_inv.inverse_y_output_pauli(1, 1)
             2
         """
+
     def inverse_z_output(
         self,
         input_index: int,
@@ -10304,6 +10615,7 @@ class Tableau:
             >>> t.inverse_z_output(0, unsigned=True) == expected
             True
         """
+
     def inverse_z_output_pauli(
         self,
         input_index: int,
@@ -10340,6 +10652,7 @@ class Tableau:
             >>> t_inv.inverse_z_output_pauli(1, 1)
             1
         """
+
     @staticmethod
     def iter_all(
         num_qubits: int,
@@ -10372,6 +10685,7 @@ class Tableau:
             >>> num_2q_gates_mod_paulis
             720
         """
+
     def prepend(
         self,
         gate: stim.Tableau,
@@ -10392,6 +10706,7 @@ class Tableau:
             >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")
             True
         """
+
     @staticmethod
     def random(
         num_qubits: int,
@@ -10413,6 +10728,7 @@ class Tableau:
             Sergey Bravyi, Dmitri Maslov
             https://arxiv.org/abs/2003.09412
         """
+
     def then(
         self,
         second: stim.Tableau,
@@ -10437,9 +10753,10 @@ class Tableau:
             >>> t3(p) == t2(t1(p))
             True
         """
+
     def to_circuit(
         self,
-        method: 'Literal["elimination", "graph_state"]' = 'elimination',
+        method: 'Literal["elimination", "graph_state"]' = "elimination",
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -10562,6 +10879,7 @@ class Tableau:
                 CZ rec[-4] 1 rec[-1] 1
             ''')
         """
+
     def to_numpy(
         self,
         *,
@@ -10724,6 +11042,7 @@ class Tableau:
             >>> z_signs
             array([9], dtype=uint8)
         """
+
     def to_pauli_string(
         self,
     ) -> stim.PauliString:
@@ -10754,6 +11073,7 @@ class Tableau:
             >>> print(t.to_pauli_string())
             +ZY_X
         """
+
     def to_stabilizers(
         self,
         *,
@@ -10803,10 +11123,11 @@ class Tableau:
             stim.PauliString("+Z_")
             stim.PauliString("+_Z")
         """
+
     def to_state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: str = "little",
     ) -> np.ndarray[np.complex64]:
         """Returns the state vector produced by applying the tableau to the |0..0> state.
 
@@ -10855,6 +11176,7 @@ class Tableau:
             >>> (h + h).to_state_vector(endian='little')
             array([0.5+0.j, 0.5+0.j, 0.5+0.j, 0.5+0.j], dtype=complex64)
         """
+
     def to_unitary_matrix(
         self,
         *,
@@ -10900,6 +11222,7 @@ class Tableau:
                    [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
                    [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
         """
+
     def x_output(
         self,
         target: int,
@@ -10921,6 +11244,7 @@ class Tableau:
             >>> cnot.x_output(1)
             stim.PauliString("+_X")
         """
+
     def x_output_pauli(
         self,
         input_index: int,
@@ -10957,6 +11281,7 @@ class Tableau:
             >>> t.x_output_pauli(1, 1)
             3
         """
+
     def x_sign(
         self,
         target: int,
@@ -10975,6 +11300,7 @@ class Tableau:
             >>> stim.Tableau.from_named_gate("S").x_sign(0)
             1
         """
+
     def y_output(
         self,
         target: int,
@@ -10996,6 +11322,7 @@ class Tableau:
             >>> cnot.y_output(1)
             stim.PauliString("+ZY")
         """
+
     def y_output_pauli(
         self,
         input_index: int,
@@ -11032,6 +11359,7 @@ class Tableau:
             >>> t.y_output_pauli(1, 1)
             2
         """
+
     def y_sign(
         self,
         target: int,
@@ -11052,6 +11380,7 @@ class Tableau:
             >>> stim.Tableau.from_named_gate("S").y_sign(0)
             -1
         """
+
     def z_output(
         self,
         target: int,
@@ -11073,6 +11402,7 @@ class Tableau:
             >>> cnot.z_output(1)
             stim.PauliString("+ZZ")
         """
+
     def z_output_pauli(
         self,
         input_index: int,
@@ -11109,6 +11439,7 @@ class Tableau:
             >>> t.z_output_pauli(1, 1)
             1
         """
+
     def z_sign(
         self,
         target: int,
@@ -11127,6 +11458,7 @@ class Tableau:
             >>> stim.Tableau.from_named_gate("SQRT_X").z_sign(0)
             -1
         """
+
 class TableauIterator:
     """Iterates over all stabilizer tableaus of a specified size.
 
@@ -11139,6 +11471,7 @@ class TableauIterator:
         >>> n
         24
     """
+
     def __iter__(
         self,
     ) -> stim.TableauIterator:
@@ -11148,11 +11481,12 @@ class TableauIterator:
         iterate, this effectively allows the iterator to be iterated
         multiple times.
         """
+
     def __next__(
         self,
     ) -> stim.Tableau:
-        """Returns the next iterated tableau.
-        """
+        """Returns the next iterated tableau."""
+
 class TableauSimulator:
     """A stabilizer circuit simulator that tracks an inverse stabilizer tableau.
 
@@ -11183,6 +11517,7 @@ class TableauSimulator:
             ],
         )
     """
+
     def __init__(
         self,
         *,
@@ -11230,6 +11565,7 @@ class TableauSimulator:
             >>> s.measure(0) == s2.measure(0)
             True
         """
+
     def c_xyz(
         self,
         *targets,
@@ -11251,6 +11587,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Y +Z +X
         """
+
     def c_zyx(
         self,
         *targets,
@@ -11272,6 +11609,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Z +X +Y
         """
+
     def canonical_stabilizers(
         self,
     ) -> List[stim.PauliString]:
@@ -11321,6 +11659,7 @@ class TableauSimulator:
             stim.PauliString("+ZZ_")
             stim.PauliString("-__Z")
         """
+
     def cnot(
         self,
         *targets,
@@ -11344,6 +11683,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
     def copy(
         self,
         *,
@@ -11418,6 +11758,7 @@ class TableauSimulator:
             >>> s.measure(0)
             True
         """
+
     def current_inverse_tableau(
         self,
     ) -> stim.Tableau:
@@ -11452,6 +11793,7 @@ class TableauSimulator:
                 ],
             )
         """
+
     def current_measurement_record(
         self,
     ) -> List[bool]:
@@ -11477,6 +11819,7 @@ class TableauSimulator:
             A list of booleans containing the result of every measurement performed by
             the simulator so far.
         """
+
     def cx(
         self,
         *targets,
@@ -11500,6 +11843,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
     def cy(
         self,
         *targets,
@@ -11523,6 +11867,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +Z +X
         """
+
     def cz(
         self,
         *targets,
@@ -11546,6 +11891,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
     def depolarize1(
         self,
         *targets: int,
@@ -11563,6 +11909,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.depolarize1(0, 1, 2, p=0.01)
         """
+
     def depolarize2(
         self,
         *targets: int,
@@ -11582,9 +11929,15 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.depolarize1(0, 1, 4, 5, p=0.01)
         """
+
     def do(
         self,
-        circuit_or_pauli_string: Union[stim.Circuit, stim.PauliString, stim.CircuitInstruction, stim.CircuitRepeatBlock],
+        circuit_or_pauli_string: Union[
+            stim.Circuit,
+            stim.PauliString,
+            stim.CircuitInstruction,
+            stim.CircuitRepeatBlock,
+        ],
     ) -> None:
         """Applies a circuit or pauli string to the simulator's state.
 
@@ -11608,6 +11961,7 @@ class TableauSimulator:
             >>> s.measure_many(0, 1, 2, 3)
             [False, True, True, False]
         """
+
     def do_circuit(
         self,
         circuit: stim.Circuit,
@@ -11627,6 +11981,7 @@ class TableauSimulator:
             >>> s.current_measurement_record()
             [True]
         """
+
     def do_pauli_string(
         self,
         pauli_string: stim.PauliString,
@@ -11643,6 +11998,7 @@ class TableauSimulator:
             >>> s.measure_many(0, 1, 2, 3)
             [False, True, True, False]
         """
+
     def do_tableau(
         self,
         tableau: stim.Tableau,
@@ -11685,6 +12041,7 @@ class TableauSimulator:
             >>> [str(sim.peek_bloch(k)) for k in range(4)]
             ['+Z', '+Y', '+Z', '+X']
         """
+
     def h(
         self,
         *targets,
@@ -11706,6 +12063,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Z -Y +X
         """
+
     def h_xy(
         self,
         *targets,
@@ -11727,6 +12085,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Y +X -Z
         """
+
     def h_xz(
         self,
         *targets,
@@ -11748,6 +12107,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Z -Y +X
         """
+
     def h_yz(
         self,
         *targets,
@@ -11769,6 +12129,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -X +Z +Y
         """
+
     def iswap(
         self,
         *targets,
@@ -11792,6 +12153,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Y +Z
         """
+
     def iswap_dag(
         self,
         *targets,
@@ -11815,6 +12177,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ -Y +Z
         """
+
     def measure(
         self,
         target: int,
@@ -11842,6 +12205,7 @@ class TableauSimulator:
             >>> s.measure(1)
             True
         """
+
     def measure_kickback(
         self,
         target: int,
@@ -11897,6 +12261,7 @@ class TableauSimulator:
             >>> s.measure_many(0, 1, 2)
             [True, True, True]
         """
+
     def measure_many(
         self,
         *targets,
@@ -11916,6 +12281,7 @@ class TableauSimulator:
             >>> s.measure_many(0, 1)
             [False, True]
         """
+
     def measure_observable(
         self,
         observable: stim.PauliString,
@@ -11953,6 +12319,7 @@ class TableauSimulator:
             >>> s.measure_observable(stim.PauliString("-ZZ"))
             True
         """
+
     @property
     def num_qubits(
         self,
@@ -11972,6 +12339,7 @@ class TableauSimulator:
             >>> s.num_qubits
             3
         """
+
     def peek_bloch(
         self,
         target: int,
@@ -12018,6 +12386,7 @@ class TableauSimulator:
             >>> s.peek_bloch(0)
             stim.PauliString("+_")
         """
+
     def peek_observable_expectation(
         self,
         observable: stim.PauliString,
@@ -12064,6 +12433,7 @@ class TableauSimulator:
             II 1
             IIZ 1
         """
+
     def peek_x(
         self,
         target: int,
@@ -12097,6 +12467,7 @@ class TableauSimulator:
             >>> s.peek_x(0)
             -1
         """
+
     def peek_y(
         self,
         target: int,
@@ -12130,6 +12501,7 @@ class TableauSimulator:
             >>> s.peek_y(0)
             -1
         """
+
     def peek_z(
         self,
         target: int,
@@ -12163,6 +12535,7 @@ class TableauSimulator:
             >>> s.peek_z(0)
             -1
         """
+
     def postselect_observable(
         self,
         observable: stim.PauliString,
@@ -12196,6 +12569,7 @@ class TableauSimulator:
             >>> s.peek_observable_expectation(stim.PauliString("+YY"))
             -1
         """
+
     def postselect_x(
         self,
         targets: Union[int, Iterable[int]],
@@ -12235,6 +12609,7 @@ class TableauSimulator:
             >>> s.peek_x(0)
             -1
         """
+
     def postselect_y(
         self,
         targets: Union[int, Iterable[int]],
@@ -12274,6 +12649,7 @@ class TableauSimulator:
             >>> s.peek_y(0)
             -1
         """
+
     def postselect_z(
         self,
         targets: Union[int, Iterable[int]],
@@ -12314,6 +12690,7 @@ class TableauSimulator:
             >>> s.peek_z(0)
             -1
         """
+
     def reset(
         self,
         *targets,
@@ -12331,6 +12708,7 @@ class TableauSimulator:
             >>> s.peek_bloch(0)
             stim.PauliString("+Z")
         """
+
     def reset_x(
         self,
         *targets,
@@ -12347,6 +12725,7 @@ class TableauSimulator:
             >>> s.peek_bloch(0)
             stim.PauliString("+X")
         """
+
     def reset_y(
         self,
         *targets,
@@ -12363,6 +12742,7 @@ class TableauSimulator:
             >>> s.peek_bloch(0)
             stim.PauliString("+Y")
         """
+
     def reset_z(
         self,
         *targets,
@@ -12380,6 +12760,7 @@ class TableauSimulator:
             >>> s.peek_bloch(0)
             stim.PauliString("+Z")
         """
+
     def s(
         self,
         *targets,
@@ -12401,6 +12782,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Y -X +Z
         """
+
     def s_dag(
         self,
         *targets,
@@ -12422,6 +12804,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -Y +X +Z
         """
+
     def set_inverse_tableau(
         self,
         new_inverse_tableau: stim.Tableau,
@@ -12449,6 +12832,7 @@ class TableauSimulator:
             >>> s.current_inverse_tableau() == t
             True
         """
+
     def set_num_qubits(
         self,
         new_num_qubits: int,
@@ -12486,6 +12870,7 @@ class TableauSimulator:
             >>> s.measure_many(0, 1, 2, 3)
             [True, True, False, False]
         """
+
     def set_state_from_stabilizers(
         self,
         stabilizers: Iterable[stim.PauliString],
@@ -12576,6 +12961,7 @@ class TableauSimulator:
                 ],
             )
         """
+
     def set_state_from_state_vector(
         self,
         state_vector: Iterable[float],
@@ -12639,6 +13025,7 @@ class TableauSimulator:
                 ],
             )
         """
+
     def sqrt_x(
         self,
         *targets,
@@ -12660,6 +13047,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +X +Z -Y
         """
+
     def sqrt_x_dag(
         self,
         *targets,
@@ -12681,6 +13069,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +X -Z +Y
         """
+
     def sqrt_y(
         self,
         *targets,
@@ -12702,6 +13091,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -Z +Y +X
         """
+
     def sqrt_y_dag(
         self,
         *targets,
@@ -12723,10 +13113,11 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +Z +Y -X
         """
+
     def state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: str = "little",
     ) -> np.ndarray[np.complex64]:
         """Returns a wavefunction for the simulator's current state.
 
@@ -12774,6 +13165,7 @@ class TableauSimulator:
             array([0.5+0.j , 0. +0.j , 0. -0.5j, 0. +0.j , 0. +0.5j, 0. +0.j ,
                    0.5+0.j , 0. +0.j ], dtype=complex64)
         """
+
     def swap(
         self,
         *targets,
@@ -12797,6 +13189,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +Y +X +X +Z
         """
+
     def x(
         self,
         *targets,
@@ -12818,6 +13211,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             +X -Y -Z
         """
+
     def x_error(
         self,
         *targets: int,
@@ -12835,6 +13229,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.x_error(0, 1, 2, p=0.01)
         """
+
     def xcx(
         self,
         *targets,
@@ -12858,6 +13253,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +Z +X
         """
+
     def xcy(
         self,
         *targets,
@@ -12881,6 +13277,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +_ +_
         """
+
     def xcz(
         self,
         *targets,
@@ -12904,6 +13301,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +_ +_
         """
+
     def y(
         self,
         *targets,
@@ -12925,6 +13323,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -X +Y -Z
         """
+
     def y_error(
         self,
         *targets: int,
@@ -12942,6 +13341,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.y_error(0, 1, 2, p=0.01)
         """
+
     def ycx(
         self,
         *targets,
@@ -12965,6 +13365,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
     def ycy(
         self,
         *targets,
@@ -12988,6 +13389,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +_ +_
         """
+
     def ycz(
         self,
         *targets,
@@ -13011,6 +13413,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +_ +_
         """
+
     def z(
         self,
         *targets,
@@ -13032,6 +13435,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(3)))
             -X -Y +Z
         """
+
     def z_error(
         self,
         *targets: int,
@@ -13049,6 +13453,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.z_error(0, 1, 2, p=0.01)
         """
+
     def zcx(
         self,
         *targets,
@@ -13072,6 +13477,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
     def zcy(
         self,
         *targets,
@@ -13095,6 +13501,7 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +X +Y +Z +X
         """
+
     def zcz(
         self,
         *targets,
@@ -13118,15 +13525,17 @@ class TableauSimulator:
             >>> print(" ".join(str(s.peek_bloch(k)) for k in range(4)))
             +_ +_ +Z +X
         """
+
 @overload
 def gate_data(
     name: str,
 ) -> stim.GateData:
     pass
+
 @overload
-def gate_data(
-) -> Dict[str, stim.GateData]:
+def gate_data() -> Dict[str, stim.GateData]:
     pass
+
 def gate_data(
     name: Optional[str] = None,
 ) -> Union[str, Dict[str, stim.GateData]]:
@@ -13144,6 +13553,7 @@ def gate_data(
         >>> gate_dict['MX'].produces_measurements
         True
     """
+
 def main(
     *,
     command_line_args: List[str],
@@ -13217,6 +13627,7 @@ def main(
         DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
         OBSERVABLE_INCLUDE(0) rec[-1]
     """
+
 @overload
 def read_shot_data_file(
     *,
@@ -13228,6 +13639,7 @@ def read_shot_data_file(
     num_observables: int = 0,
 ) -> np.ndarray:
     pass
+
 @overload
 def read_shot_data_file(
     *,
@@ -13237,9 +13649,10 @@ def read_shot_data_file(
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    separate_observables: 'Literal[True]',
+    separate_observables: "Literal[True]",
 ) -> Tuple[np.ndarray, np.ndarray]:
     pass
+
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
@@ -13320,6 +13733,7 @@ def read_shot_data_file(
         array([[False, False, False, False],
                [False,  True, False,  True]])
     """
+
 def target_combined_paulis(
     paulis: Union[stim.PauliString, List[stim.GateTarget]],
     invert: bool = False,
@@ -13347,8 +13761,8 @@ def target_combined_paulis(
             MPP !X0*Y1*Z2 X2*Y5 !Z9
         ''')
     """
-def target_combiner(
-) -> stim.GateTarget:
+
+def target_combiner() -> stim.GateTarget:
     """Returns a target combiner that can be used to build Pauli products.
 
     Examples:
@@ -13366,6 +13780,7 @@ def target_combiner(
             MPP X2*Y3*Z5
         ''')
     """
+
 def target_inv(
     qubit_index: Union[int, stim.GateTarget],
 ) -> stim.GateTarget:
@@ -13388,6 +13803,7 @@ def target_inv(
     For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
     meaning the measurement result from qubit 1 should be inverted when reported.
     """
+
 def target_logical_observable_id(
     index: int,
 ) -> stim.DemTarget:
@@ -13410,6 +13826,7 @@ def target_logical_observable_id(
             error(0.25) L13
         ''')
     """
+
 def target_pauli(
     qubit_index: int,
     pauli: Union[str, int],
@@ -13449,6 +13866,7 @@ def target_pauli(
             M 7
         ''')
     """
+
 def target_rec(
     lookback_index: int,
 ) -> stim.GateTarget:
@@ -13476,6 +13894,7 @@ def target_rec(
             CX rec[-2] 3
         ''')
     """
+
 def target_relative_detector_id(
     index: int,
 ) -> stim.DemTarget:
@@ -13498,8 +13917,8 @@ def target_relative_detector_id(
             error(0.25) D13
         ''')
     """
-def target_separator(
-) -> stim.DemTarget:
+
+def target_separator() -> stim.DemTarget:
     """Returns a target separator (e.g. "^" in a .dem file).
 
     Examples:
@@ -13515,6 +13934,7 @@ def target_separator(
             error(0.25) D1 ^ D2
         ''')
     """
+
 def target_sweep_bit(
     sweep_bit_index: int,
 ) -> stim.GateTarget:
@@ -13532,6 +13952,7 @@ def target_sweep_bit(
             CX sweep[2] 5
         ''')
     """
+
 def target_x(
     qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
@@ -13558,6 +13979,7 @@ def target_x(
             MPP X2*!Y3*Z5
         ''')
     """
+
 def target_y(
     qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
@@ -13584,6 +14006,7 @@ def target_y(
             MPP X2*!Y3*Z5
         ''')
     """
+
 def target_z(
     qubit_index: Union[int, stim.GateTarget],
     invert: bool = False,
@@ -13610,6 +14033,7 @@ def target_z(
             MPP X2*!Y3*Z5
         ''')
     """
+
 def write_shot_data_file(
     *,
     data: np.ndarray,

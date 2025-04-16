@@ -43,23 +43,26 @@ class AnonTaskStats:
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
+        assert all(
+            isinstance(k, str) and isinstance(v, int)
+            for k, v in self.custom_counts.items()
+        )
 
     def __repr__(self) -> str:
         terms = []
         if self.shots != 0:
-            terms.append(f'shots={self.shots!r}')
+            terms.append(f"shots={self.shots!r}")
         if self.errors != 0:
-            terms.append(f'errors={self.errors!r}')
+            terms.append(f"errors={self.errors!r}")
         if self.discards != 0:
-            terms.append(f'discards={self.discards!r}')
+            terms.append(f"discards={self.discards!r}")
         if self.seconds != 0:
-            terms.append(f'seconds={self.seconds!r}')
+            terms.append(f"seconds={self.seconds!r}")
         if self.custom_counts:
-            terms.append(f'custom_counts={self.custom_counts!r}')
+            terms.append(f"custom_counts={self.custom_counts!r}")
         return f'sinter.AnonTaskStats({", ".join(terms)})'
 
-    def __add__(self, other: 'AnonTaskStats') -> 'AnonTaskStats':
+    def __add__(self, other: "AnonTaskStats") -> "AnonTaskStats":
         """Returns the sum of the statistics from both anonymous stats.
 
         Adds the shots, the errors, the discards, and the seconds.

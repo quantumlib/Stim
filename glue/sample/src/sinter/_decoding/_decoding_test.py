@@ -23,21 +23,21 @@ def get_test_decoders() -> Tuple[List[str], Dict[str, sinter.Decoder]]:
     try:
         import pymatching
     except ImportError:
-        available_decoders.remove('pymatching')
+        available_decoders.remove("pymatching")
     try:
         import fusion_blossom
     except ImportError:
-        available_decoders.remove('fusion_blossom')
+        available_decoders.remove("fusion_blossom")
     try:
         import mwpf
     except ImportError:
-        available_decoders.remove('hypergraph_union_find')
-        available_decoders.remove('mw_parity_factor')
+        available_decoders.remove("hypergraph_union_find")
+        available_decoders.remove("mw_parity_factor")
 
-    e = os.environ.get('SINTER_PYTEST_CUSTOM_DECODERS')
+    e = os.environ.get("SINTER_PYTEST_CUSTOM_DECODERS")
     if e is not None:
-        for term in e.split(';'):
-            module, method = term.split(':')
+        for term in e.split(";"):
+            module, method = term.split(":")
             for name, obj in getattr(__import__(module), method)().items():
                 custom_decoders[name] = obj
                 available_decoders.append(name)
@@ -45,6 +45,7 @@ def get_test_decoders() -> Tuple[List[str], Dict[str, sinter.Decoder]]:
     available_decoders.append("also_vacuous")
     custom_decoders["also_vacuous"] = VacuousDecoder()
     return available_decoders, custom_decoders
+
 
 TEST_DECODER_NAMES, TEST_CUSTOM_DECODERS = get_test_decoders()
 
@@ -55,12 +56,14 @@ DECODER_CASES = [
 ]
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_decode_repetition_code(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit.generated('repetition_code:memory',
-                                     rounds=3,
-                                     distance=3,
-                                     after_clifford_depolarization=0.05)
+    circuit = stim.Circuit.generated(
+        "repetition_code:memory",
+        rounds=3,
+        distance=3,
+        after_clifford_depolarization=0.05,
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -72,12 +75,12 @@ def test_decode_repetition_code(decoder: str, force_streaming: Optional[bool]):
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
     assert result.discards == 0
-    if 'vacuous' not in decoder:
+    if "vacuous" not in decoder:
         assert 1 <= result.errors <= 100
     assert result.shots == 1000
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_decode_surface_code(decoder: str, force_streaming: Optional[bool]):
     circuit = stim.Circuit.generated(
         "surface_code:rotated_memory_x",
@@ -95,11 +98,11 @@ def test_decode_surface_code(decoder: str, force_streaming: Optional[bool]):
         __private__unstable__force_decode_on_disk=force_streaming,
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
-    if 'vacuous' not in decoder:
+    if "vacuous" not in decoder:
         assert 0 <= stats.errors <= 50
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_empty(decoder: str, force_streaming: Optional[bool]):
     circuit = stim.Circuit()
     result = sample_decode(
@@ -117,13 +120,15 @@ def test_empty(decoder: str, force_streaming: Optional[bool]):
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_no_observables(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         M 0
         DETECTOR rec[-1]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -139,14 +144,16 @@ def test_no_observables(decoder: str, force_streaming: Optional[bool]):
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_invincible_observables(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         M 0 1
         DETECTOR rec[-2]
         OBSERVABLE_INCLUDE(1) rec[-1]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -162,17 +169,28 @@ def test_invincible_observables(decoder: str, force_streaming: Optional[bool]):
     assert result.errors == 0
 
 
-@pytest.mark.parametrize('decoder,force_streaming,offset', [(a, b, c) for a, b in DECODER_CASES for c in range(8)])
+@pytest.mark.parametrize(
+    "decoder,force_streaming,offset",
+    [(a, b, c) for a, b in DECODER_CASES for c in range(8)],
+)
 def test_observable_offsets_mod8(decoder: str, force_streaming: bool, offset: int):
-    circuit = stim.Circuit("""
+    circuit = (
+        stim.Circuit(
+            """
         X_ERROR(0.1) 0
         MR 0
         DETECTOR rec[-1]
-    """) * (8 + offset) + stim.Circuit("""
+    """
+        )
+        * (8 + offset)
+        + stim.Circuit(
+            """
         X_ERROR(0.1) 0
         MR 0
         OBSERVABLE_INCLUDE(0) rec[-1]
-    """)
+    """
+        )
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -188,13 +206,15 @@ def test_observable_offsets_mod8(decoder: str, force_streaming: bool, offset: in
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_no_detectors(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -209,13 +229,15 @@ def test_no_detectors(decoder: str, force_streaming: Optional[bool]):
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_no_detectors_with_post_mask(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -231,9 +253,10 @@ def test_no_detectors_with_post_mask(decoder: str, force_streaming: Optional[boo
     assert 50 <= result.errors <= 150
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_post_selection(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.6) 0
         M 0
         DETECTOR(2, 0, 0, 1) rec[-1]
@@ -247,7 +270,8 @@ def test_post_selection(decoder: str, force_streaming: Optional[bool]):
         X_ERROR(0.1) 2
         M 2
         OBSERVABLE_INCLUDE(0) rec[-1]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -260,19 +284,21 @@ def test_post_selection(decoder: str, force_streaming: Optional[bool]):
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
     assert 1050 <= result.discards <= 1350
-    if 'vacuous' not in decoder:
+    if "vacuous" not in decoder:
         assert 40 <= result.errors <= 160
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_observable_post_selection(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         X_ERROR(0.2) 1
         M 0 1
         OBSERVABLE_INCLUDE(0) rec[-1]
         OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -286,19 +312,23 @@ def test_observable_post_selection(decoder: str, force_streaming: Optional[bool]
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
     np.testing.assert_allclose(result.discards / result.shots, 0.2, atol=0.1)
-    if 'vacuous' not in decoder:
-        np.testing.assert_allclose(result.errors / (result.shots - result.discards), 0.1, atol=0.05)
+    if "vacuous" not in decoder:
+        np.testing.assert_allclose(
+            result.errors / (result.shots - result.discards), 0.1, atol=0.05
+        )
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_error_splitting(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         X_ERROR(0.2) 1
         M 0 1
         OBSERVABLE_INCLUDE(0) rec[-1]
         OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -312,17 +342,36 @@ def test_error_splitting(decoder: str, force_streaming: Optional[bool]):
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
     assert result.discards == 0
-    assert set(result.custom_counts.keys()) == {'obs_mistake_mask=E_', 'obs_mistake_mask=_E', 'obs_mistake_mask=EE'}
-    if 'vacuous' not in decoder:
-        np.testing.assert_allclose(result.errors / result.shots, 1 - 0.8 * 0.9, atol=0.05)
-        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=E_'] / result.shots, 0.1 * 0.2, atol=0.05)
-        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=_E'] / result.shots, 0.1 * 0.8, atol=0.05)
-        np.testing.assert_allclose(result.custom_counts['obs_mistake_mask=EE'] / result.shots, 0.9 * 0.2, atol=0.05)
+    assert set(result.custom_counts.keys()) == {
+        "obs_mistake_mask=E_",
+        "obs_mistake_mask=_E",
+        "obs_mistake_mask=EE",
+    }
+    if "vacuous" not in decoder:
+        np.testing.assert_allclose(
+            result.errors / result.shots, 1 - 0.8 * 0.9, atol=0.05
+        )
+        np.testing.assert_allclose(
+            result.custom_counts["obs_mistake_mask=E_"] / result.shots,
+            0.1 * 0.2,
+            atol=0.05,
+        )
+        np.testing.assert_allclose(
+            result.custom_counts["obs_mistake_mask=_E"] / result.shots,
+            0.1 * 0.8,
+            atol=0.05,
+        )
+        np.testing.assert_allclose(
+            result.custom_counts["obs_mistake_mask=EE"] / result.shots,
+            0.9 * 0.2,
+            atol=0.05,
+        )
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_detector_counting(decoder: str, force_streaming: Optional[bool]):
-    circuit = stim.Circuit("""
+    circuit = stim.Circuit(
+        """
         X_ERROR(0.1) 0
         X_ERROR(0.2) 1
         M 0 1
@@ -330,7 +379,8 @@ def test_detector_counting(decoder: str, force_streaming: Optional[bool]):
         DETECTOR rec[-2]
         OBSERVABLE_INCLUDE(0) rec[-1]
         OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
-    """)
+    """
+    )
     result = sample_decode(
         circuit_obj=circuit,
         circuit_path=None,
@@ -344,45 +394,51 @@ def test_detector_counting(decoder: str, force_streaming: Optional[bool]):
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
     assert result.discards == 0
-    assert result.custom_counts['detectors_checked'] == 20000
-    assert 0.3 * 10000 * 0.5 <= result.custom_counts['detection_events'] <= 0.3 * 10000 * 2.0
-    assert set(result.custom_counts.keys()) == {'detectors_checked', 'detection_events'}
+    assert result.custom_counts["detectors_checked"] == 20000
+    assert (
+        0.3 * 10000 * 0.5
+        <= result.custom_counts["detection_events"]
+        <= 0.3 * 10000 * 2.0
+    )
+    assert set(result.custom_counts.keys()) == {"detectors_checked", "detection_events"}
 
 
-@pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
+@pytest.mark.parametrize("decoder,force_streaming", DECODER_CASES)
 def test_decode_fails_correctly(decoder: str, force_streaming: Optional[bool]):
     decoder_obj = BUILT_IN_DECODERS.get(decoder)
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
-        circuit = stim.Circuit("""
+        circuit = stim.Circuit(
+            """
             REPEAT 9 {
                 MR(0.001) 0
                 DETECTOR rec[-1]
                 OBSERVABLE_INCLUDE(0) rec[-1]
             }
-        """)
+        """
+        )
         dem = circuit.detector_error_model()
-        circuit.to_file(d / 'circuit.stim')
-        dem.to_file(d / 'dem.dem')
-        with open(d / 'bad_dets.b8', 'wb') as f:
-            f.write(b'!')
+        circuit.to_file(d / "circuit.stim")
+        dem.to_file(d / "dem.dem")
+        with open(d / "bad_dets.b8", "wb") as f:
+            f.write(b"!")
 
-        if 'vacuous' not in decoder:
+        if "vacuous" not in decoder:
             with pytest.raises(Exception):
                 decoder_obj.decode_via_files(
                     num_shots=1,
                     num_dets=dem.num_detectors,
                     num_obs=dem.num_observables,
-                    dem_path=d / 'dem.dem',
-                    dets_b8_in_path=d / 'bad_dets.b8',
-                    obs_predictions_b8_out_path=d / 'predict.b8',
+                    dem_path=d / "dem.dem",
+                    dets_b8_in_path=d / "bad_dets.b8",
+                    obs_predictions_b8_out_path=d / "predict.b8",
                     tmp_dir=d,
                 )
 
 
-@pytest.mark.parametrize('decoder', TEST_DECODER_NAMES)
+@pytest.mark.parametrize("decoder", TEST_DECODER_NAMES)
 def test_full_scale(decoder: str):
-    result, = sinter.collect(
+    (result,) = sinter.collect(
         num_workers=2,
         tasks=[sinter.Task(circuit=stim.Circuit())],
         decoders=[decoder],
@@ -400,15 +456,16 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
 
     class WrongDecoder(sinter.Decoder, sinter.CompiledDecoder):
         def compile_decoder_for_dem(
-                self,
-                *,
-                dem: stim.DetectorErrorModel,
+            self,
+            *,
+            dem: stim.DetectorErrorModel,
         ) -> CompiledDecoder:
             return self
+
         def decode_shots_bit_packed(
-                self,
-                *,
-                bit_packed_detection_event_data: np.ndarray,
+            self,
+            *,
+            bit_packed_detection_event_data: np.ndarray,
         ) -> np.ndarray:
             return np.zeros(shape=5, dtype=np.bool_)
 
@@ -417,11 +474,14 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
             self.num_obs = -(-num_obs // 8)
 
         def decode_shots_bit_packed(
-                self,
-                *,
-                bit_packed_detection_event_data: np.ndarray,
+            self,
+            *,
+            bit_packed_detection_event_data: np.ndarray,
         ) -> np.ndarray:
-            return np.zeros(dtype=np.uint8, shape=(bit_packed_detection_event_data.shape[0], self.num_obs))
+            return np.zeros(
+                dtype=np.uint8,
+                shape=(bit_packed_detection_event_data.shape[0], self.num_obs),
+            )
 
     class TrivialDecoder(sinter.Decoder):
         def compile_decoder_for_dem(
@@ -429,7 +489,7 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
             *,
             dem: stim.DetectorErrorModel,
         ) -> CompiledDecoder:
-                return TrivialCompiledDecoder(num_obs=dem.num_observables)
+            return TrivialCompiledDecoder(num_obs=dem.num_observables)
 
     circuit = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
     dem = circuit.detector_error_model()
@@ -439,31 +499,31 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
 
         circuit.compile_detector_sampler().sample_write(
             shots=10,
-            filepath=d / 'dets.b8',
-            format='b8',
+            filepath=d / "dets.b8",
+            format="b8",
         )
 
-        dem.to_file(d / 'dem.dem')
+        dem.to_file(d / "dem.dem")
 
-        with pytest.raises(NotImplementedError, match='compile_decoder_for_dem'):
+        with pytest.raises(NotImplementedError, match="compile_decoder_for_dem"):
             IncompleteDecoder().decode_via_files(
                 num_shots=10,
                 num_dets=dem.num_detectors,
                 num_obs=dem.num_observables,
-                dem_path=d / 'dem.dem',
-                dets_b8_in_path=d / 'dets.b8',
-                obs_predictions_b8_out_path=d / 'obs.b8',
+                dem_path=d / "dem.dem",
+                dets_b8_in_path=d / "dets.b8",
+                obs_predictions_b8_out_path=d / "obs.b8",
                 tmp_dir=d,
             )
 
-        with pytest.raises(ValueError, match='shape='):
+        with pytest.raises(ValueError, match="shape="):
             WrongDecoder().decode_via_files(
                 num_shots=10,
                 num_dets=dem.num_detectors,
                 num_obs=dem.num_observables,
-                dem_path=d / 'dem.dem',
-                dets_b8_in_path=d / 'dets.b8',
-                obs_predictions_b8_out_path=d / 'obs.b8',
+                dem_path=d / "dem.dem",
+                dets_b8_in_path=d / "dets.b8",
+                obs_predictions_b8_out_path=d / "obs.b8",
                 tmp_dir=d,
             )
 
@@ -471,10 +531,10 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
             num_shots=10,
             num_dets=dem.num_detectors,
             num_obs=dem.num_observables,
-            dem_path=d / 'dem.dem',
-            dets_b8_in_path=d / 'dets.b8',
-            obs_predictions_b8_out_path=d / 'obs.b8',
+            dem_path=d / "dem.dem",
+            dets_b8_in_path=d / "dets.b8",
+            obs_predictions_b8_out_path=d / "obs.b8",
             tmp_dir=d,
         )
-        obs = np.fromfile(d / 'obs.b8', dtype=np.uint8, count=10)
+        obs = np.fromfile(d / "obs.b8", dtype=np.uint8, count=10)
         np.testing.assert_array_equal(obs, [0] * 10)

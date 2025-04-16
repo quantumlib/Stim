@@ -56,7 +56,9 @@ def test_repr():
 
 def test_equality():
     eq = cirq.testing.EqualsTester()
-    eq.add_equality_group(stimcirq.CXSwapGate(inverted=False), stimcirq.CXSwapGate(inverted=False))
+    eq.add_equality_group(
+        stimcirq.CXSwapGate(inverted=False), stimcirq.CXSwapGate(inverted=False)
+    )
     eq.add_equality_group(stimcirq.CXSwapGate(inverted=True))
 
 
@@ -67,7 +69,9 @@ def test_json_serialization():
         stimcirq.CXSwapGate(inverted=False)(b, d),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(
+        json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]
+    )
     assert c == c2
 
 
@@ -75,4 +79,10 @@ def test_json_backwards_compat_exact():
     raw = stimcirq.CXSwapGate(inverted=True)
     packed = '{\n  "cirq_type": "CXSwapGate",\n  "inverted": true\n}'
     assert cirq.to_json(raw) == packed
-    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert (
+        cirq.read_json(
+            json_text=packed,
+            resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER],
+        )
+        == raw
+    )

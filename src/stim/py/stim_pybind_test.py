@@ -24,6 +24,7 @@ import types
 import stim
 import re
 
+
 def test_version():
     assert re.match(r"^\d\.\d+", stim.__version__)
 
@@ -48,7 +49,11 @@ def test_targets():
 
     t = stim.target_rec(-5)
     assert isinstance(t, stim.GateTarget)
-    assert t.is_measurement_record_target and not t.is_inverted_result_target and t.value == -5
+    assert (
+        t.is_measurement_record_target
+        and not t.is_inverted_result_target
+        and t.value == -5
+    )
 
     t = stim.target_sweep_bit(4)
     assert isinstance(t, stim.GateTarget)
@@ -105,16 +110,18 @@ def test_format_data():
     assert ctx["parse_dets"](saved, num_detectors=2, num_observables=2) == data
 
     big_data = [data[0]] + [data[1]] * 36 + [[1, 0, 1, 0]] * 4 + [data[1]] * (64 - 41)
-    saved = (b"\x00\x00\x00\x00\xe0\x01\x00\x00"
-             b"\x01\x00\x00\x00\x00\x00\x00\x00"
-             b"\x01\x00\x00\x00\xe0\x01\x00\x00"
-             b"\x00\x00\x00\x00\x00\x00\x00\x00")
+    saved = (
+        b"\x00\x00\x00\x00\xe0\x01\x00\x00"
+        b"\x01\x00\x00\x00\x00\x00\x00\x00"
+        b"\x01\x00\x00\x00\xe0\x01\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00"
+    )
     assert ctx["save_ptb64"](big_data) == saved
     assert ctx["parse_ptb64"](saved, bits_per_shot=4) == big_data
 
     # Check that python examples in help strings are correct.
     for k, v in format_data.items():
-        mod = types.ModuleType('stim_test_fake')
+        mod = types.ModuleType("stim_test_fake")
         mod.f = lambda: 5
         mod.__test__ = {"f": mod.f}
         mod.f.__doc__ = v["help"]
@@ -123,15 +130,20 @@ def test_format_data():
 
 def test_main_write_to_file():
     with tempfile.TemporaryDirectory() as d:
-        p = pathlib.Path(d) / 'tmp'
-        assert stim.main(command_line_args=[
-            "gen",
-            "--code=repetition_code",
-            "--task=memory",
-            "--rounds=1000",
-            "--distance=2",
-            f"--out={p}"
-        ]) == 0
+        p = pathlib.Path(d) / "tmp"
+        assert (
+            stim.main(
+                command_line_args=[
+                    "gen",
+                    "--code=repetition_code",
+                    "--task=memory",
+                    "--rounds=1000",
+                    "--distance=2",
+                    f"--out={p}",
+                ]
+            )
+            == 0
+        )
         with open(p) as f:
             assert "Generated repetition_code" in f.read()
 
@@ -140,30 +152,40 @@ def test_main_help(capsys):
     assert stim.main(command_line_args=["help"]) == 0
     captured = capsys.readouterr()
     assert captured.err == ""
-    assert 'Available stim commands' in captured.out
+    assert "Available stim commands" in captured.out
 
 
 def test_main_redirects_stdout(capsys):
-    assert stim.main(command_line_args=[
-        "gen",
-        "--code=repetition_code",
-        "--task=memory",
-        "--rounds=1000",
-        "--distance=2",
-    ]) == 0
+    assert (
+        stim.main(
+            command_line_args=[
+                "gen",
+                "--code=repetition_code",
+                "--task=memory",
+                "--rounds=1000",
+                "--distance=2",
+            ]
+        )
+        == 0
+    )
     captured = capsys.readouterr()
     assert "Generated repetition_code" in captured.out
     assert captured.err == ""
 
 
 def test_main_redirects_stderr(capsys):
-    assert stim.main(command_line_args=[
-        "gen",
-        "--code=XXXXX",
-        "--task=memory",
-        "--rounds=1000",
-        "--distance=2",
-    ]) == 1
+    assert (
+        stim.main(
+            command_line_args=[
+                "gen",
+                "--code=XXXXX",
+                "--task=memory",
+                "--rounds=1000",
+                "--distance=2",
+            ]
+        )
+        == 1
+    )
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "Unrecognized value 'XXXXX'" in captured.err
@@ -177,19 +199,37 @@ def test_target_methods_accept_gate_targets():
     assert stim.target_inv(stim.target_z(5)) == stim.target_z(5, invert=True)
 
     assert stim.target_x(stim.GateTarget(5)) == stim.target_x(5)
-    assert stim.target_x(stim.target_inv(stim.GateTarget(5))) == stim.target_x(5, invert=True)
-    assert stim.target_x(stim.GateTarget(5), invert=True) == stim.target_x(5, invert=True)
-    assert stim.target_x(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_x(5)
+    assert stim.target_x(stim.target_inv(stim.GateTarget(5))) == stim.target_x(
+        5, invert=True
+    )
+    assert stim.target_x(stim.GateTarget(5), invert=True) == stim.target_x(
+        5, invert=True
+    )
+    assert stim.target_x(
+        stim.target_inv(stim.GateTarget(5)), invert=True
+    ) == stim.target_x(5)
 
     assert stim.target_y(stim.GateTarget(5)) == stim.target_y(5)
-    assert stim.target_y(stim.target_inv(stim.GateTarget(5))) == stim.target_y(5, invert=True)
-    assert stim.target_y(stim.GateTarget(5), invert=True) == stim.target_y(5, invert=True)
-    assert stim.target_y(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_y(5)
+    assert stim.target_y(stim.target_inv(stim.GateTarget(5))) == stim.target_y(
+        5, invert=True
+    )
+    assert stim.target_y(stim.GateTarget(5), invert=True) == stim.target_y(
+        5, invert=True
+    )
+    assert stim.target_y(
+        stim.target_inv(stim.GateTarget(5)), invert=True
+    ) == stim.target_y(5)
 
     assert stim.target_z(stim.GateTarget(5)) == stim.target_z(5)
-    assert stim.target_z(stim.target_inv(stim.GateTarget(5))) == stim.target_z(5, invert=True)
-    assert stim.target_z(stim.GateTarget(5), invert=True) == stim.target_z(5, invert=True)
-    assert stim.target_z(stim.target_inv(stim.GateTarget(5)), invert=True) == stim.target_z(5)
+    assert stim.target_z(stim.target_inv(stim.GateTarget(5))) == stim.target_z(
+        5, invert=True
+    )
+    assert stim.target_z(stim.GateTarget(5), invert=True) == stim.target_z(
+        5, invert=True
+    )
+    assert stim.target_z(
+        stim.target_inv(stim.GateTarget(5)), invert=True
+    ) == stim.target_z(5)
 
     with pytest.raises(ValueError):
         stim.target_inv(stim.target_sweep_bit(4))
@@ -220,15 +260,17 @@ def test_target_pauli():
     assert stim.target_pauli(2, 2) == stim.target_y(2)
     assert stim.target_pauli(2, 3) == stim.target_z(2)
     assert stim.target_pauli(2, 3, True) == stim.target_z(2, True)
-    assert stim.target_pauli(qubit_index=2, pauli=3, invert=True) == stim.target_z(2, True)
+    assert stim.target_pauli(qubit_index=2, pauli=3, invert=True) == stim.target_z(
+        2, True
+    )
     assert stim.target_pauli(5, np.array([2], dtype=np.uint8)[0]) == stim.target_y(5)
     assert stim.target_pauli(5, np.array([2], dtype=np.uint32)[0]) == stim.target_y(5)
     assert stim.target_pauli(5, np.array([2], dtype=np.int16)[0]) == stim.target_y(5)
 
     with pytest.raises(ValueError, match="too large"):
-        stim.target_pauli(2**31, 'X')
+        stim.target_pauli(2**31, "X")
     with pytest.raises(ValueError, match="Expected pauli"):
-        stim.target_pauli(5, 'F')
+        stim.target_pauli(5, "F")
     with pytest.raises(ValueError, match="Expected pauli"):
         stim.target_pauli(5, np.array([257], dtype=np.uint32)[0])
 

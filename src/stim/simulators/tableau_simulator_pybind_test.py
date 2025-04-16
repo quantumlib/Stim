@@ -61,32 +61,35 @@ def test_access_tableau():
     )
 
 
-@pytest.mark.parametrize("name", [
-    "x",
-    "y",
-    "z",
-    "h",
-    "h_xy",
-    "h_yz",
-    "sqrt_x",
-    "sqrt_x_dag",
-    "sqrt_y",
-    "sqrt_y_dag",
-    "s",
-    "s_dag",
-    "swap",
-    "iswap",
-    "iswap_dag",
-    "xcx",
-    "xcy",
-    "xcz",
-    "ycx",
-    "ycy",
-    "ycz",
-    "cnot",
-    "cy",
-    "cz",
-])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "x",
+        "y",
+        "z",
+        "h",
+        "h_xy",
+        "h_yz",
+        "sqrt_x",
+        "sqrt_x_dag",
+        "sqrt_y",
+        "sqrt_y_dag",
+        "s",
+        "s_dag",
+        "swap",
+        "iswap",
+        "iswap_dag",
+        "xcx",
+        "xcy",
+        "xcz",
+        "ycx",
+        "ycy",
+        "ycz",
+        "cnot",
+        "cy",
+        "cz",
+    ],
+)
 def test_gates_present(name: str):
     t = stim.Tableau.from_named_gate(name)
     n = len(t)
@@ -104,9 +107,13 @@ def test_gates_present(name: str):
 
 def test_do():
     s = stim.TableauSimulator()
-    s.do(stim.Circuit("""
+    s.do(
+        stim.Circuit(
+            """
         S 0
-    """))
+    """
+        )
+    )
     assert s.current_inverse_tableau() == stim.Tableau.from_named_gate("S_DAG")
 
 
@@ -190,7 +197,9 @@ def test_post_select_using_measure_kickback():
         m, kick = s.measure_kickback(qubit)
         if m != desired_result:
             if kick is None:
-                raise ValueError("Deterministic measurement differed from desired result.")
+                raise ValueError(
+                    "Deterministic measurement differed from desired result."
+                )
             s.do(kick)
 
     s.h(0)
@@ -312,7 +321,9 @@ def test_is_parallel_state_vector():
     assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5])
     assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [0.5j, 0.5j, 0.5j, 0.5j])
     assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [-0.5j, -0.5j, -0.5j, -0.5j])
-    assert not is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [-0.5j, -0.5j, -0.5j, 0.5j])
+    assert not is_parallel_state_vector(
+        [0.5, 0.5, 0.5, 0.5], [-0.5j, -0.5j, -0.5j, 0.5j]
+    )
     assert not is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [1, 0, 0, 0])
 
 
@@ -331,7 +342,9 @@ def test_to_state_vector():
     s.cnot(1, 0)
     assert is_parallel_state_vector(s.state_vector(), [0.5, -0.5, -0.5, 0.5])
     s.x(2)
-    assert is_parallel_state_vector(s.state_vector(), [0, 0, 0, 0, 0.5, -0.5, -0.5, 0.5])
+    assert is_parallel_state_vector(
+        s.state_vector(), [0, 0, 0, 0, 0.5, -0.5, -0.5, 0.5]
+    )
     v = s.state_vector().reshape((2,) * 3)
     assert v[0, 0, 0] == 0
     assert v[1, 0, 0] != 0
@@ -342,17 +355,17 @@ def test_to_state_vector():
     s.set_num_qubits(3)
     s.sqrt_x(2)
     np.testing.assert_allclose(
-        s.state_vector(endian='little'),
-        [np.sqrt(0.5), 0, 0, 0, -1j*np.sqrt(0.5), 0, 0, 0],
+        s.state_vector(endian="little"),
+        [np.sqrt(0.5), 0, 0, 0, -1j * np.sqrt(0.5), 0, 0, 0],
         atol=1e-4,
     )
     np.testing.assert_allclose(
-        s.state_vector(endian='big'),
-        [np.sqrt(0.5), -1j*np.sqrt(0.5), 0, 0, 0, 0, 0, 0],
+        s.state_vector(endian="big"),
+        [np.sqrt(0.5), -1j * np.sqrt(0.5), 0, 0, 0, 0, 0, 0],
         atol=1e-4,
     )
     with pytest.raises(ValueError, match="endian"):
-        s.state_vector(endian='unknown')
+        s.state_vector(endian="unknown")
 
     # Exact precision.
     s.h(1)
@@ -364,11 +377,15 @@ def test_to_state_vector():
 
 def test_peek_observable_expectation():
     s = stim.TableauSimulator()
-    s.do(stim.Circuit('''
+    s.do(
+        stim.Circuit(
+            """
         H 0
         CNOT 0 1 0 2
         X 0
-    '''))
+    """
+        )
+    )
 
     assert s.peek_observable_expectation(stim.PauliString("ZZ_")) == -1
     assert s.peek_observable_expectation(stim.PauliString("_ZZ")) == 1
@@ -436,33 +453,37 @@ def test_peek_pauli():
 
 def test_do_circuit():
     s = stim.TableauSimulator()
-    s.do_circuit(stim.Circuit("""
+    s.do_circuit(
+        stim.Circuit(
+            """
         H 0
-    """))
-    assert s.peek_bloch(0) == stim.PauliString('+X')
+    """
+        )
+    )
+    assert s.peek_bloch(0) == stim.PauliString("+X")
 
 
 def test_do_pauli_string():
     s = stim.TableauSimulator()
     s.do_pauli_string(stim.PauliString("IXYZ"))
-    assert s.peek_bloch(0) == stim.PauliString('+Z')
-    assert s.peek_bloch(1) == stim.PauliString('-Z')
-    assert s.peek_bloch(2) == stim.PauliString('-Z')
-    assert s.peek_bloch(3) == stim.PauliString('+Z')
+    assert s.peek_bloch(0) == stim.PauliString("+Z")
+    assert s.peek_bloch(1) == stim.PauliString("-Z")
+    assert s.peek_bloch(2) == stim.PauliString("-Z")
+    assert s.peek_bloch(3) == stim.PauliString("+Z")
 
 
 def test_do_tableau():
     s = stim.TableauSimulator()
     s.do_tableau(stim.Tableau.from_named_gate("H"), [0])
-    assert s.peek_bloch(0) == stim.PauliString('+X')
+    assert s.peek_bloch(0) == stim.PauliString("+X")
     s.do_tableau(stim.Tableau.from_named_gate("CNOT"), [0, 1])
-    assert s.peek_bloch(0) == stim.PauliString('+I')
-    assert s.peek_observable_expectation(stim.PauliString('XX')) == +1
-    assert s.peek_observable_expectation(stim.PauliString('ZZ')) == +1
+    assert s.peek_bloch(0) == stim.PauliString("+I")
+    assert s.peek_observable_expectation(stim.PauliString("XX")) == +1
+    assert s.peek_observable_expectation(stim.PauliString("ZZ")) == +1
 
-    with pytest.raises(ValueError, match='len'):
+    with pytest.raises(ValueError, match="len"):
         s.do_tableau(stim.Tableau(1), [1, 2])
-    with pytest.raises(ValueError, match='duplicates'):
+    with pytest.raises(ValueError, match="duplicates"):
         s.do_tableau(stim.Tableau(3), [2, 3, 2])
 
     s.do_tableau(stim.Tableau(0), [])
@@ -485,24 +506,24 @@ def test_gate_aliases():
     s.zcx(0, 1)
     assert s.canonical_stabilizers() == [
         stim.PauliString("+XX"),
-        stim.PauliString("+ZZ")
+        stim.PauliString("+ZZ"),
     ]
     s.cx(0, 1)
     assert s.canonical_stabilizers() == [
         stim.PauliString("+X_"),
-        stim.PauliString("+_Z")
+        stim.PauliString("+_Z"),
     ]
 
     s.zcy(0, 1)
     assert s.canonical_stabilizers() == [
         stim.PauliString("+XY"),
-        stim.PauliString("+ZZ")
+        stim.PauliString("+ZZ"),
     ]
 
     s.zcz(0, 1)
     assert s.canonical_stabilizers() == [
         stim.PauliString("-XY"),
-        stim.PauliString("+ZZ")
+        stim.PauliString("+ZZ"),
     ]
 
 
@@ -516,7 +537,7 @@ def test_num_qubits():
 def test_set_state_from_state_vector():
     s = stim.TableauSimulator()
     expected = [0.5, 0.5, 0, 0, -0.5, 0.5, 0, 0]
-    s.set_state_from_state_vector(expected, endian='little')
+    s.set_state_from_state_vector(expected, endian="little")
     np.testing.assert_allclose(s.state_vector(), expected, atol=1e-6)
 
 
@@ -524,8 +545,12 @@ def test_set_state_from_stabilizers():
     s = stim.TableauSimulator()
     s.set_state_from_stabilizers([])
     assert s.current_inverse_tableau() == stim.Tableau(0)
-    s.set_state_from_stabilizers([stim.PauliString("XXX"), stim.PauliString("_ZZ"), stim.PauliString("ZZ_")])
-    np.testing.assert_allclose(s.state_vector(), [0.5**0.5, 0, 0, 0, 0, 0, 0, 0.5**0.5], atol=1e-6)
+    s.set_state_from_stabilizers(
+        [stim.PauliString("XXX"), stim.PauliString("_ZZ"), stim.PauliString("ZZ_")]
+    )
+    np.testing.assert_allclose(
+        s.state_vector(), [0.5**0.5, 0, 0, 0, 0, 0, 0, 0.5**0.5], atol=1e-6
+    )
 
 
 def test_seed():
@@ -592,7 +617,7 @@ def test_copy_with_explicit_seed():
 
 def test_copy_with_explicit_copy_rng_and_seed():
     s = stim.TableauSimulator()
-    with pytest.raises(ValueError, match='seed and copy_rng are incompatible'):
+    with pytest.raises(ValueError, match="seed and copy_rng are incompatible"):
         _ = s.copy(copy_rng=True, seed=0)
 
 
@@ -602,11 +627,15 @@ def test_do_circuit_instruction():
     s.do(stim.Circuit("X 0")[0])
     assert s.peek_z(0) == -1
 
-    s.do(stim.Circuit("""
+    s.do(
+        stim.Circuit(
+            """
         REPEAT 100 {
             CNOT 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 0
         }
-    """)[0])
+    """
+        )[0]
+    )
     assert s.peek_z(0) == +1
     assert s.peek_z(1) == +1
     assert s.peek_z(2) == +1
@@ -638,7 +667,10 @@ def test_measure_observable():
     assert not s.measure_observable(stim.PauliString(0))
     assert not s.measure_observable(stim.PauliString(2))
     assert not s.measure_observable(stim.PauliString(5))
-    n = sum(s.measure_observable(stim.PauliString(0), flip_probability=0.1) for _ in range(1000))
+    n = sum(
+        s.measure_observable(stim.PauliString(0), flip_probability=0.1)
+        for _ in range(1000)
+    )
     assert 25 <= n <= 300
 
 
@@ -689,13 +721,13 @@ def test_depolarize2_error():
     t = s.current_inverse_tableau()
     s.depolarize2(0, 1, p=0)
     assert s.current_inverse_tableau() == t
-    with pytest.raises(ValueError, match='Two qubit'):
+    with pytest.raises(ValueError, match="Two qubit"):
         s.depolarize2(1, p=1)
     assert s.current_inverse_tableau() == t
     s.depolarize2(0, 1, p=1)
     assert s.current_inverse_tableau() != t
 
-    with pytest.raises(ValueError, match='Unexpected argument'):
+    with pytest.raises(ValueError, match="Unexpected argument"):
         s.depolarize2(1, p=1, q=2)
 
 
@@ -705,7 +737,7 @@ def test_bad_inverse_padding_issue_is_fixed():
     sim = stim.TableauSimulator()
     sim.do(circuit)
     stabs = sim.canonical_stabilizers()
-    assert stabs[-1] == stim.PauliString(466 * '_' + 'X')
+    assert stabs[-1] == stim.PauliString(466 * "_" + "X")
 
 
 def test_postselect_observable():

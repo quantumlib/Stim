@@ -61,7 +61,9 @@ def test_json_serialization():
         stimcirq.CZSwapGate()(b, d),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(
+        json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]
+    )
     assert c == c2
 
 
@@ -69,4 +71,10 @@ def test_json_backwards_compat_exact():
     raw = stimcirq.CZSwapGate()
     packed = '{\n  "cirq_type": "CZSwapGate"\n}'
     assert cirq.to_json(raw) == packed
-    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert (
+        cirq.read_json(
+            json_text=packed,
+            resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER],
+        )
+        == raw
+    )

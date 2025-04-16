@@ -18,9 +18,9 @@ class CompiledDecoder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def decode_shots_bit_packed(
-            self,
-            *,
-            bit_packed_detection_event_data: np.ndarray,
+        self,
+        *,
+        bit_packed_detection_event_data: np.ndarray,
     ) -> np.ndarray:
         """Predicts observable flips from the given detection events.
 
@@ -97,18 +97,19 @@ class Decoder:
             NotImplementedError: This `sinter.Decoder` doesn't support compiling
                 for a dem.
         """
-        raise NotImplementedError('compile_decoder_for_dem')
+        raise NotImplementedError("compile_decoder_for_dem")
 
-    def decode_via_files(self,
-                         *,
-                         num_shots: int,
-                         num_dets: int,
-                         num_obs: int,
-                         dem_path: pathlib.Path,
-                         dets_b8_in_path: pathlib.Path,
-                         obs_predictions_b8_out_path: pathlib.Path,
-                         tmp_dir: pathlib.Path,
-                       ) -> None:
+    def decode_via_files(
+        self,
+        *,
+        num_shots: int,
+        num_dets: int,
+        num_obs: int,
+        dem_path: pathlib.Path,
+        dets_b8_in_path: pathlib.Path,
+        obs_predictions_b8_out_path: pathlib.Path,
+        tmp_dir: pathlib.Path,
+    ) -> None:
         """Performs decoding by reading/writing problems and answers from disk.
 
         Args:
@@ -149,13 +150,19 @@ class Decoder:
         try:
             compiled = self.compile_decoder_for_dem(dem=dem)
         except NotImplementedError as ex:
-            raise NotImplementedError(f"{type(self).__qualname__} didn't implement `compile_decoder_for_dem` or `decode_via_files`.") from ex
+            raise NotImplementedError(
+                f"{type(self).__qualname__} didn't implement `compile_decoder_for_dem` or `decode_via_files`."
+            ) from ex
 
         num_det_bytes = -(-num_dets // 8)
         num_obs_bytes = -(-num_obs // 8)
-        dets = np.fromfile(dets_b8_in_path, dtype=np.uint8, count=num_shots * num_det_bytes)
+        dets = np.fromfile(
+            dets_b8_in_path, dtype=np.uint8, count=num_shots * num_det_bytes
+        )
         dets = dets.reshape(num_shots, num_det_bytes)
         obs = compiled.decode_shots_bit_packed(bit_packed_detection_event_data=dets)
         if obs.dtype != np.uint8 or obs.shape != (num_shots, num_obs_bytes):
-            raise ValueError(f"Got a numpy array with dtype={obs.dtype},shape={obs.shape} instead of dtype={np.uint8},shape={(num_shots, num_obs_bytes)} from {type(self).__qualname__}(...).compile_decoder_for_dem(...).decode_shots_bit_packed(...).")
+            raise ValueError(
+                f"Got a numpy array with dtype={obs.dtype},shape={obs.shape} instead of dtype={np.uint8},shape={(num_shots, num_obs_bytes)} from {type(self).__qualname__}(...).compile_decoder_for_dem(...).decode_shots_bit_packed(...)."
+            )
         obs.tofile(obs_predictions_b8_out_path)

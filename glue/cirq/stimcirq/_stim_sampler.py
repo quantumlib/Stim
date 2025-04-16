@@ -30,7 +30,9 @@ class StimSampler(cirq.Sampler):
         for param_resolver in cirq.to_resolvers(params):
             # Request samples from stim.
             instance = cirq.resolve_parameters(program, param_resolver)
-            converted_circuit, key_ranges = cirq_circuit_to_stim_data(instance, flatten=True)
+            converted_circuit, key_ranges = cirq_circuit_to_stim_data(
+                instance, flatten=True
+            )
             samples = converted_circuit.compile_sampler().sample(repetitions)
 
             # Find number of qubits (length), number of instances, and indices for each measurement key.
@@ -43,14 +45,18 @@ class StimSampler(cirq.Sampler):
                 if prev_length is None:
                     lengths[key] = length
                 elif length != prev_length:
-                    raise ValueError(f"different numbers of qubits for key {key}: {prev_length} != {length}")
+                    raise ValueError(
+                        f"different numbers of qubits for key {key}: {prev_length} != {length}"
+                    )
                 instances[key] += 1
                 indices[key].extend(range(k, k + length))
                 k += length
 
             # Convert unlabelled samples into keyed results.
             records = {
-                key: samples[:, indices[key]].reshape((repetitions, instances[key], length))
+                key: samples[:, indices[key]].reshape(
+                    (repetitions, instances[key], length)
+                )
                 for key, length in lengths.items()
             }
             results.append(ResultImpl(params=param_resolver, records=records))

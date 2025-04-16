@@ -9,8 +9,7 @@ def verify_stabilizers(
     print_stabilizers: bool = False,
 ) -> bool:
     result_stabilizers = [
-        stab.output
-        for stab in stimzx.zx_graph_to_external_stabilizers(result_networkx)
+        stab.output for stab in stimzx.zx_graph_to_external_stabilizers(result_networkx)
     ]
     specified_stabilizers = [
         stim.PauliString(paulistring) for paulistring in specified_paulistrings
@@ -28,8 +27,10 @@ def verify_stabilizers(
     for s in result_stabilizers:
         for ss in specified_stabilizers:
             if not ss.commutes(s):
-                print(f"result stabilizer {s} not commuting with "
-                      f"specified stabilizer {ss}")
+                print(
+                    f"result stabilizer {s} not commuting with "
+                    f"specified stabilizer {ss}"
+                )
                 if print_stabilizers:
                     print("specified and resulting stabilizers not equivalent")
                 return False

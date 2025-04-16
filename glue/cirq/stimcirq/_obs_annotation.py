@@ -34,7 +34,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
     def qubits(self) -> Tuple[cirq.Qid, ...]:
         return ()
 
-    def with_qubits(self, *new_qubits) -> 'CumulativeObservableAnnotation':
+    def with_qubits(self, *new_qubits) -> "CumulativeObservableAnnotation":
         return self
 
     def _value_equality_values_(self) -> Any:
@@ -42,29 +42,29 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
-        items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        items += [f"rec[{e}]" for e in sorted(self.relative_keys)]
         k = ",".join(str(e) for e in items)
         return f"Obs{self.observable_index}({k})"
 
     def __repr__(self) -> str:
         return (
-            f'stimcirq.CumulativeObservableAnnotation('
-            f'parity_keys={sorted(self.parity_keys)}, '
-            f'relative_keys={sorted(self.relative_keys)}, '
-            f'observable_index={self.observable_index!r})'
+            f"stimcirq.CumulativeObservableAnnotation("
+            f"parity_keys={sorted(self.parity_keys)}, "
+            f"relative_keys={sorted(self.relative_keys)}, "
+            f"observable_index={self.observable_index!r})"
         )
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
         result = {
-            'parity_keys': sorted(self.parity_keys),
-            'observable_index': self.observable_index,
+            "parity_keys": sorted(self.parity_keys),
+            "observable_index": self.observable_index,
         }
         if self.relative_keys:
-            result['relative_keys'] = sorted(self.relative_keys)
+            result["relative_keys"] = sorted(self.relative_keys)
         return result
 
     def _decompose_(self):
@@ -94,7 +94,9 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)
-        rec_targets = [stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)]
+        rec_targets = [
+            stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)
+        ]
         for offset in range(len(edit_measurement_key_lengths)):
             m_key, m_len = edit_measurement_key_lengths[-1 - offset]
             if m_len != 1:
@@ -111,4 +113,6 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 f" in an earlier moment (or earlier in the same moment's operation order)."
             )
 
-        edit_circuit.append("OBSERVABLE_INCLUDE", rec_targets, self.observable_index, tag=tag)
+        edit_circuit.append(
+            "OBSERVABLE_INCLUDE", rec_targets, self.observable_index, tag=tag
+        )

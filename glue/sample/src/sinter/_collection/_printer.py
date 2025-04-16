@@ -11,12 +11,15 @@ class ThrottledProgressPrinter:
     Throttles the progress updates to not flood the screen when 100 show up
     at the same time, and instead only show the latest one.
     """
-    def __init__(self, *, outs: List[Any], print_progress: bool, min_progress_delay: float):
+
+    def __init__(
+        self, *, outs: List[Any], print_progress: bool, min_progress_delay: float
+    ):
         self.outs = outs
         self.print_progress = print_progress
         self.next_can_print_time = time.monotonic()
-        self.latest_msg = ''
-        self.latest_printed_msg = ''
+        self.latest_msg = ""
+        self.latest_printed_msg = ""
         self.min_progress_delay = min_progress_delay
         self.is_worker_running = False
         self.lock = threading.Lock()
@@ -42,7 +45,11 @@ class ThrottledProgressPrinter:
     def flush(self):
         with self.lock:
             if self.latest_msg != "" and self.latest_printed_msg != self.latest_msg:
-                print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
+                print(
+                    "\033[31m" + self.latest_msg + "\033[0m",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 self.latest_printed_msg = self.latest_msg
 
     def _try_print_else_delay(self) -> float:
@@ -52,7 +59,11 @@ class ThrottledProgressPrinter:
             self.next_can_print_time = t + self.min_progress_delay
             self.is_worker_running = False
             if self.latest_msg != "" and self.latest_msg != self.latest_printed_msg:
-                print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
+                print(
+                    "\033[31m" + self.latest_msg + "\033[0m",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 self.latest_printed_msg = self.latest_msg
         return max(dt, 0)
 

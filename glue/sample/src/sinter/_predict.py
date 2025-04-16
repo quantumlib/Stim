@@ -15,12 +15,13 @@ if TYPE_CHECKING:
 
 
 def _converted_on_disk(
-        in_path: pathlib.Path,
-        out_path: pathlib.Path,
-        num_dets: int,
-        num_obs: int,
-        in_format: str,
-        out_format: str) -> pathlib.Path:
+    in_path: pathlib.Path,
+    out_path: pathlib.Path,
+    num_dets: int,
+    num_obs: int,
+    in_format: str,
+    out_format: str,
+) -> pathlib.Path:
     if in_format == out_format:
         return in_path
     raw = stim.read_shot_data_file(
@@ -51,7 +52,7 @@ def predict_on_disk(
     postselect_detectors_with_non_zero_4th_coord: bool = False,
     discards_out_path: Optional[Union[str, pathlib.Path]] = None,
     discards_out_format: Optional[str] = None,
-    custom_decoders: Dict[str, 'sinter.Decoder'] = None,
+    custom_decoders: Dict[str, "sinter.Decoder"] = None,
 ) -> None:
     """Performs decoding and postselection on disk.
 
@@ -72,9 +73,13 @@ def predict_on_disk(
         custom_decoders: Custom decoders that can be used if requested by name.
     """
     if (discards_out_path is not None) != (discards_out_format is not None):
-        raise ValueError('(discards_out_path is not None) != (discards_out_format is not None)')
+        raise ValueError(
+            "(discards_out_path is not None) != (discards_out_format is not None)"
+        )
     if (discards_out_path is not None) != postselect_detectors_with_non_zero_4th_coord:
-        raise ValueError('(discards_out_path is not None) != postselect_detectors_with_non_zero_4th_coord')
+        raise ValueError(
+            "(discards_out_path is not None) != postselect_detectors_with_non_zero_4th_coord"
+        )
 
     dem_path = pathlib.Path(dem_path)
     dets_path = pathlib.Path(dets_path)
@@ -101,24 +106,29 @@ def predict_on_disk(
 
         dets_b8_path = _converted_on_disk(
             in_path=dets_path,
-            out_path=tmp_dir / 'sinter_dets.b8',
+            out_path=tmp_dir / "sinter_dets.b8",
             in_format=dets_format,
-            out_format='b8',
+            out_format="b8",
             num_dets=num_dets,
-            num_obs=0)
+            num_obs=0,
+        )
         if num_det_bytes == 0:
-            raise NotImplementedError("Don't know how many shots there are, because num_det_bytes=0.")
+            raise NotImplementedError(
+                "Don't know how many shots there are, because num_det_bytes=0."
+            )
         num_shots = os.path.getsize(dets_b8_path) // num_det_bytes
 
         if discards_out_path is not None:
-            if discards_out_format == 'b8':
+            if discards_out_format == "b8":
                 discards_b8_path = discards_out_path
             else:
-                discards_b8_path = tmp_dir / 'sinter_discards.b8'
-            post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
+                discards_b8_path = tmp_dir / "sinter_discards.b8"
+            post_selection_mask = np.zeros(
+                dtype=np.uint8, shape=math.ceil(num_dets / 8)
+            )
             if postselect_detectors_with_non_zero_4th_coord:
                 post_selection_mask = post_selection_mask_from_4th_coord(dem)
-            kept_dets_b8_path = tmp_dir / 'sinter_dets.kept.b8'
+            kept_dets_b8_path = tmp_dir / "sinter_dets.kept.b8"
             num_discards = streaming_post_select(
                 num_shots=num_shots,
                 num_dets=num_dets,
@@ -135,7 +145,7 @@ def predict_on_disk(
                 in_path=discards_b8_path,
                 out_path=discards_out_path,
                 out_format=discards_out_format,
-                in_format='b8',
+                in_format="b8",
                 num_dets=1,
                 num_obs=0,
             )
@@ -144,10 +154,12 @@ def predict_on_disk(
             kept_dets_b8_path = dets_b8_path
             num_kept_shots = num_shots
             if postselect_detectors_with_non_zero_4th_coord:
-                raise ValueError('postselect_detectors_with_non_zero_4th_coord and discards_out_path is None')
+                raise ValueError(
+                    "postselect_detectors_with_non_zero_4th_coord and discards_out_path is None"
+                )
 
-        if obs_out_format != 'b8':
-            obs_inter = tmp_dir / 'sinter_obs_inter.b8'
+        if obs_out_format != "b8":
+            obs_inter = tmp_dir / "sinter_obs_inter.b8"
         else:
             obs_inter = obs_out_path
         decode_obj.decode_via_files(
@@ -163,7 +175,7 @@ def predict_on_disk(
             in_path=obs_inter,
             out_path=obs_out_path,
             out_format=obs_out_format,
-            in_format='b8',
+            in_format="b8",
             num_dets=0,
             num_obs=num_obs,
         )
@@ -199,11 +211,17 @@ def predict_discards_bit_packed(
     num_dets = dem.num_detectors
     nb = math.ceil(num_dets / 8)
     if len(dets_bit_packed.shape) != 2:
-        raise ValueError(f'len(dets_data_bit_packed.shape={dets_bit_packed.shape}) != 2')
+        raise ValueError(
+            f"len(dets_data_bit_packed.shape={dets_bit_packed.shape}) != 2"
+        )
     if dets_bit_packed.shape[1] != nb:
-        raise ValueError(f'dets_data_bit_packed.shape[1]={dets_bit_packed.shape[1]} != math.ceil(dem.num_detectors={dem.num_detectors} / 8)')
+        raise ValueError(
+            f"dets_data_bit_packed.shape[1]={dets_bit_packed.shape[1]} != math.ceil(dem.num_detectors={dem.num_detectors} / 8)"
+        )
     if dets_bit_packed.dtype != np.uint8:
-        raise ValueError(f'dets_data_bit_packed.dtype={dets_bit_packed.dtype} != np.uint8')
+        raise ValueError(
+            f"dets_data_bit_packed.dtype={dets_bit_packed.dtype} != np.uint8"
+        )
 
     post_selection_mask = np.zeros(dtype=np.uint8, shape=nb)
     if postselect_detectors_with_non_zero_4th_coord:
@@ -219,7 +237,7 @@ def predict_observables(
     dets: np.ndarray,
     decoder: str,
     bit_pack_result: bool = False,
-    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+    custom_decoders: Optional[Dict[str, "sinter.Decoder"]] = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 
@@ -272,7 +290,7 @@ def predict_observables(
     """
 
     if dets.dtype == np.bool_:
-        dets = np.packbits(dets, axis=1, bitorder='little')
+        dets = np.packbits(dets, axis=1, bitorder="little")
     result = predict_observables_bit_packed(
         dem=dem,
         dets_bit_packed=dets,
@@ -280,7 +298,9 @@ def predict_observables(
         custom_decoders=custom_decoders,
     )
     if not bit_pack_result:
-        return np.unpackbits(result, axis=1, bitorder='little', count=dem.num_observables).astype(np.bool_)
+        return np.unpackbits(
+            result, axis=1, bitorder="little", count=dem.num_observables
+        ).astype(np.bool_)
     return result
 
 
@@ -289,7 +309,7 @@ def predict_observables_bit_packed(
     dem: stim.DetectorErrorModel,
     dets_bit_packed: np.ndarray,
     decoder: str,
-    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+    custom_decoders: Optional[Dict[str, "sinter.Decoder"]] = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 
@@ -347,9 +367,9 @@ def predict_observables_bit_packed(
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir = pathlib.Path(tmp_dir)
-        dets_b8_path = tmp_dir / 'sinter_dets.b8'
-        pred_b8_path = tmp_dir / 'sinter_predictions.b8'
-        dem_path = tmp_dir / 'dem.dem'
+        dets_b8_path = tmp_dir / "sinter_dets.b8"
+        pred_b8_path = tmp_dir / "sinter_predictions.b8"
+        dem_path = tmp_dir / "dem.dem"
         dem.to_file(dem_path)
         num_dets = dem.num_detectors
         num_obs = dem.num_observables
@@ -357,7 +377,7 @@ def predict_observables_bit_packed(
         stim.write_shot_data_file(
             data=dets_bit_packed,
             path=str(dets_b8_path),
-            format='b8',
+            format="b8",
             num_detectors=num_dets,
             num_observables=0,
         )
@@ -374,7 +394,7 @@ def predict_observables_bit_packed(
 
         return stim.read_shot_data_file(
             path=str(pred_b8_path),
-            format='b8',
+            format="b8",
             bit_pack=True,
             num_detectors=0,
             num_observables=num_obs,

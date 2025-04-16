@@ -16,7 +16,8 @@ def test_stim_conversion():
         stimcirq.cirq_circuit_to_stim_circuit(
             cirq.Circuit(
                 cirq.Moment(
-                    stimcirq.DetAnnotation(parity_keys=["later"]), cirq.measure(b, key="later")
+                    stimcirq.DetAnnotation(parity_keys=["later"]),
+                    cirq.measure(b, key="later"),
                 )
             )
         )
@@ -44,7 +45,8 @@ def test_stim_conversion():
     assert stimcirq.cirq_circuit_to_stim_circuit(
         cirq.Circuit(
             cirq.Moment(
-                cirq.measure(b, key="earlier"), stimcirq.DetAnnotation(parity_keys=["earlier"])
+                cirq.measure(b, key="earlier"),
+                stimcirq.DetAnnotation(parity_keys=["earlier"]),
             )
         )
     ) == stim.Circuit(
@@ -60,7 +62,9 @@ def test_stim_conversion():
         cirq.Circuit(
             cirq.Moment(cirq.measure(a, key="a"), cirq.measure(b, key="b")),
             cirq.Moment(
-                stimcirq.DetAnnotation(parity_keys=["a", "b"], coordinate_metadata=(1, 2, 3.5))
+                stimcirq.DetAnnotation(
+                    parity_keys=["a", "b"], coordinate_metadata=(1, 2, 3.5)
+                )
             ),
         )
     ) == stim.Circuit(
@@ -106,7 +110,9 @@ def test_simulation():
     a = cirq.LineQubit(0)
     s = cirq.Simulator().sample(
         cirq.Circuit(
-            cirq.X(a), cirq.measure(a, key="a"), stimcirq.DetAnnotation(parity_keys=["a"])
+            cirq.X(a),
+            cirq.measure(a, key="a"),
+            stimcirq.DetAnnotation(parity_keys=["a"]),
         ),
         repetitions=3,
     )
@@ -144,7 +150,9 @@ def test_equality():
         stimcirq.DetAnnotation(parity_keys=["a"], coordinate_metadata=[1, 2]),
         stimcirq.DetAnnotation(parity_keys=["a"], coordinate_metadata=(1, 2)),
     )
-    eq.add_equality_group(stimcirq.DetAnnotation(parity_keys=["a"], coordinate_metadata=(2, 1)))
+    eq.add_equality_group(
+        stimcirq.DetAnnotation(parity_keys=["a"], coordinate_metadata=(2, 1))
+    )
     eq.add_equality_group(stimcirq.DetAnnotation(parity_keys=["b"]))
     eq.add_equality_group(
         stimcirq.DetAnnotation(parity_keys=["a", "b"]),
@@ -160,12 +168,22 @@ def test_json_serialization():
         stimcirq.DetAnnotation(parity_keys=["d", "c"], coordinate_metadata=(1, 2, 3)),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(
+        json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]
+    )
     assert c == c2
 
 
 def test_json_backwards_compat_exact():
-    raw = stimcirq.DetAnnotation(parity_keys=['a'], relative_keys=[-2], coordinate_metadata=(3, 5))
+    raw = stimcirq.DetAnnotation(
+        parity_keys=["a"], relative_keys=[-2], coordinate_metadata=(3, 5)
+    )
     packed = '{\n  "cirq_type": "DetAnnotation",\n  "parity_keys": [\n    "a"\n  ],\n  "coordinate_metadata": [\n    3,\n    5\n  ],\n  "relative_keys": [\n    -2\n  ]\n}'
-    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert (
+        cirq.read_json(
+            json_text=packed,
+            resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER],
+        )
+        == raw
+    )
     assert cirq.to_json(raw) == packed

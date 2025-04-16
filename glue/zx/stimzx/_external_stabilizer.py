@@ -11,7 +11,7 @@ class ExternalStabilizer:
         self.output = output
 
     @staticmethod
-    def from_dual(dual: stim.PauliString, num_inputs: int) -> 'ExternalStabilizer':
+    def from_dual(dual: stim.PauliString, num_inputs: int) -> "ExternalStabilizer":
         sign = dual.sign
 
         # Transpose input. Ys get negated.
@@ -25,7 +25,9 @@ class ExternalStabilizer:
         )
 
     @staticmethod
-    def canonicals_from_duals(duals: List[stim.PauliString], num_inputs: int) -> List['ExternalStabilizer']:
+    def canonicals_from_duals(
+        duals: List[stim.PauliString], num_inputs: int
+    ) -> List["ExternalStabilizer"]:
         if not duals:
             return []
         duals = [e.copy() for e in duals]
@@ -52,11 +54,13 @@ class ExternalStabilizer:
         duals = input_only_stabilizers + output_using_stabilizers
         return [ExternalStabilizer.from_dual(e, num_inputs) for e in duals]
 
-    def __mul__(self, other: 'ExternalStabilizer') -> 'ExternalStabilizer':
-        return ExternalStabilizer(input=other.input * self.input, output=self.output * other.output)
+    def __mul__(self, other: "ExternalStabilizer") -> "ExternalStabilizer":
+        return ExternalStabilizer(
+            input=other.input * self.input, output=self.output * other.output
+        )
 
     def __str__(self) -> str:
-        return str(self.input) + ' -> ' + str(self.output)
+        return str(self.input) + " -> " + str(self.output)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ExternalStabilizer):
@@ -67,10 +71,14 @@ class ExternalStabilizer:
         return not self == other
 
     def __repr__(self):
-        return f'stimzx.ExternalStabilizer(input={self.input!r}, output={self.output!r})'
+        return (
+            f"stimzx.ExternalStabilizer(input={self.input!r}, output={self.output!r})"
+        )
 
 
-def _eliminate_stabilizers(stabilizers: List[stim.PauliString], elimination_indices: range):
+def _eliminate_stabilizers(
+    stabilizers: List[stim.PauliString], elimination_indices: range
+):
     """Performs partial Gaussian elimination on the list of stabilizers."""
     min_pivot = 0
     for q in elimination_indices:
@@ -86,5 +94,8 @@ def _eliminate_stabilizers(stabilizers: List[stim.PauliString], elimination_indi
                 if k != pivot and (p == 2 or p == b):
                     stabilizer *= stabilizers[pivot]
             if min_pivot != pivot:
-                stabilizers[min_pivot], stabilizers[pivot] = stabilizers[pivot], stabilizers[min_pivot]
+                stabilizers[min_pivot], stabilizers[pivot] = (
+                    stabilizers[pivot],
+                    stabilizers[min_pivot],
+                )
             min_pivot += 1

@@ -28,16 +28,20 @@ def test_stim_circuit_to_cirq_circuit():
     assert circuit == cirq.Circuit(
         cirq.Moment(cirq.X(a)),
         cirq.Moment(cirq.CNOT(a, b)),
-        cirq.Moment(cirq.X.with_probability(0.125).on(a), cirq.X.with_probability(0.125).on(b)),
-        cirq.Moment(cirq.PauliString({a: cirq.X, b: cirq.Y, c: cirq.Z}).with_probability(0.25)),
+        cirq.Moment(
+            cirq.X.with_probability(0.125).on(a), cirq.X.with_probability(0.125).on(b)
+        ),
+        cirq.Moment(
+            cirq.PauliString({a: cirq.X, b: cirq.Y, c: cirq.Z}).with_probability(0.25)
+        ),
         cirq.Moment(cirq.measure(b, key="0")),
         cirq.Moment(cirq.measure(b, key="1", invert_mask=(True,))),
         cirq.Moment(
             stimcirq.MeasureAndOrResetGate(
-                measure=True, reset=True, basis='Z', invert_measure=False, key='2'
+                measure=True, reset=True, basis="Z", invert_measure=False, key="2"
             ).on(a),
             stimcirq.MeasureAndOrResetGate(
-                measure=True, reset=True, basis='Z', invert_measure=True, key='3'
+                measure=True, reset=True, basis="Z", invert_measure=True, key="3"
             ).on(b),
         ),
     )
@@ -100,7 +104,9 @@ def test_gates_converted_using_SweepableGateHandler(name: str):
     q = qs[0]
     cirq_original = cirq.Circuit(
         stimcirq.SweepPauli(
-            stim_sweep_bit_index=3, cirq_sweep_symbol="sweep[3]", pauli=handler.pauli_gate
+            stim_sweep_bit_index=3,
+            cirq_sweep_symbol="sweep[3]",
+            pauli=handler.pauli_gate,
         ).on(q)
     )
     if name.startswith("C") or name.startswith("Z"):
@@ -157,7 +163,7 @@ def test_gates_converted_using_OneToOneMeasurementHandler(
         CircuitTranslationTracker.OneToOneMeasurementHandler,
         CircuitTranslationTracker.get_handler_table()[name],
     )
-    if handler.basis == 'Z' and not handler.reset and not probability:
+    if handler.basis == "Z" and not handler.reset and not probability:
         cirq_original = cirq.Circuit(
             cirq.measure(cirq.LineQubit(5), key="0", invert_mask=(1,) * invert)
         )
@@ -293,54 +299,54 @@ def test_noisy_measurements():
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=False,
-            basis='X',
+            basis="X",
             invert_measure=False,
-            key='0',
+            key="0",
             measure_flip_probability=0.125,
         ).on(cirq.LineQubit(0)),
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=False,
-            basis='Y',
+            basis="Y",
             invert_measure=False,
-            key='1',
+            key="1",
             measure_flip_probability=0.125,
         ).on(cirq.LineQubit(1)),
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=False,
-            basis='Z',
+            basis="Z",
             invert_measure=False,
-            key='2',
+            key="2",
             measure_flip_probability=0.125,
         ).on(cirq.LineQubit(2)),
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=True,
-            basis='X',
+            basis="X",
             invert_measure=False,
-            key='3',
+            key="3",
             measure_flip_probability=0.125,
         ).on(cirq.LineQubit(3)),
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=True,
-            basis='Y',
+            basis="Y",
             invert_measure=False,
-            key='4',
+            key="4",
             measure_flip_probability=0.125,
         ).on(cirq.LineQubit(4)),
         stimcirq.MeasureAndOrResetGate(
             measure=True,
             reset=True,
-            basis='Z',
+            basis="Z",
             invert_measure=False,
-            key='5',
+            key="5",
             measure_flip_probability=0.25,
         ).on(cirq.LineQubit(5)),
     )
     assert stimcirq.cirq_circuit_to_stim_circuit(c) == s
-    cirq.testing.assert_equivalent_repr(c, global_vals={'stimcirq': stimcirq})
+    cirq.testing.assert_equivalent_repr(c, global_vals={"stimcirq": stimcirq})
 
 
 def test_convert_mpp():
@@ -355,14 +361,18 @@ def test_convert_mpp():
     )
     c = cirq.Circuit(
         cirq.Moment(
-            cirq.PauliMeasurementGate(cirq.DensePauliString("XYZ", coefficient=+1), key='0').on(
-                cirq.LineQubit(2), cirq.LineQubit(5), cirq.LineQubit(3)
-            )
+            cirq.PauliMeasurementGate(
+                cirq.DensePauliString("XYZ", coefficient=+1), key="0"
+            ).on(cirq.LineQubit(2), cirq.LineQubit(5), cirq.LineQubit(3))
         ),
         cirq.Moment(
-            cirq.PauliMeasurementGate(cirq.DensePauliString("Y"), key='1').on(cirq.LineQubit(2)),
-            cirq.PauliMeasurementGate(cirq.DensePauliString("X"), key='2').on(cirq.LineQubit(1)),
-            cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ"), key='3').on(
+            cirq.PauliMeasurementGate(cirq.DensePauliString("Y"), key="1").on(
+                cirq.LineQubit(2)
+            ),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("X"), key="2").on(
+                cirq.LineQubit(1)
+            ),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ"), key="3").on(
                 cirq.LineQubit(3), cirq.LineQubit(4)
             ),
             cirq.X(cirq.LineQubit(0)),
@@ -405,9 +415,11 @@ def test_convert_detector():
         cirq.H(a),
         cirq.CNOT(a, b),
         cirq.Moment(
-            cirq.measure(b, key='0'),
-            cirq.measure(a, key='1'),
-            stimcirq.DetAnnotation(parity_keys=['0', '1'], coordinate_metadata=(2, 3, 5)),
+            cirq.measure(b, key="0"),
+            cirq.measure(a, key="1"),
+            stimcirq.DetAnnotation(
+                parity_keys=["0", "1"], coordinate_metadata=(2, 3, 5)
+            ),
         ),
     )
     cirq.testing.assert_has_diagram(
@@ -440,9 +452,11 @@ def test_convert_observable():
         cirq.H(a),
         cirq.CNOT(a, b),
         cirq.Moment(
-            cirq.measure(b, key='0'),
-            cirq.measure(a, key='1'),
-            stimcirq.CumulativeObservableAnnotation(parity_keys=['0', '1'], observable_index=5),
+            cirq.measure(b, key="0"),
+            cirq.measure(a, key="1"),
+            stimcirq.CumulativeObservableAnnotation(
+                parity_keys=["0", "1"], observable_index=5
+            ),
         ),
     )
     cirq.testing.assert_has_diagram(
@@ -469,18 +483,18 @@ def test_sweep_target():
     )
     a, b, c, d = cirq.LineQubit.range(4)
     cirq_circuit = cirq.Circuit(
-        stimcirq.SweepPauli(stim_sweep_bit_index=2, cirq_sweep_symbol="sweep[2]", pauli=cirq.X).on(
-            a
-        ),
-        stimcirq.SweepPauli(stim_sweep_bit_index=3, cirq_sweep_symbol="sweep[3]", pauli=cirq.Y).on(
-            b
-        ),
-        stimcirq.SweepPauli(stim_sweep_bit_index=5, cirq_sweep_symbol="sweep[5]", pauli=cirq.Z).on(
-            c
-        ),
-        stimcirq.SweepPauli(stim_sweep_bit_index=7, cirq_sweep_symbol="sweep[7]", pauli=cirq.Z).on(
-            d
-        ),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=2, cirq_sweep_symbol="sweep[2]", pauli=cirq.X
+        ).on(a),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=3, cirq_sweep_symbol="sweep[3]", pauli=cirq.Y
+        ).on(b),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=5, cirq_sweep_symbol="sweep[5]", pauli=cirq.Z
+        ).on(c),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=7, cirq_sweep_symbol="sweep[7]", pauli=cirq.Z
+        ).on(d),
     )
     cirq.testing.assert_has_diagram(
         cirq_circuit,
@@ -554,7 +568,9 @@ def test_convert_repeat_measurements():
                     cirq.Moment(
                         cirq.measure(a, key=cirq.MeasurementKey("0")),
                         cirq.measure(b, key=cirq.MeasurementKey("1")),
-                        stimcirq.DetAnnotation(relative_keys=[-1, -2], coordinate_metadata=[5]),
+                        stimcirq.DetAnnotation(
+                            relative_keys=[-1, -2], coordinate_metadata=[5]
+                        ),
                         stimcirq.ShiftCoordsAnnotation([2]),
                     ),
                 ),
@@ -572,20 +588,28 @@ def test_convert_repeat_measurements():
 
 
 def test_single_repeat_loops_always_flattened():
-    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit(
-        """
+    assert (
+        stimcirq.stim_circuit_to_cirq_circuit(
+            stim.Circuit(
+                """
         REPEAT 1 {
             H 0
         }
-        """)) == cirq.Circuit(cirq.H(cirq.LineQubit(0)))
-    assert stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
-        cirq.CircuitOperation(
-            cirq.FrozenCircuit(
-                cirq.H(cirq.LineQubit(0)),
+        """
+            )
+        )
+        == cirq.Circuit(cirq.H(cirq.LineQubit(0)))
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(
+        cirq.Circuit(
+            cirq.CircuitOperation(
+                cirq.FrozenCircuit(
+                    cirq.H(cirq.LineQubit(0)),
+                ),
+                repetitions=1,
             ),
-            repetitions=1,
-        ),
-    )) == stim.Circuit("H 0\nTICK")
+        )
+    ) == stim.Circuit("H 0\nTICK")
 
 
 def test_circuit_operations_always_in_isolated_moment():
@@ -601,59 +625,75 @@ def test_circuit_operations_always_in_isolated_moment():
     qs = cirq.LineQubit.range(4)
     expected_cirq_circuit = cirq.Circuit(
         cirq.CircuitOperation(
-            circuit=cirq.FrozenCircuit([cirq.H(qs[0]),cirq.H(qs[1])]),
+            circuit=cirq.FrozenCircuit([cirq.H(qs[0]), cirq.H(qs[1])]),
             repetitions=2,
-            use_repetition_ids=False
+            use_repetition_ids=False,
         ),
-        cirq.Moment(cirq.H(qs[2]),cirq.H(qs[3])),
+        cirq.Moment(cirq.H(qs[2]), cirq.H(qs[3])),
     )
     assert cirq_circuit == expected_cirq_circuit
 
 
 @pytest.mark.skip(reason="blocked by https://github.com/quantumlib/Cirq/issues/6136")
 def test_stim_circuit_to_cirq_circuit_mpad():
-    stim_circuit = stim.Circuit("""
+    stim_circuit = stim.Circuit(
+        """
         MPAD 0 1
-    """)
+    """
+    )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     assert cirq_circuit == cirq.Circuit(
         cirq.PauliMeasurementGate(cirq.DensePauliString(""), key="0").on(),
-        cirq.PauliMeasurementGate(cirq.DensePauliString("", coefficient=-1), key="1").on(),
+        cirq.PauliMeasurementGate(
+            cirq.DensePauliString("", coefficient=-1), key="1"
+        ).on(),
     )
 
 
 def test_stim_circuit_to_cirq_circuit_mxx_myy_mzz():
-    stim_circuit = stim.Circuit("""
+    stim_circuit = stim.Circuit(
+        """
         MXX 0 1
         MYY 0 !1
         MZZ !0 1
-    """)
+    """
+    )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     a, b = cirq.LineQubit.range(2)
     assert cirq_circuit == cirq.Circuit(
-        cirq.PauliMeasurementGate(cirq.DensePauliString("XX"), key='0').on(a, b),
-        cirq.PauliMeasurementGate(cirq.DensePauliString("YY", coefficient=-1), key='1').on(a, b),
-        cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ", coefficient=-1), key='2').on(a, b),
+        cirq.PauliMeasurementGate(cirq.DensePauliString("XX"), key="0").on(a, b),
+        cirq.PauliMeasurementGate(
+            cirq.DensePauliString("YY", coefficient=-1), key="1"
+        ).on(a, b),
+        cirq.PauliMeasurementGate(
+            cirq.DensePauliString("ZZ", coefficient=-1), key="2"
+        ).on(a, b),
     )
-    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit("""
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit(
+        """
         MPP X0*X1
         TICK
         MPP !Y0*Y1
         TICK
         MPP !Z0*Z1
         TICK
-    """)
+    """
+    )
 
 
 def test_stim_circuit_to_cirq_circuit_spp():
-    stim_circuit = stim.Circuit("""
+    stim_circuit = stim.Circuit(
+        """
         SPP X1*Y2*Z3
         SPP !Y4
         SPP_DAG X5
         SPP_DAG !Z0
-    """)
+    """
+    )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
-    assert cirq_circuit.to_text_diagram(use_unicode_characters=False).strip() == """
+    assert (
+        cirq_circuit.to_text_diagram(use_unicode_characters=False).strip()
+        == """
 0: ---[Z]^0.5----
 
 1: ---[X]--------
@@ -666,32 +706,46 @@ def test_stim_circuit_to_cirq_circuit_spp():
 
 5: ---[X]^-0.5---
     """.strip()
+    )
     q0, q1, q2, q3, q4, q5 = cirq.LineQubit.range(6)
-    assert cirq_circuit == cirq.Circuit([
-        cirq.Moment(
-            cirq.PauliStringPhasor(cirq.X(q1)*cirq.Y(q2)*cirq.Z(q3), exponent_neg=0.5),
-            cirq.PauliStringPhasor(cirq.Y(q4), exponent_neg=0, exponent_pos=0.5),
-            cirq.PauliStringPhasor(cirq.X(q5), exponent_neg=-0.5),
-            cirq.PauliStringPhasor(cirq.Z(q0), exponent_neg=0, exponent_pos=-0.5),
-        ),
-    ])
-    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit("""
+    assert cirq_circuit == cirq.Circuit(
+        [
+            cirq.Moment(
+                cirq.PauliStringPhasor(
+                    cirq.X(q1) * cirq.Y(q2) * cirq.Z(q3), exponent_neg=0.5
+                ),
+                cirq.PauliStringPhasor(cirq.Y(q4), exponent_neg=0, exponent_pos=0.5),
+                cirq.PauliStringPhasor(cirq.X(q5), exponent_neg=-0.5),
+                cirq.PauliStringPhasor(cirq.Z(q0), exponent_neg=0, exponent_pos=-0.5),
+            ),
+        ]
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit(
+        """
         SPP X1*Y2*Z3
         SPP_DAG Y4 X5
         SPP Z0
         TICK
-    """)
-
-
-def test_tags_convert():
-    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
-        H[my_tag] 0
-    """)) == cirq.Circuit(
-        cirq.H(cirq.LineQubit(0)).with_tags('my_tag'),
+    """
     )
 
 
-@pytest.mark.parametrize('gate', sorted(stim.gate_data().keys()))
+def test_tags_convert():
+    assert (
+        stimcirq.stim_circuit_to_cirq_circuit(
+            stim.Circuit(
+                """
+        H[my_tag] 0
+    """
+            )
+        )
+        == cirq.Circuit(
+            cirq.H(cirq.LineQubit(0)).with_tags("my_tag"),
+        )
+    )
+
+
+@pytest.mark.parametrize("gate", sorted(stim.gate_data().keys()))
 def test_every_operation_converts_tags(gate: str):
     if gate in [
         "ELSE_CORRELATED_ERROR",
@@ -713,53 +767,57 @@ def test_every_operation_converts_tags(gate: str):
     if data.takes_pauli_targets:
         targets = [stim.target_x(0), stim.target_y(1)]
     if data.takes_measurement_record_targets and not data.is_unitary:
-        stim_circuit.append("M", [0], tag='custom_tag')
+        stim_circuit.append("M", [0], tag="custom_tag")
         targets = [stim.target_rec(-1)]
-    if gate == 'SHIFT_COORDS':
+    if gate == "SHIFT_COORDS":
         targets = []
-    if gate == 'OBSERVABLE_INCLUDE':
+    if gate == "OBSERVABLE_INCLUDE":
         arg = [1]
-    stim_circuit.append(gate, targets, arg, tag='custom_tag')
+    stim_circuit.append(gate, targets, arg, tag="custom_tag")
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     assert any(cirq_circuit.all_operations())
     for op in cirq_circuit.all_operations():
-        assert op.tags == ('custom_tag',)
+        assert op.tags == ("custom_tag",)
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit.pop() == stim.CircuitInstruction("TICK")
-    assert all(instruction.tag == 'custom_tag' for instruction in restored_circuit)
-    if gate not in ['MXX', 'MYY', 'MZZ']:
+    assert all(instruction.tag == "custom_tag" for instruction in restored_circuit)
+    if gate not in ["MXX", "MYY", "MZZ"]:
         assert restored_circuit == stim_circuit
 
 
 def test_loop_tagging():
-    stim_circuit = stim.Circuit("""
+    stim_circuit = stim.Circuit(
+        """
         REPEAT[custom-tag] 5 {
             H[tag2] 0
             TICK
         }
-    """)
+    """
+    )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     assert cirq_circuit == cirq.Circuit(
         cirq.CircuitOperation(
             cirq.FrozenCircuit(
-                cirq.H(cirq.LineQubit(0)).with_tags('tag2'),
+                cirq.H(cirq.LineQubit(0)).with_tags("tag2"),
             ),
             repetitions=5,
             use_repetition_ids=False,
-        ).with_tags('custom-tag')
+        ).with_tags("custom-tag")
     )
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit == stim_circuit
 
 
 def test_id_error_round_trip():
-    stim_circuit = stim.Circuit("""
+    stim_circuit = stim.Circuit(
+        """
         I_ERROR 0
         I_ERROR(0.125, 0.25) 1
         II_ERROR(0.25, 0.125) 2 3
         II_ERROR 4 5
         TICK
-    """)
+    """
+    )
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit == stim_circuit

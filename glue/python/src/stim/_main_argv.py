@@ -7,5 +7,5 @@ def main_argv():
     stim.main(command_line_args=sys.argv[1:])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main_argv()

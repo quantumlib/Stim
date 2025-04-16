@@ -36,7 +36,7 @@ class DetAnnotation(cirq.Operation):
     def qubits(self) -> Tuple[cirq.Qid, ...]:
         return ()
 
-    def with_qubits(self, *new_qubits) -> 'DetAnnotation':
+    def with_qubits(self, *new_qubits) -> "DetAnnotation":
         return self
 
     def _value_equality_values_(self) -> Any:
@@ -44,29 +44,29 @@ class DetAnnotation(cirq.Operation):
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
-        items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        items += [f"rec[{e}]" for e in sorted(self.relative_keys)]
         k = ",".join(str(e) for e in items)
         return f"Det({k})"
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
         result = {
-            'parity_keys': sorted(self.parity_keys),
-            'coordinate_metadata': self.coordinate_metadata,
+            "parity_keys": sorted(self.parity_keys),
+            "coordinate_metadata": self.coordinate_metadata,
         }
         if self.relative_keys:
-            result['relative_keys'] = sorted(self.relative_keys)
+            result["relative_keys"] = sorted(self.relative_keys)
         return result
 
     def __repr__(self) -> str:
         return (
-            f'stimcirq.DetAnnotation('
-            f'parity_keys={sorted(self.parity_keys)}, '
-            f'relative_keys={sorted(self.relative_keys)}, '
-            f'coordinate_metadata={self.coordinate_metadata!r})'
+            f"stimcirq.DetAnnotation("
+            f"parity_keys={sorted(self.parity_keys)}, "
+            f"relative_keys={sorted(self.relative_keys)}, "
+            f"coordinate_metadata={self.coordinate_metadata!r})"
         )
 
     def _decompose_(self):
@@ -96,7 +96,9 @@ class DetAnnotation(cirq.Operation):
 
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)
-        rec_targets = [stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)]
+        rec_targets = [
+            stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)
+        ]
         for offset in range(len(edit_measurement_key_lengths)):
             m_key, m_len = edit_measurement_key_lengths[-1 - offset]
             if m_len != 1:

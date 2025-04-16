@@ -53,8 +53,8 @@ def var_given(
 
 
 def port_incident_pipes(
-        port: Mapping[str, Union[str, int]], n_i: int, n_j: int,
-        n_k: int) -> Tuple[Sequence[str], Sequence[Tuple[int, int, int]]]:
+    port: Mapping[str, Union[str, int]], n_i: int, n_j: int, n_k: int
+) -> Tuple[Sequence[str], Sequence[Tuple[int, int, int]]]:
     """Compute the pipes incident to a port.
 
     A port is an pipe with a open end. The incident pipes of a port are the
@@ -90,14 +90,10 @@ def port_incident_pipes(
         elif port["e"] == "+":  # empty cube is (i+1,j,k)
             adj_coords = [
                 (port["i"] + 1, port["j"], port["k"]),  # (i+1,j,k)---(i+2,j,k)
-                (port["i"] + 1, port["j"] - 1,
-                 port["k"]),  # (i+1,j-1,k)---(i+1,j,k)
-                (port["i"] + 1, port["j"],
-                 port["k"]),  # (i+1,j,k)---(i+1,j+1,k)
-                (port["i"] + 1, port["j"],
-                 port["k"] - 1),  # (i+1,j,k-1)---(i+1,j,k)
-                (port["i"] + 1, port["j"],
-                 port["k"]),  # (i+1,j,k)---(i+1,j,k+1)
+                (port["i"] + 1, port["j"] - 1, port["k"]),  # (i+1,j-1,k)---(i+1,j,k)
+                (port["i"] + 1, port["j"], port["k"]),  # (i+1,j,k)---(i+1,j+1,k)
+                (port["i"] + 1, port["j"], port["k"] - 1),  # (i+1,j,k-1)---(i+1,j,k)
+                (port["i"] + 1, port["j"], port["k"]),  # (i+1,j,k)---(i+1,j,k+1)
             ]
 
     if port["d"] == "J":
@@ -140,8 +136,11 @@ def port_incident_pipes(
 
     # only keep the pipes in bound
     for i, coord in enumerate(adj_coords):
-        if ((coord[0] in range(n_i)) and (coord[1] in range(n_j))
-                and (coord[2] in range(n_k))):
+        if (
+            (coord[0] in range(n_i))
+            and (coord[1] in range(n_j))
+            and (coord[2] in range(n_k))
+        ):
             coords.append(adj_coords[i])
             dirs.append(adj_dirs[i])
 
@@ -167,8 +166,7 @@ def cnf_even_parity_upto4(eles: Sequence[Any]) -> Any:
 
     elif len(eles) == 2:
         # 2 vars even pairty -> both True or both False
-        return z3.Or(z3.And(z3.Not(eles[0]), z3.Not(eles[1])),
-                     z3.And(eles[0], eles[1]))
+        return z3.Or(z3.And(z3.Not(eles[0]), z3.Not(eles[1])), z3.And(eles[0], eles[1]))
 
     elif len(eles) == 3:
         # 3 vars even parity -> all False, or 2 True and 1 False
@@ -182,8 +180,7 @@ def cnf_even_parity_upto4(eles: Sequence[Any]) -> Any:
     elif len(eles) == 4:
         # 4 vars even parity -> 0, 2, or 4 vars are True
         return z3.Or(
-            z3.And(z3.Not(eles[0]), z3.Not(eles[1]), z3.Not(eles[2]),
-                   z3.Not(eles[3])),
+            z3.And(z3.Not(eles[0]), z3.Not(eles[1]), z3.Not(eles[2]), z3.Not(eles[3])),
             z3.And(z3.Not(eles[0]), z3.Not(eles[1]), eles[2], eles[3]),
             z3.And(z3.Not(eles[0]), eles[1], z3.Not(eles[2]), eles[3]),
             z3.And(z3.Not(eles[0]), eles[1], eles[2], z3.Not(eles[3])),
@@ -276,19 +273,20 @@ class LatticeSurgerySAT:
         self.n_s = len(data["stabilizers"])
         # there should be at most as many stabilizers as ports
         if self.n_s > self.n_p:
-            raise ValueError(
-                f"{self.n_s} stabilizers, too many for {self.n_p} ports.")
+            raise ValueError(f"{self.n_s} stabilizers, too many for {self.n_p} ports.")
 
         # stabilizers should be paulistrings of length #ports
         self.paulistrings = [s.replace(".", "I") for s in data["stabilizers"]]
         for s in self.paulistrings:
             if len(s) != self.n_p:
                 raise ValueError(
-                    f"len({s}) = {len(s)}, but there are {self.n_p} ports.")
+                    f"len({s}) = {len(s)}, but there are {self.n_p} ports."
+                )
             for i in range(len(s)):
                 if s[i] not in ["I", "X", "Y", "Z"]:
                     raise ValueError(
-                        f"{s} has invalid Pauli. I, X, Y, and Z are allowed.")
+                        f"{s} has invalid Pauli. I, X, Y, and Z are allowed."
+                    )
 
         # transform port data
         self.ports = []
@@ -301,49 +299,66 @@ class LatticeSurgerySAT:
                 raise ValueError(f"port location should be 3-tuple {port}.")
 
             if len(port["direction"]) != 2:
-                raise ValueError(
-                    f"port direction should have 2 characters {port}.")
+                raise ValueError(f"port direction should have 2 characters {port}.")
             if port["direction"][0] not in ["+", "-"]:
                 raise ValueError(f"port direction with invalid sign {port}.")
             if port["direction"][1] not in ["I", "J", "K"]:
                 raise ValueError(f"port direction with invalid axis {port}.")
 
-            if port["direction"][0] == "-" and port["direction"][
-                    1] == "I" and (port["location"][0] not in range(
-                        1, self.n_i + 1)):
+            if (
+                port["direction"][0] == "-"
+                and port["direction"][1] == "I"
+                and (port["location"][0] not in range(1, self.n_i + 1))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [1, f{self.n_i+1}).")
-            if port["direction"][0] == "+" and port["direction"][
-                    1] == "I" and (port["location"][0] not in range(
-                        0, self.n_i)):
+                    f" should be in range [1, f{self.n_i+1})."
+                )
+            if (
+                port["direction"][0] == "+"
+                and port["direction"][1] == "I"
+                and (port["location"][0] not in range(0, self.n_i))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [0, f{self.n_i}).")
-            if port["direction"][0] == "-" and port["direction"][
-                    1] == "J" and (port["location"][1] not in range(
-                        1, self.n_j + 1)):
+                    f" should be in range [0, f{self.n_i})."
+                )
+            if (
+                port["direction"][0] == "-"
+                and port["direction"][1] == "J"
+                and (port["location"][1] not in range(1, self.n_j + 1))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [1, {self.n_j+1}).")
-            if port["direction"][0] == "+" and port["direction"][
-                    1] == "J" and (port["location"][1] not in range(
-                        0, self.n_j)):
+                    f" should be in range [1, {self.n_j+1})."
+                )
+            if (
+                port["direction"][0] == "+"
+                and port["direction"][1] == "J"
+                and (port["location"][1] not in range(0, self.n_j))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [0, f{self.n_j}).")
-            if port["direction"][0] == "-" and port["direction"][
-                    1] == "K" and (port["location"][2] not in range(
-                        1, self.n_k + 1)):
+                    f" should be in range [0, f{self.n_j})."
+                )
+            if (
+                port["direction"][0] == "-"
+                and port["direction"][1] == "K"
+                and (port["location"][2] not in range(1, self.n_k + 1))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [1, f{self.n_k+1}).")
-            if port["direction"][0] == "+" and port["direction"][
-                    1] == "K" and (port["location"][2] not in range(
-                        0, self.n_k)):
+                    f" should be in range [1, f{self.n_k+1})."
+                )
+            if (
+                port["direction"][0] == "+"
+                and port["direction"][1] == "K"
+                and (port["location"][2] not in range(0, self.n_k))
+            ):
                 raise ValueError(
                     f"{port['location']} with direction {port['direction']}"
-                    f" should be in range [0, f{self.n_k}).")
+                    f" should be in range [0, f{self.n_k})."
+                )
 
             # internally, a port is an pipe. This is different from what we
             # expose to the user: in LaS specification, a port is a cube and
@@ -371,8 +386,7 @@ class LatticeSurgerySAT:
             # "c" is the color variable of the pipe corresponding to the port
             z_dir = port["z_basis_direction"]
             if z_dir not in ["I", "J", "K"] or z_dir == my_port["d"]:
-                raise ValueError(
-                    f"port with invalid Z basis direction {port}.")
+                raise ValueError(f"port with invalid Z basis direction {port}.")
             if my_port["d"] == "I":
                 my_port["c"] = 0 if z_dir == "J" else 1
             if my_port["d"] == "J":
@@ -399,14 +413,16 @@ class LatticeSurgerySAT:
             if "forbidden_cubes" in data["optional"]:
                 for cube in data["optional"]["forbidden_cubes"]:
                     if len(cube) != 3:
-                        raise ValueError(
-                            f"forbid cube should be 3-tuple {cube}.")
-                    if (cube[0] not in range(self.n_i)
-                            or cube[1] not in range(self.n_j)
-                            or cube[2] not in range(self.n_k)):
+                        raise ValueError(f"forbid cube should be 3-tuple {cube}.")
+                    if (
+                        cube[0] not in range(self.n_i)
+                        or cube[1] not in range(self.n_j)
+                        or cube[2] not in range(self.n_k)
+                    ):
                         raise ValueError(
                             f"forbidden {cube} out of range "
-                            f"(i,j,k) < ({self.n_i, self.n_j, self.n_k})")
+                            f"(i,j,k) < ({self.n_i, self.n_j, self.n_k})"
+                        )
                     self.forbidden_cubes.append(cube)
 
         self.get_port_cubes()
@@ -427,7 +443,7 @@ class LatticeSurgerySAT:
                 self.port_cubes.append((p["i"], p["j"], p["k"] + 1))
 
     def derive_corr_boundary(
-            self, paulistrings: Sequence[str]
+        self, paulistrings: Sequence[str]
     ) -> Sequence[Sequence[Mapping[str, int]]]:
         """derive the boundary correlation surface variable values.
 
@@ -511,13 +527,13 @@ class LatticeSurgerySAT:
     ) -> None:
         """build the SMT model with variables and constraints.
 
-            Args:
-                given_arrs (Mapping[str, Any], optional):
-                    Arrays of values to plug in. Defaults to None.
-                given_vals (Sequence[Mapping[str, Any]], optional):
-                    Values to plug in. Defaults to None. These values will
-                    replace existing values if already set by given_arrs.
-            """
+        Args:
+            given_arrs (Mapping[str, Any], optional):
+                Arrays of values to plug in. Defaults to None.
+            given_vals (Sequence[Mapping[str, Any]], optional):
+                Values to plug in. Defaults to None. These values will
+                replace existing values if already set by given_arrs.
+        """
         self.define_vars()
         if given_arrs is not None:
             self.plugin_arrs(given_arrs)
@@ -552,51 +568,111 @@ class LatticeSurgerySAT:
     def define_vars(self) -> None:
         """define the variables in Z3 into self.vars."""
         self.vars = {
-            "ExistI":
-            [[[z3.Bool(f"ExistI({i},{j},{k})") for k in range(self.n_k)]
-              for j in range(self.n_j)] for i in range(self.n_i)],
-            "ExistJ":
-            [[[z3.Bool(f"ExistJ({i},{j},{k})") for k in range(self.n_k)]
-              for j in range(self.n_j)] for i in range(self.n_i)],
-            "ExistK":
-            [[[z3.Bool(f"ExistK({i},{j},{k})") for k in range(self.n_k)]
-              for j in range(self.n_j)] for i in range(self.n_i)],
-            "NodeY":
-            [[[z3.Bool(f"NodeY({i},{j},{k})") for k in range(self.n_k)]
-              for j in range(self.n_j)] for i in range(self.n_i)],
-            "CorrIJ":
-            [[[[z3.Bool(f"CorrIJ({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
-            "CorrIK":
-            [[[[z3.Bool(f"CorrIK({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
-            "CorrJK":
-            [[[[z3.Bool(f"CorrJK({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
-            "CorrJI":
-            [[[[z3.Bool(f"CorrJI({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
-            "CorrKI":
-            [[[[z3.Bool(f"CorrKI({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
-            "CorrKJ":
-            [[[[z3.Bool(f"CorrKJ({s},{i},{j},{k})") for k in range(self.n_k)]
-               for j in range(self.n_j)] for i in range(self.n_i)]
-             for s in range(self.n_s)],
+            "ExistI": [
+                [
+                    [z3.Bool(f"ExistI({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ],
+            "ExistJ": [
+                [
+                    [z3.Bool(f"ExistJ({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ],
+            "ExistK": [
+                [
+                    [z3.Bool(f"ExistK({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ],
+            "NodeY": [
+                [
+                    [z3.Bool(f"NodeY({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ],
+            "CorrIJ": [
+                [
+                    [
+                        [z3.Bool(f"CorrIJ({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
+            "CorrIK": [
+                [
+                    [
+                        [z3.Bool(f"CorrIK({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
+            "CorrJK": [
+                [
+                    [
+                        [z3.Bool(f"CorrJK({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
+            "CorrJI": [
+                [
+                    [
+                        [z3.Bool(f"CorrJI({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
+            "CorrKI": [
+                [
+                    [
+                        [z3.Bool(f"CorrKI({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
+            "CorrKJ": [
+                [
+                    [
+                        [z3.Bool(f"CorrKJ({s},{i},{j},{k})") for k in range(self.n_k)]
+                        for j in range(self.n_j)
+                    ]
+                    for i in range(self.n_i)
+                ]
+                for s in range(self.n_s)
+            ],
         }
 
         if self.color_ij:
-            self.vars["ColorI"] = [[[
-                z3.Bool(f"ColorI({i},{j},{k})") for k in range(self.n_k)
-            ] for j in range(self.n_j)] for i in range(self.n_i)]
-            self.vars["ColorJ"] = [[[
-                z3.Bool(f"ColorJ({i},{j},{k})") for k in range(self.n_k)
-            ] for j in range(self.n_j)] for i in range(self.n_i)]
+            self.vars["ColorI"] = [
+                [
+                    [z3.Bool(f"ColorI({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ]
+            self.vars["ColorJ"] = [
+                [
+                    [z3.Bool(f"ColorJ({i},{j},{k})") for k in range(self.n_k)]
+                    for j in range(self.n_j)
+                ]
+                for i in range(self.n_i)
+            ]
 
     def plugin_arrs(self, data: Mapping[str, Any]) -> None:
         """plug in the given arrays of values.
@@ -611,12 +687,12 @@ class LatticeSurgerySAT:
 
         for key in data:
             if key in [
-                    "NodeY",
-                    "ExistI",
-                    "ExistJ",
-                    "ExistK",
-                    "ColorI",
-                    "ColorJ",
+                "NodeY",
+                "ExistI",
+                "ExistJ",
+                "ExistK",
+                "ColorI",
+                "ColorJ",
             ]:
                 if len(data[key]) != self.n_i:
                     raise ValueError(f"dimension of {key} is wrong.")
@@ -627,12 +703,12 @@ class LatticeSurgerySAT:
                         if len(tmptmp) != self.n_k:
                             raise ValueError(f"dimension of {key} is wrong.")
             elif key in [
-                    "CorrIJ",
-                    "CorrIK",
-                    "CorrJI",
-                    "CorrJK",
-                    "CorrKI",
-                    "CorrKJ",
+                "CorrIJ",
+                "CorrIK",
+                "CorrJI",
+                "CorrJK",
+                "CorrKI",
+                "CorrKJ",
             ]:
                 if len(data[key]) != self.n_s:
                     raise ValueError(f"dimension of {key} is wrong.")
@@ -644,8 +720,7 @@ class LatticeSurgerySAT:
                             raise ValueError(f"dimension of {key} is wrong.")
                         for tmptmptmp in tmptmp:
                             if len(tmptmptmp) != self.n_k:
-                                raise ValueError(
-                                    f"dimension of {key} is wrong.")
+                                raise ValueError(f"dimension of {key} is wrong.")
             else:
                 raise ValueError(f"{key} is not a valid array name")
 
@@ -667,22 +742,24 @@ class LatticeSurgerySAT:
                                 if var_given(data, arr, i, j, k):
                                     self.goal.add(
                                         self.vars[arr][i][j][k]
-                                        if data[arr][i][j][k] ==
-                                        1 else z3.Not(self.vars[arr][i][j][k]))
+                                        if data[arr][i][j][k] == 1
+                                        else z3.Not(self.vars[arr][i][j][k])
+                                    )
                         # Corr vars
                         for arr in [
-                                "CorrIJ",
-                                "CorrIK",
-                                "CorrJI",
-                                "CorrJK",
-                                "CorrKI",
-                                "CorrKJ",
+                            "CorrIJ",
+                            "CorrIK",
+                            "CorrJI",
+                            "CorrJK",
+                            "CorrKI",
+                            "CorrKJ",
                         ]:
                             if var_given(data, arr, s, i, j, k):
                                 self.goal.add(
                                     self.vars[arr][s][i][j][k]
-                                    if data[arr][s][i][j][k] ==
-                                    1 else z3.Not(self.vars[arr][s][i][j][k]))
+                                    if data[arr][s][i][j][k] == 1
+                                    else z3.Not(self.vars[arr][s][i][j][k])
+                                )
 
     def plugin_vals(self, data_set: Sequence[Mapping[str, Any]]):
         """plug in the given values
@@ -705,27 +782,27 @@ class LatticeSurgerySAT:
                 if key not in data:
                     raise ValueError(f"{key} is not in given val")
             if data["array"] not in [
-                    "NodeY",
-                    "ExistI",
-                    "ExistJ",
-                    "ExistK",
-                    "ColorI",
-                    "ColorJ",
-                    "CorrIJ",
-                    "CorrIK",
-                    "CorrJI",
-                    "CorrJK",
-                    "CorrKI",
-                    "CorrKJ",
+                "NodeY",
+                "ExistI",
+                "ExistJ",
+                "ExistK",
+                "ColorI",
+                "ColorJ",
+                "CorrIJ",
+                "CorrIK",
+                "CorrJI",
+                "CorrJK",
+                "CorrKI",
+                "CorrKJ",
             ]:
                 raise ValueError(f"{data['array']} is not a valid array.")
             if data["array"] in [
-                    "NodeY",
-                    "ExistI",
-                    "ExistJ",
-                    "ExistK",
-                    "ColorI",
-                    "ColorJ",
+                "NodeY",
+                "ExistI",
+                "ExistJ",
+                "ExistK",
+                "ColorI",
+                "ColorJ",
             ]:
                 if len(data["indices"] != 3):
                     raise ValueError(f"Need 3 indices for {data['array']}.")
@@ -737,12 +814,12 @@ class LatticeSurgerySAT:
                     raise ValueError(f"k index out of range")
 
             if data["array"] in [
-                    "CorrIJ",
-                    "CorrIK",
-                    "CorrJI",
-                    "CorrJK",
-                    "CorrKI",
-                    "CorrKJ",
+                "CorrIJ",
+                "CorrIK",
+                "CorrJI",
+                "CorrJK",
+                "CorrKI",
+                "CorrKJ",
             ]:
                 if len(data["indices"] != 4):
                     raise ValueError(f"Need 4 indices for {data['array']}.")
@@ -791,26 +868,33 @@ class LatticeSurgerySAT:
         """some pipes must exist and some must not depending on the ports."""
         for port in self.ports:
             # the pipe specified by the port exists
-            self.goal.add(self.vars[f"Exist{port['d']}"][port["i"]][port["j"]][
-                port["k"]])
+            self.goal.add(
+                self.vars[f"Exist{port['d']}"][port["i"]][port["j"]][port["k"]]
+            )
             # if I- or J-pipe exist, set the color value too to the given one
             if self.color_ij:
                 if port["d"] != "K":
                     if port["c"] == 1:
-                        self.goal.add(self.vars[f"Color{port['d']}"][port["i"]]
-                                      [port["j"]][port["k"]])
+                        self.goal.add(
+                            self.vars[f"Color{port['d']}"][port["i"]][port["j"]][
+                                port["k"]
+                            ]
+                        )
                     else:
                         self.goal.add(
-                            z3.Not(self.vars[f"Color{port['d']}"][port["i"]][
-                                port["j"]][port["k"]]))
+                            z3.Not(
+                                self.vars[f"Color{port['d']}"][port["i"]][port["j"]][
+                                    port["k"]
+                                ]
+                            )
+                        )
 
             # collect the pipes touching the port to forbid them
-            dirs, coords = port_incident_pipes(port, self.n_i, self.n_j,
-                                               self.n_k)
+            dirs, coords = port_incident_pipes(port, self.n_i, self.n_j, self.n_k)
             for i, coord in enumerate(coords):
                 self.goal.add(
-                    z3.Not(self.vars[f"Exist{dirs[i]}"][coord[0]][coord[1]][
-                        coord[2]]))
+                    z3.Not(self.vars[f"Exist{dirs[i]}"][coord[0]][coord[1]][coord[2]])
+                )
 
     def constraint_connect_outside(self) -> None:
         """no pipe should cross the spatial bound except for ports."""
@@ -818,18 +902,15 @@ class LatticeSurgerySAT:
             for j in range(self.n_j):
                 # consider K-pipes crossing K-bound and not a port
                 if (i, j, self.n_k) not in self.port_cubes:
-                    self.goal.add(
-                        z3.Not(self.vars["ExistK"][i][j][self.n_k - 1]))
+                    self.goal.add(z3.Not(self.vars["ExistK"][i][j][self.n_k - 1]))
         for i in range(self.n_i):
             for k in range(self.n_k):
                 if (i, self.n_j, k) not in self.port_cubes:
-                    self.goal.add(
-                        z3.Not(self.vars["ExistJ"][i][self.n_j - 1][k]))
+                    self.goal.add(z3.Not(self.vars["ExistJ"][i][self.n_j - 1][k]))
         for j in range(self.n_j):
             for k in range(self.n_k):
                 if (self.n_i, j, k) not in self.port_cubes:
-                    self.goal.add(
-                        z3.Not(self.vars["ExistI"][self.n_i - 1][j][k]))
+                    self.goal.add(z3.Not(self.vars["ExistI"][self.n_i - 1][j][k]))
 
     def constraint_timelike_y(self) -> None:
         """forbid all I- and J- pipes to Y cubes."""
@@ -841,24 +922,28 @@ class LatticeSurgerySAT:
                             z3.Implies(
                                 self.vars["NodeY"][i][j][k],
                                 z3.Not(self.vars["ExistI"][i][j][k]),
-                            ))
+                            )
+                        )
                         self.goal.add(
                             z3.Implies(
                                 self.vars["NodeY"][i][j][k],
                                 z3.Not(self.vars["ExistJ"][i][j][k]),
-                            ))
+                            )
+                        )
                         if i - 1 >= 0:
                             self.goal.add(
                                 z3.Implies(
                                     self.vars["NodeY"][i][j][k],
                                     z3.Not(self.vars["ExistI"][i - 1][j][k]),
-                                ))
+                                )
+                            )
                         if j - 1 >= 0:
                             self.goal.add(
                                 z3.Implies(
                                     self.vars["NodeY"][i][j][k],
                                     z3.Not(self.vars["ExistJ"][i][j - 1][k]),
-                                ))
+                                )
+                            )
 
     def constraint_ij_color(self) -> None:
         """color matching for I- and J-pipes."""
@@ -876,16 +961,15 @@ class LatticeSurgerySAT:
                                 z3.Or(
                                     z3.And(
                                         self.vars["ColorI"][i - 1][j][k],
-                                        z3.Not(self.vars["ColorJ"][i][j -
-                                                                      1][k]),
+                                        z3.Not(self.vars["ColorJ"][i][j - 1][k]),
                                     ),
                                     z3.And(
-                                        z3.Not(self.vars["ColorI"][i -
-                                                                   1][j][k]),
+                                        z3.Not(self.vars["ColorI"][i - 1][j][k]),
                                         self.vars["ColorJ"][i][j - 1][k],
                                     ),
                                 ),
-                            ))
+                            )
+                        )
 
                     if i >= 1:
                         # (i-1,j,k)-(i,j,k) and (i,j,k)-(i,j+1,k)
@@ -901,12 +985,12 @@ class LatticeSurgerySAT:
                                         z3.Not(self.vars["ColorJ"][i][j][k]),
                                     ),
                                     z3.And(
-                                        z3.Not(self.vars["ColorI"][i -
-                                                                   1][j][k]),
+                                        z3.Not(self.vars["ColorI"][i - 1][j][k]),
                                         self.vars["ColorJ"][i][j][k],
                                     ),
                                 ),
-                            ))
+                            )
+                        )
                         # (i-1,j,k)-(i,j,k) and (i,j,k)-(i+1,j,k)
                         self.goal.add(
                             z3.Implies(
@@ -920,12 +1004,12 @@ class LatticeSurgerySAT:
                                         self.vars["ColorI"][i][j][k],
                                     ),
                                     z3.And(
-                                        z3.Not(self.vars["ColorI"][i -
-                                                                   1][j][k]),
+                                        z3.Not(self.vars["ColorI"][i - 1][j][k]),
                                         z3.Not(self.vars["ColorI"][i][j][k]),
                                     ),
                                 ),
-                            ))
+                            )
+                        )
 
                     if j >= 1:
                         # (i,j,k)-(i+1,j,k) and (i,j-1,k)-(i,j,k)
@@ -938,15 +1022,15 @@ class LatticeSurgerySAT:
                                 z3.Or(
                                     z3.And(
                                         self.vars["ColorI"][i][j][k],
-                                        z3.Not(self.vars["ColorJ"][i][j -
-                                                                      1][k]),
+                                        z3.Not(self.vars["ColorJ"][i][j - 1][k]),
                                     ),
                                     z3.And(
                                         z3.Not(self.vars["ColorI"][i][j][k]),
                                         self.vars["ColorJ"][i][j - 1][k],
                                     ),
                                 ),
-                            ))
+                            )
+                        )
                         # (i,j-1,k)-(i,j,k) and (i,j,k)-(i,j+1,k)
                         self.goal.add(
                             z3.Implies(
@@ -960,18 +1044,20 @@ class LatticeSurgerySAT:
                                         self.vars["ColorJ"][i][j][k],
                                     ),
                                     z3.And(
-                                        z3.Not(self.vars["ColorJ"][i][j -
-                                                                      1][k]),
+                                        z3.Not(self.vars["ColorJ"][i][j - 1][k]),
                                         z3.Not(self.vars["ColorJ"][i][j][k]),
                                     ),
                                 ),
-                            ))
+                            )
+                        )
 
                     # (i,j,k)-(i+1,j,k) and (i,j,k)-(i,j+1,k)
                     self.goal.add(
                         z3.Implies(
-                            z3.And(self.vars["ExistI"][i][j][k],
-                                   self.vars["ExistJ"][i][j][k]),
+                            z3.And(
+                                self.vars["ExistI"][i][j][k],
+                                self.vars["ExistJ"][i][j][k],
+                            ),
                             z3.Or(
                                 z3.And(
                                     self.vars["ColorI"][i][j][k],
@@ -982,7 +1068,8 @@ class LatticeSurgerySAT:
                                     self.vars["ColorJ"][i][j][k],
                                 ),
                             ),
-                        ))
+                        )
+                    )
 
     def constraint_3d_corner(self) -> None:
         """at least in one direction, both pipes nonexist."""
@@ -1012,7 +1099,8 @@ class LatticeSurgerySAT:
                             z3.Not(z3.Or(i_pipes)),
                             z3.Not(z3.Or(j_pipes)),
                             z3.Not(z3.Or(k_pipes)),
-                        ))
+                        )
+                    )
 
     def constraint_no_deg1(self) -> None:
         """forbid degree-1 X or Z cubes by considering incident pipes."""
@@ -1025,30 +1113,32 @@ class LatticeSurgerySAT:
                             cube[d] += 1 if e == "+" else 0
 
                             # construct fake ports to get incident pipes
-                            p0 = {
-                                "i": i,
-                                "j": j,
-                                "k": k,
-                                "d": d,
-                                "e": e,
-                                "c": 0
-                            }
+                            p0 = {"i": i, "j": j, "k": k, "d": d, "e": e, "c": 0}
                             found_p0 = False
                             for port in self.ports:
-                                if (i == port["i"] and j == port["j"]
-                                        and k == port["k"] and d == port["d"]):
+                                if (
+                                    i == port["i"]
+                                    and j == port["j"]
+                                    and k == port["k"]
+                                    and d == port["d"]
+                                ):
                                     found_p0 = True
 
                             # only non-port pipes need to consider
-                            if (not found_p0 and cube["I"] < self.n_i
-                                    and cube["J"] < self.n_j
-                                    and cube["K"] < self.n_k):
+                            if (
+                                not found_p0
+                                and cube["I"] < self.n_i
+                                and cube["J"] < self.n_j
+                                and cube["K"] < self.n_k
+                            ):
                                 # only cubes inside bound need to consider
                                 dirs, coords = port_incident_pipes(
-                                    p0, self.n_i, self.n_j, self.n_k)
+                                    p0, self.n_i, self.n_j, self.n_k
+                                )
                                 pipes = [
-                                    self.vars[f"Exist{dirs[l]}"][coord[0]][
-                                        coord[1]][coord[2]]
+                                    self.vars[f"Exist{dirs[l]}"][coord[0]][coord[1]][
+                                        coord[2]
+                                    ]
                                     for l, coord in enumerate(coords)
                                 ]
                                 # if the cube is not Y and the pipe exist, then
@@ -1058,11 +1148,14 @@ class LatticeSurgerySAT:
                                         z3.And(
                                             z3.Not(
                                                 self.vars["NodeY"][cube["I"]][
-                                                    cube["J"]][cube["K"]]),
+                                                    cube["J"]
+                                                ][cube["K"]]
+                                            ),
                                             self.vars[f"Exist{d}"][i][j][k],
                                         ),
                                         z3.Or(pipes),
-                                    ))
+                                    )
+                                )
 
     def constraint_corr_ports(self) -> None:
         """plug in the correlation surface values at the ports."""
@@ -1072,11 +1165,17 @@ class LatticeSurgerySAT:
                     if v == 1:
                         self.goal.add(
                             self.vars[f"Corr{k}"][s][self.ports[p]["i"]][
-                                self.ports[p]["j"]][self.ports[p]["k"]])
+                                self.ports[p]["j"]
+                            ][self.ports[p]["k"]]
+                        )
                     else:
                         self.goal.add(
-                            z3.Not(self.vars[f"Corr{k}"][s][self.ports[p]["i"]]
-                                   [self.ports[p]["j"]][self.ports[p]["k"]]))
+                            z3.Not(
+                                self.vars[f"Corr{k}"][s][self.ports[p]["i"]][
+                                    self.ports[p]["j"]
+                                ][self.ports[p]["k"]]
+                            )
+                        )
 
     def constraint_corr_y(self) -> None:
         """correlation surfaces at Y-cubes should both exist or nonexist."""
@@ -1093,32 +1192,28 @@ class LatticeSurgerySAT:
                                         self.vars["CorrKJ"][s][i][j][k],
                                     ),
                                     z3.And(
-                                        z3.Not(
-                                            self.vars["CorrKI"][s][i][j][k]),
-                                        z3.Not(
-                                            self.vars["CorrKJ"][s][i][j][k]),
+                                        z3.Not(self.vars["CorrKI"][s][i][j][k]),
+                                        z3.Not(self.vars["CorrKJ"][s][i][j][k]),
                                     ),
                                 ),
-                            ))
+                            )
+                        )
                         if k - 1 >= 0:
                             self.goal.add(
                                 z3.Or(
                                     z3.Not(self.vars["NodeY"][i][j][k]),
                                     z3.Or(
                                         z3.And(
-                                            self.vars["CorrKI"][s][i][j][k -
-                                                                         1],
-                                            self.vars["CorrKJ"][s][i][j][k -
-                                                                         1],
+                                            self.vars["CorrKI"][s][i][j][k - 1],
+                                            self.vars["CorrKJ"][s][i][j][k - 1],
                                         ),
                                         z3.And(
-                                            z3.Not(self.vars["CorrKI"][s][i][j]
-                                                   [k - 1]),
-                                            z3.Not(self.vars["CorrKJ"][s][i][j]
-                                                   [k - 1]),
+                                            z3.Not(self.vars["CorrKI"][s][i][j][k - 1]),
+                                            z3.Not(self.vars["CorrKJ"][s][i][j][k - 1]),
                                         ),
                                     ),
-                                ))
+                                )
+                            )
 
     def constraint_corr_perp(self) -> None:
         """for corr surf perpendicular to normal vector, all or none exists."""
@@ -1137,8 +1232,8 @@ class LatticeSurgerySAT:
                             )
                             if k - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistK"][i][j][k - 1]))
+                                    normal, z3.Not(self.vars["ExistK"][i][j][k - 1])
+                                )
 
                             # for other pipes, we need to build an intermediate
                             # expression for (i,j,k)-(i+1,j,k) and
@@ -1176,35 +1271,31 @@ class LatticeSurgerySAT:
                                 # add (i-1,j,k)-(i,j,k) to the expression
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistI"][i -
-                                                                   1][j][k]),
+                                        z3.Not(self.vars["ExistI"][i - 1][j][k]),
                                         self.vars["CorrIJ"][s][i - 1][j][k],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistI"][i -
-                                                                   1][j][k]),
-                                        z3.Not(
-                                            self.vars["CorrIJ"][s][i -
-                                                                   1][j][k]),
-                                    ))
+                                        z3.Not(self.vars["ExistI"][i - 1][j][k]),
+                                        z3.Not(self.vars["CorrIJ"][s][i - 1][j][k]),
+                                    )
+                                )
 
                             if j - 1 >= 0:
                                 # add (i,j-1,k)-(i,j,k) to the expression
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistJ"][i][j -
-                                                                      1][k]),
+                                        z3.Not(self.vars["ExistJ"][i][j - 1][k]),
                                         self.vars["CorrJI"][s][i][j - 1][k],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistJ"][i][j -
-                                                                      1][k]),
-                                        z3.Not(
-                                            self.vars["CorrJI"][s][i][j -
-                                                                      1][k]),
-                                    ))
+                                        z3.Not(self.vars["ExistJ"][i][j - 1][k]),
+                                        z3.Not(self.vars["CorrJI"][s][i][j - 1][k]),
+                                    )
+                                )
 
                             # if normal vector is K, then in all its
                             # incident pipes that exist all correlation surface
@@ -1216,7 +1307,8 @@ class LatticeSurgerySAT:
                                         z3.And(no_pipe_or_with_corr),
                                         z3.And(no_pipe_or_no_corr),
                                     ),
-                                ))
+                                )
+                            )
 
                             # if normal is I
                             normal = z3.And(
@@ -1225,8 +1317,8 @@ class LatticeSurgerySAT:
                             )
                             if i - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistI"][i - 1][j][k]))
+                                    normal, z3.Not(self.vars["ExistI"][i - 1][j][k])
+                                )
                             no_pipe_or_with_corr = [
                                 z3.Or(
                                     z3.Not(self.vars["ExistJ"][i][j][k]),
@@ -1250,33 +1342,29 @@ class LatticeSurgerySAT:
                             if j - 1 >= 0:
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistJ"][i][j -
-                                                                      1][k]),
+                                        z3.Not(self.vars["ExistJ"][i][j - 1][k]),
                                         self.vars["CorrJK"][s][i][j - 1][k],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistJ"][i][j -
-                                                                      1][k]),
-                                        z3.Not(
-                                            self.vars["CorrJK"][s][i][j -
-                                                                      1][k]),
-                                    ))
+                                        z3.Not(self.vars["ExistJ"][i][j - 1][k]),
+                                        z3.Not(self.vars["CorrJK"][s][i][j - 1][k]),
+                                    )
+                                )
                             if k - 1 >= 0:
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistK"][i][j][k -
-                                                                         1]),
+                                        z3.Not(self.vars["ExistK"][i][j][k - 1]),
                                         self.vars["CorrKJ"][s][i][j][k - 1],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistK"][i][j][k -
-                                                                         1]),
-                                        z3.Not(
-                                            self.vars["CorrKJ"][s][i][j][k -
-                                                                         1]),
-                                    ))
+                                        z3.Not(self.vars["ExistK"][i][j][k - 1]),
+                                        z3.Not(self.vars["CorrKJ"][s][i][j][k - 1]),
+                                    )
+                                )
                             self.goal.add(
                                 z3.Implies(
                                     normal,
@@ -1284,7 +1372,8 @@ class LatticeSurgerySAT:
                                         z3.And(no_pipe_or_with_corr),
                                         z3.And(no_pipe_or_no_corr),
                                     ),
-                                ))
+                                )
+                            )
 
                             # if normal is J
                             normal = z3.And(
@@ -1293,8 +1382,8 @@ class LatticeSurgerySAT:
                             )
                             if j - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistJ"][i][j - 1][k]))
+                                    normal, z3.Not(self.vars["ExistJ"][i][j - 1][k])
+                                )
                             no_pipe_or_with_corr = [
                                 z3.Or(
                                     z3.Not(self.vars["ExistI"][i][j][k]),
@@ -1318,33 +1407,29 @@ class LatticeSurgerySAT:
                             if i - 1 >= 0:
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistI"][i -
-                                                                   1][j][k]),
+                                        z3.Not(self.vars["ExistI"][i - 1][j][k]),
                                         self.vars["CorrIK"][s][i - 1][j][k],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistI"][i -
-                                                                   1][j][k]),
-                                        z3.Not(
-                                            self.vars["CorrIK"][s][i -
-                                                                   1][j][k]),
-                                    ))
+                                        z3.Not(self.vars["ExistI"][i - 1][j][k]),
+                                        z3.Not(self.vars["CorrIK"][s][i - 1][j][k]),
+                                    )
+                                )
                             if k - 1 >= 0:
                                 no_pipe_or_with_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistK"][i][j][k -
-                                                                         1]),
+                                        z3.Not(self.vars["ExistK"][i][j][k - 1]),
                                         self.vars["CorrKI"][s][i][j][k - 1],
-                                    ))
+                                    )
+                                )
                                 no_pipe_or_no_corr.append(
                                     z3.Or(
-                                        z3.Not(self.vars["ExistK"][i][j][k -
-                                                                         1]),
-                                        z3.Not(
-                                            self.vars["CorrKI"][s][i][j][k -
-                                                                         1]),
-                                    ))
+                                        z3.Not(self.vars["ExistK"][i][j][k - 1]),
+                                        z3.Not(self.vars["CorrKI"][s][i][j][k - 1]),
+                                    )
+                                )
                             self.goal.add(
                                 z3.Implies(
                                     normal,
@@ -1352,7 +1437,8 @@ class LatticeSurgerySAT:
                                         z3.And(no_pipe_or_with_corr),
                                         z3.And(no_pipe_or_no_corr),
                                     ),
-                                ))
+                                )
+                            )
 
     def constraint_corr_para(self) -> None:
         """for corr surf parallel to the normal , even number of them exist."""
@@ -1368,8 +1454,8 @@ class LatticeSurgerySAT:
                             )
                             if k - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistK"][i][j][k - 1]))
+                                    normal, z3.Not(self.vars["ExistK"][i][j][k - 1])
+                                )
 
                             # unlike in constraint_corr_perp, we only care
                             # about the cases where the pipe exists and the
@@ -1392,7 +1478,8 @@ class LatticeSurgerySAT:
                                     z3.And(
                                         self.vars["ExistI"][i - 1][j][k],
                                         self.vars["CorrIK"][s][i - 1][j][k],
-                                    ))
+                                    )
+                                )
 
                             # add (i,j-1,k)-(i,j,k) to the expression
                             if j - 1 >= 0:
@@ -1400,13 +1487,15 @@ class LatticeSurgerySAT:
                                     z3.And(
                                         self.vars["ExistJ"][i][j - 1][k],
                                         self.vars["CorrJK"][s][i][j - 1][k],
-                                    ))
+                                    )
+                                )
 
                             # parity of the expressions must be even
                             self.goal.add(
                                 z3.Implies(
-                                    normal,
-                                    cnf_even_parity_upto4(pipe_with_corr)))
+                                    normal, cnf_even_parity_upto4(pipe_with_corr)
+                                )
+                            )
 
                             # if normal is I
                             normal = z3.And(
@@ -1415,8 +1504,8 @@ class LatticeSurgerySAT:
                             )
                             if i - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistI"][i - 1][j][k]))
+                                    normal, z3.Not(self.vars["ExistI"][i - 1][j][k])
+                                )
                             pipe_with_corr = [
                                 z3.And(
                                     self.vars["ExistJ"][i][j][k],
@@ -1432,17 +1521,20 @@ class LatticeSurgerySAT:
                                     z3.And(
                                         self.vars["ExistJ"][i][j - 1][k],
                                         self.vars["CorrJI"][s][i][j - 1][k],
-                                    ))
+                                    )
+                                )
                             if k - 1 >= 0:
                                 pipe_with_corr.append(
                                     z3.And(
                                         self.vars["ExistK"][i][j][k - 1],
                                         self.vars["CorrKI"][s][i][j][k - 1],
-                                    ))
+                                    )
+                                )
                             self.goal.add(
                                 z3.Implies(
-                                    normal,
-                                    cnf_even_parity_upto4(pipe_with_corr)))
+                                    normal, cnf_even_parity_upto4(pipe_with_corr)
+                                )
+                            )
 
                             # if normal is J
                             normal = z3.And(
@@ -1451,8 +1543,8 @@ class LatticeSurgerySAT:
                             )
                             if j - 1 >= 0:
                                 normal = z3.And(
-                                    normal,
-                                    z3.Not(self.vars["ExistJ"][i][j - 1][k]))
+                                    normal, z3.Not(self.vars["ExistJ"][i][j - 1][k])
+                                )
                             pipe_with_corr = [
                                 z3.And(
                                     self.vars["ExistI"][i][j][k],
@@ -1468,17 +1560,20 @@ class LatticeSurgerySAT:
                                     z3.And(
                                         self.vars["ExistI"][i - 1][j][k],
                                         self.vars["CorrIJ"][s][i - 1][j][k],
-                                    ))
+                                    )
+                                )
                             if k - 1 >= 0:
                                 pipe_with_corr.append(
                                     z3.And(
                                         self.vars["ExistK"][i][j][k - 1],
                                         self.vars["CorrKJ"][s][i][j][k - 1],
-                                    ))
+                                    )
+                                )
                             self.goal.add(
                                 z3.Implies(
-                                    normal,
-                                    cnf_even_parity_upto4(pipe_with_corr)))
+                                    normal, cnf_even_parity_upto4(pipe_with_corr)
+                                )
+                            )
 
     def check_z3(self, print_progress: bool = True) -> bool:
         """check whether the built goal in self.goal is satisfiable.
@@ -1549,13 +1644,18 @@ class LatticeSurgerySAT:
             # open a tmp directory as workspace
 
             # dimacs and sat log are either in the tmp dir, or as user specify
-            tmp_dimacs_file_name = (dimacs_file_name + ".dimacs" if dimacs_file_name else
-                                    tmp_dir + "/tmp.dimacs")
-            tmp_sat_log_file_name = (sat_log_file_name + ".kissat" if sat_log_file_name
-                                     else tmp_dir + "/tmp.sat")
+            tmp_dimacs_file_name = (
+                dimacs_file_name + ".dimacs"
+                if dimacs_file_name
+                else tmp_dir + "/tmp.dimacs"
+            )
+            tmp_sat_log_file_name = (
+                sat_log_file_name + ".kissat"
+                if sat_log_file_name
+                else tmp_dir + "/tmp.sat"
+            )
 
-            if self.write_cnf(tmp_dimacs_file_name,
-                              print_progress=print_progress):
+            if self.write_cnf(tmp_dimacs_file_name, print_progress=print_progress):
                 # continue if the CNF is non-trivial, i.e., write_cnf is True
                 kissat_start_time = time.time()
 
@@ -1566,14 +1666,16 @@ class LatticeSurgerySAT:
                     # -100 if the return code is not updated later on.
 
                     import random
+
                     with subprocess.Popen(
                         [
-                            solver_cmd, f'--seed={random.randrange(1000000)}',
-                            tmp_dimacs_file_name
+                            solver_cmd,
+                            f"--seed={random.randrange(1000000)}",
+                            tmp_dimacs_file_name,
                         ],
-                            stdout=subprocess.PIPE,
-                            bufsize=1,
-                            universal_newlines=True,
+                        stdout=subprocess.PIPE,
+                        bufsize=1,
+                        universal_newlines=True,
                     ) as run_kissat:
                         for line in run_kissat.stdout:
                             log.write(line)
@@ -1586,8 +1688,7 @@ class LatticeSurgerySAT:
                     # 10 means SAT in Kissat
                     if_solved = True
                     if print_progress:
-                        print(
-                            f"kissat runtime: {time.time()-kissat_start_time}")
+                        print(f"kissat runtime: {time.time()-kissat_start_time}")
                         print("kissat SAT!")
 
                     # we read the Kissat solution from the SAT log, then, plug
@@ -1614,14 +1715,13 @@ class LatticeSurgerySAT:
                         f"Kissat return code {kissat_return_code} is neither"
                         " SAT nor UNSAT. Maybe you should add print_process="
                         "True to enable the Kissat printout message to see "
-                        "what is going on.")
+                        "what is going on."
+                    )
         # closing the tmp directory, the files and itself are removed
 
         return if_solved
 
-    def write_cnf(self,
-                  output_file_name: str,
-                  print_progress: bool = False) -> bool:
+    def write_cnf(self, output_file_name: str, print_progress: bool = False) -> bool:
         """generate CNF for the problem.
 
         Args:
@@ -1641,14 +1741,17 @@ class LatticeSurgerySAT:
         with open(output_file_name, "w") as output_f:
             output_f.write(cnf.dimacs())
         if dimacs.startswith("p cnf 1 1"):
-            print("Generated CNF is trivial meaning z3 concludes the instance"
-                  " UNSAT during simplification.")
+            print(
+                "Generated CNF is trivial meaning z3 concludes the instance"
+                " UNSAT during simplification."
+            )
             return False
         else:
             return True
 
-    def read_kissat_result(self, dimacs_file: str,
-                           result_file: str) -> Mapping[str, Any]:
+    def read_kissat_result(
+        self, dimacs_file: str, result_file: str
+    ) -> Mapping[str, Any]:
         """read result from external SAT solver
 
         Args:
@@ -1666,36 +1769,72 @@ class LatticeSurgerySAT:
                 The others are left with -1.
         """
         results = {
-            "ExistI": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ExistJ": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ExistK": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ColorI": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ColorJ": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "NodeY": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                      for _ in range(self.n_i)],
-            "CorrIJ": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrIK": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrJK": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrJI": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrKI": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrKJ": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
+            "ExistI": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ExistJ": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ExistK": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ColorI": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ColorJ": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "NodeY": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "CorrIJ": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrIK": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrJK": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrJI": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrKI": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrKJ": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
         }
 
         # in this file, the assigments are lines starting with "v" like
@@ -1724,7 +1863,8 @@ class LatticeSurgerySAT:
         for line in dimacs:
             if line.startswith("c"):
                 _, index, name = line.strip().split(" ")
-                if name.startswith((
+                if name.startswith(
+                    (
                         "NodeY",
                         "ExistI",
                         "ExistJ",
@@ -1737,15 +1877,16 @@ class LatticeSurgerySAT:
                         "CorrJK",
                         "CorrKI",
                         "CorrKJ",
-                )):
+                    )
+                ):
                     arr, tmp = name[:-1].split("(")
                     coords = [int(num) for num in tmp.split(",")]
                     if len(coords) == 3:
-                        results[arr][coords[0]][coords[1]][
-                            coords[2]] = sat[index]
+                        results[arr][coords[0]][coords[1]][coords[2]] = sat[index]
                     elif len(coords) == 4:
-                        results[arr][coords[0]][coords[1]][coords[2]][
-                            coords[3]] = sat[index]
+                        results[arr][coords[0]][coords[1]][coords[2]][coords[3]] = sat[
+                            index
+                        ]
                     else:
                         raise ValueError("number of coord should be 3 or 4!")
 
@@ -1754,59 +1895,86 @@ class LatticeSurgerySAT:
     def get_result(self) -> Mapping[str, Any]:
         """get the variable values.
 
-            Returns:
-                Mapping[str, Any]: output in the LaSRe format
+        Returns:
+            Mapping[str, Any]: output in the LaSRe format
         """
         model = self.solver.model()
         data = {
-            "n_i":
-            self.n_i,
-            "n_j":
-            self.n_j,
-            "n_k":
-            self.n_k,
-            "n_p":
-            self.n_p,
-            "n_s":
-            self.n_s,
-            "ports":
-            self.ports,
-            "stabs":
-            self.stabs,
-            "port_cubes":
-            self.port_cubes,
-            "optional":
-            self.optional,
-            "ExistI": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ExistJ": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ExistK": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ColorI": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "ColorJ": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                       for _ in range(self.n_i)],
-            "NodeY": [[[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
-                      for _ in range(self.n_i)],
-            "CorrIJ": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrIK": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrJK": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrJI": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrKI": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
-            "CorrKJ": [[[[-1 for _ in range(self.n_k)]
-                         for _ in range(self.n_j)] for _ in range(self.n_i)]
-                       for _ in range(self.n_s)],
+            "n_i": self.n_i,
+            "n_j": self.n_j,
+            "n_k": self.n_k,
+            "n_p": self.n_p,
+            "n_s": self.n_s,
+            "ports": self.ports,
+            "stabs": self.stabs,
+            "port_cubes": self.port_cubes,
+            "optional": self.optional,
+            "ExistI": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ExistJ": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ExistK": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ColorI": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "ColorJ": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "NodeY": [
+                [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                for _ in range(self.n_i)
+            ],
+            "CorrIJ": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrIK": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrJK": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrJI": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrKI": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
+            "CorrKJ": [
+                [
+                    [[-1 for _ in range(self.n_k)] for _ in range(self.n_j)]
+                    for _ in range(self.n_i)
+                ]
+                for _ in range(self.n_s)
+            ],
         }
         arrs = [
             "NodeY",
@@ -1826,17 +1994,19 @@ class LatticeSurgerySAT:
                         if s == 0:  # Exist, Node, and Color vars
                             for arr in arrs:
                                 data[arr][i][j][k] = (
-                                    1 if model[self.vars[arr][i][j][k]] else 0)
+                                    1 if model[self.vars[arr][i][j][k]] else 0
+                                )
 
                         # Corr vars
                         for arr in [
-                                "CorrIJ",
-                                "CorrIK",
-                                "CorrJI",
-                                "CorrJK",
-                                "CorrKI",
-                                "CorrKJ",
+                            "CorrIJ",
+                            "CorrIK",
+                            "CorrJI",
+                            "CorrJK",
+                            "CorrKI",
+                            "CorrKJ",
                         ]:
                             data[arr][s][i][j][k] = (
-                                1 if model[self.vars[arr][s][i][j][k]] else 0)
+                                1 if model[self.vars[arr][s][i][j][k]] else 0
+                            )
         return data

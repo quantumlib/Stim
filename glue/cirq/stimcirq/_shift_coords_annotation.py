@@ -23,7 +23,7 @@ class ShiftCoordsAnnotation(cirq.Operation):
     def qubits(self) -> Tuple[cirq.Qid, ...]:
         return ()
 
-    def with_qubits(self, *new_qubits) -> 'ShiftCoordsAnnotation':
+    def with_qubits(self, *new_qubits) -> "ShiftCoordsAnnotation":
         return self
 
     def _value_equality_values_(self) -> Any:
@@ -35,13 +35,13 @@ class ShiftCoordsAnnotation(cirq.Operation):
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
-        return {'shift': self.shift}
+        return {"shift": self.shift}
 
     def __repr__(self) -> str:
-        return f'stimcirq.ShiftCoordsAnnotation({self.shift!r})'
+        return f"stimcirq.ShiftCoordsAnnotation({self.shift!r})"
 
     def _decompose_(self):
         return []

@@ -32,13 +32,15 @@ class MeasureAndOrResetGate(cirq.Gate):
 
     def resolve(self, target: cirq.Qid) -> cirq.Operation:
         if (
-            self.basis == 'Z'
+            self.basis == "Z"
             and self.measure
             and self.measure_flip_probability == 0
             and not self.reset
         ):
             return cirq.MeasurementGate(
-                num_qubits=1, key=self.key, invert_mask=(1,) if self.invert_measure else ()
+                num_qubits=1,
+                key=self.key,
+                invert_mask=(1,) if self.invert_measure else (),
             ).on(target)
 
         return MeasureAndOrResetGate(
@@ -63,9 +65,9 @@ class MeasureAndOrResetGate(cirq.Gate):
     def _decompose_(self, qubits):
         (q,) = qubits
         if self.measure:
-            if self.basis == 'X':
+            if self.basis == "X":
                 yield cirq.H(q)
-            elif self.basis == 'Y':
+            elif self.basis == "Y":
                 yield cirq.X(q) ** 0.5
             if self.measure_flip_probability:
                 raise NotImplementedError("Noisy measurement as a cirq operation.")
@@ -76,22 +78,30 @@ class MeasureAndOrResetGate(cirq.Gate):
         if self.reset:
             yield cirq.ResetChannel().on(q)
         if self.measure or self.reset:
-            if self.basis == 'X':
+            if self.basis == "X":
                 yield cirq.H(q)
-            elif self.basis == 'Y':
+            elif self.basis == "Y":
                 yield cirq.X(q) ** -0.5
 
     def _stim_op_name(self) -> str:
-        result = ''
+        result = ""
         if self.measure:
             result += "M"
         if self.reset:
             result += "R"
-        if self.basis != 'Z':
+        if self.basis != "Z":
             result += self.basis
         return result
 
-    def _stim_conversion_(self, *, edit_circuit: stim.Circuit, targets: List[int], tag: str, edit_measurement_key_lengths: List[Tuple[str, int]], **kwargs):
+    def _stim_conversion_(
+        self,
+        *,
+        edit_circuit: stim.Circuit,
+        targets: List[int],
+        tag: str,
+        edit_measurement_key_lengths: List[Tuple[str, int]],
+        **kwargs,
+    ):
         if self.measure:
             edit_measurement_key_lengths.append((self.key, 1))
         if self.invert_measure:
@@ -115,25 +125,25 @@ class MeasureAndOrResetGate(cirq.Gate):
 
     def __repr__(self):
         return (
-            f'stimcirq.MeasureAndOrResetGate('
-            f'measure={self.measure!r}, '
-            f'reset={self.reset!r}, '
-            f'basis={self.basis!r}, '
-            f'invert_measure={self.invert_measure!r}, '
-            f'key={self.key!r}, '
-            f'measure_flip_probability={self.measure_flip_probability!r})'
+            f"stimcirq.MeasureAndOrResetGate("
+            f"measure={self.measure!r}, "
+            f"reset={self.reset!r}, "
+            f"basis={self.basis!r}, "
+            f"invert_measure={self.invert_measure!r}, "
+            f"key={self.key!r}, "
+            f"measure_flip_probability={self.measure_flip_probability!r})"
         )
 
     @staticmethod
     def _json_namespace_() -> str:
-        return ''
+        return ""
 
     def _json_dict_(self) -> Dict[str, Any]:
         return {
-            'measure': self.measure,
-            'reset': self.reset,
-            'basis': self.basis,
-            'invert_measure': self.invert_measure,
-            'key': self.key,
-            'measure_flip_probability': self.measure_flip_probability,
+            "measure": self.measure,
+            "reset": self.reset,
+            "basis": self.basis,
+            "invert_measure": self.invert_measure,
+            "key": self.key,
+            "measure_flip_probability": self.measure_flip_probability,
         }

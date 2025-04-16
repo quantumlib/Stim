@@ -9,7 +9,7 @@ class CompiledSampler(metaclass=abc.ABCMeta):
     """A sampler that has been configured for efficiently sampling some task."""
 
     @abc.abstractmethod
-    def sample(self, suggested_shots: int) -> 'sinter.AnonTaskStats':
+    def sample(self, suggested_shots: int) -> "sinter.AnonTaskStats":
         """Samples shots and returns statistics.
 
         Args:
@@ -67,6 +67,8 @@ class Sampler(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def compiled_sampler_for_task(self, task: 'sinter.Task') -> 'sinter.CompiledSampler':
+    def compiled_sampler_for_task(
+        self, task: "sinter.Task"
+    ) -> "sinter.CompiledSampler":
         """Creates, configures, and returns an object for sampling the task."""
         pass

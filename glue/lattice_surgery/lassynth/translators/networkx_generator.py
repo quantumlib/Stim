@@ -16,7 +16,7 @@ def networkx_generator(lasre: Mapping[str, Any]) -> networkx.Graph:
     zx_nx_graph = networkx.Graph()
     type_to_str = {"X": "X", "Z": "Z", "Pi": "in", "Po": "out", "I": "X"}
     cnt = 0
-    for (i, j, k) in port_cubes:
+    for i, j, k in port_cubes:
         node = nodes[i][j][k]
         zx_nx_graph.add_node(cnt, value=stimzx.ZxType(type_to_str[node.type]))
         node.node_id = cnt
@@ -27,9 +27,9 @@ def networkx_generator(lasre: Mapping[str, Any]) -> networkx.Graph:
             for k in range(n_k + 1):
                 node = nodes[i][j][k]
                 if node.type not in ["N", "Po", "Pi"]:
-                    zx_nx_graph.add_node(cnt,
-                                         value=stimzx.ZxType(
-                                             type_to_str[node.type]))
+                    zx_nx_graph.add_node(
+                        cnt, value=stimzx.ZxType(type_to_str[node.type])
+                    )
                     node.node_id = cnt
                     cnt += 1
                 if node.y_tail_minus:

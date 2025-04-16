@@ -19,7 +19,7 @@ class ExistingData:
         if isinstance(case, Task):
             key = case.strong_id()
         else:
-            raise NotImplementedError(f'{type(case)}')
+            raise NotImplementedError(f"{type(case)}")
         if key not in self.data:
             return AnonTaskStats()
         return self.data[key].to_anon_stats()
@@ -32,13 +32,13 @@ class ExistingData:
         else:
             self.data[k] = sample
 
-    def __iadd__(self, other: 'ExistingData') -> 'ExistingData':
+    def __iadd__(self, other: "ExistingData") -> "ExistingData":
         for sample in other.data.values():
             self.add_sample(sample)
         return self
 
     @staticmethod
-    def from_file(path_or_file: Any) -> 'ExistingData':
+    def from_file(path_or_file: Any) -> "ExistingData":
         expected_fields = {
             "shots",
             "discards",
@@ -50,6 +50,7 @@ class ExistingData:
         }
         # Import is done locally to reduce cost of importing sinter.
         import csv
+
         if isinstance(path_or_file, (str, pathlib.Path)):
             with open(path_or_file) as csvfile:
                 return ExistingData.from_file(csvfile)
@@ -60,35 +61,43 @@ class ExistingData:
             raise ValueError(
                 f"Bad CSV data. "
                 f"Got columns {sorted(actual_fields)!r} "
-                f"but expected columns {sorted(expected_fields)!r}")
-        has_custom_counts = 'custom_counts' in actual_fields
+                f"but expected columns {sorted(expected_fields)!r}"
+            )
+        has_custom_counts = "custom_counts" in actual_fields
         result = ExistingData()
         for row in reader:
             if has_custom_counts:
-                custom_counts = row['custom_counts']
-                if custom_counts is None or custom_counts == '':
+                custom_counts = row["custom_counts"]
+                if custom_counts is None or custom_counts == "":
                     custom_counts = collections.Counter()
                 else:
                     custom_counts = json.loads(custom_counts)
-                    if not isinstance(custom_counts, dict) or not all(isinstance(k, str) or not isinstance(v, int) for k, v in custom_counts.items()):
-                        raise ValueError(f"{row['custom_counts']=} isn't empty or a dictionary from string keys to integer values.")
+                    if not isinstance(custom_counts, dict) or not all(
+                        isinstance(k, str) or not isinstance(v, int)
+                        for k, v in custom_counts.items()
+                    ):
+                        raise ValueError(
+                            f"{row['custom_counts']=} isn't empty or a dictionary from string keys to integer values."
+                        )
                     custom_counts = collections.Counter(custom_counts)
             else:
                 custom_counts = collections.Counter()
-            result.add_sample(TaskStats(
-                shots=int(row['shots']),
-                discards=int(row['discards']),
-                errors=int(row['errors']),
-                custom_counts=custom_counts,
-                seconds=float(row['seconds']),
-                strong_id=row['strong_id'],
-                decoder=row['decoder'],
-                json_metadata=json.loads(row['json_metadata']),
-            ))
+            result.add_sample(
+                TaskStats(
+                    shots=int(row["shots"]),
+                    discards=int(row["discards"]),
+                    errors=int(row["errors"]),
+                    custom_counts=custom_counts,
+                    seconds=float(row["seconds"]),
+                    strong_id=row["strong_id"],
+                    decoder=row["decoder"],
+                    json_metadata=json.loads(row["json_metadata"]),
+                )
+            )
         return result
 
 
-def stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
+def stats_from_csv_files(*paths_or_files: Any) -> List["sinter.TaskStats"]:
     """Reads and aggregates shot statistics from CSV files.
 
     (An old alias of `read_stats_from_csv_files`, kept around for backwards
@@ -132,7 +141,7 @@ def stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
     return list(result.data.values())
 
 
-def read_stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
+def read_stats_from_csv_files(*paths_or_files: Any) -> List["sinter.TaskStats"]:
     """Reads and aggregates shot statistics from CSV files.
 
     Assumes the CSV file was written by printing `sinter.CSV_HEADER` and then

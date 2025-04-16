@@ -14,29 +14,35 @@
 
 from setuptools import setup
 
-with open('README.md', encoding='UTF-8') as f:
+with open("README.md", encoding="UTF-8") as f:
     long_description = f.read()
-with open('requirements.txt', encoding='UTF-8') as f:
+with open("requirements.txt", encoding="UTF-8") as f:
     requirements = f.read().splitlines()
 
-__version__ = '1.15.dev0'
+__version__ = "1.15.dev0"
 
 setup(
-    name='sinter',
+    name="sinter",
     version=__version__,
-    author='Craig Gidney',
-    author_email='craig.gidney@gmail.com',
-    license='Apache 2',
-    packages=['sinter', 'sinter._data', 'sinter._collection', 'sinter._command', 'sinter._decoding'],
-    package_dir={'': 'src'},
-    description='Samples stim circuits and decodes them using pymatching.',
+    author="Craig Gidney",
+    author_email="craig.gidney@gmail.com",
+    license="Apache 2",
+    packages=[
+        "sinter",
+        "sinter._data",
+        "sinter._collection",
+        "sinter._command",
+        "sinter._decoding",
+    ],
+    package_dir={"": "src"},
+    description="Samples stim circuits and decodes them using pymatching.",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    python_requires='>=3.7.0',
-    data_files=['README.md', 'requirements.txt', 'readme_example_plot.png'],
+    long_description_content_type="text/markdown",
+    python_requires=">=3.7.0",
+    data_files=["README.md", "requirements.txt", "readme_example_plot.png"],
     install_requires=requirements,
-    tests_require=['pytest', 'pymatching'],
+    tests_require=["pytest", "pymatching"],
     entry_points={
-        'console_scripts': ['sinter=sinter._command._main:main'],
+        "console_scripts": ["sinter=sinter._command._main:main"],
     },
 )
