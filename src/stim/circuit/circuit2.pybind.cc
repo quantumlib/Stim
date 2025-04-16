@@ -741,7 +741,7 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             std::vector<pybind11::object> result;
             for (const auto &e : solution) {
                 if (e.has_value()) {
-                    result.push_back(pybind11::cast(e.value()));
+                    result.push_back(pybind11::cast(*e));
                 } else {
                     result.push_back(pybind11::none());
                 }
