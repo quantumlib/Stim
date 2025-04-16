@@ -359,7 +359,7 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, rep_code, {
             {std::vector<int32_t>{1}},
             {std::vector<int32_t>{}},
             {},
-            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{0}},
             {std::vector<int32_t>{}},
             {},
             {},

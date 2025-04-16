@@ -2040,16 +2040,16 @@ class Circuit:
         *,
         bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Determines noiseless parities of the measurement sets of detector/observable.
+        """Determines noiseless parities of the measurement sets of detectors/observables.
 
         BEWARE: the returned values are NOT the "expected value of the
         detector/observable". Stim consistently defines the value of a
         detector/observable as whether or not it flipped, so the expected value of a
         detector/observable is vacuously always 0 (not flipped). This method instead
-        returns the expected parity of the measurement set declared by the
-        detector/observable, which is the baselines used to determine if a flip
-        occurred. A detector/observable's value is the parity of it's measurement set
-        xored with its sign (the value returned by this method).
+        returns the "sign"; the expected parity of the measurement set declared by the
+        detector/observable. The sign is the baseline used to determine if a flip
+        occurred. A detector/observable's value is whether its sign disagrees with the
+        measured parity of its measurement set.
 
         Note that this method doesn't account for sweep bits. It will effectively ignore
         instructions like `CX sweep[0] 0`.
@@ -2344,6 +2344,76 @@ class Circuit:
             ...     before_round_data_depolarization=0.01)
             >>> len(circuit.shortest_graphlike_error())
             7
+        """
+    def solve_flow_measurements(
+        self,
+        flows: List[stim.Flow],
+    ) -> List[Optional[List[int]]]:
+        """Finds measurements that explain the starts/ends of the given flows.
+
+        Args:
+            flows: A list of flows, each of which to be solved. Measurements and signs
+                are entirely ignored. The input/output of a flow can't both be identity
+                Paulis.
+
+        Returns:
+            A list of solutions for each given flow.
+
+            If no solution exists for flows[k], then results[k] is None.
+            Otherwise, results[k] is the measurement indices for flows[k].
+
+            When a solution exists, it's guaranteed that
+
+                stim.Flow(
+                    input=flows[k].input,
+                    output=flows[k].output,
+                    measurements=results[k],
+                )
+
+            is an unsigned flow of the circuit. The sign can be solved for separately
+            if needed.
+
+        Raises:
+            ValueError:
+                A flow had an empty input and output.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     M 2
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("Z2 -> 1"),
+            ... ])
+            [[0]]
+
+            >>> stim.Circuit('''
+            ...     M 2
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("X2 -> X2"),
+            ... ])
+            [None]
+
+            >>> stim.Circuit('''
+            ...     MXX 0 1
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("YY -> ZZ"),
+            ... ])
+            [[0]]
+
+            >>> # Rep code cycle
+            >>> stim.Circuit('''
+            ...     R 1 3
+            ...     CX 0 1 2 3
+            ...     CX 4 3 2 1
+            ...     M 1 3
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("1 -> Z0*Z4"),
+            ...     stim.Flow("Z0 -> Z2"),
+            ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+            ...     stim.Flow("Y0 -> Y0"),
+            ... ])
+            [[0, 1], [0], [], None]
         """
     def time_reversed_for_flows(
         self,
