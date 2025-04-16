@@ -2351,6 +2351,11 @@ class Circuit:
     ) -> List[Optional[List[int]]]:
         """Finds measurements that explain the starts/ends of the given flows.
 
+        CAUTION: it's not guaranteed that the solutions returned by this method are
+        minimal. It may use 20 measurements when only 2 are needed. The method applies
+        some simple heuristics that attempt to reduce the size, but these heuristics
+        aren't perfect.
+
         Args:
             flows: A list of flows, each of which to be solved. Measurements and signs
                 are entirely ignored. The input/output of a flow can't both be identity

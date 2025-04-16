@@ -585,6 +585,31 @@ std::vector<std::optional<std::vector<int32_t>>> solve_for_flow_measurements(con
     solver.eliminate_input_xz_terms(num_eliminated, num_circuit_flows);
     solver.eliminate_output_xz_terms(num_eliminated, num_circuit_flows);
 
+    // Greedily attempt to reduce measurement counts.
+    // This avoids bad scenarios like stability experiments putting the global measurement set into local flows.
+    for (size_t k = num_eliminated; k < num_circuit_flows; k++) {
+        if (solver.table[k].input.ref().has_no_pauli_terms() && solver.table[k].output.ref().has_no_pauli_terms()) {
+            const auto &src = solver.table[k].measurements;
+            for (size_t k2 = num_circuit_flows; k2 < solver.table.size(); k2++) {
+                auto &dst = solver.table[k2].measurements;
+                if (dst.size() >= src.size() * 2) {
+                    continue;
+                }
+
+                solver.buf_for_xor_merge.resize(std::max(solver.buf_for_xor_merge.size(), src.size() + dst.size() + 1));
+                const int32_t *end = xor_merge_sort(
+                    SpanRef<const int32_t>(dst),
+                    SpanRef<const int32_t>(src),
+                    solver.buf_for_xor_merge.data());
+                size_t n = end - solver.buf_for_xor_merge.data();
+                if (n < dst.size()) {
+                    memcpy(dst.data(), solver.buf_for_xor_merge.data(), n * sizeof(int32_t));
+                    dst.resize(n);
+                }
+            }
+        }
+    }
+
     // Collect the measurements, checking the pauli terms were actually cleared.
     std::vector<std::optional<std::vector<int32_t>>> result;
     for (size_t k = 0; k < flows.size(); k++) {
