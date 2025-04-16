@@ -264,3 +264,104 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, all_operations, {
         EXPECT_TRUE(passes[k]) << k << ": " << generators[k];
     }
 })
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, empty, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+            })
+        ),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+        }));
+})
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> X0"),
+            })
+        ),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+        }));
+
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> Y0"),
+            })
+        ),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {},
+        }));
+
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> X0"),
+                Flow<W>::from_str("Y0 -> Y0"),
+                Flow<W>::from_str("X0 -> 1"),
+                Flow<W>::from_str("X0 -> Z0"),
+                Flow<W>::from_str("Y1 -> Y1"),
+            })
+        ),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+            {},
+            {std::vector<int32_t>{0}},
+            {},
+            {std::vector<int32_t>{}},
+        }));
+
+    EXPECT_THROW({
+        solve_for_flow_measurements<W>(Circuit(), (std::vector<Flow<W>>{Flow<W>::from_str("1 -> 1")}));
+    }, std::invalid_argument);
+})
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, rep_code, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                R 1 3
+                CX 0 1 2 3
+                CX 4 3 2 1
+                M 1 3
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("Z0*Z2 -> 1"),
+                Flow<W>::from_str("1 -> Z2*Z4"),
+                Flow<W>::from_str("1 -> Z0*Z4"),
+                Flow<W>::from_str("Z0*Z4 -> Z0*Z2"),
+                Flow<W>::from_str("Z0 -> Z0"),
+                Flow<W>::from_str("Z0 -> Z1"),
+                Flow<W>::from_str("Z0 -> Z2"),
+                Flow<W>::from_str("X0*X2*X4 -> X0*X2*X4"),
+                Flow<W>::from_str("X0 -> X0"),
+                Flow<W>::from_str("X0 -> Z0"),
+            })
+        ),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{0, 1}},
+            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{}},
+            {},
+            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{}},
+            {},
+            {},
+        }));
+})
