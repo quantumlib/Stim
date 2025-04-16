@@ -16,7 +16,6 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"
-
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"

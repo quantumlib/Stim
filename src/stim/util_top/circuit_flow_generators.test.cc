@@ -270,11 +270,8 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, empty, {
         solve_for_flow_measurements<W>(
             Circuit(R"CIRCUIT(
             )CIRCUIT"),
-            (std::vector<Flow<W>>{
-            })
-        ),
-        (std::vector<std::optional<std::vector<int32_t>>>{
-        }));
+            (std::vector<Flow<W>>{})),
+        (std::vector<std::optional<std::vector<int32_t>>>{}));
 })
 
 TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
@@ -285,8 +282,7 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
             )CIRCUIT"),
             (std::vector<Flow<W>>{
                 Flow<W>::from_str("1 -> X0"),
-            })
-        ),
+            })),
         (std::vector<std::optional<std::vector<int32_t>>>{
             {std::vector<int32_t>{0}},
         }));
@@ -298,8 +294,7 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
             )CIRCUIT"),
             (std::vector<Flow<W>>{
                 Flow<W>::from_str("1 -> Y0"),
-            })
-        ),
+            })),
         (std::vector<std::optional<std::vector<int32_t>>>{
             {},
         }));
@@ -315,8 +310,7 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
                 Flow<W>::from_str("X0 -> 1"),
                 Flow<W>::from_str("X0 -> Z0"),
                 Flow<W>::from_str("Y1 -> Y1"),
-            })
-        ),
+            })),
         (std::vector<std::optional<std::vector<int32_t>>>{
             {std::vector<int32_t>{0}},
             {},
@@ -325,9 +319,9 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
             {std::vector<int32_t>{}},
         }));
 
-    EXPECT_THROW({
-        solve_for_flow_measurements<W>(Circuit(), (std::vector<Flow<W>>{Flow<W>::from_str("1 -> 1")}));
-    }, std::invalid_argument);
+    EXPECT_THROW(
+        { solve_for_flow_measurements<W>(Circuit(), (std::vector<Flow<W>>{Flow<W>::from_str("1 -> 1")})); },
+        std::invalid_argument);
 })
 
 TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, rep_code, {
@@ -350,8 +344,7 @@ TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, rep_code, {
                 Flow<W>::from_str("X0*X2*X4 -> X0*X2*X4"),
                 Flow<W>::from_str("X0 -> X0"),
                 Flow<W>::from_str("X0 -> Z0"),
-            })
-        ),
+            })),
         (std::vector<std::optional<std::vector<int32_t>>>{
             {std::vector<int32_t>{0}},
             {std::vector<int32_t>{1}},

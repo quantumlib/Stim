@@ -200,12 +200,13 @@ void CircuitFlowReverser::do_instruction(const CircuitInstruction &inst) {
             if (inverted_circuit.target_buf.tail.empty()) {
                 d2tag[DemTarget::observable_id((uint64_t)inst.args[0])] = inst.tag;
             } else {
-                inverted_circuit.operations.push_back(CircuitInstruction{
-                    GateType::OBSERVABLE_INCLUDE,
-                    inverted_circuit.arg_buf.take_copy(inst.args),
-                    inverted_circuit.target_buf.commit_tail(),
-                    inverted_circuit.tag_buf.take_copy(inst.tag),
-                });
+                inverted_circuit.operations.push_back(
+                    CircuitInstruction{
+                        GateType::OBSERVABLE_INCLUDE,
+                        inverted_circuit.arg_buf.take_copy(inst.args),
+                        inverted_circuit.target_buf.commit_tail(),
+                        inverted_circuit.tag_buf.take_copy(inst.tag),
+                    });
             }
             rev.undo_gate(inst);
             break;

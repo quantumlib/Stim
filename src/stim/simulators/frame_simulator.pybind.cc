@@ -33,7 +33,8 @@ std::optional<size_t> py_index_to_optional_size_t(
     return (size_t)i;
 }
 
-static void generate_biased_samples_bit_packed_contiguous(uint8_t *out, size_t num_bytes, float p, std::mt19937_64 &rng) {
+static void generate_biased_samples_bit_packed_contiguous(
+    uint8_t *out, size_t num_bytes, float p, std::mt19937_64 &rng) {
     uintptr_t start = (uintptr_t)out;
     uintptr_t end = start + num_bytes;
     uintptr_t aligned64_start = start & ~0b111ULL;
@@ -61,11 +62,12 @@ static void generate_biased_samples_bit_packed_contiguous(uint8_t *out, size_t n
     }
 }
 
-static void generate_biased_samples_bit_packed_with_stride(uint8_t *out, pybind11::ssize_t stride, size_t num_bytes, float p, std::mt19937_64 &rng) {
+static void generate_biased_samples_bit_packed_with_stride(
+    uint8_t *out, pybind11::ssize_t stride, size_t num_bytes, float p, std::mt19937_64 &rng) {
     uint64_t stack[64];
     uint64_t *stack_ptr = &stack[0];
-    for (size_t k1 = 0; k1 < num_bytes; k1 += 64*8) {
-        size_t n2 = std::min(num_bytes - k1, (size_t)(64*8));
+    for (size_t k1 = 0; k1 < num_bytes; k1 += 64 * 8) {
+        size_t n2 = std::min(num_bytes - k1, (size_t)(64 * 8));
         biased_randomize_bits(p, stack_ptr, stack_ptr + (n2 + 7) / 8, rng);
         uint8_t *stack_data = (uint8_t *)(void *)stack_ptr;
         for (size_t k2 = 0; k2 < n2; k2++) {
@@ -76,11 +78,12 @@ static void generate_biased_samples_bit_packed_with_stride(uint8_t *out, pybind1
     }
 }
 
-static void generate_biased_samples_bool(uint8_t *out, pybind11::ssize_t stride, size_t num_samples, float p, std::mt19937_64 &rng) {
+static void generate_biased_samples_bool(
+    uint8_t *out, pybind11::ssize_t stride, size_t num_samples, float p, std::mt19937_64 &rng) {
     uint64_t stack[64];
     uint64_t *stack_ptr = &stack[0];
-    for (size_t k1 = 0; k1 < num_samples; k1 += 64*64) {
-        size_t n2 = std::min(num_samples - k1, (size_t)(64*64));
+    for (size_t k1 = 0; k1 < num_samples; k1 += 64 * 64) {
+        size_t n2 = std::min(num_samples - k1, (size_t)(64 * 64));
         biased_randomize_bits(p, stack_ptr, stack_ptr + (n2 + 63) / 64, rng);
         for (size_t k2 = 0; k2 < n2; k2++) {
             bool bit = (stack[k2 / 64] >> (k2 & 63)) & 1;
@@ -90,7 +93,8 @@ static void generate_biased_samples_bool(uint8_t *out, pybind11::ssize_t stride,
 }
 
 template <size_t W>
-pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_samples, float p, bool bit_packed, pybind11::object out) {
+pybind11::object generate_bernoulli_samples(
+    FrameSimulator<W> &self, size_t num_samples, float p, bool bit_packed, pybind11::object out) {
     if (bit_packed) {
         size_t num_bytes = (num_samples + 7) / 8;
         if (out.is_none()) {
@@ -100,10 +104,7 @@ pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_
                 delete[] reinterpret_cast<uint64_t *>(f);
             });
             out = pybind11::array_t<uint8_t>(
-                {(pybind11::ssize_t)num_bytes},
-                {(pybind11::ssize_t)1},
-                (uint8_t *)buffer,
-                free_when_done);
+                {(pybind11::ssize_t)num_bytes}, {(pybind11::ssize_t)1}, (uint8_t *)buffer, free_when_done);
         } else if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(out)) {
             throw std::invalid_argument("`out` wasn't `None` or a uint8 numpy array.");
         }
@@ -121,18 +122,9 @@ pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_
         void *start_of_data = (void *)buf.mutable_data();
 
         if (stride == 1) {
-            generate_biased_samples_bit_packed_contiguous(
-                (uint8_t *)start_of_data,
-                num_bytes,
-                p,
-                self.rng);
+            generate_biased_samples_bit_packed_contiguous((uint8_t *)start_of_data, num_bytes, p, self.rng);
         } else {
-            generate_biased_samples_bit_packed_with_stride(
-                (uint8_t *)start_of_data,
-                stride,
-                num_bytes,
-                p,
-                self.rng);
+            generate_biased_samples_bit_packed_with_stride((uint8_t *)start_of_data, stride, num_bytes, p, self.rng);
         }
         if (num_samples & 0b111) {
             uint8_t mask = (1 << (num_samples & 0b111)) - 1;
@@ -158,12 +150,7 @@ pybind11::object generate_bernoulli_samples(FrameSimulator<W> &self, size_t num_
         auto stride = buf.strides(0);
         void *start_of_data = (void *)buf.mutable_data();
 
-        generate_biased_samples_bool(
-            (uint8_t *)start_of_data,
-            stride,
-            num_samples,
-            p,
-            self.rng);
+        generate_biased_samples_bool((uint8_t *)start_of_data, stride, num_samples, p, self.rng);
     }
     return out;
 }
@@ -230,7 +217,8 @@ pybind11::object peek_pauli_flips(const FrameSimulator<W> &self, const pybind11:
     return pybind11::cast(std::move(result));
 }
 
-pybind11::object pick_output_numpy_array(pybind11::object output_vs, bool bit_packed, bool transpose, size_t shape1, size_t shape2, const char *name) {
+pybind11::object pick_output_numpy_array(
+    pybind11::object output_vs, bool bit_packed, bool transpose, size_t shape1, size_t shape2, const char *name) {
     auto numpy = pybind11::module::import("numpy");
     auto dtype = bit_packed ? numpy.attr("uint8") : numpy.attr("bool_");
     auto py_bool = pybind11::module::import("builtins").attr("bool");
@@ -245,13 +233,18 @@ pybind11::object pick_output_numpy_array(pybind11::object output_vs, bool bit_pa
         return pybind11::none();
     } else if (pybind11::isinstance<pybind11::bool_>(output_vs) && pybind11::bool_(true).equal(output_vs)) {
         return numpy.attr("empty")(shape, dtype);
-    } else if (bit_packed && pybind11::isinstance<pybind11::array_t<uint8_t>>(output_vs) && shape.equal(output_vs.attr("shape"))) {
+    } else if (
+        bit_packed && pybind11::isinstance<pybind11::array_t<uint8_t>>(output_vs) &&
+        shape.equal(output_vs.attr("shape"))) {
         return output_vs;
-    } else if (!bit_packed && pybind11::isinstance<pybind11::array_t<bool>>(output_vs) && shape.equal(output_vs.attr("shape"))) {
+    } else if (
+        !bit_packed && pybind11::isinstance<pybind11::array_t<bool>>(output_vs) &&
+        shape.equal(output_vs.attr("shape"))) {
         return output_vs;
     } else {
         std::stringstream ss;
-        ss << name << " wasn't set to False, True, or a numpy array with dtype=" << pybind11::str(dtype) << " and shape=" << shape;
+        ss << name << " wasn't set to False, True, or a numpy array with dtype=" << pybind11::str(dtype)
+           << " and shape=" << shape;
         throw std::invalid_argument(ss.str());
     }
 }
@@ -266,38 +259,31 @@ pybind11::object to_numpy(
     pybind11::object output_measure_flips,
     pybind11::object output_detector_flips,
     pybind11::object output_observable_flips) {
-    output_xs = pick_output_numpy_array(output_xs, bit_packed, transpose, self.num_qubits, self.batch_size, "output_xs");
-    output_zs = pick_output_numpy_array(output_zs, bit_packed, transpose, self.num_qubits, self.batch_size, "output_zs");
-    output_measure_flips = pick_output_numpy_array(output_measure_flips, bit_packed, transpose, self.m_record.stored, self.batch_size, "output_measure_flips");
-    output_detector_flips = pick_output_numpy_array(output_detector_flips, bit_packed, transpose, self.det_record.stored, self.batch_size, "output_detector_flips");
-    output_observable_flips = pick_output_numpy_array(output_observable_flips, bit_packed, transpose, self.num_observables, self.batch_size, "output_observable_flips");
+    output_xs =
+        pick_output_numpy_array(output_xs, bit_packed, transpose, self.num_qubits, self.batch_size, "output_xs");
+    output_zs =
+        pick_output_numpy_array(output_zs, bit_packed, transpose, self.num_qubits, self.batch_size, "output_zs");
+    output_measure_flips = pick_output_numpy_array(
+        output_measure_flips, bit_packed, transpose, self.m_record.stored, self.batch_size, "output_measure_flips");
+    output_detector_flips = pick_output_numpy_array(
+        output_detector_flips, bit_packed, transpose, self.det_record.stored, self.batch_size, "output_detector_flips");
+    output_observable_flips = pick_output_numpy_array(
+        output_observable_flips,
+        bit_packed,
+        transpose,
+        self.num_observables,
+        self.batch_size,
+        "output_observable_flips");
 
     if (!output_xs.is_none()) {
-        simd_bit_table_to_numpy(
-            self.x_table,
-            self.num_qubits,
-            self.batch_size,
-            bit_packed,
-            transpose,
-            output_xs);
+        simd_bit_table_to_numpy(self.x_table, self.num_qubits, self.batch_size, bit_packed, transpose, output_xs);
     }
     if (!output_zs.is_none()) {
-        simd_bit_table_to_numpy(
-            self.z_table,
-            self.num_qubits,
-            self.batch_size,
-            bit_packed,
-            transpose,
-            output_zs);
+        simd_bit_table_to_numpy(self.z_table, self.num_qubits, self.batch_size, bit_packed, transpose, output_zs);
     }
     if (!output_measure_flips.is_none()) {
         simd_bit_table_to_numpy(
-            self.m_record.storage,
-            self.m_record.stored,
-            self.batch_size,
-            bit_packed,
-            transpose,
-            output_measure_flips);
+            self.m_record.storage, self.m_record.stored, self.batch_size, bit_packed, transpose, output_measure_flips);
     }
     if (!output_detector_flips.is_none()) {
         simd_bit_table_to_numpy(
@@ -310,17 +296,15 @@ pybind11::object to_numpy(
     }
     if (!output_observable_flips.is_none()) {
         simd_bit_table_to_numpy(
-            self.obs_record,
-            self.num_observables,
-            self.batch_size,
-            bit_packed,
-            transpose,
-            output_observable_flips);
+            self.obs_record, self.num_observables, self.batch_size, bit_packed, transpose, output_observable_flips);
     }
-    if (output_xs.is_none() + output_zs.is_none() + output_measure_flips.is_none() + output_detector_flips.is_none() + output_observable_flips.is_none() == 5) {
+    if (output_xs.is_none() + output_zs.is_none() + output_measure_flips.is_none() + output_detector_flips.is_none() +
+            output_observable_flips.is_none() ==
+        5) {
         throw std::invalid_argument("No outputs requested! Specify at least one output_*= argument.");
     }
-    return pybind11::make_tuple(output_xs, output_zs, output_measure_flips, output_detector_flips, output_observable_flips);
+    return pybind11::make_tuple(
+        output_xs, output_zs, output_measure_flips, output_detector_flips, output_observable_flips);
 }
 
 template <size_t W>
@@ -1235,7 +1219,10 @@ void stim_pybind::pybind_frame_simulator_methods(
 
     c.def(
         "broadcast_pauli_errors",
-        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &pauli, const pybind11::object &mask, float p) {
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self,
+           const pybind11::object &pauli,
+           const pybind11::object &mask,
+           float p) {
             uint8_t pb = pybind11_object_to_pauli_ixyz(pauli);
 
             if (!pybind11::isinstance<pybind11::array_t<bool>>(mask)) {
@@ -1265,9 +1252,10 @@ void stim_pybind::pybind_frame_simulator_methods(
             bool p_x = (0b0110 >> pb) & 1;  // parity of 2 bit number
             bool p_z = pb & 2;
 
-            if ( p != 1 && p != 0 ) {
+            if (p != 1 && p != 0) {
                 for (size_t i = 0; i < mask_num_qubits; i++) {
-                    biased_randomize_bits(p, self.rng_buffer.u64, self.rng_buffer.u64+(mask_batch_size/64), self.rng);
+                    biased_randomize_bits(
+                        p, self.rng_buffer.u64, self.rng_buffer.u64 + (mask_batch_size / 64), self.rng);
                     for (size_t j = 0; j < mask_batch_size; j++) {
                         bool b = *u.data(i, j);
                         bool r = self.rng_buffer[j];

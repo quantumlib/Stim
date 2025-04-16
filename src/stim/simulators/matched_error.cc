@@ -209,9 +209,9 @@ bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
            stack_frames == other.stack_frames;
 }
 bool CircuitTargetsInsideInstruction::operator==(const CircuitTargetsInsideInstruction &other) const {
-    return gate_type == other.gate_type && gate_tag == other.gate_tag && target_range_start == other.target_range_start &&
-           target_range_end == other.target_range_end && targets_in_range == other.targets_in_range &&
-           args == other.args;
+    return gate_type == other.gate_type && gate_tag == other.gate_tag &&
+           target_range_start == other.target_range_start && target_range_end == other.target_range_end &&
+           targets_in_range == other.targets_in_range && args == other.args;
 }
 bool DemTargetWithCoords::operator==(const DemTargetWithCoords &other) const {
     return coords == other.coords && dem_target == other.dem_target;
