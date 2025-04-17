@@ -40,7 +40,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            .flow_data = {"Y", "X"},
+            .flow_data = {"+Y", "+X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
@@ -102,7 +102,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f + i * 0.5f, -0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            .flow_data = {"-Y", "X"},
+            .flow_data = {"-Y", "+X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 H 0
@@ -130,7 +130,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f - i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f + 0.5f * i}},
-            .flow_data = {"Y", "-X"},
+            .flow_data = {"+Y", "-X"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 H 0
@@ -160,7 +160,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            .flow_data = {"Z", "Y"},
+            .flow_data = {"+Z", "+Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
@@ -188,7 +188,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f - i * 0.5f, -0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
-            .flow_data = {"-Z", "Y"},
+            .flow_data = {"-Z", "+Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 S 0
 S 0
@@ -218,7 +218,7 @@ Targets:
     Qubits to operate on.
 )MARKDOWN",
             .unitary_data = {{0.5f - i * 0.5f, 0.5f - 0.5f * i}, {-0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            .flow_data = {"Z", "-Y"},
+            .flow_data = {"+Z", "-Y"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 H 0
 S 0
