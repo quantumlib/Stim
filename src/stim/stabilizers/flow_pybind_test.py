@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import numpy as np
 import stim
 import pytest
 
@@ -104,3 +104,75 @@ def test_equality():
 def test_repr(value):
     assert eval(repr(value), {'stim': stim}) == value
     assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+
+
+def test_obs_flows():
+    assert stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) X2
+    """).has_flow(stim.Flow("X2 -> obs[1]"))
+    assert not stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) !X2
+    """).has_flow(stim.Flow("X2 -> obs[1]"))
+    assert stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) !X2
+    """).has_flow(stim.Flow("X2 -> obs[1]"), unsigned=True)
+    assert stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) !X2
+    """).has_flow(stim.Flow("-X2 -> obs[1]"))
+    assert not stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) X2
+    """).has_flow(stim.Flow("Y2 -> obs[1]"))
+    assert not stim.Circuit("""
+        OBSERVABLE_INCLUDE(1) X2
+    """).has_flow(stim.Flow("Y2 -> obs[1]"), unsigned=True)
+
+
+def test_obs_include_pauli_terms_sensitivity():
+    _, obs = stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) X0
+        X_ERROR(0.5) 0
+        OBSERVABLE_INCLUDE(0) X0
+    """).compile_detector_sampler().sample(shots=1024, separate_observables=True)
+    assert np.count_nonzero(obs) == 0
+
+    _, obs = stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        X_ERROR(0.5) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    """).compile_detector_sampler().sample(shots=1024, separate_observables=True)
+    xs, ys, zs = np.count_nonzero(obs, axis=0)
+    assert xs == 0
+    assert 256 <= ys <= 768
+    assert zs == ys
+
+    _, obs = stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        Y_ERROR(0.5) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    """).compile_detector_sampler().sample(shots=1024, separate_observables=True)
+    xs, ys, zs = np.count_nonzero(obs, axis=0)
+    assert ys == 0
+    assert 256 <= xs <= 768
+    assert zs == xs
+
+    _, obs = stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+        Z_ERROR(0.5) 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    """).compile_detector_sampler().sample(shots=1024, separate_observables=True)
+    xs, ys, zs = np.count_nonzero(obs, axis=0)
+    assert zs == 0
+    assert 256 <= ys <= 768
+    assert xs == ys

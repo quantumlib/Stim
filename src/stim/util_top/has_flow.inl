@@ -1,4 +1,7 @@
 #include "stim/util_top/has_flow.h"
+#include "stim/simulators/frame_simulator_util.h"
+#include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 namespace stim {
 
@@ -45,32 +48,45 @@ bool _sample_if_noiseless_circuit_has_stabilizer_flow(
 
     num_qubits = std::max(num_qubits, (uint32_t)flow.input.num_qubits);
     num_qubits = std::max(num_qubits, (uint32_t)flow.output.num_qubits);
-    Circuit augmented_circuit;
-    for (uint32_t k = 0; k < num_qubits; k++) {
-        augmented_circuit.safe_append_u("XCX", {k, k + num_qubits + 1}, {});
+    std::set<uint32_t> obs_indices;
+    for (uint32_t obs_index : flow.observables) {
+        obs_indices.insert(obs_index);
     }
-    for (uint32_t k = 0; k < num_qubits; k++) {
-        augmented_circuit.safe_append_u("DEPOLARIZE1", {k}, {0.75});
-    }
-    augmented_circuit.append_from_text("TICK");
-    _pauli_string_controlled_not<W>(flow.input, num_qubits, augmented_circuit);
-    augmented_circuit.append_from_text("TICK");
-    augmented_circuit += circuit;
-    augmented_circuit.append_from_text("TICK");
 
-    _pauli_string_controlled_not<W>(flow.output, num_qubits, augmented_circuit);
+    // Max-mix all the qubits.
+    Circuit augmented_circuit;
+    GateTarget ancilla = GateTarget::qubit(num_qubits);
+    for (uint32_t k = 0; k < num_qubits; k++) {
+        augmented_circuit.safe_append_u("X_ERROR", {k}, {0.5});
+    }
+    for (uint32_t k = 0; k < num_qubits; k++) {
+        augmented_circuit.safe_append_u("Z_ERROR", {k}, {0.5});
+    }
+
+    // Xor input onto ancilla.
+    _pauli_string_controlled_not<W>(flow.input, num_qubits, augmented_circuit);
+    // Perform circuit (accounting for desired observables impacting ancilla)
+    augmented_circuit += flow_test_block_for_circuit(circuit, ancilla, obs_indices);
     for (int32_t m : flow.measurements) {
-        std::array<GateTarget, 2> targets{
-            measurement_index_to_target<W>(m, num_measurements, flow), GateTarget::qubit(num_qubits)};
+        std::array<GateTarget, 2> targets{measurement_index_to_target<W>(m, num_measurements, flow), ancilla};
         augmented_circuit.safe_append(CircuitInstruction(GateType::CX, {}, targets, ""));
     }
+    // Xor output onto ancilla.
+    _pauli_string_controlled_not<W>(flow.output, num_qubits, augmented_circuit);
+
+    // The ancilla should end up deterministically in |0> if the flow is valid.
     augmented_circuit.safe_append_u("M", {num_qubits}, {});
 
-    auto out = sample_batch_measurements(
-        augmented_circuit, TableauSimulator<W>::reference_sample_circuit(augmented_circuit), num_samples, rng, false);
+    simd_bits<W> reference_sample = TableauSimulator<W>::reference_sample_circuit(augmented_circuit);
+    num_samples = (num_samples + W - 1) / W * W;
+    auto result = sample_batch_measurements<W>(
+        augmented_circuit,
+        reference_sample,
+        num_samples,
+        rng,
+        false);
 
-    size_t m = augmented_circuit.count_measurements() - 1;
-    return !out[m].not_zero();
+    return !result[num_measurements].not_zero();
 }
 
 template <size_t W>
@@ -108,6 +124,15 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
         }
     }
 
+    // Add observable-to-flow effects.
+    std::map<uint64_t, SparseXorVec<DemTarget>> obs_effects;
+    for (size_t f = 0; f < flows.size(); f++) {
+        const auto &flow = flows[f];
+        for (const auto &obs : flow.observables) {
+            obs_effects[obs].sorted_items.push_back(DemTarget::relative_detector_id(f));
+        }
+    }
+
     // Mark measurements for inclusion.
     for (size_t f = flows.size(); f--;) {
         const auto &flow = flows[f];
@@ -121,9 +146,32 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
     // Undo the circuit.
     circuit.for_each_operation_reverse([&](const CircuitInstruction &inst) {
         if (inst.gate_type == GateType::DETECTOR) {
-            // Substituted.
+            // Ignore detectors; we're using them for tracking flows.
         } else if (inst.gate_type == GateType::OBSERVABLE_INCLUDE) {
-            // Skip.
+            // Map observable effects onto the flows that depended on that observable.
+            uint64_t obs_id = (uint32_t)inst.args[0];
+            auto effects = obs_effects.find(obs_id);
+            if (effects == obs_effects.end()) {
+                return;
+            }
+            for (auto t : inst.targets) {
+                if (t.is_measurement_record_target()) {
+                    int64_t index = t.rec_offset() + (int64_t)rev.num_measurements_in_past;
+                    if (index < 0) {
+                        throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+                    }
+                    rev.rec_bits[index] ^= effects->second;
+                } else if (t.is_pauli_target()) {
+                    if (t.data & TARGET_PAULI_X_BIT) {
+                        rev.xs[t.qubit_value()] ^= effects->second;
+                    }
+                    if (t.data & TARGET_PAULI_Z_BIT) {
+                        rev.zs[t.qubit_value()] ^= effects->second;
+                    }
+                } else {
+                    throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
+                }
+            }
         } else {
             rev.undo_gate(inst);
         }

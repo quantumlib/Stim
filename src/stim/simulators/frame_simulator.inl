@@ -239,10 +239,10 @@ void FrameSimulator<W>::do_OBSERVABLE_INCLUDE(const CircuitInstruction &inst) {
                 r ^= m_record.lookback(lookback);
             } else if (t.is_pauli_target()) {
                 if (t.data & TARGET_PAULI_X_BIT) {
-                    r ^= x_table[t.qubit_value()];
+                    r ^= z_table[t.qubit_value()];
                 }
                 if (t.data & TARGET_PAULI_Z_BIT) {
-                    r ^= z_table[t.qubit_value()];
+                    r ^= x_table[t.qubit_value()];
                 }
             } else {
                 throw std::invalid_argument("Unexpected target for OBSERVABLE_INCLUDE: " + t.str());
