@@ -56,7 +56,7 @@ TEST(detector_slice_set, from_circuit) {
         2,
         1,
         {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {3, 5}}}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {3, 5}}, {2, {}}}));
     ASSERT_EQ(
         slice_set.slices,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
@@ -417,7 +417,7 @@ TEST(detector_slice_set, from_circuit_with_errors) {
     ASSERT_EQ(
         slice_set.anticommutations,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
-            {{2, DemTarget::relative_detector_id(0)}, {GateTarget::x(0)}},
+            {{3, DemTarget::relative_detector_id(0)}, {GateTarget::x(0)}},
         }));
     ASSERT_EQ(
         slice_set.slices,

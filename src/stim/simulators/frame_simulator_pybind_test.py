@@ -612,3 +612,15 @@ def test_generate_bernoulli_samples():
     assert np.all(v[0::2][:-1] == 0xFF)
     assert v[0::2][-1] == 0x7F
     assert np.all(v[1::2] == 0)
+
+
+def test_get_measurement_flips_negative_index():
+    sim = stim.FlipSimulator(batch_size=8, disable_stabilizer_randomization=True)
+    sim.do(stim.Circuit("""
+        X_ERROR(1) 1
+        M 0 1
+    """))
+    np.testing.assert_array_equal(sim.get_measurement_flips(record_index=-2), [False] * 8)
+    np.testing.assert_array_equal(sim.get_measurement_flips(record_index=-1), [True] * 8)
+    np.testing.assert_array_equal(sim.get_measurement_flips(record_index=0), [False] * 8)
+    np.testing.assert_array_equal(sim.get_measurement_flips(record_index=1), [True] * 8)

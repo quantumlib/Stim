@@ -734,6 +734,96 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             .data());
 
     c.def(
+        "solve_flow_measurements",
+        [](const Circuit &self, const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows) -> pybind11::object {
+            std::span<const Flow<MAX_BITWORD_WIDTH>> flows_span = flows;
+            auto solution = solve_for_flow_measurements(self, flows_span);
+            std::vector<pybind11::object> result;
+            for (const auto &e : solution) {
+                if (e.has_value()) {
+                    result.push_back(pybind11::cast(*e));
+                } else {
+                    result.push_back(pybind11::none());
+                }
+            }
+            return pybind11::cast(result);
+        },
+        clean_doc_string(R"DOC(
+            @signature def solve_flow_measurements(self, flows: List[stim.Flow]) -> List[Optional[List[int]]]:
+            Finds measurements that explain the starts/ends of the given flows.
+
+            CAUTION: it's not guaranteed that the solutions returned by this method are
+            minimal. It may use 20 measurements when only 2 are needed. The method applies
+            some simple heuristics that attempt to reduce the size, but these heuristics
+            aren't perfect.
+
+            Args:
+                flows: A list of flows, each of which to be solved. Measurements and signs
+                    are entirely ignored. The input/output of a flow can't both be identity
+                    Paulis.
+
+            Returns:
+                A list of solutions for each given flow.
+
+                If no solution exists for flows[k], then results[k] is None.
+                Otherwise, results[k] is the measurement indices for flows[k].
+
+                When a solution exists, it's guaranteed that
+
+                    stim.Flow(
+                        input=flows[k].input,
+                        output=flows[k].output,
+                        measurements=results[k],
+                    )
+
+                is an unsigned flow of the circuit. The sign can be solved for separately
+                if needed.
+
+            Raises:
+                ValueError:
+                    A flow had an empty input and output.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("Z2 -> 1"),
+                ... ])
+                [[0]]
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("X2 -> X2"),
+                ... ])
+                [None]
+
+                >>> stim.Circuit('''
+                ...     MXX 0 1
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("YY -> ZZ"),
+                ... ])
+                [[0]]
+
+                >>> # Rep code cycle
+                >>> stim.Circuit('''
+                ...     R 1 3
+                ...     CX 0 1 2 3
+                ...     CX 4 3 2 1
+                ...     M 1 3
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("1 -> Z0*Z4"),
+                ...     stim.Flow("Z0 -> Z2"),
+                ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+                ...     stim.Flow("Y0 -> Y0"),
+                ... ])
+                [[0, 1], [0], [], None]
+        )DOC")
+            .data());
+
+    c.def(
         "time_reversed_for_flows",
         [](const Circuit &self,
            const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows,
