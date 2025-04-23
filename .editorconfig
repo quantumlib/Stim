@@ -32,29 +32,22 @@ trim_trailing_whitespace = true
 max_line_length = 120
 
 [{BUILD,*.BUILD,*.bzl,*.bazel,.bazelrc}]
-# Google doesn't have a style guideline for Bazel files. Most people use 4.
 indent_size = 4
 
 [{*.cc,*.h}]
-# Google style guidelines use 2.
 indent_size = 4
 
 [{*.js,*.ts}]
-# Google style guidelines use 2.
 indent_size = 4
 
 [*.json]
-# Not stated explicitly in Google's guidelines, but the examples use 2.
 indent_size = 2
 
 [*.py]
-# Google style guidelines use 4.
 indent_size = 4
 
 [*.sh]
-# Google style guidelines use 2.
 indent_size = 4
 
 [{*.yaml,*.yml}]
-# Google doesn't have style guidelines for YAML. Most people use indent = 2.
 indent_size = 2
