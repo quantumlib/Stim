@@ -19,10 +19,7 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include <vector>
 
 #include "stim/mem/span_ref.h"

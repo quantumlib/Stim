@@ -137,7 +137,7 @@ Examples:
             .name = "I_ERROR",
             .id = GateType::I_ERROR,
             .best_candidate_inverse_id = GateType::I_ERROR,
-            .arg_count = 1,
+            .arg_count = ARG_COUNT_SYGIL_ANY,
             .flags = (GateFlags)(GATE_IS_SINGLE_QUBIT_GATE | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             .category = "F_Noise Channels",
             .help = R"MARKDOWN(
@@ -148,7 +148,10 @@ communication mechanism for systems built on top of stim.
 
 Parens Arguments:
 
-    A single float specifying the probability of applying an I operation.
+    A list of disjoint probabilities summing to at most 1.
+
+    The probabilities have no effect on stim simulations or error analysis, but may be
+    interpreted in arbitrary ways by external tools.
 
 Targets:
 
@@ -156,14 +159,21 @@ Targets:
 
 Pauli Mixture:
 
-    1-p: I
-     p : I
+     *: I
 
 Examples:
 
+    # does nothing
+    I_ERROR 0
+
+    # does nothing with probability 0.1, else does nothing
     I_ERROR(0.1) 0
 
-    I_ERROR[ACTUALLY_I_AM_LEAKAGE_NOISE_IN_AN_ADVANCED_SIMULATOR](0.1) 0 2 4
+    # doesn't require a probability argument
+    I_ERROR[LEAKAGE_NOISE_FOR_AN_ADVANCED_SIMULATOR:0.1] 0 2 4
+
+    # checks for you that the disjoint probabilities in the arguments are legal
+    I_ERROR[MULTIPLE_NOISE_MECHANISMS](0.1, 0.2) 0 2 4
 )MARKDOWN",
             .unitary_data = {},
             .flow_data = {},
@@ -176,7 +186,7 @@ Examples:
             .name = "II_ERROR",
             .id = GateType::II_ERROR,
             .best_candidate_inverse_id = GateType::II_ERROR,
-            .arg_count = 1,
+            .arg_count = ARG_COUNT_SYGIL_ANY,
             .flags = (GateFlags)(GATE_TARGETS_PAIRS | GATE_IS_NOISY | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             .category = "F_Noise Channels",
             .help = R"MARKDOWN(
@@ -187,7 +197,10 @@ communication mechanism for systems built on top of stim.
 
 Parens Arguments:
 
-    A single float specifying the probability of applying an II operation.
+    A list of disjoint probabilities summing to at most 1.
+
+    The probabilities have no effect on stim simulations or error analysis, but may be
+    interpreted in arbitrary ways by external tools.
 
 Targets:
 
@@ -195,14 +208,22 @@ Targets:
 
 Pauli Mixture:
 
-    1-p: II
-     p : II
+    *: II
 
 Examples:
 
+    # does nothing
+    II_ERROR 0 1
+
+    # does nothing with probability 0.1, else does nothing
     II_ERROR(0.1) 0 1
 
-    II_ERROR[ACTUALLY_I_SPECIFY_LEAKAGE_TRANSPORT_FOR_AN_ADVANCED_SIMULATOR](0.1) 0 2 4 6
+    # checks for you that the targets are two-qubit pairs
+    II_ERROR[TWO_QUBIT_LEAKAGE_NOISE_FOR_AN_ADVANCED_SIMULATOR:0.1] 0 2 4 6
+
+    # checks for you that the disjoint probabilities in the arguments are legal
+    II_ERROR[MULTIPLE_TWO_QUBIT_NOISE_MECHANISMS](0.1, 0.2) 0 2 4 6
+
 )MARKDOWN",
             .unitary_data = {},
             .flow_data = {},

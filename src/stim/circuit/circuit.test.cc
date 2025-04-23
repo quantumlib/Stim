@@ -1985,3 +1985,22 @@ TEST(circuit, insert_instruction) {
         X 1
     )CIRCUIT"));
 }
+
+TEST(circuit, without_tags) {
+    Circuit initial(R"CIRCUIT(
+        H[test-1] 0
+        REPEAT[test-2] 100 {
+            REPEAT[test-3] 100 {
+                M[test-4](0.125) 0
+            }
+        }
+    )CIRCUIT");
+    ASSERT_EQ(initial.without_tags(), Circuit(R"CIRCUIT(
+        H 0
+        REPEAT 100 {
+            REPEAT 100 {
+                M(0.125) 0
+            }
+        }
+    )CIRCUIT"));
+}

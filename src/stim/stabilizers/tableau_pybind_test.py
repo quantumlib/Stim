@@ -713,6 +713,11 @@ def test_to_pauli_string():
         cnot.to_pauli_string()
 
 
+def test_iter_0q():
+    assert list(stim.Tableau.iter_all(0, unsigned=True)) == [stim.Tableau(0)]
+    assert list(stim.Tableau.iter_all(0, unsigned=False)) == [stim.Tableau(0)]
+
+
 def test_iter_1q():
     r = stim.Tableau.iter_all(1, unsigned=True)
     assert len(set(repr(e) for e in r)) == 6

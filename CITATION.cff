@@ -1,0 +1,91 @@
+# Citation information for this repository.                         -*- yaml -*-
+#
+# CITATION.cff files provide human- & machine-readable citation information for
+# software and datasets. GitHub, Zenodo, and the Zotero browser plugin all use
+# CFF files automatically if provided. https://citation-file-format.github.io/.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+cff-version: 1.2.0
+message: If you use Stim, please cite it using this metadata.
+
+# CITATION.cff files describe how to cite software or datasets, with the goal of
+# making software and data be citable in their own right. However, sometimes
+# projects want citations to go to a paper instead. 'Preferred-citation' serves
+# to communicate that. The distinction matters in different situations. If this
+# field is present, GitHub uses the value for the "cite this repository" button
+# and ignores the rest of this file; conversely, the Zenodo-GitHub integration
+# ignores this field when creating an entry for a new software release because
+# the Zenodo entry is specifically about the software in this repository.
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Gidney
+      given-names: Craig
+  title: 'Stim: a fast stabilizer circuit simulator'
+  journal: Quantum
+  year: 2021
+  month: 7
+  volume: 5
+  start: 497
+  issn: 2521-327X
+  url: https://doi.org/10.22331/q-2021-07-06-497
+  publisher:
+    name: >-
+      Verein zur Förderung des Open Access Publizierens in den
+      Quantenwissenschaften
+
+# The remaining metadata in this file describes the current software release.
+
+title: Stim
+abstract: >-
+  Stim is a tool for high performance simulation and analysis of quantum
+  stabilizer circuits, especially quantum error correction (QEC) circuits.
+authors:
+  - family-names: Gidney
+    given-names: Craig
+version: 1.14.0
+date-released: 2024-09-24
+url: https://github.com/quantumlib/stim
+repository-code: https://github.com/quantumlib/stim
+license: Apache-2.0
+type: software
+identifiers:
+  - description: The GitHub repository for Stim
+    value: https://github.com/quantumlib/Stim
+    type: url
+  - description: PyPI project for Stim
+    value: https://pypi.org/project/Stim
+    type: url
+  - description: Publication about Stim
+    value: 10.22331/q-2021-07-06-497
+    type: doi
+keywords:
+  - algorithms
+  - API
+  - application programming interface
+  - C++
+  - Clifford gates
+  - Clifford operations
+  - high performance
+  - open-source software
+  - physics
+  - Python
+  - QEC
+  - quantum
+  - quantum algorithms
+  - quantum circuits
+  - quantum computing
+  - quantum error correction
+  - quantum error decoder
+  - quantum gates
+  - quantum programming
+  - quantum simulation
+  - quantum state
+  - qubit
+  - science
+  - SDK
+  - simulation
+  - simulator
+  - software
+  - software development toolkit
+  - stabilizer circuits

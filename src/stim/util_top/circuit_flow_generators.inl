@@ -5,6 +5,7 @@ namespace stim {
 template <size_t W>
 CircuitFlowGeneratorSolver<W>::CircuitFlowGeneratorSolver(CircuitStats stats)
     : table(),
+      imag_bits(stats.num_qubits),
       num_qubits(stats.num_qubits),
       num_measurements(stats.num_measurements),
       num_measurements_in_past(stats.num_measurements),
@@ -146,7 +147,7 @@ void CircuitFlowGeneratorSolver<W>::mult_row_into(size_t src_row, size_t dst_row
     log_i += dst.input.ref().inplace_right_mul_returning_log_i_scalar(src.input);
     log_i -= dst.output.ref().inplace_right_mul_returning_log_i_scalar(src.output);
     if (log_i & 1) {
-        throw std::invalid_argument("Unexpected anticommutation while solving for flow generators.");
+        imag_bits[dst_row] ^= 1;
     }
     if (log_i & 2) {
         dst.input.sign ^= 1;
@@ -218,7 +219,7 @@ void CircuitFlowGeneratorSolver<W>::undo_feedback_capable_instruction(CircuitIns
 template <size_t W>
 void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
     if (table.size() > num_qubits * 3) {
-        canonicalize_over_qubits();
+        canonicalize_over_qubits(table.size());
     }
 
     switch (inst.gate_type) {
@@ -395,10 +396,10 @@ std::span<const size_t> CircuitFlowGeneratorSolver<W>::rows_with(PREDICATE predi
 }
 
 template <size_t W>
-void CircuitFlowGeneratorSolver<W>::elimination_step(std::span<const size_t> elimination_set, size_t &num_eliminated) {
+void CircuitFlowGeneratorSolver<W>::elimination_step(std::span<const size_t> elimination_set, size_t &num_eliminated, size_t num_available_rows) {
     size_t pivot = SIZE_MAX;
     for (auto p : elimination_set) {
-        if (p >= num_eliminated) {
+        if (p >= num_eliminated && p < num_available_rows) {
             pivot = p;
             break;
         }
@@ -417,29 +418,29 @@ void CircuitFlowGeneratorSolver<W>::elimination_step(std::span<const size_t> eli
 }
 
 template <size_t W>
-void CircuitFlowGeneratorSolver<W>::canonicalize_over_qubits() {
+void CircuitFlowGeneratorSolver<W>::canonicalize_over_qubits(size_t num_available_rows) {
     size_t num_eliminated = 0;
     for (size_t q = 0; q < num_qubits; q++) {
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.input.xs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.input.zs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.output.xs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.output.zs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
     }
 
     for (size_t r = 0; r < table.size(); r++) {
@@ -453,44 +454,59 @@ void CircuitFlowGeneratorSolver<W>::canonicalize_over_qubits() {
 }
 
 template <size_t W>
-void CircuitFlowGeneratorSolver<W>::final_canonicalize_into_table() {
-    for (auto &row : measurements_only_table) {
-        table.push_back(std::move(row));
-    }
-
-    size_t num_eliminated = 0;
+void CircuitFlowGeneratorSolver<W>::eliminate_input_xz_terms(size_t &num_eliminated, size_t num_available_rows) {
     for (size_t q = 0; q < num_qubits; q++) {
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.input.xs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.input.zs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
     }
+}
+
+template <size_t W>
+void CircuitFlowGeneratorSolver<W>::eliminate_output_xz_terms(size_t &num_eliminated, size_t num_available_rows) {
     for (size_t q = 0; q < num_qubits; q++) {
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.output.xs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return flow.output.zs[q];
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
     }
+}
+
+template <size_t W>
+void CircuitFlowGeneratorSolver<W>::eliminate_measurement_terms(size_t &num_eliminated, size_t num_available_rows) {
     for (size_t m = 0; m < num_measurements; m++) {
         elimination_step(
             rows_with([&](const Flow<W> &flow) {
                 return std::find(flow.measurements.begin(), flow.measurements.end(), (int32_t)m) !=
                        flow.measurements.end();
             }),
-            num_eliminated);
+            num_eliminated, num_available_rows);
     }
+}
+
+template <size_t W>
+void CircuitFlowGeneratorSolver<W>::final_canonicalize_into_table() {
+    for (auto &row : measurements_only_table) {
+        table.push_back(std::move(row));
+    }
+
+    size_t num_eliminated = 0;
+    eliminate_input_xz_terms(num_eliminated, table.size());
+    eliminate_output_xz_terms(num_eliminated, table.size());
+    eliminate_measurement_terms(num_eliminated, table.size());
     for (auto &row : table) {
         row.output.sign ^= row.input.sign;
         row.input.sign = 0;
@@ -510,8 +526,10 @@ void CircuitFlowGeneratorSolver<W>::final_canonicalize_into_table() {
 }
 
 template <size_t W>
-std::vector<Flow<W>> circuit_flow_generators(const Circuit &circuit) {
-    CircuitFlowGeneratorSolver<W> solver(circuit.compute_stats());
+CircuitFlowGeneratorSolver<W> CircuitFlowGeneratorSolver<W>::solver_with_circuit_generators(const Circuit &circuit, uint32_t min_num_qubits) {
+    auto stats = circuit.compute_stats();
+    stats.num_qubits = std::max(stats.num_qubits, min_num_qubits);
+    CircuitFlowGeneratorSolver<W> solver(stats);
     for (size_t q = 0; q < solver.num_qubits; q++) {
         auto &x = solver.add_row();
         x.output.xs[q] = 1;
@@ -523,8 +541,87 @@ std::vector<Flow<W>> circuit_flow_generators(const Circuit &circuit) {
     circuit.for_each_operation_reverse([&](CircuitInstruction inst) {
         solver.undo_instruction(inst);
     });
+    return solver;
+}
+
+template <size_t W>
+std::vector<Flow<W>> circuit_flow_generators(const Circuit &circuit) {
+    CircuitFlowGeneratorSolver<W> solver = CircuitFlowGeneratorSolver<W>::solver_with_circuit_generators(circuit, 0);
+    if (solver.imag_bits.not_zero()) {
+        throw std::invalid_argument("Unexpected anticommutation while solving for flow generators.");
+    }
     solver.final_canonicalize_into_table();
     return solver.table;
+}
+
+template <size_t W>
+std::vector<std::optional<std::vector<int32_t>>> solve_for_flow_measurements(const Circuit &circuit, std::span<const Flow<W>> flows) {
+    size_t num_flow_qubits = 0;
+    for (const auto &flow : flows) {
+        num_flow_qubits = std::max(num_flow_qubits, flow.input.num_qubits);
+        num_flow_qubits = std::max(num_flow_qubits, flow.output.num_qubits);
+        if (flow.input.ref().has_no_pauli_terms() && flow.output.ref().has_no_pauli_terms()) {
+            throw std::invalid_argument(
+                "Given a 1 -> 1 flow (empty input, empty output). "
+                "Only solving non-empty flows is supported by this method.");
+        }
+    }
+
+    CircuitFlowGeneratorSolver<W> solver = CircuitFlowGeneratorSolver<W>::solver_with_circuit_generators(circuit, num_flow_qubits);
+
+    // Copy pauli terms from flows into the table.
+    size_t num_circuit_flows = solver.table.size();
+    for (size_t k = 0; k < flows.size(); k++) {
+        const auto &flow = flows[k];
+        auto &dst = solver.add_row();
+        dst.input.xs.word_range_ref(0, flow.input.xs.num_simd_words) = flow.input.xs;
+        dst.input.zs.word_range_ref(0, flow.input.zs.num_simd_words) = flow.input.zs;
+        dst.output.xs.word_range_ref(0, flow.output.xs.num_simd_words) = flow.output.xs;
+        dst.output.zs.word_range_ref(0, flow.output.zs.num_simd_words) = flow.output.zs;
+    }
+
+    // Eliminate the pauli terms.
+    size_t num_eliminated = 0;
+    solver.eliminate_input_xz_terms(num_eliminated, num_circuit_flows);
+    solver.eliminate_output_xz_terms(num_eliminated, num_circuit_flows);
+
+    // Greedily attempt to reduce measurement counts.
+    // This avoids bad scenarios like stability experiments putting the global measurement set into local flows.
+    for (size_t k = num_eliminated; k < num_circuit_flows; k++) {
+        if (solver.table[k].input.ref().has_no_pauli_terms() && solver.table[k].output.ref().has_no_pauli_terms()) {
+            const auto &src = solver.table[k].measurements;
+            for (size_t k2 = num_circuit_flows; k2 < solver.table.size(); k2++) {
+                auto &dst = solver.table[k2].measurements;
+                if (dst.size() >= src.size() * 2) {
+                    continue;
+                }
+
+                solver.buf_for_xor_merge.resize(std::max(solver.buf_for_xor_merge.size(), src.size() + dst.size() + 1));
+                const int32_t *end = xor_merge_sort(
+                    SpanRef<const int32_t>(dst),
+                    SpanRef<const int32_t>(src),
+                    solver.buf_for_xor_merge.data());
+                size_t n = end - solver.buf_for_xor_merge.data();
+                if (n < dst.size()) {
+                    memcpy(dst.data(), solver.buf_for_xor_merge.data(), n * sizeof(int32_t));
+                    dst.resize(n);
+                }
+            }
+        }
+    }
+
+    // Collect the measurements, checking the pauli terms were actually cleared.
+    std::vector<std::optional<std::vector<int32_t>>> result;
+    for (size_t k = 0; k < flows.size(); k++) {
+        Flow<W> &solved = solver.table[k + num_circuit_flows];
+        if (solver.imag_bits[k] || !solved.input.ref().has_no_pauli_terms() || !solved.output.ref().has_no_pauli_terms()) {
+            result.push_back(std::optional<std::vector<int32_t>>{});
+            continue;
+        }
+        result.emplace_back(std::move(solved.measurements));
+    }
+
+    return result;
 }
 
 }  // namespace stim

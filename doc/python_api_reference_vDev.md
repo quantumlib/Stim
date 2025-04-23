@@ -50,10 +50,12 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.num_ticks`](#stim.Circuit.num_ticks)
     - [`stim.Circuit.pop`](#stim.Circuit.pop)
+    - [`stim.Circuit.reference_detector_and_observable_signs`](#stim.Circuit.reference_detector_and_observable_signs)
     - [`stim.Circuit.reference_sample`](#stim.Circuit.reference_sample)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
+    - [`stim.Circuit.solve_flow_measurements`](#stim.Circuit.solve_flow_measurements)
     - [`stim.Circuit.time_reversed_for_flows`](#stim.Circuit.time_reversed_for_flows)
     - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
@@ -62,6 +64,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.to_tableau`](#stim.Circuit.to_tableau)
     - [`stim.Circuit.with_inlined_feedback`](#stim.Circuit.with_inlined_feedback)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
+    - [`stim.Circuit.without_tags`](#stim.Circuit.without_tags)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
     - [`stim.CircuitErrorLocation.__init__`](#stim.CircuitErrorLocation.__init__)
     - [`stim.CircuitErrorLocation.flipped_measurement`](#stim.CircuitErrorLocation.flipped_measurement)
@@ -187,6 +190,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DetectorErrorModel.rounded`](#stim.DetectorErrorModel.rounded)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
     - [`stim.DetectorErrorModel.to_file`](#stim.DetectorErrorModel.to_file)
+    - [`stim.DetectorErrorModel.without_tags`](#stim.DetectorErrorModel.without_tags)
 - [`stim.ExplainedError`](#stim.ExplainedError)
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
@@ -834,7 +838,7 @@ def __str__(
 def append(
     self,
     name: str,
-    targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]],
+    targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]],
     arg: Union[float, Iterable[float]],
     *,
     tag: str = "",
@@ -867,6 +871,7 @@ def append(
         >>> c.append("CNOT", [stim.target_rec(-1), 0])
         >>> c.append("X_ERROR", [0], 0.125)
         >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+        >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
         >>> print(repr(c))
         stim.Circuit('''
             X 0
@@ -875,6 +880,7 @@ def append(
             CX rec[-1] 0
             X_ERROR(0.125) 0
             E(0.25) X0 Y2
+            MPP X1*Y2 Z3
         ''')
 
     Args:
@@ -888,11 +894,15 @@ def append(
             (The argument being called `name` is no longer quite right, but
             is being kept for backwards compatibility.)
         targets: The objects operated on by the gate. This can be either a
-            single target or an iterable of multiple targets to broadcast the
-            gate over. Each target can be an integer (a qubit), a
-            stim.GateTarget, or a special target from one of the `stim.target_*`
-            methods (such as a measurement record target like `rec[-1]` from
-            `stim.target_rec(-1)`).
+            single target or an iterable of multiple targets.
+
+            Each target can be:
+                An int: The index of a targeted qubit.
+                A `stim.GateTarget`: Could be a variety of things. Methods like
+                    `stim.target_rec`, `stim.target_sweet`, `stim.target_x`, and
+                    `stim.CircuitInstruction.__getitem__` all return this type.
+                A `stim.PauliString`: This will automatically be expanded into
+                    a product of pauli targets like `X1*Y2*Z3`.
         arg: The "parens arguments" for the gate, such as the probability for a
             noise operation. A double or list of doubles parameterizing the
             gate. Different gates take different parens arguments. For example,
@@ -1954,7 +1964,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('CNOT 4 5', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.Circuit.from_file(path)
+        ...         circuit = stim.Circuit.from_file(f)
         >>> circuit
         stim.Circuit('''
             CX 4 5
@@ -2746,6 +2756,61 @@ def pop(
     """
 ```
 
+<a name="stim.Circuit.reference_detector_and_observable_signs"></a>
+```python
+# stim.Circuit.reference_detector_and_observable_signs
+
+# (in class stim.Circuit)
+def reference_detector_and_observable_signs(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Determines noiseless parities of the measurement sets of detectors/observables.
+
+    BEWARE: the returned values are NOT the "expected value of the
+    detector/observable". Stim consistently defines the value of a
+    detector/observable as whether or not it flipped, so the expected value of a
+    detector/observable is vacuously always 0 (not flipped). This method instead
+    returns the "sign"; the expected parity of the measurement set declared by the
+    detector/observable. The sign is the baseline used to determine if a flip
+    occurred. A detector/observable's value is whether its sign disagrees with the
+    measured parity of its measurement set.
+
+    Note that this method doesn't account for sweep bits. It will effectively ignore
+    instructions like `CX sweep[0] 0`.
+
+    Args:
+        bit_packed: Defaults to False. Determines whether the output numpy arrays
+            use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+    Returns:
+        A (det, obs) tuple with numpy arrays containing the reference parities.
+
+        if bit_packed:
+            det.shape == (math.ceil(num_detectors / 8),)
+            det.dtype == np.uint8
+            obs.shape == (math.ceil(num_observables / 8),)
+            obs.dtype == np.uint8
+        else:
+            det.shape == (num_detectors,)
+            det.dtype == np.bool_
+            obs.shape == (num_observables,)
+            obs.dtype == np.bool_
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     X 1
+        ...     M 0 1
+        ...     DETECTOR rec[-1]
+        ...     DETECTOR rec[-2]
+        ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+        ... ''').reference_detector_and_observable_signs()
+        (array([ True, False]), array([False, False, False,  True]))
+    """
+```
+
 <a name="stim.Circuit.reference_sample"></a>
 ```python
 # stim.Circuit.reference_sample
@@ -2762,12 +2827,18 @@ def reference_sample(
     towards +Z instead of randomly +Z/-Z.
 
     Args:
-        circuit: The circuit to "sample" from.
         bit_packed: Defaults to False. Determines whether the output numpy arrays
             use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
     Returns:
-        reference_sample: reference sample sampled from the given circuit.
+        A numpy array containing the reference sample.
+
+        if bit_packed:
+            shape == (math.ceil(num_measurements / 8),)
+            dtype == np.uint8
+        else:
+            shape == (num_measurements,)
+            dtype == np.bool_
 
     Examples:
         >>> import stim
@@ -3027,6 +3098,88 @@ def shortest_graphlike_error(
         ...     before_round_data_depolarization=0.01)
         >>> len(circuit.shortest_graphlike_error())
         7
+    """
+```
+
+<a name="stim.Circuit.solve_flow_measurements"></a>
+```python
+# stim.Circuit.solve_flow_measurements
+
+# (in class stim.Circuit)
+def solve_flow_measurements(
+    self,
+    flows: List[stim.Flow],
+) -> List[Optional[List[int]]]:
+    """Finds measurements that explain the starts/ends of the given flows.
+
+    CAUTION: it's not guaranteed that the solutions returned by this method are
+    minimal. It may use 20 measurements when only 2 are needed. The method applies
+    some simple heuristics that attempt to reduce the size, but these heuristics
+    aren't perfect.
+
+    Args:
+        flows: A list of flows, each of which to be solved. Measurements and signs
+            are entirely ignored. The input/output of a flow can't both be identity
+            Paulis.
+
+    Returns:
+        A list of solutions for each given flow.
+
+        If no solution exists for flows[k], then results[k] is None.
+        Otherwise, results[k] is the measurement indices for flows[k].
+
+        When a solution exists, it's guaranteed that
+
+            stim.Flow(
+                input=flows[k].input,
+                output=flows[k].output,
+                measurements=results[k],
+            )
+
+        is an unsigned flow of the circuit. The sign can be solved for separately
+        if needed.
+
+    Raises:
+        ValueError:
+            A flow had an empty input and output.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit('''
+        ...     M 2
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("Z2 -> 1"),
+        ... ])
+        [[0]]
+
+        >>> stim.Circuit('''
+        ...     M 2
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("X2 -> X2"),
+        ... ])
+        [None]
+
+        >>> stim.Circuit('''
+        ...     MXX 0 1
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("YY -> ZZ"),
+        ... ])
+        [[0]]
+
+        >>> # Rep code cycle
+        >>> stim.Circuit('''
+        ...     R 1 3
+        ...     CX 0 1 2 3
+        ...     CX 4 3 2 1
+        ...     M 1 3
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("1 -> Z0*Z4"),
+        ...     stim.Flow("Z0 -> Z2"),
+        ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+        ...     stim.Flow("Y0 -> Y0"),
+        ... ])
+        [[0, 1], [0], [], None]
     """
 ```
 
@@ -3583,6 +3736,33 @@ def without_noise(
         stim.Circuit('''
             CX 0 1
             M 0
+        ''')
+    """
+```
+
+<a name="stim.Circuit.without_tags"></a>
+```python
+# stim.Circuit.without_tags
+
+# (in class stim.Circuit)
+def without_tags(
+    self,
+) -> stim.Circuit:
+    """Returns a copy of the circuit with all tags removed.
+
+    Returns:
+        A `stim.Circuit` with the same instructions except all tags have been
+        removed.
+
+    Examples:
+        >>> import stim
+        >>> stim.Circuit('''
+        ...     X[test-tag] 0
+        ...     M[test-tag-2](0.125) 0
+        ... ''').without_tags()
+        stim.Circuit('''
+            X 0
+            M(0.125) 0
         ''')
     """
 ```
@@ -7257,7 +7437,7 @@ def from_file(
         ...     with open(path, 'w') as f:
         ...         print('error(0.25) D2 D3', file=f)
         ...     with open(path) as f:
-        ...         circuit = stim.DetectorErrorModel.from_file(path)
+        ...         circuit = stim.DetectorErrorModel.from_file(f)
         >>> circuit
         stim.DetectorErrorModel('''
             error(0.25) D2 D3
@@ -7583,6 +7763,31 @@ def to_file(
     """
 ```
 
+<a name="stim.DetectorErrorModel.without_tags"></a>
+```python
+# stim.DetectorErrorModel.without_tags
+
+# (in class stim.DetectorErrorModel)
+def without_tags(
+    self,
+) -> stim.DetectorErrorModel:
+    """Returns a copy of the detector error model with all tags removed.
+
+    Returns:
+        A `stim.DetectorErrorModel` with the same instructions except all tags have
+        been removed.
+
+    Examples:
+        >>> import stim
+        >>> stim.DetectorErrorModel('''
+        ...     error[test-tag](0.25) D0
+        ... ''').without_tags()
+        stim.DetectorErrorModel('''
+            error(0.25) D0
+        ''')
+    """
+```
+
 <a name="stim.ExplainedError"></a>
 ```python
 # stim.ExplainedError
@@ -7854,6 +8059,7 @@ def broadcast_pauli_errors(
     *,
     pauli: Union[str, int],
     mask: np.ndarray,
+    p: float = 1,
 ) -> None:
     """Applies a pauli error to all qubits in all instances, filtered by a mask.
 
@@ -7874,6 +8080,9 @@ def broadcast_pauli_errors(
             The error is only applied to qubit q in instance k when
 
                 mask[q, k] == True.
+        p: Defaults to 1 (no effect). When specified, the error is applied
+            probabilistically instead of deterministically to each (instance, qubit)
+            pair matching the mask. This argument specifies the probability.
 
     Examples:
         >>> import stim
