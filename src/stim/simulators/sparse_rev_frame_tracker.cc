@@ -839,7 +839,8 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const CircuitInstruction &dat)
 }
 
 void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
-    auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
+    uint64_t obs_id = (uint32_t)dat.args[0];
+    auto obs = DemTarget::observable_id(obs_id);
     for (auto t : dat.targets) {
         if (t.is_measurement_record_target()) {
             int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;

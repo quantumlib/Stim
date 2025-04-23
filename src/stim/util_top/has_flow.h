@@ -48,6 +48,9 @@ std::vector<bool> check_if_circuit_has_unsigned_stabilizer_flows(
 template <size_t W>
 std::ostream &operator<<(std::ostream &out, const Flow<W> &flow);
 
+/// Internal helper method.
+Circuit flow_test_block_for_circuit(const Circuit &circuit, GateTarget ancilla_qubit, const std::set<uint32_t> &obs_indices);
+
 }  // namespace stim
 
 #include "stim/util_top/has_flow.inl"

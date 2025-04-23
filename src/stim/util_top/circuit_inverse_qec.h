@@ -3,6 +3,7 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/stabilizers/flow.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 namespace stim {
 

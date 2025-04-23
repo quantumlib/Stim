@@ -2349,34 +2349,50 @@ class Circuit:
         self,
         flows: List[stim.Flow],
     ) -> List[Optional[List[int]]]:
-        """Finds measurements that explain the starts/ends of the given flows.
+        """Finds measurements to explain the starts/ends of the given flows, ignoring sign.
 
         CAUTION: it's not guaranteed that the solutions returned by this method are
         minimal. It may use 20 measurements when only 2 are needed. The method applies
         some simple heuristics that attempt to reduce the size, but these heuristics
-        aren't perfect.
+        aren't perfect and don't make any strong guarantees.
+
+        The recommended way to use this method is on small parts of a circuit, such as a
+        single surface code round. The ideal use case is when there is exactly one
+        solution for each flow, because then the method behaves predictably and
+        consistently. When there are multiple solutions, the method has no real way to
+        pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+        For example, if you have a multi-round surface code circuit with open time
+        boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+        (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+        (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+        solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+        of rounds, times a random combination of unrelated detectors). The method is
+        permitted to return any of those solutions.
 
         Args:
             flows: A list of flows, each of which to be solved. Measurements and signs
-                are entirely ignored. The input/output of a flow can't both be identity
-                Paulis.
+                are entirely ignored.
+
+                An error is raised if one of the given flows has an identity pauli
+                string as its input and as its output, despite the fact that this case
+                has a vacuous solution (no measurements). This error is only present as
+                a safety check that catches some possible bugs in the calling code, such
+                as accidentally applying this method to detector flows. This error may
+                be removed in the future, so that the vacuous case succeeds vacuously.
 
         Returns:
             A list of solutions for each given flow.
 
-            If no solution exists for flows[k], then results[k] is None.
-            Otherwise, results[k] is the measurement indices for flows[k].
+            If no solution exists for flows[k], then solutions[k] is None.
+            Otherwise, solutions[k] is a list of measurement indices for flows[k].
 
-            When a solution exists, it's guaranteed that
+            When solutions[k] is not None, it's guaranteed that
 
-                stim.Flow(
+                circuit.has_flow(stim.Flow(
                     input=flows[k].input,
                     output=flows[k].output,
-                    measurements=results[k],
-                )
-
-            is an unsigned flow of the circuit. The sign can be solved for separately
-            if needed.
+                    measurements=solutions[k],
+                ), unsigned=True)
 
         Raises:
             ValueError:
@@ -7240,6 +7256,7 @@ class Flow:
         input: Optional[stim.PauliString] = None,
         output: Optional[stim.PauliString] = None,
         measurements: Optional[Iterable[Union[int, GateTarget]]] = None,
+        included_observables: Optional[Iterable[int]] = None,
     ) -> None:
         """Initializes a stim.Flow.
 
@@ -7256,11 +7273,18 @@ class Flow:
                 specify the flow's input stabilizer.
             output: Defaults to None. Can be set to a stim.PauliString to directly
                 specify the flow's output stabilizer.
-            measurements: Can be set to a list of integers or gate targets like
-                `stim.target_rec(-1)`, to specify the measurements that mediate the
-                flow. Negative and positive measurement indices are allowed. Indexes
-                follow the python convention where -1 is the last measurement in a
-                circuit and 0 is the first measurement in a circuit.
+            measurements: Defaults to None. Can be set to a list of integers or gate
+                targets like `stim.target_rec(-1)`, to specify the measurements that
+                mediate the flow. Negative and positive measurement indices are allowed.
+                Indexes follow the python convention where -1 is the last measurement in
+                a circuit and 0 is the first measurement in a circuit.
+            included_observables: Defaults to None. `OBSERVABLE_INCLUDE` instructions
+                that target an observable index from this list will be implicitly
+                included in the flow. This allows flows to refer to observables. For
+                example, the flow "X5 -> obs[3]" says "At the start of the circuit,
+                observable 3 should be an X term on qubit 5. By the end of the circuit
+                it will be measured. The `OBSERVABLE_INCLUDE(3)` instructions in the
+                circuit should explain how this happened.".
 
         Examples:
             >>> import stim
@@ -7277,6 +7301,13 @@ class Flow:
             ...     measurements=[],
             ... )
             stim.Flow("XX -> _X")
+
+            >>> # Identical terms cancel.
+            >>> stim.Flow("X2 -> Y2*Y2 xor rec[-2] xor rec[-2]")
+            stim.Flow("__X -> ___")
+
+            >>> stim.Flow("X -> Y xor obs[3] xor obs[3] xor obs[3]")
+            stim.Flow("X -> Y xor obs[3]")
         """
     def __ne__(
         self,
@@ -7293,6 +7324,30 @@ class Flow:
         self,
     ) -> str:
         """Returns a shorthand description of the flow.
+        """
+    def included_observables_copy(
+        self,
+    ) -> List[int]:
+        """Returns a copy of the flow's included observable indices.
+
+        When an observable is included in a flow, the flow implicitly includes all
+        measurements and pauli terms from `OBSERVABLE_INCLUDE` instructions targeting
+        that observable index.
+
+        Examples:
+            >>> import stim
+            >>> f = stim.Flow(included_observables=[3, 2])
+            >>> f.included_observables_copy()
+            [2, 3]
+
+            >>> f.included_observables_copy() is f.included_observables_copy()
+            False
+
+            >>> f = stim.Flow("X2 -> obs[3]")
+            >>> f.included_observables_copy()
+            [3]
+            >>> stim.Circuit("OBSERVABLE_INCLUDE(3) X2").has_flow(f)
+            True
         """
     def input_copy(
         self,

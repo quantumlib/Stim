@@ -750,34 +750,50 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
         },
         clean_doc_string(R"DOC(
             @signature def solve_flow_measurements(self, flows: List[stim.Flow]) -> List[Optional[List[int]]]:
-            Finds measurements that explain the starts/ends of the given flows.
+            Finds measurements to explain the starts/ends of the given flows, ignoring sign.
 
             CAUTION: it's not guaranteed that the solutions returned by this method are
             minimal. It may use 20 measurements when only 2 are needed. The method applies
             some simple heuristics that attempt to reduce the size, but these heuristics
-            aren't perfect.
+            aren't perfect and don't make any strong guarantees.
+
+            The recommended way to use this method is on small parts of a circuit, such as a
+            single surface code round. The ideal use case is when there is exactly one
+            solution for each flow, because then the method behaves predictably and
+            consistently. When there are multiple solutions, the method has no real way to
+            pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+            For example, if you have a multi-round surface code circuit with open time
+            boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+            (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+            (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+            solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+            of rounds, times a random combination of unrelated detectors). The method is
+            permitted to return any of those solutions.
 
             Args:
                 flows: A list of flows, each of which to be solved. Measurements and signs
-                    are entirely ignored. The input/output of a flow can't both be identity
-                    Paulis.
+                    are entirely ignored.
+
+                    An error is raised if one of the given flows has an identity pauli
+                    string as its input and as its output, despite the fact that this case
+                    has a vacuous solution (no measurements). This error is only present as
+                    a safety check that catches some possible bugs in the calling code, such
+                    as accidentally applying this method to detector flows. This error may
+                    be removed in the future, so that the vacuous case succeeds vacuously.
 
             Returns:
                 A list of solutions for each given flow.
 
-                If no solution exists for flows[k], then results[k] is None.
-                Otherwise, results[k] is the measurement indices for flows[k].
+                If no solution exists for flows[k], then solutions[k] is None.
+                Otherwise, solutions[k] is a list of measurement indices for flows[k].
 
-                When a solution exists, it's guaranteed that
+                When solutions[k] is not None, it's guaranteed that
 
-                    stim.Flow(
+                    circuit.has_flow(stim.Flow(
                         input=flows[k].input,
                         output=flows[k].output,
-                        measurements=results[k],
-                    )
-
-                is an unsigned flow of the circuit. The sign can be solved for separately
-                if needed.
+                        measurements=solutions[k],
+                    ), unsigned=True)
 
             Raises:
                 ValueError:
