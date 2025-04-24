@@ -734,6 +734,112 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             .data());
 
     c.def(
+        "solve_flow_measurements",
+        [](const Circuit &self, const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows) -> pybind11::object {
+            std::span<const Flow<MAX_BITWORD_WIDTH>> flows_span = flows;
+            auto solution = solve_for_flow_measurements(self, flows_span);
+            std::vector<pybind11::object> result;
+            for (const auto &e : solution) {
+                if (e.has_value()) {
+                    result.push_back(pybind11::cast(*e));
+                } else {
+                    result.push_back(pybind11::none());
+                }
+            }
+            return pybind11::cast(result);
+        },
+        clean_doc_string(R"DOC(
+            @signature def solve_flow_measurements(self, flows: List[stim.Flow]) -> List[Optional[List[int]]]:
+            Finds measurements to explain the starts/ends of the given flows, ignoring sign.
+
+            CAUTION: it's not guaranteed that the solutions returned by this method are
+            minimal. It may use 20 measurements when only 2 are needed. The method applies
+            some simple heuristics that attempt to reduce the size, but these heuristics
+            aren't perfect and don't make any strong guarantees.
+
+            The recommended way to use this method is on small parts of a circuit, such as a
+            single surface code round. The ideal use case is when there is exactly one
+            solution for each flow, because then the method behaves predictably and
+            consistently. When there are multiple solutions, the method has no real way to
+            pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+            For example, if you have a multi-round surface code circuit with open time
+            boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+            (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+            (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+            solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+            of rounds, times a random combination of unrelated detectors). The method is
+            permitted to return any of those solutions.
+
+            Args:
+                flows: A list of flows, each of which to be solved. Measurements and signs
+                    are entirely ignored.
+
+                    An error is raised if one of the given flows has an identity pauli
+                    string as its input and as its output, despite the fact that this case
+                    has a vacuous solution (no measurements). This error is only present as
+                    a safety check that catches some possible bugs in the calling code, such
+                    as accidentally applying this method to detector flows. This error may
+                    be removed in the future, so that the vacuous case succeeds vacuously.
+
+            Returns:
+                A list of solutions for each given flow.
+
+                If no solution exists for flows[k], then solutions[k] is None.
+                Otherwise, solutions[k] is a list of measurement indices for flows[k].
+
+                When solutions[k] is not None, it's guaranteed that
+
+                    circuit.has_flow(stim.Flow(
+                        input=flows[k].input,
+                        output=flows[k].output,
+                        measurements=solutions[k],
+                    ), unsigned=True)
+
+            Raises:
+                ValueError:
+                    A flow had an empty input and output.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("Z2 -> 1"),
+                ... ])
+                [[0]]
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("X2 -> X2"),
+                ... ])
+                [None]
+
+                >>> stim.Circuit('''
+                ...     MXX 0 1
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("YY -> ZZ"),
+                ... ])
+                [[0]]
+
+                >>> # Rep code cycle
+                >>> stim.Circuit('''
+                ...     R 1 3
+                ...     CX 0 1 2 3
+                ...     CX 4 3 2 1
+                ...     M 1 3
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("1 -> Z0*Z4"),
+                ...     stim.Flow("Z0 -> Z2"),
+                ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+                ...     stim.Flow("Y0 -> Y0"),
+                ... ])
+                [[0, 1], [0], [], None]
+        )DOC")
+            .data());
+
+    c.def(
         "time_reversed_for_flows",
         [](const Circuit &self,
            const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows,

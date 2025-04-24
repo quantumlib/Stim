@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 import cirq
 import stim
 
-
 @cirq.value_equality
 class IIGate(cirq.Gate):
     """Handles explaining stim's II gate to cirq."""

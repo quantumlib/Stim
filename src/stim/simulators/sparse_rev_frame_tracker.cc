@@ -405,6 +405,25 @@ void SparseUnsignedRevFrameTracker::undo_RZ(const CircuitInstruction &dat) {
     clear_qubits(dat);
 }
 
+void SparseUnsignedRevFrameTracker::undo_implicit_RZs_at_start_of_circuit() {
+    for (size_t q = 0; q < xs.size(); q++) {
+        for (const auto &d : xs[q]) {
+            anticommutations.insert({d, GateTarget::qubit(q)});
+        }
+    }
+    if (!anticommutations.empty() && fail_on_anticommute) {
+        std::stringstream ss;
+        ss << "While running backwards through the circuit,\n";
+        ss << "during reverse-execution of the implicit resets at the beginning of the circuit,\n";
+        ss << "the following detecting region vs dissipation anticommutations occurred\n";
+        for (auto &[d, g] : anticommutations) {
+            ss << "    " << d << " vs " << g << "\n";
+        }
+        ss << "Therefore invalid detectors/observables are present in the circuit.\n";
+        throw std::invalid_argument(ss.str());
+    }
+}
+
 void SparseUnsignedRevFrameTracker::undo_MPAD(const CircuitInstruction &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         num_measurements_in_past--;
@@ -820,7 +839,8 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const CircuitInstruction &dat)
 }
 
 void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const CircuitInstruction &dat) {
-    auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
+    uint64_t obs_id = (uint32_t)dat.args[0];
+    auto obs = DemTarget::observable_id(obs_id);
     for (auto t : dat.targets) {
         if (t.is_measurement_record_target()) {
             int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;

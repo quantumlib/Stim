@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <cstddef>
-
 #ifndef _STIM_MEM_BIT_WORD_H
 #define _STIM_MEM_BIT_WORD_H
+
+#include <cstddef>
 
 namespace stim {
 

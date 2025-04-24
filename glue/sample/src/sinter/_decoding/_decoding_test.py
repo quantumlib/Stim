@@ -10,6 +10,7 @@ import pytest
 import sinter
 import stim
 
+from sinter import CompiledDecoder
 from sinter._collection import post_selection_mask_from_4th_coord
 from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 from sinter._decoding._decoding import sample_decode
@@ -391,3 +392,89 @@ def test_full_scale(decoder: str):
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
+
+
+def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
+    class IncompleteDecoder(sinter.Decoder):
+        pass
+
+    class WrongDecoder(sinter.Decoder, sinter.CompiledDecoder):
+        def compile_decoder_for_dem(
+                self,
+                *,
+                dem: stim.DetectorErrorModel,
+        ) -> CompiledDecoder:
+            return self
+        def decode_shots_bit_packed(
+                self,
+                *,
+                bit_packed_detection_event_data: np.ndarray,
+        ) -> np.ndarray:
+            return np.zeros(shape=5, dtype=np.bool_)
+
+    class TrivialCompiledDecoder(sinter.CompiledDecoder):
+        def __init__(self, num_obs: int):
+            self.num_obs = -(-num_obs // 8)
+
+        def decode_shots_bit_packed(
+                self,
+                *,
+                bit_packed_detection_event_data: np.ndarray,
+        ) -> np.ndarray:
+            return np.zeros(dtype=np.uint8, shape=(bit_packed_detection_event_data.shape[0], self.num_obs))
+
+    class TrivialDecoder(sinter.Decoder):
+        def compile_decoder_for_dem(
+            self,
+            *,
+            dem: stim.DetectorErrorModel,
+        ) -> CompiledDecoder:
+                return TrivialCompiledDecoder(num_obs=dem.num_observables)
+
+    circuit = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=3)
+    dem = circuit.detector_error_model()
+
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+
+        circuit.compile_detector_sampler().sample_write(
+            shots=10,
+            filepath=d / 'dets.b8',
+            format='b8',
+        )
+
+        dem.to_file(d / 'dem.dem')
+
+        with pytest.raises(NotImplementedError, match='compile_decoder_for_dem'):
+            IncompleteDecoder().decode_via_files(
+                num_shots=10,
+                num_dets=dem.num_detectors,
+                num_obs=dem.num_observables,
+                dem_path=d / 'dem.dem',
+                dets_b8_in_path=d / 'dets.b8',
+                obs_predictions_b8_out_path=d / 'obs.b8',
+                tmp_dir=d,
+            )
+
+        with pytest.raises(ValueError, match='shape='):
+            WrongDecoder().decode_via_files(
+                num_shots=10,
+                num_dets=dem.num_detectors,
+                num_obs=dem.num_observables,
+                dem_path=d / 'dem.dem',
+                dets_b8_in_path=d / 'dets.b8',
+                obs_predictions_b8_out_path=d / 'obs.b8',
+                tmp_dir=d,
+            )
+
+        TrivialDecoder().decode_via_files(
+            num_shots=10,
+            num_dets=dem.num_detectors,
+            num_obs=dem.num_observables,
+            dem_path=d / 'dem.dem',
+            dets_b8_in_path=d / 'dets.b8',
+            obs_predictions_b8_out_path=d / 'obs.b8',
+            tmp_dir=d,
+        )
+        obs = np.fromfile(d / 'obs.b8', dtype=np.uint8, count=10)
+        np.testing.assert_array_equal(obs, [0] * 10)

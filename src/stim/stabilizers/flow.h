@@ -17,19 +17,24 @@
 #ifndef _STIM_STABILIZERS_FLOW_H
 #define _STIM_STABILIZERS_FLOW_H
 
-#include <iostream>
-#include <span>
-
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 
 template <size_t W>
 struct Flow {
+    /// The stabilizer at the beginning of the circuit.
     stim::PauliString<W> input;
+    /// The equivalent stabilizer at the end the circuit.
     stim::PauliString<W> output;
+    /// The measurements mediating the equivalence.
     /// Indexing follows python convention: -1 is the last element, 0 is the first element.
+    /// ENTRIES MUST BE SORTED AND UNIQUE.
     std::vector<int32_t> measurements;
+    /// Indices of observables included in the flow.
+    /// Determines which OBSERVABLE_INCLUDE instructions are included.
+    /// ENTRIES MUST BE SORTED AND UNIQUE.
+    std::vector<uint32_t> observables;
 
     static Flow<W> from_str(std::string_view text);
     bool operator<(const Flow<W> &other) const;
