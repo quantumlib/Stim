@@ -19,11 +19,8 @@
 
 #include <array>
 #include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <span>
 #include <sstream>
-#include <stdexcept>
 #include <vector>
 
 namespace stim {

@@ -14,6 +14,8 @@
 
 #include "stim/util_bot/probability_util.h"
 
+#include <cstring>
+
 #include "stim/util_bot/arg_parse.h"
 
 using namespace stim;

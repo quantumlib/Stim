@@ -7,6 +7,17 @@
 
 using namespace stim;
 
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str_dedupe, {
+    EXPECT_EQ(
+        Flow<W>::from_str("X -> Y xor rec[-1] xor rec[-1] xor rec[-1] xor rec[-2] xor rec[-2] xor rec[-3] xor obs[1] xor obs[1] xor obs[3] xor obs[3] xor obs[3]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str("X"),
+            .output = PauliString<W>::from_str("Y"),
+            .measurements = {-3, -1},
+            .observables = {3},
+        }));
+})
+
 TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
     ASSERT_THROW({ Flow<W>::from_str(""); }, std::invalid_argument);
     ASSERT_THROW({ Flow<W>::from_str("X"); }, std::invalid_argument);
@@ -21,6 +32,11 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
     ASSERT_THROW({ Flow<W>::from_str("X -> X rec[-1]"); }, std::invalid_argument);
     ASSERT_THROW({ Flow<W>::from_str("X -> X xor"); }, std::invalid_argument);
     ASSERT_THROW({ Flow<W>::from_str("X -> rec[-1] xor X"); }, std::invalid_argument);
+    ASSERT_THROW({ Flow<W>::from_str("X -> obs[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ Flow<W>::from_str("X -> obs[A]"); }, std::invalid_argument);
+    ASSERT_THROW({ Flow<W>::from_str("X -> obs[]"); }, std::invalid_argument);
+    ASSERT_THROW({ Flow<W>::from_str("X -> obs[ 5]"); }, std::invalid_argument);
+    ASSERT_THROW({ Flow<W>::from_str("X -> rec[]"); }, std::invalid_argument);
 
     ASSERT_EQ(
         Flow<W>::from_str("1 -> 1"),
@@ -28,6 +44,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str(""),
             .output = PauliString<W>::from_str(""),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("1 -> -rec[0]"),
@@ -35,6 +52,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str(""),
             .output = PauliString<W>::from_str("-"),
             .measurements = {0},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("i -> -i"),
@@ -42,6 +60,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str(""),
             .output = PauliString<W>::from_str("-"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("iX -> -iY"),
@@ -49,6 +68,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("X"),
             .output = PauliString<W>::from_str("-Y"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("X->-Y"),
@@ -56,6 +76,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("X"),
             .output = PauliString<W>::from_str("-Y"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("X -> -Y"),
@@ -63,6 +84,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("X"),
             .output = PauliString<W>::from_str("-Y"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("-X -> Y"),
@@ -70,6 +92,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("-X"),
             .output = PauliString<W>::from_str("Y"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> -Z_Z"),
@@ -77,6 +100,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str("-Z_Z"),
             .measurements = {},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> Z_Y xor rec[-1]"),
@@ -84,6 +108,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str("Z_Y"),
             .measurements = {-1},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> Z_Y xor rec[5]"),
@@ -91,6 +116,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str("Z_Y"),
             .measurements = {5},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> rec[-1]"),
@@ -98,27 +124,66 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str, {
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str(""),
             .measurements = {-1},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> Z_Y xor rec[-1] xor rec[-3]"),
         (Flow<W>{
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str("Z_Y"),
-            .measurements = {-1, -3},
+            .measurements = {-3, -1},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("XYZ -> ZIY xor rec[55] xor rec[-3]"),
         (Flow<W>{
             .input = PauliString<W>::from_str("XYZ"),
             .output = PauliString<W>::from_str("Z_Y"),
-            .measurements = {55, -3},
+            .measurements = {-3, 55},
+            .observables = {},
+        }));
+    ASSERT_EQ(
+        Flow<W>::from_str("XYZ -> ZIY xor rec[-3] xor rec[55]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str("XYZ"),
+            .output = PauliString<W>::from_str("Z_Y"),
+            .measurements = {-3, 55},
+            .observables = {},
         }));
     ASSERT_EQ(
         Flow<W>::from_str("X9 -> -Z5*Y3 xor rec[55] xor rec[-3]"),
         (Flow<W>{
             .input = PauliString<W>::from_str("_________X"),
             .output = PauliString<W>::from_str("-___Y_Z"),
-            .measurements = {55, -3},
+            .measurements = {-3, 55},
+            .observables = {},
+        }));
+})
+
+TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str_obs, {
+    EXPECT_EQ(
+        Flow<W>::from_str("X9 -> obs[5]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str("_________X"),
+            .output = PauliString<W>::from_str(""),
+            .measurements = {},
+            .observables = {5},
+        }));
+    EXPECT_EQ(
+        Flow<W>::from_str("X9 -> X xor obs[5] xor obs[3] xor rec[-1]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str("_________X"),
+            .output = PauliString<W>::from_str("X"),
+            .measurements = {-1},
+            .observables = {3, 5},
+        }));
+    EXPECT_EQ(
+        Flow<W>::from_str("X9 -> X xor obs[5] xor rec[-1] xor obs[3]"),
+        (Flow<W>{
+            .input = PauliString<W>::from_str("_________X"),
+            .output = PauliString<W>::from_str("X"),
+            .measurements = {-1},
+            .observables = {3, 5},
         }));
 })
 
@@ -141,7 +206,7 @@ TEST_EACH_WORD_SIZE_W(stabilizer_flow, str_and_from_str, {
 
     ASSERT_EQ(
         Flow<W>::from_str("-1 -> -X xor rec[-1] xor rec[-3]"),
-        (Flow<W>{PauliString<W>::from_str("-"), PauliString<W>::from_str("-X"), {-1, -3}}));
+        (Flow<W>{PauliString<W>::from_str("-"), PauliString<W>::from_str("-X"), {-3, -1}}));
 })
 
 TEST_EACH_WORD_SIZE_W(stabilizer_flow, ordering, {
