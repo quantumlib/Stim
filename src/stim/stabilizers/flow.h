@@ -36,7 +36,11 @@ struct Flow {
     /// ENTRIES MUST BE SORTED AND UNIQUE.
     std::vector<uint32_t> observables;
 
+    /// Fixes non-unique non-sorted measurements and observables.
+    void canonicalize();
+
     static Flow<W> from_str(std::string_view text);
+    Flow<W> operator*(const Flow<W> &rhs) const;
     bool operator<(const Flow<W> &other) const;
     bool operator==(const Flow<W> &other) const;
     bool operator!=(const Flow<W> &other) const;

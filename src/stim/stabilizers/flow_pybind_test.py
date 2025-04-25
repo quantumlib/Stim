@@ -176,3 +176,24 @@ def test_obs_include_pauli_terms_sensitivity():
     assert zs == 0
     assert 256 <= ys <= 768
     assert xs == ys
+
+
+def test_flow_canonicalization():
+    assert stim.Flow(measurements=[4, 0, 4]) == stim.Flow(measurements=[0])
+    assert stim.Flow(included_observables=[4, 0, 4]) == stim.Flow(included_observables=[0])
+
+
+def test_flow_multiplication():
+    assert stim.Flow("XYZ -> 1") * stim.Flow("1 -> XYZ") == stim.Flow("XYZ -> XYZ")
+    assert stim.Flow("XX_ -> 1") * stim.Flow("_XX -> 1") == stim.Flow("X_X -> 1")
+    assert stim.Flow("1 -> XX_") * stim.Flow("1 -> _XX") == stim.Flow("1 -> X_X")
+    assert stim.Flow("1 -> rec[-1] xor rec[-3]") * stim.Flow("1 -> rec[-1] xor rec[-2]") == stim.Flow("1 -> rec[-2] xor rec[-3]")
+    assert stim.Flow("1 -> obs[1] xor obs[3]") * stim.Flow("1 -> obs[1] xor obs[2]") == stim.Flow("1 -> obs[2] xor obs[3]")
+    assert stim.Flow("X -> X") * stim.Flow("Z -> Z") == stim.Flow("Y -> Y")
+    assert stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ") == stim.Flow("1 -> -YY")
+    assert stim.Flow("1 -> obs[1]") * stim.Flow("1 -> obs[1]") == stim.Flow("1 -> 1")
+    assert stim.Flow("1 -> rec[1]") * stim.Flow("1 -> rec[1]") == stim.Flow("1 -> 1")
+    with pytest.raises(ValueError, match="anticommute"):
+        _ = stim.Flow("1 -> X") * stim.Flow("1 -> Y")
+    with pytest.raises(ValueError, match="anticommute"):
+        _ = stim.Flow("1 -> Y") * stim.Flow("1 -> X")
