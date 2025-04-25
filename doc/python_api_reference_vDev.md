@@ -220,6 +220,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.Flow`](#stim.Flow)
     - [`stim.Flow.__eq__`](#stim.Flow.__eq__)
     - [`stim.Flow.__init__`](#stim.Flow.__init__)
+    - [`stim.Flow.__mul__`](#stim.Flow.__mul__)
     - [`stim.Flow.__ne__`](#stim.Flow.__ne__)
     - [`stim.Flow.__repr__`](#stim.Flow.__repr__)
     - [`stim.Flow.__str__`](#stim.Flow.__str__)
@@ -9162,6 +9163,40 @@ def __init__(
 
         >>> stim.Flow("X -> Y xor obs[3] xor obs[3] xor obs[3]")
         stim.Flow("X -> Y xor obs[3]")
+    """
+```
+
+<a name="stim.Flow.__mul__"></a>
+```python
+# stim.Flow.__mul__
+
+# (in class stim.Flow)
+def __mul__(
+    self,
+    rhs: stim.Flow,
+) -> stim.Flow:
+    """Computes the product of two flows.
+
+    Args:
+        rhs: The right hand side of the multiplication.
+
+    Returns:
+        The product of the two flows.
+
+    Raises:
+        ValueError: The inputs anti-commute (their product would be anti-Hermitian).
+            For example, 1 -> X times 1 -> Y fails because it would give 1 -> iZ.
+
+    Examples:
+        >>> import stim
+        >>> stim.Flow("X -> X") * stim.Flow("Z -> Z")
+        stim.Flow("Y -> Y")
+
+        >>> stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ")
+        stim.Flow("1 -> -YY")
+
+        >>> stim.Flow("X -> rec[-1]") * stim.Flow("X -> rec[-2]")
+        stim.Flow("_ -> rec[-2] xor rec[-1]")
     """
 ```
 
