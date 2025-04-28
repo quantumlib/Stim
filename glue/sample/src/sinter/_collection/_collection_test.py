@@ -1,14 +1,13 @@
 import collections
-import math
+import multiprocessing
 import pathlib
-import sys
 import tempfile
 import time
 
 import pytest
-import stim
 
 import sinter
+import stim
 
 
 def test_iter_collect():
@@ -272,3 +271,47 @@ def test_mock_timing_sampler():
         custom_decoders={'MockTimingSampler': MockTimingSampler()},
     )
     assert 1_000_000 <= results[0].shots <= 1_000_000 + 12000
+
+class BatchSizeTrackingSampler(sinter.Sampler, sinter.CompiledSampler):
+    """A sampler that tracks the suggested batch size requests it receives."""
+
+    def __init__(self, batch_sizes: list[int]):
+        self.batch_sizes = batch_sizes
+
+    def compiled_sampler_for_task(self, task: sinter.Task) -> sinter.CompiledSampler:
+        return self
+
+    def sample(self, suggested_shots: int) -> sinter.AnonTaskStats:
+        self.batch_sizes.append(suggested_shots)
+        return sinter.AnonTaskStats(
+            shots=suggested_shots,
+            errors=1,
+            seconds=0.001,
+        )
+
+
+def test_ramp_throttled_sampler_respects_max_batch_size():
+    """Test that the CollectionManager instantiated RampThrottledSampler respects the `max_batch_size`
+    parameter."""
+
+    # since the RampThrottledSampler and batch sizing happens in the worker process, we need a
+    # shared list to track what goes on with the sampler
+    with multiprocessing.Manager() as manager:
+        tracking_sampler = BatchSizeTrackingSampler(manager.list())
+
+        sinter.collect(
+            num_workers=1,
+            tasks=[
+                sinter.Task(
+                    circuit=stim.Circuit(),
+                    decoder='tracking_sampler',
+                    json_metadata={'test': 'small_batch'},
+                )
+            ],
+            max_shots=10_000,
+            max_batch_size=128,  # Set a small max batch size
+            custom_decoders={'tracking_sampler': tracking_sampler},
+        )
+        # batch size should start at one and then maximum seen should be at most 128
+        assert tracking_sampler.batch_sizes[0] == 1
+        assert 1 < max(tracking_sampler.batch_sizes) <= 128

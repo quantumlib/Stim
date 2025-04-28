@@ -101,14 +101,13 @@ static Flow<MAX_BITWORD_WIDTH> py_init_flow(
                     result.measurements.push_back(pybind11::cast<int32_t>(h));
                 }
             }
-            inplace_xor_sort(SpanRef<int32_t>(result.measurements));
         }
         if (!included_observables.is_none()) {
             for (const auto &h : included_observables) {
                 result.observables.push_back(pybind11::cast<uint32_t>(h));
             }
-            inplace_xor_sort(SpanRef<uint32_t>(result.observables));
         }
+        result.canonicalize();
         return result;
     }
 
@@ -284,6 +283,36 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
                 [3]
                 >>> stim.Circuit("OBSERVABLE_INCLUDE(3) X2").has_flow(f)
                 True
+        )DOC")
+            .data());
+
+    c.def(
+        "__mul__",
+        &Flow<MAX_BITWORD_WIDTH>::operator*,
+        pybind11::arg("rhs"),
+        clean_doc_string(R"DOC(
+            Computes the product of two flows.
+
+            Args:
+                rhs: The right hand side of the multiplication.
+
+            Returns:
+                The product of the two flows.
+
+            Raises:
+                ValueError: The inputs anti-commute (their product would be anti-Hermitian).
+                    For example, 1 -> X times 1 -> Y fails because it would give 1 -> iZ.
+
+            Examples:
+                >>> import stim
+                >>> stim.Flow("X -> X") * stim.Flow("Z -> Z")
+                stim.Flow("Y -> Y")
+
+                >>> stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ")
+                stim.Flow("1 -> -YY")
+
+                >>> stim.Flow("X -> rec[-1]") * stim.Flow("X -> rec[-2]")
+                stim.Flow("_ -> rec[-2] xor rec[-1]")
         )DOC")
             .data());
 

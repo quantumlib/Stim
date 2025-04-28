@@ -114,14 +114,14 @@ PauliStringRef<W> &PauliStringRef<W>::operator*=(const PauliStringRef<W> &rhs) {
 
 template <size_t W>
 uint8_t PauliStringRef<W>::inplace_right_mul_returning_log_i_scalar(const PauliStringRef<W> &rhs) noexcept {
-    assert(num_qubits == rhs.num_qubits);
+    assert(num_qubits >= rhs.num_qubits);
 
     // Accumulator registers for counting mod 4 in parallel across each bit position.
     simd_word<W> cnt1{};
     simd_word<W> cnt2{};
 
-    xs.for_each_word(
-        zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word<W> &x1, simd_word<W> &z1, simd_word<W> &x2, simd_word<W> &z2) {
+    rhs.xs.for_each_word(
+        rhs.zs, xs, zs, [&cnt1, &cnt2](simd_word<W> &x2, simd_word<W> &z2, simd_word<W> &x1, simd_word<W> &z1) {
             // Update the left hand side Paulis.
             auto old_x1 = x1;
             auto old_z1 = z1;

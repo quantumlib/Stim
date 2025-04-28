@@ -92,6 +92,7 @@ src/stim/util_top/export_crumble_url.test.cc
 src/stim/util_top/export_qasm.test.cc
 src/stim/util_top/export_quirk_url.test.cc
 src/stim/util_top/has_flow.test.cc
+src/stim/util_top/mbqc_decomposition.test.cc
 src/stim/util_top/reference_sample_tree.test.cc
 src/stim/util_top/simplified_circuit.test.cc
 src/stim/util_top/stabilizers_to_tableau.test.cc

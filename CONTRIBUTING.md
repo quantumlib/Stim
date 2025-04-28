@@ -40,12 +40,7 @@ purpose. The preferred manner for submitting pull requests is to fork the Stim
 [repository](https://github.com/quantumlib/Stim), create a [git
 branch](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell) in
 this fork to do your work, and when ready, create a pull request from this
-branch to the main Stim repository. The subsections below describe the process
-in more detail.
-
-Pleae make sure to follow the [Google Style
-Guides](https://google.github.io/styleguide/) in your code, particularly the
-[style guide for Python](https://google.github.io/styleguide/pyguide.html).
+branch to the main Stim repository.
 
 ### Repository forks
 
@@ -69,16 +64,9 @@ Guides](https://google.github.io/styleguide/) in your code, particularly the
 
 ### Development and testing
 
-Do your work and `git commit` your changes to your branch as needed.
-
-We use several tools to test code and perform other activities such as checking
-formatting against the style guidelines. You can run those tools locally during
-development. Wrapper scripts are located in the [`check/`](./check/)
-subdirectory to simplify running the tools.
-
-*   Run `check/pytest` to run the Pytest suite
-*   Run `check/mypy` to run the Mypy type checker
-*   Run `check/pylint` to run the Pylint code linter
+Please follow the detailed instructions in
+[`doc/developer_documentation.md`](doc/developer_documentation.md) for
+developing and testing Stim.
 
 ### Pull requests and code reviews
 

@@ -258,4 +258,34 @@ std::ostream &operator<<(std::ostream &out, const Flow<W> &flow) {
     return out;
 }
 
+template <size_t W>
+void Flow<W>::canonicalize() {
+    size_t measurements_kept = inplace_xor_sort(SpanRef<int32_t>(measurements)).size();
+    size_t observables_kept = inplace_xor_sort(SpanRef<uint32_t>(observables)).size();
+    measurements.resize(measurements_kept);
+    observables.resize(observables_kept);
+}
+
+template <size_t W>
+Flow<W> Flow<W>::operator*(const Flow<W> &rhs) const {
+    Flow<W> result = *this;
+
+    result.input.ensure_num_qubits(rhs.input.num_qubits, 1.1);
+    result.output.ensure_num_qubits(rhs.output.num_qubits, 1.1);
+    uint8_t log_i = 0;
+    log_i -= result.input.ref().inplace_right_mul_returning_log_i_scalar(rhs.input.ref());
+    log_i += result.output.ref().inplace_right_mul_returning_log_i_scalar(rhs.output.ref());
+    if (log_i & 1) {
+        throw std::invalid_argument(str() + " anticommutes with " + rhs.str());
+    }
+    if (log_i & 2) {
+        result.output.sign ^= true;
+    }
+
+    result.measurements.insert(result.measurements.end(), rhs.measurements.begin(), rhs.measurements.end());
+    result.observables.insert(result.observables.end(), rhs.observables.begin(), rhs.observables.end());
+    result.canonicalize();
+    return result;
+}
+
 }  // namespace stim
