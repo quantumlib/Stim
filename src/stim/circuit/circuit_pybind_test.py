@@ -838,7 +838,7 @@ def test_shortest_error_sat_problem_unrecognized_format():
         DETECTOR rec[-1] rec[-2]
     """)
     with pytest.raises(ValueError, match='Unsupported format'):
-      sat_str = c.shortest_error_sat_problem(format='unsupported format name')
+        _ = c.shortest_error_sat_problem(format='unsupported format name')
 
 
 def test_shortest_error_sat_problem():
@@ -1507,17 +1507,10 @@ def test_reference_sample():
     assert len(ref) == 0
     circuit = stim.Circuit(
         """
-        H 0
-        M 0
-        M 1
-    """
-    )
-    circuit = stim.Circuit(
-        """
         H 0 1
         CX 0 2 1 3
         MPP X0*X1 Y0*Y1 Z0*Z1
-    """
+        """
     )
     np.testing.assert_array_equal(circuit.reference_sample(), circuit.reference_sample())
     assert np.sum(circuit.reference_sample()) % 2 == 1
@@ -2395,3 +2388,15 @@ def test_reference_detector_and_observable_signs():
     assert not np.any(obs)
     assert len(det) == (circuit.num_detectors + 7) // 8
     assert len(obs) == 1
+
+
+def test_without_noise_removes_id_errors():
+    assert stim.Circuit("""
+        I_ERROR 0
+        I_ERROR(0.25) 1
+        II_ERROR 2 3
+        II_ERROR(0.125) 3 4
+        H 0
+    """).without_noise() == stim.Circuit("""
+        H 0
+    """)

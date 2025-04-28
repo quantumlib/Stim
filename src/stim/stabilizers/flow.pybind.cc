@@ -71,7 +71,8 @@ static Flow<MAX_BITWORD_WIDTH> py_init_flow(
     const pybind11::object &arg,
     const pybind11::object &input,
     const pybind11::object &output,
-    const pybind11::object &measurements) {
+    const pybind11::object &measurements,
+    const pybind11::object &included_observables) {
     if (arg.is_none()) {
         Flow<MAX_BITWORD_WIDTH> result{PauliString<MAX_BITWORD_WIDTH>(0), PauliString<MAX_BITWORD_WIDTH>(0)};
         bool imag = false;
@@ -101,6 +102,12 @@ static Flow<MAX_BITWORD_WIDTH> py_init_flow(
                 }
             }
         }
+        if (!included_observables.is_none()) {
+            for (const auto &h : included_observables) {
+                result.observables.push_back(pybind11::cast<uint32_t>(h));
+            }
+        }
+        result.canonicalize();
         return result;
     }
 
@@ -112,6 +119,9 @@ static Flow<MAX_BITWORD_WIDTH> py_init_flow(
     }
     if (!measurements.is_none()) {
         throw std::invalid_argument("Can't specify both a positional argument and `measurements=`.");
+    }
+    if (!included_observables.is_none()) {
+        throw std::invalid_argument("Can't specify both a positional argument and `included_observables=`.");
     }
 
     if (pybind11::isinstance<Flow<MAX_BITWORD_WIDTH>>(arg)) {
@@ -134,8 +144,9 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
         pybind11::arg("input") = pybind11::none(),
         pybind11::arg("output") = pybind11::none(),
         pybind11::arg("measurements") = pybind11::none(),
+        pybind11::arg("included_observables") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def __init__(self, arg: Union[None, str, stim.Flow] = None, /, *, input: Optional[stim.PauliString] = None, output: Optional[stim.PauliString] = None, measurements: Optional[Iterable[Union[int, GateTarget]]] = None) -> None:
+            @signature def __init__(self, arg: Union[None, str, stim.Flow] = None, /, *, input: Optional[stim.PauliString] = None, output: Optional[stim.PauliString] = None, measurements: Optional[Iterable[Union[int, GateTarget]]] = None, included_observables: Optional[Iterable[int]] = None) -> None:
             Initializes a stim.Flow.
 
             When given a string, the string is parsed as flow shorthand. For example,
@@ -151,11 +162,18 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
                     specify the flow's input stabilizer.
                 output: Defaults to None. Can be set to a stim.PauliString to directly
                     specify the flow's output stabilizer.
-                measurements: Can be set to a list of integers or gate targets like
-                    `stim.target_rec(-1)`, to specify the measurements that mediate the
-                    flow. Negative and positive measurement indices are allowed. Indexes
-                    follow the python convention where -1 is the last measurement in a
-                    circuit and 0 is the first measurement in a circuit.
+                measurements: Defaults to None. Can be set to a list of integers or gate
+                    targets like `stim.target_rec(-1)`, to specify the measurements that
+                    mediate the flow. Negative and positive measurement indices are allowed.
+                    Indexes follow the python convention where -1 is the last measurement in
+                    a circuit and 0 is the first measurement in a circuit.
+                included_observables: Defaults to None. `OBSERVABLE_INCLUDE` instructions
+                    that target an observable index from this list will be implicitly
+                    included in the flow. This allows flows to refer to observables. For
+                    example, the flow "X5 -> obs[3]" says "At the start of the circuit,
+                    observable 3 should be an X term on qubit 5. By the end of the circuit
+                    it will be measured. The `OBSERVABLE_INCLUDE(3)` instructions in the
+                    circuit should explain how this happened.".
 
             Examples:
                 >>> import stim
@@ -172,6 +190,13 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
                 ...     measurements=[],
                 ... )
                 stim.Flow("XX -> _X")
+
+                >>> # Identical terms cancel.
+                >>> stim.Flow("X2 -> Y2*Y2 xor rec[-2] xor rec[-2]")
+                stim.Flow("__X -> ___")
+
+                >>> stim.Flow("X -> Y xor obs[3] xor obs[3] xor obs[3]")
+                stim.Flow("X -> Y xor obs[3]")
         )DOC")
             .data());
 
@@ -229,6 +254,65 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
 
                 >>> f.measurements_copy() is f.measurements_copy()
                 False
+        )DOC")
+            .data());
+
+    c.def(
+        "included_observables_copy",
+        [](const Flow<MAX_BITWORD_WIDTH> &self) -> std::vector<uint32_t> {
+            return self.observables;
+        },
+        clean_doc_string(R"DOC(
+            Returns a copy of the flow's included observable indices.
+
+            When an observable is included in a flow, the flow implicitly includes all
+            measurements and pauli terms from `OBSERVABLE_INCLUDE` instructions targeting
+            that observable index.
+
+            Examples:
+                >>> import stim
+                >>> f = stim.Flow(included_observables=[3, 2])
+                >>> f.included_observables_copy()
+                [2, 3]
+
+                >>> f.included_observables_copy() is f.included_observables_copy()
+                False
+
+                >>> f = stim.Flow("X2 -> obs[3]")
+                >>> f.included_observables_copy()
+                [3]
+                >>> stim.Circuit("OBSERVABLE_INCLUDE(3) X2").has_flow(f)
+                True
+        )DOC")
+            .data());
+
+    c.def(
+        "__mul__",
+        &Flow<MAX_BITWORD_WIDTH>::operator*,
+        pybind11::arg("rhs"),
+        clean_doc_string(R"DOC(
+            Computes the product of two flows.
+
+            Args:
+                rhs: The right hand side of the multiplication.
+
+            Returns:
+                The product of the two flows.
+
+            Raises:
+                ValueError: The inputs anti-commute (their product would be anti-Hermitian).
+                    For example, 1 -> X times 1 -> Y fails because it would give 1 -> iZ.
+
+            Examples:
+                >>> import stim
+                >>> stim.Flow("X -> X") * stim.Flow("Z -> Z")
+                stim.Flow("Y -> Y")
+
+                >>> stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ")
+                stim.Flow("1 -> -YY")
+
+                >>> stim.Flow("X -> rec[-1]") * stim.Flow("X -> rec[-2]")
+                stim.Flow("_ -> rec[-2] xor rec[-1]")
         )DOC")
             .data());
 

@@ -1,12 +1,11 @@
-import inspect
 import itertools
-from typing import Any, Callable, cast, Tuple, Union
+from typing import cast
 
 import cirq
 import pytest
 import stim
-import stimcirq
 
+import stimcirq
 from ._stim_to_cirq import CircuitTranslationTracker
 
 
@@ -619,7 +618,7 @@ def test_stim_circuit_to_cirq_circuit_mpad():
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     assert cirq_circuit == cirq.Circuit(
         cirq.PauliMeasurementGate(cirq.DensePauliString(""), key="0").on(),
-        cirq.PauliMeasurementGate(-cirq.DensePauliString(""), key="1").on(),
+        cirq.PauliMeasurementGate(cirq.DensePauliString("", coefficient=-1), key="1").on(),
     )
 
 
@@ -633,8 +632,8 @@ def test_stim_circuit_to_cirq_circuit_mxx_myy_mzz():
     a, b = cirq.LineQubit.range(2)
     assert cirq_circuit == cirq.Circuit(
         cirq.PauliMeasurementGate(cirq.DensePauliString("XX"), key='0').on(a, b),
-        cirq.PauliMeasurementGate(-cirq.DensePauliString("YY"), key='1').on(a, b),
-        cirq.PauliMeasurementGate(-cirq.DensePauliString("ZZ"), key='2').on(a, b),
+        cirq.PauliMeasurementGate(cirq.DensePauliString("YY", coefficient=-1), key='1').on(a, b),
+        cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ", coefficient=-1), key='2').on(a, b),
     )
     assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim.Circuit("""
         MPP X0*X1
@@ -749,5 +748,18 @@ def test_loop_tagging():
             use_repetition_ids=False,
         ).with_tags('custom-tag')
     )
+    restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert restored_circuit == stim_circuit
+
+
+def test_id_error_round_trip():
+    stim_circuit = stim.Circuit("""
+        I_ERROR 0
+        I_ERROR(0.125, 0.25) 1
+        II_ERROR(0.25, 0.125) 2 3
+        II_ERROR 4 5
+        TICK
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit == stim_circuit

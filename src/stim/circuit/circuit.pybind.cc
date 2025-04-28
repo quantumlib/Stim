@@ -689,16 +689,16 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("bit_packed") = false,
         clean_doc_string(R"DOC(
             @signature def reference_detector_and_observable_signs(self, *, bit_packed: bool = False) -> tuple[np.ndarray, np.ndarray]:
-            Determines noiseless parities of the measurement sets of detector/observable.
+            Determines noiseless parities of the measurement sets of detectors/observables.
 
             BEWARE: the returned values are NOT the "expected value of the
             detector/observable". Stim consistently defines the value of a
             detector/observable as whether or not it flipped, so the expected value of a
             detector/observable is vacuously always 0 (not flipped). This method instead
-            returns the expected parity of the measurement set declared by the
-            detector/observable, which is the baselines used to determine if a flip
-            occurred. A detector/observable's value is the parity of it's measurement set
-            xored with its sign (the value returned by this method).
+            returns the "sign"; the expected parity of the measurement set declared by the
+            detector/observable. The sign is the baseline used to determine if a flip
+            occurred. A detector/observable's value is whether its sign disagrees with the
+            measured parity of its measurement set.
 
             Note that this method doesn't account for sweep bits. It will effectively ignore
             instructions like `CX sweep[0] 0`.

@@ -129,6 +129,10 @@ class CollectionManager:
     def start_workers(self, *, actually_start_worker_processes: bool = True):
         assert not self.started
 
+        # Use max_batch_size from collection_options if provided, otherwise default to 1024 as large
+        # batch sizes can lead to thrashing
+        max_batch_shots = self.collection_options.max_batch_size or 1024
+
         sampler = RampThrottledSampler(
             sub_sampler=MuxSampler(
                 custom_decoders=self.custom_decoders,
@@ -137,7 +141,7 @@ class CollectionManager:
                 tmp_dir=self.tmp_dir,
             ),
             target_batch_seconds=1,
-            max_batch_shots=1024,
+            max_batch_shots=max_batch_shots,
         )
 
         self.started = True

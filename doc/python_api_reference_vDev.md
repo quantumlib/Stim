@@ -55,6 +55,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_error_sat_problem`](#stim.Circuit.shortest_error_sat_problem)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
+    - [`stim.Circuit.solve_flow_measurements`](#stim.Circuit.solve_flow_measurements)
     - [`stim.Circuit.time_reversed_for_flows`](#stim.Circuit.time_reversed_for_flows)
     - [`stim.Circuit.to_crumble_url`](#stim.Circuit.to_crumble_url)
     - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
@@ -219,9 +220,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
 - [`stim.Flow`](#stim.Flow)
     - [`stim.Flow.__eq__`](#stim.Flow.__eq__)
     - [`stim.Flow.__init__`](#stim.Flow.__init__)
+    - [`stim.Flow.__mul__`](#stim.Flow.__mul__)
     - [`stim.Flow.__ne__`](#stim.Flow.__ne__)
     - [`stim.Flow.__repr__`](#stim.Flow.__repr__)
     - [`stim.Flow.__str__`](#stim.Flow.__str__)
+    - [`stim.Flow.included_observables_copy`](#stim.Flow.included_observables_copy)
     - [`stim.Flow.input_copy`](#stim.Flow.input_copy)
     - [`stim.Flow.measurements_copy`](#stim.Flow.measurements_copy)
     - [`stim.Flow.output_copy`](#stim.Flow.output_copy)
@@ -2765,16 +2768,16 @@ def reference_detector_and_observable_signs(
     *,
     bit_packed: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Determines noiseless parities of the measurement sets of detector/observable.
+    """Determines noiseless parities of the measurement sets of detectors/observables.
 
     BEWARE: the returned values are NOT the "expected value of the
     detector/observable". Stim consistently defines the value of a
     detector/observable as whether or not it flipped, so the expected value of a
     detector/observable is vacuously always 0 (not flipped). This method instead
-    returns the expected parity of the measurement set declared by the
-    detector/observable, which is the baselines used to determine if a flip
-    occurred. A detector/observable's value is the parity of it's measurement set
-    xored with its sign (the value returned by this method).
+    returns the "sign"; the expected parity of the measurement set declared by the
+    detector/observable. The sign is the baseline used to determine if a flip
+    occurred. A detector/observable's value is whether its sign disagrees with the
+    measured parity of its measurement set.
 
     Note that this method doesn't account for sweep bits. It will effectively ignore
     instructions like `CX sweep[0] 0`.
@@ -3097,6 +3100,104 @@ def shortest_graphlike_error(
         ...     before_round_data_depolarization=0.01)
         >>> len(circuit.shortest_graphlike_error())
         7
+    """
+```
+
+<a name="stim.Circuit.solve_flow_measurements"></a>
+```python
+# stim.Circuit.solve_flow_measurements
+
+# (in class stim.Circuit)
+def solve_flow_measurements(
+    self,
+    flows: List[stim.Flow],
+) -> List[Optional[List[int]]]:
+    """Finds measurements to explain the starts/ends of the given flows, ignoring sign.
+
+    CAUTION: it's not guaranteed that the solutions returned by this method are
+    minimal. It may use 20 measurements when only 2 are needed. The method applies
+    some simple heuristics that attempt to reduce the size, but these heuristics
+    aren't perfect and don't make any strong guarantees.
+
+    The recommended way to use this method is on small parts of a circuit, such as a
+    single surface code round. The ideal use case is when there is exactly one
+    solution for each flow, because then the method behaves predictably and
+    consistently. When there are multiple solutions, the method has no real way to
+    pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+    For example, if you have a multi-round surface code circuit with open time
+    boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+    (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+    (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+    solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+    of rounds, times a random combination of unrelated detectors). The method is
+    permitted to return any of those solutions.
+
+    Args:
+        flows: A list of flows, each of which to be solved. Measurements and signs
+            are entirely ignored.
+
+            An error is raised if one of the given flows has an identity pauli
+            string as its input and as its output, despite the fact that this case
+            has a vacuous solution (no measurements). This error is only present as
+            a safety check that catches some possible bugs in the calling code, such
+            as accidentally applying this method to detector flows. This error may
+            be removed in the future, so that the vacuous case succeeds vacuously.
+
+    Returns:
+        A list of solutions for each given flow.
+
+        If no solution exists for flows[k], then solutions[k] is None.
+        Otherwise, solutions[k] is a list of measurement indices for flows[k].
+
+        When solutions[k] is not None, it's guaranteed that
+
+            circuit.has_flow(stim.Flow(
+                input=flows[k].input,
+                output=flows[k].output,
+                measurements=solutions[k],
+            ), unsigned=True)
+
+    Raises:
+        ValueError:
+            A flow had an empty input and output.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.Circuit('''
+        ...     M 2
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("Z2 -> 1"),
+        ... ])
+        [[0]]
+
+        >>> stim.Circuit('''
+        ...     M 2
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("X2 -> X2"),
+        ... ])
+        [None]
+
+        >>> stim.Circuit('''
+        ...     MXX 0 1
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("YY -> ZZ"),
+        ... ])
+        [[0]]
+
+        >>> # Rep code cycle
+        >>> stim.Circuit('''
+        ...     R 1 3
+        ...     CX 0 1 2 3
+        ...     CX 4 3 2 1
+        ...     M 1 3
+        ... ''').solve_flow_measurements([
+        ...     stim.Flow("1 -> Z0*Z4"),
+        ...     stim.Flow("Z0 -> Z2"),
+        ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+        ...     stim.Flow("Y0 -> Y0"),
+        ... ])
+        [[0, 1], [0], [], None]
     """
 ```
 
@@ -7976,6 +8077,7 @@ def broadcast_pauli_errors(
     *,
     pauli: Union[str, int],
     mask: np.ndarray,
+    p: float = 1,
 ) -> None:
     """Applies a pauli error to all qubits in all instances, filtered by a mask.
 
@@ -7996,6 +8098,9 @@ def broadcast_pauli_errors(
             The error is only applied to qubit q in instance k when
 
                 mask[q, k] == True.
+        p: Defaults to 1 (no effect). When specified, the error is applied
+            probabilistically instead of deterministically to each (instance, qubit)
+            pair matching the mask. This argument specifies the probability.
 
     Examples:
         >>> import stim
@@ -9006,6 +9111,7 @@ def __init__(
     input: Optional[stim.PauliString] = None,
     output: Optional[stim.PauliString] = None,
     measurements: Optional[Iterable[Union[int, GateTarget]]] = None,
+    included_observables: Optional[Iterable[int]] = None,
 ) -> None:
     """Initializes a stim.Flow.
 
@@ -9022,11 +9128,18 @@ def __init__(
             specify the flow's input stabilizer.
         output: Defaults to None. Can be set to a stim.PauliString to directly
             specify the flow's output stabilizer.
-        measurements: Can be set to a list of integers or gate targets like
-            `stim.target_rec(-1)`, to specify the measurements that mediate the
-            flow. Negative and positive measurement indices are allowed. Indexes
-            follow the python convention where -1 is the last measurement in a
-            circuit and 0 is the first measurement in a circuit.
+        measurements: Defaults to None. Can be set to a list of integers or gate
+            targets like `stim.target_rec(-1)`, to specify the measurements that
+            mediate the flow. Negative and positive measurement indices are allowed.
+            Indexes follow the python convention where -1 is the last measurement in
+            a circuit and 0 is the first measurement in a circuit.
+        included_observables: Defaults to None. `OBSERVABLE_INCLUDE` instructions
+            that target an observable index from this list will be implicitly
+            included in the flow. This allows flows to refer to observables. For
+            example, the flow "X5 -> obs[3]" says "At the start of the circuit,
+            observable 3 should be an X term on qubit 5. By the end of the circuit
+            it will be measured. The `OBSERVABLE_INCLUDE(3)` instructions in the
+            circuit should explain how this happened.".
 
     Examples:
         >>> import stim
@@ -9043,6 +9156,47 @@ def __init__(
         ...     measurements=[],
         ... )
         stim.Flow("XX -> _X")
+
+        >>> # Identical terms cancel.
+        >>> stim.Flow("X2 -> Y2*Y2 xor rec[-2] xor rec[-2]")
+        stim.Flow("__X -> ___")
+
+        >>> stim.Flow("X -> Y xor obs[3] xor obs[3] xor obs[3]")
+        stim.Flow("X -> Y xor obs[3]")
+    """
+```
+
+<a name="stim.Flow.__mul__"></a>
+```python
+# stim.Flow.__mul__
+
+# (in class stim.Flow)
+def __mul__(
+    self,
+    rhs: stim.Flow,
+) -> stim.Flow:
+    """Computes the product of two flows.
+
+    Args:
+        rhs: The right hand side of the multiplication.
+
+    Returns:
+        The product of the two flows.
+
+    Raises:
+        ValueError: The inputs anti-commute (their product would be anti-Hermitian).
+            For example, 1 -> X times 1 -> Y fails because it would give 1 -> iZ.
+
+    Examples:
+        >>> import stim
+        >>> stim.Flow("X -> X") * stim.Flow("Z -> Z")
+        stim.Flow("Y -> Y")
+
+        >>> stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ")
+        stim.Flow("1 -> -YY")
+
+        >>> stim.Flow("X -> rec[-1]") * stim.Flow("X -> rec[-2]")
+        stim.Flow("_ -> rec[-2] xor rec[-1]")
     """
 ```
 
@@ -9080,6 +9234,37 @@ def __str__(
     self,
 ) -> str:
     """Returns a shorthand description of the flow.
+    """
+```
+
+<a name="stim.Flow.included_observables_copy"></a>
+```python
+# stim.Flow.included_observables_copy
+
+# (in class stim.Flow)
+def included_observables_copy(
+    self,
+) -> List[int]:
+    """Returns a copy of the flow's included observable indices.
+
+    When an observable is included in a flow, the flow implicitly includes all
+    measurements and pauli terms from `OBSERVABLE_INCLUDE` instructions targeting
+    that observable index.
+
+    Examples:
+        >>> import stim
+        >>> f = stim.Flow(included_observables=[3, 2])
+        >>> f.included_observables_copy()
+        [2, 3]
+
+        >>> f.included_observables_copy() is f.included_observables_copy()
+        False
+
+        >>> f = stim.Flow("X2 -> obs[3]")
+        >>> f.included_observables_copy()
+        [3]
+        >>> stim.Circuit("OBSERVABLE_INCLUDE(3) X2").has_flow(f)
+        True
     """
 ```
 

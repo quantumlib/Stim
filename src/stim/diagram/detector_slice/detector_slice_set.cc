@@ -29,6 +29,7 @@ struct DetectorSliceSetComputer {
     bool process_block_rev(const Circuit &block);
     bool process_op_rev(const Circuit &parent, const CircuitInstruction &op);
     bool process_tick();
+    void process_undo_start_of_circuit();
 };
 
 bool DetectorSliceSetComputer::process_block_rev(const Circuit &block) {
@@ -45,7 +46,13 @@ bool DetectorSliceSetComputer::process_tick() {
         on_tick_callback();
     }
     tick_cur--;
-    return tick_cur < first_yield_tick;
+
+    // Offset by 1 to go one tick further, and catch any anticommutation issues.
+    return tick_cur + 1 < first_yield_tick;
+}
+
+void DetectorSliceSetComputer::process_undo_start_of_circuit() {
+    tracker.undo_implicit_RZs_at_start_of_circuit();
 }
 
 bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const CircuitInstruction &op) {
@@ -253,10 +260,9 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     result.min_tick = start_tick;
     result.num_ticks = num_ticks;
 
-    helper.on_tick_callback = [&]() {
-        // Process anticommutations.
+    auto process_anticommutations = [&](size_t out_tick) {
         for (const auto &[d, g] : helper.tracker.anticommutations) {
-            result.anticommutations[{helper.tick_cur, d}].push_back(g);
+            result.anticommutations[{out_tick, d}].push_back(g);
 
             // Stop propagating it backwards if it broke.
             for (size_t q = 0; q < num_qubits; q++) {
@@ -269,6 +275,10 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
             }
         }
         helper.tracker.anticommutations.clear();
+    };
+
+    helper.on_tick_callback = [&]() {
+        process_anticommutations(helper.tick_cur + 1);
 
         // Record locations of detectors and observables.
         for (size_t q = 0; q < num_qubits; q++) {
@@ -300,7 +310,11 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     };
 
     if (!helper.process_tick()) {
-        helper.process_block_rev(circuit);
+        bool early_exit = helper.process_block_rev(circuit);
+        if (!early_exit) {
+            helper.process_undo_start_of_circuit();
+            process_anticommutations(1);
+        }
     }
 
     std::set<uint64_t> included_detectors;
@@ -928,7 +942,7 @@ void DetectorSliceSet::write_svg_contents_to(
         bool is_anticommutation = std::get<3>(e);
         if (is_anticommutation) {
             for (const auto &anti_target : terms) {
-                auto c = coords(tick + 1, anti_target.qubit_value());
+                auto c = coords(tick, anti_target.qubit_value());
                 out << R"SVG(<circle)SVG";
                 write_key_val(out, "cx", c.xyz[0]);
                 write_key_val(out, "cy", c.xyz[1]);
