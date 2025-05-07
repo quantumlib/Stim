@@ -9,7 +9,9 @@ using namespace stim;
 
 TEST_EACH_WORD_SIZE_W(stabilizer_flow, from_str_dedupe, {
     EXPECT_EQ(
-        Flow<W>::from_str("X -> Y xor rec[-1] xor rec[-1] xor rec[-1] xor rec[-2] xor rec[-2] xor rec[-3] xor obs[1] xor obs[1] xor obs[3] xor obs[3] xor obs[3]"),
+        Flow<W>::from_str(
+            "X -> Y xor rec[-1] xor rec[-1] xor rec[-1] xor rec[-2] xor rec[-2] xor rec[-3] xor obs[1] xor obs[1] xor "
+            "obs[3] xor obs[3] xor obs[3]"),
         (Flow<W>{
             .input = PauliString<W>::from_str("X"),
             .output = PauliString<W>::from_str("Y"),

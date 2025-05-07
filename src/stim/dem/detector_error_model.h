@@ -40,7 +40,8 @@ struct DetectorErrorModel {
 
     void append_dem_instruction(const DemInstruction &instruction);
     void append_error_instruction(double probability, SpanRef<const DemTarget> targets, std::string_view tag);
-    void append_shift_detectors_instruction(SpanRef<const double> coord_shift, uint64_t detector_shift, std::string_view tag);
+    void append_shift_detectors_instruction(
+        SpanRef<const double> coord_shift, uint64_t detector_shift, std::string_view tag);
     void append_detector_instruction(SpanRef<const double> coords, DemTarget target, std::string_view tag);
     void append_logical_observable_instruction(DemTarget target, std::string_view tag);
     void append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body, std::string_view tag);

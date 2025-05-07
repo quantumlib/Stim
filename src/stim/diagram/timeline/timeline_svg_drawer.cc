@@ -756,16 +756,19 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
             ss << "L" << (op.args.empty() ? 0 : op.args[0]) << "*=";
             ss << t.pauli_type();
             auto c = q2xy(t.qubit_value());
-            draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{
-                .span=2,
-                .body=ss.str(),
-                .subscript="",
-                .superscript="",
-                .fill="lightgray",
-                .text_color="black",
-                .font_size=0,
-                .sub_font_size=10
-            }, {});
+            draw_annotated_gate(
+                c.xyz[0],
+                c.xyz[1],
+                SvgGateData{
+                    .span = 2,
+                    .body = ss.str(),
+                    .subscript = "",
+                    .superscript = "",
+                    .fill = "lightgray",
+                    .text_color = "black",
+                    .font_size = 0,
+                    .sub_font_size = 10},
+                {});
         }
     }
 
@@ -777,7 +780,8 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
         std::stringstream ss;
         ss << "OBS_INCLUDE(" << (op.args.empty() ? 0 : op.args[0]) << ")";
         if (!had_paulis) {
-            draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black", 0, 10}, {});
+            draw_annotated_gate(
+                c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black", 0, 10}, {});
         }
         c.xyz[0] += (span - 1) * GATE_PITCH * 0.5f;
 

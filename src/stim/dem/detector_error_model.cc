@@ -24,7 +24,8 @@
 
 using namespace stim;
 
-void DetectorErrorModel::append_error_instruction(double probability, SpanRef<const DemTarget> targets, std::string_view tag) {
+void DetectorErrorModel::append_error_instruction(
+    double probability, SpanRef<const DemTarget> targets, std::string_view tag) {
     append_dem_instruction(DemInstruction{&probability, targets, tag, DemInstructionType::DEM_ERROR});
 }
 
@@ -34,7 +35,8 @@ void DetectorErrorModel::append_shift_detectors_instruction(
     append_dem_instruction(DemInstruction{coord_shift, &shift, tag, DemInstructionType::DEM_SHIFT_DETECTORS});
 }
 
-void DetectorErrorModel::append_detector_instruction(SpanRef<const double> coords, DemTarget target, std::string_view tag) {
+void DetectorErrorModel::append_detector_instruction(
+    SpanRef<const double> coords, DemTarget target, std::string_view tag) {
     append_dem_instruction(DemInstruction{coords, &target, tag, DemInstructionType::DEM_DETECTOR});
 }
 
@@ -61,7 +63,8 @@ void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, DetectorErro
     instructions.push_back({{}, stored_targets, tag, DemInstructionType::DEM_REPEAT_BLOCK});
 }
 
-void DetectorErrorModel::append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body, std::string_view tag) {
+void DetectorErrorModel::append_repeat_block(
+    uint64_t repeat_count, const DetectorErrorModel &body, std::string_view tag) {
     DemTarget data[2];
     data[0].data = repeat_count;
     data[1].data = blocks.size();
@@ -311,12 +314,13 @@ void dem_read_instruction(DetectorErrorModel &model, char lead_char, SOURCE read
     }
 
     model.tag_buf.commit_tail();
-    model.instructions.push_back(DemInstruction{
-        .arg_data=model.arg_buf.commit_tail(),
-        .target_data=model.target_buf.commit_tail(),
-        .tag=tail_tag,
-        .type=type,
-    });
+    model.instructions.push_back(
+        DemInstruction{
+            .arg_data = model.arg_buf.commit_tail(),
+            .target_data = model.target_buf.commit_tail(),
+            .tag = tail_tag,
+            .type = type,
+        });
 }
 
 template <typename SOURCE>
@@ -451,7 +455,8 @@ void flattened_helper(
                 flattened_helper(loop_body, cur_coordinate_shift, cur_detector_shift, out);
             }
         } else if (op.type == DemInstructionType::DEM_LOGICAL_OBSERVABLE) {
-            out.append_dem_instruction(DemInstruction{{}, op.target_data, op.tag, DemInstructionType::DEM_LOGICAL_OBSERVABLE});
+            out.append_dem_instruction(
+                DemInstruction{{}, op.target_data, op.tag, DemInstructionType::DEM_LOGICAL_OBSERVABLE});
         } else if (op.type == DemInstructionType::DEM_DETECTOR) {
             while (cur_coordinate_shift.size() < op.arg_data.size()) {
                 cur_coordinate_shift.push_back(0);
@@ -476,7 +481,8 @@ void flattened_helper(
                 shifted_detectors.push_back(t);
             }
 
-            out.append_dem_instruction(DemInstruction{op.arg_data, shifted_detectors, op.tag, DemInstructionType::DEM_ERROR});
+            out.append_dem_instruction(
+                DemInstruction{op.arg_data, shifted_detectors, op.tag, DemInstructionType::DEM_ERROR});
         } else {
             throw std::invalid_argument("Unrecognized instruction type: " + op.str());
         }
@@ -779,10 +785,7 @@ DetectorErrorModel DetectorErrorModel::without_tags() const {
     DetectorErrorModel result;
     for (DemInstruction inst : instructions) {
         if (inst.type == DemInstructionType::DEM_REPEAT_BLOCK) {
-            result.append_repeat_block(
-                inst.repeat_block_rep_count(),
-                inst.repeat_block_body(*this).without_tags(),
-                "");
+            result.append_repeat_block(inst.repeat_block_rep_count(), inst.repeat_block_body(*this).without_tags(), "");
         } else {
             inst.tag = "";
             result.append_dem_instruction(inst);

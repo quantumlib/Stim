@@ -96,7 +96,8 @@ TEST(detector_error_model, append_logical_observable_instruction) {
 
     ASSERT_THROW({ model.append_logical_observable_instruction(DemTarget::separator(), ""); }, std::invalid_argument);
     ASSERT_THROW(
-        { model.append_logical_observable_instruction(DemTarget::relative_detector_id(4), ""); }, std::invalid_argument);
+        { model.append_logical_observable_instruction(DemTarget::relative_detector_id(4), ""); },
+        std::invalid_argument);
     model.append_logical_observable_instruction(DemTarget::observable_id(4), "");
 }
 
@@ -211,7 +212,8 @@ TEST(detector_error_model, parse) {
     expected.append_error_instruction(
         0.25,
         (std::vector<DemTarget>{
-            DemTarget::relative_detector_id(5), DemTarget::separator(), DemTarget::observable_id(4)}), "");
+            DemTarget::relative_detector_id(5), DemTarget::separator(), DemTarget::observable_id(4)}),
+        "");
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0

@@ -310,7 +310,7 @@ class Circuit:
     @overload
     def append(
         self,
-        name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock],
+        name: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock, stim.Circuit],
     ) -> None:
         pass
     def append(
@@ -537,6 +537,9 @@ class Circuit:
         skip_reference_sample: bool = False,
     ) -> stim.CompiledMeasurementsToDetectionEventsConverter:
         """Creates a measurement-to-detection-event converter for the given circuit.
+
+        The converter can efficiently compute detection events and observable flips
+        from raw measurement data.
 
         The converter uses a noiseless reference sample, collected from the circuit
         using stim's Tableau simulator during initialization of the converter, as a
@@ -1794,9 +1797,10 @@ class Circuit:
         """Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
         The output is a string describing the maxSAT problem in WDIMACS format
-        (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-        problem is the highest likelihood set of error mechanisms that combine to
-        flip any logical observable while producing no detection events).
+        (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+        optimal solution to the problem is the highest likelihood set of error
+        mechanisms that combine to flip any logical observable while producing no
+        detection events).
 
         If there are any errors with probability p > 0.5, they are inverted so
         that the resulting weight ends up being positive. If there are errors
@@ -2216,11 +2220,11 @@ class Circuit:
         """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
 
         The output is a string describing the maxSAT problem in WDIMACS format
-        (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-        problem is the fault distance of the circuit (the minimum number of error
-        mechanisms that combine to flip any logical observable while producing no
-        detection events). This method ignores the probabilities of the error
-        mechanisms since it only cares about minimizing the number of errors
+        (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+        optimal solution to the problem is the fault distance of the circuit (the
+        minimum number of error mechanisms that combine to flip any logical observable
+        while producing no detection events). This method ignores the probabilities of
+        the error mechanisms since it only cares about minimizing the number of errors
         triggered.
 
         There are many tools that can solve maxSAT problems in WDIMACS format.
@@ -2672,7 +2676,7 @@ class Circuit:
             ...     CNOT 0 1
             ...     S 1
             ... ''').to_crumble_url()
-            'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+            'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1_'
 
             >>> circuit = stim.Circuit('''
             ...     M(0.25) 0 1 2
@@ -2682,7 +2686,7 @@ class Circuit:
             ... ''')
             >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
             >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
-            'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
+            'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]_'
         """
     def to_file(
         self,
@@ -5539,9 +5543,10 @@ class DetectorErrorModel:
         """Appends an instruction to the detector error model.
 
         Args:
-            instruction: Either the name of an instruction, a stim.DemInstruction, or a
-                stim.DemRepeatBlock. The `parens_arguments`, `targets`, and 'tag'
-                arguments should be given if and only if the instruction is a name.
+            instruction: Either the name of an instruction, a stim.DemInstruction, a
+                stim.DemRepeatBlock. or a stim.DetectorErrorModel. The
+                `parens_arguments`, `targets`, and 'tag' arguments should be given iff
+                the instruction is a name.
             parens_arguments: Numeric values parameterizing the instruction. The numbers
                 inside parentheses in a detector error model file (eg. the `0.25` in
                 `error(0.25) D0`). This argument can be given either a list of doubles,
@@ -6037,7 +6042,7 @@ class DetectorErrorModel:
         the race to find a solution.
 
         Args:
-            ignore_ungraphlike_errors: Defaults to False. When False, an exception is
+            ignore_ungraphlike_errors: Defaults to True. When False, an exception is
                 raised if there are any errors in the model that are not graphlike. When
                 True, those errors are skipped as if they weren't present.
 
