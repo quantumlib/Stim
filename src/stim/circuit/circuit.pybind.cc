@@ -263,6 +263,8 @@ void circuit_append(
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
         self.append_repeat_block(block.repeat_count, block.body, pybind11::cast<std::string_view>(block.tag));
+    } else if (pybind11::isinstance<Circuit>(obj)) {
+        self += pybind11::cast<Circuit>(obj);
     } else {
         throw std::invalid_argument(
             "First argument of append_operation must be a str (a gate name), "
@@ -742,6 +744,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         clean_doc_string(R"DOC(
             Creates a measurement-to-detection-event converter for the given circuit.
 
+            The converter can efficiently compute detection events and observable flips
+            from raw measurement data.
+
             The converter uses a noiseless reference sample, collected from the circuit
             using stim's Tableau simulator during initialization of the converter, as a
             baseline for determining what the expected value of a detector is.
@@ -1075,9 +1080,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("tag") = "",
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
                    : clean_doc_string(R"DOC(
-                Appends an operation into the circuit.
                 @overload def append(self, name: str, targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]], arg: Union[float, Iterable[float]], *, tag: str = "") -> None:
-                @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
+                @overload def append(self, name: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock, stim.Circuit]) -> None:
+                Appends an operation into the circuit.
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
 
@@ -2076,11 +2081,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Makes a maxSAT problem of the circuit's distance, that other tools can solve.
 
             The output is a string describing the maxSAT problem in WDIMACS format
-            (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-            problem is the fault distance of the circuit (the minimum number of error
-            mechanisms that combine to flip any logical observable while producing no
-            detection events). This method ignores the probabilities of the error
-            mechanisms since it only cares about minimizing the number of errors
+            (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+            optimal solution to the problem is the fault distance of the circuit (the
+            minimum number of error mechanisms that combine to flip any logical observable
+            while producing no detection events). This method ignores the probabilities of
+            the error mechanisms since it only cares about minimizing the number of errors
             triggered.
 
             There are many tools that can solve maxSAT problems in WDIMACS format.
@@ -2147,9 +2152,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
             The output is a string describing the maxSAT problem in WDIMACS format
-            (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-            problem is the highest likelihood set of error mechanisms that combine to
-            flip any logical observable while producing no detection events).
+            (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+            optimal solution to the problem is the highest likelihood set of error
+            mechanisms that combine to flip any logical observable while producing no
+            detection events).
 
             If there are any errors with probability p > 0.5, they are inverted so
             that the resulting weight ends up being positive. If there are errors
