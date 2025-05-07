@@ -1,7 +1,7 @@
 #include "stim/util_bot/test_util.test.h"
 
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 #include "stim/util_bot/probability_util.h"
 
@@ -54,8 +54,10 @@ void expect_string_is_identical_to_saved_file(std::string_view actual, std::stri
         out.close();
         EXPECT_TRUE(false) << "Diagram didn't agree.\n"
                            << "    key=" << key << "\n"
-                           << "    expected: file://" << std::filesystem::weakly_canonical(std::filesystem::path(path)).c_str() << "\n"
-                           << "    actual: file://" << std::filesystem::weakly_canonical(std::filesystem::path(new_path)).c_str() << "\n";
+                           << "    expected: file://"
+                           << std::filesystem::weakly_canonical(std::filesystem::path(path)).c_str() << "\n"
+                           << "    actual: file://"
+                           << std::filesystem::weakly_canonical(std::filesystem::path(new_path)).c_str() << "\n";
     }
 }
 

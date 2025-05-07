@@ -28,11 +28,7 @@ TEST(mbqc_decomposition, all_gates) {
                 verified_flows.push_back(std::move(flow));
             }
         }
-        std::vector<bool> result = sample_if_circuit_has_stabilizer_flows<64>(
-            256,
-            rng,
-            circuit,
-            verified_flows);
+        std::vector<bool> result = sample_if_circuit_has_stabilizer_flows<64>(256, rng, circuit, verified_flows);
         bool correct = true;
         for (auto b : result) {
             correct &= b;

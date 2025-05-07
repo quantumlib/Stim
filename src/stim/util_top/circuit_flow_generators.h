@@ -2,6 +2,7 @@
 #define _STIM_UTIL_TOP_CIRCUIT_FLOW_GENERATORS_H
 
 #include <optional>
+
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
@@ -21,7 +22,8 @@ std::vector<Flow<W>> circuit_flow_generators(const Circuit &circuit);
 ///     When no solution exists for the circuit for a flow, its result is the empty optional.
 ///     Otherwise a flow's result is a list of measurement indices.
 template <size_t W>
-std::vector<std::optional<std::vector<int32_t>>> solve_for_flow_measurements(const Circuit &circuit, std::span<const Flow<W>> flows);
+std::vector<std::optional<std::vector<int32_t>>> solve_for_flow_measurements(
+    const Circuit &circuit, std::span<const Flow<W>> flows);
 
 template <size_t W>
 struct CircuitFlowGeneratorSolver {
@@ -36,7 +38,8 @@ struct CircuitFlowGeneratorSolver {
     std::vector<GateTarget> buf_targets;
 
     explicit CircuitFlowGeneratorSolver(CircuitStats stats);
-    static CircuitFlowGeneratorSolver<W> solver_with_circuit_generators(const Circuit &circuit, uint32_t min_num_qubits);
+    static CircuitFlowGeneratorSolver<W> solver_with_circuit_generators(
+        const Circuit &circuit, uint32_t min_num_qubits);
 
     Flow<W> &add_row();
     void add_1q_measure_terms(CircuitInstruction inst, bool x, bool z);

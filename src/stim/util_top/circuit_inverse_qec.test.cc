@@ -342,15 +342,11 @@ TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, obs_include_pauli, {
             RX 1
             OBSERVABLE_INCLUDE[test](1) X1
         )CIRCUIT"),
-        {std::vector<Flow<W>>{
-        }});
+        {std::vector<Flow<W>>{}});
     ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
         OBSERVABLE_INCLUDE[test](1) X1
         MX 1
         OBSERVABLE_INCLUDE(1) rec[-1]
     )CIRCUIT"));
-    ASSERT_EQ(
-        actual.second,
-        (std::vector<Flow<W>>{
-        }));
+    ASSERT_EQ(actual.second, (std::vector<Flow<W>>{}));
 })

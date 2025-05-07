@@ -254,7 +254,8 @@ std::array<std::complex<float>, 4> reconstruct_unitary_from_axis_angle(const Gat
     };
 }
 
-std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(const Gate &g) {
+std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(
+    const Gate &g) {
     auto xyz = g.to_euler_angles();
     std::array<int, 3> half_turns;
 
@@ -354,7 +355,8 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
             c.safe_append_u(g.name, {0, 1}, {});
             auto key_s = flow_key(c, false);
             auto key_u = flow_key(c, true);
-            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end()) << "collision between " << g.name << " and " << GATE_DATA[known_flows_s[key_s]].name;
+            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end())
+                << "collision between " << g.name << " and " << GATE_DATA[known_flows_s[key_s]].name;
             known_flows_s[key_s] = g.id;
             known_flows_u[key_u].push_back(g.id);
         }

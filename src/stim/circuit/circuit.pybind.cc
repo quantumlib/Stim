@@ -245,7 +245,8 @@ void circuit_append(
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
         if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
@@ -258,7 +259,8 @@ void circuit_append(
             });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
@@ -273,11 +275,19 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    std::string_view tag) {
     circuit_append(self, obj, targets, arg, tag, true);
 }
 void circuit_append_strict(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    std::string_view tag) {
     circuit_append(self, obj, targets, arg, tag, false);
 }
 

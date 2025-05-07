@@ -231,13 +231,16 @@ void CircuitInstruction::validate() const {
         if (gate.flags & GATE_TARGETS_PAULI_STRING) {
             for (GateTarget q : targets) {
                 if (!q.is_measurement_record_target() && !q.is_pauli_target()) {
-                    throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes measurement record targets and Pauli targets (rec[-k], Xk, Yk, Zk).");
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) +
+                        " only takes measurement record targets and Pauli targets (rec[-k], Xk, Yk, Zk).");
                 }
             }
         } else {
             for (GateTarget q : targets) {
                 if (!q.is_measurement_record_target()) {
-                    throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes measurement record targets (rec[-k]).");
+                    throw std::invalid_argument(
+                        "Gate " + std::string(gate.name) + " only takes measurement record targets (rec[-k]).");
                 }
             }
         }
