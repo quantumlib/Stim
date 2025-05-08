@@ -16,7 +16,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         *,
         parity_keys: Iterable[str] = (),
         relative_keys: Iterable[int] = (),
-        pauli_keys: dict[int,str] | None = None,
+        pauli_keys: Iterable[str] = (),
         observable_index: int,
     ):
         """
@@ -29,7 +29,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         """
         self.parity_keys = frozenset(parity_keys)
         self.relative_keys = frozenset(relative_keys)
-        self.pauli_keys = pauli_keys or {}
+        self.pauli_keys = frozenset(pauli_keys)
         self.observable_index = observable_index
 
     @property
@@ -45,6 +45,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
         items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        items += sorted(self.pauli_keys)
         k = ",".join(str(e) for e in items)
         return f"Obs{self.observable_index}({k})"
 
@@ -53,7 +54,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
             f'stimcirq.CumulativeObservableAnnotation('
             f'parity_keys={sorted(self.parity_keys)}, '
             f'relative_keys={sorted(self.relative_keys)}, '
-            f'pauli_keys={self.pauli_keys}, '
+            f'pauli_keys={sorted(self.pauli_keys)}, '
             f'observable_index={self.observable_index!r})'
         )
 
@@ -65,6 +66,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         result = {
             'parity_keys': sorted(self.parity_keys),
             'observable_index': self.observable_index,
+            'pauli_keys': sorted(self.pauli_keys),
         }
         if self.relative_keys:
             result['relative_keys'] = sorted(self.relative_keys)
@@ -109,8 +111,8 @@ class CumulativeObservableAnnotation(cirq.Operation):
                     break
         rec_targets.extend(
             [
-                stim.target_pauli(qubit_index=k, pauli=self.pauli_keys[k]) 
-                for k in sorted(self.pauli_keys, reverse=True)
+                stim.target_pauli(qubit_index=int(k[1:]), pauli=k[0]) 
+                for k in sorted(self.pauli_keys)
             ]
         )
         if remaining:
