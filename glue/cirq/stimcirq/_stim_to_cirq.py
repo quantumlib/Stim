@@ -340,11 +340,18 @@ class CircuitTranslationTracker:
 
     def resolve_measurement_record_keys(
         self, targets: Iterable[stim.GateTarget]
-    ) -> Tuple[List[str], List[int]]:
+    ) -> Tuple[List[str], List[int], dict[int, str]]:
+        pauli_targets, meas_targets = {}, []
+        for t in targets:
+            if t.is_measurement_record_target:
+                meas_targets.append(t)
+            else:
+                pauli_targets[t.value] = t.pauli_type
+
         if self.have_seen_loop:
-            return [], [t.value for t in targets]
+            return [], [t.value for t in meas_targets], pauli_targets
         else:
-            return [str(self.num_measurements_seen + t.value) for t in targets], []
+            return [str(self.num_measurements_seen + t.value) for t in meas_targets], [], pauli_targets
 
     def process_detector(self, instruction: stim.CircuitInstruction) -> None:
         if instruction.tag:
@@ -352,7 +359,7 @@ class CircuitTranslationTracker:
         else:
             tags = ()
         coords = self.coords_after_offset(instruction.gate_args_copy())
-        keys, rels = self.resolve_measurement_record_keys(instruction.targets_copy())
+        keys, rels, _ = self.resolve_measurement_record_keys(instruction.targets_copy())
         self.append_operation(
             DetAnnotation(parity_keys=keys, relative_keys=rels, coordinate_metadata=coords).with_tags(*tags)
         )
@@ -364,10 +371,10 @@ class CircuitTranslationTracker:
             tags = ()
         args = instruction.gate_args_copy()
         index = 0 if not args else int(args[0])
-        keys, rels = self.resolve_measurement_record_keys(instruction.targets_copy())
+        keys, rels, paulis = self.resolve_measurement_record_keys(instruction.targets_copy())
         self.append_operation(
             CumulativeObservableAnnotation(
-                parity_keys=keys, relative_keys=rels, observable_index=index
+                parity_keys=keys, relative_keys=rels, pauli_keys=paulis, observable_index=index
             ).with_tags(*tags)
         )
 

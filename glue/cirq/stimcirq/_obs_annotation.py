@@ -16,6 +16,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         *,
         parity_keys: Iterable[str] = (),
         relative_keys: Iterable[int] = (),
+        pauli_keys: dict[int,str] | None = None,
         observable_index: int,
     ):
         """
@@ -28,6 +29,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         """
         self.parity_keys = frozenset(parity_keys)
         self.relative_keys = frozenset(relative_keys)
+        self.pauli_keys = pauli_keys or {}
         self.observable_index = observable_index
 
     @property
@@ -51,6 +53,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
             f'stimcirq.CumulativeObservableAnnotation('
             f'parity_keys={sorted(self.parity_keys)}, '
             f'relative_keys={sorted(self.relative_keys)}, '
+            f'pauli_keys={self.pauli_keys}, '
             f'observable_index={self.observable_index!r})'
         )
 
@@ -104,6 +107,12 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 rec_targets.append(stim.target_rec(-1 - offset))
                 if not remaining:
                     break
+        rec_targets.extend(
+            [
+                stim.target_pauli(qubit_index=k, pauli=self.pauli_keys[k]) 
+                for k in sorted(self.pauli_keys, reverse=True)
+            ]
+        )
         if remaining:
             raise ValueError(
                 f"{self!r} was processed before measurements it referenced ({sorted(remaining)!r})."
