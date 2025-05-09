@@ -206,7 +206,14 @@ def test_json_serialization_with_pauli_keys():
 
 
 def test_json_backwards_compat_exact():
+    raw = stimcirq.CumulativeObservableAnnotation(parity_keys=['z'], relative_keys=[-2], observable_index=5)
+    packed_v1 = '{\n  "cirq_type": "CumulativeObservableAnnotation",\n  "parity_keys": [\n    "z"\n  ],\n  "observable_index": 5,\n  "relative_keys": [\n    -2\n  ]\n}'
+    packed_v2 ='{\n  "cirq_type": "CumulativeObservableAnnotation",\n  "parity_keys": [\n    "z"\n  ],\n  "observable_index": 5,\n  "pauli_keys": [],\n  "relative_keys": [\n    -2\n  ]\n}'
+    assert cirq.read_json(json_text=packed_v1, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.read_json(json_text=packed_v2, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.to_json(raw) == packed_v2
+
+    # With pauli_keys
     raw = stimcirq.CumulativeObservableAnnotation(parity_keys=['z'], relative_keys=[-2], observable_index=5, pauli_keys=["X0", "Y1", "Z2"])
-    packed ='{\n  "cirq_type": "CumulativeObservableAnnotation",\n  "parity_keys": [\n    "z"\n  ],\n  "observable_index": 5,\n  "pauli_keys": [\n    "X0",\n    "Y1",\n    "Z2"\n  ],\n  "relative_keys": [\n    -2\n  ]\n}'
-    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
-    assert cirq.to_json(raw) == packed
+    packed_v2 ='{\n  "cirq_type": "CumulativeObservableAnnotation",\n  "parity_keys": [\n    "z"\n  ],\n  "observable_index": 5,\n  "pauli_keys": [\n    "X0",\n    "Y1",\n    "Z2"\n  ],\n  "relative_keys": [\n    -2\n  ]\n}'
+    assert cirq.to_json(raw) == packed_v2

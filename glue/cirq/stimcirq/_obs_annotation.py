@@ -40,7 +40,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         return self
 
     def _value_equality_values_(self) -> Any:
-        return self.parity_keys, self.relative_keys, self.observable_index
+        return self.parity_keys, self.relative_keys, self.pauli_keys, self.observable_index
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
