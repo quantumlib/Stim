@@ -371,4 +371,31 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         &CompiledMeasurementsToDetectionEventsConverter::repr,
         "Returns text that is a valid python expression evaluating to an equivalent "
         "`stim.CompiledMeasurementsToDetectionEventsConverter`.");
+    c.def(pybind11::pickle(
+        // __getstate__ function: returns a tuple to be pickled.
+        [](const CompiledMeasurementsToDetectionEventsConverter &self) {
+            // The stim::Circuit object should be picklable if its Python wrapper
+            // (stim.Circuit) is. Stim circuits are picklable as they can be
+            // represented by their string definitions.
+            return pybind11::make_tuple(self.circuit, self.skip_reference_sample);
+        },
+        // __setstate__ function: reconstructs the object from the tuple.
+        [](pybind11::tuple t) {
+            if (t.size() != 2) {
+                throw std::runtime_error(
+                    "Invalid state for unpickling "
+                    "CompiledMeasurementsToDetectionEventsConverter! Expected 2 "
+                    "elements in tuple.");
+            }
+            // Extract the circuit and the flag from the tuple.
+            stim::Circuit circuit = t[0].cast<stim::Circuit>();
+            bool skip_reference_sample = t[1].cast<bool>();
+            
+            // Re-use the existing initialization logic provided by
+            // py_init_compiled_measurements_to_detection_events_converter.
+            // This ensures the object is reconstructed in the same way it's
+            // initially created.
+            return py_init_compiled_measurements_to_detection_events_converter(
+                circuit, skip_reference_sample);
+        }));
 }
