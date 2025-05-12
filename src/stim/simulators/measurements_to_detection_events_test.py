@@ -297,3 +297,42 @@ def test_anticommuting_pieces_combining_into_deterministic_observable():
     m = c.compile_sampler().sample_bit_packed(shots=1000)
     det, obs = c.compile_m2d_converter().convert(measurements=m, separate_observables=True)
     np.testing.assert_array_equal(obs, obs * 0)
+
+
+def test_converter_pickle():
+    converter = stim.Circuit('''
+       X_ERROR(0.1) 0
+       X 0
+       CNOT sweep[0] 0
+       M 0
+       DETECTOR rec[-1]
+       OBSERVABLE_INCLUDE(0) rec[-1]
+    ''').compile_m2d_converter()
+
+    roundtripped = pickle.loads(pickle.dumps(converter))
+    assert str(converter) == str(roundtripped)
+
+    result = roundtripped.convert(
+        measurements=np.array([[0], [1]], dtype=np.bool_),
+        append_observables=False,
+    )
+    assert result.dtype == np.bool_
+    assert result.shape == (2, 1)
+    np.testing.assert_array_equal(result, [[1], [0]])
+
+    result = roundtripped.convert(
+        measurements=np.array([[0], [1]], dtype=np.bool_),
+        append_observables=True,
+    )
+    assert result.dtype == np.bool_
+    assert result.shape == (2, 2)
+    np.testing.assert_array_equal(result, [[1, 1], [0, 0]])
+
+    result = roundtripped.convert(
+        measurements=np.array([[0], [1], [0], [1]], dtype=np.bool_),
+        sweep_bits=np.array([[0], [0], [1], [1]], dtype=np.bool_),
+        append_observables=True,
+    )
+    assert result.dtype == np.bool_
+    assert result.shape == (4, 2)
+    np.testing.assert_array_equal(result, [[1, 1], [0, 0], [0, 0], [1, 1]])
