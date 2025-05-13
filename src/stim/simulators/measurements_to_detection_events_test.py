@@ -15,6 +15,7 @@ import tempfile
 
 import numpy as np
 import pytest
+import pickle
 import stim
 
 
