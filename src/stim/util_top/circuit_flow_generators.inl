@@ -359,7 +359,6 @@ void CircuitFlowGeneratorSolver<W>::undo_instruction(CircuitInstruction inst) {
         case GateType::MPP:
             buf_targets.clear();
             buf_targets.insert(buf_targets.end(), inst.targets.begin(), inst.targets.end());
-            std::reverse(buf_targets.begin(), buf_targets.end());
             decompose_mpp_operation(
                 CircuitInstruction{inst.gate_type, {}, buf_targets, inst.tag},
                 num_qubits,
