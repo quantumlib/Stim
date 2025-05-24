@@ -253,6 +253,21 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("XXX -> _ZY xor rec[2]"),
             Flow<W>::from_str("Z_X -> _ZX xor rec[3]"),
         }));
+
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
+            MPP Y0*Y1 Y2*Y3
+        )CIRCUIT")),
+        (std::vector<Flow<W>>{
+            Flow<W>::from_str("1 -> __YY xor rec[1]"),
+            Flow<W>::from_str("1 -> YY__ xor rec[0]"),
+            Flow<W>::from_str("___Y -> ___Y"),
+            Flow<W>::from_str("__XZ -> __ZX xor rec[1]"),
+            Flow<W>::from_str("__ZZ -> __ZZ"),
+            Flow<W>::from_str("_Y__ -> _Y__"),
+            Flow<W>::from_str("XZ__ -> ZX__ xor rec[0]"),
+            Flow<W>::from_str("ZZ__ -> ZZ__"),
+        }));
 })
 
 TEST_EACH_WORD_SIZE_W(circuit_flow_generators, all_operations, {
