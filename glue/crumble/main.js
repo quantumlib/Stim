@@ -136,6 +136,7 @@ function exportCurrentState() {
     let validStimCircuit = editorState.copyOfCurCircuit().toStimCircuit().
         replaceAll('\nPOLYGON', '\n#!pragma POLYGON').
         replaceAll('\nERR', '\n#!pragma ERR').
+        replaceAll('\nREVERSE', '\n#!pragma REVERSE').
         replaceAll('\nMARK', '\n#!pragma MARK');
     let txt = txtStimCircuit;
     txt.value = validStimCircuit + '\n';

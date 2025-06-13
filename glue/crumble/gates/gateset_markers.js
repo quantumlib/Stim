@@ -180,6 +180,16 @@ function *iter_gates_markers() {
             ctx.fillRect(x1 - rad, y1 - rad, rad, rad);
         }
     );
+    yield new Gate(
+        'REVERSE',
+        undefined,
+        false,
+        true,  // not exactly a marker, but behaves like one
+        undefined,
+        () => {},
+        () => {},
+        (op, coordFunc, ctx) => {}
+    );
 }
 
 export {iter_gates_markers, marker_placement};

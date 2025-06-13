@@ -122,11 +122,15 @@ class PropagatedPauliFrames {
      * @param {!int} marker_index
      * @returns {!PropagatedPauliFrames}
      */
-    static fromCircuit(circuit, marker_index) {
+    static fromCircuit(circuit, marker_index, reverse = true) {
         let result = new PropagatedPauliFrames(new Map());
 
         let bases = /** @type {!Map<!int, !string>} */ new Map();
-        for (let k = 0; k < circuit.layers.length; k++) {
+        const start = reverse ? circuit.layers.length - 1 : 0;
+        const end = reverse ? -1 : circuit.layers.length;
+        const step = reverse ? -1 : 1;
+
+        for (let k = start; reverse ? k > end : k < end; k += step) {
             let layer = circuit.layers[k];
             let prevBases = bases;
             bases = layer.id_pauliFrameAfter(bases, marker_index);
@@ -171,7 +175,7 @@ class PropagatedPauliFrames {
             }
 
             if (bases.size > 0) {
-                result.id_layers.set(k + 0.5, new PropagatedPauliFrameLayer(bases, new Set(), []));
+                result.id_layers.set(reverse ? k - 0.5 : k + 0.5, new PropagatedPauliFrameLayer(bases, new Set(), []));
             }
             if (errors.size > 0 || crossings.length > 0) {
                 result.id_layers.set(k, new PropagatedPauliFrameLayer(new Map(), errors, crossings));
