@@ -32,8 +32,7 @@ class AnonTaskStats:
     errors: int = 0
     discards: int = 0
     seconds: float = 0
-    custom_counts: Counter[str] = dataclasses.field(
-        default_factory=collections.Counter)
+    custom_counts: Counter[str] = dataclasses.field(default_factory=collections.Counter)
 
     def __post_init__(self):
         assert isinstance(self.errors, (int, np.integer))
@@ -45,8 +44,7 @@ class AnonTaskStats:
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        assert all(isinstance(k, str) and isinstance(v, int)
-                   for k, v in self.custom_counts.items())
+        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
 
     def __repr__(self) -> str:
         terms = []
