@@ -4,7 +4,7 @@ from typing import Counter, List, Any
 from typing import Optional
 from typing import Union
 from typing import overload
-
+import numpy as np
 from sinter._data._anon_task_stats import AnonTaskStats
 from sinter._data._csv_out import csv_line
 
@@ -71,10 +71,10 @@ class TaskStats:
     custom_counts: Counter[str] = dataclasses.field(default_factory=collections.Counter)
 
     def __post_init__(self):
-        assert isinstance(self.errors, int)
-        assert isinstance(self.shots, int)
-        assert isinstance(self.discards, int)
-        assert isinstance(self.seconds, (int, float))
+        assert isinstance(self.errors, (int, np.integer))
+        assert isinstance(self.shots, (int, np.integer))
+        assert isinstance(self.discards, (int, np.integer))
+        assert isinstance(self.seconds, (int, float, np.integer, np.floating))
         assert isinstance(self.custom_counts, collections.Counter)
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
@@ -83,7 +83,7 @@ class TaskStats:
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
+        assert all(isinstance(k, str) and isinstance(v, (int, np.integer)) for k, v in self.custom_counts.items())
 
     def with_edits(
         self,
@@ -193,10 +193,10 @@ class TaskStats:
                     22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
         """
         return csv_line(
-            shots=self.shots,
-            errors=self.errors,
-            seconds=self.seconds,
-            discards=self.discards,
+            shots=int(self.shots),
+            errors=int(self.errors),
+            seconds=float(self.seconds),
+            discards=int(self.discards),
             strong_id=self.strong_id,
             decoder=self.decoder,
             json_metadata=self.json_metadata,

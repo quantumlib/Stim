@@ -44,7 +44,7 @@ class AnonTaskStats:
         assert self.discards >= 0
         assert self.seconds >= 0
         assert self.shots >= self.errors + self.discards
-        assert all(isinstance(k, str) and isinstance(v, int) for k, v in self.custom_counts.items())
+        assert all(isinstance(k, str) and isinstance(v, (int, np.integer)) for k, v in self.custom_counts.items())
 
     def __repr__(self) -> str:
         terms = []
