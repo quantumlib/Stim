@@ -29,7 +29,7 @@ def test_to_csv_line():
         discards=4,
         seconds=5,
     )
-    assert v.to_csv_line() == str(v) == '        22,         3,         4,       5,pymatching,test,"{""a"":[1,2,3]}",'
+    assert v.to_csv_line() == str(v) == '        22,         3,         4,    5.00,pymatching,test,"{""a"":[1,2,3]}",'
 
 
 def test_to_anon_stats():

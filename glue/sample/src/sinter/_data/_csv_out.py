@@ -36,6 +36,9 @@ def csv_line(*,
                                    separators=(',', ':'),
                                    sort_keys=True)
         if custom_counts:
+            # Ensure all custom_counts values are integers before dumping to JSON
+            for k in custom_counts:
+                custom_counts[k] = int(custom_counts[k])
             custom_counts = escape_csv(
                 json.dumps(custom_counts,
                            separators=(',', ':'),
