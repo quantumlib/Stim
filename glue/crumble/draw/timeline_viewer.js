@@ -14,8 +14,12 @@ let TIMELINE_PITCH = 32;
  * @param {!int} max_t
  * @param {!number} x_pitch
  * @param {!Map} hitCounts
+ * @param {!boolean} reversed
  */
-function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi, min_t, max_t, x_pitch, hitCounts) {
+function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi, min_t, max_t, x_pitch, hitCounts, reversed) {
+    const colors = {'X': 'red', 'Y': 'green', 'Z': 'blue'};
+    const lightColors = {'X': '#ff7777', 'Y': '#77ff77', 'Z': '#7777ff'};
+
     for (let t = min_t - 1; t <= max_t; t++) {
         if (!hitCounts.has(t)) {
             hitCounts.set(t, new Map());
@@ -45,16 +49,10 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
             if (x === undefined || y === undefined) {
                 continue;
             }
-            if (b === 'X') {
-                ctx.fillStyle = 'red'
-            } else if (b === 'Y') {
-                ctx.fillStyle = 'green'
-            } else if (b === 'Z') {
-                ctx.fillStyle = 'blue'
-            } else {
-                throw new Error('Not a pauli: ' + b);
-            }
+            ctx.fillStyle = reversed ? lightColors[b] : colors[b];
             ctx.fillRect(x - dx, y - dy, wx, wy);
+            ctx.shadowColor = ctx.shadowBlur = ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+            ctx.filter = "none";
         }
         for (let q of p0.errors) {
             let {dx, dy, wx, wy} = marker_placement(mi, q, hitCount);
@@ -74,15 +72,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
         for (let {q1, q2, color} of p0.crossings) {
             let [x1, y1] = qubitTimeCoordFunc(q1, t);
             let [x2, y2] = qubitTimeCoordFunc(q2, t);
-            if (color === 'X') {
-                ctx.strokeStyle = 'red';
-            } else if (color === 'Y') {
-                ctx.strokeStyle = 'green';
-            } else if (color === 'Z') {
-                ctx.strokeStyle = 'blue';
-            } else {
-                ctx.strokeStyle = 'purple'
-            }
+            ctx.strokeStyle = reversed ? lightColors[color] : colors[color];
             ctx.lineWidth = 8;
             stroke_connector_to(ctx, x1, y1, x2, y2);
             ctx.lineWidth = 1;
@@ -96,8 +86,9 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
  * @param {!Map<!int, !PropagatedPauliFrames>} propagatedMarkerLayers
  * @param {!function(!int): ![!number, !number]} timesliceQubitCoordsFunc
  * @param {!int} numLayers
+ * @param {!Set<!int>} reversedMarkers
  */
-function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers) {
+function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers, reversedMarkers = new Set()) {
     let w = Math.floor(ctx.canvas.width / 2);
 
     let qubits = snap.timelineQubits();
@@ -162,7 +153,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         // Draw colored indicators showing Pauli propagation.
         let hitCounts = new Map();
         for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts);
+            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts, reversedMarkers.has(mi));
         }
 
         // Draw highlight of current layer.
