@@ -88,7 +88,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
  * @param {!int} numLayers
  * @param {!Set<!int>} reversedMarkers
  */
-function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers, reversedMarkers = new Set()) {
+function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers, propagatedRevMarkerLayers = new Map()) {
     let w = Math.floor(ctx.canvas.width / 2);
 
     let qubits = snap.timelineQubits();
@@ -152,9 +152,14 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
         // Draw colored indicators showing Pauli propagation.
         let hitCounts = new Map();
-        for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts, reversedMarkers.has(mi));
+        for (let [mi, p] of propagatedRevMarkerLayers.entries()) {
+            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts, true);
         }
+
+        for (let [mi, p] of propagatedMarkerLayers.entries()) {
+            drawTimelineMarkers(ctx, snap, qubitTimeCoords, p, mi, min_t_clamp, max_t, x_pitch, hitCounts, false);
+        }
+
 
         // Draw highlight of current layer.
         ctx.globalAlpha *= 0.5;

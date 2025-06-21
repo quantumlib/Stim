@@ -2,6 +2,8 @@ import {Operation} from "./operation.js"
 import {GATE_MAP} from "../gates/gateset.js";
 import {groupBy} from "../base/seq.js";
 
+const MARKER_NAMES = ['MARKX', 'MARKY', 'MARKZ', 'REVMARKX', 'REVMARKY', 'REVMARKZ'];
+
 class Layer {
     constructor() {
         this.id_ops = /** @type {!Map<!int, !Operation>} */ new Map();
@@ -216,9 +218,12 @@ class Layer {
      * @param {!int} marker_index
      * @returns {!Map<!int, !string>}
      */
-    id_pauliFrameAfter(before, marker_index) {
+    id_pauliFrameAfter(before, marker_index, reverse=false) {
         let after = new Map();
         let handled = new Set();
+        const MARKX_NAME = reverse ? 'REVMARKX' : 'MARKX';
+        const MARKY_NAME = reverse ? 'REVMARKY' : 'MARKY';
+        const MARKZ_NAME = reverse ? 'REVMARKZ' : 'MARKZ';
 
         for (let k of before.keys()) {
             let v = before.get(k);
@@ -253,7 +258,7 @@ class Layer {
         }
 
         for (let op of this.markers) {
-            if (op.gate.name === 'MARKX' && op.args[0] === marker_index) {
+            if (op.gate.name === MARKX_NAME && op.args[0] === marker_index) {
                 let key = op.id_targets[0];
                 let pauli = after.get(key);
                 if (pauli === undefined || pauli === 'I') {
@@ -266,7 +271,7 @@ class Layer {
                     pauli = 'Y';
                 }
                 after.set(key, pauli);
-            } else if (op.gate.name === 'MARKY' && op.args[0] === marker_index) {
+            } else if (op.gate.name === MARKY_NAME && op.args[0] === marker_index) {
                 let key = op.id_targets[0];
                 let pauli = after.get(key);
                 if (pauli === undefined || pauli === 'I') {
@@ -279,7 +284,7 @@ class Layer {
                     pauli = 'X';
                 }
                 after.set(key, pauli);
-            } else if (op.gate.name === 'MARKZ' && op.args[0] === marker_index) {
+            } else if (op.gate.name === MARKZ_NAME && op.args[0] === marker_index) {
                 let key = op.id_targets[0];
                 let pauli = after.get(key);
                 if (pauli === undefined || pauli === 'I') {
@@ -330,7 +335,7 @@ class Layer {
             if (index !== undefined && op.args[0] !== index) {
                 return true;
             }
-            if (op.gate.name !== 'MARKX' && op.gate.name !== 'MARKY' && op.gate.name !== 'MARKZ') {
+            if (!(MARKER_NAMES.includes(op.gate.name))) {
                 return true;
             }
             return op.id_targets[0] !== q;
@@ -343,7 +348,7 @@ class Layer {
      */
     put(op, allow_overwrite=true) {
         if (op.gate.is_marker) {
-            if (op.gate.name === 'MARKX' || op.gate.name === 'MARKY' || op.gate.name === 'MARKZ') {
+            if (MARKER_NAMES.includes(op.gate.name)) {
                 this.id_dropMarkersAt(op.id_targets[0], op.args[0]);
             }
             this.markers.push(op);

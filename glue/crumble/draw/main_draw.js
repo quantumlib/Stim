@@ -207,7 +207,7 @@ function draw(ctx, snap) {
             if (gate.name === "MARKX" || gate.name === "MARKY" || gate.name === "MARKZ") {
                 numPropagatedLayers = Math.max(numPropagatedLayers, op.args[0] + 1);
             }
-            if (gate.name === "REVERSE") {
+            if (gate.name === "REVMARKX" || gate.name === "REVMARKY" || gate.name === "REVMARKZ") {
                 reversedMarkers.add(op.args[0]);
             }
         }
@@ -221,8 +221,13 @@ function draw(ctx, snap) {
     };
     let propagatedMarkerLayers = /** @type {!Map<!int, !PropagatedPauliFrames>} */ new Map();
     for (let mi = 0; mi < numPropagatedLayers; mi++) {
-        propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi, reversedMarkers.has(mi)));
+        propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi, false));
     }
+    let propagatedRevMarkerLayers = /** @type {!Map<!int, !PropagatedPauliFrames>} */ new Map();
+    for (let mi of reversedMarkers) {
+        propagatedRevMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi, true));
+    }
+
     let {dets: dets, obs: obs} = circuit.collectDetectorsAndObservables(false);
     let batch_input = [];
     for (let mi = 0; mi < dets.length; mi++) {
@@ -353,6 +358,7 @@ function draw(ctx, snap) {
         });
 
         drawMarkers(ctx, snap, qubitDrawCoords, propagatedMarkerLayers);
+        drawMarkers(ctx, snap, qubitDrawCoords, propagatedRevMarkerLayers);
 
         if (focusX !== undefined) {
             ctx.save();
@@ -388,7 +394,7 @@ function draw(ctx, snap) {
         });
     });
 
-    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length, reversedMarkers);
+    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length, propagatedRevMarkerLayers);
 
     // Draw scrubber.
     ctx.save();

@@ -164,7 +164,7 @@ class Circuit {
             replaceAll('#!pragma ERR', 'ERR').
             replaceAll('#!pragma MARK', 'MARK').
             replaceAll('#!pragma POLYGON', 'POLYGON').
-            replaceAll('#!pragma REVERSE', 'REVERSE').
+            replaceAll('#!pragma REVMARK', 'REVMARK').
             replaceAll('_', ' ').
             replaceAll('Q(', 'QUBIT_COORDS(').
             replaceAll('DT', 'DETECTOR').

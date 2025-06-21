@@ -180,15 +180,35 @@ function *iter_gates_markers() {
             ctx.fillRect(x1 - rad, y1 - rad, rad, rad);
         }
     );
+        yield new Gate(
+        'REVMARKX',
+        1,
+        true,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        make_marker_drawer('#ff7777'),
+    );
     yield new Gate(
-        'REVERSE',
-        undefined,
-        false,
-        true,  // not exactly a marker, but behaves like one
+        'REVMARKY',
+        1,
+        true,
+        true,
         undefined,
         () => {},
         () => {},
-        (op, coordFunc, ctx) => {}
+        make_marker_drawer('#77ff77'),
+    );
+    yield new Gate(
+        'REVMARKZ',
+        1,
+        true,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        make_marker_drawer('#7777ff'),
     );
 }
 
