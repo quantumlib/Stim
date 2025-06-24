@@ -28,7 +28,6 @@ Coord<3> flattened_3d(SpanRef<const double> c) {
 }
 
 std::vector<Coord<3>> pick_coordinates(const DetectorErrorModel &dem) {
-    Basic3dDiagram out;
     std::set<uint64_t> det_set;
     uint64_t n = dem.count_detectors();
     std::set<Coord<3>> used_coords;
