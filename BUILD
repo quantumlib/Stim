@@ -104,7 +104,6 @@ pybind_library(
     copts = [
         "-O3",
         "-std=c++20",
-        "-fvisibility=hidden",
         "-march=native",
         "-DVERSION_INFO=0.0.dev0",
     ],
