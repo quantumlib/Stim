@@ -1,6 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_library")
 
 SOURCE_FILES_NO_MAIN = glob(
     [
@@ -30,6 +31,17 @@ PERF_FILES = glob(
     [
         "src/**/*.perf.cc",
         "src/**/*.perf.h",
+    ],
+)
+
+PYBIND_LIB_FILES = glob(
+    [
+        "src/**/*.pybind.cc",
+        "src/**/*.pybind.h",
+    ],
+    exclude = [
+        "src/stim/py/march.pybind.cc",
+        "src/stim/py/stim.pybind.cc",
     ],
 )
 
@@ -84,6 +96,20 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+pybind_library(
+    name = "stim_pybind_lib",
+    srcs = SOURCE_FILES_NO_MAIN + PYBIND_LIB_FILES,
+    copts = [
+        "-O3",
+        "-std=c++20",
+        "-fvisibility=hidden",
+        "-march=native",
+        "-DVERSION_INFO=0.0.dev0",
+    ],
+    includes = ["src/"],
+    visibility = ["//visibility:public"],
 )
 
 cc_binary(
