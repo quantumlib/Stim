@@ -39,7 +39,7 @@ PYBIND_LIB_FILES = glob(
         "src/**/*.pybind.cc",
         "src/**/*.pybind.h",
     ],
-    exclude = [
+    exclude = [  # exclude files that have a PYBIND11_MODULE statement.
         "src/stim/py/march.pybind.cc",
         "src/stim/py/stim.pybind.cc",
     ],
