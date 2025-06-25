@@ -23,11 +23,29 @@ on:
     branches:
       - main
 jobs:
-  benchmark_windows:
+  benchmark_windows_E:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
       - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2
       - run: cmake .
       - run: MSBuild.exe stim_perf.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
-      - run: msbuild_out/stim_perf.exe
+      - run: msbuild_out/stim_perf.exe --only="E*"
+  benchmark_windows_f:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2
+      - run: cmake .
+      - run: MSBuild.exe stim_perf.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+      - run: msbuild_out/stim_perf.exe --only="f*"
+  benchmark_windows_g:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
+      - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2
+      - run: cmake .
+      - run: MSBuild.exe stim_perf.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+      - run: msbuild_out/stim_perf.exe --only="g*"
+
+      
