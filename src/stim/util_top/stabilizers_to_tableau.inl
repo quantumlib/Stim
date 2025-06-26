@@ -12,6 +12,7 @@ Tableau<W> stabilizers_to_tableau(
 
     simd_bit_table<W> buf_xs(num_qubits, num_qubits);
     simd_bit_table<W> buf_zs(num_qubits, num_qubits);
+    simd_bits<W> buf_signs(num_qubits);
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
     buf_xs[0][0] = 1;
@@ -24,14 +25,24 @@ Tableau<W> stabilizers_to_tableau(
     //     }
     //     std::cerr << "\n";
     // }
+    auto *v0 = buf_signs.ptr_simd;
     auto *v1 = buf_xs[0].ptr_simd;
     auto *v2 = buf_zs[0].ptr_simd;
-    auto *v1_end = v1 + buf_xs[0].num_simd_words;
-    while (v1 != v1_end) {
+    auto *v0_end = v0 + buf_signs.num_simd_words;
+    while (v0 != v0_end) {
         std::swap(*v1, *v2);
+        *v0 ^= *v1 & *v2;
+        v0++;
         v1++;
         v2++;
     }
+    // for (size_t k1 = 0; k1 < 5; k1++) {
+    //     std::cerr << "AFTER k=" << 0 << ", k1=" << k1 << ": ";
+    //     for (size_t k2 = 0; k2 < 5; k2++) {
+    //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+    //     }
+    //     std::cerr << "\n";
+    // }
 
     std::cerr << "_XZY"[buf_xs[0][0] + 2*buf_zs[0][0]] << "\n";
     return Tableau<W>(3);
