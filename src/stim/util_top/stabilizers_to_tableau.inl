@@ -48,43 +48,29 @@ Tableau<W> stabilizers_to_tableau(
 
         // Change pivot basis to the Z axis.
         if (buf_xs[pivot][k]) {
-            GateType g = buf_zs[pivot][k] ? GateType::H_YZ : GateType::H;
             size_t q = pivot;
             simd_bits_range_ref<W> xs1 = buf_xs[q];
             simd_bits_range_ref<W> zs1 = buf_zs[q];
             simd_bits_range_ref<W> ss = buf_signs;
-            switch (g) {
-                case GateType::H_YZ:
-                    std::cerr << "    pivot change basis Y " << k << "\n";
-                    ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
-                        x ^= z;
-                        s ^= z.andnot(x);
-                    });
-                    break;
-                case GateType::H:
-                    std::cerr << "    pivot change basis X " << k << "\n";
-                    // for (size_t k1 = 0; k1 < 5; k1++) {
-                    //     std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
-                    //     for (size_t k2 = 0; k2 < 5; k2++) {
-                    //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
-                    //     }
-                    //     std::cerr << "\n";
-                    // }
-                    ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
-                        std::swap(x, z);
-                        s ^= x & z;
-                    });
-                    // for (size_t k1 = 0; k1 < 5; k1++) {
-                    //     std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
-                    //     for (size_t k2 = 0; k2 < 5; k2++) {
-                    //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
-                    //     }
-                    //     std::cerr << "\n";
-                    // }
-                    break;
-                default:
-                    throw std::invalid_argument("Unrecognized gate type.");
-            }
+            std::cerr << "    pivot change basis X " << k << "\n";
+            // for (size_t k1 = 0; k1 < 5; k1++) {
+            //     std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
+            //     for (size_t k2 = 0; k2 < 5; k2++) {
+            //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+            //     }
+            //     std::cerr << "\n";
+            // }
+            ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
+                std::swap(x, z);
+                s ^= x & z;
+            });
+            // for (size_t k1 = 0; k1 < 5; k1++) {
+            //     std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
+            //     for (size_t k2 = 0; k2 < 5; k2++) {
+            //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+            //     }
+            //     std::cerr << "\n";
+            // }
         }
 
 
