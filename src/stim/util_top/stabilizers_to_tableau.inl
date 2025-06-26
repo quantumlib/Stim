@@ -65,9 +65,9 @@ Tableau<W> stabilizers_to_tableau(
         if (k > 2) {
             return Tableau<W>(10);
         }
-        for (size_t k1 = 0; k1 < 30; k1++) {
+        for (size_t k1 = 0; k1 < 5; k1++) {
             std::cerr << "k=" << k << ", k1=" << k1 << ": ";
-            for (size_t k2 = 0; k2 < stabilizers.size(); k2++) {
+            for (size_t k2 = 0; k2 < 5; k2++) {
                 std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
             }
             std::cerr << "\n";
