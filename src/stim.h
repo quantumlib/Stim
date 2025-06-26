@@ -3,10 +3,6 @@
 /// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES.
 /// It may change arbitrarily and catastrophically from minor version to minor version.
 /// If you need a stable API, use stim's Python API.
-#include "stim/circuit/circuit.h"
-#include "stim/circuit/circuit_instruction.h"
-#include "stim/circuit/gate_decomposition.h"
-#include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
 #include "stim/mem/bit_ref.h"
 #include "stim/mem/bitword.h"

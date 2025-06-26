@@ -1,8 +1,4 @@
 src/stim.cc
-src/stim/circuit/circuit.cc
-src/stim/circuit/circuit_instruction.cc
-src/stim/circuit/gate_decomposition.cc
-src/stim/circuit/gate_target.cc
 src/stim/gates/gate_data_annotations.cc
 src/stim/gates/gate_data_blocks.cc
 src/stim/gates/gate_data_collapsing.cc

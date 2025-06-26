@@ -136,9 +136,6 @@ struct PauliString {
     ///          avoid quadratic overheads from constant slight expansions.
     void ensure_num_qubits(size_t min_num_qubits, double resize_pad_factor);
 
-    void mul_pauli_term(GateTarget t, bool *imag, bool right_mul);
-    void left_mul_pauli(GateTarget t, bool *imag);
-    void right_mul_pauli(GateTarget t, bool *imag);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

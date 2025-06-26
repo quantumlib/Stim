@@ -213,66 +213,6 @@ void PauliString<W>::ensure_num_qubits(size_t min_num_qubits, double resize_pad_
 }
 
 template <size_t W>
-void PauliString<W>::mul_pauli_term(GateTarget t, bool *imag, bool right_mul) {
-    auto q = t.qubit_value();
-    ensure_num_qubits(q + 1, 1.25);
-    bool x2 = (bool)(t.data & TARGET_PAULI_X_BIT);
-    bool z2 = (bool)(t.data & TARGET_PAULI_Z_BIT);
-    if (!(x2 | z2)) {
-        throw std::invalid_argument("Not a pauli target: " + t.str());
-    }
-
-    bit_ref x1 = xs[q];
-    bit_ref z1 = zs[q];
-    bool old_x1 = x1;
-    bool old_z1 = z1;
-    x1 ^= x2;
-    z1 ^= z2;
-
-    // At each bit position: accumulate anti-commutation (+i or -i) counts.
-    bool x1z2 = x1 & z2;
-    bool anti_commutes = (x2 & z1) ^ x1z2;
-    sign ^= (*imag ^ old_x1 ^ old_z1 ^ x1z2) & anti_commutes;
-    sign ^= (bool)(t.data & TARGET_INVERTED_BIT);
-    *imag ^= anti_commutes;
-    sign ^= right_mul && anti_commutes;
-}
-
-template <size_t W>
-void PauliString<W>::left_mul_pauli(GateTarget t, bool *imag) {
-    mul_pauli_term(t, imag, false);
-}
-
-template <size_t W>
-void PauliString<W>::right_mul_pauli(GateTarget t, bool *imag) {
-    mul_pauli_term(t, imag, true);
-}
-
-template <size_t W>
-uint8_t PauliString<W>::py_get_item(int64_t index) const {
-    if (index < 0) {
-        index += num_qubits;
-    }
-    if (index < 0 || (size_t)index >= num_qubits) {
-        throw std::out_of_range("index");
-    }
-    size_t u = (size_t)index;
-    int x = xs[u];
-    int z = zs[u];
-    return pauli_xz_to_xyz(x, z);
-}
-
-template <size_t W>
-PauliString<W> PauliString<W>::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
-    assert(slice_length >= 0);
-    assert(slice_length == 0 || start >= 0);
-    return PauliString::from_func(false, slice_length, [&](size_t i) {
-        int j = start + i * step;
-        return "_XZY"[xs[j] + zs[j] * 2];
-    });
-}
-
-template <size_t W>
 std::ostream &operator<<(std::ostream &out, const PauliString<W> &ps) {
     return out << ps.ref();
 }

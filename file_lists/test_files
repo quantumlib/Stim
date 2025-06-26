@@ -1,8 +1,4 @@
 src/stim.test.cc
-src/stim/circuit/circuit.test.cc
-src/stim/circuit/circuit_instruction.test.cc
-src/stim/circuit/gate_decomposition.test.cc
-src/stim/circuit/gate_target.test.cc
 src/stim/gates/gates.test.cc
 src/stim/mem/bit_ref.test.cc
 src/stim/mem/fixed_cap_vector.test.cc
