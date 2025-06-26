@@ -48,10 +48,6 @@ Tableau<W> stabilizers_to_tableau(
 
         // Change pivot basis to the Z axis.
         if (buf_xs[pivot][k]) {
-            size_t q = pivot;
-            simd_bits_range_ref<W> xs1 = buf_xs[q];
-            simd_bits_range_ref<W> zs1 = buf_zs[q];
-            simd_bits_range_ref<W> ss = buf_signs;
             std::cerr << "    pivot change basis X " << k << "\n";
             // for (size_t k1 = 0; k1 < 5; k1++) {
             //     std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
@@ -60,10 +56,17 @@ Tableau<W> stabilizers_to_tableau(
             //     }
             //     std::cerr << "\n";
             // }
-            ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
-                std::swap(x, z);
-                s ^= x & z;
-            });
+            auto *v0 = buf_signs.ptr_simd;
+            auto *v1 = buf_xs[0].ptr_simd;
+            auto *v2 = buf_zs[0].ptr_simd;
+            auto *v0_end = v0 + buf_signs.num_simd_words;
+            while (v0 != v0_end) {
+                std::swap(*v1, *v2);
+                *v0 ^= *v1 & *v2;
+                v0++;
+                v1++;
+                v2++;
+            }
             // for (size_t k1 = 0; k1 < 5; k1++) {
             //     std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
             //     for (size_t k2 = 0; k2 < 5; k2++) {
