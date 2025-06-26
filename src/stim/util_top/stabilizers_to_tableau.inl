@@ -28,9 +28,13 @@ Tableau<W> stabilizers_to_tableau(
     Circuit elimination_instructions;
 
     auto fail_due_to_anticommutation = [&]() {
+            std::cerr << "loop D5\n";
         for (size_t k1 = 0; k1 < stabilizers.size(); k1++) {
+            std::cerr << "loop D6\n";
             for (size_t k2 = k1 + 1; k2 < stabilizers.size(); k2++) {
+            std::cerr << "loop D7\n";
                 if (!stabilizers[k1].ref().commutes(stabilizers[k2])) {
+            std::cerr << "loop D8\n";
                     std::stringstream ss;
                     ss << "Some of the given stabilizers anticommute.\n";
                     ss << "For example:";
@@ -41,6 +45,7 @@ Tableau<W> stabilizers_to_tableau(
                 }
             }
         }
+            std::cerr << "loop D9\n";
         throw std::invalid_argument(
             "The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please "
             "report this as a bug.");
@@ -77,9 +82,12 @@ Tableau<W> stabilizers_to_tableau(
         std::cerr << "loop C1\n";
         size_t pivot;
         for (size_t q = 0; q < used; q++) {
+            std::cerr << "loop D1\n";
             if (buf_xs[q][k]) {
+                std::cerr << "loop D2\n";
                 fail_due_to_anticommutation();
             }
+            std::cerr << "loop D3\n";
         }
         std::cerr << "loop C2\n";
         for (pivot = used; pivot < num_qubits; pivot++) {
