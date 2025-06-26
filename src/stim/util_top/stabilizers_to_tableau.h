@@ -1,7 +1,6 @@
 #ifndef _STIM_STABILIZERS_CONVERSIONS_H
 #define _STIM_STABILIZERS_CONVERSIONS_H
 
-#include "stim/circuit/circuit.h"
 #include "stim/stabilizers/tableau.h"
 
 namespace stim {

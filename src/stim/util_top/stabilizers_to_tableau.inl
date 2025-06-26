@@ -24,7 +24,6 @@ Tableau<W> stabilizers_to_tableau(
     buf_zs = buf_zs.transposed();
 
     std::cerr << "inside A3\n";
-    Circuit elimination_instructions;
 
     auto fail_due_to_anticommutation = [&]() {
             std::cerr << "fail_due_to_anticommutation start\n";
@@ -45,18 +44,6 @@ Tableau<W> stabilizers_to_tableau(
         throw std::invalid_argument(
             "The given stabilizers commute but the solver failed in a way that suggests they anticommute. Please "
             "report this as a bug.");
-    };
-
-    auto print_redundant_z_product_parts = [&](size_t stabilizer_index, std::ostream &out) {
-        PauliString<W> target = stabilizers[stabilizer_index];
-        target.ensure_num_qubits(num_qubits, 1.0);
-        target = target.ref().after(elimination_instructions);
-        if (num_qubits > 0) {
-            GateTarget t = GateTarget::qubit(num_qubits - 1);
-            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
-            elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
-        }
-
     };
 
     std::cerr << "inside A4\n";
@@ -97,7 +84,6 @@ Tableau<W> stabilizers_to_tableau(
                 ss << "For example:";
                 ss << "\n    stabilizers[" << k << "] = " << stabilizers[k];
                 ss << "\nis the negation of the product of the following stabilizers: {";
-                print_redundant_z_product_parts(k, ss);
                 ss << "\n}";
                 throw std::invalid_argument(ss.str());
             }
@@ -109,7 +95,6 @@ Tableau<W> stabilizers_to_tableau(
                 ss << "\nFor example:";
                 ss << "\n    stabilizers[" << k << "] = " << stabilizers[k];
                 ss << "\nis the product of the following stabilizers: {";
-                print_redundant_z_product_parts(k, ss);
                 ss << "\n}";
                 throw std::invalid_argument(ss.str());
             }
@@ -119,9 +104,6 @@ Tableau<W> stabilizers_to_tableau(
         // Change pivot basis to the Z axis.
         if (buf_xs[pivot][k]) {
             GateType g = buf_zs[pivot][k] ? GateType::H_YZ : GateType::H;
-            GateTarget t = GateTarget::qubit(pivot);
-            CircuitInstruction instruction{g, {}, &t, ""};
-            elimination_instructions.safe_append(instruction);
             size_t q = pivot;
             simd_bits_range_ref<W> xs1 = buf_xs[q];
             simd_bits_range_ref<W> zs1 = buf_zs[q];
@@ -237,13 +219,6 @@ Tableau<W> stabilizers_to_tableau(
         }
     }
     std::cerr << "inside A5\n";
-
-    if (num_qubits > 0) {
-        // Force size of resulting tableau to be correct.
-        GateTarget t = GateTarget::qubit(num_qubits - 1);
-        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
-        elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
-    }
 
     std::cerr << "inside A6\n";
     return Tableau<W>(3);
