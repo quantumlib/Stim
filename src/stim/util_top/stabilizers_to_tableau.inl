@@ -17,7 +17,6 @@ Tableau<W> stabilizers_to_tableau(
     buf_zs = buf_zs.transposed();
     buf_xs[0][0] = 1;
 
-    size_t used = 0;
     {
         // Change pivot basis to the Z axis.
         // for (size_t k1 = 0; k1 < 5; k1++) {
@@ -46,9 +45,6 @@ Tableau<W> stabilizers_to_tableau(
         //     std::cerr << "\n";
         // }
 
-
-        std::cerr << "    pivot done\n";
-        used++;
     }
 
     std::cerr << "_XZY"[buf_xs[0][0] + 2*buf_zs[0][0]] << "\n";
