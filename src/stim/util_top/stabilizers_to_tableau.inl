@@ -20,6 +20,9 @@ Tableau<W> stabilizers_to_tableau(
     }
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
+    buf_xs.clear();
+    buf_zs.clear();
+    buf_xs[0][0] = 1;
 
     size_t used = 0;
     {
