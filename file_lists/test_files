@@ -4,10 +4,6 @@ src/stim/circuit/circuit_instruction.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc
 src/stim/gates/gates.test.cc
-src/stim/gen/circuit_gen_params.test.cc
-src/stim/gen/gen_color_code.test.cc
-src/stim/gen/gen_rep_code.test.cc
-src/stim/gen/gen_surface_code.test.cc
 src/stim/io/measure_record.test.cc
 src/stim/io/measure_record_batch.test.cc
 src/stim/io/measure_record_batch_writer.test.cc

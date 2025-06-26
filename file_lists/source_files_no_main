@@ -18,10 +18,6 @@ src/stim/gates/gate_data_period_4.cc
 src/stim/gates/gate_data_pp.cc
 src/stim/gates/gate_data_swaps.cc
 src/stim/gates/gates.cc
-src/stim/gen/circuit_gen_params.cc
-src/stim/gen/gen_color_code.cc
-src/stim/gen/gen_rep_code.cc
-src/stim/gen/gen_surface_code.cc
 src/stim/io/measure_record.cc
 src/stim/io/measure_record_batch_writer.cc
 src/stim/io/measure_record_writer.cc

@@ -136,11 +136,25 @@ Tableau<W> stabilizers_to_tableau(
                     break;
                 case GateType::H:
                     std::cerr << "    pivot change basis X " << k << "\n";
+                    for (size_t k1 = 0; k1 < 30; k1++) {
+                        std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
+                        for (size_t k2 = 0; k2 < stabilizers.size(); k2++) {
+                            std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+                        }
+                        std::cerr << "\n";
+                    }
                     ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
                         std::swap(x, z);
                         s ^= x & z;
                     });
-                    break;
+                    for (size_t k1 = 0; k1 < 30; k1++) {
+                        std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
+                        for (size_t k2 = 0; k2 < stabilizers.size(); k2++) {
+                            std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+                        }
+                        std::cerr << "\n";
+                    }
+                break;
                 default:
                     throw std::invalid_argument("Unrecognized gate type.");
             }
