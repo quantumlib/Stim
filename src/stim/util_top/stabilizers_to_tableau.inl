@@ -62,7 +62,7 @@ Tableau<W> stabilizers_to_tableau(
     std::cerr << "inside A4\n";
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
-        if (k > 7) {
+        if (k > 2) {
             return Tableau<W>(10);
         }
         for (size_t k1 = 0; k1 < 30; k1++) {
