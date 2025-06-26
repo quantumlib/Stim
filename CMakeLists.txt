@@ -52,7 +52,7 @@ if(NOT(MSVC))
     target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -O3)
 else()
-    target_compile_options(stim PRIVATE ${MACHINE_FLAG})
+    target_compile_options(stim PRIVATE ${MACHINE_FLAG} -O1)
 endif()
 install(TARGETS stim RUNTIME DESTINATION bin)
 
