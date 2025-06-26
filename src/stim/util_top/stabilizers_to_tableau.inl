@@ -74,12 +74,14 @@ Tableau<W> stabilizers_to_tableau(
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
+        std::cerr << "loop C1\n";
         size_t pivot;
         for (size_t q = 0; q < used; q++) {
             if (buf_xs[q][k]) {
                 fail_due_to_anticommutation();
             }
         }
+        std::cerr << "loop C2\n";
         for (pivot = used; pivot < num_qubits; pivot++) {
             if (buf_xs[pivot][k] || buf_zs[pivot][k]) {
                 break;
@@ -87,6 +89,7 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Check for incompatible / redundant stabilizers.
+        std::cerr << "loop C3\n";
         if (pivot == num_qubits) {
             if (buf_signs[k]) {
                 std::stringstream ss;
@@ -114,6 +117,7 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Change pivot basis to the Z axis.
+        std::cerr << "loop C4\n";
         if (buf_xs[pivot][k]) {
             GateType g = buf_zs[pivot][k] ? GateType::H_YZ : GateType::H;
             GateTarget t = GateTarget::qubit(pivot);
@@ -142,6 +146,7 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Cancel other terms in Pauli string.
+        std::cerr << "loop C5\n";
         for (size_t q = 0; q < num_qubits; q++) {
             int p = buf_xs[q][k] + buf_zs[q][k] * 2;
             if (p && q != pivot) {
@@ -187,6 +192,7 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Move pivot to diagonal.
+        std::cerr << "loop C6\n";
         if (pivot != used) {
             std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(used)};
             CircuitInstruction instruction{GateType::SWAP, {}, targets, ""};
@@ -196,6 +202,7 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Fix sign.
+        std::cerr << "loop C7\n";
         if (buf_signs[k]) {
             GateTarget t = GateTarget::qubit(used);
             CircuitInstruction instruction{GateType::X, {}, &t, ""};
@@ -203,6 +210,7 @@ Tableau<W> stabilizers_to_tableau(
             buf_signs ^= buf_zs[used];
         }
 
+        std::cerr << "loop C8\n";
         used++;
     }
 
