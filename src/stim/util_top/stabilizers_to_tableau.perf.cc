@@ -44,6 +44,9 @@ BENCHMARK(stabilizers_to_tableau_144) {
             stabilizers.push_back(ps);
         }
     }
+    for (size_t k = 0; k < stabilizers.size(); k++) {
+        std::cerr << "stabilizer " << k << ": " << stabilizers[k] << "\n";
+    }
 
     size_t dep = 0;
     std::cerr << "step D\n";
