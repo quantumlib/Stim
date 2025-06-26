@@ -136,94 +136,94 @@ Tableau<W> stabilizers_to_tableau(
                     break;
                 case GateType::H:
                     std::cerr << "    pivot change basis X " << k << "\n";
-                    for (size_t k1 = 0; k1 < 5; k1++) {
-                        std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
-                        for (size_t k2 = 0; k2 < 5; k2++) {
-                            std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
-                        }
-                        std::cerr << "\n";
-                    }
+                    // for (size_t k1 = 0; k1 < 5; k1++) {
+                    //     std::cerr << "BEFORE k=" << k << ", k1=" << k1 << ": ";
+                    //     for (size_t k2 = 0; k2 < 5; k2++) {
+                    //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+                    //     }
+                    //     std::cerr << "\n";
+                    // }
                     ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
                         std::swap(x, z);
                         s ^= x & z;
                     });
-                    for (size_t k1 = 0; k1 < 5; k1++) {
-                        std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
-                        for (size_t k2 = 0; k2 < 5; k2++) {
-                            std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
-                        }
-                        std::cerr << "\n";
-                    }
-                break;
+                    // for (size_t k1 = 0; k1 < 5; k1++) {
+                    //     std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
+                    //     for (size_t k2 = 0; k2 < 5; k2++) {
+                    //         std::cerr << "_XZY"[buf_xs[k1][k2] + 2*buf_zs[k1][k2]];
+                    //     }
+                    //     std::cerr << "\n";
+                    // }
+                    break;
                 default:
                     throw std::invalid_argument("Unrecognized gate type.");
             }
         }
 
-        // Cancel other terms in Pauli string.
-        for (size_t q = 0; q < num_qubits; q++) {
-            int p = buf_xs[q][k] + buf_zs[q][k] * 2;
-            if (p && q != pivot) {
-                std::cerr << "    kill " << q << "\n";
-                std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(q)};
-                GateType g = p == 1 ? GateType::XCX : p == 2 ? GateType::XCZ : GateType::XCY;
-                CircuitInstruction instruction{g, {}, targets, ""};
-                elimination_instructions.safe_append(instruction);
-                size_t q1 = targets[0].qubit_value();
-                size_t q2 = targets[1].qubit_value();
-                simd_bits_range_ref<W> ss = buf_signs;
-                simd_bits_range_ref<W> xs1 = buf_xs[q1];
-                simd_bits_range_ref<W> zs1 = buf_zs[q1];
-                simd_bits_range_ref<W> xs2 = buf_xs[q2];
-                simd_bits_range_ref<W> zs2 = buf_zs[q2];
-                switch (g) {
-                    case GateType::XCX:
-                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
-                            s ^= (x1 ^ x2) & z1 & z2;
-                            x1 ^= z2;
-                            x2 ^= z1;
-                        });
-                        break;
-                    case GateType::XCY:
-                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
-                            x1 ^= x2 ^ z2;
-                            x2 ^= z1;
-                            z2 ^= z1;
-                            s ^= x1.andnot(z1) & x2.andnot(z2);
-                            s ^= x1 & z1 & z2.andnot(x2);
-                        });
-                        break;
-                    case GateType::XCZ:
-                        ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
-                            z2 ^= z1;
-                            x1 ^= x2;
-                            s ^= (z2 ^ x1).andnot(z1 & x2);
-                        });
-                        break;
-                    default:
-                        throw std::invalid_argument("Unrecognized gate type.");
-                }
-            }
-        }
-
-        // Move pivot to diagonal.
-        if (pivot != used) {
-            std::cerr << "    pivot swap\n";
-            std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(used)};
-            CircuitInstruction instruction{GateType::SWAP, {}, targets, ""};
-            elimination_instructions.safe_append(instruction);
-            buf_xs[pivot].swap_with(buf_xs[used]);
-            buf_zs[pivot].swap_with(buf_zs[used]);
-        }
-
-        // Fix sign.
-        if (buf_signs[k]) {
-            std::cerr << "    pivot sign\n";
-            GateTarget t = GateTarget::qubit(used);
-            CircuitInstruction instruction{GateType::X, {}, &t, ""};
-            elimination_instructions.safe_append(instruction);
-            buf_signs ^= buf_zs[used];
-        }
+        // // Cancel other terms in Pauli string.
+        // for (size_t q = 0; q < num_qubits; q++) {
+        //     int p = buf_xs[q][k] + buf_zs[q][k] * 2;
+        //     if (p && q != pivot) {
+        //         std::cerr << "    kill " << q << "\n";
+        //         std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(q)};
+        //         GateType g = p == 1 ? GateType::XCX : p == 2 ? GateType::XCZ : GateType::XCY;
+        //         CircuitInstruction instruction{g, {}, targets, ""};
+        //         elimination_instructions.safe_append(instruction);
+        //         size_t q1 = targets[0].qubit_value();
+        //         size_t q2 = targets[1].qubit_value();
+        //         simd_bits_range_ref<W> ss = buf_signs;
+        //         simd_bits_range_ref<W> xs1 = buf_xs[q1];
+        //         simd_bits_range_ref<W> zs1 = buf_zs[q1];
+        //         simd_bits_range_ref<W> xs2 = buf_xs[q2];
+        //         simd_bits_range_ref<W> zs2 = buf_zs[q2];
+        //         switch (g) {
+        //             case GateType::XCX:
+        //                 ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+        //                     s ^= (x1 ^ x2) & z1 & z2;
+        //                     x1 ^= z2;
+        //                     x2 ^= z1;
+        //                 });
+        //                 break;
+        //             case GateType::XCY:
+        //                 ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+        //                     x1 ^= x2 ^ z2;
+        //                     x2 ^= z1;
+        //                     z2 ^= z1;
+        //                     s ^= x1.andnot(z1) & x2.andnot(z2);
+        //                     s ^= x1 & z1 & z2.andnot(x2);
+        //                 });
+        //                 break;
+        //             case GateType::XCZ:
+        //                 ss.for_each_word(xs1, zs1, xs2, zs2, [](auto &s, auto &x1, auto &z1, auto &x2, auto &z2) {
+        //                     z2 ^= z1;
+        //                     x1 ^= x2;
+        //                     s ^= (z2 ^ x1).andnot(z1 & x2);
+        //                 });
+        //                 break;
+        //             default:
+        //                 throw std::invalid_argument("Unrecognized gate type.");
+        //         }
+        //     }
+        // }
+        //
+        // // Move pivot to diagonal.
+        // if (pivot != used) {
+        //     std::cerr << "    pivot swap\n";
+        //     std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(used)};
+        //     CircuitInstruction instruction{GateType::SWAP, {}, targets, ""};
+        //     elimination_instructions.safe_append(instruction);
+        //     buf_xs[pivot].swap_with(buf_xs[used]);
+        //     buf_zs[pivot].swap_with(buf_zs[used]);
+        // }
+        //
+        // // Fix sign.
+        // if (buf_signs[k]) {
+        //     std::cerr << "    pivot sign\n";
+        //     GateTarget t = GateTarget::qubit(used);
+        //     CircuitInstruction instruction{GateType::X, {}, &t, ""};
+        //     elimination_instructions.safe_append(instruction);
+        //     buf_signs ^= buf_zs[used];
+        // }
 
         std::cerr << "    pivot done\n";
         used++;
