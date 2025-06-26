@@ -19,10 +19,6 @@ BENCHMARK(stabilizers_to_tableau_144) {
     Tableau<64> t2 = stabilizers_to_tableau(stabilizers, true, true, false);
     dep += t2.xs[0].zs[0];
 
-    // benchmark_go([&]() {
-    //     Tableau<64> t = stabilizers_to_tableau(stabilizers, true, true, false);
-    //     dep += t.xs[0].zs[0];
-    // }).goal_micros(500);
     if (dep == 99999999) {
         std::cout << "data dependence";
     }

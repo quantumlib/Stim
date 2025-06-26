@@ -29,14 +29,14 @@ Tableau<W> stabilizers_to_tableau(
         auto *v0 = buf_signs.ptr_simd;
         auto *v1 = buf_xs[0].ptr_simd;
         auto *v2 = buf_zs[0].ptr_simd;
-        auto *v0_end = v0 + buf_signs.num_simd_words;
-        while (v0 != v0_end) {
+        // auto *v0_end = v0 + buf_signs.num_simd_words;
+        // while (v0 != v0_end) {
             std::swap(*v1, *v2);
             *v0 ^= *v1 & *v2;
             v0++;
             v1++;
             v2++;
-        }
+        // }
         // for (size_t k1 = 0; k1 < 5; k1++) {
         //     std::cerr << "AFTER k=" << k << ", k1=" << k1 << ": ";
         //     for (size_t k2 = 0; k2 < 5; k2++) {
