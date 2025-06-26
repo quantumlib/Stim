@@ -73,7 +73,7 @@ if(NOT(MSVC))
     target_compile_options(stim_perf PRIVATE -Wall -Wpedantic -g  -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(stim_perf PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address)
 else()
-    target_compile_options(stim_perf PRIVATE ${MACHINE_FLAG})
+    target_compile_options(stim_perf PRIVATE ${MACHINE_FLAG} /O1)
 endif()
 
 find_package(GTest QUIET)
