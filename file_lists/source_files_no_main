@@ -17,7 +17,6 @@ src/stim/gates/gates.cc
 src/stim/mem/bit_ref.cc
 src/stim/mem/simd_util.cc
 src/stim/mem/simd_word.cc
-src/stim/mem/sparse_xor_vec.cc
 src/stim/util_bot/arg_parse.cc
 src/stim/util_bot/error_decomp.cc
 src/stim/util_bot/probability_util.cc

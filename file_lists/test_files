@@ -8,11 +8,9 @@ src/stim/mem/simd_bits.test.cc
 src/stim/mem/simd_bits_range_ref.test.cc
 src/stim/mem/simd_util.test.cc
 src/stim/mem/simd_word.test.cc
-src/stim/mem/sparse_xor_vec.test.cc
 src/stim/stabilizers/pauli_string.test.cc
 src/stim/stabilizers/pauli_string_ref.test.cc
 src/stim/stabilizers/tableau.test.cc
-src/stim/stabilizers/tableau_iter.test.cc
 src/stim/util_bot/arg_parse.test.cc
 src/stim/util_bot/error_decomp.test.cc
 src/stim/util_bot/probability_util.test.cc

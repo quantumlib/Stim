@@ -1,4 +1,2 @@
 src/stim/gates/gates.pybind.cc
-src/stim/stabilizers/pauli_string.pybind.cc
 src/stim/stabilizers/tableau.pybind.cc
-src/stim/stabilizers/tableau_iter.pybind.cc

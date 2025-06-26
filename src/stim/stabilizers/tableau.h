@@ -171,50 +171,6 @@ struct Tableau {
     /// Appends the other tableau onto this one, resulting in the direct sum.
     Tableau<W> &operator+=(const Tableau<W> &second);
 
-    /// === Specialized vectorized methods for prepending operations onto the tableau === ///
-    void prepend_SWAP(size_t q1, size_t q2);
-    void prepend_X(size_t q);
-    void prepend_Y(size_t q);
-    void prepend_Z(size_t q);
-    void prepend_H_XZ(size_t q);
-    void prepend_H_YZ(size_t q);
-    void prepend_H_XY(size_t q);
-    void prepend_H_NXY(size_t q);
-    void prepend_H_NXZ(size_t q);
-    void prepend_H_NYZ(size_t q);
-    void prepend_C_XYZ(size_t q);
-    void prepend_C_NXYZ(size_t q);
-    void prepend_C_XNYZ(size_t q);
-    void prepend_C_XYNZ(size_t q);
-    void prepend_C_ZYX(size_t q);
-    void prepend_C_NZYX(size_t q);
-    void prepend_C_ZNYX(size_t q);
-    void prepend_C_ZYNX(size_t q);
-    void prepend_SQRT_X(size_t q);
-    void prepend_SQRT_X_DAG(size_t q);
-    void prepend_SQRT_Y(size_t q);
-    void prepend_SQRT_Y_DAG(size_t q);
-    void prepend_SQRT_Z(size_t q);
-    void prepend_SQRT_Z_DAG(size_t q);
-    void prepend_SQRT_XX(size_t q1, size_t q2);
-    void prepend_SQRT_XX_DAG(size_t q1, size_t q2);
-    void prepend_SQRT_YY(size_t q1, size_t q2);
-    void prepend_SQRT_YY_DAG(size_t q1, size_t q2);
-    void prepend_SQRT_ZZ(size_t q1, size_t q2);
-    void prepend_SQRT_ZZ_DAG(size_t q1, size_t q2);
-    void prepend_ZCX(size_t control, size_t target);
-    void prepend_ZCY(size_t control, size_t target);
-    void prepend_ZCZ(size_t control, size_t target);
-    void prepend_ISWAP(size_t q1, size_t q2);
-    void prepend_ISWAP_DAG(size_t q1, size_t q2);
-    void prepend_XCX(size_t control, size_t target);
-    void prepend_XCY(size_t control, size_t target);
-    void prepend_XCZ(size_t control, size_t target);
-    void prepend_YCX(size_t control, size_t target);
-    void prepend_YCY(size_t control, size_t target);
-    void prepend_YCZ(size_t control, size_t target);
-    void prepend_pauli_product(const PauliStringRef<W> &op);
-
     /// Builds the Y output by using Y = iXZ.
     PauliString<W> y_output(size_t input_index) const;
 
@@ -246,6 +202,5 @@ std::ostream &operator<<(std::ostream &out, const Tableau<W> &ps);
 }  // namespace stim
 
 #include "stim/stabilizers/tableau.inl"
-#include "stim/stabilizers/tableau_specialized_prepend.inl"
 
 #endif
