@@ -79,25 +79,20 @@ Tableau<W> stabilizers_to_tableau(
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
-        std::cerr << "loop C1\n";
         size_t pivot;
         for (size_t q = 0; q < used; q++) {
-            std::cerr << "loop D1\n";
             if (buf_xs[q][k]) {
-                std::cerr << "loop D2\n";
                 fail_due_to_anticommutation();
             }
-            std::cerr << "loop D3\n";
         }
-        std::cerr << "loop C2\n";
         for (pivot = used; pivot < num_qubits; pivot++) {
             if (buf_xs[pivot][k] || buf_zs[pivot][k]) {
                 break;
             }
         }
+        std::cerr << "chose pivot " << pivot << " in iter " << k << "\n";
 
         // Check for incompatible / redundant stabilizers.
-        std::cerr << "loop C3\n";
         if (pivot == num_qubits) {
             if (buf_signs[k]) {
                 std::stringstream ss;
@@ -125,7 +120,6 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Change pivot basis to the Z axis.
-        std::cerr << "loop C4\n";
         if (buf_xs[pivot][k]) {
             GateType g = buf_zs[pivot][k] ? GateType::H_YZ : GateType::H;
             GateTarget t = GateTarget::qubit(pivot);
@@ -137,12 +131,14 @@ Tableau<W> stabilizers_to_tableau(
             simd_bits_range_ref<W> ss = buf_signs;
             switch (g) {
                 case GateType::H_YZ:
+                    std::cerr << "    pivot change basis Y " << k << "\n";
                     ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
                         x ^= z;
                         s ^= z.andnot(x);
                     });
                     break;
                 case GateType::H:
+                    std::cerr << "    pivot change basis X " << k << "\n";
                     ss.for_each_word(xs1, zs1, [](auto &s, auto &x, auto &z) {
                         std::swap(x, z);
                         s ^= x & z;
@@ -154,10 +150,10 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Cancel other terms in Pauli string.
-        std::cerr << "loop C5\n";
         for (size_t q = 0; q < num_qubits; q++) {
             int p = buf_xs[q][k] + buf_zs[q][k] * 2;
             if (p && q != pivot) {
+                std::cerr << "    kill " << q << "\n";
                 std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(q)};
                 GateType g = p == 1 ? GateType::XCX : p == 2 ? GateType::XCZ : GateType::XCY;
                 CircuitInstruction instruction{g, {}, targets, ""};
@@ -200,8 +196,8 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Move pivot to diagonal.
-        std::cerr << "loop C6\n";
         if (pivot != used) {
+            std::cerr << "    pivot swap\n";
             std::array<GateTarget, 2> targets{GateTarget::qubit(pivot), GateTarget::qubit(used)};
             CircuitInstruction instruction{GateType::SWAP, {}, targets, ""};
             elimination_instructions.safe_append(instruction);
@@ -210,15 +206,15 @@ Tableau<W> stabilizers_to_tableau(
         }
 
         // Fix sign.
-        std::cerr << "loop C7\n";
         if (buf_signs[k]) {
+            std::cerr << "    pivot sign\n";
             GateTarget t = GateTarget::qubit(used);
             CircuitInstruction instruction{GateType::X, {}, &t, ""};
             elimination_instructions.safe_append(instruction);
             buf_signs ^= buf_zs[used];
         }
 
-        std::cerr << "loop C8\n";
+        std::cerr << "    pivot done\n";
         used++;
     }
 
