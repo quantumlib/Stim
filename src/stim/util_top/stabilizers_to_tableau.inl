@@ -5,9 +5,13 @@ namespace stim {
 template <size_t W>
 Tableau<W> stabilizers_to_tableau(
     const std::vector<PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
+    size_t num_qubits = 0;
+    for (const auto &e : stabilizers) {
+        num_qubits = std::max(num_qubits, e.num_qubits);
+    }
 
-    simd_bit_table<W> buf_xs(stabilizers.size(), stabilizers.size());
-    simd_bit_table<W> buf_zs(stabilizers.size(), stabilizers.size());
+    simd_bit_table<W> buf_xs(num_qubits, num_qubits);
+    simd_bit_table<W> buf_zs(num_qubits, num_qubits);
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
     buf_xs[0][0] = 1;
