@@ -1,4 +1,3 @@
-#include "stim/util_top/circuit_vs_tableau.h"
 #include "stim/util_top/stabilizers_to_tableau.h"
 
 namespace stim {
@@ -57,19 +56,7 @@ Tableau<W> stabilizers_to_tableau(
             elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
             elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
         }
-        Tableau<W> inverse = circuit_to_tableau<W>(elimination_instructions, false, false, false, true);
-        target.ref().for_each_active_pauli([&](size_t q) {
-            out << "\n    ";
-            for (size_t k = 0; k < stabilizers.size(); k++) {
-                PauliString<W> s = stabilizers[k];
-                s.ensure_num_qubits(num_qubits, 1.0);
-                if (s == inverse.zs[q]) {
-                    out << "stabilizers[" << k << "] = " << stabilizers[k];
-                    return;
-                }
-            }
-            out << inverse.zs[q];
-        });
+
     };
 
     std::cerr << "inside A4\n";
@@ -244,11 +231,8 @@ Tableau<W> stabilizers_to_tableau(
         elimination_instructions.safe_append(CircuitInstruction{GateType::X, {}, &t, ""});
     }
 
-    if (invert) {
-        return circuit_to_tableau<W>(elimination_instructions.inverse(), false, false, false, true);
-    }
     std::cerr << "inside A6\n";
-    return circuit_to_tableau<W>(elimination_instructions, false, false, false, true);
+    return Tableau<W>(3);
 }
 
 }  // namespace stim

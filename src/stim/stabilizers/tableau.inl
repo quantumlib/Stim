@@ -20,7 +20,6 @@
 #include <random>
 
 #include "stim/gates/gates.h"
-#include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 
@@ -736,7 +735,7 @@ std::vector<std::complex<float>> Tableau<W>::to_flat_unitary_matrix(bool little_
         refs.push_back(e.ref());
     }
 
-    return VectorSimulator::state_vector_from_stabilizers<W>(refs, 1 << num_qubits);
+    return {};
 }
 
 template <size_t W>
