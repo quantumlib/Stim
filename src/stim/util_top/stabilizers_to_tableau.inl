@@ -10,16 +10,9 @@ Tableau<W> stabilizers_to_tableau(
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
-    simd_bit_table<W> buf_xs(stabilizers.size(), num_qubits);
-    simd_bit_table<W> buf_zs(stabilizers.size(), num_qubits);
-    simd_bits<W> buf_signs(stabilizers.size());
-    for (size_t k = 0; k < stabilizers.size(); k++) {
-        memcpy(buf_xs[k].u8, stabilizers[k].xs.u8, stabilizers[k].xs.num_u8_padded());
-        memcpy(buf_zs[k].u8, stabilizers[k].zs.u8, stabilizers[k].zs.num_u8_padded());
-        buf_signs[k] = stabilizers[k].sign;
-    }
-    buf_xs = buf_xs.transposed();
-    buf_zs = buf_zs.transposed();
+    simd_bit_table<W> buf_xs(192, 192);
+    simd_bit_table<W> buf_zs(192, 192);
+    simd_bits<W> buf_signs(192);
     buf_xs.clear();
     buf_zs.clear();
     buf_xs[0][0] = 1;
