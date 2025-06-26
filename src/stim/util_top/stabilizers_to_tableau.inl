@@ -13,6 +13,8 @@ Tableau<W> stabilizers_to_tableau(
     simd_bit_table<W> buf_xs(num_qubits, num_qubits);
     simd_bit_table<W> buf_zs(num_qubits, num_qubits);
     simd_bits<W> buf_signs(num_qubits);
+    buf_xs = buf_xs.transposed();
+    buf_zs = buf_zs.transposed();
     buf_xs[0][0] = 1;
 
     size_t used = 0;
