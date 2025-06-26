@@ -10,11 +10,9 @@ Tableau<W> stabilizers_to_tableau(
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
-    simd_bit_table<W> buf_xs(192, 192);
-    simd_bit_table<W> buf_zs(192, 192);
-    simd_bits<W> buf_signs(192);
-    buf_xs.clear();
-    buf_zs.clear();
+    simd_bit_table<W> buf_xs(num_qubits, num_qubits);
+    simd_bit_table<W> buf_zs(num_qubits, num_qubits);
+    simd_bits<W> buf_signs(num_qubits);
     buf_xs[0][0] = 1;
 
     size_t used = 0;
