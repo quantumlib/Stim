@@ -45,8 +45,13 @@ BENCHMARK(stabilizers_to_tableau_144) {
         }
     }
 
-    std::cerr << "step D\n";
     size_t dep = 0;
+    std::cerr << "step D\n";
+    Tableau<64> t2 = stabilizers_to_tableau(stabilizers, true, true, false);
+    std::cerr << "step D2\n";
+    dep += t2.xs[0].zs[0];
+    std::cerr << "step D3\n";
+
     benchmark_go([&]() {
         Tableau<64> t = stabilizers_to_tableau(stabilizers, true, true, false);
         dep += t.xs[0].zs[0];

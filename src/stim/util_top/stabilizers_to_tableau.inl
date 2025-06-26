@@ -6,11 +6,13 @@ namespace stim {
 template <size_t W>
 Tableau<W> stabilizers_to_tableau(
     const std::vector<PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
+    std::cerr << "inside A1\n";
     size_t num_qubits = 0;
     for (const auto &e : stabilizers) {
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
+    std::cerr << "inside A2\n";
     simd_bit_table<W> buf_xs(stabilizers.size(), num_qubits);
     simd_bit_table<W> buf_zs(stabilizers.size(), num_qubits);
     simd_bits<W> buf_signs(stabilizers.size());
@@ -22,6 +24,7 @@ Tableau<W> stabilizers_to_tableau(
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
 
+    std::cerr << "inside A3\n";
     Circuit elimination_instructions;
 
     auto fail_due_to_anticommutation = [&]() {
@@ -67,6 +70,7 @@ Tableau<W> stabilizers_to_tableau(
         });
     };
 
+    std::cerr << "inside A4\n";
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
@@ -209,6 +213,7 @@ Tableau<W> stabilizers_to_tableau(
                 "To allow underspecifying the state, pass the argument allow_underconstrained=True.");
         }
     }
+    std::cerr << "inside A5\n";
 
     if (num_qubits > 0) {
         // Force size of resulting tableau to be correct.
@@ -220,6 +225,7 @@ Tableau<W> stabilizers_to_tableau(
     if (invert) {
         return circuit_to_tableau<W>(elimination_instructions.inverse(), false, false, false, true);
     }
+    std::cerr << "inside A6\n";
     return circuit_to_tableau<W>(elimination_instructions, false, false, false, true);
 }
 
