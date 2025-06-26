@@ -6,9 +6,8 @@ template <size_t W>
 Tableau<W> stabilizers_to_tableau(
     const std::vector<PauliString<W>> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
 
-    simd_bit_table<W> buf_xs(192, 192);
-    simd_bit_table<W> buf_zs(192, 192);
-    simd_bits<W> buf_signs(192);
+    simd_bit_table<W> buf_xs(stabilizers.size(), stabilizers.size());
+    simd_bit_table<W> buf_zs(stabilizers.size(), stabilizers.size());
     buf_xs = buf_xs.transposed();
     buf_zs = buf_zs.transposed();
     buf_xs[0][0] = 1;
@@ -23,7 +22,7 @@ Tableau<W> stabilizers_to_tableau(
     // }
     auto *v1 = buf_xs[0].ptr_simd;
     auto *v2 = buf_zs[0].ptr_simd;
-    auto *v1_end = v1 + buf_signs.num_simd_words;
+    auto *v1_end = v1 + buf_xs[0].num_simd_words;
     while (v1 != v1_end) {
         std::swap(*v1, *v2);
         v1++;
