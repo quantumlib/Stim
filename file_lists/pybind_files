@@ -4,7 +4,6 @@ src/stim/circuit/circuit_instruction.pybind.cc
 src/stim/circuit/circuit_repeat_block.pybind.cc
 src/stim/circuit/gate_target.pybind.cc
 src/stim/gates/gates.pybind.cc
-src/stim/io/read_write.pybind.cc
 src/stim/stabilizers/pauli_string.pybind.cc
 src/stim/stabilizers/pauli_string_iter.pybind.cc
 src/stim/stabilizers/tableau.pybind.cc

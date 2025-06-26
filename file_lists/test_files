@@ -4,12 +4,6 @@ src/stim/circuit/circuit_instruction.test.cc
 src/stim/circuit/gate_decomposition.test.cc
 src/stim/circuit/gate_target.test.cc
 src/stim/gates/gates.test.cc
-src/stim/io/measure_record.test.cc
-src/stim/io/measure_record_batch.test.cc
-src/stim/io/measure_record_batch_writer.test.cc
-src/stim/io/measure_record_reader.test.cc
-src/stim/io/measure_record_writer.test.cc
-src/stim/io/sparse_shot.test.cc
 src/stim/mem/bit_ref.test.cc
 src/stim/mem/fixed_cap_vector.test.cc
 src/stim/mem/monotonic_buffer.test.cc

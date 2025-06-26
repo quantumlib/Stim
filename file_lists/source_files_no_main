@@ -18,12 +18,6 @@ src/stim/gates/gate_data_period_4.cc
 src/stim/gates/gate_data_pp.cc
 src/stim/gates/gate_data_swaps.cc
 src/stim/gates/gates.cc
-src/stim/io/measure_record.cc
-src/stim/io/measure_record_batch_writer.cc
-src/stim/io/measure_record_writer.cc
-src/stim/io/raii_file.cc
-src/stim/io/sparse_shot.cc
-src/stim/io/stim_data_formats.cc
 src/stim/mem/bit_ref.cc
 src/stim/mem/simd_util.cc
 src/stim/mem/simd_word.cc
