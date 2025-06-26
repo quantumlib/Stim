@@ -27,10 +27,8 @@ namespace stim {
 
 template <size_t W>
 struct PauliString;
-struct Circuit;
 template <size_t W>
 struct Tableau;
-struct CircuitInstruction;
 
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
@@ -127,17 +125,8 @@ struct PauliStringRef {
     ///         tableau's size.
     ///     inverse: When true, applies the inverse of the tableau instead of the tableau.
     void do_tableau(const Tableau<W> &tableau, SpanRef<const size_t> targets, bool inverse);
-    void do_circuit(const Circuit &circuit);
-    void undo_circuit(const Circuit &circuit);
-    void do_instruction(const CircuitInstruction &inst);
-    void undo_instruction(const CircuitInstruction &inst);
-
-    PauliString<W> after(const Circuit &circuit) const;
     PauliString<W> after(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
-    PauliString<W> after(const CircuitInstruction &operation) const;
-    PauliString<W> before(const Circuit &circuit) const;
     PauliString<W> before(const Tableau<W> &tableau, SpanRef<const size_t> indices) const;
-    PauliString<W> before(const CircuitInstruction &operation) const;
 
     size_t weight() const;
     bool has_no_pauli_terms() const;
@@ -155,73 +144,6 @@ struct PauliStringRef {
             }
         }
     }
-
-   private:
-    void check_avoids_MPP(const CircuitInstruction &inst);
-    void check_avoids_reset(const CircuitInstruction &inst);
-    void check_avoids_measurement(const CircuitInstruction &inst);
-    void undo_reset_xyz(const CircuitInstruction &inst);
-
-    void do_single_cx(const CircuitInstruction &inst, uint32_t c, uint32_t t);
-    void do_single_cy(const CircuitInstruction &inst, uint32_t c, uint32_t t);
-    void do_single_cz(const CircuitInstruction &inst, uint32_t c, uint32_t t);
-
-    void do_H_XZ(const CircuitInstruction &inst);
-    void do_H_YZ(const CircuitInstruction &inst);
-    void do_H_XY(const CircuitInstruction &inst);
-    void do_H_NXY(const CircuitInstruction &inst);
-    void do_H_NXZ(const CircuitInstruction &inst);
-    void do_H_NYZ(const CircuitInstruction &inst);
-    void do_C_XYZ(const CircuitInstruction &inst);
-    void do_C_NXYZ(const CircuitInstruction &inst);
-    void do_C_XNYZ(const CircuitInstruction &inst);
-    void do_C_XYNZ(const CircuitInstruction &inst);
-    void do_C_ZYX(const CircuitInstruction &inst);
-    void do_C_NZYX(const CircuitInstruction &inst);
-    void do_C_ZNYX(const CircuitInstruction &inst);
-    void do_C_ZYNX(const CircuitInstruction &inst);
-    void do_SQRT_X(const CircuitInstruction &inst);
-    void do_SQRT_Y(const CircuitInstruction &inst);
-    void do_SQRT_Z(const CircuitInstruction &inst);
-    void do_SQRT_X_DAG(const CircuitInstruction &inst);
-    void do_SQRT_Y_DAG(const CircuitInstruction &inst);
-    void do_SQRT_Z_DAG(const CircuitInstruction &inst);
-    void do_SQRT_XX(const CircuitInstruction &inst);
-    void do_SQRT_XX_DAG(const CircuitInstruction &inst);
-    void do_SQRT_YY(const CircuitInstruction &inst);
-    void do_SQRT_YY_DAG(const CircuitInstruction &inst);
-    void do_SQRT_ZZ(const CircuitInstruction &inst);
-    void do_SQRT_ZZ_DAG(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_ZCX(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_ZCY(const CircuitInstruction &inst);
-    void do_ZCZ(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_SWAP(const CircuitInstruction &inst);
-    void do_X(const CircuitInstruction &inst);
-    void do_Y(const CircuitInstruction &inst);
-    void do_Z(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_ISWAP(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_ISWAP_DAG(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_CXSWAP(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_CZSWAP(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_SWAPCX(const CircuitInstruction &inst);
-    void do_XCX(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_XCY(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_XCZ(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_YCX(const CircuitInstruction &inst);
-    void do_YCY(const CircuitInstruction &inst);
-    template <bool reverse_order>
-    void do_YCZ(const CircuitInstruction &inst);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.

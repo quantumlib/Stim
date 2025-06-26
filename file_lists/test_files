@@ -1,5 +1,4 @@
 src/stim.test.cc
-src/stim/gates/gates.test.cc
 src/stim/mem/bit_ref.test.cc
 src/stim/mem/fixed_cap_vector.test.cc
 src/stim/mem/monotonic_buffer.test.cc
@@ -8,14 +7,8 @@ src/stim/mem/simd_bits.test.cc
 src/stim/mem/simd_bits_range_ref.test.cc
 src/stim/mem/simd_util.test.cc
 src/stim/mem/simd_word.test.cc
-src/stim/stabilizers/pauli_string.test.cc
-src/stim/stabilizers/pauli_string_ref.test.cc
-src/stim/stabilizers/tableau.test.cc
 src/stim/util_bot/arg_parse.test.cc
-src/stim/util_bot/error_decomp.test.cc
-src/stim/util_bot/probability_util.test.cc
 src/stim/util_bot/str_util.test.cc
 src/stim/util_bot/test_util.test.cc
 src/stim/util_bot/twiddle.test.cc
-src/stim/util_top/stabilizers_to_tableau.test.cc
 src/stim_included_twice.test.cc

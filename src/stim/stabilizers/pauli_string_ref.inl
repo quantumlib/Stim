@@ -15,7 +15,6 @@
 #include <cassert>
 #include <sstream>
 
-#include "stim/gates/gates.h"
 #include "stim/mem/simd_util.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"

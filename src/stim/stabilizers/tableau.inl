@@ -19,8 +19,6 @@
 #include <map>
 #include <random>
 
-#include "stim/gates/gates.h"
-#include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau.h"
 
 namespace stim {

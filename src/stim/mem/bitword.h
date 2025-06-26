@@ -18,6 +18,7 @@
 #define _STIM_MEM_BIT_WORD_H
 
 #include <cstddef>
+#include <iostream>
 
 namespace stim {
 

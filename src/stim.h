@@ -3,7 +3,6 @@
 /// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES.
 /// It may change arbitrarily and catastrophically from minor version to minor version.
 /// If you need a stable API, use stim's Python API.
-#include "stim/gates/gates.h"
 #include "stim/mem/bit_ref.h"
 #include "stim/mem/bitword.h"
 #include "stim/mem/bitword_128_sse.h"
