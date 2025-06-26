@@ -75,6 +75,10 @@ Tableau<W> stabilizers_to_tableau(
     std::cerr << "inside A4\n";
     size_t used = 0;
     for (size_t k = 0; k < stabilizers.size(); k++) {
+        for (size_t k2 = 0; k2 < stabilizers.size(); k2++) {
+            std::cerr << "stabilizer in iter " << k << ": " << k2 << ": " << stabilizers[k2] << "\n";
+        }
+
         // Find a non-identity term in the Pauli string past the region used by other stabilizers.
         size_t pivot;
         for (size_t q = 0; q < used; q++) {
