@@ -70,8 +70,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/" DESTINATION "include" FILES
 
 add_executable(stim_perf ${SOURCE_FILES_NO_MAIN} ${PERF_FILES})
 if(NOT(MSVC))
-    target_compile_options(stim_perf PRIVATE -Wall -Wpedantic -O3 -fno-strict-aliasing ${MACHINE_FLAG})
-    target_link_options(stim_perf PRIVATE)
+    target_compile_options(stim_perf PRIVATE -Wall -Wpedantic -g  -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fno-strict-aliasing ${MACHINE_FLAG})
+    target_link_options(stim_perf PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address)
 else()
     target_compile_options(stim_perf PRIVATE ${MACHINE_FLAG})
 endif()
