@@ -36,6 +36,7 @@ struct CircuitFlowGeneratorSolver {
     std::vector<size_t> buf_for_rows_with;
     std::vector<int32_t> buf_for_xor_merge;
     std::vector<GateTarget> buf_targets;
+    std::vector<GateTarget> buf_targets_2;
 
     explicit CircuitFlowGeneratorSolver(CircuitStats stats);
     static CircuitFlowGeneratorSolver<W> solver_with_circuit_generators(
