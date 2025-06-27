@@ -549,3 +549,63 @@ ExplainedError {
 }
 )RESULT");
 }
+
+TEST(ErrorMatcher, heralded_error) {
+    Circuit circuit(R"CIRCUIT(
+        HERALDED_ERASE(0.01) 0
+        DETECTOR rec[-1]
+        HERALDED_ERASE(0.01) 1 2
+    )CIRCUIT");
+    DetectorErrorModel filter(R"MODEL(
+        error(1) D0
+    )MODEL");
+
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
+        circuit,
+        &filter,
+        false);
+    std::stringstream ss;
+    for (const auto &match : actual) {
+        ss << "\n" << match << "\n";
+    }
+    ASSERT_EQ(ss.str(), R"RESULT(
+ExplainedError {
+    dem_error_terms: D0
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: Z0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+}
+)RESULT");
+}
