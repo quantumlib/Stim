@@ -406,7 +406,10 @@ std::string comma_sep_workaround(const TIter &iterable) {
 }
 
 void ErrorAnalyzer::check_for_gauge(
-    const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit, std::string_view tag) {
+    const SparseXorVec<DemTarget> &potential_gauge,
+    const char *context_op,
+    uint64_t context_qubit,
+    std::string_view tag) {
     if (potential_gauge.empty()) {
         return;
     }
@@ -961,12 +964,13 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
         for (auto &t : stored_targets) {
             t.shift_if_detector_id(-(int64_t)base_detector_id);
         }
-        out.instructions.push_back(DemInstruction{
-            .arg_data=stored_args,
-            .target_data=stored_targets,
-            .tag=stored_tag,
-            .type=e.type,
-        });
+        out.instructions.push_back(
+            DemInstruction{
+                .arg_data = stored_args,
+                .target_data = stored_targets,
+                .tag = stored_tag,
+                .type = e.type,
+            });
     };
 
     for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
@@ -1077,7 +1081,8 @@ ErrorEquivalenceClass ErrorAnalyzer::mono_dedupe_store(ErrorEquivalenceClass sor
     return result;
 }
 
-ErrorEquivalenceClass ErrorAnalyzer::add_error(double probability, SpanRef<const DemTarget> flipped_sorted, std::string_view tag) {
+ErrorEquivalenceClass ErrorAnalyzer::add_error(
+    double probability, SpanRef<const DemTarget> flipped_sorted, std::string_view tag) {
     auto key = mono_dedupe_store(ErrorEquivalenceClass{flipped_sorted, tag});
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
@@ -1177,10 +1182,10 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations, std::stri
                     body.instructions.insert(
                         body.instructions.begin(),
                         DemInstruction{
-                            .arg_data={},
-                            .target_data=shift_targets,
-                            .tag="",
-                            .type=DemInstructionType::DEM_SHIFT_DETECTORS,
+                            .arg_data = {},
+                            .target_data = shift_targets,
+                            .tag = "",
+                            .type = DemInstructionType::DEM_SHIFT_DETECTORS,
                         });
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
@@ -1208,7 +1213,9 @@ void ErrorAnalyzer::undo_SHIFT_COORDS(const CircuitInstruction &inst) {
 
 template <size_t s>
 void ErrorAnalyzer::decompose_helper_add_error_combinations(
-    const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids, std::string_view tag) {
+    const std::array<uint64_t, 1 << s> &detector_masks,
+    std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids,
+    std::string_view tag) {
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {

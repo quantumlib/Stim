@@ -271,7 +271,10 @@ struct ErrorAnalyzer {
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
     void check_for_gauge(
-        const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit, std::string_view tag);
+        const SparseXorVec<DemTarget> &potential_gauge,
+        const char *context_op,
+        uint64_t context_qubit,
+        std::string_view tag);
     /// Checks if the given sparse vectors are equal. If they aren't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
@@ -329,7 +332,9 @@ struct ErrorAnalyzer {
     /// Works by rewriting the `stored_ids` argument.
     template <size_t s>
     void decompose_helper_add_error_combinations(
-        const std::array<uint64_t, 1 << s> &detector_masks, std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids, std::string_view tag);
+        const std::array<uint64_t, 1 << s> &detector_masks,
+        std::array<SpanRef<const DemTarget>, 1 << s> &stored_ids,
+        std::string_view tag);
 
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as

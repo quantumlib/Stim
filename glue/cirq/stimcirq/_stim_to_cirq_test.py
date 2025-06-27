@@ -763,3 +763,19 @@ def test_id_error_round_trip():
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit == stim_circuit
+
+def test_round_trip_with_pauli_obs():
+    stim_circuit = stim.Circuit("""
+        QUBIT_COORDS(5, 5) 0
+        R 0
+        OBSERVABLE_INCLUDE(0) X0
+        TICK
+        H 0
+        TICK
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        TICK
+    """)
+    cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert restored_circuit == stim_circuit

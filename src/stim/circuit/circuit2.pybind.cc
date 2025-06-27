@@ -16,7 +16,6 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"
-
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"
@@ -1093,7 +1092,7 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 ...     CNOT 0 1
                 ...     S 1
                 ... ''').to_crumble_url()
-                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1_'
 
                 >>> circuit = stim.Circuit('''
                 ...     M(0.25) 0 1 2
@@ -1103,7 +1102,7 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 ... ''')
                 >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
                 >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
-                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
+                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]_'
         )DOC")
             .data());
 

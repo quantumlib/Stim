@@ -39,25 +39,29 @@ TEST(ErrorMatcher, X_ERROR) {
             },
             {
                 CircuitErrorLocation{
-                    .noise_tag="",
-                    .tick_offset=0,
-                    .flipped_pauli_product={
-                        {GateTarget::x(0), {5, 6}},
-                    },
-                    .flipped_measurement=FlippedMeasurement{UINT64_MAX, {}},
-                    .instruction_targets=CircuitTargetsInsideInstruction{
-                        .gate_type=GateType::X_ERROR,
-                        .gate_tag="",
-                        .args={0.25},
-                        .target_range_start=0,
-                        .target_range_end=1,
-                        .targets_in_range={
-                            {GateTarget::qubit(0), {5, 6}},
+                    .noise_tag = "",
+                    .tick_offset = 0,
+                    .flipped_pauli_product =
+                        {
+                            {GateTarget::x(0), {5, 6}},
                         },
-                    },
-                    .stack_frames={
-                        CircuitErrorLocationStackFrame{1, 0, 0},
-                    },
+                    .flipped_measurement = FlippedMeasurement{UINT64_MAX, {}},
+                    .instruction_targets =
+                        CircuitTargetsInsideInstruction{
+                            .gate_type = GateType::X_ERROR,
+                            .gate_tag = "",
+                            .args = {0.25},
+                            .target_range_start = 0,
+                            .target_range_end = 1,
+                            .targets_in_range =
+                                {
+                                    {GateTarget::qubit(0), {5, 6}},
+                                },
+                        },
+                    .stack_frames =
+                        {
+                            CircuitErrorLocationStackFrame{1, 0, 0},
+                        },
                 },
             }},
     };
@@ -542,6 +546,66 @@ TEST(ErrorMatcher, runs_on_all_gates_circuit) {
 ExplainedError {
     dem_error_terms: D0[coords 2,4,6]
     [no single circuit error had these exact symptoms]
+}
+)RESULT");
+}
+
+TEST(ErrorMatcher, heralded_error) {
+    Circuit circuit(R"CIRCUIT(
+        HERALDED_ERASE(0.01) 0
+        DETECTOR rec[-1]
+        HERALDED_ERASE(0.01) 1 2
+    )CIRCUIT");
+    DetectorErrorModel filter(R"MODEL(
+        error(1) D0
+    )MODEL");
+
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
+        circuit,
+        &filter,
+        false);
+    std::stringstream ss;
+    for (const auto &match : actual) {
+        ss << "\n" << match << "\n";
+    }
+    ASSERT_EQ(ss.str(), R"RESULT(
+ExplainedError {
+    dem_error_terms: D0
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: Z0
+        flipped_measurement.measurement_record_index: 0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (HERALDED_ERASE) in the circuit
+            at target #1 of the instruction
+            resolving to HERALDED_ERASE(0.01) 0
+    }
 }
 )RESULT");
 }

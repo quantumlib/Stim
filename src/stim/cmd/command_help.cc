@@ -21,6 +21,7 @@
 #include <set>
 
 #include "stim/circuit/circuit.h"
+#include "stim/cmd/command_analyze_errors.h"
 #include "stim/cmd/command_convert.h"
 #include "stim/cmd/command_detect.h"
 #include "stim/cmd/command_diagram.h"
@@ -30,7 +31,6 @@
 #include "stim/cmd/command_repl.h"
 #include "stim/cmd/command_sample.h"
 #include "stim/cmd/command_sample_dem.h"
-#include "stim/cmd/command_analyze_errors.h"
 #include "stim/gates/gates.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/flow.h"

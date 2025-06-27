@@ -2400,3 +2400,18 @@ def test_without_noise_removes_id_errors():
     """).without_noise() == stim.Circuit("""
         H 0
     """)
+
+
+def test_append_circuit_to_circuit():
+    circuit = stim.Circuit("""
+        H 0
+    """)
+    circuit.append(stim.Circuit("""
+        X 1
+        Z 2
+    """))
+    assert circuit == stim.Circuit("""
+        H 0
+        X 1
+        Z 2
+    """)
