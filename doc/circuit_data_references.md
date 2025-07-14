@@ -39,4 +39,4 @@
 
 ## 2025
 
-- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"]([https://zenodo.org/records/11241876](https://zenodo.org/records/15854678))
+- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
