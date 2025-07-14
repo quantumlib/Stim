@@ -39,4 +39,5 @@
 
 ## 2025
 
-- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
+- [arXiv:2503.04968](https://arxiv.org/abs/2503.04968) → [](https://github.com/QEC-pages/Modular-Surface-code-simulations/tree/e67ce95414dfd246430399d6f9f778c0791965f6/out)
+- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits for "Optimized Noise-Resilient Surface Code Teleportation Interfaces"](https://zenodo.org/records/15854678)
