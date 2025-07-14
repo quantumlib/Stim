@@ -36,3 +36,7 @@
 - [arXiv:2409.17595](https://arxiv.org/abs/2409.17595) → [Data for "Magic state cultivation: growing T states as cheap as CNOT gates"](https://zenodo.org/records/13777072)
 - [arXiv:2412.14256](https://arxiv.org/abs/2412.14256) → [Data for "Scaling and logic in the color code on a superconducting quantum processor"](https://zenodo.org/records/14238944)
 - [arXiv:2412.14360](https://arxiv.org/abs/2412.14360) → [Data for "Demonstrating dynamic surface codes"](https://zenodo.org/records/14238907)
+
+## 2025
+
+- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"]([https://zenodo.org/records/11241876](https://zenodo.org/records/15854678))
