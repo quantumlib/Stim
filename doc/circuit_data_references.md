@@ -34,10 +34,12 @@
 - [arXiv:2408.11894](https://arxiv.org/abs/2408.11894) → [Stim circuits for 'Automated Synthesis of Fault-Tolerant State Preparation Circuits for Quantum Error Correction Codes'](https://github.com/cda-tum/mqt-qecc/tree/main/src/mqt/qecc/ft_stateprep/eval/circuits)
 - [arXiv:2408.13687](https://arxiv.org/abs/2408.13687) → [Data for "Quantum error correction below the surface code threshold"](https://zenodo.org/records/13273331)
 - [arXiv:2409.17595](https://arxiv.org/abs/2409.17595) → [Data for "Magic state cultivation: growing T states as cheap as CNOT gates"](https://zenodo.org/records/13777072)
+- [arXiv:2412.01391](https://arxiv.org/abs/2412.01391) → [Codes and circuits for "Transversal Logical Clifford gates on rotated surface codes with reconfigurable neutral atom arrays"](https://github.com/Zihan-Chen-PhMA/Dynamical-S-gate-decoding/tree/c3b7a1e2f95d49a5853d5534a4596854317890e9/circuit_garage)
 - [arXiv:2412.14256](https://arxiv.org/abs/2412.14256) → [Data for "Scaling and logic in the color code on a superconducting quantum processor"](https://zenodo.org/records/14238944)
 - [arXiv:2412.14360](https://arxiv.org/abs/2412.14360) → [Data for "Demonstrating dynamic surface codes"](https://zenodo.org/records/14238907)
 
 ## 2025
 
-- [arXiv:2503.04968](https://arxiv.org/abs/2503.04968) → [](https://github.com/QEC-pages/Modular-Surface-code-simulations/tree/e67ce95414dfd246430399d6f9f778c0791965f6/out)
-- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits for "Optimized Noise-Resilient Surface Code Teleportation Interfaces"](https://zenodo.org/records/15854678)
+- [arXiv:2503.04968](https://arxiv.org/abs/2503.04968) → [Stim circuits for "Optimized Noise-Resilient Surface Code Teleportation Interfaces"](https://github.com/QEC-pages/Modular-Surface-code-simulations/tree/e67ce95414dfd246430399d6f9f778c0791965f6/out)
+- [arXiv:2503.18657](https://arxiv.org/abs/2503.18657) → [Codes and circuits for "Efficient Magic State Cultivation on RP^2"](https://github.com/Zihan-Chen-PhMA/Cultiv_T_RP2/tree/77ad9b3dcc858ff9a5b92e80eca33d191aa16b3d/circuit_garage)
+- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
