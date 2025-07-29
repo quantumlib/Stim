@@ -153,9 +153,7 @@ jobs:
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      # (April 2015): The >=0.11.dev0 is to allow pip to pick 1.5.0.dev, because cirq-core v1.4 doesn't allow numpy v2.
-      #               But it also allows older versions of python to pick versions before 1.4 as needed.
-      CIBW_TEST_REQUIRES: cirq-core>=0.11.dev0 pytest
+      CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
