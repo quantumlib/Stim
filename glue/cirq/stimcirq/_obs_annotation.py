@@ -16,7 +16,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         *,
         parity_keys: Iterable[str] = (),
         relative_keys: Iterable[int] = (),
-        pauli_keys: Iterable[tuple[cirq.Qid, str]] = (),
+        pauli_keys: Iterable[tuple[cirq.Qid, str]] | Iterable[str] = (),
         observable_index: int,
     ):
         """
@@ -29,7 +29,14 @@ class CumulativeObservableAnnotation(cirq.Operation):
         """
         self.parity_keys = frozenset(parity_keys)
         self.relative_keys = frozenset(relative_keys)
-        self.pauli_keys = frozenset(pauli_keys)
+        _pauli_keys = []
+        for k in pauli_keys:
+            if isinstance(k, str):
+                # For backward compatibility
+                _pauli_keys.append((cirq.LineQubit(int(k[1:])), k[0]))
+            else:
+                _pauli_keys.append(tuple(k))
+        self.pauli_keys = frozenset(_pauli_keys)
         self.observable_index = observable_index
 
     @property
