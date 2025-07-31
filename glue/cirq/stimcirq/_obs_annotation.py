@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
 import cirq
 import stim
@@ -16,7 +16,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         *,
         parity_keys: Iterable[str] = (),
         relative_keys: Iterable[int] = (),
-        pauli_keys: Iterable[str] = (),
+        pauli_keys: Iterable[tuple[cirq.Qid, str]] = (),
         observable_index: int,
     ):
         """
@@ -34,10 +34,19 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
     @property
     def qubits(self) -> Tuple[cirq.Qid, ...]:
-        return ()
+        return tuple(sorted(q for q, _ in self.pauli_keys))
 
     def with_qubits(self, *new_qubits) -> 'CumulativeObservableAnnotation':
-        return self
+        if len(self.qubits) == len(new_qubits):
+            pauli_map = dict(self.pauli_keys)
+            return CumulativeObservableAnnotation(
+                parity_keys=self.parity_keys,
+                relative_keys=self.relative_keys,
+                pauli_keys=tuple((new_q, pauli_map[q]) for new_q, q in zip(new_qubits, self.qubits)),
+                observable_index=self.observable_index,
+            )
+
+        raise ValueError("Number of qubits does not match")
 
     def _value_equality_values_(self) -> Any:
         return self.parity_keys, self.relative_keys, self.pauli_keys, self.observable_index
@@ -85,6 +94,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         edit_measurement_key_lengths: List[Tuple[str, int]],
         have_seen_loop: bool = False,
         tag: str,
+        targets: list[int],
         **kwargs,
     ):
         # Ideally these references would all be resolved ahead of time, to avoid the redundant
@@ -109,10 +119,11 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 rec_targets.append(stim.target_rec(-1 - offset))
                 if not remaining:
                     break
+        pauli_map = dict(self.pauli_keys)
         rec_targets.extend(
             [
-                stim.target_pauli(qubit_index=int(k[1:]), pauli=k[0]) 
-                for k in sorted(self.pauli_keys)
+                stim.target_pauli(qubit_index=tid, pauli=pauli_map[q]) 
+                for q, tid in zip(self.qubits, targets)
             ]
         )
         if remaining:
