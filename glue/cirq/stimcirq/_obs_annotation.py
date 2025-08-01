@@ -35,11 +35,11 @@ class CumulativeObservableAnnotation(cirq.Operation):
             if isinstance(k, str):
                 # For backward compatibility
                 _pauli_keys.append(k)
-                _qubits_to_pauli_keys.append((cirq.LineQubit(int(k[1:])), k[0]))
+                _qubits_to_pauli_keys.append((cirq.LineQubit(int(k[1:])), k))
             else:
                 qubit, basis_and_id = k
                 _pauli_keys.append(basis_and_id)
-                _qubits_to_pauli_keys.append((qubit, basis_and_id[0]))
+                _qubits_to_pauli_keys.append((qubit, basis_and_id))
         self._qubits_to_pauli_keys = tuple(_qubits_to_pauli_keys)
         self.pauli_keys = frozenset(_pauli_keys)
         self.observable_index = observable_index
@@ -147,7 +147,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
         rec_targets.extend(
             [
-                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q]) 
+                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q][0]) 
                 for q, tid in zip(self.qubits, targets)
             ]
         )
