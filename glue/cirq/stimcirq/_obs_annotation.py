@@ -65,12 +65,21 @@ class CumulativeObservableAnnotation(cirq.Operation):
     def _value_equality_values_(self) -> Any:
         return self.parity_keys, self.relative_keys, self._qubits_to_pauli_keys, self.observable_index
 
-    def _circuit_diagram_info_(self, args: Any) -> str:
+    def _circuit_diagram_info_(self, args: Any) -> Union[str, Tuple[str]]:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
         items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
-        items += sorted([f'{str(q)}{k[0]}' for q,k in self._qubits_to_pauli_keys])
-        k = ",".join(str(e) for e in items)
-        return f"Obs{self.observable_index}({k})"
+        
+        if len(self._qubits_to_pauli_keys):
+            pauli_map = dict(self._qubits_to_pauli_keys)
+            out = []
+            for q in self.qubits:
+                k = ",".join([str(e) for e in items] + [f'{str(q)}{pauli_map[q][0]}'])
+                out.append(f"Obs{self.observable_index}({k})")
+            return tuple(out)
+        else:
+            k = ",".join(str(e) for e in items)
+            return f"Obs{self.observable_index}({k})"
+
 
     def __repr__(self) -> str:
         return (
