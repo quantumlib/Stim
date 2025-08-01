@@ -147,7 +147,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
 
         rec_targets.extend(
             [
-                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q][0]) 
+                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q]) 
                 for q, tid in zip(self.qubits, targets)
             ]
         )
