@@ -768,6 +768,7 @@ def test_round_trip_with_pauli_obs():
     stim_circuit = stim.Circuit("""
         QUBIT_COORDS(5, 5) 0
         R 0
+        TICK
         OBSERVABLE_INCLUDE(0) X0
         TICK
         H 0
