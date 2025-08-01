@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from typing import Any, Dict, Iterable, List, Tuple, Union
 
 import cirq
 import stim
@@ -16,7 +16,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         *,
         parity_keys: Iterable[str] = (),
         relative_keys: Iterable[int] = (),
-        pauli_keys: Iterable[tuple[cirq.Qid, str]] | Iterable[str] = (),
+        pauli_keys: Union[Iterable[Tuple[cirq.Qid, str]], Iterable[str]] = (),
         observable_index: int,
     ):
         """
@@ -30,38 +30,45 @@ class CumulativeObservableAnnotation(cirq.Operation):
         self.parity_keys = frozenset(parity_keys)
         self.relative_keys = frozenset(relative_keys)
         _pauli_keys = []
+        _qubits_to_pauli_keys = []
         for k in pauli_keys:
             if isinstance(k, str):
                 # For backward compatibility
-                _pauli_keys.append((cirq.LineQubit(int(k[1:])), k[0]))
+                _pauli_keys.append(k)
+                _qubits_to_pauli_keys.append((cirq.LineQubit(int(k[1:])), k[0]))
             else:
-                _pauli_keys.append(tuple(k))
+                qubit, basis_and_id = k
+                _pauli_keys.append(basis_and_id)
+                _qubits_to_pauli_keys.append((qubit, basis_and_id[0]))
+        self._qubits_to_pauli_keys = tuple(_qubits_to_pauli_keys)
         self.pauli_keys = frozenset(_pauli_keys)
         self.observable_index = observable_index
 
     @property
     def qubits(self) -> Tuple[cirq.Qid, ...]:
-        return tuple(sorted(q for q, _ in self.pauli_keys))
+        return tuple(sorted(q for q, _ in self._qubits_to_pauli_keys))
 
     def with_qubits(self, *new_qubits) -> 'CumulativeObservableAnnotation':
         if len(self.qubits) == len(new_qubits):
-            pauli_map = dict(self.pauli_keys)
+            qubits_to_pauli_keys = dict(self._qubits_to_pauli_keys)
             return CumulativeObservableAnnotation(
                 parity_keys=self.parity_keys,
                 relative_keys=self.relative_keys,
-                pauli_keys=tuple((new_q, pauli_map[q]) for new_q, q in zip(new_qubits, self.qubits)),
+                pauli_keys=tuple(
+                    (newq, qubits_to_pauli_keys[q]) for newq, q in zip(new_qubits, self.qubits)
+                ),
                 observable_index=self.observable_index,
             )
 
         raise ValueError("Number of qubits does not match")
 
     def _value_equality_values_(self) -> Any:
-        return self.parity_keys, self.relative_keys, self.pauli_keys, self.observable_index
+        return self.parity_keys, self.relative_keys, self._qubits_to_pauli_keys, self.observable_index
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
         items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
-        items += sorted(self.pauli_keys)
+        items += sorted([f'{str(q)}{k[0]}' for q,k in self._qubits_to_pauli_keys])
         k = ",".join(str(e) for e in items)
         return f"Obs{self.observable_index}({k})"
 
@@ -70,7 +77,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
             f'stimcirq.CumulativeObservableAnnotation('
             f'parity_keys={sorted(self.parity_keys)}, '
             f'relative_keys={sorted(self.relative_keys)}, '
-            f'pauli_keys={sorted(self.pauli_keys)}, '
+            f'pauli_keys={sorted(self._qubits_to_pauli_keys)}, '
             f'observable_index={self.observable_index!r})'
         )
 
@@ -82,7 +89,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         result = {
             'parity_keys': sorted(self.parity_keys),
             'observable_index': self.observable_index,
-            'pauli_keys': sorted(self.pauli_keys),
+            'pauli_keys': sorted(self._qubits_to_pauli_keys),
         }
         if self.relative_keys:
             result['relative_keys'] = sorted(self.relative_keys)
@@ -126,10 +133,12 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 rec_targets.append(stim.target_rec(-1 - offset))
                 if not remaining:
                     break
-        pauli_map = dict(self.pauli_keys)
+        
+        qubit_to_basis = dict([(q,k[0]) for q, k in self._qubits_to_pauli_keys])
+
         rec_targets.extend(
             [
-                stim.target_pauli(qubit_index=tid, pauli=pauli_map[q]) 
+                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q]) 
                 for q, tid in zip(self.qubits, targets)
             ]
         )
