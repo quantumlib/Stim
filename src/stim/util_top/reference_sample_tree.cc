@@ -155,7 +155,7 @@ uint64_t ReferenceSampleTree::size() const {
         result += child.size();
     }
 #if defined(__GNUC__) || defined(__clang__)
-    bool overflow = __builtin_umull_overflow(result, repetitions, &result);
+    bool overflow = __builtin_mul_overflow(result, repetitions, &result);
     assert(!overflow);
 #else
     result *= repetitions;
