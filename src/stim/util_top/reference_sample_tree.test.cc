@@ -303,3 +303,54 @@ TEST(ReferenceSampleTree, surface_code_with_pauli_vs_normal_reference_sample) {
     ASSERT_EQ(ref.size(), circuit.count_measurements());
     expect_tree_matches_normal_reference_sample_of(ref, circuit);
 }
+
+TEST(ReferenceSampleTree, random_access_large_tree) {
+    ReferenceSampleTree tree_under_test{
+        .prefix_bits = {1, 1, 0, 1},
+        .suffix_children =
+            {ReferenceSampleTree{
+                 .prefix_bits = {1, 0, 1},
+                 .suffix_children = {},
+                 .repetitions = 60'000'000,
+             },
+             ReferenceSampleTree{
+                 .prefix_bits = {0, 0, 0, 0, 0, 0, 1},
+                 .suffix_children = {ReferenceSampleTree{
+                     .prefix_bits = {1, 1, 1, 0, 0, 1},
+                     .suffix_children = {},
+                     .repetitions = 42,
+                 }},
+                 .repetitions = 2'000'000'000,
+             },
+             ReferenceSampleTree{
+                 .prefix_bits = {0, 0, 0, 0, 1},
+                 .suffix_children = {},
+                 .repetitions = 999'000'000,
+             }},
+        .repetitions = 1'234'000,
+    };
+
+    std::vector<bool> expected_beginning = std::vector<bool>{1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1};
+    for (size_t index = 0; index < expected_beginning.size(); ++index) {
+        ASSERT_EQ(tree_under_test[index], expected_beginning[index]) << "index: " << index;
+    }
+
+    uint64_t whole_tree_size = tree_under_test.size();
+    ASSERT_EQ(
+        whole_tree_size,
+        1'234'000ULL * (4 + (60'000'000ULL * 3) + (2'000'000'000ULL * (7 + (42 * 6))) + (999'000'000ULL * 5)));
+
+    std::vector<bool> expected_ending =
+        std::vector<bool>{0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    for (uint64_t index = 0; index < expected_ending.size(); ++index) {
+        ASSERT_EQ(tree_under_test[whole_tree_size - expected_ending.size() + index], expected_ending[index])
+            << "index: " << index;
+    }
+    // Same thing on previous outer iteration.
+    uint64_t one_outer_iter_before_ending = whole_tree_size - (whole_tree_size / 1'234'000ULL);
+    for (uint64_t index = 0; index < expected_ending.size(); ++index) {
+        ASSERT_EQ(
+            tree_under_test[one_outer_iter_before_ending - expected_ending.size() + index], expected_ending[index])
+            << "index: " << index;
+    }
+}
