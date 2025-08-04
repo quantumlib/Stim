@@ -154,7 +154,13 @@ uint64_t ReferenceSampleTree::size() const {
     for (const auto &child : suffix_children) {
         result += child.size();
     }
-    return result * repetitions;
+#if defined(__GNUC__) || defined(__clang__)
+    bool overflow = __builtin_umull_overflow(result, repetitions, &result);
+    assert(!overflow);
+#else
+    result *= repetitions;
+#endif
+    return result;
 }
 
 void ReferenceSampleTree::decompress_into(std::vector<bool> &output) const {
