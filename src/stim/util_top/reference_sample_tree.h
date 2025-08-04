@@ -32,7 +32,7 @@ struct ReferenceSampleTree {
     /// Determines whether the tree contains any bits at all.
     bool empty() const;
     /// Computes the total size of the uncompressed bits represented by the tree.
-    size_t size() const;
+    uint64_t size() const;
 
     /// Writes the contents of the tree into the given output vector.
     void decompress_into(std::vector<bool> &output) const;
