@@ -16,7 +16,7 @@ void expect_tree_matches_normal_reference_sample_of(const ReferenceSampleTree &t
     auto expected = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(circuit);
     EXPECT_EQ(actual, expected);
     for (size_t index = 0; index < decompressed.size(); ++index) {
-        ASSERT_EQ(tree[index], decompressed[index]);
+        ASSERT_EQ(tree[index], decompressed[index]) << "index: " << index;
     }
 }
 
@@ -118,7 +118,7 @@ TEST(ReferenceSampleTree, decompress_into) {
     std::vector<bool> expected = std::vector<bool>{1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1};
     ASSERT_EQ(result, expected);
     for (size_t index = 0; index < expected.size(); ++index) {
-        ASSERT_EQ(tree_under_test[index], expected[index]);
+        ASSERT_EQ(tree_under_test[index], expected[index]) << "index: " << index;
     }
 
     result.clear();
@@ -144,7 +144,7 @@ TEST(ReferenceSampleTree, decompress_into) {
         std::vector<bool>{1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0};
     ASSERT_EQ(result, expected);
     for (size_t index = 0; index < expected.size(); ++index) {
-        ASSERT_EQ(tree_under_test[index], expected[index]);
+        ASSERT_EQ(tree_under_test[index], expected[index]) << "index: " << index;
     }
 }
 
