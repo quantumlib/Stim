@@ -1,7 +1,5 @@
 #include "stim/util_top/reference_sample_tree.h"
 
-#include <immintrin.h>
-
 using namespace stim;
 
 bool ReferenceSampleTree::empty() const {
@@ -156,9 +154,17 @@ uint64_t ReferenceSampleTree::size() const {
     for (const auto &child : suffix_children) {
         result += child.size();
     }
-    unsigned long long overflow;
-    result = _mulx_u64(result, repetitions, &overflow);
+#if defined(__GNUC__) || defined(__clang__)
+    bool overflow = __builtin_mul_overflow(result, repetitions, &result);
+    assert(!overflow);
+#elif defined(_WIN32)
+    uint64_t overflow;
+    result = _umul128(result, repetitions, &overflow);
     assert(overflow == 0);
+#else
+    assert((repetitions == 0) || (result <= (UINT64_MAX / repetitions)));
+    result *= repetitions;
+#endif
     return result;
 }
 
