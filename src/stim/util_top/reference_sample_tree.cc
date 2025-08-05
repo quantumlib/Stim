@@ -1,5 +1,9 @@
 #include "stim/util_top/reference_sample_tree.h"
 
+#if defined(_WIN32)
+#include <intrin.h>
+#endif
+
 using namespace stim;
 
 bool ReferenceSampleTree::empty() const {
