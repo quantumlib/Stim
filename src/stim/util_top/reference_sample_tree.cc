@@ -162,7 +162,7 @@ uint64_t ReferenceSampleTree::size() const {
 #if defined(__GNUC__) || defined(__clang__)
     bool overflow = __builtin_mul_overflow(result, repetitions, &result);
     assert(!overflow);
-#elif defined(_WIN32)
+#elif defined(_WIN64)
     uint64_t overflow;
     result = _umul128(result, repetitions, &overflow);
     assert(overflow == 0);
