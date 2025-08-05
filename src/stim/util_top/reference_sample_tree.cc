@@ -154,12 +154,9 @@ uint64_t ReferenceSampleTree::size() const {
     for (const auto &child : suffix_children) {
         result += child.size();
     }
-#if defined(__GNUC__) || defined(__clang__)
-    bool overflow = __builtin_mul_overflow(result, repetitions, &result);
-    assert(!overflow);
-#else
-    result *= repetitions;
-#endif
+    unsigned long long overflow;
+    result = _mulx_u64(result, repetitions, &overflow);
+    assert(overflow == 0);
     return result;
 }
 
