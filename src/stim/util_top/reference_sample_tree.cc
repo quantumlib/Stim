@@ -1,5 +1,7 @@
 #include "stim/util_top/reference_sample_tree.h"
 
+#include <immintrin.h>
+
 using namespace stim;
 
 bool ReferenceSampleTree::empty() const {
