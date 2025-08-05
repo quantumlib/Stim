@@ -2,6 +2,7 @@
 
 #if defined(_WIN32)
 #include <intrin.h>
+#pragma intrinsic(_umul128)
 #endif
 
 using namespace stim;
