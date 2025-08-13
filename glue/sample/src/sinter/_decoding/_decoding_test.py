@@ -22,6 +22,11 @@ def get_test_decoders() -> Tuple[List[str], Dict[str, sinter.Decoder]]:
     custom_decoders = {}
     try:
         import pymatching
+        from packaging import version
+
+        if version.parse(pymatching.__version__) < version.parse("2.3.0"):
+            available_decoders.remove('correlated_pymatching')
+
     except ImportError:
         available_decoders.remove('pymatching')
     try:
@@ -243,7 +248,7 @@ def test_post_selection(decoder: str, force_streaming: Optional[bool]):
         M 1
         DETECTOR(1, 0, 0) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
-        
+
         X_ERROR(0.1) 2
         M 2
         OBSERVABLE_INCLUDE(0) rec[-1]
