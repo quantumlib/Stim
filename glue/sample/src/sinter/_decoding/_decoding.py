@@ -180,6 +180,14 @@ def sample_decode(*,
         decoder: The name of the decoder to use. Allowed values are:
             "pymatching":
                 Use pymatching min-weight-perfect-match decoder.
+            "correlated_pymatching":
+                Use two-pass correlated pymatching decoder.
+            "fusion_blossom":
+                Use fusion blossom min-weight-perfect-match decoder.
+            "hypergraph_union_find":
+                Use weighted hypergraph union-find decoder.
+            "mw_parity_factor":
+                Use mwpf min-weight-parity-factor decoder.
             "internal":
                 Use internal decoder with uncorrelated decoding.
             "internal_correlated":
