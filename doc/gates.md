@@ -3579,7 +3579,7 @@ Example:
 
     # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
     # Apply independently to qubit pairs (1,2), (5,6), and (8,3)
-    PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
+    PAULI_CHANNEL_2(0,0,0, 0,0.1,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
 
 Pauli Mixture:
 
