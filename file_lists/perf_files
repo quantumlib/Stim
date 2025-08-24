@@ -12,6 +12,7 @@ src/stim/simulators/dem_sampler.perf.cc
 src/stim/simulators/error_analyzer.perf.cc
 src/stim/simulators/frame_simulator.perf.cc
 src/stim/simulators/tableau_simulator.perf.cc
+src/stim/stabilizers/clifford_string.perf.cc
 src/stim/stabilizers/pauli_string.perf.cc
 src/stim/stabilizers/pauli_string_iter.perf.cc
 src/stim/stabilizers/tableau.perf.cc
