@@ -18,6 +18,7 @@ on:
   push:
     branches:
       - main
+      - guenp-patch-1
     tags:
       - v*
   pull_request:
