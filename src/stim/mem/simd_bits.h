@@ -128,6 +128,8 @@ struct simd_bits {
 
     /// Returns whether or not the two ranges have set bits in common.
     bool intersects(const simd_bits_range_ref<W> other) const;
+    /// Returns whether or not all bits that are set in `other` are also set in this range.
+    bool is_subset_of_or_equal_to(const simd_bits_range_ref<W> other) const;
 
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.
@@ -158,6 +160,19 @@ struct simd_bits {
     }
 
     uint64_t as_u64() const;
+
+    template <typename CALLBACK>
+    void for_each_set_bit(CALLBACK callback) const {
+        size_t n = num_u64_padded();
+        for (size_t w = 0; w < n; w++) {
+            uint64_t v = u64[w];
+            while (v) {
+                size_t q = w * 64 + std::countr_zero(v);
+                v &= v - 1;
+                callback(q);
+            }
+        }
+    }
 };
 
 template <size_t W>

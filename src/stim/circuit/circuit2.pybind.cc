@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <pybind11/stl.h>
+#include <stim/util_top/missing_detectors.h>
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"
@@ -276,7 +277,10 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
     c.def(
         "count_determined_measurements",
         &count_determined_measurements<MAX_BITWORD_WIDTH>,
+        pybind11::kw_only(),
+        pybind11::arg("unknown_input") = false,
         clean_doc_string(R"DOC(
+            @signature def count_determined_measurements(self, *, unknown_input: bool = False) -> int:
             Counts the number of predictable measurements in the circuit.
 
             This method ignores any noise in the circuit.
@@ -307,6 +311,13 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             the Z basis. Typically this relationship is not declared as a detector, because
             it's not local, or as an observable, because it doesn't store a qubit.
 
+            Args:
+                unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                    When set to True, the inputs are instead treated as being in unknown
+                    random states. For example, this means that Z-basis measurements at
+                    the very beginning of the circuit will be considered random rather
+                    than determined.
+
             Returns:
                 The number of measurements that were predictable.
 
@@ -327,6 +338,24 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 0
 
                 >>> stim.Circuit('''
+                ...     M 0
+                ... ''').count_determined_measurements()
+                1
+
+                >>> stim.Circuit('''
+                ...     M 0
+                ... ''').count_determined_measurements(unknown_input=True)
+                0
+
+                >>> stim.Circuit('''
+                ...     M 0
+                ...     M 0 1
+                ...     M 0 1 2
+                ...     M 0 1 2 3
+                ... ''').count_determined_measurements(unknown_input=True)
+                6
+
+                >>> stim.Circuit('''
                 ...     R 0 1
                 ...     MZZ 0 1
                 ...     MYY 0 1
@@ -343,6 +372,69 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 217
                 >>> circuit.num_detectors + circuit.num_observables
                 217
+        )DOC")
+            .data());
+
+    c.def(
+        "missing_detectors",
+        &missing_detectors,
+        pybind11::kw_only(),
+        pybind11::arg("unknown_input") = false,
+        clean_doc_string(R"DOC(
+            @signature def missing_detectors(self, *, unknown_input: bool = False) -> int:
+            Finds deterministic measurements independent of declared detectors/observables.
+
+            This method is useful for debugging missing detectors in a circuit, because it
+            identifies generators for uncovered degrees of freedom.
+
+            It's not recommended to use this method to solve for the detectors of a circuit.
+            The returned detectors are not guaranteed to be stable across versions, and
+            aren't optimized to be "good" (e.g. form a low weight basis or be matchable
+            if possible). It will also identify things that are technically determined
+            but that the user may not want to use as a detector, such as the fact that
+            in the first round after transversal Z basis initialization of a toric code
+            the product of all X stabilizer measurements is deterministic even though the
+            individual measurements are all random.
+
+            Args:
+                unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                    When set to True, the inputs are instead treated as being in unknown
+                    random states. For example, this means that Z-basis measurements at
+                    the very beginning of the circuit will be considered random rather
+                    than determined.
+
+            Returns:
+                A circuit containing DETECTOR instructions that specify the uncovered
+                degrees of freedom in the deterministic measurement sets of the input
+                circuit. The returned circuit can be appended to the input circuit to
+                get a circuit with no missing detectors.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     R 0
+                ...     M 0
+                ... ''').missing_detectors()
+                stim.Circuit('''
+                    DETECTOR rec[-1]
+                ''')
+
+                >>> stim.Circuit('''
+                ...     MZZ 0 1
+                ...     MYY 0 1
+                ...     MXX 0 1
+                ...     DEPOLARIZE1(0.1) 0 1
+                ...     MZZ 0 1
+                ...     MYY 0 1
+                ...     MXX 0 1
+                ...     DETECTOR rec[-1] rec[-4]
+                ...     DETECTOR rec[-2] rec[-5]
+                ...     DETECTOR rec[-3] rec[-6]
+                ... ''').missing_detectors(unknown_input=True)
+                stim.Circuit('''
+                    DETECTOR rec[-3] rec[-2] rec[-1]
+                ''')
         )DOC")
             .data());
 
