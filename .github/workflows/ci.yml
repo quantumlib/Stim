@@ -14,11 +14,9 @@
 
 name: ci
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
-      - guenp-patch-1
     tags:
       - v*
   pull_request:
@@ -128,8 +126,6 @@ jobs:
           {os: windows-2025, dist: cp310-win_amd64},
           {os: windows-2025, dist: cp311-win_amd64},
           {os: windows-2025, dist: cp312-win_amd64},
-
-          # (April 2024) disabled because numpy fails to build. Unsure why it's not using a prebuilt wheel.
           {os: windows-2025, dist: cp313-win_amd64},
 
           {os: windows-2025, dist: cp36-win32},
