@@ -248,6 +248,19 @@ bool simd_bits_range_ref<W>::intersects(const simd_bits_range_ref<W> other) cons
 }
 
 template <size_t W>
+bool simd_bits_range_ref<W>::is_subset_of_or_equal_to(const simd_bits_range_ref<W> other) const {
+    size_t n = std::min(num_u64_padded(), other.num_u64_padded());
+    uint64_t v = 0;
+    for (size_t k = 0; k < n; k++) {
+        v |= u64[k] & ~other.u64[k];
+    }
+    for (size_t k = other.num_u64_padded(); k < num_u64_padded(); k++) {
+        v |= u64[k];
+    }
+    return v == 0;
+}
+
+template <size_t W>
 uint64_t simd_bits_range_ref<W>::as_u64() const {
     size_t n64 = num_u64_padded();
     for (size_t k = 1; k < n64; k++) {
