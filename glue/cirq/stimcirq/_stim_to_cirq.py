@@ -340,13 +340,13 @@ class CircuitTranslationTracker:
 
     def resolve_measurement_record_keys(
         self, targets: Iterable[stim.GateTarget]
-    ) -> Tuple[List[str], List[int], List[str]]:
+    ) -> Tuple[List[str], List[int], List[Tuple[cirq.Qid, str]]]:
         pauli_targets, meas_targets = [], []
         for t in targets:
             if t.is_measurement_record_target:
                 meas_targets.append(t)
             else:
-                pauli_targets.append(f'{t.pauli_type}{t.value}')
+                pauli_targets.append((cirq.LineQubit(t.value), f'{t.pauli_type}{t.value}'))
 
         if self.have_seen_loop:
             return [], [t.value for t in meas_targets], pauli_targets
