@@ -955,3 +955,40 @@ def test_before_reset():
         stim.PauliString("Z").before(stim.Circuit("MX 0"))
     with pytest.raises(ValueError):
         stim.PauliString("Z").before(stim.Circuit("MY 0"))
+
+def test_constructor_from_dict():
+    # Key is the qubit index:
+    assert stim.PauliString({2: "X", 4: "Z"}) == stim.PauliString("__X_Z")
+    assert stim.PauliString({0: 1, 1: 2}) == stim.PauliString("XY")
+    assert stim.PauliString({1: 1, 3: 2, 5: "Z"}) == stim.PauliString("_X_Y_Z")
+    assert stim.PauliString({1: 0, 3: "I", 4: "_"}) == stim.PauliString("_____")
+    assert stim.PauliString({0: "X", 2: "x", 4: "y"}) == stim.PauliString("X_X_Y") # Case-insensitive
+    assert stim.PauliString({}) == stim.PauliString("")
+
+    # Key is the Pauli:
+    assert stim.PauliString({"X": 2, "Z": 4, "Y": 6, "I": 5}) == stim.PauliString("__X_Z_6")
+    assert stim.PauliString({"X": 0, "Z": [1,2]}) == stim.PauliString("XZZ")
+    assert stim.PauliString({"x": [0,2], "Y": 4}) == stim.PauliString("X_X_Y") # Case-insensitive
+    assert stim.PauliString({"I": [1,2]}) == stim.PauliString("___")
+
+def test_constructor_from_dict_errors():
+    with pytest.raises(ValueError):
+        stim.PauliString({"A": 0})
+
+    with pytest.raises(ValueError):
+        stim.PauliString({0: "A"})
+
+    with pytest.raises(ValueError):
+        stim.PauliString({0: 4}) # Paulis correspond to 0-3
+
+    with pytest.raises(ValueError):
+        stim.PauliString({0: -1}) # Paulis correspond to 0-3
+
+    with pytest.raises(ValueError):
+        stim.PauliString({"ZX": 0}) # Paulis need to be single characters
+
+    with pytest.raises(ValueError):
+        stim.PauliString({"X": "not an int"}) # When key is string - value can't also be string
+
+    with pytest.raises(ValueError):
+        stim.PauliString({"X": 0, 1: "Y"}) # All keys must either be strings or ints
