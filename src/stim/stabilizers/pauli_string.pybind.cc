@@ -323,6 +323,35 @@ pybind11::class_<FlexPauliString> stim_pybind::pybind_pauli_string(pybind11::mod
             .data());
 }
 
+static unit8_t convert_pauli_to_int(const pybind11::handle &h) {
+    int64_t v = -1;
+    if (pybind11::isinstance<pybind11::int_>(h)) {
+        try {
+            v = pybind11::cast<int64_t>(h);
+        } catch (const pybind11::cast_error &) {
+        }
+    } else if (pybind11::isinstance<pybind11::str>(h)) {
+        std::string_view s = pybind11::cast<std::string_view>(h);
+        if (s == "I" || s == "_") {
+            v = 0;
+        } else if (s == "X" || s == "x") {
+            v = 1;
+        } else if (s == "Y" || s == "y") {
+            v = 2;
+        } else if (s == "Z" || s == "z") {
+            v = 3;
+        }
+    }
+    if (v >= 0 && v < 4) {
+        return (uint8_t)v;
+    } else {
+        throw std::invalid_argument(
+            "Don't know how to convert " + pybind11::cast<std::string>(pybind11::repr(h)) +
+            " into a pauli.\n"
+            "Expected something from {0, 1, 2, 3, 'I', 'X', 'Y', 'Z', '_'}.");
+    }
+}
+
 void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<FlexPauliString> &c) {
     c.def(
         pybind11::init(
@@ -363,32 +392,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 if (!pauli_indices_or.is_none()) {
                     std::vector<uint8_t> ps;
                     for (const pybind11::handle &h : pauli_indices_or) {
-                        int64_t v = -1;
-                        if (pybind11::isinstance<pybind11::int_>(h)) {
-                            try {
-                                v = pybind11::cast<int64_t>(h);
-                            } catch (const pybind11::cast_error &) {
-                            }
-                        } else if (pybind11::isinstance<pybind11::str>(h)) {
-                            std::string_view s = pybind11::cast<std::string_view>(h);
-                            if (s == "I" || s == "_") {
-                                v = 0;
-                            } else if (s == "X" || s == "x") {
-                                v = 1;
-                            } else if (s == "Y" || s == "y") {
-                                v = 2;
-                            } else if (s == "Z" || s == "z") {
-                                v = 3;
-                            }
-                        }
-                        if (v >= 0 && v < 4) {
-                            ps.push_back((uint8_t)v);
-                        } else {
-                            throw std::invalid_argument(
-                                "Don't know how to convert " + pybind11::cast<std::string>(pybind11::repr(h)) +
-                                " into a pauli.\n"
-                                "Expected something from {0, 1, 2, 3, 'I', 'X', 'Y', 'Z', '_'}.");
-                        }
+                        ps.push_back(convert_pauli_to_int(h));
                     }
                     FlexPauliString result(ps.size());
                     for (size_t k = 0; k < ps.size(); k++) {
