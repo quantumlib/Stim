@@ -44,3 +44,5 @@ build.ninja
 node_modules
 MODULE.bazel.lock
 .ninja_lock
+glue/crumble/node_modules
+glue/crumble/crumpy/bundle.js

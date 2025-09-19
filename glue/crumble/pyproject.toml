@@ -1,0 +1,176 @@
+[build-system]
+requires = ["poetry-core>=2.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+
+[project]
+name = "crumpy"
+authors = [
+  { name = "Riverlane", email = "deltakit@riverlane.com" },
+]
+description = "A python library for visualizing Crumble circuits in Jupyter"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = [
+    "anywidget>=0.9.18",
+    "cirq>=1.3.0",
+    "ipywidgets>=8.1.7",
+    "ply>=3.11",
+    "qiskit>=2.1.2",
+    "stim>=1.15.0",
+    "stimcirq>=1.15.0",
+    "traitlets>=5.14.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/Deltakit/crumpy"
+"Bug Tracker" = "https://github.com/Deltakit/crumpy/issues"
+Discussions = "https://github.com/Deltakit/crumpy/discussions"
+Changelog = "https://github.com/Deltakit/crumpy/releases"
+
+
+[dependency-groups]
+test = [
+  "pytest >=6",
+  "pytest-cov >=3",
+]
+dev = [
+  { include-group = "test" },
+]
+docs = [
+  "sphinx>=7.0",
+  "myst_parser>=0.13",
+  "sphinx_copybutton",
+  "sphinx_autodoc_typehints",
+  "furo>=2023.08.17",
+  "nbsphinx>=0.9.6",
+  "ipykernel>=6.30.1",
+  "stim>=1.15.0",
+  "pandoc>=2.4",
+  "cirq>=1.6.1",
+  "stimcirq>=1.15.0",
+]
+[tool.poetry]
+packages = [{ include = "crumpy" }]
+include = [
+  { path = "crumpy/bundle.js", format = ["sdist", "wheel"] },
+]
+version = "0.0.0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0", extras = ["plugin"] }
+
+[tool.poetry-dynamic-versioning]
+enable = true
+substitution.files = ["crumpy/__init__.py"]
+
+[tool.poetry.group.test.dependencies]
+pytest = ">= 6"
+pytest-cov = ">= 3"
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = [
+  "error",
+]
+log_cli_level = "INFO"
+testpaths = [
+  "tests",
+]
+
+
+[tool.coverage]
+run.source = ["crumpy"]
+report.exclude_also = [
+  '\.\.\.',
+  'if typing.TYPE_CHECKING:',
+]
+
+[tool.mypy]
+files = ["crumpy"]
+python_version = "3.11"
+warn_unused_configs = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "crumpy.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+
+[tool.ruff]
+target-version = "py39"
+exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+extend-select = [
+  "ARG",      # flake8-unused-arguments
+  "B",        # flake8-bugbear
+  "C4",       # flake8-comprehensions
+  "EM",       # flake8-errmsg
+  "EXE",      # flake8-executable
+  "G",        # flake8-logging-format
+  "I",        # isort
+  "ICN",      # flake8-import-conventions
+  "NPY",      # NumPy specific rules
+  "PD",       # pandas-vet
+  "PGH",      # pygrep-hooks
+  "PIE",      # flake8-pie
+  "PL",       # pylint
+  "PT",       # flake8-pytest-style
+  "PTH",      # flake8-use-pathlib
+  "RET",      # flake8-return
+  "RUF",      # Ruff-specific
+  "SIM",      # flake8-simplify
+  "T20",      # flake8-print
+  "UP",       # pyupgrade
+  "YTT",      # flake8-2020
+]
+ignore = [
+  "PLR09",    # Too many <...>
+  "PLR2004",  # Magic value used in comparison
+]
+isort.required-imports = ["from __future__ import annotations"]
+# Uncomment if using a _compat.typing backport
+# typing-modules = ["crumpy._compat.typing"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["T20"]
+"noxfile.py" = ["T20"]
+
+
+[tool.pylint]
+py-version = "3.11"
+ignore-paths = [".*/_version.py"]
+reports.output-format = "colorized"
+similarities.ignore-imports = "yes"
+messages_control.disable = [
+  "design",
+  "fixme",
+  "line-too-long",
+  "missing-module-docstring",
+  "missing-function-docstring",
+  "wrong-import-position",
+]
