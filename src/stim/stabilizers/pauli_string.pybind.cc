@@ -24,6 +24,10 @@
 using namespace stim;
 using namespace stim_pybind;
 
+struct PsFromDict {
+    std::vector<std::pair<size_t, uint8_t>> pauli_by_location;
+};
+
 pybind11::object flex_pauli_string_to_unitary_matrix(const stim::FlexPauliString &ps, std::string_view endian) {
     bool little_endian;
     if (endian == "little") {
@@ -323,7 +327,7 @@ pybind11::class_<FlexPauliString> stim_pybind::pybind_pauli_string(pybind11::mod
             .data());
 }
 
-static unit8_t convert_pauli_to_int(const pybind11::handle &h) {
+static uint8_t convert_pauli_to_int(const pybind11::handle &h) {
     int64_t v = -1;
     if (pybind11::isinstance<pybind11::int_>(h)) {
         try {
@@ -386,6 +390,60 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 pybind11::object other_or = pybind11::isinstance<FlexPauliString>(arg) ? arg : other;
                 if (!other_or.is_none()) {
                     return pybind11::cast<FlexPauliString>(other_or);
+                }
+
+
+                // Handle dict input:
+                if (pybind11::isinstance<pybind11::dict>(arg)) {
+                    pybind11::dict dict_arg = pybind11::cast<pybind11::dict>(arg);
+
+                    // Handle empty dict:
+                    if (dict_arg.empty()) {
+                        return FlexPauliString(0);
+                    }
+
+                    const auto first_entry = dict_arg.begin();
+                    PsFromDict ps;
+                    size_t max_index = 0;
+
+                    if (pybind11::isinstance<pybind11::int_>(first_entry->first)) {
+                        // Key are ints - i.e the qubit indices:
+                        for (const auto &item : dict_arg) {
+                            const auto key = item.first;
+                            const auto value = item.second;
+                            // Verify key is int for consistency:
+                            if (!pybind11::isinstance<pybind11::int_>(key)) {
+                                throw std::invalid_argument(
+                                    "When constructing stim.PauliString from Dict keys must all be ints or strings, but not a mix of them. First conflicting key:" +
+                                    pybind11::cast<std::string>(pybind11::repr(arg)));
+                            }
+
+                            if (pybind11::cast<size_t>(key) > max_index) {
+                                max_index = pybind11::cast<size_t>(key);
+                            }
+                            ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(key), convert_pauli_to_int(value)));
+                        }
+                        
+                    } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
+                        // Keys are strings:
+                    } else {
+                        throw std::invalid_argument(
+                            "Don't know how to initialize a stim.PauliString from " +
+                            pybind11::cast<std::string>(pybind11::repr(arg)));
+                    }
+
+                    // Format collected info into a FlexPauliString:
+                    FlexPauliString result(max_index+1);
+
+                    for (const auto &[key, value] : ps.pauli_by_location) {
+                        // Conver 0-3 to x,z values (00, 01, 10, 11)
+                        uint8_t p = value;
+                        p ^= p >> 1;
+                        result.value.xs[key] = p & 1;
+                        result.value.zs[key] = p & 2;
+                    }
+                    
+                    return result;
                 }
 
                 pybind11::object pauli_indices_or = pybind11::isinstance<pybind11::iterable>(arg) ? arg : pauli_indices;
