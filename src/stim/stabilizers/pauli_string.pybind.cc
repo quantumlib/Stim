@@ -426,13 +426,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         
                     } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
                         // Keys are strings:
-                        std::cout << "Starting string keys branch" << std::endl;
+                        auto taken_indices = std::vector<size_t>();
+
                         for (const auto &item : dict_arg) {
                             const auto pauli_string = item.first;
                             const auto indices = item.second;
 
-                            std::cout << "Processing pauli_string: " << pybind11::cast<std::string>(pauli_string) << std::endl;
-                            std::cout << "with indices: " << pybind11::cast<std::string>(pybind11::repr(indices)) << std::endl;
                             // Verify pauli_string is str for consistency:
                             if (!pybind11::isinstance<pybind11::str>(pauli_string)) {
                                 throw std::invalid_argument(
@@ -440,39 +439,42 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                                     pybind11::cast<std::string>(pybind11::repr(pauli_string)));
                             }
 
-                            std::cout << "Converting indices to pauli int" << std::endl;
                             const auto pauli_int = convert_pauli_to_int(pauli_string);
-                            
-                            std::cout << "Converted indices to pauli int: " << static_cast<int>(pauli_int) << std::endl;
-                            std::cout << "Debug: pauli_int value as uint8_t: " << +pauli_int << std::endl;
-
-                            // Turn single int into a list:
-                            // auto indices_as_iterable = pybind11::isinstance<pybind11::iterable>(indices) ? indices : pybind11::cast(std::vector<pybind11::object>{indices});
-                            // std::cout << "Turned indices into iterable: " << pybind11::cast<std::string>(pybind11::repr(indices_as_iterable)) << std::endl;
 
                             if (pybind11::isinstance<pybind11::iterable>(indices)) {
                                 for (const auto &qubit_index : indices) {
-                                    std::cout << "Processing qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << std::endl;
+                                    // Verify index is and int:
                                     if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
                                         throw std::invalid_argument(
                                             "Qubit index must be an int. got:" +
                                             pybind11::cast<std::string>(pybind11::repr(qubit_index)));
                                     }
+                                    // Verify index was not used before:
+                                    if (std::find(taken_indices.begin(), taken_indices.end(), pybind11::cast<size_t>(qubit_index)) != taken_indices.end()) {
+                                        throw std::invalid_argument(
+                                            "More than one Pauli definitions use the same qubit index. Conflict for index:" +
+                                            pybind11::cast<std::string>(pybind11::repr(qubit_index)));
+                                    }
+                                    taken_indices.push_back(pybind11::cast<size_t>(qubit_index));
+
                                     if (pybind11::cast<size_t>(qubit_index) > max_index) {
                                         max_index = pybind11::cast<size_t>(qubit_index);
                                     }
-                                    std::cout << "Pushing back qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << " with pauli int: " << (int)pauli_int << std::endl;
                                     ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(qubit_index), pauli_int));
-                                    std::cout << "Pushed back qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << " with pauli int: " << (int)pauli_int << std::endl;
                                 }
                             } else if (pybind11::isinstance<pybind11::int_>(indices)) {
+                                // Verify index was not used before:
+                                if (std::find(taken_indices.begin(), taken_indices.end(), pybind11::cast<size_t>(indices)) != taken_indices.end()) {
+                                    throw std::invalid_argument(
+                                        "More than one Pauli definitions use the same qubit index. Conflict for index:" +
+                                        pybind11::cast<std::string>(pybind11::repr(indices)));
+                                }
+                                taken_indices.push_back(pybind11::cast<size_t>(indices));
+
                                 if (pybind11::cast<size_t>(indices) > max_index) {
                                     max_index = pybind11::cast<size_t>(indices);
                                 }
-                                std::cout << "Processing qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << std::endl;
-                                std::cout << "Pushing back qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << " with pauli int: " << (int)pauli_int << std::endl;
                                 ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(indices), pauli_int));
-                                std::cout << "Pushed back qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << " with pauli int: " << (int)pauli_int << std::endl;
                             } else {
                                 throw std::invalid_argument(
                                     "Qubit index must be an int. got:" +

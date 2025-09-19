@@ -997,8 +997,8 @@ def test_constructor_from_dict_errors():
     with pytest.raises(ValueError, match="keys must all be ints or all strings"):
         stim.PauliString({"X": 0, 1: "Y"})
 
-    # with pytest.raises(ValueError):
-    #     stim.PauliString({"X": 0, "Y": 0})
-    #
-    # with pytest.raises(ValueError):
-    #     stim.PauliString({"Z": 1, "Y": [4,1]})
+    with pytest.raises(ValueError):
+        stim.PauliString({"X": 0, "Y": 0})
+
+    with pytest.raises(ValueError):
+        stim.PauliString({"Z": 1, "Y": [4,1]})
