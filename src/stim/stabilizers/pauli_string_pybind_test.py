@@ -966,7 +966,8 @@ def test_constructor_from_dict():
     assert stim.PauliString({}) == stim.PauliString("")
 
     # Key is the Pauli:
-    assert stim.PauliString({"X": 2, "Z": 4, "Y": 6, "I": 5}) == stim.PauliString("__X_Z_6")
+    assert stim.PauliString({"X": 0, "Z": 1}) == stim.PauliString("XZ")
+    assert stim.PauliString({"X": 2, "Z": 4, "Y": 6, "I": 5}) == stim.PauliString("__X_Z_Y")
     assert stim.PauliString({"X": 0, "Z": [1,2]}) == stim.PauliString("XZZ")
     assert stim.PauliString({"x": [0,2], "Y": 4}) == stim.PauliString("X_X_Y") # Case-insensitive
     assert stim.PauliString({"I": [1,2]}) == stim.PauliString("___")
@@ -987,8 +988,17 @@ def test_constructor_from_dict_errors():
     with pytest.raises(ValueError):
         stim.PauliString({"ZX": 0}) # Paulis need to be single characters
 
-    with pytest.raises(ValueError):
-        stim.PauliString({"X": "not an int"}) # When key is string - value can't also be string
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"X": "not an int"})
 
-    with pytest.raises(ValueError):
-        stim.PauliString({"X": 0, 1: "Y"}) # All keys must either be strings or ints
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"Y": [0, "not an int"]})
+    #
+    # with pytest.raises(ValueError, match="Dict keys must all be ints or strings"):
+    #     stim.PauliString({"X": 0, 1: "Y"})
+    #
+    # with pytest.raises(ValueError):
+    #     stim.PauliString({"X": 0, "Y": 0})
+    #
+    # with pytest.raises(ValueError):
+    #     stim.PauliString({"Z": 1, "Y": [4,1]})

@@ -409,45 +409,74 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     if (pybind11::isinstance<pybind11::int_>(first_entry->first)) {
                         // Key are ints - i.e the qubit indices:
                         for (const auto &item : dict_arg) {
-                            const auto key = item.first;
-                            const auto value = item.second;
-                            // Verify key is int for consistency:
-                            if (!pybind11::isinstance<pybind11::int_>(key)) {
+                            const auto index = item.first;
+                            const auto pauli_string = item.second;
+                            // Verify index is int for consistency:
+                            if (!pybind11::isinstance<pybind11::int_>(index)) {
                                 throw std::invalid_argument(
                                     "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
-                                    pybind11::cast<std::string>(pybind11::repr(key)));
+                                    pybind11::cast<std::string>(pybind11::repr(index)));
                             }
 
-                            if (pybind11::cast<size_t>(key) > max_index) {
-                                max_index = pybind11::cast<size_t>(key);
+                            if (pybind11::cast<size_t>(index) > max_index) {
+                                max_index = pybind11::cast<size_t>(index);
                             }
-                            ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(key), convert_pauli_to_int(value)));
+                            ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(index), convert_pauli_to_int(pauli_string)));
                         }
                         
                     } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
                         // Keys are strings:
+                        std::cout << "Starting string keys branch" << std::endl;
                         for (const auto &item : dict_arg) {
-                            const auto key = item.first;
-                            const auto value = item.second;
-                            // Verify key is str for consistency:
-                            if (!pybind11::isinstance<pybind11::str>(key)) {
+                            const auto pauli_string = item.first;
+                            const auto indices = item.second;
+
+                            std::cout << "Processing pauli_string: " << pybind11::cast<std::string>(pauli_string) << std::endl;
+                            std::cout << "with indices: " << pybind11::cast<std::string>(pybind11::repr(indices)) << std::endl;
+                            // Verify pauli_string is str for consistency:
+                            if (!pybind11::isinstance<pybind11::str>(pauli_string)) {
                                 throw std::invalid_argument(
                                     "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
-                                    pybind11::cast<std::string>(pybind11::repr(key)));
+                                    pybind11::cast<std::string>(pybind11::repr(pauli_string)));
                             }
 
-                            const auto pauli_int = convert_pauli_to_int(value);
+                            std::cout << "Converting indices to pauli int" << std::endl;
+                            const auto pauli_int = convert_pauli_to_int(pauli_string);
+                            
+                            std::cout << "Converted indices to pauli int: " << static_cast<int>(pauli_int) << std::endl;
+                            std::cout << "Debug: pauli_int value as uint8_t: " << +pauli_int << std::endl;
 
                             // Turn single int into a list:
-                            const auto value_as_iterable = pybind11::isinstance<pybind11::iterable>(value) ? value : pybind11::iterable(pybind11::list(pybind11::make_tuple(value)));
-                            
-                            for (const auto &qubit_index : value_as_iterable) {
-                                if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
-                                    throw std::invalid_argument(
-                                        "Qubit index must be an int. got:" +
-                                        pybind11::cast<std::string>(pybind11::repr(qubit_index)));
+                            // auto indices_as_iterable = pybind11::isinstance<pybind11::iterable>(indices) ? indices : pybind11::cast(std::vector<pybind11::object>{indices});
+                            // std::cout << "Turned indices into iterable: " << pybind11::cast<std::string>(pybind11::repr(indices_as_iterable)) << std::endl;
+
+                            if (pybind11::isinstance<pybind11::iterable>(indices)) {
+                                for (const auto &qubit_index : indices) {
+                                    std::cout << "Processing qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << std::endl;
+                                    if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
+                                        throw std::invalid_argument(
+                                            "Qubit index must be an int. got:" +
+                                            pybind11::cast<std::string>(pybind11::repr(qubit_index)));
+                                    }
+                                    if (pybind11::cast<size_t>(qubit_index) > max_index) {
+                                        max_index = pybind11::cast<size_t>(qubit_index);
+                                    }
+                                    std::cout << "Pushing back qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << " with pauli int: " << (int)pauli_int << std::endl;
+                                    ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(qubit_index), pauli_int));
+                                    std::cout << "Pushed back qubit index: " << pybind11::cast<std::string>(pybind11::repr(qubit_index)) << " with pauli int: " << (int)pauli_int << std::endl;
                                 }
-                                ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(qubit_index), pauli_int));
+                            } else if (pybind11::isinstance<pybind11::int_>(indices)) {
+                                if (pybind11::cast<size_t>(indices) > max_index) {
+                                    max_index = pybind11::cast<size_t>(indices);
+                                }
+                                std::cout << "Processing qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << std::endl;
+                                std::cout << "Pushing back qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << " with pauli int: " << (int)pauli_int << std::endl;
+                                ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(indices), pauli_int));
+                                std::cout << "Pushed back qubit index: " << pybind11::cast<std::string>(pybind11::repr(indices)) << " with pauli int: " << (int)pauli_int << std::endl;
+                            } else {
+                                throw std::invalid_argument(
+                                    "Qubit index must be an int. got:" +
+                                    pybind11::cast<std::string>(pybind11::repr(indices)));
                             }
                         }
                     } else {
@@ -464,7 +493,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         uint8_t p = value;
                         p ^= p >> 1;
                         result.value.xs[key] = p & 1;
-                        result.value.zs[key] = p & 2;
+                        result.value.zs[key] = (p & 2) >> 1;
                     }
                     
                     return result;
