@@ -414,8 +414,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                             // Verify key is int for consistency:
                             if (!pybind11::isinstance<pybind11::int_>(key)) {
                                 throw std::invalid_argument(
-                                    "When constructing stim.PauliString from Dict keys must all be ints or strings, but not a mix of them. First conflicting key:" +
-                                    pybind11::cast<std::string>(pybind11::repr(arg)));
+                                    "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
+                                    pybind11::cast<std::string>(pybind11::repr(key)));
                             }
 
                             if (pybind11::cast<size_t>(key) > max_index) {
@@ -426,6 +426,30 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         
                     } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
                         // Keys are strings:
+                        for (const auto &item : dict_arg) {
+                            const auto key = item.first;
+                            const auto value = item.second;
+                            // Verify key is str for consistency:
+                            if (!pybind11::isinstance<pybind11::str>(key)) {
+                                throw std::invalid_argument(
+                                    "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
+                                    pybind11::cast<std::string>(pybind11::repr(key)));
+                            }
+
+                            const auto pauli_int = convert_pauli_to_int(value);
+
+                            // Turn single int into a list:
+                            const auto value_as_iterable = pybind11::isinstance<pybind11::iterable>(value) ? value : pybind11::iterable(pybind11::list(pybind11::make_tuple(value)));
+                            
+                            for (const auto &qubit_index : value_as_iterable) {
+                                if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
+                                    throw std::invalid_argument(
+                                        "Qubit index must be an int. got:" +
+                                        pybind11::cast<std::string>(pybind11::repr(qubit_index)));
+                                }
+                                ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(qubit_index), pauli_int));
+                            }
+                        }
                     } else {
                         throw std::invalid_argument(
                             "Don't know how to initialize a stim.PauliString from " +
