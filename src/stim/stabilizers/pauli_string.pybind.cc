@@ -431,11 +431,21 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                     } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
                         // Keys are strings:
-                        auto taken_indices = std::vector<size_t>();
+                        auto used_indices = std::vector<size_t>();
+
+                        auto verify_index_not_used = [&used_indices](pybind11::handle index) {
+                            if (std::find(used_indices.begin(), used_indices.end(), pybind11::cast<size_t>(index)) != used_indices.end()) {
+                                throw std::invalid_argument(
+                                    "More than one Pauli definitions use the same qubit index. Conflict for index:" +
+                                    pybind11::cast<std::string>(pybind11::repr(index)));
+                            }
+
+                            used_indices.push_back(pybind11::cast<size_t>(index));
+                        };
 
                         for (const auto &item : dict_arg) {
                             const auto pauli_string = item.first;
-                            const auto indices = item.second;
+                            const auto index_or_indices = item.second;
 
                             // Verify pauli_string is str for consistency:
                             if (!pybind11::isinstance<pybind11::str>(pauli_string)) {
@@ -446,38 +456,24 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                             const auto pauli_int = convert_pauli_to_int(pauli_string);
 
-                            if (pybind11::isinstance<pybind11::iterable>(indices)) {
-                                for (const auto &qubit_index : indices) {
-                                    // Verify index is and int:
+                            if (pybind11::isinstance<pybind11::iterable>(index_or_indices)) {
+                                for (const auto &qubit_index : index_or_indices) {
+                                    // Verify index is an int:
                                     if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
                                         throw std::invalid_argument(
                                             "Qubit index must be an int. got:" +
                                             pybind11::cast<std::string>(pybind11::repr(qubit_index)));
                                     }
-                                    // Verify index was not used before:
-                                    if (std::find(taken_indices.begin(), taken_indices.end(), pybind11::cast<size_t>(qubit_index)) != taken_indices.end()) {
-                                        throw std::invalid_argument(
-                                            "More than one Pauli definitions use the same qubit index. Conflict for index:" +
-                                            pybind11::cast<std::string>(pybind11::repr(qubit_index)));
-                                    }
-                                    taken_indices.push_back(pybind11::cast<size_t>(qubit_index));
-
+                                    verify_index_not_used(qubit_index);
                                     add_pauli_to_index(qubit_index, pauli_int);
                                 }
-                            } else if (pybind11::isinstance<pybind11::int_>(indices)) {
-                                // Verify index was not used before:
-                                if (std::find(taken_indices.begin(), taken_indices.end(), pybind11::cast<size_t>(indices)) != taken_indices.end()) {
-                                    throw std::invalid_argument(
-                                        "More than one Pauli definitions use the same qubit index. Conflict for index:" +
-                                        pybind11::cast<std::string>(pybind11::repr(indices)));
-                                }
-                                taken_indices.push_back(pybind11::cast<size_t>(indices));
-
-                                add_pauli_to_index(indices, pauli_int);
+                            } else if (pybind11::isinstance<pybind11::int_>(index_or_indices)) {
+                                verify_index_not_used(index_or_indices);
+                                add_pauli_to_index(index_or_indices, pauli_int);
                             } else {
                                 throw std::invalid_argument(
                                     "Qubit index must be an int. got:" +
-                                    pybind11::cast<std::string>(pybind11::repr(indices)));
+                                    pybind11::cast<std::string>(pybind11::repr(index_or_indices)));
                             }
                         }
                     } else {
@@ -549,6 +545,14 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     Iterable: initializes by interpreting each item as a Pauli.
                         Each item can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                    Dict[int, Union[int, str]]: initializes by interpreting keys as
+                        the qubit index and values as the Pauli for that index.
+                        Each item can be a single-qubit Pauli string (like "X"),
+                        or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                    Dict[str, Union[int, Iterable[int]]]: initializes by interpreting keys as
+                        Pauli operators and values as the qubit index or indices for that Pauli.
+                        Note that in order to avoid ambiguity, the Pauli keys must be
+                        strings,in contrast with the other initialization methods.
 
             Examples:
                 >>> import stim
@@ -576,6 +580,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
                 >>> stim.PauliString("X6*Y6")
                 stim.PauliString("+i______Z")
+
+                >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
+                stim.PauliString("+X_YX")
+
+                >>> stim.PauliString({"X": 1, "Z: [0, 3]})
+                stim.PauliString("+ZX_Z")
         )DOC")
             .data());
 
