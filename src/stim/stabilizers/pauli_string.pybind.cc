@@ -406,6 +406,14 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     PsFromDict ps;
                     size_t max_index = 0;
 
+                    auto add_pauli_to_index = [&ps, &max_index](pybind11::handle index, uint8_t pauli) {
+                        size_t index_ = pybind11::cast<size_t>(index);
+                        if (index_ > max_index) {
+                            max_index = index_;
+                        }
+                        ps.pauli_by_location.push_back(std::make_pair(index_, pauli));
+                    };
+
                     if (pybind11::isinstance<pybind11::int_>(first_entry->first)) {
                         // Key are ints - i.e the qubit indices:
                         for (const auto &item : dict_arg) {
@@ -418,12 +426,9 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                                     pybind11::cast<std::string>(pybind11::repr(index)));
                             }
 
-                            if (pybind11::cast<size_t>(index) > max_index) {
-                                max_index = pybind11::cast<size_t>(index);
-                            }
-                            ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(index), convert_pauli_to_int(pauli_string)));
+                            add_pauli_to_index(index, convert_pauli_to_int(pauli_string));
                         }
-                        
+
                     } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
                         // Keys are strings:
                         auto taken_indices = std::vector<size_t>();
@@ -457,10 +462,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                                     }
                                     taken_indices.push_back(pybind11::cast<size_t>(qubit_index));
 
-                                    if (pybind11::cast<size_t>(qubit_index) > max_index) {
-                                        max_index = pybind11::cast<size_t>(qubit_index);
-                                    }
-                                    ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(qubit_index), pauli_int));
+                                    add_pauli_to_index(qubit_index, pauli_int);
                                 }
                             } else if (pybind11::isinstance<pybind11::int_>(indices)) {
                                 // Verify index was not used before:
@@ -471,10 +473,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                                 }
                                 taken_indices.push_back(pybind11::cast<size_t>(indices));
 
-                                if (pybind11::cast<size_t>(indices) > max_index) {
-                                    max_index = pybind11::cast<size_t>(indices);
-                                }
-                                ps.pauli_by_location.push_back(std::make_pair(pybind11::cast<size_t>(indices), pauli_int));
+                                add_pauli_to_index(indices, pauli_int);
                             } else {
                                 throw std::invalid_argument(
                                     "Qubit index must be an int. got:" +
@@ -497,7 +496,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         result.value.xs[key] = p & 1;
                         result.value.zs[key] = (p & 2) >> 1;
                     }
-                    
+
                     return result;
                 }
 
