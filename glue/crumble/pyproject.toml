@@ -6,7 +6,7 @@ build-backend = "poetry_dynamic_versioning.backend"
 [project]
 name = "crumpy"
 authors = [
-  { name = "Riverlane", email = "deltakit@riverlane.com" },
+  { name = "Sam Zappa (Riverlane)", email = "deltakit@riverlane.com" },
 ]
 description = "A python library for visualizing Crumble circuits in Jupyter"
 readme = "README.md"
@@ -38,10 +38,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Deltakit/crumpy"
-"Bug Tracker" = "https://github.com/Deltakit/crumpy/issues"
-Discussions = "https://github.com/Deltakit/crumpy/discussions"
-Changelog = "https://github.com/Deltakit/crumpy/releases"
+Homepage = "https://github.com/quantumlib/Stim"
+"Bug Tracker" = "https://github.com/quantumlib/Stim/issues"
+Discussions = "https://github.com/quantumlib/Stim/discussions"
+Changelog = "https://github.com/quantumlib/Stim/releases"
 
 
 [dependency-groups]
