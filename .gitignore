@@ -44,5 +44,6 @@ build.ninja
 node_modules
 MODULE.bazel.lock
 .ninja_lock
-glue/crumble/node_modules
-glue/crumble/crumpy/bundle.js
+crumble_js
+bundle.js
+.ipynb_checkpoints
