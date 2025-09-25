@@ -25,7 +25,7 @@ __version__ = version(__name__)
 
 __all__ = ["__version__"]
 
-bundler_output_dir = pathlib.Path(__file__).parent
+bundler_output_dir = pathlib.Path(__file__).parent.parent / "js"
 
 
 class CircuitWidget(anywidget.AnyWidget):

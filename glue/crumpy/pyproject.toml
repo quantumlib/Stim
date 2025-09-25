@@ -7,6 +7,7 @@ build-backend = "poetry_dynamic_versioning.backend"
 name = "crumpy"
 authors = [
   { name = "Sam Zappa (Riverlane)", email = "deltakit@riverlane.com" },
+  { name = "Guen Prawiroatmodjo (Riverlane)", email = "deltakit@riverlane.com" },
 ]
 description = "A python library for visualizing Crumble circuits in Jupyter"
 readme = "README.md"
@@ -66,9 +67,9 @@ docs = [
   "stimcirq>=1.15.0",
 ]
 [tool.poetry]
-packages = [{ include = "crumpy" }]
+packages = [{ include = "crumpy", from = "src" }]
 include = [
-  { path = "crumpy/bundle.js", format = ["sdist", "wheel"] },
+  { path = "src/js/bundle.js", format = ["sdist", "wheel"] },
 ]
 version = "0.0.0"
 
@@ -77,7 +78,7 @@ poetry-dynamic-versioning = { version = ">=1.0.0", extras = ["plugin"] }
 
 [tool.poetry-dynamic-versioning]
 enable = true
-substitution.files = ["crumpy/__init__.py"]
+substitution.files = ["src/crumpy/__init__.py"]
 
 [tool.poetry.group.test.dependencies]
 pytest = ">= 6"
@@ -105,7 +106,7 @@ report.exclude_also = [
 ]
 
 [tool.mypy]
-files = ["crumpy"]
+files = ["src", "tests"]
 python_version = "3.11"
 warn_unused_configs = true
 strict = true
