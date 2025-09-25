@@ -492,7 +492,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     }
 
                     // Format collected info into a FlexPauliString:
-                    FlexPauliString result(max_index+1);
+                    FlexPauliString result(pauli_by_location.empty() ? 0 : max_index+1);
 
                     for (const auto &[key, value] : pauli_by_location) {
                         // Conver 0-3 to x,z values (00, 01, 10, 11)

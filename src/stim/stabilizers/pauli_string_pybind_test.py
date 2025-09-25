@@ -972,7 +972,7 @@ def test_constructor_from_dict():
     assert stim.PauliString({"X": [0], "Z": [1,2]}) == stim.PauliString("XZZ")
     assert stim.PauliString({"x": [0,2], "Y": [4]}) == stim.PauliString("X_X_Y") # Case-insensitive
     assert stim.PauliString({"I": [1,2]}) == stim.PauliString("___")
-    # assert stim.PauliString({"I": []}) == stim.PauliString("") # TODO fix.
+    assert stim.PauliString({"I": []}) == stim.PauliString("")
     assert stim.PauliString({"I": [9]}) == stim.PauliString(10)
     assert stim.PauliString({0: [9]}) == stim.PauliString(10)
     assert stim.PauliString({"_": [9]}) == stim.PauliString(10)
