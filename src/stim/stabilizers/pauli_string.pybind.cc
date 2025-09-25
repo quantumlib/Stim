@@ -24,9 +24,6 @@
 using namespace stim;
 using namespace stim_pybind;
 
-struct PsFromDict {
-    std::vector<std::pair<size_t, uint8_t>> pauli_by_location;
-};
 
 pybind11::object flex_pauli_string_to_unitary_matrix(const stim::FlexPauliString &ps, std::string_view endian) {
     bool little_endian;
@@ -402,24 +399,24 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         return FlexPauliString(0);
                     }
 
-                    const auto first_entry = dict_arg.begin();
-                    PsFromDict ps;
+                    const auto &first_entry = dict_arg.begin();
+                    std::vector<std::pair<size_t, uint8_t>> pauli_by_location;
                     size_t max_index = 0;
 
-                    auto add_pauli_to_index = [&ps, &max_index](pybind11::handle index, uint8_t pauli) {
+                    auto add_pauli_to_index = [&pauli_by_location, &max_index](pybind11::handle index, uint8_t pauli) {
                         size_t index_ = pybind11::cast<size_t>(index);
                         if (index_ > max_index) {
                             max_index = index_;
                         }
-                        ps.pauli_by_location.push_back(std::make_pair(index_, pauli));
+                        pauli_by_location.push_back(std::make_pair(index_, pauli));
                     };
 
                     if (pybind11::isinstance<pybind11::int_>(first_entry->second) || 
                         pybind11::isinstance<pybind11::str>(first_entry->second)) {
                         // Value is int or str -> key is qubit index:
                         for (const auto &item : dict_arg) {
-                            const auto index = item.first;
-                            const auto pauli_string = item.second;
+                            const auto &index = item.first;
+                            const auto &pauli_string = item.second;
                             // Verify index is int for consistency:
                             if (!pybind11::isinstance<pybind11::int_>(index)) {
                                 throw std::invalid_argument(
@@ -445,8 +442,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         };
 
                         for (const auto &item : dict_arg) {
-                            const auto pauli_str_or_int = item.first;
-                            const auto indices = item.second;
+                            const auto &pauli_str_or_int = item.first;
+                            const auto &indices = item.second;
 
                             // Verify pauli_str_or_int is str or int for consistency:
                             if (!(pybind11::isinstance<pybind11::str>(pauli_str_or_int) ||
@@ -483,7 +480,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     // Format collected info into a FlexPauliString:
                     FlexPauliString result(max_index+1);
 
-                    for (const auto &[key, value] : ps.pauli_by_location) {
+                    for (const auto &[key, value] : pauli_by_location) {
                         // Conver 0-3 to x,z values (00, 01, 10, 11)
                         uint8_t p = value;
                         p ^= p >> 1;
