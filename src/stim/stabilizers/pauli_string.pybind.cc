@@ -404,7 +404,13 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     size_t max_index = 0;
 
                     auto add_pauli_to_index = [&pauli_by_location, &max_index](pybind11::handle index, uint8_t pauli) {
-                        size_t index_ = pybind11::cast<size_t>(index);
+                        int64_t index_value = pybind11::cast<int64_t>(index);
+                        if (index_value < 0) {
+                            throw std::invalid_argument(
+                                "Qubit index must be non-negative. got: " + std::to_string(index_value));
+                        }
+                        
+                        size_t index_ = static_cast<size_t>(index_value);
                         if (index_ > max_index) {
                             max_index = index_;
                         }
@@ -432,13 +438,20 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         auto used_indices = std::vector<size_t>();
 
                         auto verify_index_not_used = [&used_indices](pybind11::handle index) {
-                            if (std::find(used_indices.begin(), used_indices.end(), pybind11::cast<size_t>(index)) != used_indices.end()) {
+                            int64_t index_value = pybind11::cast<int64_t>(index);
+                            if (index_value < 0) {
+                                throw std::invalid_argument(
+                                    "Qubit index must be non-negative. got: " + std::to_string(index_value));
+                            }
+                            
+                            size_t index_size_t = static_cast<size_t>(index_value);
+                            if (std::find(used_indices.begin(), used_indices.end(), index_size_t) != used_indices.end()) {
                                 throw std::invalid_argument(
                                     "More than one Pauli definitions use the same qubit index. Conflict for index:" +
                                     pybind11::cast<std::string>(pybind11::repr(index)));
                             }
 
-                            used_indices.push_back(pybind11::cast<size_t>(index));
+                            used_indices.push_back(index_size_t);
                         };
 
                         for (const auto &item : dict_arg) {
@@ -467,6 +480,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                                         "Qubit index must be an int. got:" +
                                         pybind11::cast<std::string>(pybind11::repr(qubit_index)));
                                 }
+                                
                                 verify_index_not_used(qubit_index);
                                 add_pauli_to_index(qubit_index, convert_pauli_to_int(pauli_str_or_int));
                             }
@@ -542,14 +556,12 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
                     Dict[int, Union[int, str]]: initializes by interpreting keys as
                         the qubit index and values as the Pauli for that index.
-                        Each item can be a single-qubit Pauli string (like "X"),
+                        Each value can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
                     Dict[str, Iterable[int]]: initializes by interpreting keys as
                         Pauli operators and values as the qubit indices for that Pauli.
-                        (TODO decide if we want to insist on the following. Currently
-                        I've changed the code to allow keys to be ints)
-                        Note that in order to avoid ambiguity, the Pauli keys must be
-                        strings,in contrast with the other initialization methods.
+                        Each key can be a single-qubit Pauli string (like "X"),
+                        or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
             Examples:
                 >>> import stim
@@ -581,8 +593,11 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
                 stim.PauliString("+X_YX")
 
-                >>> stim.PauliString({"X": [1], "Z": [0, 3]})
-                stim.PauliString("+ZX_Z")
+                >>> stim.PauliString({0: "X", 2: 2, 3: 1})
+                stim.PauliString("+X_YX")
+
+                >>> stim.PauliString({"X": [1], 2: [4], "Z": [0, 3]})
+                stim.PauliString("+ZX_ZY")
         )DOC")
             .data());
 
