@@ -112,31 +112,37 @@ guide and Python best practices.
 
 CrumPy makes use of the widget creation tool
 [AnyWidget](https://anywidget.dev/). With AnyWidget, Python classes are able to
-take JavaScript and display custom widgets in Jupyter environments. CrumPy
-therefore includes both JavaScript and Python subparts:
+take JavaScript and display custom widgets in Jupyter environments. In order to 
+visualize Crumble within CrumPy, some modifications in the Crumble source code
+were needed. CrumPy therefore includes both JavaScript and Python subparts:
 
 ```text
 glue/
-├── crumble/                  # Modified Crumble code
-│   ├── crumpy/
-│   │   ├── __init__.py       # Python code for CircuitWidget
-│   │   └── bundle.js         # Bundled JavaScript will appear here
-│   ├── main.js       # Main circuit visualization/setup
+├── crumpy/                       # Modified Crumble code
+│   ├── src/
+│   │   ├── crumpy/
+│   │   │   └── __init__.py       # Python code for CircuitWidget
+│   │   ├── js/
+│   │   │   ├── draw/             # Modified JS source code
+│   │   │   ├── main.js           # Main circuit visualization/setup
+│   │   │   ├── bundle.js         # Bundled JavaScript will appear here
+│   │   │   └── package.json      # Bundling setup and scripts
 │   └── ...
-│   └── package.json          # Bundling setup and scripts
-├── tests/                    # Python tests
-└── ...
+│   ├── tests/                    # Python tests
+│   ├── simple_example.ipynb      # Example notebook
+│   └── getting_started.ipynb     # Getting started notebook
 ```
 
-`glue/crumble/crumpy` contains the main Python package code.
+`glue/crumpy` contains the main Python package code.
 
-`glue/crumble/crumpy/__init__.py` contains the main class of the `crumpy` package,
+`glue/crumpy/src/crumpy/__init__.py` contains the main class of the `crumpy` package,
 `CircuitWidget`.
 
-`glue/crumble/` contains the modified Crumble circuit visualization code that
-will be rendered in the `CircuitWidget` widget.
+`glue/crumpy/src/js/` contains the modified Crumble circuit visualization code that
+will be rendered in the `CircuitWidget` widget. In the build step, we copy the Crumble
+source code and modify it with the `.js` files in this folder.
 
-`glue/crumble/main.js` contains the main circuit visualization and setup logic
+`glue/crumpy/src/js/main.js` contains the main circuit visualization and setup logic
 in the form of the `render` function
 [used by AnyWidget](https://anywidget.dev/en/afm/#anywidget-front-end-module-afm).
 
@@ -158,6 +164,13 @@ A new bundle should appear at `src/js/bundle.js`.
 **Note**: If you are working in a Jupyter notebook and re-bundle the JavaScript,
 you may need to restart the notebook kernel and rerun any widget-displaying code
 for the changes to take effect.
+
+### Install from source
+
+After creating the bundle, you can install the package from source:
+
+1. Navigate to `glue/crumpy`
+2. Run `pip install -e .` in your favorite Python environment
 
 <!-- SPHINX-START -->
 
