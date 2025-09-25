@@ -414,23 +414,24 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         ps.pauli_by_location.push_back(std::make_pair(index_, pauli));
                     };
 
-                    if (pybind11::isinstance<pybind11::int_>(first_entry->first)) {
-                        // Key are ints - i.e the qubit indices:
+                    if (pybind11::isinstance<pybind11::int_>(first_entry->second) || 
+                        pybind11::isinstance<pybind11::str>(first_entry->second)) {
+                        // Value is int or str -> key is qubit index:
                         for (const auto &item : dict_arg) {
                             const auto index = item.first;
                             const auto pauli_string = item.second;
                             // Verify index is int for consistency:
                             if (!pybind11::isinstance<pybind11::int_>(index)) {
                                 throw std::invalid_argument(
-                                    "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
+                                    "When constructing stim.PauliString from Dict, keys must all be ints (indices) with single Pauli values, or Pauli keys with iterable values. Conflicting key: " +
                                     pybind11::cast<std::string>(pybind11::repr(index)));
                             }
 
                             add_pauli_to_index(index, convert_pauli_to_int(pauli_string));
                         }
 
-                    } else if (pybind11::isinstance<pybind11::str>(first_entry->first)) {
-                        // Keys are strings:
+                    } else if (pybind11::isinstance<pybind11::iterable>(first_entry->second)) {
+                        // Value is iterable -> key is Pauli:
                         auto used_indices = std::vector<size_t>();
 
                         auto verify_index_not_used = [&used_indices](pybind11::handle index) {
@@ -444,36 +445,33 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         };
 
                         for (const auto &item : dict_arg) {
-                            const auto pauli_string = item.first;
-                            const auto index_or_indices = item.second;
+                            const auto pauli_str_or_int = item.first;
+                            const auto indices = item.second;
 
-                            // Verify pauli_string is str for consistency:
-                            if (!pybind11::isinstance<pybind11::str>(pauli_string)) {
+                            // Verify pauli_str_or_int is str or int for consistency:
+                            if (!(pybind11::isinstance<pybind11::str>(pauli_str_or_int) ||
+                                pybind11::isinstance<pybind11::int_>(pauli_str_or_int))) {
                                 throw std::invalid_argument(
-                                    "When constructing stim.PauliString from Dict, keys must all be ints or all strings, not a mix. Conflicting key: " +
-                                    pybind11::cast<std::string>(pybind11::repr(pauli_string)));
+                                    "When constructing stim.PauliString from Dict, keys must all be ints (indices) with single Pauli values, or Pauli keys with iterable values. Conflicting key: " +
+                                    pybind11::cast<std::string>(pybind11::repr(pauli_str_or_int)));
                             }
 
-                            const auto pauli_int = convert_pauli_to_int(pauli_string);
-
-                            if (pybind11::isinstance<pybind11::iterable>(index_or_indices)) {
-                                for (const auto &qubit_index : index_or_indices) {
-                                    // Verify index is an int:
-                                    if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
-                                        throw std::invalid_argument(
-                                            "Qubit index must be an int. got:" +
-                                            pybind11::cast<std::string>(pybind11::repr(qubit_index)));
-                                    }
-                                    verify_index_not_used(qubit_index);
-                                    add_pauli_to_index(qubit_index, pauli_int);
-                                }
-                            } else if (pybind11::isinstance<pybind11::int_>(index_or_indices)) {
-                                verify_index_not_used(index_or_indices);
-                                add_pauli_to_index(index_or_indices, pauli_int);
-                            } else {
+                            // All values must be iterables if at least one of them is:
+                            if (!pybind11::isinstance<pybind11::iterable>(indices)) {
                                 throw std::invalid_argument(
-                                    "Qubit index must be an int. got:" +
-                                    pybind11::cast<std::string>(pybind11::repr(index_or_indices)));
+                                    "When constructing stim.PauliString from Dict, with values as iterables, all values must be iterables. got: " +
+                                    pybind11::cast<std::string>(pybind11::repr(indices)));
+                            }
+
+                            for (const auto &qubit_index : indices) {
+                                // Verify index is an int:
+                                if (!pybind11::isinstance<pybind11::int_>(qubit_index)) {
+                                    throw std::invalid_argument(
+                                        "Qubit index must be an int. got:" +
+                                        pybind11::cast<std::string>(pybind11::repr(qubit_index)));
+                                }
+                                verify_index_not_used(qubit_index);
+                                add_pauli_to_index(qubit_index, convert_pauli_to_int(pauli_str_or_int));
                             }
                         }
                     } else {
@@ -549,8 +547,10 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         the qubit index and values as the Pauli for that index.
                         Each item can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
-                    Dict[str, Union[int, Iterable[int]]]: initializes by interpreting keys as
-                        Pauli operators and values as the qubit index or indices for that Pauli.
+                    Dict[str, Iterable[int]]: initializes by interpreting keys as
+                        Pauli operators and values as the qubit indices for that Pauli.
+                        (TODO decide if we want to insist on the following. Currently
+                        I've changed the code to allow keys to be ints)
                         Note that in order to avoid ambiguity, the Pauli keys must be
                         strings,in contrast with the other initialization methods.
 
@@ -584,7 +584,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
                 stim.PauliString("+X_YX")
 
-                >>> stim.PauliString({"X": 1, "Z: [0, 3]})
+                >>> stim.PauliString({"X": [1], "Z": [0, 3]})
                 stim.PauliString("+ZX_Z")
         )DOC")
             .data());
