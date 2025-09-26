@@ -591,8 +591,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         the qubit index and values as the Pauli for that index.
                         Each value can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
-                    Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys as
-                        Pauli operators and values as the qubit indices for that Pauli.
+                    Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys
+                        as Pauli operators and values as the qubit indices for that Pauli.
                         Each key can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
