@@ -955,3 +955,90 @@ def test_before_reset():
         stim.PauliString("Z").before(stim.Circuit("MX 0"))
     with pytest.raises(ValueError):
         stim.PauliString("Z").before(stim.Circuit("MY 0"))
+
+def test_constructor_from_dict():
+    # Values are single Pauli -> Key is the qubit index:
+    assert stim.PauliString({2: "X", 4: "Z"}) == stim.PauliString("__X_Z")
+    assert stim.PauliString({0: 1, 1: 2}) == stim.PauliString("XY")
+    assert stim.PauliString({1: 1, 3: 2, 5: "Z"}) == stim.PauliString("_X_Y_Z")
+    assert stim.PauliString({1: 0, 3: "I", 4: "_"}) == stim.PauliString("_____")
+    assert stim.PauliString({0: "X", 2: "x", 4: "y"}) == stim.PauliString("X_X_Y") # Case-insensitive
+    assert stim.PauliString({}) == stim.PauliString("")
+
+    # Values are iterable -> Key is the Pauli:
+    assert stim.PauliString({"X": [0], "Z": [1]}) == stim.PauliString("XZ")
+    assert stim.PauliString({1: [0], 3: [1]}) == stim.PauliString("XZ")
+    assert stim.PauliString({"X": [2], "Z": [4], "Y": [6], "I": [5]}) == stim.PauliString("__X_Z_Y")
+    assert stim.PauliString({"X": [0], "Z": [1,2]}) == stim.PauliString("XZZ")
+    assert stim.PauliString({"x": [0,2], "Y": [4]}) == stim.PauliString("X_X_Y") # Case-insensitive
+    assert stim.PauliString({"I": [1,2]}) == stim.PauliString("___")
+    assert stim.PauliString({"I": []}) == stim.PauliString("")
+    assert stim.PauliString({"I": [9]}) == stim.PauliString(10)
+    assert stim.PauliString({0: [9]}) == stim.PauliString(10)
+    assert stim.PauliString({"_": [9]}) == stim.PauliString(10)
+
+    # Acceptable collisions:
+    assert stim.PauliString({"X": [2], "I": [2]}) == stim.PauliString("__X") # Trivial Pauli should not cause a conflict
+    assert stim.PauliString({"X": [2], 1: [2]}) == stim.PauliString("__X") # Same Pauli should not cause conflict between int/str
+    assert stim.PauliString({"X": [2], "I": [0,1,2,3], "Z": [0], 0: [0,1,2,3], "Y": [1], "_": [0,1,2,3]}) == stim.PauliString("ZYX_") # A more complex example
+
+def test_constructor_from_dict_errors():
+    with pytest.raises(ValueError, match="keys must all be ints"):
+        stim.PauliString({"X": 0}) # When value is non-itetable, key must be int (index)
+
+    with pytest.raises(ValueError, match="Don't know how to convert"):
+        stim.PauliString({"A": [0]})
+
+    with pytest.raises(ValueError, match="Don't know how to convert"):
+        stim.PauliString({0: "A"})
+
+    with pytest.raises(ValueError, match="Don't know how to convert"):
+        stim.PauliString({0: 4}) # Paulis correspond to 0-3
+
+    with pytest.raises(ValueError, match="Don't know how to convert"):
+        stim.PauliString({0: -1}) # Paulis correspond to 0-3
+
+    with pytest.raises(ValueError, match="Don't know how to convert"):
+        stim.PauliString({"ZX": [0]}) # Paulis need to be single characters
+
+    with pytest.raises(ValueError, match="Pauli keys with iterable values"):
+        stim.PauliString({"X": "not an iterable"})
+
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"Y": [0, "not an int"]})
+
+    with pytest.raises(ValueError, match="keys must all be ints"):
+        stim.PauliString({"X": 0, 1: "Y"})
+
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"X": [0], 1: "Y"})
+
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"X": [0], 1: ["Y"]})
+
+    with pytest.raises(ValueError, match="same qubit index"):
+        stim.PauliString({"X": [0], "Y": [0]}) # Different non-trivial Paulies can't use the same index
+
+    with pytest.raises(ValueError, match="same qubit index"):
+        stim.PauliString({"Z": [1], "Y": [4,1]}) # Different non-trivial Paulies can't use the same index
+
+    with pytest.raises(ValueError, match="same qubit index"):
+        stim.PauliString({"I": [0,1,4], "Z": [1], "Y": [4,1]}) # Different non-trivial Paulies can't use the same index
+
+    with pytest.raises(ValueError, match="keys must all be ints"):
+        stim.PauliString({(): []})
+
+    with pytest.raises(ValueError, match="keys must all be ints"):
+        stim.PauliString({(): 0})
+
+    with pytest.raises(ValueError, match="Qubit index must be an int"):
+        stim.PauliString({"X": [()]})
+
+    with pytest.raises(ValueError, match="Qubit index must be non-negative"):
+        stim.PauliString({"X": [-1]})
+
+    with pytest.raises(ValueError, match="Qubit index must be non-negative"):
+        stim.PauliString({-1: "X"})
+    
+    with pytest.raises(ValueError, match="Qubit index must be non-negative"):
+        stim.PauliString({"I": [-1]})
