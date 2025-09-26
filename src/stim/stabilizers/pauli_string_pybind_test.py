@@ -977,6 +977,10 @@ def test_constructor_from_dict():
     assert stim.PauliString({0: [9]}) == stim.PauliString(10)
     assert stim.PauliString({"_": [9]}) == stim.PauliString(10)
 
+    assert stim.PauliString({"X": [2], "I": [2]}) == stim.PauliString("__X") # Trivial Pauli should not cause a conflict
+    assert stim.PauliString({"X": [2], 1: [2]}) == stim.PauliString("__X") # Same Pauli should not cause conflict between int/str
+    assert stim.PauliString({"X": [2], "I": [0,1,2,3], "Z": [0], 0: [0,1,2,3], "Y": [1], "_": [0,1,2,3]}) == stim.PauliString("ZYX_") # A more complex example
+
 def test_constructor_from_dict_errors():
     with pytest.raises(ValueError, match="keys must all be ints"):
         stim.PauliString({"X": 0}) # When value is non-itetable, key must be int (index)
