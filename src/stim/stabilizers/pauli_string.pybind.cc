@@ -417,7 +417,7 @@ static FlexPauliString pauli_string_from_dict(const pybind11::dict& dict) {
             // This helper function checks if an index has been used before. It doesn't allow non-trivial 
             // Pauli strings to collide, but it does allow collisions with trivial ("I") Pauli strings by not keeping track of them.
             // return true if the new index should be added to the final result.
-            
+
             int64_t index_value = pybind11::cast<int64_t>(index);
             if (index_value < 0) {
                 throw std::invalid_argument(
@@ -534,10 +534,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                     return pybind11::cast<FlexPauliString>(other_or);
                 }
 
-
-                // Handle dict input:
                 if (pybind11::isinstance<pybind11::dict>(arg)) {
-                    // pybind11::dict dict_arg = pybind11::cast<pybind11::dict>(arg);
                     return pauli_string_from_dict(pybind11::cast<pybind11::dict>(arg));
                 }
 
@@ -594,7 +591,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         the qubit index and values as the Pauli for that index.
                         Each value can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
-                    Dict[str, Iterable[int]]: initializes by interpreting keys as
+                    Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys as
                         Pauli operators and values as the qubit indices for that Pauli.
                         Each key can be a single-qubit Pauli string (like "X"),
                         or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
