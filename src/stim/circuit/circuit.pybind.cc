@@ -1090,32 +1090,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("tag") = "",
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
                    : clean_doc_string(R"DOC(
-                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]], arg: Union[float, Iterable[float]], *, tag: str = "") -> None:
+                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]], arg: Union[float, Iterable[float], None] = None, *, tag: str = "") -> None:
                 @overload def append(self, name: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock, stim.Circuit]) -> None:
                 Appends an operation into the circuit.
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
-
-                Examples:
-                    >>> import stim
-                    >>> c = stim.Circuit()
-                    >>> c.append("X", 0)
-                    >>> c.append("H", [0, 1])
-                    >>> c.append("M", [0, stim.target_inv(1)])
-                    >>> c.append("CNOT", [stim.target_rec(-1), 0])
-                    >>> c.append("X_ERROR", [0], 0.125)
-                    >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
-                    >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
-                    >>> print(repr(c))
-                    stim.Circuit('''
-                        X 0
-                        H 0 1
-                        M 0 !1
-                        CX rec[-1] 0
-                        X_ERROR(0.125) 0
-                        E(0.25) X0 Y2
-                        MPP X1*Y2 Z3
-                    ''')
 
                 Args:
                     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
@@ -1148,6 +1127,27 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         `cirq.append`) will default to a single 0.0 argument for gates that
                         take exactly one argument.
                     tag: A customizable string attached to the instruction.
+
+                Examples:
+                    >>> import stim
+                    >>> c = stim.Circuit()
+                    >>> c.append("X", 0)
+                    >>> c.append("H", [0, 1])
+                    >>> c.append("M", [0, stim.target_inv(1)])
+                    >>> c.append("CNOT", [stim.target_rec(-1), 0])
+                    >>> c.append("X_ERROR", [0], 0.125)
+                    >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+                    >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
+                    >>> print(repr(c))
+                    stim.Circuit('''
+                        X 0
+                        H 0 1
+                        M 0 !1
+                        CX rec[-1] 0
+                        X_ERROR(0.125) 0
+                        E(0.25) X0 Y2
+                        MPP X1*Y2 Z3
+                    ''')
             )DOC")
                          .data());
     }

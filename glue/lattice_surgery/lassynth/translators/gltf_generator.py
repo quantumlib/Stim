@@ -2471,6 +2471,7 @@ def gltf_generator(lasre: Mapping[str, Any],
     ExistJ = lasre["ExistJ"]
     ColorJ = lasre["ColorJ"]
     ExistK = lasre["ExistK"]
+    s_bound = None
     if "CorrIJ" in lasre:
         CorrIJ = lasre["CorrIJ"]
         CorrIK = lasre["CorrIK"]
@@ -2493,7 +2494,7 @@ def gltf_generator(lasre: Mapping[str, Any],
     t_injections = (lasre["optional"]["t_injections"]
                     if "t_injections" in lasre["optional"] else [])
 
-    if s < -1 or (s_bound > 0 and s not in range(-1, s_bound)):
+    if s < -1 or (s_bound is not None and s_bound > 0 and s not in range(-1, s_bound)):
         raise ValueError(f"No such stabilizer index {s}.")
 
     for i in range(i_bound):

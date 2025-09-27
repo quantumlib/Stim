@@ -1,5 +1,10 @@
 #include "stim/util_top/reference_sample_tree.h"
 
+#if defined(_WIN32)
+#include <intrin.h>
+#pragma intrinsic(_umul128)
+#endif
+
 using namespace stim;
 
 bool ReferenceSampleTree::empty() const {
@@ -149,12 +154,23 @@ ReferenceSampleTree ReferenceSampleTree::simplified() const {
     return result;
 }
 
-size_t ReferenceSampleTree::size() const {
-    size_t result = prefix_bits.size();
+uint64_t ReferenceSampleTree::size() const {
+    uint64_t result = prefix_bits.size();
     for (const auto &child : suffix_children) {
         result += child.size();
     }
-    return result * repetitions;
+#if defined(__GNUC__) || defined(__clang__)
+    bool overflow = __builtin_mul_overflow(result, repetitions, &result);
+    assert(!overflow);
+#elif defined(_WIN64)
+    uint64_t overflow;
+    result = _umul128(result, repetitions, &overflow);
+    assert(overflow == 0);
+#else
+    assert((repetitions == 0) || (result <= (UINT64_MAX / repetitions)));
+    result *= repetitions;
+#endif
+    return result;
 }
 
 void ReferenceSampleTree::decompress_into(std::vector<bool> &output) const {
@@ -187,6 +203,57 @@ bool ReferenceSampleTree::operator==(const ReferenceSampleTree &other) const {
 }
 bool ReferenceSampleTree::operator!=(const ReferenceSampleTree &other) const {
     return !(*this == other);
+}
+
+bool ReferenceSampleTree::operator[](uint64_t index) const {
+    uint64_t current_absolute_index = 0;
+    bool result;
+    bool value_found = try_get_bit_value(index, current_absolute_index, result);
+    assert(value_found);
+    return result;
+}
+
+bool ReferenceSampleTree::try_get_bit_value(
+    uint64_t desired_absolute_index, uint64_t &current_absolute_index, bool &bit_value) const {
+    // Run through once to allow shallow accesses (without unnecessary full iteration of the tree).
+    const uint64_t current_relative_starting_index = current_absolute_index;
+    {
+        const uint64_t relative_index = desired_absolute_index - current_absolute_index;
+        if (relative_index < prefix_bits.size()) {
+            bit_value = prefix_bits[relative_index];
+            return true;
+        }
+        current_absolute_index += prefix_bits.size();
+        for (const ReferenceSampleTree &child : suffix_children) {
+            if (child.try_get_bit_value(desired_absolute_index, current_absolute_index, bit_value)) {
+                return true;
+            }
+        }
+    }
+    // After the first full iteration, extrapolate the repetition size and skip to the proper iteration.
+    const uint64_t single_iteration_size = current_absolute_index - current_relative_starting_index;
+    const uint64_t skip_to_iteration_count =
+        (desired_absolute_index - current_relative_starting_index) / single_iteration_size;
+    if (skip_to_iteration_count < repetitions) {
+        // If the desired index is in this part of the tree, skip forward to the appropriate iteration.
+        current_absolute_index += single_iteration_size * (skip_to_iteration_count - 1);
+        // Do the final iteration to find the value.
+        const uint64_t relative_index = desired_absolute_index - current_absolute_index;
+        if (relative_index < prefix_bits.size()) {
+            bit_value = prefix_bits[relative_index];
+            return true;
+        }
+        current_absolute_index += prefix_bits.size();
+        for (const ReferenceSampleTree &child : suffix_children) {
+            if (child.try_get_bit_value(desired_absolute_index, current_absolute_index, bit_value)) {
+                return true;
+            }
+        }
+    } else {
+        // Advance past this node for parent to continue.
+        current_absolute_index += single_iteration_size * (repetitions - 1);
+    }
+    return false;
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const ReferenceSampleTree &v) {

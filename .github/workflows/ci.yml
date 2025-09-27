@@ -126,9 +126,7 @@ jobs:
           {os: windows-2025, dist: cp310-win_amd64},
           {os: windows-2025, dist: cp311-win_amd64},
           {os: windows-2025, dist: cp312-win_amd64},
-
-          # (April 2024) disabled because numpy fails to build. Unsure why it's not using a prebuilt wheel.
-          # {os: windows-2025, dist: cp313-win_amd64},
+          {os: windows-2025, dist: cp313-win_amd64},
 
           {os: windows-2025, dist: cp36-win32},
           {os: windows-2025, dist: cp37-win32},
@@ -153,9 +151,7 @@ jobs:
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      # (April 2015): The >=0.11.dev0 is to allow pip to pick 1.5.0.dev, because cirq-core v1.4 doesn't allow numpy v2.
-      #               But it also allows older versions of python to pick versions before 1.4 as needed.
-      CIBW_TEST_REQUIRES: cirq-core>=0.11.dev0 pytest
+      CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
@@ -351,7 +347,7 @@ jobs:
     - run: ./a.out test
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | install_dir/bin/stim --sample
   benchmark_windows:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
       - uses: microsoft/setup-msbuild@c26a08ba26249b81327e26f6ef381897b6a8754d # v1.0.2

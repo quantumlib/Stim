@@ -33,6 +33,15 @@
 - [arXiv:2408.00758](https://arxiv.org/abs/2408.00758) → [Stim circuits for ``To reset, or not to reset -- that is the question" manuscript](https://zenodo.org/records/13152440)
 - [arXiv:2408.11894](https://arxiv.org/abs/2408.11894) → [Stim circuits for 'Automated Synthesis of Fault-Tolerant State Preparation Circuits for Quantum Error Correction Codes'](https://github.com/cda-tum/mqt-qecc/tree/main/src/mqt/qecc/ft_stateprep/eval/circuits)
 - [arXiv:2408.13687](https://arxiv.org/abs/2408.13687) → [Data for "Quantum error correction below the surface code threshold"](https://zenodo.org/records/13273331)
+- [arXiv:2409.04628](https://arxiv.org/abs/2409.04628) → [Stim implementation of the [[16,4,4]] Tesseract Code](https://github.com/DeDuckProject/tesseract-code-stim) (circuits are in the stim_circuits/ directory)
 - [arXiv:2409.17595](https://arxiv.org/abs/2409.17595) → [Data for "Magic state cultivation: growing T states as cheap as CNOT gates"](https://zenodo.org/records/13777072)
+- [arXiv:2412.01391](https://arxiv.org/abs/2412.01391) → [GitHub repo for "Transversal Logical Clifford gates on rotated surface codes with reconfigurable neutral atom arrays"](https://github.com/Zihan-Chen-PhMA/Dynamical-S-gate-decoding/) (circuits are in the circuit_garage/ directory)
 - [arXiv:2412.14256](https://arxiv.org/abs/2412.14256) → [Data for "Scaling and logic in the color code on a superconducting quantum processor"](https://zenodo.org/records/14238944)
 - [arXiv:2412.14360](https://arxiv.org/abs/2412.14360) → [Data for "Demonstrating dynamic surface codes"](https://zenodo.org/records/14238907)
+
+## 2025
+
+- [arXiv:2503.04968](https://arxiv.org/abs/2503.04968) → [GitHub repo for "Optimized Noise-Resilient Surface Code Teleportation Interfaces"](https://github.com/QEC-pages/Modular-Surface-code-simulations/) (circuits are in the out/ directory)
+- [arXiv:2503.18657](https://arxiv.org/abs/2503.18657) → [GitHub repo for "Efficient Magic State Cultivation on RP^2"](https://github.com/Zihan-Chen-PhMA/Cultiv_T_RP2/) (circuits are in the circuit_garage/ directory)
+- [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
+- [arXiv:2507.19430](https://arxiv.org/abs/2507.19430) → [Stim circuits and parity check matrices for "Directional Codes: a new family of quantum LDPC codes on hexagonal- and square-grid connectivity hardware" manuscript](https://zenodo.org/records/16422162)
