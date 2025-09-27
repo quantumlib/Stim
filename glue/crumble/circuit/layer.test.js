@@ -20,13 +20,17 @@ test("layer.put_get", () => {
 
     let marker1 = new Operation(GATE_MAP.get("MARKX"), '', new Float32Array([0]), new Uint32Array([4]));
     let marker2 = new Operation(GATE_MAP.get("MARKZ"), '', new Float32Array([1]), new Uint32Array([5]));
+    let marker3 = new Operation(GATE_MAP.get("REVMARKX"), '', new Float32Array([2]), new Uint32Array([4]));
+    let marker4 = new Operation(GATE_MAP.get("REVMARKZ"), '', new Float32Array([3]), new Uint32Array([5]));
     layer.put(marker1);
     layer.put(marker2);
+    layer.put(marker3);
+    layer.put(marker4);
     assertThat(layer.id_ops).isEqualTo(new Map([
         [2, op],
         [3, op],
     ]));
-    assertThat(layer.markers).isEqualTo([marker1, marker2]);
+    assertThat(layer.markers).isEqualTo([marker1, marker2, marker3, marker4]);
 });
 
 test("layer.filtered", () => {

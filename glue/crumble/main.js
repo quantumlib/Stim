@@ -226,6 +226,12 @@ function makeChordHandlers() {
     });
     res.set(' ', preview => editorState.unmarkFocusInferBasis(preview));
 
+    const shiftedKeyMap = {
+        '1': '!', '2': '@', '3': '#', '4': '$', '5': '%',
+        '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+        '-': '_', '=': '+', '\\': '|', '`': '~'
+    };
+
     for (let [key, val] of [
         ['1', 0],
         ['2', 1],
@@ -243,6 +249,9 @@ function makeChordHandlers() {
         ['`', 13],
     ]) {
         res.set(`${key}`, preview => editorState.markFocusInferBasis(preview, val));
+        res.set(`shift+${shiftedKeyMap[key]}+x`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('REVMARKX').withDefaultArgument(val)));
+        res.set(`shift+${shiftedKeyMap[key]}+y`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('REVMARKY').withDefaultArgument(val)));
+        res.set(`shift+${shiftedKeyMap[key]}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('REVMARKZ').withDefaultArgument(val)));
         res.set(`${key}+x`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKX').withDefaultArgument(val)));
         res.set(`${key}+y`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKY').withDefaultArgument(val)));
         res.set(`${key}+z`, preview => editorState.writeGateToFocus(preview, GATE_MAP.get('MARKZ').withDefaultArgument(val)));
@@ -487,6 +496,7 @@ function handleKeyboardEvent(ev) {
     key = key.substring(0, key.length - 1);
 
     let handler = CHORD_HANDLERS.get(key);
+    console.debug(`Key: "${key}" => ${handler}`);
     if (handler !== undefined) {
         handler(chord_ev.inProgress);
         ev.preventDefault();
