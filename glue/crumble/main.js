@@ -496,7 +496,6 @@ function handleKeyboardEvent(ev) {
     key = key.substring(0, key.length - 1);
 
     let handler = CHORD_HANDLERS.get(key);
-    console.debug(`Key: "${key}" => ${handler}`);
     if (handler !== undefined) {
         handler(chord_ev.inProgress);
         ev.preventDefault();
