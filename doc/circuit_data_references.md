@@ -45,3 +45,4 @@
 - [arXiv:2503.18657](https://arxiv.org/abs/2503.18657) → [GitHub repo for "Efficient Magic State Cultivation on RP^2"](https://github.com/Zihan-Chen-PhMA/Cultiv_T_RP2/) (circuits are in the circuit_garage/ directory)
 - [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
 - [arXiv:2507.19430](https://arxiv.org/abs/2507.19430) → [Stim circuits and parity check matrices for "Directional Codes: a new family of quantum LDPC codes on hexagonal- and square-grid connectivity hardware" manuscript](https://zenodo.org/records/16422162)
+- [arXiv:2502.01743](https://arxiv.org/abs/2502.01743) → [Github Repo for "Efficient Magic State Cultivation on the Surface Code"](https://github.com/tomirendo/surface-code-magic-state-cultivation)
