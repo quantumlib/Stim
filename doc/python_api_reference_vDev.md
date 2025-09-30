@@ -11086,6 +11086,14 @@ def __init__(
             Iterable: initializes by interpreting each item as a Pauli.
                 Each item can be a single-qubit Pauli string (like "X"),
                 or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+            Dict[int, Union[int, str]]: initializes by interpreting keys as
+                the qubit index and values as the Pauli for that index.
+                Each value can be a single-qubit Pauli string (like "X"),
+                or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+            Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys
+                as Pauli operators and values as the qubit indices for that Pauli.
+                Each key can be a single-qubit Pauli string (like "X"),
+                or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
     Examples:
         >>> import stim
@@ -11113,6 +11121,15 @@ def __init__(
 
         >>> stim.PauliString("X6*Y6")
         stim.PauliString("+i______Z")
+
+        >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
+        stim.PauliString("+X_YX")
+
+        >>> stim.PauliString({0: "X", 2: 2, 3: 1})
+        stim.PauliString("+X_YX")
+
+        >>> stim.PauliString({"X": [1], 2: [4], "Z": [0, 3]})
+        stim.PauliString("+ZX_ZY")
     """
 ```
 
