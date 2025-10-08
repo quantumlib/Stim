@@ -664,6 +664,8 @@ class Circuit:
         """
     def count_determined_measurements(
         self,
+        *,
+        unknown_input: bool = False,
     ) -> int:
         """Counts the number of predictable measurements in the circuit.
 
@@ -695,6 +697,13 @@ class Circuit:
         the Z basis. Typically this relationship is not declared as a detector, because
         it's not local, or as an observable, because it doesn't store a qubit.
 
+        Args:
+            unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                When set to True, the inputs are instead treated as being in unknown
+                random states. For example, this means that Z-basis measurements at
+                the very beginning of the circuit will be considered random rather
+                than determined.
+
         Returns:
             The number of measurements that were predictable.
 
@@ -713,6 +722,24 @@ class Circuit:
             ...     M 0
             ... ''').count_determined_measurements()
             0
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ... ''').count_determined_measurements()
+            1
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ... ''').count_determined_measurements(unknown_input=True)
+            0
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ...     M 0 1
+            ...     M 0 1 2
+            ...     M 0 1 2 3
+            ... ''').count_determined_measurements(unknown_input=True)
+            6
 
             >>> stim.Circuit('''
             ...     R 0 1
@@ -1867,6 +1894,65 @@ class Circuit:
             1000 -2 0
             4001 -1 0
             4001 2 0
+        """
+    def missing_detectors(
+        self,
+        *,
+        unknown_input: bool = False,
+    ) -> int:
+        """Finds deterministic measurements independent of declared detectors/observables.
+
+        This method is useful for debugging missing detectors in a circuit, because it
+        identifies generators for uncovered degrees of freedom.
+
+        It's not recommended to use this method to solve for the detectors of a circuit.
+        The returned detectors are not guaranteed to be stable across versions, and
+        aren't optimized to be "good" (e.g. form a low weight basis or be matchable
+        if possible). It will also identify things that are technically determined
+        but that the user may not want to use as a detector, such as the fact that
+        in the first round after transversal Z basis initialization of a toric code
+        the product of all X stabilizer measurements is deterministic even though the
+        individual measurements are all random.
+
+        Args:
+            unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                When set to True, the inputs are instead treated as being in unknown
+                random states. For example, this means that Z-basis measurements at
+                the very beginning of the circuit will be considered random rather
+                than determined.
+
+        Returns:
+            A circuit containing DETECTOR instructions that specify the uncovered
+            degrees of freedom in the deterministic measurement sets of the input
+            circuit. The returned circuit can be appended to the input circuit to
+            get a circuit with no missing detectors.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     M 0
+            ... ''').missing_detectors()
+            stim.Circuit('''
+                DETECTOR rec[-1]
+            ''')
+
+            >>> stim.Circuit('''
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ...     DEPOLARIZE1(0.1) 0 1
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ...     DETECTOR rec[-1] rec[-4]
+            ...     DETECTOR rec[-2] rec[-5]
+            ...     DETECTOR rec[-3] rec[-6]
+            ... ''').missing_detectors(unknown_input=True)
+            stim.Circuit('''
+                DETECTOR rec[-3] rec[-2] rec[-1]
+            ''')
         """
     @property
     def num_detectors(
@@ -6354,6 +6440,79 @@ class FlipSimulator:
             >>> import stim
             >>> sim = stim.FlipSimulator(batch_size=256)
         """
+    def append_measurement_flips(
+        self,
+        measurement_flip_data: np.ndarray,
+    ) -> None:
+        """Appends measurement flip data to the simulator's measurement record.
+
+        Args:
+            measurement_flip_data: The flip data to append. The following shape/dtype
+                combinations are supported.
+
+                Single measurement without bit packing:
+                    shape=(self.batch_size,)
+                    dtype=np.bool_
+
+                Single measurement with bit packing:
+                    shape=(math.ceil(self.batch_size / 8),)
+                    dtype=np.uint8
+
+                Multiple measurements without bit packing:
+                    shape=(num_measurements, self.batch_size)
+                    dtype=np.bool_
+
+                Multiple measurements with bit packing:
+                    shape=(num_measurements, math.ceil(self.batch_size / 8))
+                    dtype=np.uint8
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+            >>> sim = stim.FlipSimulator(batch_size=9)
+            >>> sim.append_measurement_flips(np.array(
+            ...     [0, 1, 0, 0, 1, 0, 0, 1, 1],
+            ...     dtype=np.bool_,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [0b11001001, 0],
+            ...     dtype=np.uint8,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [[0b11111111, 0b1], [0b00000000, 0b0], [0b11111111, 0b1]],
+            ...     dtype=np.uint8,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [False, False, False, False, False, False, False, False, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [[1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0]],
+            ...     dtype=np.bool_,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [False, False, False, False, False, False, False, False, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [ True, False,  True, False,  True, False,  True, False,  True],
+                   [False,  True, False,  True, False,  True, False,  True, False]])
+        """
     @property
     def batch_size(
         self,
@@ -8643,6 +8802,14 @@ class PauliString:
                 Iterable: initializes by interpreting each item as a Pauli.
                     Each item can be a single-qubit Pauli string (like "X"),
                     or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                Dict[int, Union[int, str]]: initializes by interpreting keys as
+                    the qubit index and values as the Pauli for that index.
+                    Each value can be a single-qubit Pauli string (like "X"),
+                    or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys
+                    as Pauli operators and values as the qubit indices for that Pauli.
+                    Each key can be a single-qubit Pauli string (like "X"),
+                    or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
         Examples:
             >>> import stim
@@ -8670,6 +8837,15 @@ class PauliString:
 
             >>> stim.PauliString("X6*Y6")
             stim.PauliString("+i______Z")
+
+            >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
+            stim.PauliString("+X_YX")
+
+            >>> stim.PauliString({0: "X", 2: 2, 3: 1})
+            stim.PauliString("+X_YX")
+
+            >>> stim.PauliString({"X": [1], 2: [4], "Z": [0, 3]})
+            stim.PauliString("+ZX_ZY")
         """
     def __itruediv__(
         self,

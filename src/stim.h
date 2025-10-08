@@ -118,6 +118,7 @@
 #include "stim/util_top/export_quirk_url.h"
 #include "stim/util_top/has_flow.h"
 #include "stim/util_top/mbqc_decomposition.h"
+#include "stim/util_top/missing_detectors.h"
 #include "stim/util_top/reference_sample_tree.h"
 #include "stim/util_top/simplified_circuit.h"
 #include "stim/util_top/stabilizers_to_tableau.h"

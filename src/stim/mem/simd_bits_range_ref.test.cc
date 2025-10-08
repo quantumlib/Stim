@@ -391,6 +391,27 @@ TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, intersects, {
     ASSERT_EQ(ref.intersects(other), true);
 })
 
+TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, is_subset_of_or_equal_to, {
+    simd_bits<W> data(1024);
+    simd_bits<W> other(512);
+    simd_bits_range_ref<W> ref(data);
+    ASSERT_EQ(data.is_subset_of_or_equal_to(other), true);
+    ASSERT_EQ(ref.is_subset_of_or_equal_to(other), true);
+    other[511] = true;
+    ASSERT_EQ(data.is_subset_of_or_equal_to(other), true);
+    ASSERT_EQ(ref.is_subset_of_or_equal_to(other), true);
+    data[511] = true;
+    ASSERT_EQ(data.is_subset_of_or_equal_to(other), true);
+    ASSERT_EQ(ref.is_subset_of_or_equal_to(other), true);
+    other[511] = false;
+    ASSERT_EQ(data.is_subset_of_or_equal_to(other), false);
+    ASSERT_EQ(ref.is_subset_of_or_equal_to(other), false);
+    other[511] = true;
+    data[513] = true;
+    ASSERT_EQ(data.is_subset_of_or_equal_to(other), false);
+    ASSERT_EQ(ref.is_subset_of_or_equal_to(other), false);
+})
+
 TEST_EACH_WORD_SIZE_W(simd_bits_range_ref, prefix_ref, {
     simd_bits<W> data(1024);
     simd_bits_range_ref<W> ref(data);
