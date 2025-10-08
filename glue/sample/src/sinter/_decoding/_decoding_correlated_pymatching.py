@@ -35,14 +35,14 @@ class CorrelatedPyMatchingDecoder(Decoder):
                 "For example, if you are using pip, run `pip install pymatching`.\n"
             ) from ex
 
-        # correlated matching requires pymatching 2.3.0 or later
-        if version.parse(pymatching.__version__) < version.parse("2.3.0"):
+        # correlated matching requires pymatching 2.3.1 or later
+        if version.parse(pymatching.__version__) < version.parse("2.3.1"):
             raise ValueError("""
-The correlated pymatching decoder requires pymatching 2.3.0 or later.
+The correlated pymatching decoder requires pymatching 2.3.1 or later.
 
 If you're using pip to install packages, this can be fixed by running
 ```
-pip install "pymatching~=2.3" --upgrade
+pip install "pymatching~=2.3.1" --upgrade
 ```
 """)
 
@@ -70,14 +70,14 @@ pip install "pymatching~=2.3" --upgrade
                 "For example, if you are using pip, run `pip install pymatching`.\n"
             ) from ex
 
-        # correlated matching requires pymatching 2.3.0 or later
-        if version.parse(pymatching.__version__) < version.parse("2.3.0"):
+        # correlated matching requires pymatching 2.3.1 or later
+        if version.parse(pymatching.__version__) < version.parse("2.3.1"):
             raise ValueError("""
-The correlated pymatching decoder requires pymatching 2.3.0 or later.
+The correlated pymatching decoder requires pymatching 2.3.1 or later.
 
 If you're using pip to install packages, this can be fixed by running
 ```
-pip install "pymatching~=2.3" --upgrade
+pip install "pymatching~=2.3.1" --upgrade
 ```
 """)
 
