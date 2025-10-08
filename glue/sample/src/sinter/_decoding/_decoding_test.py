@@ -239,7 +239,7 @@ def test_no_detectors_with_post_mask(decoder: str, force_streaming: Optional[boo
 @pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
 def test_post_selection(decoder: str, force_streaming: Optional[bool]):
     circuit = stim.Circuit("""
-        X_ERROR(0.6) 0
+        X_ERROR(0.4) 0
         M 0
         DETECTOR(2, 0, 0, 1) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
@@ -264,9 +264,9 @@ def test_post_selection(decoder: str, force_streaming: Optional[bool]):
         __private__unstable__force_decode_on_disk=force_streaming,
         custom_decoders=TEST_CUSTOM_DECODERS,
     )
-    assert 1050 <= result.discards <= 1350
+    assert 650 <= result.discards <= 950
     if 'vacuous' not in decoder:
-        assert 40 <= result.errors <= 160
+        assert 60 <= result.errors <= 240
 
 
 @pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
