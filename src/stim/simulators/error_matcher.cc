@@ -222,8 +222,10 @@ void ErrorMatcher::err_pauli_channel_2(const CircuitInstruction &op) {
                 }
                 bool x0 = p0 & 1;
                 bool z0 = p0 & 2;
+                x0 ^= z0;
                 bool x1 = p1 & 1;
                 bool z1 = p1 & 2;
+                x1 ^= z1;
                 uint32_t m0 = x0 * TARGET_PAULI_X_BIT + z0 * TARGET_PAULI_Z_BIT;
                 uint32_t m1 = x1 * TARGET_PAULI_X_BIT + z1 * TARGET_PAULI_Z_BIT;
                 pair[0].data = t[k].data | m0;
