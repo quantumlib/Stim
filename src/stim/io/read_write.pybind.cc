@@ -196,9 +196,9 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("bit_pack") = false,  // Legacy argument for backwards compat.
         clean_doc_string(R"DOC(
             Reads shot data, such as measurement samples, from a file.
-            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
-            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: 'Literal[True]') -> Tuple[np.ndarray, np.ndarray]:
-            @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: bool = False) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]', bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
+            @overload def read_shot_data_file(*, path: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]', bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: 'Literal[True]') -> Tuple[np.ndarray, np.ndarray]:
+            @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]', bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, separate_observables: bool = False) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
 
             Args:
                 path: The path to the file to read the data from.
@@ -282,7 +282,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_observables") = pybind11::none(),
         clean_doc_string(R"DOC(
             Writes shot data, such as measurement samples, to a file.
-            @signature def write_shot_data_file(*, data: np.ndarray, path: Union[str, pathlib.Path], format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> None:
+            @signature def write_shot_data_file(*, data: np.ndarray, path: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]', num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> None:
 
             Args:
                 data: The data to write to the file. This must be a numpy array. The dtype

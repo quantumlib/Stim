@@ -271,7 +271,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
+            @signature def to_unitary_matrix(self, *, endian: 'Literal["little", "big"]') -> np.ndarray[np.complex64]:
             Converts the tableau into a unitary matrix.
 
             For an n-qubit tableau, this method performs O(n 4^n) work. It uses the state
@@ -1742,7 +1742,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.Tableau:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: 'Literal["little", "big"]' = 'little') -> stim.Tableau:
             Creates a tableau from the unitary matrix of a Clifford operation.
 
             Args:
@@ -2142,7 +2142,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def from_state_vector(state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
+            @signature def from_state_vector(state_vector: Iterable[float], *, endian: 'Literal["little", "big"]') -> stim.Tableau:
             Creates a tableau representing the stabilizer state of the given state vector.
 
             Args:
@@ -2233,7 +2233,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
         clean_doc_string(R"DOC(
-            @signature def to_state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
+            @signature def to_state_vector(self, *, endian: 'Literal["little", "big"]' = 'little') -> np.ndarray[np.complex64]:
             Returns the state vector produced by applying the tableau to the |0..0> state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of

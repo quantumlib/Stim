@@ -270,7 +270,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
         clean_doc_string(R"DOC(
-            @signature def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
+            @signature def state_vector(self, *, endian: 'Literal["little", "big"]' = 'little') -> np.ndarray[np.complex64]:
             Returns a wavefunction for the simulator's current state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
@@ -2483,7 +2483,7 @@ void stim_pybind::pybind_tableau_simulator_methods(
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> None:
+            @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: 'Literal["little", "big"]') -> None:
             Sets the simulator's state to a superposition specified by an amplitude vector.
 
             Args:

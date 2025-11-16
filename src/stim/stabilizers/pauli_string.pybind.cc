@@ -726,7 +726,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(R"DOC(
-            @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
+            @signature def to_unitary_matrix(self, *, endian: 'Literal["little", "big"]') -> np.ndarray[np.complex64]:
             Converts the pauli string into a unitary matrix.
 
             Args:
@@ -758,7 +758,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("endian") = "little",
         pybind11::arg("unsigned") = false,
         clean_doc_string(R"DOC(
-            @signature def from_unitary_matrix(matrix: Iterable[Iterable[Union[int, float, complex]]], *, endian: str = 'little', unsigned: bool = False) -> stim.PauliString:
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[Union[int, float, complex]]], *, endian: 'Literal["little", "big"]' = 'little', unsigned: bool = False) -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
             Args:
