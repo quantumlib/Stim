@@ -19,6 +19,10 @@ def main():
     print(f'''
 """Stim {version}: a fast quantum stabilizer circuit library."""
 # (This is a stubs file describing the classes and methods in stim.)
+try:
+    from typing import Literal
+except ImportError:
+    pass
 from __future__ import annotations
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
 if TYPE_CHECKING:
