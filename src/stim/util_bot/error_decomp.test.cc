@@ -158,3 +158,29 @@ TEST(conversions, independent_vs_disjoint_xyz_errors_round_trip_fuzz) {
         ASSERT_NEAR(z, z3, 1e-6) << "x=" << x << ",y=" << y << ",z=" << z;
     }
 }
+
+TEST(conversions, depolarize1_probability_to_independent_per_channel_probability_throws_invalid_argument_if_p_greater_than_0_75) {
+    const double invalid_p = 0.76;
+    const std::string expected_error_message = "depolarize1_probability_to_independent_per_channel_probability with p>0.75; p=" + std::to_string(invalid_p);
+    EXPECT_THROW({
+        try {
+            depolarize1_probability_to_independent_per_channel_probability(invalid_p);
+        } catch (const std::invalid_argument& e) {
+            EXPECT_EQ(expected_error_message, e.what());
+            throw;
+        }
+    }, std::invalid_argument);
+}
+
+TEST(conversions, depolarize2_probability_to_independent_per_channel_probability_throws_invalid_argument_if_p_greater_than_0_9375) {
+    const double invalid_p = 0.9475;
+    const std::string expected_error_message = "depolarize2_probability_to_independent_per_channel_probability with p>15.0/16.0; p=" + std::to_string(invalid_p);
+    EXPECT_THROW({
+        try {
+            depolarize2_probability_to_independent_per_channel_probability(invalid_p);
+        } catch (const std::invalid_argument& e) {
+            EXPECT_EQ(expected_error_message, e.what());
+            throw;
+        }
+    }, std::invalid_argument);
+}

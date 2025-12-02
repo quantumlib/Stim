@@ -816,9 +816,6 @@ void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
     }
-    if (inst.args[0] > 0.75) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability > 3/4).");
-    }
     double p = depolarize1_probability_to_independent_per_channel_probability(inst.args[0]);
     for (auto q : inst.targets) {
         add_error_combinations<2>(
@@ -835,9 +832,6 @@ void ErrorAnalyzer::undo_DEPOLARIZE1(const CircuitInstruction &inst) {
 void ErrorAnalyzer::undo_DEPOLARIZE2(const CircuitInstruction &inst) {
     if (!accumulate_errors) {
         return;
-    }
-    if (inst.args[0] > 15.0 / 16.0) {
-        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability > 15/16).");
     }
     double p = depolarize2_probability_to_independent_per_channel_probability(inst.args[0]);
     for (size_t i = 0; i < inst.targets.size(); i += 2) {
