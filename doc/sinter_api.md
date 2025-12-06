@@ -161,11 +161,11 @@ class CollectionOptions:
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
     """
-    max_shots: Optional[int] = None
-    max_errors: Optional[int] = None
-    start_batch_size: Optional[int] = None
-    max_batch_size: Optional[int] = None
-    max_batch_seconds: Optional[float] = None
+    max_shots: Union = None
+    max_errors: Union = None
+    start_batch_size: Union = None
+    max_batch_size: Union = None
+    max_batch_seconds: Union = None
 ```
 
 <a name="sinter.CollectionOptions.combine"></a>
@@ -461,9 +461,9 @@ class Fit:
             of the best fit's square error, or whose likelihood was within some
             maximum Bayes factor of the max likelihood hypothesis.
     """
-    low: Optional[float]
-    best: Optional[float]
-    high: Optional[float]
+    low: Union
+    best: Union
+    high: Union
 ```
 
 <a name="sinter.Progress"></a>
@@ -586,16 +586,16 @@ class Task:
 def __init__(
     self,
     *,
-    circuit: Optional[stim.Circuit] = None,
-    decoder: Optional[str] = None,
-    detector_error_model: Optional[stim.DetectorErrorModel] = None,
-    postselection_mask: Optional[np.ndarray] = None,
-    postselected_observables_mask: Optional[np.ndarray] = None,
+    circuit: stim.Circuit | None = None,
+    decoder: str | None = None,
+    detector_error_model: stim.DetectorErrorModel | None = None,
+    postselection_mask: np.ndarray | None = None,
+    postselected_observables_mask: np.ndarray | None = None,
     json_metadata: Any = None,
     collection_options: sinter.CollectionOptions = sinter.CollectionOptions(),
     skip_validation: bool = False,
-    circuit_path: Union[str, pathlib.Path, NoneType] = None,
-    _unvalidated_strong_id: Optional[str] = None,
+    circuit_path: str | pathlib.Path | None = None,
+    _unvalidated_strong_id: str | None = None,
 ) -> None:
     """
     Args:
@@ -852,7 +852,7 @@ def to_csv_line(
         >>> print(sinter.CSV_HEADER)
              shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts
         >>> print(stat.to_csv_line())
-                22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
+                22,         3,         0,    5.00,pymatching,test,"{""a"":[1,2,3]}",
     """
 ```
 
@@ -864,14 +864,14 @@ def to_csv_line(
 def with_edits(
     self,
     *,
-    strong_id: Optional[str] = None,
-    decoder: Optional[str] = None,
-    json_metadata: Optional[Any] = None,
-    shots: Optional[int] = None,
-    errors: Optional[int] = None,
-    discards: Optional[int] = None,
-    seconds: Optional[float] = None,
-    custom_counts: Optional[Counter[str]] = None,
+    strong_id: str | None = None,
+    decoder: str | None = None,
+    json_metadata: Any | None = None,
+    shots: int | None = None,
+    errors: int | None = None,
+    discards: int | None = None,
+    seconds: float | None = None,
+    custom_counts: Counter[str] | None = None,
 ) -> sinter.TaskStats:
 ```
 
@@ -925,23 +925,23 @@ def better_sorted_str_terms(
 def collect(
     *,
     num_workers: int,
-    tasks: Union[Iterator[sinter.Task], Iterable[sinter.Task]],
-    existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
-    save_resume_filepath: Union[NoneType, str, pathlib.Path] = None,
-    progress_callback: Optional[Callable[[sinter.Progress], NoneType]] = None,
-    max_shots: Optional[int] = None,
-    max_errors: Optional[int] = None,
+    tasks: Iterator[sinter.Task] | Iterable[sinter.Task],
+    existing_data_filepaths: Iterable[str | pathlib.Path] = (),
+    save_resume_filepath: None | str | pathlib.Path = None,
+    progress_callback: Callable[[sinter.Progress], NoneType] | None = None,
+    max_shots: int | None = None,
+    max_errors: int | None = None,
     count_observable_error_combos: bool = False,
     count_detection_events: bool = False,
-    decoders: Optional[Iterable[str]] = None,
-    max_batch_seconds: Optional[int] = None,
-    max_batch_size: Optional[int] = None,
-    start_batch_size: Optional[int] = None,
+    decoders: Iterable[str] | None = None,
+    max_batch_seconds: int | None = None,
+    max_batch_size: int | None = None,
+    start_batch_size: int | None = None,
     print_progress: bool = False,
-    hint_num_tasks: Optional[int] = None,
-    custom_decoders: Optional[Dict[str, Union[sinter.Decoder, sinter.Sampler]]] = None,
-    custom_error_count_key: Optional[str] = None,
-    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
+    hint_num_tasks: int | None = None,
+    custom_decoders: Dict[str, sinter.Decoder | sinter.Sampler] | None = None,
+    custom_error_count_key: str | None = None,
+    allowed_cpu_affinity_ids: Iterable[int] | None = None,
 ) -> List[sinter.TaskStats]:
     """Collects statistics from the given tasks, using multiprocessing.
 
@@ -1252,20 +1252,20 @@ def group_by(
 def iter_collect(
     *,
     num_workers: int,
-    tasks: Union[Iterator[sinter.Task], Iterable[sinter.Task]],
-    hint_num_tasks: Optional[int] = None,
-    additional_existing_data: Union[NoneType, Dict[str, sinter.TaskStats], Iterable[sinter.TaskStats]] = None,
-    max_shots: Optional[int] = None,
-    max_errors: Optional[int] = None,
-    decoders: Optional[Iterable[str]] = None,
-    max_batch_seconds: Optional[int] = None,
-    max_batch_size: Optional[int] = None,
-    start_batch_size: Optional[int] = None,
+    tasks: Iterator[sinter.Task] | Iterable[sinter.Task],
+    hint_num_tasks: int | None = None,
+    additional_existing_data: None | Dict[str, sinter.TaskStats] | Iterable[sinter.TaskStats] = None,
+    max_shots: int | None = None,
+    max_errors: int | None = None,
+    decoders: Iterable[str] | None = None,
+    max_batch_seconds: int | None = None,
+    max_batch_size: int | None = None,
+    start_batch_size: int | None = None,
     count_observable_error_combos: bool = False,
     count_detection_events: bool = False,
-    custom_decoders: Optional[Dict[str, Union[sinter.Decoder, sinter.Sampler]]] = None,
-    custom_error_count_key: Optional[str] = None,
-    allowed_cpu_affinity_ids: Optional[Iterable[int]] = None,
+    custom_decoders: Dict[str, sinter.Decoder | sinter.Sampler] | None = None,
+    custom_error_count_key: str | None = None,
+    allowed_cpu_affinity_ids: Iterable[int] | None = None,
 ) -> Iterator[sinter.Progress]:
     """Iterates error correction statistics collected from worker processes.
 
@@ -1377,7 +1377,7 @@ def iter_collect(
 # (at top-level in the sinter module)
 def log_binomial(
     *,
-    p: Union[float, np.ndarray],
+    p: float | np.ndarray,
     n: int,
     hits: int,
 ) -> np.ndarray:
@@ -1466,7 +1466,7 @@ def plot_discard_rate(
     group_func: Callable[[sinter.TaskStats], ~TCurveId] = lambda _: None,
     filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
-    highlight_max_likelihood_factor: Optional[float] = 1000.0,
+    highlight_max_likelihood_factor: float | None = 1000.0,
     point_label_func: Callable[[sinter.TaskStats], Any] = lambda _: None,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
@@ -1530,8 +1530,8 @@ def plot_error_rate(
     group_func: Callable[[sinter.TaskStats], ~TCurveId] = lambda _: None,
     filter_func: Callable[[sinter.TaskStats], Any] = lambda _: True,
     plot_args_func: Callable[[int, ~TCurveId, List[sinter.TaskStats]], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
-    highlight_max_likelihood_factor: Optional[float] = 1000.0,
-    line_fits: Optional[Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']]] = None,
+    highlight_max_likelihood_factor: float | None = 1000.0,
+    line_fits: Tuple[Literal['linear', 'log', 'sqrt'], Literal['linear', 'log', 'sqrt']] | None = None,
     point_label_func: Callable[[sinter.TaskStats], Any] = lambda _: None,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
@@ -1593,7 +1593,7 @@ def plot_error_rate(
 
 # (at top-level in the sinter module)
 def post_selection_mask_from_4th_coord(
-    dem: Union[stim.Circuit, stim.DetectorErrorModel],
+    dem: stim.Circuit | stim.DetectorErrorModel,
 ) -> np.ndarray:
     """Returns a mask that postselects detector's with non-zero 4th coordinate.
 
@@ -1666,7 +1666,7 @@ def predict_observables(
     dets: np.ndarray,
     decoder: str,
     bit_pack_result: bool = False,
-    custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_decoders: Dict[str, sinter.Decoder] | None = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 
@@ -1729,7 +1729,7 @@ def predict_observables_bit_packed(
     dem: stim.DetectorErrorModel,
     dets_bit_packed: np.ndarray,
     decoder: str,
-    custom_decoders: Optional[Dict[str, sinter.Decoder]] = None,
+    custom_decoders: Dict[str, sinter.Decoder] | None = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data.
 
@@ -1786,14 +1786,14 @@ def predict_observables_bit_packed(
 def predict_on_disk(
     *,
     decoder: str,
-    dem_path: Union[str, pathlib.Path],
-    dets_path: Union[str, pathlib.Path],
+    dem_path: str | pathlib.Path,
+    dets_path: str | pathlib.Path,
     dets_format: str,
-    obs_out_path: Union[str, pathlib.Path],
+    obs_out_path: str | pathlib.Path,
     obs_out_format: str,
     postselect_detectors_with_non_zero_4th_coord: bool = False,
-    discards_out_path: Union[str, pathlib.Path, NoneType] = None,
-    discards_out_format: Optional[str] = None,
+    discards_out_path: str | pathlib.Path | None = None,
+    discards_out_format: str | None = None,
     custom_decoders: Dict[str, sinter.Decoder] = None,
 ) -> None:
     """Performs decoding and postselection on disk.
@@ -1866,11 +1866,11 @@ def read_stats_from_csv_files(
 
 # (at top-level in the sinter module)
 def shot_error_rate_to_piece_error_rate(
-    shot_error_rate: Union[float, sinter.Fit],
+    shot_error_rate: float | sinter.Fit,
     *,
     pieces: float,
     values: float = 1,
-) -> Union[float, sinter.Fit]:
+) -> float | sinter.Fit:
     """Convert from total error rate to per-piece error rate.
 
     Args:
