@@ -137,13 +137,19 @@ detection event simulations and affect whether the observable is included in err
 makes it easier to benchmark all observables of a code, without having to introduce noiseless qubits entangled with the
 logical qubit to avoid the testing of the X observable anticommuting with the testing of the Z observable.
 
+Unlike a `DETECTOR` instruction which provides a complete description of a detector by listing all its constituent
+measurement records, an individual `OBSERVABLE_INCLUDE` instruction is not required to (and generally does not) fully
+describe a logical observable. Instead, measurement records or Pauli targets are added to it incrementally. A logical
+observable can be given both types of description: as a collection of Pauli targets and as a collection of measurement
+record targets.
+
 Parens Arguments:
 
     A non-negative integer specifying the index of the logical observable to add the measurement records to.
 
 Targets:
 
-    The measurement records to add to the specified observable.
+    The measurement records or Pauli terms to add to the specified observable.
 
 Example:
 
@@ -178,6 +184,12 @@ Example:
     DETECTOR rec[-3] rec[-6]
     OBSERVABLE_INCLUDE(0) X0 X1
     OBSERVABLE_INCLUDE(1) Z0 Z2
+
+    # Stim circuit may include a description of an observable in terms of Pauli targets
+    # alongside a description in terms of measurement records.
+    OBSERVABLE_INCLUDE(0) Z0 Z1
+    M 0 1
+    OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
 )MARKDOWN",
             .unitary_data = {},
             .flow_data = {},
