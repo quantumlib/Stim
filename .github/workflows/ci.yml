@@ -29,8 +29,6 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-24.04, dist: cp36-manylinux_x86_64},
-          {os: ubuntu-24.04, dist: cp37-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp38-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp39-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
@@ -39,8 +37,6 @@ jobs:
           {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp314-manylinux_x86_64},
 
-          {os: ubuntu-24.04, dist: cp36-manylinux_i686},
-          {os: ubuntu-24.04, dist: cp37-manylinux_i686},
           # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
           # {os: ubuntu-latest, dist: cp38-manylinux_i686},
           # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
@@ -89,8 +85,6 @@ jobs:
           # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macos-14, dist: cp36-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp37-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp38-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp39-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
@@ -122,8 +116,6 @@ jobs:
           # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2025, dist: cp36-win_amd64},
-          {os: windows-2025, dist: cp37-win_amd64},
           {os: windows-2025, dist: cp38-win_amd64},
           {os: windows-2025, dist: cp39-win_amd64},
           {os: windows-2025, dist: cp310-win_amd64},
@@ -132,8 +124,6 @@ jobs:
           {os: windows-2025, dist: cp313-win_amd64},
           {os: windows-2025, dist: cp314-win_amd64},
 
-          {os: windows-2025, dist: cp36-win32},
-          {os: windows-2025, dist: cp37-win32},
           # cp38-win32 and cp39-win32 disabled because scipy fails to build.
           #
           # The actual error seen in github actions:
