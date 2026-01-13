@@ -838,7 +838,7 @@ def test_shortest_error_sat_problem_unrecognized_format():
         DETECTOR rec[-1] rec[-2]
     """)
     with pytest.raises(ValueError, match='Unsupported format'):
-      sat_str = c.shortest_error_sat_problem(format='unsupported format name')
+        _ = c.shortest_error_sat_problem(format='unsupported format name')
 
 
 def test_shortest_error_sat_problem():
@@ -1507,17 +1507,10 @@ def test_reference_sample():
     assert len(ref) == 0
     circuit = stim.Circuit(
         """
-        H 0
-        M 0
-        M 1
-    """
-    )
-    circuit = stim.Circuit(
-        """
         H 0 1
         CX 0 2 1 3
         MPP X0*X1 Y0*Y1 Z0*Z1
-    """
+        """
     )
     np.testing.assert_array_equal(circuit.reference_sample(), circuit.reference_sample())
     assert np.sum(circuit.reference_sample()) % 2 == 1
@@ -2351,3 +2344,74 @@ def test_append_pauli_string():
         c.append("MPP", object())
     with pytest.raises(ValueError, match="Don't know how to target"):
         c.append("MPP", object())
+
+
+def test_without_tags():
+    circuit = stim.Circuit("""
+        H[tag] 5
+    """)
+    assert circuit.without_tags() == stim.Circuit("""
+        H 5
+    """)
+
+
+def test_reference_detector_and_observable_signs():
+    det, obs = stim.Circuit("""
+        X 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+    """).reference_detector_and_observable_signs()
+    assert det.dtype == np.bool_
+    assert obs.dtype == np.bool_
+    np.testing.assert_array_equal(det, [True, False])
+    np.testing.assert_array_equal(obs, [False, False, False, True])
+
+    det, obs = stim.Circuit("""
+        X 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+    """).reference_detector_and_observable_signs(bit_packed=True)
+    assert det.dtype == np.uint8
+    assert obs.dtype == np.uint8
+    np.testing.assert_array_equal(det, [0b01])
+    np.testing.assert_array_equal(obs, [0b1000])
+
+    circuit = stim.Circuit.generated("surface_code:rotated_memory_x", rounds=3, distance=3)
+    det, obs = circuit.reference_detector_and_observable_signs(bit_packed=True)
+    assert det.dtype == np.uint8
+    assert obs.dtype == np.uint8
+    assert not np.any(det)
+    assert not np.any(obs)
+    assert len(det) == (circuit.num_detectors + 7) // 8
+    assert len(obs) == 1
+
+
+def test_without_noise_removes_id_errors():
+    assert stim.Circuit("""
+        I_ERROR 0
+        I_ERROR(0.25) 1
+        II_ERROR 2 3
+        II_ERROR(0.125) 3 4
+        H 0
+    """).without_noise() == stim.Circuit("""
+        H 0
+    """)
+
+
+def test_append_circuit_to_circuit():
+    circuit = stim.Circuit("""
+        H 0
+    """)
+    circuit.append(stim.Circuit("""
+        X 1
+        Z 2
+    """))
+    assert circuit == stim.Circuit("""
+        H 0
+        X 1
+        Z 2
+    """)

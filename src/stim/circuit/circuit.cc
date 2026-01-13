@@ -331,7 +331,8 @@ void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     }
 }
 
-void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg, std::string_view tag) {
+void Circuit::safe_append_ua(
+    std::string_view gate_name, const std::vector<uint32_t> &targets, double singleton_arg, std::string_view tag) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -344,7 +345,10 @@ void Circuit::safe_append_ua(std::string_view gate_name, const std::vector<uint3
 }
 
 void Circuit::safe_append_u(
-    std::string_view gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args, std::string_view tag) {
+    std::string_view gate_name,
+    const std::vector<uint32_t> &targets,
+    const std::vector<double> &args,
+    std::string_view tag) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -798,6 +802,19 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     }
     for (const auto &block : blocks) {
         result.blocks.push_back(block.aliased_noiseless_circuit());
+    }
+    return result;
+}
+
+Circuit Circuit::without_tags() const {
+    Circuit result;
+    for (CircuitInstruction inst : operations) {
+        if (inst.gate_type == GateType::REPEAT) {
+            result.append_repeat_block(inst.repeat_block_rep_count(), inst.repeat_block_body(*this).without_tags(), "");
+        } else {
+            inst.tag = "";
+            result.safe_append(inst);
+        }
     }
     return result;
 }

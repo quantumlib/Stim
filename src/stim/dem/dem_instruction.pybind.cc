@@ -129,7 +129,8 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     pybind11::module &m, pybind11::class_<ExposedDemInstruction> &c) {
     c.def(
         pybind11::init(
-            [](std::string_view type, pybind11::object &arguments, pybind11::object &targets, std::string_view tag) -> ExposedDemInstruction {
+            [](std::string_view type, pybind11::object &arguments, pybind11::object &targets, std::string_view tag)
+                -> ExposedDemInstruction {
                 if (arguments.is_none() && targets.is_none()) {
                     return ExposedDemInstruction::from_str(type);
                 }
@@ -180,7 +181,8 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
                 if (!arguments.is_none()) {
                     conv_args = pybind11::cast<std::vector<double>>(arguments);
                 }
-                ExposedDemInstruction result{std::move(conv_args), std::move(conv_targets), std::string(tag), conv_type};
+                ExposedDemInstruction result{
+                    std::move(conv_args), std::move(conv_targets), std::string(tag), conv_type};
                 result.as_dem_instruction().validate();
                 return result;
             }),

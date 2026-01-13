@@ -21,12 +21,10 @@
 #include <array>
 #include <bit>
 #include <immintrin.h>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
 #include "stim/mem/bitword.h"
-#include "stim/mem/simd_util.h"
 
 namespace stim {
 
@@ -220,9 +218,9 @@ struct bitword<256> {
             bitword<256> &x = data[stride * k];
             bitword<256> &y = data[stride * (k + shift)];
             bitword<256> a = x & mask;
-            bitword<256> b = x & ~mask;
+            bitword<256> b = _mm256_andnot_si256(mask, x.val);
             bitword<256> c = y & mask;
-            bitword<256> d = y & ~mask;
+            bitword<256> d = _mm256_andnot_si256(mask, y.val);
             x = a | bitword<256>(_mm256_slli_epi64(c.val, shift));
             y = bitword<256>(_mm256_srli_epi64(b.val, shift)) | d;
         }

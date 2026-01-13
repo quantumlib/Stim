@@ -120,7 +120,8 @@ TEST(export_crumble, all_operations) {
         "TICK;"
         "CX_rec[-1]_0;"
         "CY_sweep[0]_1;"
-        "CZ_2_rec[-1]";
+        "CZ_2_rec[-1]"
+        "_";
     ASSERT_EQ(actual, expected);
 }
 
@@ -155,6 +156,7 @@ TEST(export_crumble, graphlike_error) {
         "MARKX(0)3;"
         "TICK;"
         "M(0.125)2_3;"
-        "OI(0)rec[-1]";
+        "OI(0)rec[-1]"
+        "_";
     ASSERT_EQ(actual, expected);
 }

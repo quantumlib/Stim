@@ -51,11 +51,7 @@ Examples:
     R 0
     CX 1 0
 )MARKDOWN",
-            .unitary_data =
-                {{1, 0, 0, 0},
-                 {0, 1, 0, 0},
-                 {0, 0, 1, 0},
-                 {0, 0, 0, 1}},
+            .unitary_data = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},
             .flow_data = {"+XI", "+ZI", "+IX", "+IZ"},
             .h_s_cx_m_r_decomposition = R"CIRCUIT(
 )CIRCUIT",

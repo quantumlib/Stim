@@ -200,7 +200,7 @@ std::array<std::complex<float>, 4> canonicalize_global_phase(std::array<std::com
 }
 
 void expect_unitaries_close_up_global_phase(
-    Gate g, std::array<std::complex<float>, 4> u1, std::array<std::complex<float>, 4> u2) {
+    const Gate &g, std::array<std::complex<float>, 4> u1, std::array<std::complex<float>, 4> u2) {
     u1 = canonicalize_global_phase(u1);
     u2 = canonicalize_global_phase(u2);
     for (size_t k = 0; k < 4; k++) {
@@ -217,7 +217,7 @@ void expect_unitaries_close_up_global_phase(
     EXPECT_TRUE(true);
 }
 
-std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles(Gate g) {
+std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles(const Gate &g) {
     auto xyz = g.to_euler_angles();
     auto c = cosf(xyz[0] / 2);
     auto s = sinf(xyz[0] / 2);
@@ -238,7 +238,7 @@ std::array<std::complex<float>, 4> reconstruct_unitary_from_data(Gate g) {
     };
 }
 
-std::array<std::complex<float>, 4> reconstruct_unitary_from_axis_angle(Gate g) {
+std::array<std::complex<float>, 4> reconstruct_unitary_from_axis_angle(const Gate &g) {
     auto xyz_a = g.to_axis_angle();
     auto x = xyz_a[0];
     auto y = xyz_a[1];
@@ -254,7 +254,8 @@ std::array<std::complex<float>, 4> reconstruct_unitary_from_axis_angle(Gate g) {
     };
 }
 
-std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(Gate g) {
+std::array<std::complex<float>, 4> reconstruct_unitary_from_euler_angles_via_vector_sim_for_axis_reference(
+    const Gate &g) {
     auto xyz = g.to_euler_angles();
     std::array<int, 3> half_turns;
 
@@ -341,7 +342,7 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
     std::map<std::string, std::vector<GateType>> known_flows_u;
 
     for (const auto &g : GATE_DATA.items) {
-        if (g.id == GateType::II) {
+        if (g.id == GateType::II || g.id == GateType::II_ERROR || g.id == GateType::I_ERROR) {
             ASSERT_EQ(g.hadamard_conjugated(false), g.id);
             ASSERT_EQ(g.hadamard_conjugated(true), g.id);
             continue;
@@ -354,13 +355,14 @@ TEST(gate_data, hadamard_conjugated_vs_flow_generators_of_two_qubit_gates) {
             c.safe_append_u(g.name, {0, 1}, {});
             auto key_s = flow_key(c, false);
             auto key_u = flow_key(c, true);
-            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end()) << "collision between " << g.name << " and " << GATE_DATA[known_flows_s[key_s]].name;
+            ASSERT_EQ(known_flows_s.find(key_s), known_flows_s.end())
+                << "collision between " << g.name << " and " << GATE_DATA[known_flows_s[key_s]].name;
             known_flows_s[key_s] = g.id;
             known_flows_u[key_u].push_back(g.id);
         }
     }
     for (const auto &g : GATE_DATA.items) {
-        if (g.id == GateType::II) {
+        if (g.id == GateType::II || g.id == GateType::II_ERROR || g.id == GateType::I_ERROR) {
             continue;
         }
         if (g.arg_count != 0 && g.arg_count != ARG_COUNT_SYGIL_ZERO_OR_ONE && g.arg_count != ARG_COUNT_SYGIL_ANY) {

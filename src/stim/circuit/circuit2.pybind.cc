@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <pybind11/stl.h>
+#include <stim/util_top/missing_detectors.h>
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"
-
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/util_top/circuit_flow_generators.h"
 #include "stim/util_top/circuit_inverse_qec.h"
@@ -277,7 +277,10 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
     c.def(
         "count_determined_measurements",
         &count_determined_measurements<MAX_BITWORD_WIDTH>,
+        pybind11::kw_only(),
+        pybind11::arg("unknown_input") = false,
         clean_doc_string(R"DOC(
+            @signature def count_determined_measurements(self, *, unknown_input: bool = False) -> int:
             Counts the number of predictable measurements in the circuit.
 
             This method ignores any noise in the circuit.
@@ -308,6 +311,13 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             the Z basis. Typically this relationship is not declared as a detector, because
             it's not local, or as an observable, because it doesn't store a qubit.
 
+            Args:
+                unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                    When set to True, the inputs are instead treated as being in unknown
+                    random states. For example, this means that Z-basis measurements at
+                    the very beginning of the circuit will be considered random rather
+                    than determined.
+
             Returns:
                 The number of measurements that were predictable.
 
@@ -328,6 +338,24 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 0
 
                 >>> stim.Circuit('''
+                ...     M 0
+                ... ''').count_determined_measurements()
+                1
+
+                >>> stim.Circuit('''
+                ...     M 0
+                ... ''').count_determined_measurements(unknown_input=True)
+                0
+
+                >>> stim.Circuit('''
+                ...     M 0
+                ...     M 0 1
+                ...     M 0 1 2
+                ...     M 0 1 2 3
+                ... ''').count_determined_measurements(unknown_input=True)
+                6
+
+                >>> stim.Circuit('''
                 ...     R 0 1
                 ...     MZZ 0 1
                 ...     MYY 0 1
@@ -344,6 +372,69 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 217
                 >>> circuit.num_detectors + circuit.num_observables
                 217
+        )DOC")
+            .data());
+
+    c.def(
+        "missing_detectors",
+        &missing_detectors,
+        pybind11::kw_only(),
+        pybind11::arg("unknown_input") = false,
+        clean_doc_string(R"DOC(
+            @signature def missing_detectors(self, *, unknown_input: bool = False) -> int:
+            Finds deterministic measurements independent of declared detectors/observables.
+
+            This method is useful for debugging missing detectors in a circuit, because it
+            identifies generators for uncovered degrees of freedom.
+
+            It's not recommended to use this method to solve for the detectors of a circuit.
+            The returned detectors are not guaranteed to be stable across versions, and
+            aren't optimized to be "good" (e.g. form a low weight basis or be matchable
+            if possible). It will also identify things that are technically determined
+            but that the user may not want to use as a detector, such as the fact that
+            in the first round after transversal Z basis initialization of a toric code
+            the product of all X stabilizer measurements is deterministic even though the
+            individual measurements are all random.
+
+            Args:
+                unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                    When set to True, the inputs are instead treated as being in unknown
+                    random states. For example, this means that Z-basis measurements at
+                    the very beginning of the circuit will be considered random rather
+                    than determined.
+
+            Returns:
+                A circuit containing DETECTOR instructions that specify the uncovered
+                degrees of freedom in the deterministic measurement sets of the input
+                circuit. The returned circuit can be appended to the input circuit to
+                get a circuit with no missing detectors.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     R 0
+                ...     M 0
+                ... ''').missing_detectors()
+                stim.Circuit('''
+                    DETECTOR rec[-1]
+                ''')
+
+                >>> stim.Circuit('''
+                ...     MZZ 0 1
+                ...     MYY 0 1
+                ...     MXX 0 1
+                ...     DEPOLARIZE1(0.1) 0 1
+                ...     MZZ 0 1
+                ...     MYY 0 1
+                ...     MXX 0 1
+                ...     DETECTOR rec[-1] rec[-4]
+                ...     DETECTOR rec[-2] rec[-5]
+                ...     DETECTOR rec[-3] rec[-6]
+                ... ''').missing_detectors(unknown_input=True)
+                stim.Circuit('''
+                    DETECTOR rec[-3] rec[-2] rec[-1]
+                ''')
         )DOC")
             .data());
 
@@ -734,6 +825,112 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
             .data());
 
     c.def(
+        "solve_flow_measurements",
+        [](const Circuit &self, const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows) -> pybind11::object {
+            std::span<const Flow<MAX_BITWORD_WIDTH>> flows_span = flows;
+            auto solution = solve_for_flow_measurements(self, flows_span);
+            std::vector<pybind11::object> result;
+            for (const auto &e : solution) {
+                if (e.has_value()) {
+                    result.push_back(pybind11::cast(*e));
+                } else {
+                    result.push_back(pybind11::none());
+                }
+            }
+            return pybind11::cast(result);
+        },
+        clean_doc_string(R"DOC(
+            @signature def solve_flow_measurements(self, flows: List[stim.Flow]) -> List[Optional[List[int]]]:
+            Finds measurements to explain the starts/ends of the given flows, ignoring sign.
+
+            CAUTION: it's not guaranteed that the solutions returned by this method are
+            minimal. It may use 20 measurements when only 2 are needed. The method applies
+            some simple heuristics that attempt to reduce the size, but these heuristics
+            aren't perfect and don't make any strong guarantees.
+
+            The recommended way to use this method is on small parts of a circuit, such as a
+            single surface code round. The ideal use case is when there is exactly one
+            solution for each flow, because then the method behaves predictably and
+            consistently. When there are multiple solutions, the method has no real way to
+            pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+            For example, if you have a multi-round surface code circuit with open time
+            boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+            (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+            (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+            solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+            of rounds, times a random combination of unrelated detectors). The method is
+            permitted to return any of those solutions.
+
+            Args:
+                flows: A list of flows, each of which to be solved. Measurements and signs
+                    are entirely ignored.
+
+                    An error is raised if one of the given flows has an identity pauli
+                    string as its input and as its output, despite the fact that this case
+                    has a vacuous solution (no measurements). This error is only present as
+                    a safety check that catches some possible bugs in the calling code, such
+                    as accidentally applying this method to detector flows. This error may
+                    be removed in the future, so that the vacuous case succeeds vacuously.
+
+            Returns:
+                A list of solutions for each given flow.
+
+                If no solution exists for flows[k], then solutions[k] is None.
+                Otherwise, solutions[k] is a list of measurement indices for flows[k].
+
+                When solutions[k] is not None, it's guaranteed that
+
+                    circuit.has_flow(stim.Flow(
+                        input=flows[k].input,
+                        output=flows[k].output,
+                        measurements=solutions[k],
+                    ), unsigned=True)
+
+            Raises:
+                ValueError:
+                    A flow had an empty input and output.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("Z2 -> 1"),
+                ... ])
+                [[0]]
+
+                >>> stim.Circuit('''
+                ...     M 2
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("X2 -> X2"),
+                ... ])
+                [None]
+
+                >>> stim.Circuit('''
+                ...     MXX 0 1
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("YY -> ZZ"),
+                ... ])
+                [[0]]
+
+                >>> # Rep code cycle
+                >>> stim.Circuit('''
+                ...     R 1 3
+                ...     CX 0 1 2 3
+                ...     CX 4 3 2 1
+                ...     M 1 3
+                ... ''').solve_flow_measurements([
+                ...     stim.Flow("1 -> Z0*Z4"),
+                ...     stim.Flow("Z0 -> Z2"),
+                ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+                ...     stim.Flow("Y0 -> Y0"),
+                ... ])
+                [[0, 1], [0], [], None]
+        )DOC")
+            .data());
+
+    c.def(
         "time_reversed_for_flows",
         [](const Circuit &self,
            const std::vector<Flow<MAX_BITWORD_WIDTH>> &flows,
@@ -987,7 +1184,7 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 ...     CNOT 0 1
                 ...     S 1
                 ... ''').to_crumble_url()
-                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+                'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1_'
 
                 >>> circuit = stim.Circuit('''
                 ...     M(0.25) 0 1 2
@@ -997,7 +1194,7 @@ void stim_pybind::pybind_circuit_methods_extra(pybind11::module &, pybind11::cla
                 ... ''')
                 >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
                 >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
-                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
+                'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]_'
         )DOC")
             .data());
 

@@ -770,7 +770,12 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
                size_t target_range_end,
                const std::vector<GateTargetWithCoords> &targets_in_range) -> CircuitTargetsInsideInstruction {
                 CircuitTargetsInsideInstruction result{
-                    GATE_DATA.at(gate).id, std::string(tag), args, target_range_start, target_range_end, targets_in_range};
+                    GATE_DATA.at(gate).id,
+                    std::string(tag),
+                    args,
+                    target_range_start,
+                    target_range_end,
+                    targets_in_range};
                 return result;
             }),
         pybind11::kw_only(),
@@ -1004,7 +1009,8 @@ void stim_pybind::pybind_circuit_error_location_methods(
                 if (!flipped_measurement.is_none()) {
                     m = pybind11::cast<FlippedMeasurement>(flipped_measurement);
                 }
-                CircuitErrorLocation result{std::string(noise_tag), tick_offset, flipped_pauli_product, m, instruction_targets, stack_frames};
+                CircuitErrorLocation result{
+                    std::string(noise_tag), tick_offset, flipped_pauli_product, m, instruction_targets, stack_frames};
                 return result;
             }),
         pybind11::kw_only(),

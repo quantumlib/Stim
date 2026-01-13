@@ -24,13 +24,15 @@ struct ReferenceSampleTree {
     bool operator==(const ReferenceSampleTree &other) const;
     /// Checks if two trees are not exactly the same, including structure (not just uncompressed contents).
     bool operator!=(const ReferenceSampleTree &other) const;
+    /// Returns the bit value for a given absolute index.
+    bool operator[](uint64_t index) const;
     /// Returns a simple description of the tree's structure, like "5*('101'+6*('11'))".
     std::string str() const;
 
     /// Determines whether the tree contains any bits at all.
     bool empty() const;
     /// Computes the total size of the uncompressed bits represented by the tree.
-    size_t size() const;
+    uint64_t size() const;
 
     /// Writes the contents of the tree into the given output vector.
     void decompress_into(std::vector<bool> &output) const;
@@ -45,6 +47,8 @@ struct ReferenceSampleTree {
    private:
     /// Helper method for `simplified`.
     void flatten_and_simplify_into(std::vector<ReferenceSampleTree> &out) const;
+    /// Helper method for `operator[]`.
+    bool try_get_bit_value(uint64_t desired_absolute_index, uint64_t & current_absolute_index, bool & bit_value) const;
 };
 std::ostream &operator<<(std::ostream &out, const ReferenceSampleTree &v);
 

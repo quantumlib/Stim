@@ -245,7 +245,8 @@ void circuit_append(
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<PyCircuitInstruction>(obj)) {
         if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitInstruction.");
         }
 
         const PyCircuitInstruction &instruction = pybind11::cast<PyCircuitInstruction>(obj);
@@ -258,11 +259,14 @@ void circuit_append(
             });
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none() || !tag.empty()) {
-            throw std::invalid_argument("Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` or `tag` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
         self.append_repeat_block(block.repeat_count, block.body, pybind11::cast<std::string_view>(block.tag));
+    } else if (pybind11::isinstance<Circuit>(obj)) {
+        self += pybind11::cast<Circuit>(obj);
     } else {
         throw std::invalid_argument(
             "First argument of append_operation must be a str (a gate name), "
@@ -271,11 +275,19 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    std::string_view tag) {
     circuit_append(self, obj, targets, arg, tag, true);
 }
 void circuit_append_strict(
-    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg, std::string_view tag) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    std::string_view tag) {
     circuit_append(self, obj, targets, arg, tag, false);
 }
 
@@ -636,12 +648,18 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             towards +Z instead of randomly +Z/-Z.
 
             Args:
-                circuit: The circuit to "sample" from.
                 bit_packed: Defaults to False. Determines whether the output numpy arrays
                     use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
             Returns:
-                reference_sample: reference sample sampled from the given circuit.
+                A numpy array containing the reference sample.
+
+                if bit_packed:
+                    shape == (math.ceil(num_measurements / 8),)
+                    dtype == np.uint8
+                else:
+                    shape == (num_measurements,)
+                    dtype == np.bool_
 
             Examples:
                 >>> import stim
@@ -654,12 +672,90 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
+        "reference_detector_and_observable_signs",
+        [](const Circuit &self, bool bit_packed) -> pybind11::object {
+            simd_bits<MAX_BITWORD_WIDTH> ref = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(self);
+            size_t num_det = self.count_detectors();
+            size_t num_obs = self.count_observables();
+            simd_bits<MAX_BITWORD_WIDTH> dets(num_det);
+            simd_bits<MAX_BITWORD_WIDTH> obs(num_obs);
+            size_t offset = 0;
+            size_t k_det = 0;
+            self.for_each_operation([&](CircuitInstruction inst) {
+                if (inst.gate_type == GateType::DETECTOR || inst.gate_type == GateType::OBSERVABLE_INCLUDE) {
+                    bit_ref d = inst.gate_type == GateType::DETECTOR ? dets[k_det++] : obs[(int)inst.args[0]];
+                    for (const auto &t : inst.targets) {
+                        if (t.is_measurement_record_target()) {
+                            d ^= ref[offset + t.value()];
+                        }
+                    }
+                } else {
+                    offset += inst.count_measurement_results();
+                }
+            });
+            auto det_py = simd_bits_to_numpy(dets, num_det, bit_packed);
+            auto obs_py = simd_bits_to_numpy(obs, num_obs, bit_packed);
+            return pybind11::make_tuple(det_py, obs_py);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(R"DOC(
+            @signature def reference_detector_and_observable_signs(self, *, bit_packed: bool = False) -> tuple[np.ndarray, np.ndarray]:
+            Determines noiseless parities of the measurement sets of detectors/observables.
+
+            BEWARE: the returned values are NOT the "expected value of the
+            detector/observable". Stim consistently defines the value of a
+            detector/observable as whether or not it flipped, so the expected value of a
+            detector/observable is vacuously always 0 (not flipped). This method instead
+            returns the "sign"; the expected parity of the measurement set declared by the
+            detector/observable. The sign is the baseline used to determine if a flip
+            occurred. A detector/observable's value is whether its sign disagrees with the
+            measured parity of its measurement set.
+
+            Note that this method doesn't account for sweep bits. It will effectively ignore
+            instructions like `CX sweep[0] 0`.
+
+            Args:
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                A (det, obs) tuple with numpy arrays containing the reference parities.
+
+                if bit_packed:
+                    det.shape == (math.ceil(num_detectors / 8),)
+                    det.dtype == np.uint8
+                    obs.shape == (math.ceil(num_observables / 8),)
+                    obs.dtype == np.uint8
+                else:
+                    det.shape == (num_detectors,)
+                    det.dtype == np.bool_
+                    obs.shape == (num_observables,)
+                    obs.dtype == np.bool_
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X 1
+                ...     M 0 1
+                ...     DETECTOR rec[-1]
+                ...     DETECTOR rec[-2]
+                ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+                ... ''').reference_detector_and_observable_signs()
+                (array([ True, False]), array([False, False, False,  True]))
+        )DOC")
+            .data());
+
+    c.def(
         "compile_m2d_converter",
         &py_init_compiled_measurements_to_detection_events_converter,
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         clean_doc_string(R"DOC(
             Creates a measurement-to-detection-event converter for the given circuit.
+
+            The converter can efficiently compute detection events and observable flips
+            from raw measurement data.
 
             The converter uses a noiseless reference sample, collected from the circuit
             using stim's Tableau simulator during initialization of the converter, as a
@@ -994,32 +1090,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("tag") = "",
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
                    : clean_doc_string(R"DOC(
+                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]], arg: Union[float, Iterable[float], None] = None, *, tag: str = "") -> None:
+                @overload def append(self, name: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock, stim.Circuit]) -> None:
                 Appends an operation into the circuit.
-                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]], arg: Union[float, Iterable[float]], *, tag: str = "") -> None:
-                @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
-
-                Examples:
-                    >>> import stim
-                    >>> c = stim.Circuit()
-                    >>> c.append("X", 0)
-                    >>> c.append("H", [0, 1])
-                    >>> c.append("M", [0, stim.target_inv(1)])
-                    >>> c.append("CNOT", [stim.target_rec(-1), 0])
-                    >>> c.append("X_ERROR", [0], 0.125)
-                    >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
-                    >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
-                    >>> print(repr(c))
-                    stim.Circuit('''
-                        X 0
-                        H 0 1
-                        M 0 !1
-                        CX rec[-1] 0
-                        X_ERROR(0.125) 0
-                        E(0.25) X0 Y2
-                        MPP X1*Y2 Z3
-                    ''')
 
                 Args:
                     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
@@ -1052,6 +1127,27 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         `cirq.append`) will default to a single 0.0 argument for gates that
                         take exactly one argument.
                     tag: A customizable string attached to the instruction.
+
+                Examples:
+                    >>> import stim
+                    >>> c = stim.Circuit()
+                    >>> c.append("X", 0)
+                    >>> c.append("H", [0, 1])
+                    >>> c.append("M", [0, stim.target_inv(1)])
+                    >>> c.append("CNOT", [stim.target_rec(-1), 0])
+                    >>> c.append("X_ERROR", [0], 0.125)
+                    >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+                    >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
+                    >>> print(repr(c))
+                    stim.Circuit('''
+                        X 0
+                        H 0 1
+                        M 0 !1
+                        CX rec[-1] 0
+                        X_ERROR(0.125) 0
+                        E(0.25) X0 Y2
+                        MPP X1*Y2 Z3
+                    ''')
             )DOC")
                          .data());
     }
@@ -1406,7 +1502,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 ...     with open(path, 'w') as f:
                 ...         print('CNOT 4 5', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.Circuit.from_file(path)
+                ...         circuit = stim.Circuit.from_file(f)
                 >>> circuit
                 stim.Circuit('''
                     CX 4 5
@@ -1995,11 +2091,11 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Makes a maxSAT problem of the circuit's distance, that other tools can solve.
 
             The output is a string describing the maxSAT problem in WDIMACS format
-            (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-            problem is the fault distance of the circuit (the minimum number of error
-            mechanisms that combine to flip any logical observable while producing no
-            detection events). This method ignores the probabilities of the error
-            mechanisms since it only cares about minimizing the number of errors
+            (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+            optimal solution to the problem is the fault distance of the circuit (the
+            minimum number of error mechanisms that combine to flip any logical observable
+            while producing no detection events). This method ignores the probabilities of
+            the error mechanisms since it only cares about minimizing the number of errors
             triggered.
 
             There are many tools that can solve maxSAT problems in WDIMACS format.
@@ -2066,9 +2162,10 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
             The output is a string describing the maxSAT problem in WDIMACS format
-            (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-            problem is the highest likelihood set of error mechanisms that combine to
-            flip any logical observable while producing no detection events).
+            (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+            optimal solution to the problem is the highest likelihood set of error
+            mechanisms that combine to flip any logical observable while producing no
+            detection events).
 
             If there are any errors with probability p > 0.5, they are inverted so
             that the resulting weight ends up being positive. If there are errors
@@ -2237,6 +2334,29 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             .data());
 
     c.def(
+        "without_tags",
+        &Circuit::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the circuit with all tags removed.
+
+            Returns:
+                A `stim.Circuit` with the same instructions except all tags have been
+                removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...     X[test-tag] 0
+                ...     M[test-tag-2](0.125) 0
+                ... ''').without_tags()
+                stim.Circuit('''
+                    X 0
+                    M(0.125) 0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
         "flattened",
         &Circuit::flattened,
         clean_doc_string(R"DOC(
@@ -2342,7 +2462,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("rows") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def diagram(self, type: str = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

@@ -1,4 +1,4 @@
-__version__ = '1.15.dev0'
+__version__ = '1.16.dev0'
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
@@ -12,6 +12,9 @@ from ._stim_to_cirq import (
 )
 from ._sweep_pauli import SweepPauli
 from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
+from ._i_error_gate import IErrorGate
+from ._ii_error_gate import IIErrorGate
+from ._ii_gate import IIGate
 
 JSON_RESOLVERS_DICT = {
     "CumulativeObservableAnnotation": CumulativeObservableAnnotation,
@@ -22,5 +25,8 @@ JSON_RESOLVERS_DICT = {
     "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
     "CXSwapGate": CXSwapGate,
     "CZSwapGate": CZSwapGate,
+    "IIGate": IIGate,
+    "IIErrorGate": IIErrorGate,
+    "IErrorGate": IErrorGate,
 }
 JSON_RESOLVER = JSON_RESOLVERS_DICT.get

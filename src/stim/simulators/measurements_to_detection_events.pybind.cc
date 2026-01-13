@@ -161,6 +161,7 @@ CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_mea
 
 void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
     pybind11::module &m, pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
+    using SerializationTuple = std::tuple<stim::Circuit, bool, pybind11::object, size_t>;
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),
         pybind11::arg("circuit"),
@@ -220,6 +221,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("obs_out_filepath") = nullptr,
         pybind11::arg("obs_out_format") = "01",
         clean_doc_string(R"DOC(
+            @signature def convert_file(self, *, measurements_filepath: Union[str, pathlib.Path], measurements_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', sweep_bits_filepath: Optional[Union[str, pathlib.Path]] = None, sweep_bits_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', detection_events_filepath: Union[str, pathlib.Path], detection_events_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', append_observables: bool = False, obs_out_filepath: Optional[Union[str, pathlib.Path]] = None, obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01') -> None:
             Reads measurement data from a file and writes detection events to another file.
 
             Args:
@@ -288,7 +290,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         clean_doc_string(R"DOC(
             Converts measurement data into detection event data.
             @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:
-            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: 'Literal[True]', append_observables: bool = False, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: Literal[True], append_observables: bool = False, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
             @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_packed: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:
@@ -371,4 +373,29 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         &CompiledMeasurementsToDetectionEventsConverter::repr,
         "Returns text that is a valid python expression evaluating to an equivalent "
         "`stim.CompiledMeasurementsToDetectionEventsConverter`.");
+    
+    c.def(pybind11::pickle(
+        // __getstate__ function: returns a tuple to be pickled.
+        [](const CompiledMeasurementsToDetectionEventsConverter &self) -> 
+        SerializationTuple {
+            size_t num_ref_bits = self.circuit_stats.num_measurements;
+            pybind11::object ref_sample_numpy =
+                stim_pybind::simd_bits_to_numpy(self.ref_sample, num_ref_bits,
+                                            /*bit_packed=*/true);
+
+            return SerializationTuple(self.circuit, self.skip_reference_sample,
+                                  ref_sample_numpy, num_ref_bits);
+        },
+        // __setstate__ function: reconstructs the object from the Python tuple.
+        [](SerializationTuple t_py) {
+            const auto &[circuit, skip_ref, ref_bits_npy, num_ref_bits] = t_py;
+
+            stim::simd_bits<stim::MAX_BITWORD_WIDTH> reconstructed_ref_sample(
+                num_ref_bits);
+            stim_pybind::memcpy_bits_from_numpy_to_simd(num_ref_bits, ref_bits_npy,
+                                                    reconstructed_ref_sample);
+
+            return CompiledMeasurementsToDetectionEventsConverter(
+                std::move(reconstructed_ref_sample), circuit, skip_ref);
+      }));
 }

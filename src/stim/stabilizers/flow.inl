@@ -1,16 +1,30 @@
 #include "stim/circuit/circuit.h"
-#include "stim/simulators/frame_simulator_util.h"
-#include "stim/simulators/sparse_rev_frame_tracker.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/util_bot/arg_parse.h"
+#include "stim/mem/span_ref.h"
 
 namespace stim {
 
+inline bool parse_obs_index(std::string_view obs, uint32_t *out) {
+    if (obs.size() < 6 || obs[0] != 'o' || obs[1] != 'b' || obs[2] != 's' || obs[3] != '[' || obs.back() != ']') {
+        throw std::invalid_argument("");  // Caught and given a message by caller.
+    }
+    int64_t i = 0;
+    if (!parse_int64(obs.substr(4, obs.size() - 5), &i)) {
+        return false;
+    }
+
+    if (i >= 0 && i <= UINT32_MAX) {
+        *out = (uint32_t)i;
+        return true;
+    }
+    return false;
+}
+
 inline bool parse_rec_allowing_non_negative(std::string_view rec, int32_t *out) {
     if (rec.size() < 6 || rec[0] != 'r' || rec[1] != 'e' || rec[2] != 'c' || rec[3] != '[' || rec.back() != ']') {
-        throw std::invalid_argument("");  // Caught and given a message below.
+        throw std::invalid_argument("");  // Caught and given a message by caller.
     }
     int64_t i = 0;
     if (!parse_int64(rec.substr(4, rec.size() - 5), &i)) {
@@ -75,19 +89,29 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
         }
         PauliString<W> out(0);
         std::vector<int32_t> measurements;
+        std::vector<uint32_t> observables;
         bool flip_out = false;
         if (parts[k].starts_with('-')) {
             flip_out = true;
             parts[k] = parts[k].substr(1);
         }
-        if (!parts[k].empty() && parts[k][0] != 'r') {
+        if (!parts[k].empty() && parts[k][0] != 'r' && parts[k][0] != 'o') {
             out = parse_non_empty_pauli_string_allowing_i<W>(parts[k], &imag_out);
-        } else {
+        } else if (parts[k][0] == 'r') {
             int32_t rec;
             if (!parse_rec_allowing_non_negative(parts[k], &rec)) {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
             measurements.push_back(rec);
+        } else if (parts[k][0] == 'o') {
+            uint32_t rec;
+            if (!parse_obs_index(parts[k], &rec)) {
+                throw std::invalid_argument("");  // Caught and given a message below.
+            }
+            observables.push_back(rec);
+        } else {
+            throw std::invalid_argument("Parsing reached an expected-to-be-impossible state. "
+                                        "Failed to understand a Pauli term.");
         }
         out.sign ^= flip_out;
         k++;
@@ -95,17 +119,31 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
             if (parts[k] != "xor" || k + 1 == parts.size()) {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
-            int32_t rec;
-            if (!parse_rec_allowing_non_negative(parts[k + 1], &rec)) {
+            if (parts[k + 1].starts_with("r")) {
+                int32_t rec;
+                if (!parse_rec_allowing_non_negative(parts[k + 1], &rec)) {
+                    throw std::invalid_argument("");  // Caught and given a message below.
+                }
+                measurements.push_back(rec);
+            } else if (parts[k + 1].starts_with("o")) {
+                uint32_t obs;
+                if (!parse_obs_index(parts[k + 1], &obs)) {
+                    throw std::invalid_argument("");  // Caught and given a message below.
+                }
+                observables.push_back(obs);
+            } else {
                 throw std::invalid_argument("");  // Caught and given a message below.
             }
-            measurements.push_back(rec);
             k += 2;
         }
         if (imag_inp != imag_out) {
             throw std::invalid_argument("Anti-Hermitian flows aren't allowed.");
         }
-        return Flow{inp, out, measurements};
+        size_t measurements_kept = inplace_xor_sort(SpanRef<int32_t>(measurements)).size();
+        size_t obs_kept = inplace_xor_sort(SpanRef<uint32_t>(observables)).size();
+        measurements.resize(measurements_kept);
+        observables.resize(obs_kept);
+        return Flow{inp, out, measurements, observables};
     } catch (const std::invalid_argument &ex) {
         if (*ex.what() != '\0') {
             throw;
@@ -116,7 +154,7 @@ Flow<W> Flow<W>::from_str(std::string_view text) {
 
 template <size_t W>
 bool Flow<W>::operator==(const Flow<W> &other) const {
-    return input == other.input && output == other.output && measurements == other.measurements;
+    return input == other.input && output == other.output && measurements == other.measurements && observables == other.observables;
 }
 
 template <size_t W>
@@ -129,6 +167,9 @@ bool Flow<W>::operator<(const Flow<W> &other) const {
     }
     if (measurements != other.measurements) {
         return SpanRef<const int32_t>(measurements) < SpanRef<const int32_t>(other.measurements);
+    }
+    if (observables != other.observables) {
+        return SpanRef<const uint32_t>(observables) < SpanRef<const uint32_t>(other.observables);
     }
     return false;
 }
@@ -204,10 +245,47 @@ std::ostream &operator<<(std::ostream &out, const Flow<W> &flow) {
         has_out = true;
         out << "rec[" << t << "]";
     }
+    for (const auto &t : flow.observables) {
+        if (has_out) {
+            out << " xor ";
+        }
+        has_out = true;
+        out << "obs[" << t << "]";
+    }
     if (!has_out) {
         out << "1";
     }
     return out;
+}
+
+template <size_t W>
+void Flow<W>::canonicalize() {
+    size_t measurements_kept = inplace_xor_sort(SpanRef<int32_t>(measurements)).size();
+    size_t observables_kept = inplace_xor_sort(SpanRef<uint32_t>(observables)).size();
+    measurements.resize(measurements_kept);
+    observables.resize(observables_kept);
+}
+
+template <size_t W>
+Flow<W> Flow<W>::operator*(const Flow<W> &rhs) const {
+    Flow<W> result = *this;
+
+    result.input.ensure_num_qubits(rhs.input.num_qubits, 1.1);
+    result.output.ensure_num_qubits(rhs.output.num_qubits, 1.1);
+    uint8_t log_i = 0;
+    log_i -= result.input.ref().inplace_right_mul_returning_log_i_scalar(rhs.input.ref());
+    log_i += result.output.ref().inplace_right_mul_returning_log_i_scalar(rhs.output.ref());
+    if (log_i & 1) {
+        throw std::invalid_argument(str() + " anticommutes with " + rhs.str());
+    }
+    if (log_i & 2) {
+        result.output.sign ^= true;
+    }
+
+    result.measurements.insert(result.measurements.end(), rhs.measurements.begin(), rhs.measurements.end());
+    result.observables.insert(result.observables.end(), rhs.observables.begin(), rhs.observables.end());
+    result.canonicalize();
+    return result;
 }
 
 }  // namespace stim

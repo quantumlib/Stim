@@ -22,7 +22,7 @@
 namespace stim {
 
 template <size_t W>
-uint64_t count_determined_measurements(const Circuit &circuit);
+uint64_t count_determined_measurements(const Circuit &circuit, bool unknown_input = false);
 
 }  // namespace stim
 

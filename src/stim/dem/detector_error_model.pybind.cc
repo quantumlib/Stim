@@ -514,6 +514,8 @@ void stim_pybind::pybind_detector_error_model_methods(
             } else if (pybind11::isinstance<ExposedDemRepeatBlock>(instruction)) {
                 const ExposedDemRepeatBlock &block = pybind11::cast<ExposedDemRepeatBlock>(instruction);
                 self.append_repeat_block(block.repeat_count, block.body, block.tag);
+            } else if (pybind11::isinstance<DetectorErrorModel>(instruction)) {
+                self += pybind11::cast<DetectorErrorModel>(instruction);
             } else {
                 throw std::invalid_argument(
                     "First argument to stim.DetectorErrorModel.append must be a str (an instruction name), "
@@ -530,9 +532,10 @@ void stim_pybind::pybind_detector_error_model_methods(
             Appends an instruction to the detector error model.
 
             Args:
-                instruction: Either the name of an instruction, a stim.DemInstruction, or a
-                    stim.DemRepeatBlock. The `parens_arguments`, `targets`, and 'tag'
-                    arguments should be given if and only if the instruction is a name.
+                instruction: Either the name of an instruction, a stim.DemInstruction, a
+                    stim.DemRepeatBlock. or a stim.DetectorErrorModel. The
+                    `parens_arguments`, `targets`, and 'tag' arguments should be given iff
+                    the instruction is a name.
                 parens_arguments: Numeric values parameterizing the instruction. The numbers
                     inside parentheses in a detector error model file (eg. the `0.25` in
                     `error(0.25) D0`). This argument can be given either a list of doubles,
@@ -804,7 +807,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             the race to find a solution.
 
             Args:
-                ignore_ungraphlike_errors: Defaults to False. When False, an exception is
+                ignore_ungraphlike_errors: Defaults to True. When False, an exception is
                     raised if there are any errors in the model that are not graphlike. When
                     True, those errors are skipped as if they weren't present.
 
@@ -930,7 +933,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     with open(path, 'w') as f:
                 ...         print('error(0.25) D2 D3', file=f)
                 ...     with open(path) as f:
-                ...         circuit = stim.DetectorErrorModel.from_file(path)
+                ...         circuit = stim.DetectorErrorModel.from_file(f)
                 >>> circuit
                 stim.DetectorErrorModel('''
                     error(0.25) D2 D3
@@ -1152,7 +1155,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         &dem_diagram,
         pybind11::arg("type"),
         clean_doc_string(R"DOC(
-            @signature def diagram(self, type: str) -> Any:
+            @signature def diagram(self, type: Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"] = 'matchgraph-svg') -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
@@ -1202,6 +1205,27 @@ void stim_pybind::pybind_detector_error_model_methods(
                 ...     diagram = circuit.diagram("match-graph-3d")
                 ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
                 ...         print(diagram, file=f)
+        )DOC")
+            .data());
+
+    c.def(
+        "without_tags",
+        &DetectorErrorModel::without_tags,
+        clean_doc_string(R"DOC(
+            Returns a copy of the detector error model with all tags removed.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same instructions except all tags have
+                been removed.
+
+            Examples:
+                >>> import stim
+                >>> stim.DetectorErrorModel('''
+                ...     error[test-tag](0.25) D0
+                ... ''').without_tags()
+                stim.DetectorErrorModel('''
+                    error(0.25) D0
+                ''')
         )DOC")
             .data());
 }

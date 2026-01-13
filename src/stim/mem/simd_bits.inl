@@ -285,6 +285,11 @@ bool simd_bits<W>::intersects(const simd_bits_range_ref<W> other) const {
 }
 
 template <size_t W>
+bool simd_bits<W>::is_subset_of_or_equal_to(const simd_bits_range_ref<W> other) const {
+    return simd_bits_range_ref<W>(*this).is_subset_of_or_equal_to(other);
+}
+
+template <size_t W>
 std::string simd_bits<W>::str() const {
     return simd_bits_range_ref<W>(*this).str();
 }

@@ -335,7 +335,7 @@ def sample(
 # sinter.Decoder
 
 # (at top-level in the sinter module)
-class Decoder(metaclass=abc.ABCMeta):
+class Decoder:
     """Abstract base class for custom decoders.
 
     Custom decoders can be explained to sinter by inheriting from this class and
@@ -343,6 +343,10 @@ class Decoder(metaclass=abc.ABCMeta):
 
     Decoder classes MUST be serializable (e.g. via pickling), so that they can
     be given to worker processes when using python multiprocessing.
+
+    Child classes should implement `compile_decoder_for_dem`, but (for legacy
+    reasons) can alternatively implement `decode_via_files`. At least one of
+    the two methods must be implemented.
     """
 ```
 
@@ -386,7 +390,6 @@ def compile_decoder_for_dem(
 # sinter.Decoder.decode_via_files
 
 # (in class sinter.Decoder)
-@abc.abstractmethod
 def decode_via_files(
     self,
     *,
@@ -849,7 +852,7 @@ def to_csv_line(
         >>> print(sinter.CSV_HEADER)
              shots,    errors,  discards, seconds,decoder,strong_id,json_metadata,custom_counts
         >>> print(stat.to_csv_line())
-                22,         3,         0,       5,pymatching,test,"{""a"":[1,2,3]}",
+                22,         3,         0,    5.00,pymatching,test,"{""a"":[1,2,3]}",
     """
 ```
 
@@ -1408,7 +1411,7 @@ def log_binomial(
     Examples:
         >>> import sinter
         >>> sinter.log_binomial(p=0.5, n=100, hits=50)
-        array(-2.5308785, dtype=float32)
+        array(-2.5308762, dtype=float32)
         >>> sinter.log_binomial(p=0.2, n=1_000_000, hits=1_000)
         array(-216626.97, dtype=float32)
         >>> sinter.log_binomial(p=0.1, n=1_000_000, hits=1_000)

@@ -253,6 +253,21 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, various, {
             Flow<W>::from_str("XXX -> _ZY xor rec[2]"),
             Flow<W>::from_str("Z_X -> _ZX xor rec[3]"),
         }));
+
+    EXPECT_EQ(
+        circuit_flow_generators<W>(Circuit(R"CIRCUIT(
+            MPP Y0*Y1 Y2*Y3
+        )CIRCUIT")),
+        (std::vector<Flow<W>>{
+            Flow<W>::from_str("1 -> __YY xor rec[1]"),
+            Flow<W>::from_str("1 -> YY__ xor rec[0]"),
+            Flow<W>::from_str("___Y -> ___Y"),
+            Flow<W>::from_str("__XZ -> __ZX xor rec[1]"),
+            Flow<W>::from_str("__ZZ -> __ZZ"),
+            Flow<W>::from_str("_Y__ -> _Y__"),
+            Flow<W>::from_str("XZ__ -> ZX__ xor rec[0]"),
+            Flow<W>::from_str("ZZ__ -> ZZ__"),
+        }));
 })
 
 TEST_EACH_WORD_SIZE_W(circuit_flow_generators, all_operations, {
@@ -263,4 +278,98 @@ TEST_EACH_WORD_SIZE_W(circuit_flow_generators, all_operations, {
     for (size_t k = 0; k < passes.size(); k++) {
         EXPECT_TRUE(passes[k]) << k << ": " << generators[k];
     }
+})
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, empty, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{})),
+        (std::vector<std::optional<std::vector<int32_t>>>{}));
+})
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, simple, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> X0"),
+            })),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+        }));
+
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> Y0"),
+            })),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {},
+        }));
+
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                MX 0
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("1 -> X0"),
+                Flow<W>::from_str("Y0 -> Y0"),
+                Flow<W>::from_str("X0 -> 1"),
+                Flow<W>::from_str("X0 -> Z0"),
+                Flow<W>::from_str("Y1 -> Y1"),
+            })),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+            {},
+            {std::vector<int32_t>{0}},
+            {},
+            {std::vector<int32_t>{}},
+        }));
+
+    EXPECT_THROW(
+        { solve_for_flow_measurements<W>(Circuit(), (std::vector<Flow<W>>{Flow<W>::from_str("1 -> 1")})); },
+        std::invalid_argument);
+})
+
+TEST_EACH_WORD_SIZE_W(solve_for_flow_measurements, rep_code, {
+    EXPECT_EQ(
+        solve_for_flow_measurements<W>(
+            Circuit(R"CIRCUIT(
+                R 1 3
+                CX 0 1 2 3
+                CX 4 3 2 1
+                M 1 3
+            )CIRCUIT"),
+            (std::vector<Flow<W>>{
+                Flow<W>::from_str("Z0*Z2 -> 1"),
+                Flow<W>::from_str("1 -> Z2*Z4"),
+                Flow<W>::from_str("1 -> Z0*Z4"),
+                Flow<W>::from_str("Z0*Z4 -> Z0*Z2"),
+                Flow<W>::from_str("Z0 -> Z0"),
+                Flow<W>::from_str("Z0 -> Z1"),
+                Flow<W>::from_str("Z0 -> Z2"),
+                Flow<W>::from_str("X0*X2*X4 -> X0*X2*X4"),
+                Flow<W>::from_str("X0 -> X0"),
+                Flow<W>::from_str("X0 -> Z0"),
+            })),
+        (std::vector<std::optional<std::vector<int32_t>>>{
+            {std::vector<int32_t>{0}},
+            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{0, 1}},
+            {std::vector<int32_t>{1}},
+            {std::vector<int32_t>{}},
+            {},
+            {std::vector<int32_t>{0}},
+            {std::vector<int32_t>{}},
+            {},
+            {},
+        }));
 })

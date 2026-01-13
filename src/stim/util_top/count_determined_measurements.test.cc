@@ -22,6 +22,43 @@
 
 using namespace stim;
 
+TEST_EACH_WORD_SIZE_W(count_determined_measurements, unknown_input, {
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MZZ 0 1
+        )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MZZ 0 1
+        )CIRCUIT"), true),
+        0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MPP Z0*Z1 X2*X3
+        )CIRCUIT")),
+        1);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MPP Z0*Z1 X2*X3
+        )CIRCUIT"), true),
+        0);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MPP Z0*Z1 X2*X3
+            TICK
+            MPP Z0*Z1 X2*X3
+        )CIRCUIT"), true),
+        2);
+    ASSERT_EQ(
+        count_determined_measurements<W>(Circuit(R"CIRCUIT(
+            MPP Z0*Z1 X2*X3
+            TICK
+            MPP Z0*Z1 X2*X3
+        )CIRCUIT")),
+        3);
+})
+
 TEST_EACH_WORD_SIZE_W(count_determined_measurements, single_qubit_measurements_baseline, {
     ASSERT_EQ(
         count_determined_measurements<W>(Circuit(R"CIRCUIT(

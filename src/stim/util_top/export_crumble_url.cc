@@ -132,5 +132,6 @@ std::string stim::export_crumble_url(
     std::stringstream s;
     s << "https://algassert.com/crumble#circuit=";
     write_crumble_url(circuit, skip_detectors, marks, s);
+    s << "_";  // This is a workaround for colab clipping a single character off the end of the URL in some contexts
     return s.str();
 }

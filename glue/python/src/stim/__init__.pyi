@@ -1,7 +1,7 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
 # (This is a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
+from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional, Sequence, Literal
 if TYPE_CHECKING:
     import io
     import pathlib
@@ -302,7 +302,7 @@ class Circuit:
         self,
         name: str,
         targets: Union[int, stim.GateTarget, stim.PauliString, Iterable[Union[int, stim.GateTarget, stim.PauliString]]],
-        arg: Union[float, Iterable[float]],
+        arg: Union[float, Iterable[float], None] = None,
         *,
         tag: str = "",
     ) -> None:
@@ -310,7 +310,7 @@ class Circuit:
     @overload
     def append(
         self,
-        name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock],
+        name: Union[stim.CircuitInstruction, stim.CircuitRepeatBlock, stim.Circuit],
     ) -> None:
         pass
     def append(
@@ -324,27 +324,6 @@ class Circuit:
         """Appends an operation into the circuit.
 
         Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
-
-        Examples:
-            >>> import stim
-            >>> c = stim.Circuit()
-            >>> c.append("X", 0)
-            >>> c.append("H", [0, 1])
-            >>> c.append("M", [0, stim.target_inv(1)])
-            >>> c.append("CNOT", [stim.target_rec(-1), 0])
-            >>> c.append("X_ERROR", [0], 0.125)
-            >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
-            >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
-            >>> print(repr(c))
-            stim.Circuit('''
-                X 0
-                H 0 1
-                M 0 !1
-                CX rec[-1] 0
-                X_ERROR(0.125) 0
-                E(0.25) X0 Y2
-                MPP X1*Y2 Z3
-            ''')
 
         Args:
             name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
@@ -377,6 +356,27 @@ class Circuit:
                 `cirq.append`) will default to a single 0.0 argument for gates that
                 take exactly one argument.
             tag: A customizable string attached to the instruction.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.Circuit()
+            >>> c.append("X", 0)
+            >>> c.append("H", [0, 1])
+            >>> c.append("M", [0, stim.target_inv(1)])
+            >>> c.append("CNOT", [stim.target_rec(-1), 0])
+            >>> c.append("X_ERROR", [0], 0.125)
+            >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+            >>> c.append("MPP", [stim.PauliString("X1*Y2"), stim.GateTarget("Z3")])
+            >>> print(repr(c))
+            stim.Circuit('''
+                X 0
+                H 0 1
+                M 0 !1
+                CX rec[-1] 0
+                X_ERROR(0.125) 0
+                E(0.25) X0 Y2
+                MPP X1*Y2 Z3
+            ''')
         """
     def append_from_stim_program_text(
         self,
@@ -538,6 +538,9 @@ class Circuit:
     ) -> stim.CompiledMeasurementsToDetectionEventsConverter:
         """Creates a measurement-to-detection-event converter for the given circuit.
 
+        The converter can efficiently compute detection events and observable flips
+        from raw measurement data.
+
         The converter uses a noiseless reference sample, collected from the circuit
         using stim's Tableau simulator during initialization of the converter, as a
         baseline for determining what the expected value of a detector is.
@@ -661,6 +664,8 @@ class Circuit:
         """
     def count_determined_measurements(
         self,
+        *,
+        unknown_input: bool = False,
     ) -> int:
         """Counts the number of predictable measurements in the circuit.
 
@@ -692,6 +697,13 @@ class Circuit:
         the Z basis. Typically this relationship is not declared as a detector, because
         it's not local, or as an observable, because it doesn't store a qubit.
 
+        Args:
+            unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                When set to True, the inputs are instead treated as being in unknown
+                random states. For example, this means that Z-basis measurements at
+                the very beginning of the circuit will be considered random rather
+                than determined.
+
         Returns:
             The number of measurements that were predictable.
 
@@ -710,6 +722,24 @@ class Circuit:
             ...     M 0
             ... ''').count_determined_measurements()
             0
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ... ''').count_determined_measurements()
+            1
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ... ''').count_determined_measurements(unknown_input=True)
+            0
+
+            >>> stim.Circuit('''
+            ...     M 0
+            ...     M 0 1
+            ...     M 0 1 2
+            ...     M 0 1 2 3
+            ... ''').count_determined_measurements(unknown_input=True)
+            6
 
             >>> stim.Circuit('''
             ...     R 0 1
@@ -1019,7 +1049,7 @@ class Circuit:
         """
     def diagram(
         self,
-        type: str = 'timeline-text',
+        type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text',
         *,
         tick: Union[None, int, range] = None,
         filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
@@ -1350,7 +1380,7 @@ class Circuit:
             ...     with open(path, 'w') as f:
             ...         print('CNOT 4 5', file=f)
             ...     with open(path) as f:
-            ...         circuit = stim.Circuit.from_file(path)
+            ...         circuit = stim.Circuit.from_file(f)
             >>> circuit
             stim.Circuit('''
                 CX 4 5
@@ -1794,9 +1824,10 @@ class Circuit:
         """Makes a maxSAT problem for the circuit's likeliest undetectable logical error.
 
         The output is a string describing the maxSAT problem in WDIMACS format
-        (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-        problem is the highest likelihood set of error mechanisms that combine to
-        flip any logical observable while producing no detection events).
+        (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+        optimal solution to the problem is the highest likelihood set of error
+        mechanisms that combine to flip any logical observable while producing no
+        detection events).
 
         If there are any errors with probability p > 0.5, they are inverted so
         that the resulting weight ends up being positive. If there are errors
@@ -1863,6 +1894,65 @@ class Circuit:
             1000 -2 0
             4001 -1 0
             4001 2 0
+        """
+    def missing_detectors(
+        self,
+        *,
+        unknown_input: bool = False,
+    ) -> int:
+        """Finds deterministic measurements independent of declared detectors/observables.
+
+        This method is useful for debugging missing detectors in a circuit, because it
+        identifies generators for uncovered degrees of freedom.
+
+        It's not recommended to use this method to solve for the detectors of a circuit.
+        The returned detectors are not guaranteed to be stable across versions, and
+        aren't optimized to be "good" (e.g. form a low weight basis or be matchable
+        if possible). It will also identify things that are technically determined
+        but that the user may not want to use as a detector, such as the fact that
+        in the first round after transversal Z basis initialization of a toric code
+        the product of all X stabilizer measurements is deterministic even though the
+        individual measurements are all random.
+
+        Args:
+            unknown_input: Defaults to False (inputs assumed to be in the |0> state).
+                When set to True, the inputs are instead treated as being in unknown
+                random states. For example, this means that Z-basis measurements at
+                the very beginning of the circuit will be considered random rather
+                than determined.
+
+        Returns:
+            A circuit containing DETECTOR instructions that specify the uncovered
+            degrees of freedom in the deterministic measurement sets of the input
+            circuit. The returned circuit can be appended to the input circuit to
+            get a circuit with no missing detectors.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     R 0
+            ...     M 0
+            ... ''').missing_detectors()
+            stim.Circuit('''
+                DETECTOR rec[-1]
+            ''')
+
+            >>> stim.Circuit('''
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ...     DEPOLARIZE1(0.1) 0 1
+            ...     MZZ 0 1
+            ...     MYY 0 1
+            ...     MXX 0 1
+            ...     DETECTOR rec[-1] rec[-4]
+            ...     DETECTOR rec[-2] rec[-5]
+            ...     DETECTOR rec[-3] rec[-6]
+            ... ''').missing_detectors(unknown_input=True)
+            stim.Circuit('''
+                DETECTOR rec[-3] rec[-2] rec[-1]
+            ''')
         """
     @property
     def num_detectors(
@@ -2035,6 +2125,54 @@ class Circuit:
                 X 2
             ''')
         """
+    def reference_detector_and_observable_signs(
+        self,
+        *,
+        bit_packed: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Determines noiseless parities of the measurement sets of detectors/observables.
+
+        BEWARE: the returned values are NOT the "expected value of the
+        detector/observable". Stim consistently defines the value of a
+        detector/observable as whether or not it flipped, so the expected value of a
+        detector/observable is vacuously always 0 (not flipped). This method instead
+        returns the "sign"; the expected parity of the measurement set declared by the
+        detector/observable. The sign is the baseline used to determine if a flip
+        occurred. A detector/observable's value is whether its sign disagrees with the
+        measured parity of its measurement set.
+
+        Note that this method doesn't account for sweep bits. It will effectively ignore
+        instructions like `CX sweep[0] 0`.
+
+        Args:
+            bit_packed: Defaults to False. Determines whether the output numpy arrays
+                use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
+
+        Returns:
+            A (det, obs) tuple with numpy arrays containing the reference parities.
+
+            if bit_packed:
+                det.shape == (math.ceil(num_detectors / 8),)
+                det.dtype == np.uint8
+                obs.shape == (math.ceil(num_observables / 8),)
+                obs.dtype == np.uint8
+            else:
+                det.shape == (num_detectors,)
+                det.dtype == np.bool_
+                obs.shape == (num_observables,)
+                obs.dtype == np.bool_
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     X 1
+            ...     M 0 1
+            ...     DETECTOR rec[-1]
+            ...     DETECTOR rec[-2]
+            ...     OBSERVABLE_INCLUDE(3) rec[-1] rec[-2]
+            ... ''').reference_detector_and_observable_signs()
+            (array([ True, False]), array([False, False, False,  True]))
+        """
     def reference_sample(
         self,
         *,
@@ -2046,12 +2184,18 @@ class Circuit:
         towards +Z instead of randomly +Z/-Z.
 
         Args:
-            circuit: The circuit to "sample" from.
             bit_packed: Defaults to False. Determines whether the output numpy arrays
                 use dtype=bool_ or dtype=uint8 with 8 bools packed into each byte.
 
         Returns:
-            reference_sample: reference sample sampled from the given circuit.
+            A numpy array containing the reference sample.
+
+            if bit_packed:
+                shape == (math.ceil(num_measurements / 8),)
+                dtype == np.uint8
+            else:
+                shape == (num_measurements,)
+                dtype == np.bool_
 
         Examples:
             >>> import stim
@@ -2162,11 +2306,11 @@ class Circuit:
         """Makes a maxSAT problem of the circuit's distance, that other tools can solve.
 
         The output is a string describing the maxSAT problem in WDIMACS format
-        (see https://maxhs.org/docs/wdimacs.html). The optimal solution to the
-        problem is the fault distance of the circuit (the minimum number of error
-        mechanisms that combine to flip any logical observable while producing no
-        detection events). This method ignores the probabilities of the error
-        mechanisms since it only cares about minimizing the number of errors
+        (see https://jix.github.io/varisat/manual/0.2.0/formats/dimacs.html). The
+        optimal solution to the problem is the fault distance of the circuit (the
+        minimum number of error mechanisms that combine to flip any logical observable
+        while producing no detection events). This method ignores the probabilities of
+        the error mechanisms since it only cares about minimizing the number of errors
         triggered.
 
         There are many tools that can solve maxSAT problems in WDIMACS format.
@@ -2290,6 +2434,97 @@ class Circuit:
             ...     before_round_data_depolarization=0.01)
             >>> len(circuit.shortest_graphlike_error())
             7
+        """
+    def solve_flow_measurements(
+        self,
+        flows: List[stim.Flow],
+    ) -> List[Optional[List[int]]]:
+        """Finds measurements to explain the starts/ends of the given flows, ignoring sign.
+
+        CAUTION: it's not guaranteed that the solutions returned by this method are
+        minimal. It may use 20 measurements when only 2 are needed. The method applies
+        some simple heuristics that attempt to reduce the size, but these heuristics
+        aren't perfect and don't make any strong guarantees.
+
+        The recommended way to use this method is on small parts of a circuit, such as a
+        single surface code round. The ideal use case is when there is exactly one
+        solution for each flow, because then the method behaves predictably and
+        consistently. When there are multiple solutions, the method has no real way to
+        pick out a "good" solution rather than a "cataclysmic trash fire of a" solution.
+        For example, if you have a multi-round surface code circuit with open time
+        boundaries and solve the flow 1 -> Z1*Z2*Z3*Z4, then there's a good solution
+        (the Z1*Z2*Z3*Z4 measurement from the last round), various mediocre solutions
+        (a Z1*Z2*Z3*Z4 measurement from a different round), and lots of terrible
+        solutions (a combination of multiple Z1*Z2*Z3*Z4 measurements from an odd number
+        of rounds, times a random combination of unrelated detectors). The method is
+        permitted to return any of those solutions.
+
+        Args:
+            flows: A list of flows, each of which to be solved. Measurements and signs
+                are entirely ignored.
+
+                An error is raised if one of the given flows has an identity pauli
+                string as its input and as its output, despite the fact that this case
+                has a vacuous solution (no measurements). This error is only present as
+                a safety check that catches some possible bugs in the calling code, such
+                as accidentally applying this method to detector flows. This error may
+                be removed in the future, so that the vacuous case succeeds vacuously.
+
+        Returns:
+            A list of solutions for each given flow.
+
+            If no solution exists for flows[k], then solutions[k] is None.
+            Otherwise, solutions[k] is a list of measurement indices for flows[k].
+
+            When solutions[k] is not None, it's guaranteed that
+
+                circuit.has_flow(stim.Flow(
+                    input=flows[k].input,
+                    output=flows[k].output,
+                    measurements=solutions[k],
+                ), unsigned=True)
+
+        Raises:
+            ValueError:
+                A flow had an empty input and output.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     M 2
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("Z2 -> 1"),
+            ... ])
+            [[0]]
+
+            >>> stim.Circuit('''
+            ...     M 2
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("X2 -> X2"),
+            ... ])
+            [None]
+
+            >>> stim.Circuit('''
+            ...     MXX 0 1
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("YY -> ZZ"),
+            ... ])
+            [[0]]
+
+            >>> # Rep code cycle
+            >>> stim.Circuit('''
+            ...     R 1 3
+            ...     CX 0 1 2 3
+            ...     CX 4 3 2 1
+            ...     M 1 3
+            ... ''').solve_flow_measurements([
+            ...     stim.Flow("1 -> Z0*Z4"),
+            ...     stim.Flow("Z0 -> Z2"),
+            ...     stim.Flow("X0*X2*X4 -> X0*X2*X4"),
+            ...     stim.Flow("Y0 -> Y0"),
+            ... ])
+            [[0, 1], [0], [], None]
         """
     def time_reversed_for_flows(
         self,
@@ -2527,7 +2762,7 @@ class Circuit:
             ...     CNOT 0 1
             ...     S 1
             ... ''').to_crumble_url()
-            'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1'
+            'https://algassert.com/crumble#circuit=H_0;CX_0_1;S_1_'
 
             >>> circuit = stim.Circuit('''
             ...     M(0.25) 0 1 2
@@ -2537,7 +2772,7 @@ class Circuit:
             ... ''')
             >>> err = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
             >>> circuit.to_crumble_url(skip_detectors=True, mark={1: err})
-            'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]'
+            'https://algassert.com/crumble#circuit=;TICK;MARKX(1)1;MARKX(1)2;MARKX(1)0;TICK;M(0.25)0_1_2;OI(0)rec[-1]_'
         """
     def to_file(
         self,
@@ -2790,6 +3025,26 @@ class Circuit:
             stim.Circuit('''
                 CX 0 1
                 M 0
+            ''')
+        """
+    def without_tags(
+        self,
+    ) -> stim.Circuit:
+        """Returns a copy of the circuit with all tags removed.
+
+        Returns:
+            A `stim.Circuit` with the same instructions except all tags have been
+            removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.Circuit('''
+            ...     X[test-tag] 0
+            ...     M[test-tag-2](0.125) 0
+            ... ''').without_tags()
+            stim.Circuit('''
+                X 0
+                M(0.125) 0
             ''')
         """
 class CircuitErrorLocation:
@@ -3818,13 +4073,13 @@ class CompiledDemSampler:
         shots: int,
         *,
         det_out_file: Union[None, str, pathlib.Path],
-        det_out_format: str = "01",
+        det_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         obs_out_file: Union[None, str, pathlib.Path],
-        obs_out_format: str = "01",
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         err_out_file: Union[None, str, pathlib.Path] = None,
-        err_out_format: str = "01",
+        err_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         replay_err_in_file: Union[None, str, pathlib.Path] = None,
-        replay_err_in_format: str = "01",
+        replay_err_in_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Samples the detector error model and writes the results to disk.
 
@@ -4078,9 +4333,9 @@ class CompiledDetectorSampler:
         shots: int,
         *,
         filepath: Union[str, pathlib.Path],
-        format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
-        obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         prepend_observables: bool = False,
         append_observables: bool = False,
     ) -> None:
@@ -4284,8 +4539,8 @@ class CompiledMeasurementSampler:
         self,
         shots: int,
         *,
-        filepath: str,
-        format: str = '01',
+        filepath: Union[str, pathlib.Path],
+        format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Samples measurements from the circuit and writes them to a file.
 
@@ -4384,7 +4639,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         *,
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
-        separate_observables: 'Literal[True]',
+        separate_observables: Literal[True],
         append_observables: bool = False,
         bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -4476,15 +4731,15 @@ class CompiledMeasurementsToDetectionEventsConverter:
     def convert_file(
         self,
         *,
-        measurements_filepath: str,
-        measurements_format: str = '01',
-        sweep_bits_filepath: str = None,
-        sweep_bits_format: str = '01',
-        detection_events_filepath: str,
-        detection_events_format: str = '01',
+        measurements_filepath: Union[str, pathlib.Path],
+        measurements_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
+        sweep_bits_filepath: Optional[Union[str, pathlib.Path]] = None,
+        sweep_bits_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
+        detection_events_filepath: Union[str, pathlib.Path],
+        detection_events_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         append_observables: bool = False,
-        obs_out_filepath: str = None,
-        obs_out_format: str = '01',
+        obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Reads measurement data from a file and writes detection events to another file.
 
@@ -5374,9 +5629,10 @@ class DetectorErrorModel:
         """Appends an instruction to the detector error model.
 
         Args:
-            instruction: Either the name of an instruction, a stim.DemInstruction, or a
-                stim.DemRepeatBlock. The `parens_arguments`, `targets`, and 'tag'
-                arguments should be given if and only if the instruction is a name.
+            instruction: Either the name of an instruction, a stim.DemInstruction, a
+                stim.DemRepeatBlock. or a stim.DetectorErrorModel. The
+                `parens_arguments`, `targets`, and 'tag' arguments should be given iff
+                the instruction is a name.
             parens_arguments: Numeric values parameterizing the instruction. The numbers
                 inside parentheses in a detector error model file (eg. the `0.25` in
                 `error(0.25) D0`). This argument can be given either a list of doubles,
@@ -5578,7 +5834,7 @@ class DetectorErrorModel:
         """
     def diagram(
         self,
-        type: str,
+        type: Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"] = 'matchgraph-svg',
     ) -> Any:
         """Returns a diagram of the circuit, from a variety of options.
 
@@ -5694,7 +5950,7 @@ class DetectorErrorModel:
             ...     with open(path, 'w') as f:
             ...         print('error(0.25) D2 D3', file=f)
             ...     with open(path) as f:
-            ...         circuit = stim.DetectorErrorModel.from_file(path)
+            ...         circuit = stim.DetectorErrorModel.from_file(f)
             >>> circuit
             stim.DetectorErrorModel('''
                 error(0.25) D2 D3
@@ -5872,7 +6128,7 @@ class DetectorErrorModel:
         the race to find a solution.
 
         Args:
-            ignore_ungraphlike_errors: Defaults to False. When False, an exception is
+            ignore_ungraphlike_errors: Defaults to True. When False, an exception is
                 raised if there are any errors in the model that are not graphlike. When
                 True, those errors are skipped as if they weren't present.
 
@@ -5968,6 +6224,24 @@ class DetectorErrorModel:
             ...         contents = f.read()
             >>> contents
             'error(0.25) D2 D3\n'
+        """
+    def without_tags(
+        self,
+    ) -> stim.DetectorErrorModel:
+        """Returns a copy of the detector error model with all tags removed.
+
+        Returns:
+            A `stim.DetectorErrorModel` with the same instructions except all tags have
+            been removed.
+
+        Examples:
+            >>> import stim
+            >>> stim.DetectorErrorModel('''
+            ...     error[test-tag](0.25) D0
+            ... ''').without_tags()
+            stim.DetectorErrorModel('''
+                error(0.25) D0
+            ''')
         """
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
@@ -6166,6 +6440,79 @@ class FlipSimulator:
             >>> import stim
             >>> sim = stim.FlipSimulator(batch_size=256)
         """
+    def append_measurement_flips(
+        self,
+        measurement_flip_data: np.ndarray,
+    ) -> None:
+        """Appends measurement flip data to the simulator's measurement record.
+
+        Args:
+            measurement_flip_data: The flip data to append. The following shape/dtype
+                combinations are supported.
+
+                Single measurement without bit packing:
+                    shape=(self.batch_size,)
+                    dtype=np.bool_
+
+                Single measurement with bit packing:
+                    shape=(math.ceil(self.batch_size / 8),)
+                    dtype=np.uint8
+
+                Multiple measurements without bit packing:
+                    shape=(num_measurements, self.batch_size)
+                    dtype=np.bool_
+
+                Multiple measurements with bit packing:
+                    shape=(num_measurements, math.ceil(self.batch_size / 8))
+                    dtype=np.uint8
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+            >>> sim = stim.FlipSimulator(batch_size=9)
+            >>> sim.append_measurement_flips(np.array(
+            ...     [0, 1, 0, 0, 1, 0, 0, 1, 1],
+            ...     dtype=np.bool_,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [0b11001001, 0],
+            ...     dtype=np.uint8,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [[0b11111111, 0b1], [0b00000000, 0b0], [0b11111111, 0b1]],
+            ...     dtype=np.uint8,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [False, False, False, False, False, False, False, False, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True]])
+
+            >>> sim.append_measurement_flips(np.array(
+            ...     [[1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0]],
+            ...     dtype=np.bool_,
+            ... ))
+
+            >>> sim.get_measurement_flips()
+            array([[False,  True, False, False,  True, False, False,  True,  True],
+                   [ True, False, False,  True, False, False,  True,  True, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [False, False, False, False, False, False, False, False, False],
+                   [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                   [ True, False,  True, False,  True, False,  True, False,  True],
+                   [False,  True, False,  True, False,  True, False,  True, False]])
+        """
     @property
     def batch_size(
         self,
@@ -6186,6 +6533,7 @@ class FlipSimulator:
         *,
         pauli: Union[str, int],
         mask: np.ndarray,
+        p: float = 1,
     ) -> None:
         """Applies a pauli error to all qubits in all instances, filtered by a mask.
 
@@ -6206,6 +6554,9 @@ class FlipSimulator:
                 The error is only applied to qubit q in instance k when
 
                     mask[q, k] == True.
+            p: Defaults to 1 (no effect). When specified, the error is applied
+                probabilistically instead of deterministically to each (instance, qubit)
+                pair matching the mask. This argument specifies the probability.
 
         Examples:
             >>> import stim
@@ -7069,6 +7420,7 @@ class Flow:
         input: Optional[stim.PauliString] = None,
         output: Optional[stim.PauliString] = None,
         measurements: Optional[Iterable[Union[int, GateTarget]]] = None,
+        included_observables: Optional[Iterable[int]] = None,
     ) -> None:
         """Initializes a stim.Flow.
 
@@ -7085,11 +7437,18 @@ class Flow:
                 specify the flow's input stabilizer.
             output: Defaults to None. Can be set to a stim.PauliString to directly
                 specify the flow's output stabilizer.
-            measurements: Can be set to a list of integers or gate targets like
-                `stim.target_rec(-1)`, to specify the measurements that mediate the
-                flow. Negative and positive measurement indices are allowed. Indexes
-                follow the python convention where -1 is the last measurement in a
-                circuit and 0 is the first measurement in a circuit.
+            measurements: Defaults to None. Can be set to a list of integers or gate
+                targets like `stim.target_rec(-1)`, to specify the measurements that
+                mediate the flow. Negative and positive measurement indices are allowed.
+                Indexes follow the python convention where -1 is the last measurement in
+                a circuit and 0 is the first measurement in a circuit.
+            included_observables: Defaults to None. `OBSERVABLE_INCLUDE` instructions
+                that target an observable index from this list will be implicitly
+                included in the flow. This allows flows to refer to observables. For
+                example, the flow "X5 -> obs[3]" says "At the start of the circuit,
+                observable 3 should be an X term on qubit 5. By the end of the circuit
+                it will be measured. The `OBSERVABLE_INCLUDE(3)` instructions in the
+                circuit should explain how this happened.".
 
         Examples:
             >>> import stim
@@ -7106,6 +7465,40 @@ class Flow:
             ...     measurements=[],
             ... )
             stim.Flow("XX -> _X")
+
+            >>> # Identical terms cancel.
+            >>> stim.Flow("X2 -> Y2*Y2 xor rec[-2] xor rec[-2]")
+            stim.Flow("__X -> ___")
+
+            >>> stim.Flow("X -> Y xor obs[3] xor obs[3] xor obs[3]")
+            stim.Flow("X -> Y xor obs[3]")
+        """
+    def __mul__(
+        self,
+        rhs: stim.Flow,
+    ) -> stim.Flow:
+        """Computes the product of two flows.
+
+        Args:
+            rhs: The right hand side of the multiplication.
+
+        Returns:
+            The product of the two flows.
+
+        Raises:
+            ValueError: The inputs anti-commute (their product would be anti-Hermitian).
+                For example, 1 -> X times 1 -> Y fails because it would give 1 -> iZ.
+
+        Examples:
+            >>> import stim
+            >>> stim.Flow("X -> X") * stim.Flow("Z -> Z")
+            stim.Flow("Y -> Y")
+
+            >>> stim.Flow("1 -> XX") * stim.Flow("1 -> ZZ")
+            stim.Flow("1 -> -YY")
+
+            >>> stim.Flow("X -> rec[-1]") * stim.Flow("X -> rec[-2]")
+            stim.Flow("_ -> rec[-2] xor rec[-1]")
         """
     def __ne__(
         self,
@@ -7122,6 +7515,30 @@ class Flow:
         self,
     ) -> str:
         """Returns a shorthand description of the flow.
+        """
+    def included_observables_copy(
+        self,
+    ) -> List[int]:
+        """Returns a copy of the flow's included observable indices.
+
+        When an observable is included in a flow, the flow implicitly includes all
+        measurements and pauli terms from `OBSERVABLE_INCLUDE` instructions targeting
+        that observable index.
+
+        Examples:
+            >>> import stim
+            >>> f = stim.Flow(included_observables=[3, 2])
+            >>> f.included_observables_copy()
+            [2, 3]
+
+            >>> f.included_observables_copy() is f.included_observables_copy()
+            False
+
+            >>> f = stim.Flow("X2 -> obs[3]")
+            >>> f.included_observables_copy()
+            [3]
+            >>> stim.Circuit("OBSERVABLE_INCLUDE(3) X2").has_flow(f)
+            True
         """
     def input_copy(
         self,
@@ -8363,7 +8780,7 @@ class PauliString:
         """
     def __init__(
         self,
-        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, Literal["_", "I", "X", "Y", "Z"]]]] = None,
         /,
     ) -> None:
         """Initializes a stim.PauliString from the given argument.
@@ -8384,6 +8801,14 @@ class PauliString:
                 stim.PauliString: initializes a copy of the given Pauli string.
                 Iterable: initializes by interpreting each item as a Pauli.
                     Each item can be a single-qubit Pauli string (like "X"),
+                    or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                Dict[int, Union[int, str]]: initializes by interpreting keys as
+                    the qubit index and values as the Pauli for that index.
+                    Each value can be a single-qubit Pauli string (like "X"),
+                    or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
+                Dict[Union[int, str], Iterable[int]]: initializes by interpreting keys
+                    as Pauli operators and values as the qubit indices for that Pauli.
+                    Each key can be a single-qubit Pauli string (like "X"),
                     or an integer. Integers use the convention 0=I, 1=X, 2=Y, 3=Z.
 
         Examples:
@@ -8412,6 +8837,15 @@ class PauliString:
 
             >>> stim.PauliString("X6*Y6")
             stim.PauliString("+i______Z")
+
+            >>> stim.PauliString({0: "X", 2: "Y", 3: "X"})
+            stim.PauliString("+X_YX")
+
+            >>> stim.PauliString({0: "X", 2: 2, 3: 1})
+            stim.PauliString("+X_YX")
+
+            >>> stim.PauliString({"X": [1], 2: [4], "Z": [0, 3]})
+            stim.PauliString("+ZX_ZY")
         """
     def __itruediv__(
         self,
@@ -8853,7 +9287,7 @@ class PauliString:
     def from_unitary_matrix(
         matrix: Iterable[Iterable[Union[int, float, complex]]],
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
         unsigned: bool = False,
     ) -> stim.PauliString:
         """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
@@ -9143,7 +9577,7 @@ class PauliString:
     def to_unitary_matrix(
         self,
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> np.ndarray[np.complex64]:
         """Converts the pauli string into a unitary matrix.
 
@@ -9778,7 +10212,7 @@ class Tableau:
     def from_state_vector(
         state_vector: Iterable[float],
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> stim.Tableau:
         """Creates a tableau representing the stabilizer state of the given state vector.
 
@@ -9839,7 +10273,7 @@ class Tableau:
     def from_unitary_matrix(
         matrix: Iterable[Iterable[float]],
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> stim.Tableau:
         """Creates a tableau from the unitary matrix of a Clifford operation.
 
@@ -10268,7 +10702,7 @@ class Tableau:
         """
     def to_circuit(
         self,
-        method: 'Literal["elimination", "graph_state"]' = 'elimination',
+        method: Literal["elimination", "graph_state"] = 'elimination',
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -10635,7 +11069,7 @@ class Tableau:
     def to_state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> np.ndarray[np.complex64]:
         """Returns the state vector produced by applying the tableau to the |0..0> state.
 
@@ -10687,7 +11121,7 @@ class Tableau:
     def to_unitary_matrix(
         self,
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> np.ndarray[np.complex64]:
         """Converts the tableau into a unitary matrix.
 
@@ -12409,7 +12843,7 @@ class TableauSimulator:
         self,
         state_vector: Iterable[float],
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> None:
         """Sets the simulator's state to a superposition specified by an amplitude vector.
 
@@ -12555,7 +12989,7 @@ class TableauSimulator:
     def state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> np.ndarray[np.complex64]:
         """Returns a wavefunction for the simulator's current state.
 
@@ -13050,7 +13484,7 @@ def main(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -13061,18 +13495,18 @@ def read_shot_data_file(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    separate_observables: 'Literal[True]',
+    separate_observables: Literal[True],
 ) -> Tuple[np.ndarray, np.ndarray]:
     pass
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -13443,7 +13877,7 @@ def write_shot_data_file(
     *,
     data: np.ndarray,
     path: Union[str, pathlib.Path],
-    format: str,
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,

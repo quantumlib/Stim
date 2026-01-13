@@ -19,23 +19,24 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <stim/circuit/circuit.h>
 
-#include "command_convert.h"
-#include "command_detect.h"
-#include "command_diagram.h"
-#include "command_explain_errors.h"
-#include "command_gen.h"
-#include "command_m2d.h"
-#include "command_repl.h"
-#include "command_sample.h"
-#include "command_sample_dem.h"
+#include "stim/circuit/circuit.h"
 #include "stim/cmd/command_analyze_errors.h"
+#include "stim/cmd/command_convert.h"
+#include "stim/cmd/command_detect.h"
+#include "stim/cmd/command_diagram.h"
+#include "stim/cmd/command_explain_errors.h"
+#include "stim/cmd/command_gen.h"
+#include "stim/cmd/command_m2d.h"
+#include "stim/cmd/command_repl.h"
+#include "stim/cmd/command_sample.h"
+#include "stim/cmd/command_sample_dem.h"
 #include "stim/gates/gates.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/util_bot/arg_parse.h"
+#include "stim/util_top/mbqc_decomposition.h"
 
 using namespace stim;
 
@@ -255,9 +256,35 @@ void print_decomposition(Acc &out, const Gate &gate) {
         out << "# The following circuit is equivalent (up to global phase) to `";
         out << undecomposed.str() << "`";
         out << decomposition;
-        if (Circuit(decomposition) == Circuit(undecomposed.str())) {
+        Circuit c(decomposition);
+        if (c == Circuit(undecomposed.str())) {
             out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
+        } else if (c.operations.empty()) {
+            out << "\n# (The decomposition is empty because this gate has no effect.)\n";
         }
+        out.change_indent(-4);
+    }
+}
+
+void print_mbqc_decomposition(Acc &out, const Gate &gate) {
+    const char *decomposition = mbqc_decomposition(gate.id);
+    if (decomposition != nullptr) {
+        std::stringstream undecomposed;
+        auto decomp_targets = gate_decomposition_help_targets_for_gate_type(gate.id);
+        undecomposed << CircuitInstruction{gate.id, {}, decomp_targets, ""};
+
+        out << "MBQC Decomposition (into MX, MY, MZ, MXX, MZZ, and Pauli feedback):\n";
+        out.change_indent(+4);
+        out << "# The following circuit performs `";
+        out << undecomposed.str() << "` (but affects the measurement record and an ancilla qubit)";
+        out << decomposition;
+        Circuit c(decomposition);
+        if (c == Circuit(undecomposed.str())) {
+            out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
+        } else if (c.operations.empty()) {
+            out << "\n# (The decomposition is empty because this gate has no effect.)\n";
+        }
+
         out.change_indent(-4);
     }
 }
@@ -425,6 +452,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     print_bloch_vector(out, gate);
     print_unitary_matrix(out, gate);
     print_decomposition(out, gate);
+    print_mbqc_decomposition(out, gate);
     out.flush();
     return out.settled;
 }

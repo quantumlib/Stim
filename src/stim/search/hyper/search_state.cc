@@ -45,12 +45,13 @@ void SearchState::append_transition_as_error_instruction_to(const SearchState &o
     // Default probability to 1.
     out.arg_buf.append_tail(1);
 
-    out.instructions.push_back(DemInstruction{
-        .arg_data=out.arg_buf.commit_tail(),
-        .target_data=out.target_buf.commit_tail(),
-        .tag="",
-        .type=DemInstructionType::DEM_ERROR,
-    });
+    out.instructions.push_back(
+        DemInstruction{
+            .arg_data = out.arg_buf.commit_tail(),
+            .target_data = out.target_buf.commit_tail(),
+            .tag = "",
+            .type = DemInstructionType::DEM_ERROR,
+        });
 }
 
 bool SearchState::operator==(const SearchState &other) const {

@@ -267,7 +267,8 @@ std::string stim::shortest_error_sat_problem(const DetectorErrorModel& model, st
     return sat_problem_as_wcnf_string(model, /*weighted=*/false, /*quantization=*/0);
 }
 
-std::string stim::likeliest_error_sat_problem(const DetectorErrorModel& model, int quantization, std::string_view format) {
+std::string stim::likeliest_error_sat_problem(
+    const DetectorErrorModel& model, int quantization, std::string_view format) {
     if (format != "WDIMACS") {
         throw std::invalid_argument("Unsupported format.");
     }

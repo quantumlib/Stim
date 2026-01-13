@@ -1681,3 +1681,63 @@ TEST_EACH_WORD_SIZE_W(FrameSimulator, heralded_pauli_channel_1_statistics_offset
     EXPECT_NEAR(bins[6] / (double)n, 0.25, 0.04);
     EXPECT_NEAR(bins[7] / (double)n, 0.15, 0.04);
 })
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, observable_include_paulis_rz, {
+    auto circuit = Circuit(R"CIRCUIT(
+        RZ 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    )CIRCUIT");
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    sim.reset_all();
+    sim.do_circuit(circuit);
+    auto x0 = sim.obs_record[0].popcnt();
+    auto y0 = sim.obs_record[1].popcnt();
+    auto z0 = sim.obs_record[2].popcnt();
+    ASSERT_EQ(x0, y0);
+    ASSERT_GT(x0, 300);
+    ASSERT_LT(x0, 700);
+    ASSERT_EQ(z0, 0);
+})
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, observable_include_paulis_ry, {
+    auto circuit = Circuit(R"CIRCUIT(
+        RY 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    )CIRCUIT");
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    sim.reset_all();
+    sim.do_circuit(circuit);
+    auto x0 = sim.obs_record[0].popcnt();
+    auto y0 = sim.obs_record[1].popcnt();
+    auto z0 = sim.obs_record[2].popcnt();
+    ASSERT_EQ(x0, z0);
+    ASSERT_GT(x0, 300);
+    ASSERT_LT(x0, 700);
+    ASSERT_EQ(y0, 0);
+})
+
+TEST_EACH_WORD_SIZE_W(FrameSimulator, observable_include_paulis_rx, {
+    auto circuit = Circuit(R"CIRCUIT(
+        RX 0
+        OBSERVABLE_INCLUDE(0) X0
+        OBSERVABLE_INCLUDE(1) Y0
+        OBSERVABLE_INCLUDE(2) Z0
+    )CIRCUIT");
+    FrameSimulator<W> sim(
+        circuit.compute_stats(), FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 1024, INDEPENDENT_TEST_RNG());
+    sim.reset_all();
+    sim.do_circuit(circuit);
+    auto x0 = sim.obs_record[0].popcnt();
+    auto y0 = sim.obs_record[1].popcnt();
+    auto z0 = sim.obs_record[2].popcnt();
+    ASSERT_EQ(y0, z0);
+    ASSERT_GT(y0, 300);
+    ASSERT_LT(y0, 700);
+    ASSERT_EQ(x0, 0);
+})

@@ -2,6 +2,7 @@
 #define _STIM_UTIL_TOP_CIRCUIT_INVERSE_QEC_H
 
 #include "stim/circuit/circuit.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 #include "stim/stabilizers/flow.h"
 
 namespace stim {
