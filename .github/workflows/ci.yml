@@ -403,20 +403,23 @@ jobs:
       - uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
         with:
           node-version: 16.x
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6
+        with:
+          python-version: '3.13'
       - run: bazel build :stim_dev_wheel
       - run: pip install bazel-bin/stim-0.0.dev0-py3-none-any.whl
-      - run: diff <(python3.13 dev/gen_stim_api_reference.py -dev) doc/python_api_reference_vDev.md
-      - run: diff <(python3.13 dev/gen_stim_stub_file.py -dev) glue/python/src/stim/__init__.pyi
-      - run: diff <(python3.13 dev/gen_stim_stub_file.py -dev) doc/stim.pyi
-      - run: diff <(python3.13 -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
-      - run: diff <(python3.13 -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
-      - run: diff <(python3.13 -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
+      - run: diff <(python dev/gen_stim_api_reference.py -dev) doc/python_api_reference_vDev.md
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) glue/python/src/stim/__init__.pyi
+      - run: diff <(python dev/gen_stim_stub_file.py -dev) doc/stim.pyi
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
       - run: diff <(dev/gen_known_gates_for_js.sh) glue/crumble/test/generated_gate_name_list.test.js
-      - run: python3.13 doc/stim.pyi
+      - run: python doc/stim.pyi
       - run: npm install -g rollup@3.21.2 uglify-js@3.17.4
       - run: diff <(dev/compile_crumble_into_cpp_string_file.sh) src/stim/diagram/crumble_data.cc
       - run: pip install -e glue/sample
-      - run: diff <(python3.13 dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
+      - run: diff <(python dev/gen_sinter_api_reference.py -dev) doc/sinter_api.md
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-24.04
     steps:
