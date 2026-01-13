@@ -2462,7 +2462,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("rows") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(R"DOC(
-            @signature def diagram(self, type: 'Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"]' = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text', *, tick: Union[None, int, range] = None, filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),), rows: int | None = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

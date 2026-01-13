@@ -249,7 +249,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::arg("filepath"),
         pybind11::arg("format") = "01",
         clean_doc_string(R"DOC(
-            @signature def sample_write(self, shots: int, *, filepath: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01') -> None:
+            @signature def sample_write(self, shots: int, *, filepath: Union[str, pathlib.Path], format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01') -> None:
             Samples measurements from the circuit and writes them to a file.
 
             Examples:

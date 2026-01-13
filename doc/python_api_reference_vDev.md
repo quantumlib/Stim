@@ -1664,7 +1664,7 @@ def detector_error_model(
 # (in class stim.Circuit)
 def diagram(
     self,
-    type: 'Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"]' = 'timeline-text',
+    type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text',
     *,
     tick: Union[None, int, range] = None,
     filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
@@ -5230,13 +5230,13 @@ def sample_write(
     shots: int,
     *,
     det_out_file: Union[None, str, pathlib.Path],
-    det_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    det_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     obs_out_file: Union[None, str, pathlib.Path],
-    obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     err_out_file: Union[None, str, pathlib.Path] = None,
-    err_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    err_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     replay_err_in_file: Union[None, str, pathlib.Path] = None,
-    replay_err_in_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    replay_err_in_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
 ) -> None:
     """Samples the detector error model and writes the results to disk.
 
@@ -5497,9 +5497,9 @@ def sample_write(
     shots: int,
     *,
     filepath: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
-    obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     prepend_observables: bool = False,
     append_observables: bool = False,
 ) -> None:
@@ -5711,7 +5711,7 @@ def sample_write(
     shots: int,
     *,
     filepath: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
 ) -> None:
     """Samples measurements from the circuit and writes them to a file.
 
@@ -5838,7 +5838,7 @@ def convert(
     *,
     measurements: np.ndarray,
     sweep_bits: Optional[np.ndarray] = None,
-    separate_observables: 'Literal[True]',
+    separate_observables: Literal[True],
     append_observables: bool = False,
     bit_packed: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -5938,14 +5938,14 @@ def convert_file(
     self,
     *,
     measurements_filepath: Union[str, pathlib.Path],
-    measurements_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    measurements_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     sweep_bits_filepath: Optional[Union[str, pathlib.Path]] = None,
-    sweep_bits_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    sweep_bits_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     detection_events_filepath: Union[str, pathlib.Path],
-    detection_events_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    detection_events_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     append_observables: bool = False,
     obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
-    obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+    obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
 ) -> None:
     """Reads measurement data from a file and writes detection events to another file.
 
@@ -7425,7 +7425,7 @@ def copy(
 # (in class stim.DetectorErrorModel)
 def diagram(
     self,
-    type: 'Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"]' = 'matchgraph-svg',
+    type: Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"] = 'matchgraph-svg',
 ) -> Any:
     """Returns a diagram of the circuit, from a variety of options.
 
@@ -11064,7 +11064,7 @@ def __imul__(
 # (in class stim.PauliString)
 def __init__(
     self,
-    arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+    arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, Literal["_", "I", "X", "Y", "Z"]]]] = None,
     /,
 ) -> None:
     """Initializes a stim.PauliString from the given argument.
@@ -11684,7 +11684,7 @@ def from_numpy(
 def from_unitary_matrix(
     matrix: Iterable[Iterable[Union[int, float, complex]]],
     *,
-    endian: 'Literal["little", "big"]' = 'little',
+    endian: Literal["little", "big"] = 'little',
     unsigned: bool = False,
 ) -> stim.PauliString:
     """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
@@ -12023,7 +12023,7 @@ def to_tableau(
 def to_unitary_matrix(
     self,
     *,
-    endian: 'Literal["little", "big"]',
+    endian: Literal["little", "big"],
 ) -> np.ndarray[np.complex64]:
     """Converts the pauli string into a unitary matrix.
 
@@ -12826,7 +12826,7 @@ def from_stabilizers(
 def from_state_vector(
     state_vector: Iterable[float],
     *,
-    endian: 'Literal["little", "big"]',
+    endian: Literal["little", "big"],
 ) -> stim.Tableau:
     """Creates a tableau representing the stabilizer state of the given state vector.
 
@@ -12894,7 +12894,7 @@ def from_state_vector(
 def from_unitary_matrix(
     matrix: Iterable[Iterable[float]],
     *,
-    endian: 'Literal["little", "big"]' = 'little',
+    endian: Literal["little", "big"] = 'little',
 ) -> stim.Tableau:
     """Creates a tableau from the unitary matrix of a Clifford operation.
 
@@ -13407,7 +13407,7 @@ def then(
 # (in class stim.Tableau)
 def to_circuit(
     self,
-    method: 'Literal["elimination", "graph_state"]' = 'elimination',
+    method: Literal["elimination", "graph_state"] = 'elimination',
 ) -> stim.Circuit:
     """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -13802,7 +13802,7 @@ def to_stabilizers(
 def to_state_vector(
     self,
     *,
-    endian: 'Literal["little", "big"]' = 'little',
+    endian: Literal["little", "big"] = 'little',
 ) -> np.ndarray[np.complex64]:
     """Returns the state vector produced by applying the tableau to the |0..0> state.
 
@@ -13861,7 +13861,7 @@ def to_state_vector(
 def to_unitary_matrix(
     self,
     *,
-    endian: 'Literal["little", "big"]',
+    endian: Literal["little", "big"],
 ) -> np.ndarray[np.complex64]:
     """Converts the tableau into a unitary matrix.
 
@@ -16003,7 +16003,7 @@ def set_state_from_state_vector(
     self,
     state_vector: Iterable[float],
     *,
-    endian: 'Literal["little", "big"]',
+    endian: Literal["little", "big"],
 ) -> None:
     """Sets the simulator's state to a superposition specified by an amplitude vector.
 
@@ -16184,7 +16184,7 @@ def sqrt_y_dag(
 def state_vector(
     self,
     *,
-    endian: 'Literal["little", "big"]' = 'little',
+    endian: Literal["little", "big"] = 'little',
 ) -> np.ndarray[np.complex64]:
     """Returns a wavefunction for the simulator's current state.
 
@@ -16812,7 +16812,7 @@ def main(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -16823,18 +16823,18 @@ def read_shot_data_file(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    separate_observables: 'Literal[True]',
+    separate_observables: Literal[True],
 ) -> Tuple[np.ndarray, np.ndarray]:
     pass
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -17296,7 +17296,7 @@ def write_shot_data_file(
     *,
     data: np.ndarray,
     path: Union[str, pathlib.Path],
-    format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]',
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
