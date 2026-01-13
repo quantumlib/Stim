@@ -114,3 +114,69 @@ TEST_EACH_WORD_SIZE_W(clifford_string, multiplication_table_vs_tableau_multiplic
     }
     ASSERT_EQ(p1 * p2, p12);
 })
+
+TEST_EACH_WORD_SIZE_W(clifford_string, to_from_circuit, {
+    Circuit circuit(R"CIRCUIT(
+        H 0
+        H_XY 1
+        H_YZ 2
+        H_NXY 3
+        H_NXZ 4
+        H_NYZ 5
+        S_DAG 6
+        X 7
+        Y 8
+        Z 9
+        C_XYZ 10
+        C_ZYX 11
+        C_NXYZ 12
+        C_XNYZ 13
+        C_XYNZ 14
+        C_NZYX 15
+        C_ZNYX 16
+        C_ZYNX 17
+        SQRT_X 18
+        SQRT_X_DAG 19
+        SQRT_Y 20
+        SQRT_Y_DAG 21
+        S 22
+        I 23
+    )CIRCUIT");
+    CliffordString<W> s = CliffordString<W>::from_circuit(circuit);
+    ASSERT_EQ(s.to_circuit(), circuit);
+})
+
+TEST_EACH_WORD_SIZE_W(clifford_string, known_identities, {
+    auto s1 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        H 0
+    )CIRCUIT"));
+    auto s2 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        H 0
+    )CIRCUIT"));
+    auto s3 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        I 0
+    )CIRCUIT"));
+    ASSERT_EQ(s2 * s1, s3);
+
+    s1 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        S 0
+    )CIRCUIT"));
+    s2 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        S 0
+    )CIRCUIT"));
+    s3 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        Z 0
+    )CIRCUIT"));
+    ASSERT_EQ(s2 * s1, s3);
+
+    s1 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        S_DAG 0
+    )CIRCUIT"));
+    s2 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        H 0
+    )CIRCUIT"));
+    s3 = CliffordString<W>::from_circuit(Circuit(R"CIRCUIT(
+        C_XYZ 0
+    )CIRCUIT"));
+    ASSERT_EQ(s2 * s1, s3);
+})
