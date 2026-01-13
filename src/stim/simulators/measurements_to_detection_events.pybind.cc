@@ -221,6 +221,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("obs_out_filepath") = nullptr,
         pybind11::arg("obs_out_format") = "01",
         clean_doc_string(R"DOC(
+            @signature def convert_file(self, *, measurements_filepath: Union[str, pathlib.Path], measurements_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', sweep_bits_filepath: Optional[Union[str, pathlib.Path]] = None, sweep_bits_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', detection_events_filepath: Union[str, pathlib.Path], detection_events_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', append_observables: bool = False, obs_out_filepath: Optional[Union[str, pathlib.Path]] = None, obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01') -> None:
             Reads measurement data from a file and writes detection events to another file.
 
             Args:
@@ -289,7 +290,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         clean_doc_string(R"DOC(
             Converts measurement data into detection event data.
             @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:
-            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: 'Literal[True]', append_observables: bool = False, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: Literal[True], append_observables: bool = False, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
             @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_packed: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:

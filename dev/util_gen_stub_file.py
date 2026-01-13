@@ -72,6 +72,8 @@ skip = {
     "__post_init__",
     "__weakref__",
     "__abstractmethods__",
+    "__annotate_func__",
+    "__annotations_cache__",
 }
 
 
