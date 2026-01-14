@@ -36,7 +36,7 @@ pybind11::class_<CliffordString<MAX_BITWORD_WIDTH>> stim_pybind::pybind_clifford
             Examples:
                 >>> import stim
                 >>> stim.CliffordString("H,S,C_XYZ") * stim.CliffordString("H,H,H")
-                stim.CliffordString("I,C_XYZ,H")
+                stim.CliffordString("I,C_ZYX,SQRT_X_DAG")
         )DOC")
             .data());
 }
@@ -171,8 +171,8 @@ void stim_pybind::pybind_clifford_string_methods(
                 >>> stim.CliffordString("X,Y,Z,SQRT_X")
                 stim.CliffordString("X,Y,Z,SQRT_X")
 
-                >>> stim.CliffordString([1, 2, 3, "H", stim.gate_data("S")])
-                stim.CliffordString("X,Y,Z,H,S")
+                >>> stim.CliffordString(["H", stim.gate_data("S")])
+                stim.CliffordString("H,S")
 
                 >>> stim.CliffordString(stim.PauliString("XYZ"))
                 stim.CliffordString("X,Y,Z")
@@ -182,11 +182,35 @@ void stim_pybind::pybind_clifford_string_methods(
         )DOC")
             .data());
 
-    c.def("__imul__", &CliffordString<MAX_BITWORD_WIDTH>::operator*=, "Performs an inplace right-multiplication.");
+    c.def(
+        "__imul__",
+        &CliffordString<MAX_BITWORD_WIDTH>::operator*=,
+        clean_doc_string(R"DOC(
+            Returns the product of two CliffordString instances.
+
+            Examples:
+                >>> import stim
+                >>> x = stim.CliffordString("S,X,X")
+                >>> y = stim.CliffordString("S,Z,H,Z")
+                >>> alias = x
+                >>> alias *= y
+                >>> x
+                stim.CliffordString("Z,Y,SQRT_Y,Z")
+        )DOC")
+            .data());
+
     c.def(
         "__mul__",
         &CliffordString<MAX_BITWORD_WIDTH>::operator*,
-        "Returns the product of two CliffordString instances.");
+        clean_doc_string(R"DOC(
+            Returns the product of two CliffordString instances.
+
+            Examples:
+                >>> import stim
+                >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
+                stim.CliffordString("Z,Y,SQRT_Y,Z")
+        )DOC")
+            .data());
 
     c.def(
         "__str__",
@@ -201,7 +225,15 @@ void stim_pybind::pybind_clifford_string_methods(
         [](const CliffordString<MAX_BITWORD_WIDTH> &self) {
             return self.num_qubits;
         },
-        "Returns the number of Clifford operations in the string.");
+        clean_doc_string(R"DOC(
+            Returns the number of Clifford operations in the string.
+
+            Examples:
+                >>> import stim
+                >>> len(stim.CliffordString("I,X,Y,Z,H"))
+                5
+        )DOC")
+            .data());
 
     c.def(pybind11::self == pybind11::self, "Determines if two Clifford strings have identical contents.");
     c.def(pybind11::self != pybind11::self, "Determines if two Clifford strings have non-identical contents.");
@@ -216,7 +248,37 @@ void stim_pybind::pybind_clifford_string_methods(
             return pybind11::cast(GateTypeWrapper{self.gate_at(index)});
         },
         pybind11::arg("index_or_slice"),
-        "Returns the Clifford at a given index, or a slice of the CliffordString.");
+        clean_doc_string(R"DOC(
+            @overload def __getitem__(self, index_or_slice: int) -> stim.GateData:
+            @overload def __getitem__(self, index_or_slice: slice) -> stim.CliffordString:
+            @signature def __getitem__(self, index_or_slice: Union[int, slice]) -> Union[stim.GateData, stim.CliffordString]:
+            Returns a Clifford or substring from the CliffordString.
+
+            Args:
+                index_or_slice: The index of the Clifford to return, or the slice
+                    corresponding to the sub CliffordString to return.
+
+            Returns:
+                The indexed Clifford (as a stim.GateData instance) or the sliced
+                CliffordString.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.CliffordString("I,X,Y,Z,H")
+
+                >>> s[2]
+                stim.gate_data('Y')
+
+                >>> s[-1]
+                stim.gate_data('H')
+
+                >>> s[:-1]
+                stim.CliffordString("I,X,Y,Z")
+
+                >>> s[::2]
+                stim.CliffordString("I,Y,H")
+        )DOC")
+            .data());
 
     c.def_static(
         "random",
