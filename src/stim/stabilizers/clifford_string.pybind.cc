@@ -68,7 +68,7 @@ void stim_pybind::pybind_clifford_string_methods(
                     return CliffordString<MAX_BITWORD_WIDTH>(0);
                 }
                 if (text.ends_with(',')) {
-                    text = text.substr(text.size() - 1);
+                    text = text.substr(0, text.size() - 1);
                 }
 
                 size_t n = 1;

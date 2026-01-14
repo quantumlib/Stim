@@ -24,6 +24,7 @@ def test_trivial():
 
 
 def test_simple():
+    assert stim.CliffordString("X,Y,Z,H,SQRT_X,C_XYZ,H_NXZ") == stim.CliffordString("  X  ,   Y  ,  Z  , H_XZ , SQRT_X,C_XYZ,H_NXZ,   ")
     p = stim.CliffordString("X,Y,Z,H,SQRT_X,C_XYZ,H_NXZ")
     assert repr(p) == 'stim.CliffordString("X,Y,Z,H,SQRT_X,C_XYZ,H_NXZ")'
     assert str(p) == 'X,Y,Z,H,SQRT_X,C_XYZ,H_NXZ'
