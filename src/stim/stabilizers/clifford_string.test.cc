@@ -1,11 +1,10 @@
 #include "stim/stabilizers/clifford_string.h"
 
-#include "stim/util_bot/test_util.test.h"
-
 #include "gtest/gtest.h"
 
 #include "stim/mem/simd_word.test.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/util_bot/test_util.test.h"
 
 using namespace stim;
 
@@ -199,8 +198,8 @@ TEST_EACH_WORD_SIZE_W(clifford_string, random, {
     size_t seen_gates = 0;
     for (const auto &g : GATE_DATA.items) {
         if ((g.flags & GATE_IS_UNITARY) && (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
-            ASSERT_LT(counts[(uint8_t)g.id], 256.0*256.0/24.0*(1.0 + 0.5));
-            ASSERT_GT(counts[(uint8_t)g.id], 256.0*256.0/24.0*(1.0 - 0.5));
+            ASSERT_LT(counts[(uint8_t)g.id], 256.0 * 256.0 / 24.0 * (1.0 + 0.5));
+            ASSERT_GT(counts[(uint8_t)g.id], 256.0 * 256.0 / 24.0 * (1.0 - 0.5));
             seen_gates++;
         }
     }

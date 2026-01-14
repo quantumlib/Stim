@@ -17,9 +17,9 @@
 #ifndef _STIM_STABILIZERS_CLIFFORD_STRING_H
 #define _STIM_STABILIZERS_CLIFFORD_STRING_H
 
-#include "stim/mem/simd_bits.h"
-#include "stim/gates/gates.h"
 #include "stim/circuit/circuit.h"
+#include "stim/gates/gates.h"
+#include "stim/mem/simd_bits.h"
 
 namespace stim {
 
@@ -35,94 +35,42 @@ struct CliffordWord {
 };
 
 constexpr std::array<GateType, 64> INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE{
-    GateType::I,
-    GateType::X,
-    GateType::Z,
-    GateType::Y,
+    GateType::I,          GateType::X,          GateType::Z,          GateType::Y,
 
     GateType::NOT_A_GATE,  // These should be impossible if the class is in a good state.
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::S,
-    GateType::H_XY,
-    GateType::S_DAG,
-    GateType::H_NXY,
+    GateType::S,          GateType::H_XY,       GateType::S_DAG,      GateType::H_NXY,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::SQRT_X_DAG,
-    GateType::SQRT_X,
-    GateType::H_YZ,
-    GateType::H_NYZ,
+    GateType::SQRT_X_DAG, GateType::SQRT_X,     GateType::H_YZ,       GateType::H_NYZ,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::C_ZYX,
-    GateType::C_ZNYX,
-    GateType::C_ZYNX,
-    GateType::C_NZYX,
+    GateType::C_ZYX,      GateType::C_ZNYX,     GateType::C_ZYNX,     GateType::C_NZYX,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
-    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE, GateType::NOT_A_GATE,
 
-    GateType::C_XYZ,
-    GateType::C_XYNZ,
-    GateType::C_XNYZ,
-    GateType::C_NXYZ,
+    GateType::C_XYZ,      GateType::C_XYNZ,     GateType::C_XNYZ,     GateType::C_NXYZ,
 
-    GateType::H,
-    GateType::SQRT_Y_DAG,
-    GateType::SQRT_Y,
-    GateType::H_NXZ,
+    GateType::H,          GateType::SQRT_Y_DAG, GateType::SQRT_Y,     GateType::H_NXZ,
 };
 
 inline GateType bits2gate(std::array<bool, 6> bits) {
-    int k = (bits[0] << 0)
-          | (bits[1] << 1)
-          | (bits[2] << 2)
-          | (bits[3] << 3)
-          | (bits[4] << 4)
-          | (bits[5] << 5);
+    int k = (bits[0] << 0) | (bits[1] << 1) | (bits[2] << 2) | (bits[3] << 3) | (bits[4] << 4) | (bits[5] << 5);
     return INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[k];
 }
 
@@ -160,14 +108,8 @@ inline CliffordWord<Word> operator*(const CliffordWord<Word> &lhs, const Cliffor
     Word rhs_x2y = andnot(rhs.inv_x2x, rhs.x2z);
     Word rhs_z2y = andnot(rhs.inv_z2z, rhs.z2x);
     Word dy = (lhs.x2z & lhs.z2x) ^ lhs.inv_x2x ^ lhs.z2x ^ lhs.x2z ^ lhs.inv_z2z;
-    result.x_signs = rhs.x_signs
-        ^ andnot(rhs.inv_x2x, lhs.x_signs)
-        ^ (rhs_x2y & dy)
-        ^ (rhs.x2z & lhs.z_signs);
-    result.z_signs = rhs.z_signs
-        ^ (rhs.z2x & lhs.x_signs)
-        ^ (rhs_z2y & dy)
-        ^ andnot(rhs.inv_z2z, lhs.z_signs);
+    result.x_signs = rhs.x_signs ^ andnot(rhs.inv_x2x, lhs.x_signs) ^ (rhs_x2y & dy) ^ (rhs.x2z & lhs.z_signs);
+    result.z_signs = rhs.z_signs ^ (rhs.z2x & lhs.x_signs) ^ (rhs_z2y & dy) ^ andnot(rhs.inv_z2z, lhs.z_signs);
 
     return result;
 }
@@ -208,7 +150,7 @@ struct CliffordString {
     void randomize(std::mt19937_64 &rng) {
         CliffordString<W> result(num_qubits);
         x_signs.randomize(num_qubits, rng);
-        z_signs.randomize(num_qubits,rng);
+        z_signs.randomize(num_qubits, rng);
         for (size_t k = 0; k < num_qubits; k++) {
             uint64_t v = rng() % 6;
             uint8_t p1 = v % 3 + 1;
@@ -255,7 +197,7 @@ struct CliffordString {
 
     /// Sets an internal rotation from a GateType.
     void set_gate_at(size_t q, GateType gate_type) {
-        std::array<bool, 6> bits = gate_to_bits(gate_type);;
+        std::array<bool, 6> bits = gate_to_bits(gate_type);
         z_signs[q] = bits[0];
         x_signs[q] = bits[1];
         inv_x2x[q] = bits[2];
@@ -375,12 +317,8 @@ struct CliffordString {
 
     /// Determines if two Clifford strings have the same length and contents.
     bool operator==(const CliffordString<W> &other) const {
-        return x_signs == other.x_signs
-            && z_signs == other.z_signs
-            && inv_x2x == other.inv_x2x
-            && x2z == other.x2z
-            && z2x == other.z2x
-            && inv_z2z == other.inv_z2z;
+        return x_signs == other.x_signs && z_signs == other.z_signs && inv_x2x == other.inv_x2x && x2z == other.x2z &&
+               z2x == other.z2x && inv_z2z == other.inv_z2z;
     }
     /// Determines if two Clifford strings have different lengths or contents.
     bool operator!=(const CliffordString<W> &other) const {

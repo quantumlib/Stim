@@ -34,7 +34,7 @@ TEST(command_convert, convert_measurements_with_circuit_to_dets) {
         std::make_tuple("hits", "\n1\n0\n0,1\n"),
         std::make_tuple("r8", std::string({0x02, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}))};
 
-    for (const auto& [in_format, in_data] : measurement_data) {
+    for (const auto &[in_format, in_data] : measurement_data) {
         ASSERT_EQ(
             run_captured_stim_main(
                 {"convert",
@@ -83,7 +83,7 @@ TEST(command_convert, convert_detections_observables_with_circuit_to_dets) {
             "r8",
             std::string({0x05, 0x00, 0x00, 0x03, 0x01, 0x00, 0x02, 0x02, 0x00, 0x01, 0x03, 0x01, 0x03, 0x00, 0x00}))};
 
-    for (const auto& [in_format, in_data] : detection_data) {
+    for (const auto &[in_format, in_data] : detection_data) {
         ASSERT_EQ(
             run_captured_stim_main(
                 {"convert",
@@ -133,7 +133,7 @@ TEST(command_convert, convert_detections_observables_with_circuit_to_dets_with_o
             "r8",
             std::string({0x05, 0x00, 0x00, 0x03, 0x01, 0x00, 0x02, 0x02, 0x00, 0x01, 0x03, 0x01, 0x03, 0x00, 0x00}))};
 
-    for (const auto& [in_format, in_data] : detection_data) {
+    for (const auto &[in_format, in_data] : detection_data) {
         ASSERT_EQ(
             run_captured_stim_main(
                 {"convert",
@@ -179,8 +179,8 @@ TEST(command_convert, convert_detections_observables_with_circuit_no_dets) {
         std::make_tuple("hits", "0,2\n3,4\n\n2\n\n0\n"),
         std::make_tuple("r8", std::string({0x00, 0x01, 0x02, 0x03, 0x00, 0x00, 0x05, 0x02, 0x02, 0x05, 0x00, 0x04}))};
 
-    for (const auto& [in_format, in_data] : detection_data) {
-        for (const auto& [out_format, out_data] : detection_data) {
+    for (const auto &[in_format, in_data] : detection_data) {
+        for (const auto &[out_format, out_data] : detection_data) {
             ASSERT_EQ(
                 run_captured_stim_main(
                     {"convert",
@@ -211,8 +211,8 @@ TEST(command_convert, convert_detections_observables_with_dem) {
         std::make_tuple("hits", "0\n0,1,4\n\n1,4\n"),
         std::make_tuple("r8", std::string({0x00, 0x04, 0x00, 0x00, 0x02, 0x00, 0x05, 0x01, 0x02, 0x00}))};
 
-    for (const auto& [in_format, in_data] : detection_data) {
-        for (const auto& [out_format, out_data] : detection_data) {
+    for (const auto &[in_format, in_data] : detection_data) {
+        for (const auto &[out_format, out_data] : detection_data) {
             ASSERT_EQ(
                 run_captured_stim_main(
                     {"convert",
@@ -238,8 +238,8 @@ TEST(command_convert, convert_measurements_no_circuit_or_dem) {
             "r8",
             std::string({0x00, 0x02, 0x01, 0x01, 0x00, 0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00}))};
 
-    for (const auto& [in_format, in_data] : measurement_data) {
-        for (const auto& [out_format, out_data] : measurement_data) {
+    for (const auto &[in_format, in_data] : measurement_data) {
+        for (const auto &[out_format, out_data] : measurement_data) {
             ASSERT_EQ(
                 run_captured_stim_main(
                     {"convert",
@@ -263,8 +263,8 @@ TEST(command_convert, convert_detections_observables_no_circuit_or_dem) {
         std::make_tuple("hits", "0\n0,1,4\n\n1,4\n"),
         std::make_tuple("r8", std::string({0x00, 0x04, 0x00, 0x00, 0x02, 0x00, 0x05, 0x01, 0x02, 0x00}))};
 
-    for (const auto& [in_format, in_data] : detection_data) {
-        for (const auto& [out_format, out_data] : detection_data) {
+    for (const auto &[in_format, in_data] : detection_data) {
+        for (const auto &[out_format, out_data] : detection_data) {
             ASSERT_EQ(
                 run_captured_stim_main(
                     {"convert",
@@ -289,8 +289,8 @@ TEST(command_convert, convert_bits_per_shot_no_dets) {
         std::make_tuple("hits", "\n1\n0\n0,1\n"),
         std::make_tuple("r8", std::string({0x02, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}))};
 
-    for (const auto& [in_format, in_data] : measurement_data) {
-        for (const auto& [out_format, out_data] : measurement_data) {
+    for (const auto &[in_format, in_data] : measurement_data) {
+        for (const auto &[out_format, out_data] : measurement_data) {
             ASSERT_EQ(
                 run_captured_stim_main(
                     {"convert",

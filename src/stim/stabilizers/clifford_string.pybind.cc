@@ -14,11 +14,11 @@
 
 #include "stim/stabilizers/clifford_string.pybind.h"
 
-#include "stim/stabilizers/flex_pauli_string.h"
-#include "stim/stabilizers/pauli_string.h"
 #include "stim/gates/gates.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
+#include "stim/stabilizers/flex_pauli_string.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -53,97 +53,98 @@ static std::string_view trim(std::string_view text) {
     return text.substr(s, e - s);
 }
 
-void stim_pybind::pybind_clifford_string_methods(pybind11::module &m, pybind11::class_<CliffordString<MAX_BITWORD_WIDTH>> &c) {
+void stim_pybind::pybind_clifford_string_methods(
+    pybind11::module &m, pybind11::class_<CliffordString<MAX_BITWORD_WIDTH>> &c) {
     c.def(
-        pybind11::init(
-            [](const pybind11::object &arg) -> CliffordString<MAX_BITWORD_WIDTH> {
-                if (pybind11::isinstance<pybind11::int_>(arg)) {
-                    return CliffordString<MAX_BITWORD_WIDTH>(pybind11::cast<int64_t>(arg));
+        pybind11::init([](const pybind11::object &arg) -> CliffordString<MAX_BITWORD_WIDTH> {
+            if (pybind11::isinstance<pybind11::int_>(arg)) {
+                return CliffordString<MAX_BITWORD_WIDTH>(pybind11::cast<int64_t>(arg));
+            }
+
+            if (pybind11::isinstance<pybind11::str>(arg)) {
+                std::string_view text = pybind11::cast<std::string_view>(arg);
+                text = trim(text);
+                if (text.empty()) {
+                    return CliffordString<MAX_BITWORD_WIDTH>(0);
+                }
+                if (text.ends_with(',')) {
+                    text = text.substr(text.size() - 1);
                 }
 
-                if (pybind11::isinstance<pybind11::str>(arg)) {
-                    std::string_view text = pybind11::cast<std::string_view>(arg);
-                    text = trim(text);
-                    if (text.empty()) {
-                        return CliffordString<MAX_BITWORD_WIDTH>(0);
-                    }
-                    if (text.ends_with(',')) {
-                        text = text.substr(text.size() - 1);
-                    }
-
-                    size_t n = 1;
-                    for (char e : text) {
-                        n += e == ',';
-                    }
-                    CliffordString<MAX_BITWORD_WIDTH> result(n);
-                    size_t start = 0;
-                    size_t out_index = 0;
-                    for (size_t end = 0; end <= text.size(); end++) {
-                        if (end == text.size() || text[end] == ',') {
-                            std::string_view segment = text.substr(start, end - start);
-                            segment = trim(segment);
-                            auto [z_sign, x_sign, inv_x2x, x2z, z2x, inv_z2z] = gate_to_bits(GATE_DATA.at(segment).id);
-                            result.z_signs[out_index] = z_sign;
-                            result.x_signs[out_index] = x_sign;
-                            result.inv_x2x[out_index] = inv_x2x;
-                            result.x2z[out_index] = x2z;
-                            result.z2x[out_index] = z2x;
-                            result.inv_z2z[out_index] = inv_z2z;
-                            start = end + 1;
-                            out_index += 1;
-                        }
-                    }
-                    return result;
+                size_t n = 1;
+                for (char e : text) {
+                    n += e == ',';
                 }
-
-                if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(arg)) {
-                    auto copy = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(arg);
-                    return copy;
+                CliffordString<MAX_BITWORD_WIDTH> result(n);
+                size_t start = 0;
+                size_t out_index = 0;
+                for (size_t end = 0; end <= text.size(); end++) {
+                    if (end == text.size() || text[end] == ',') {
+                        std::string_view segment = text.substr(start, end - start);
+                        segment = trim(segment);
+                        auto [z_sign, x_sign, inv_x2x, x2z, z2x, inv_z2z] = gate_to_bits(GATE_DATA.at(segment).id);
+                        result.z_signs[out_index] = z_sign;
+                        result.x_signs[out_index] = x_sign;
+                        result.inv_x2x[out_index] = inv_x2x;
+                        result.x2z[out_index] = x2z;
+                        result.z2x[out_index] = z2x;
+                        result.inv_z2z[out_index] = inv_z2z;
+                        start = end + 1;
+                        out_index += 1;
+                    }
                 }
+                return result;
+            }
 
-                if (pybind11::isinstance<FlexPauliString>(arg)) {
-                    const FlexPauliString &other = pybind11::cast<const FlexPauliString &>(arg);
-                    CliffordString<MAX_BITWORD_WIDTH> result(other.value.num_qubits);
-                    result.z_signs = other.value.xs;
-                    result.x_signs = other.value.zs;
-                    return result;
-                }
+            if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(arg)) {
+                auto copy = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(arg);
+                return copy;
+            }
 
-                pybind11::module collections = pybind11::module::import("collections.abc");
-                pybind11::object iterable_type = collections.attr("Iterable");
-                if (pybind11::isinstance(arg, iterable_type)) {
-                    std::vector<GateType> gates;
-                    for (const auto &t : arg) {
-                        if (pybind11::isinstance<GateTypeWrapper>(t)) {
-                            gates.push_back(pybind11::cast<GateTypeWrapper>(t).type);
-                            continue;
-                        } else if (pybind11::isinstance<pybind11::str>(t)) {
-                            gates.push_back(GATE_DATA.at(pybind11::cast<std::string_view>(t)).id);
-                            continue;
+            if (pybind11::isinstance<FlexPauliString>(arg)) {
+                const FlexPauliString &other = pybind11::cast<const FlexPauliString &>(arg);
+                CliffordString<MAX_BITWORD_WIDTH> result(other.value.num_qubits);
+                result.z_signs = other.value.xs;
+                result.x_signs = other.value.zs;
+                return result;
+            }
+
+            pybind11::module collections = pybind11::module::import("collections.abc");
+            pybind11::object iterable_type = collections.attr("Iterable");
+            if (pybind11::isinstance(arg, iterable_type)) {
+                std::vector<GateType> gates;
+                for (const auto &t : arg) {
+                    if (pybind11::isinstance<GateTypeWrapper>(t)) {
+                        gates.push_back(pybind11::cast<GateTypeWrapper>(t).type);
+                        continue;
+                    } else if (pybind11::isinstance<pybind11::str>(t)) {
+                        gates.push_back(GATE_DATA.at(pybind11::cast<std::string_view>(t)).id);
+                        continue;
 
                         /// Integer case is disabled until exposed encoding is decided upon.
                         // } else if (pybind11::isinstance<pybind11::int_>(t)) {
                         //     int64_t v = pybind11::cast<int64_t>(t);
-                        //     if (v >= 0 && (size_t)v < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size() && INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[v] != GateType::NOT_A_GATE) {
+                        //     if (v >= 0 && (size_t)v < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size() &&
+                        //     INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[v] != GateType::NOT_A_GATE) {
                         //         gates.push_back(INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[v]);
                         //         continue;
                         //     }
-                        }
-                        throw std::invalid_argument(
-                            "Don't know how to convert the following item into a Clifford: " +
-                            pybind11::cast<std::string>(pybind11::repr(t)));
                     }
-                    CliffordString<MAX_BITWORD_WIDTH> result(gates.size());
-                    for (size_t k = 0; k < gates.size(); k++) {
-                        result.set_gate_at(k, gates[k]);
-                    }
-                    return result;
+                    throw std::invalid_argument(
+                        "Don't know how to convert the following item into a Clifford: " +
+                        pybind11::cast<std::string>(pybind11::repr(t)));
                 }
+                CliffordString<MAX_BITWORD_WIDTH> result(gates.size());
+                for (size_t k = 0; k < gates.size(); k++) {
+                    result.set_gate_at(k, gates[k]);
+                }
+                return result;
+            }
 
-                throw std::invalid_argument(
-                    "Don't know how to initialize a stim.CliffordString from " +
-                    pybind11::cast<std::string>(pybind11::repr(arg)));
-            }),
+            throw std::invalid_argument(
+                "Don't know how to initialize a stim.CliffordString from " +
+                pybind11::cast<std::string>(pybind11::repr(arg)));
+        }),
         pybind11::arg("arg"),
         pybind11::pos_only(),
         clean_doc_string(R"DOC(
@@ -181,10 +182,7 @@ void stim_pybind::pybind_clifford_string_methods(pybind11::module &m, pybind11::
         )DOC")
             .data());
 
-    c.def(
-        "__imul__",
-        &CliffordString<MAX_BITWORD_WIDTH>::operator*=,
-        "Performs an inplace right-multiplication.");
+    c.def("__imul__", &CliffordString<MAX_BITWORD_WIDTH>::operator*=, "Performs an inplace right-multiplication.");
     c.def(
         "__mul__",
         &CliffordString<MAX_BITWORD_WIDTH>::operator*,
@@ -244,192 +242,193 @@ void stim_pybind::pybind_clifford_string_methods(pybind11::module &m, pybind11::
         )DOC")
             .data());
 
-/// Integer case is disabled until exposed encoding is decided upon.
-//     c.def_static(
-//         "gate_to_int",
-//         [](const pybind11::object &gate) {
-//             Gate raw_gate;
-//             if (pybind11::isinstance<pybind11::str>(gate)) {
-//                 raw_gate = GATE_DATA.at(pybind11::cast<std::string_view>(gate));
-//             } else if (pybind11::isinstance<GateType>(gate)) {
-//                 raw_gate = GATE_DATA.at(pybind11::cast<GateType>(gate));
-//             } else {
-//                 throw std::invalid_argument(
-//                     "Don't know how to interpret this as a gate: " +
-//                     pybind11::cast<std::string>(pybind11::repr(gate)));
-//             }
-//             if ((raw_gate.flags & GATE_IS_UNITARY) && (raw_gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
-//                 auto vals = gate_to_bits(raw_gate.id);
-//                 auto result = 0;
-//                 for (size_t k = 0; k < vals.size(); k++) {
-//                     result ^= vals[k] << k;
-//                 }
-//                 return result;
-//             } else {
-//                 throw std::invalid_argument(
-//                     "Not a single qubit Clifford gate: " +
-//                     pybind11::cast<std::string>(pybind11::repr(gate)));
-//             }
-//         },
-//         pybind11::arg("gate"),
-//         clean_doc_string(R"DOC(
-//             Encodes a single qubit Clifford gate into a 6 bit integer.
-//             @signature def gate_to_int(self, gate: Union[str, stim.GateData]) -> int:
-//
-//             The encoding is based on copying bits from the gate's stabilizer Tableau
-//             directly into the bits of the integer. The first two bits (the least significant
-//             bits) encode the X and Z signs, the second two bits encode the X output Pauli,
-//             and the last two bits encode the Z output Pauli.
-//
-//             This binary integer:
-//
-//                 0bABCDXZ
-//
-//             Corresponds to this tableau:
-//
-//                 stim.Tableau.from_conjugated_generators(
-//                     xs=[
-//                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
-//                     ],
-//                     zs=[
-//                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
-//                     ],
-//                 )
-//
-//             The explicit encoding is as follows:
-//
-//                  0 = 0b000000 = I
-//                  1 = 0b000001 = X
-//                  2 = 0b000010 = Z
-//                  3 = 0b000011 = Y
-//                  8 = 0b001000 = S
-//                  9 = 0b001001 = H_XY
-//                 10 = 0b001010 = S_DAG
-//                 11 = 0b001011 = H_NXY
-//                 <4 unused ids>
-//                 16 = 0b010000 = SQRT_X_DAG
-//                 17 = 0b010001 = SQRT_X
-//                 18 = 0b010010 = H_YZ
-//                 19 = 0b010011 = H_NYZ
-//                 <8 unused ids>
-//                 28 = 0b011100 = C_ZYX
-//                 29 = 0b011101 = C_ZNYX
-//                 30 = 0b011110 = C_ZYNX
-//                 31 = 0b011111 = C_NZYX
-//                 <24 unused ids>
-//                 56 = 0b111000 = C_XYZ
-//                 57 = 0b111001 = C_XYNZ
-//                 58 = 0b111010 = C_XNYZ
-//                 59 = 0b111011 = C_NXYZ
-//                 60 = 0b111100 = H
-//                 61 = 0b111101 = SQRT_Y_DAG
-//                 62 = 0b111110 = SQRT_Y
-//                 63 = 0b111111 = H_NXZ
-//
-//             Args:
-//
-//                 gate: The gate to encode into an integer. This can either be the name of
-//                     the gate as a string, or a stim.GateData instance. The given gate must
-//                     be a single qubit Clifford gate.
-//
-//             Examples:
-//
-//                 >>> stim.CliffordString.gate_to_int(stim.gate_data("S"))
-//                 9
-//
-//                 >>> stim.CliffordString.gate_to_int("H")
-//                 60
-//
-//                 >>> t = stim.gate_data("H").tableau
-//                 >>> manual_id = 0
-//                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "XY") << 0
-//                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "YZ") << 1
-//                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "XY") << 2
-//                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "YZ") << 3
-//                 >>> manual_id ^= (t.x_sign(0)) << 5
-//                 >>> manual_id ^= (t.z_sign(0)) << 6
-//                 >>> manual_id
-//                 60
-//         )DOC")
-//             .data());
+    /// Integer case is disabled until exposed encoding is decided upon.
+    //     c.def_static(
+    //         "gate_to_int",
+    //         [](const pybind11::object &gate) {
+    //             Gate raw_gate;
+    //             if (pybind11::isinstance<pybind11::str>(gate)) {
+    //                 raw_gate = GATE_DATA.at(pybind11::cast<std::string_view>(gate));
+    //             } else if (pybind11::isinstance<GateType>(gate)) {
+    //                 raw_gate = GATE_DATA.at(pybind11::cast<GateType>(gate));
+    //             } else {
+    //                 throw std::invalid_argument(
+    //                     "Don't know how to interpret this as a gate: " +
+    //                     pybind11::cast<std::string>(pybind11::repr(gate)));
+    //             }
+    //             if ((raw_gate.flags & GATE_IS_UNITARY) && (raw_gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+    //                 auto vals = gate_to_bits(raw_gate.id);
+    //                 auto result = 0;
+    //                 for (size_t k = 0; k < vals.size(); k++) {
+    //                     result ^= vals[k] << k;
+    //                 }
+    //                 return result;
+    //             } else {
+    //                 throw std::invalid_argument(
+    //                     "Not a single qubit Clifford gate: " +
+    //                     pybind11::cast<std::string>(pybind11::repr(gate)));
+    //             }
+    //         },
+    //         pybind11::arg("gate"),
+    //         clean_doc_string(R"DOC(
+    //             Encodes a single qubit Clifford gate into a 6 bit integer.
+    //             @signature def gate_to_int(self, gate: Union[str, stim.GateData]) -> int:
+    //
+    //             The encoding is based on copying bits from the gate's stabilizer Tableau
+    //             directly into the bits of the integer. The first two bits (the least significant
+    //             bits) encode the X and Z signs, the second two bits encode the X output Pauli,
+    //             and the last two bits encode the Z output Pauli.
+    //
+    //             This binary integer:
+    //
+    //                 0bABCDXZ
+    //
+    //             Corresponds to this tableau:
+    //
+    //                 stim.Tableau.from_conjugated_generators(
+    //                     xs=[
+    //                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
+    //                     ],
+    //                     zs=[
+    //                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
+    //                     ],
+    //                 )
+    //
+    //             The explicit encoding is as follows:
+    //
+    //                  0 = 0b000000 = I
+    //                  1 = 0b000001 = X
+    //                  2 = 0b000010 = Z
+    //                  3 = 0b000011 = Y
+    //                  8 = 0b001000 = S
+    //                  9 = 0b001001 = H_XY
+    //                 10 = 0b001010 = S_DAG
+    //                 11 = 0b001011 = H_NXY
+    //                 <4 unused ids>
+    //                 16 = 0b010000 = SQRT_X_DAG
+    //                 17 = 0b010001 = SQRT_X
+    //                 18 = 0b010010 = H_YZ
+    //                 19 = 0b010011 = H_NYZ
+    //                 <8 unused ids>
+    //                 28 = 0b011100 = C_ZYX
+    //                 29 = 0b011101 = C_ZNYX
+    //                 30 = 0b011110 = C_ZYNX
+    //                 31 = 0b011111 = C_NZYX
+    //                 <24 unused ids>
+    //                 56 = 0b111000 = C_XYZ
+    //                 57 = 0b111001 = C_XYNZ
+    //                 58 = 0b111010 = C_XNYZ
+    //                 59 = 0b111011 = C_NXYZ
+    //                 60 = 0b111100 = H
+    //                 61 = 0b111101 = SQRT_Y_DAG
+    //                 62 = 0b111110 = SQRT_Y
+    //                 63 = 0b111111 = H_NXZ
+    //
+    //             Args:
+    //
+    //                 gate: The gate to encode into an integer. This can either be the name of
+    //                     the gate as a string, or a stim.GateData instance. The given gate must
+    //                     be a single qubit Clifford gate.
+    //
+    //             Examples:
+    //
+    //                 >>> stim.CliffordString.gate_to_int(stim.gate_data("S"))
+    //                 9
+    //
+    //                 >>> stim.CliffordString.gate_to_int("H")
+    //                 60
+    //
+    //                 >>> t = stim.gate_data("H").tableau
+    //                 >>> manual_id = 0
+    //                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "XY") << 0
+    //                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "YZ") << 1
+    //                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "XY") << 2
+    //                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "YZ") << 3
+    //                 >>> manual_id ^= (t.x_sign(0)) << 5
+    //                 >>> manual_id ^= (t.z_sign(0)) << 6
+    //                 >>> manual_id
+    //                 60
+    //         )DOC")
+    //             .data());
 
-/// Integer case is disabled until exposed encoding is decided upon.
-//     c.def_static(
-//         "int_to_gate",
-//         [](size_t arg) -> GateType {
-//             GateType result = GateType::NOT_A_GATE;
-//             if (arg < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size()) {
-//                 result = INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[arg];
-//             }
-//             if (result == GateType::NOT_A_GATE) {
-//                 throw std::invalid_argument("No single qubit Clifford gate is encoded as the integer " + std::to_string(arg) + ".");
-//             }
-//             return result;
-//         },
-//         pybind11::arg("arg"),
-//         clean_doc_string(R"DOC(
-//             Decodes a single qubit Clifford gate out of a 6 bit integer.
-//
-//             The encoding is based on the internal representation used to represent the gate
-//             (designed to make applying operations fast). The gate is specified by 6 bits,
-//             corresponding to bits (or inverted bits) from the gate's stabilizer tableau.
-//
-//             This binary integer:
-//
-//                 0bABCDXZ
-//
-//             Corresponds to this tableau:
-//
-//                 stim.Tableau.from_conjugated_generators(
-//                     xs=[
-//                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
-//                     ],
-//                     zs=[
-//                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
-//                     ],
-//                 )
-//
-//             The explicit encoding is as follows:
-//
-//                  0 = 0b000000 = I
-//                  1 = 0b000001 = X
-//                  2 = 0b000010 = Z
-//                  3 = 0b000011 = Y
-//                  8 = 0b001000 = S
-//                  9 = 0b001001 = H_XY
-//                 10 = 0b001010 = S_DAG
-//                 11 = 0b001011 = H_NXY
-//                 <4 unused ids>
-//                 16 = 0b010000 = SQRT_X_DAG
-//                 17 = 0b010001 = SQRT_X
-//                 18 = 0b010010 = H_YZ
-//                 19 = 0b010011 = H_NYZ
-//                 <8 unused ids>
-//                 28 = 0b011100 = C_ZYX
-//                 29 = 0b011101 = C_ZNYX
-//                 30 = 0b011110 = C_ZYNX
-//                 31 = 0b011111 = C_NZYX
-//                 <24 unused ids>
-//                 56 = 0b111000 = C_XYZ
-//                 57 = 0b111001 = C_XYNZ
-//                 58 = 0b111010 = C_XNYZ
-//                 59 = 0b111011 = C_NXYZ
-//                 60 = 0b111100 = H
-//                 61 = 0b111101 = SQRT_Y_DAG
-//                 62 = 0b111110 = SQRT_Y
-//                 63 = 0b111111 = H_NXZ
-//
-//             Args:
-//                 arg: The encoded integer to decode into a gate.
-//
-//             Examples:
-//
-//                 >>> stim.CliffordString.int_to_gate(1)
-//                 stim.gate_data("X")
-//
-//                 >>> stim.CliffordString.int_to_gate(9)
-//                 stim.gate_data("S")
-//
-//         )DOC")
-//             .data());
+    /// Integer case is disabled until exposed encoding is decided upon.
+    //     c.def_static(
+    //         "int_to_gate",
+    //         [](size_t arg) -> GateType {
+    //             GateType result = GateType::NOT_A_GATE;
+    //             if (arg < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size()) {
+    //                 result = INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[arg];
+    //             }
+    //             if (result == GateType::NOT_A_GATE) {
+    //                 throw std::invalid_argument("No single qubit Clifford gate is encoded as the integer " +
+    //                 std::to_string(arg) + ".");
+    //             }
+    //             return result;
+    //         },
+    //         pybind11::arg("arg"),
+    //         clean_doc_string(R"DOC(
+    //             Decodes a single qubit Clifford gate out of a 6 bit integer.
+    //
+    //             The encoding is based on the internal representation used to represent the gate
+    //             (designed to make applying operations fast). The gate is specified by 6 bits,
+    //             corresponding to bits (or inverted bits) from the gate's stabilizer tableau.
+    //
+    //             This binary integer:
+    //
+    //                 0bABCDXZ
+    //
+    //             Corresponds to this tableau:
+    //
+    //                 stim.Tableau.from_conjugated_generators(
+    //                     xs=[
+    //                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
+    //                     ],
+    //                     zs=[
+    //                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
+    //                     ],
+    //                 )
+    //
+    //             The explicit encoding is as follows:
+    //
+    //                  0 = 0b000000 = I
+    //                  1 = 0b000001 = X
+    //                  2 = 0b000010 = Z
+    //                  3 = 0b000011 = Y
+    //                  8 = 0b001000 = S
+    //                  9 = 0b001001 = H_XY
+    //                 10 = 0b001010 = S_DAG
+    //                 11 = 0b001011 = H_NXY
+    //                 <4 unused ids>
+    //                 16 = 0b010000 = SQRT_X_DAG
+    //                 17 = 0b010001 = SQRT_X
+    //                 18 = 0b010010 = H_YZ
+    //                 19 = 0b010011 = H_NYZ
+    //                 <8 unused ids>
+    //                 28 = 0b011100 = C_ZYX
+    //                 29 = 0b011101 = C_ZNYX
+    //                 30 = 0b011110 = C_ZYNX
+    //                 31 = 0b011111 = C_NZYX
+    //                 <24 unused ids>
+    //                 56 = 0b111000 = C_XYZ
+    //                 57 = 0b111001 = C_XYNZ
+    //                 58 = 0b111010 = C_XNYZ
+    //                 59 = 0b111011 = C_NXYZ
+    //                 60 = 0b111100 = H
+    //                 61 = 0b111101 = SQRT_Y_DAG
+    //                 62 = 0b111110 = SQRT_Y
+    //                 63 = 0b111111 = H_NXZ
+    //
+    //             Args:
+    //                 arg: The encoded integer to decode into a gate.
+    //
+    //             Examples:
+    //
+    //                 >>> stim.CliffordString.int_to_gate(1)
+    //                 stim.gate_data("X")
+    //
+    //                 >>> stim.CliffordString.int_to_gate(9)
+    //                 stim.gate_data("S")
+    //
+    //         )DOC")
+    //             .data());
 }

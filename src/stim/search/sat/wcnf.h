@@ -32,10 +32,10 @@ namespace stim {
 ///     sidestep the need for direct integration with any particular solver and allow
 ///     for experimentation with different solvers to achieve the best performance.
 
-std::string shortest_error_sat_problem(const DetectorErrorModel& model, std::string_view format = "WDIMACS");
+std::string shortest_error_sat_problem(const DetectorErrorModel &model, std::string_view format = "WDIMACS");
 
 std::string likeliest_error_sat_problem(
-    const DetectorErrorModel& model, int quantization = 10, std::string_view format = "WDIMACS");
+    const DetectorErrorModel &model, int quantization = 10, std::string_view format = "WDIMACS");
 
 }  // namespace stim
 

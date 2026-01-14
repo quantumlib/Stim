@@ -1,9 +1,10 @@
 #include "stim/util_top/missing_detectors.h"
+
 #include "stim/util_top/circuit_flow_generators.h"
 
 using namespace stim;
 
-static Circuit missing_detectors_impl(const Circuit& circuit) {
+static Circuit missing_detectors_impl(const Circuit &circuit) {
     size_t num_measurements = circuit.count_measurements();
     std::vector<std::pair<simd_bits<64>, bool>> rows;
     std::vector<simd_bits<64>> logical_operators;
@@ -22,7 +23,8 @@ static Circuit missing_detectors_impl(const Circuit& circuit) {
                     logical_operators.push_back(simd_bits<64>(num_measurements));
                 }
             }
-            simd_bits_range_ref<64> row = inst.gate_type == GateType::DETECTOR ? rows.back().first : logical_operators[(size_t)inst.args[0]];
+            simd_bits_range_ref<64> row =
+                inst.gate_type == GateType::DETECTOR ? rows.back().first : logical_operators[(size_t)inst.args[0]];
             for (auto e : inst.targets) {
                 if (e.is_measurement_record_target()) {
                     row[e.rec_offset() + measurement_offset] ^= true;
@@ -44,7 +46,8 @@ static Circuit missing_detectors_impl(const Circuit& circuit) {
 
     // Turn measurement invariants into rows in the table.
     for (const auto &generator : circuit_flow_generators<64>(circuit)) {
-        if (generator.input.ref().has_no_pauli_terms() && generator.output.ref().has_no_pauli_terms() && generator.observables.empty()) {
+        if (generator.input.ref().has_no_pauli_terms() && generator.output.ref().has_no_pauli_terms() &&
+            generator.observables.empty()) {
             rows.push_back({simd_bits<64>(num_measurements), true});
             for (int32_t e : generator.measurements) {
                 if (e < 0) {
@@ -87,7 +90,6 @@ static Circuit missing_detectors_impl(const Circuit& circuit) {
         num_solved++;
     }
 
-
     // Any rows from invariants that the detector rows failed to clear are assumed to be the missing detectors.
     Circuit result;
     for (auto &r : rows) {
@@ -103,19 +105,20 @@ static Circuit missing_detectors_impl(const Circuit& circuit) {
             r.first.for_each_set_bit([&](size_t bit_position) {
                 result.target_buf.append_tail(GateTarget::rec((int32_t)bit_position - (int32_t)num_measurements));
             });
-            result.operations.push_back(CircuitInstruction{
-                GateType::DETECTOR,
-                {},
-                result.target_buf.commit_tail(),
-                "",
-            });
+            result.operations.push_back(
+                CircuitInstruction{
+                    GateType::DETECTOR,
+                    {},
+                    result.target_buf.commit_tail(),
+                    "",
+                });
         }
     }
 
     return result;
 }
 
-Circuit stim::missing_detectors(const Circuit& circuit, bool unknown_input) {
+Circuit stim::missing_detectors(const Circuit &circuit, bool unknown_input) {
     if (unknown_input) {
         return missing_detectors_impl(circuit);
     } else {
@@ -124,12 +127,13 @@ Circuit stim::missing_detectors(const Circuit& circuit, bool unknown_input) {
         for (uint32_t k = 0; k < num_qubits; k++) {
             with_resets.target_buf.append_tail(GateTarget::qubit(k));
         }
-        with_resets.operations.push_back(CircuitInstruction{
-            GateType::R,
-            {},
-            with_resets.target_buf.commit_tail(),
-            "",
-        });
+        with_resets.operations.push_back(
+            CircuitInstruction{
+                GateType::R,
+                {},
+                with_resets.target_buf.commit_tail(),
+                "",
+            });
         with_resets += circuit;
         return missing_detectors_impl(with_resets);
     }

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <pybind11/stl.h>
-#include "stim/util_top/missing_detectors.h"
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"
@@ -27,6 +26,7 @@
 #include "stim/util_top/export_qasm.h"
 #include "stim/util_top/export_quirk_url.h"
 #include "stim/util_top/has_flow.h"
+#include "stim/util_top/missing_detectors.h"
 #include "stim/util_top/simplified_circuit.h"
 #include "stim/util_top/transform_without_feedback.h"
 

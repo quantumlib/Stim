@@ -37,7 +37,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/clifford_string.pybind.h"
- #include "stim/stabilizers/flow.pybind.h"
+#include "stim/stabilizers/flow.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/pauli_string_iter.pybind.h"
 #include "stim/stabilizers/tableau.h"

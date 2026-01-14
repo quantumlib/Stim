@@ -373,29 +373,27 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         &CompiledMeasurementsToDetectionEventsConverter::repr,
         "Returns text that is a valid python expression evaluating to an equivalent "
         "`stim.CompiledMeasurementsToDetectionEventsConverter`.");
-    
-    c.def(pybind11::pickle(
-        // __getstate__ function: returns a tuple to be pickled.
-        [](const CompiledMeasurementsToDetectionEventsConverter &self) -> 
-        SerializationTuple {
-            size_t num_ref_bits = self.circuit_stats.num_measurements;
-            pybind11::object ref_sample_numpy =
-                stim_pybind::simd_bits_to_numpy(self.ref_sample, num_ref_bits,
-                                            /*bit_packed=*/true);
 
-            return SerializationTuple(self.circuit, self.skip_reference_sample,
-                                  ref_sample_numpy, num_ref_bits);
-        },
-        // __setstate__ function: reconstructs the object from the Python tuple.
-        [](SerializationTuple t_py) {
-            const auto &[circuit, skip_ref, ref_bits_npy, num_ref_bits] = t_py;
+    c.def(
+        pybind11::pickle(
+            // __getstate__ function: returns a tuple to be pickled.
+            [](const CompiledMeasurementsToDetectionEventsConverter &self) -> SerializationTuple {
+                size_t num_ref_bits = self.circuit_stats.num_measurements;
+                pybind11::object ref_sample_numpy = stim_pybind::simd_bits_to_numpy(
+                    self.ref_sample,
+                    num_ref_bits,
+                    /*bit_packed=*/true);
 
-            stim::simd_bits<stim::MAX_BITWORD_WIDTH> reconstructed_ref_sample(
-                num_ref_bits);
-            stim_pybind::memcpy_bits_from_numpy_to_simd(num_ref_bits, ref_bits_npy,
-                                                    reconstructed_ref_sample);
+                return SerializationTuple(self.circuit, self.skip_reference_sample, ref_sample_numpy, num_ref_bits);
+            },
+            // __setstate__ function: reconstructs the object from the Python tuple.
+            [](SerializationTuple t_py) {
+                const auto &[circuit, skip_ref, ref_bits_npy, num_ref_bits] = t_py;
 
-            return CompiledMeasurementsToDetectionEventsConverter(
-                std::move(reconstructed_ref_sample), circuit, skip_ref);
-      }));
+                stim::simd_bits<stim::MAX_BITWORD_WIDTH> reconstructed_ref_sample(num_ref_bits);
+                stim_pybind::memcpy_bits_from_numpy_to_simd(num_ref_bits, ref_bits_npy, reconstructed_ref_sample);
+
+                return CompiledMeasurementsToDetectionEventsConverter(
+                    std::move(reconstructed_ref_sample), circuit, skip_ref);
+            }));
 }
