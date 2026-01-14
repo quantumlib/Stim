@@ -1,6 +1,6 @@
 #include "stim/util_top/mbqc_decomposition.h"
 
-#include <stim/util_bot/test_util.test.h>
+#include "stim/util_bot/test_util.test.h"
 
 #include "gtest/gtest.h"
 

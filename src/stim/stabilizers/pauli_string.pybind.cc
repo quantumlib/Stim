@@ -578,7 +578,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
             'Y', or 'Z'.
 
-            Arguments:
+            Args:
                 arg [position-only]: This can be a variety of types, including:
                     None (default): initializes an empty Pauli string.
                     int: initializes an identity Pauli string of the given length.

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <pybind11/stl.h>
-#include <stim/util_top/missing_detectors.h>
+#include "stim/util_top/missing_detectors.h"
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/cmd/command_help.h"

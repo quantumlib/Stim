@@ -1,7 +1,7 @@
 #include "stim/util_top/missing_detectors.h"
 
-#include <stim/simulators/error_analyzer.h>
-#include <stim/util_bot/test_util.test.h>
+#include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/test_util.test.h"
 
 #include "gtest/gtest.h"
 

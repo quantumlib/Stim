@@ -3889,6 +3889,116 @@ class CircuitTargetsInsideInstruction:
             >>> loc.instruction_targets.targets_in_range
             [stim.GateTargetWithCoords(0, [])]
         """
+class CliffordString:
+    """A tensor product of single qubit Clifford gates (e.g. "H \u2297 X \u2297 S").
+
+    Represents a collection of Clifford operations applied pairwise to a
+    collection of qubits. Ignores global phase.
+
+    Examples:
+        >>> import stim
+        >>> stim.CliffordString("H,S,C_XYZ") * stim.CliffordString("H,H,H")
+        stim.CliffordString("I,C_XYZ,H")
+    """
+    def __eq__(
+        self,
+        arg0: stim.CliffordString,
+    ) -> bool:
+        """Determines if two Clifford strings have identical contents.
+        """
+    def __getitem__(
+        self,
+        index_or_slice: object,
+    ) -> object:
+        """Returns the Clifford at a given index, or a slice of the CliffordString.
+        """
+    def __imul__(
+        self,
+        arg0: stim.CliffordString,
+    ) -> stim.CliffordString:
+        """Performs an inplace right-multiplication.
+        """
+    def __init__(
+        self,
+        arg: Union[int, str, stim.CliffordString, stim.PauliString],
+        /,
+    ) -> None:
+        """Initializes a stim.CliffordString from the given argument.
+
+        Args:
+            arg [position-only]: This can be a variety of types, including:
+                int: initializes an identity Clifford string of the given length.
+                str: initializes by parsing a comma-separated list of gate names.
+                stim.CliffordString: initializes by copying the given Clifford string.
+                stim.PauliString: initializes by copying from the given Pauli string
+                    (ignores the sign of the Pauli string).
+                Iterable: initializes by interpreting each item as a Clifford.
+                    Each item can be a single-qubit Clifford gate name (like "SQRT_X")
+                    or stim.GateData instance.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.CliffordString(5)
+            stim.CliffordString("I,I,I,I,I")
+
+            >>> stim.CliffordString("X,Y,Z,SQRT_X")
+            stim.CliffordString("X,Y,Z,SQRT_X")
+
+            >>> stim.CliffordString([1, 2, 3, "H", stim.gate_data("S")])
+            stim.CliffordString("X,Y,Z,H,S")
+
+            >>> stim.CliffordString(stim.PauliString("XYZ"))
+            stim.CliffordString("X,Y,Z")
+
+            >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
+            stim.CliffordString("X,Y,Z")
+        """
+    def __len__(
+        self,
+    ) -> int:
+        """Returns the number of Clifford operations in the string.
+        """
+    def __mul__(
+        self,
+        arg0: stim.CliffordString,
+    ) -> stim.CliffordString:
+        """Returns the product of two CliffordString instances.
+        """
+    def __ne__(
+        self,
+        arg0: stim.CliffordString,
+    ) -> bool:
+        """Determines if two Clifford strings have non-identical contents.
+        """
+    def __repr__(
+        self,
+    ) -> str:
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.CliffordString`.
+        """
+    def __str__(
+        self,
+    ) -> str:
+        """Returns a string representation of the CliffordString's operations.
+        """
+    @staticmethod
+    def random(
+        num_qubits: int,
+    ) -> stim.CliffordString:
+        """Samples a uniformly random CliffordString.
+
+        Args:
+            num_qubits: The number of qubits the CliffordString should act upon.
+
+        Examples:
+            >>> import stim
+            >>> p = stim.CliffordString.random(5)
+            >>> len(p)
+            5
+
+        Returns:
+            The sampled Clifford string.
+        """
 class CompiledDemSampler:
     """A helper class for efficiently sampler from a detector error model.
 
@@ -7428,7 +7538,7 @@ class Flow:
         the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
         "X_", output pauli string "ZZ", and measurement indices [-1].
 
-        Arguments:
+        Args:
             arg [position-only]: Defaults to None. Must be specified by itself if used.
                 str: Initializes a flow by parsing the given shorthand text.
                 stim.Flow: Initializes a copy of the given flow.
@@ -8793,7 +8903,7 @@ class PauliString:
         pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
         'Y', or 'Z'.
 
-        Arguments:
+        Args:
             arg [position-only]: This can be a variety of types, including:
                 None (default): initializes an empty Pauli string.
                 int: initializes an identity Pauli string of the given length.

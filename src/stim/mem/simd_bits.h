@@ -89,6 +89,7 @@ struct simd_bits {
     bool operator<(const simd_bits_range_ref<W> other) const;
 
     void destructive_resize(size_t new_min_bits);
+    void preserving_resize(size_t new_min_bits);
 
     /// Returns a reference to the bit at offset k.
     bit_ref operator[](size_t k);

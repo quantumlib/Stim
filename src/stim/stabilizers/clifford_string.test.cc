@@ -1,6 +1,9 @@
 #include "stim/stabilizers/clifford_string.h"
 
+#include "stim/util_bot/test_util.test.h"
+
 #include "gtest/gtest.h"
+
 #include "stim/mem/simd_word.test.h"
 #include "stim/stabilizers/tableau.h"
 
@@ -9,7 +12,7 @@ using namespace stim;
 std::vector<Gate> single_qubit_clifford_rotations() {
     std::vector<Gate> result;
     for (size_t g = 0; g < NUM_DEFINED_GATES; g++) {
-        Gate gate = GATE_DATA[(GateType)g];
+        const Gate &gate = GATE_DATA[(GateType)g];
         if ((gate.flags & GateFlags::GATE_IS_SINGLE_QUBIT_GATE) && (gate.flags & GateFlags::GATE_IS_UNITARY)) {
             result.push_back(gate);
         }
@@ -179,4 +182,27 @@ TEST_EACH_WORD_SIZE_W(clifford_string, known_identities, {
         C_XYZ 0
     )CIRCUIT"));
     ASSERT_EQ(s2 * s1, s3);
+})
+
+TEST_EACH_WORD_SIZE_W(clifford_string, random, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    CliffordString<W> c = CliffordString<W>::random(256, rng);
+    std::array<uint64_t, NUM_DEFINED_GATES> counts{};
+    for (size_t k = 0; k < 256; k++) {
+        for (size_t q = 0; q < 256; q++) {
+            GateType t = c.gate_at(q);
+            counts[(uint8_t)t] += 1;
+        }
+        c.randomize(rng);
+    }
+    ASSERT_EQ(counts[(uint8_t)GateType::NOT_A_GATE], 0);
+    size_t seen_gates = 0;
+    for (const auto &g : GATE_DATA.items) {
+        if ((g.flags & GATE_IS_UNITARY) && (g.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+            ASSERT_LT(counts[(uint8_t)g.id], 256.0*256.0/24.0*(1.0 + 0.5));
+            ASSERT_GT(counts[(uint8_t)g.id], 256.0*256.0/24.0*(1.0 - 0.5));
+            seen_gates++;
+        }
+    }
+    ASSERT_EQ(seen_gates, 24);
 })

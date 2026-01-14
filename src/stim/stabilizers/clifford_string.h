@@ -34,101 +34,102 @@ struct CliffordWord {
     Word inv_z2z;  // Inverted so that zero-initializing gives the identity gate.
 };
 
+constexpr std::array<GateType, 64> INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE{
+    GateType::I,
+    GateType::X,
+    GateType::Z,
+    GateType::Y,
+
+    GateType::NOT_A_GATE,  // These should be impossible if the class is in a good state.
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::S,
+    GateType::H_XY,
+    GateType::S_DAG,
+    GateType::H_NXY,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::SQRT_X_DAG,
+    GateType::SQRT_X,
+    GateType::H_YZ,
+    GateType::H_NYZ,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::C_ZYX,
+    GateType::C_ZNYX,
+    GateType::C_ZYNX,
+    GateType::C_NZYX,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+    GateType::NOT_A_GATE,
+
+    GateType::C_XYZ,
+    GateType::C_XYNZ,
+    GateType::C_XNYZ,
+    GateType::C_NXYZ,
+
+    GateType::H,
+    GateType::SQRT_Y_DAG,
+    GateType::SQRT_Y,
+    GateType::H_NXZ,
+};
+
 inline GateType bits2gate(std::array<bool, 6> bits) {
-    constexpr std::array<GateType, 64> table{
-        GateType::I,
-        GateType::X,
-        GateType::Z,
-        GateType::Y,
-
-        GateType::NOT_A_GATE,  // These should be impossible if the class is in a good state.
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::S,
-        GateType::H_XY,
-        GateType::S_DAG,
-        GateType::H_NXY,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::SQRT_X_DAG,
-        GateType::SQRT_X,
-        GateType::H_YZ,
-        GateType::H_NYZ,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::C_ZYX,
-        GateType::C_ZNYX,
-        GateType::C_ZYNX,
-        GateType::C_NZYX,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-        GateType::NOT_A_GATE,
-
-        GateType::C_XYZ,
-        GateType::C_XYNZ,
-        GateType::C_XNYZ,
-        GateType::C_NXYZ,
-
-        GateType::H,
-        GateType::SQRT_Y_DAG,
-        GateType::SQRT_Y,
-        GateType::H_NXZ,
-    };
     int k = (bits[0] << 0)
           | (bits[1] << 1)
           | (bits[2] << 2)
           | (bits[3] << 3)
           | (bits[4] << 4)
           | (bits[5] << 5);
-    return table[k];
+    return INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[k];
 }
 
 inline std::array<bool, 6> gate_to_bits(GateType gate_type) {
     Gate g = GATE_DATA[gate_type];
     if (!(g.flags & GATE_IS_SINGLE_QUBIT_GATE) || !(g.flags & GATE_IS_UNITARY)) {
-        throw std::invalid_argument("Not a single qubit gate: " + std::string(g.name));
+        throw std::invalid_argument("Not a single qubit Clifford gate: " + std::string(g.name));
     }
     const auto &flows = g.flow_data;
     std::string_view tx = flows[0];
@@ -204,6 +205,28 @@ struct CliffordString {
           inv_z2z(num_qubits) {
     }
 
+    void randomize(std::mt19937_64 &rng) {
+        CliffordString<W> result(num_qubits);
+        x_signs.randomize(num_qubits, rng);
+        z_signs.randomize(num_qubits,rng);
+        for (size_t k = 0; k < num_qubits; k++) {
+            uint64_t v = rng() % 6;
+            uint8_t p1 = v % 3 + 1;
+            uint8_t p2 = v / 3 + 1;
+            p2 += p2 >= p1;
+            inv_x2x[k] = !(p1 & 1);
+            x2z[k] = p1 & 2;
+            z2x[k] = p2 & 1;
+            inv_z2z[k] = !(p2 & 2);
+        }
+    }
+
+    static CliffordString<W> random(size_t num_qubits, std::mt19937_64 &rng) {
+        CliffordString<W> result(num_qubits);
+        result.randomize(rng);
+        return result;
+    }
+
     /// Extracts rotations k*W through (k+1)*W into a CliffordWord<W>.
     inline CliffordWord<bitword<W>> word_at(size_t k) const {
         return CliffordWord<bitword<W>>{
@@ -243,9 +266,7 @@ struct CliffordString {
 
     /// Inplace right-multiplication of rotations.
     CliffordString &operator*=(const CliffordString &rhs) {
-        if (num_qubits < rhs.num_qubits) {
-            throw std::invalid_argument("Can't inplace-multiply by a larger Clifford string.");
-        }
+        ensure_num_qubits(rhs.num_qubits);
         for (size_t k = 0; k < rhs.x_signs.num_simd_words; k++) {
             auto lhs_w = word_at(k);
             auto rhs_w = rhs.word_at(k);
@@ -297,11 +318,21 @@ struct CliffordString {
         return result;
     }
 
+    void ensure_num_qubits(size_t min_num_qubits) {
+        if (num_qubits < min_num_qubits) {
+            num_qubits = min_num_qubits;
+            x_signs.preserving_resize(num_qubits);
+            z_signs.preserving_resize(num_qubits);
+            inv_x2x.preserving_resize(num_qubits);
+            x2z.preserving_resize(num_qubits);
+            z2x.preserving_resize(num_qubits);
+            inv_z2z.preserving_resize(num_qubits);
+        }
+    }
+
     /// Inplace left-multiplication of rotations.
     CliffordString &inplace_left_mul_by(const CliffordString &lhs) {
-        if (num_qubits < lhs.num_qubits) {
-            throw std::invalid_argument("Can't inplace-multiply by a larger Clifford string.");
-        }
+        ensure_num_qubits(lhs.num_qubits);
         for (size_t k = 0; k < x_signs.num_simd_words; k++) {
             auto lhs_w = lhs.word_at(k);
             auto rhs_w = word_at(k);
@@ -360,6 +391,46 @@ struct CliffordString {
     std::string str() const {
         std::stringstream ss;
         ss << *this;
+        return ss.str();
+    }
+
+    std::string py_str() const {
+        std::stringstream ss;
+        for (size_t q = 0; q < num_qubits; q++) {
+            if (q) {
+                ss << ',';
+            }
+            ss << GATE_DATA[gate_at(q)].name;
+        }
+        return ss.str();
+    }
+
+    CliffordString<W> py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
+        assert(slice_length >= 0);
+        assert(slice_length == 0 || start >= 0);
+        CliffordString<W> result(slice_length);
+        for (size_t k = 0; k < (size_t)slice_length; k++) {
+            size_t old_k = start + step * k;
+            result.x_signs[k] = x_signs[old_k];
+            result.z_signs[k] = z_signs[old_k];
+            result.inv_x2x[k] = inv_x2x[old_k];
+            result.x2z[k] = x2z[old_k];
+            result.z2x[k] = z2x[old_k];
+            result.inv_z2z[k] = inv_z2z[old_k];
+        }
+        return result;
+    }
+
+    std::string py_repr() const {
+        std::stringstream ss;
+        ss << "stim.CliffordString(\"";
+        for (size_t q = 0; q < num_qubits; q++) {
+            if (q) {
+                ss << ',';
+            }
+            ss << GATE_DATA[gate_at(q)].name;
+        }
+        ss << "\")";
         return ss.str();
     }
 };

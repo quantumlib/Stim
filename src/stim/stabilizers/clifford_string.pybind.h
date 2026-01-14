@@ -12,24 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _STIM_GATES_GATE_DATA_PYBIND_H
-#define _STIM_GATES_GATE_DATA_PYBIND_H
+#ifndef _STIM_STABILIZERS_CLIFFORD_STRING_PYBIND_H
+#define _STIM_STABILIZERS_CLIFFORD_STRING_PYBIND_H
 
 #include <pybind11/pybind11.h>
 
-#include "stim/gates/gates.h"
+#include "stim/stabilizers/clifford_string.h"
 
 namespace stim_pybind {
 
-struct GateTypeWrapper {
-    stim::GateType type;
-    inline bool operator==(const GateTypeWrapper &other) const {
-        return type == other.type;
-    }
-};
-
-pybind11::class_<GateTypeWrapper> pybind_gate_data(pybind11::module &m);
-void pybind_gate_data_methods(pybind11::module &m, pybind11::class_<GateTypeWrapper> &c);
+pybind11::class_<stim::CliffordString<stim::MAX_BITWORD_WIDTH>> pybind_clifford_string(pybind11::module &m);
+void pybind_clifford_string_methods(pybind11::module &m, pybind11::class_<stim::CliffordString<stim::MAX_BITWORD_WIDTH>> &c);
 
 }  // namespace stim_pybind
 
