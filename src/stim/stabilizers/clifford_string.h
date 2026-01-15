@@ -302,7 +302,11 @@ struct CliffordString {
             z2x,
             inv_z2z,
             y_signs_out,
-            [](simd_word<W> &x_out, simd_word<W> &z_out, const simd_word<W> &x2, const simd_word<W> &inv_z2, simd_word<W> &y_sign) {
+            [](simd_word<W> &x_out,
+               simd_word<W> &z_out,
+               const simd_word<W> &x2,
+               const simd_word<W> &inv_z2,
+               simd_word<W> &y_sign) {
                 y_sign ^= ~x_out & ~inv_z2 & (z_out ^ x2);
                 y_sign ^= x_out & inv_z2 & z_out & x2;
                 x_out ^= ~x2;

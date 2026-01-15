@@ -282,7 +282,9 @@ void stim_pybind::pybind_clifford_string_methods(
 
     c.def(
         "__setitem__",
-        [](CliffordString<MAX_BITWORD_WIDTH> &self, const pybind11::object &index_or_slice, const pybind11::object &new_value) {
+        [](CliffordString<MAX_BITWORD_WIDTH> &self,
+           const pybind11::object &index_or_slice,
+           const pybind11::object &new_value) {
             pybind11::ssize_t index, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.num_qubits, &index, &step, &slice_length)) {
                 if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
@@ -300,7 +302,8 @@ void stim_pybind::pybind_clifford_string_methods(
                     }
                     return;
                 } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
-                    const CliffordString<MAX_BITWORD_WIDTH> &v = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(new_value);
+                    const CliffordString<MAX_BITWORD_WIDTH> &v =
+                        pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(new_value);
                     for (size_t k = 0; k < (size_t)slice_length; k++) {
                         size_t target_k = index + step * k;
                         self.set_gate_at(target_k, v.gate_at(k));
@@ -382,8 +385,7 @@ void stim_pybind::pybind_clifford_string_methods(
             auto ps = self.x_outputs();
             FlexPauliString result(std::move(ps));
             return pybind11::make_tuple(
-                pybind11::cast(result),
-                simd_bits_to_numpy(self.x_signs, self.num_qubits, bit_packed_signs));
+                pybind11::cast(result), simd_bits_to_numpy(self.x_signs, self.num_qubits, bit_packed_signs));
         },
         pybind11::kw_only(),
         pybind11::arg("bit_packed_signs") = false,
@@ -435,8 +437,7 @@ void stim_pybind::pybind_clifford_string_methods(
             auto ys = self.y_outputs_and_signs(signs);
             FlexPauliString result(std::move(ys));
             return pybind11::make_tuple(
-                pybind11::cast(result),
-                simd_bits_to_numpy(signs, self.num_qubits, bit_packed_signs));
+                pybind11::cast(result), simd_bits_to_numpy(signs, self.num_qubits, bit_packed_signs));
         },
         pybind11::kw_only(),
         pybind11::arg("bit_packed_signs") = false,
@@ -484,8 +485,7 @@ void stim_pybind::pybind_clifford_string_methods(
             auto ps = self.z_outputs();
             FlexPauliString result(std::move(ps));
             return pybind11::make_tuple(
-                pybind11::cast(result),
-                simd_bits_to_numpy(self.z_signs, self.num_qubits, bit_packed_signs));
+                pybind11::cast(result), simd_bits_to_numpy(self.z_signs, self.num_qubits, bit_packed_signs));
         },
         pybind11::kw_only(),
         pybind11::arg("bit_packed_signs") = false,
