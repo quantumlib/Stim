@@ -120,15 +120,6 @@ void stim_pybind::pybind_clifford_string_methods(
                     } else if (pybind11::isinstance<pybind11::str>(t)) {
                         gates.push_back(GATE_DATA.at(pybind11::cast<std::string_view>(t)).id);
                         continue;
-
-                        /// Integer case is disabled until exposed encoding is decided upon.
-                        // } else if (pybind11::isinstance<pybind11::int_>(t)) {
-                        //     int64_t v = pybind11::cast<int64_t>(t);
-                        //     if (v >= 0 && (size_t)v < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size() &&
-                        //     INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[v] != GateType::NOT_A_GATE) {
-                        //         gates.push_back(INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[v]);
-                        //         continue;
-                        //     }
                     }
                     throw std::invalid_argument(
                         "Don't know how to convert the following item into a Clifford: " +
@@ -304,6 +295,12 @@ void stim_pybind::pybind_clifford_string_methods(
                 } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
                     const CliffordString<MAX_BITWORD_WIDTH> &v =
                         pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(new_value);
+                    if (v.num_qubits != (size_t)slice_length) {
+                        std::stringstream ss;
+                        ss << "Length mismatch. The targeted slice covers " << slice_length;
+                        ss << " values but the given CliffordString has " << v.num_qubits << " values.";
+                        throw std::invalid_argument(ss.str());
+                    }
                     for (size_t k = 0; k < (size_t)slice_length; k++) {
                         size_t target_k = index + step * k;
                         self.set_gate_at(target_k, v.gate_at(k));
@@ -331,27 +328,42 @@ void stim_pybind::pybind_clifford_string_methods(
         pybind11::arg("new_value"),
         clean_doc_string(R"DOC(
             @signature def __setitem__(self, index_or_slice: Union[int, slice], new_value: Union[str, stim.GateData, stim.CliffordString]) -> None:
-            Returns a Clifford or substring from the CliffordString.
+            Overwrites an indexed Clifford, or slice of Cliffords, with the given value.
 
             Args:
                 index_or_slice: The index of the Clifford to overwrite, or the slice
                     of Cliffords to overwrite.
+                new_value: Specifies the value to write into the Clifford string. This can
+                    be set to a few different types of values:
+                    - str: Name of the single qubit Clifford gate to write to the index or
+                        broadcast over the slice.
+                    - stim.GateData: The single qubit Clifford gate to write to the index
+                        or broadcast over the slice.
+                    - stim.CliffordString: Values to write into the slice.
 
             Examples:
                 >>> import stim
-                >>> s = stim.CliffordString("I,X,Y,Z,H")
+                >>> s = stim.CliffordString("I,I,I,I,I")
 
-                >>> s[2]
-                stim.gate_data('Y')
+                >>> s[1] = 'H'
+                >>> s
+                stim.CliffordString("I,H,I,I,I")
 
-                >>> s[-1]
-                stim.gate_data('H')
+                >>> s[2:] = 'SQRT_X'
+                >>> s
+                stim.CliffordString("I,H,SQRT_X,SQRT_X,SQRT_X")
 
-                >>> s[:-1]
-                stim.CliffordString("I,X,Y,Z")
+                >>> s[0] = stim.gate_data('S_DAG').inverse
+                >>> s
+                stim.CliffordString("S,H,SQRT_X,SQRT_X,SQRT_X")
 
-                >>> s[::2]
-                stim.CliffordString("I,Y,H")
+                >>> s[:] = 'I'
+                >>> s
+                stim.CliffordString("I,I,I,I,I")
+
+                >>> s[::2] = stim.CliffordString("X,Y,Z")
+                >>> s
+                stim.CliffordString("X,I,Y,I,Z")
         )DOC")
             .data());
 
@@ -376,6 +388,54 @@ void stim_pybind::pybind_clifford_string_methods(
 
             Returns:
                 The sampled Clifford string.
+        )DOC")
+            .data());
+
+    c.def_static(
+        "all_cliffords_string",
+        []() -> CliffordString<256> {
+            CliffordString<MAX_BITWORD_WIDTH> result(24);
+            result.set_gate_at(0, GateType::I);
+            result.set_gate_at(4, GateType::H_XY);
+            result.set_gate_at(8, GateType::H);
+            result.set_gate_at(12, GateType::H_YZ);
+            result.set_gate_at(16, GateType::C_XYZ);
+            result.set_gate_at(20, GateType::C_ZYX);
+            for (size_t q = 0; q < 24; q++) {
+                if (q % 4) {
+                    result.set_gate_at(q, result.gate_at(q - 1));
+                }
+            }
+
+            CliffordString<MAX_BITWORD_WIDTH> ixyz(24);
+            for (size_t q = 0; q < 24; q += 4) {
+                ixyz.set_gate_at(q + 0, GateType::I);
+                ixyz.set_gate_at(q + 1, GateType::X);
+                ixyz.set_gate_at(q + 2, GateType::Y);
+                ixyz.set_gate_at(q + 3, GateType::Z);
+            }
+            result *= ixyz;
+            return result;
+        },
+        clean_doc_string(R"DOC(
+            Returns a stim.CliffordString containing each single qubit Clifford once.
+
+            Useful for things like testing that a method works on every single Clifford.
+
+            Examples:
+                >>> import stim
+                >>> cliffords = stim.CliffordString.all_cliffords_string()
+                >>> len(cliffords)
+                24
+
+                >>> print(cliffords[:8])
+                I,X,Y,Z,H_XY,S,S_DAG,H_NXY
+
+                >>> print(cliffords[8:16])
+                H,SQRT_Y_DAG,H_NXZ,SQRT_Y,H_YZ,H_NYZ,SQRT_X,SQRT_X_DAG
+
+                >>> print(cliffords[16:])
+                C_XYZ,C_XYNZ,C_NXYZ,C_XNYZ,C_ZYX,C_ZNYX,C_NZYX,C_ZYNX
         )DOC")
             .data());
 

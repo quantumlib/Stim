@@ -120,6 +120,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CliffordString.__repr__`](#stim.CliffordString.__repr__)
     - [`stim.CliffordString.__setitem__`](#stim.CliffordString.__setitem__)
     - [`stim.CliffordString.__str__`](#stim.CliffordString.__str__)
+    - [`stim.CliffordString.all_cliffords_string`](#stim.CliffordString.all_cliffords_string)
     - [`stim.CliffordString.random`](#stim.CliffordString.random)
     - [`stim.CliffordString.x_outputs`](#stim.CliffordString.x_outputs)
     - [`stim.CliffordString.y_outputs`](#stim.CliffordString.y_outputs)
@@ -5257,27 +5258,42 @@ def __setitem__(
     index_or_slice: Union[int, slice],
     new_value: Union[str, stim.GateData, stim.CliffordString],
 ) -> None:
-    """Returns a Clifford or substring from the CliffordString.
+    """Overwrites an indexed Clifford, or slice of Cliffords, with the given value.
 
     Args:
         index_or_slice: The index of the Clifford to overwrite, or the slice
             of Cliffords to overwrite.
+        new_value: Specifies the value to write into the Clifford string. This can
+            be set to a few different types of values:
+            - str: Name of the single qubit Clifford gate to write to the index or
+                broadcast over the slice.
+            - stim.GateData: The single qubit Clifford gate to write to the index
+                or broadcast over the slice.
+            - stim.CliffordString: Values to write into the slice.
 
     Examples:
         >>> import stim
-        >>> s = stim.CliffordString("I,X,Y,Z,H")
+        >>> s = stim.CliffordString("I,I,I,I,I")
 
-        >>> s[2]
-        stim.gate_data('Y')
+        >>> s[1] = 'H'
+        >>> s
+        stim.CliffordString("I,H,I,I,I")
 
-        >>> s[-1]
-        stim.gate_data('H')
+        >>> s[2:] = 'SQRT_X'
+        >>> s
+        stim.CliffordString("I,H,SQRT_X,SQRT_X,SQRT_X")
 
-        >>> s[:-1]
-        stim.CliffordString("I,X,Y,Z")
+        >>> s[0] = stim.gate_data('S_DAG').inverse
+        >>> s
+        stim.CliffordString("S,H,SQRT_X,SQRT_X,SQRT_X")
 
-        >>> s[::2]
-        stim.CliffordString("I,Y,H")
+        >>> s[:] = 'I'
+        >>> s
+        stim.CliffordString("I,I,I,I,I")
+
+        >>> s[::2] = stim.CliffordString("X,Y,Z")
+        >>> s
+        stim.CliffordString("X,I,Y,I,Z")
     """
 ```
 
@@ -5290,6 +5306,35 @@ def __str__(
     self,
 ) -> str:
     """Returns a string representation of the CliffordString's operations.
+    """
+```
+
+<a name="stim.CliffordString.all_cliffords_string"></a>
+```python
+# stim.CliffordString.all_cliffords_string
+
+# (in class stim.CliffordString)
+@staticmethod
+def all_cliffords_string(
+) -> stim.CliffordString:
+    """Returns a stim.CliffordString containing each single qubit Clifford once.
+
+    Useful for things like testing that a method works on every single Clifford.
+
+    Examples:
+        >>> import stim
+        >>> cliffords = stim.CliffordString.all_cliffords_string()
+        >>> len(cliffords)
+        24
+
+        >>> print(cliffords[:8])
+        I,X,Y,Z,H_XY,S,S_DAG,H_NXY
+
+        >>> print(cliffords[8:16])
+        H,SQRT_Y_DAG,H_NXZ,SQRT_Y,H_YZ,H_NYZ,SQRT_X,SQRT_X_DAG
+
+        >>> print(cliffords[16:])
+        C_XYZ,C_XYNZ,C_NXYZ,C_XNYZ,C_ZYX,C_ZNYX,C_NZYX,C_ZYNX
     """
 ```
 

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from platform import python_version
 
 import numpy as np
 import pytest
@@ -87,8 +86,16 @@ def test_set_item():
     c[0] = stim.gate_data('X')
     assert c == stim.CliffordString("X,S,S,H,H")
 
+    with pytest.raises(ValueError, match="object of type"):
+        c[0] = stim.CliffordString("Y")
+    with pytest.raises(ValueError, match="Length mismatch"):
+        c[:2] = stim.CliffordString("Y")
+    assert c == stim.CliffordString("X,S,S,H,H")
+    c[:2] = stim.CliffordString("Y,Y")
+    assert c == stim.CliffordString("Y,Y,S,H,H")
 
-def all_cliffords_string():
+
+def all_cliffords_string_from_gate_data():
     c = stim.CliffordString(24)
     r = 0
     for g in stim.gate_data().values():
@@ -103,7 +110,7 @@ def test_x_outputs():
     assert paulis == stim.PauliString("XXXXZYYYZXX")
     np.testing.assert_array_equal(signs, [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0])
 
-    c = all_cliffords_string()
+    c = all_cliffords_string_from_gate_data()
     paulis, signs = c.x_outputs()
     for k in range(len(c)):
         expected = c[k].tableau.x_output(0)
@@ -116,7 +123,7 @@ def test_y_outputs():
     assert paulis == stim.PauliString("YYYYYXXZXZZ")
     np.testing.assert_array_equal(signs, [0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1])
 
-    c = all_cliffords_string()
+    c = all_cliffords_string_from_gate_data()
     paulis, signs = c.y_outputs()
     for k in range(len(c)):
         expected = c[k].tableau.y_output(0)
@@ -129,9 +136,15 @@ def test_z_outputs():
     assert paulis == stim.PauliString("ZZZZXZZXYYY")
     np.testing.assert_array_equal(signs, [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0])
 
-    c = all_cliffords_string()
+    c = all_cliffords_string_from_gate_data()
     paulis, signs = c.z_outputs()
     for k in range(len(c)):
         expected = c[k].tableau.z_output(0)
         assert (-1 if signs[k] else 1) == expected.sign
         assert paulis[k] == expected[0]
+
+
+def test_all_cliffords_string():
+    c = stim.CliffordString.all_cliffords_string()
+    assert len(c) == 24
+    assert set(e.name for e in all_cliffords_string_from_gate_data()) == set(e.name for e in c)
