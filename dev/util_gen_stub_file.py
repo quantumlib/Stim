@@ -8,6 +8,7 @@ from typing import Tuple
 
 keep = {
     "__add__",
+    "__ipow__",
     "__radd__",
     "__eq__",
     "__call__",
