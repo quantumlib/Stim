@@ -46,3 +46,4 @@
 - [arXiv:2504.02935](https://arxiv.org/abs/2504.02935) → [Scripts, Stim circuits and simulation results for "Magic State Injection with Erasure Qubits"](https://zenodo.org/records/15874462)
 - [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
 - [arXiv:2507.19430](https://arxiv.org/abs/2507.19430) → [Stim circuits and parity check matrices for "Directional Codes: a new family of quantum LDPC codes on hexagonal- and square-grid connectivity hardware" manuscript](https://zenodo.org/records/16422162)
+- [arXiv:2512.17999](https://arxiv.org/abs/2512.17999) → [Stim circuits for "Logical gates on Floquet codes via folds and twists"](https://zenodo.org/records/17966122)
