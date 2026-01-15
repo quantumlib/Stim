@@ -560,10 +560,7 @@ TEST(ErrorMatcher, heralded_error) {
         error(1) D0
     )MODEL");
 
-    auto actual = ErrorMatcher::explain_errors_from_circuit(
-        circuit,
-        &filter,
-        false);
+    auto actual = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
@@ -629,7 +626,9 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::x(1)}}));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::x(1)}}));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -647,7 +646,9 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::y(1)}}));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::y(1)}}));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -665,7 +666,9 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::z(1)}}));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{GateTargetWithCoords{GateTarget::z(1)}}));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -683,9 +686,11 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::x(0)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::x(0)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -703,10 +708,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::x(0)},
-        GateTargetWithCoords{GateTarget::x(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::x(0)},
+            GateTargetWithCoords{GateTarget::x(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -724,10 +731,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::x(0)},
-        GateTargetWithCoords{GateTarget::y(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::x(0)},
+            GateTargetWithCoords{GateTarget::y(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -745,10 +754,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::x(0)},
-        GateTargetWithCoords{GateTarget::z(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::x(0)},
+            GateTargetWithCoords{GateTarget::z(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -766,9 +777,11 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::y(0)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::y(0)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -786,10 +799,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::y(0)},
-        GateTargetWithCoords{GateTarget::x(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::y(0)},
+            GateTargetWithCoords{GateTarget::x(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -807,10 +822,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::y(0)},
-        GateTargetWithCoords{GateTarget::y(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::y(0)},
+            GateTargetWithCoords{GateTarget::y(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -828,10 +845,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::y(0)},
-        GateTargetWithCoords{GateTarget::z(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::y(0)},
+            GateTargetWithCoords{GateTarget::z(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -849,9 +868,11 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::z(0)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::z(0)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -869,10 +890,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::z(0)},
-        GateTargetWithCoords{GateTarget::x(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::z(0)},
+            GateTargetWithCoords{GateTarget::x(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -890,10 +913,12 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::z(0)},
-        GateTargetWithCoords{GateTarget::y(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::z(0)},
+            GateTargetWithCoords{GateTarget::y(1)},
+        }));
 
     actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
@@ -911,8 +936,10 @@ TEST(ErrorMatcher, PAULI_CHANNEL_2) {
         false);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].circuit_error_locations.size(), 1);
-    ASSERT_EQ(actual[0].circuit_error_locations[0].flipped_pauli_product, (std::vector<GateTargetWithCoords>{
-        GateTargetWithCoords{GateTarget::z(0)},
-        GateTargetWithCoords{GateTarget::z(1)},
-    }));
+    ASSERT_EQ(
+        actual[0].circuit_error_locations[0].flipped_pauli_product,
+        (std::vector<GateTargetWithCoords>{
+            GateTargetWithCoords{GateTarget::z(0)},
+            GateTargetWithCoords{GateTarget::z(1)},
+        }));
 }
