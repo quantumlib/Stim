@@ -280,6 +280,78 @@ void stim_pybind::pybind_clifford_string_methods(
         )DOC")
             .data());
 
+    c.def(
+        "__setitem__",
+        [](CliffordString<MAX_BITWORD_WIDTH> &self, const pybind11::object &index_or_slice, const pybind11::object &new_value) {
+            pybind11::ssize_t index, step, slice_length;
+            if (normalize_index_or_slice(index_or_slice, self.num_qubits, &index, &step, &slice_length)) {
+                if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
+                    GateType g = pybind11::cast<GateTypeWrapper>(new_value).type;
+                    for (size_t k = 0; k < (size_t)slice_length; k++) {
+                        size_t target_k = index + step * k;
+                        self.set_gate_at(target_k, g);
+                    }
+                    return;
+                } else if (pybind11::isinstance<pybind11::str>(new_value)) {
+                    GateType g = GATE_DATA.at(pybind11::cast<std::string_view>(new_value)).id;
+                    for (size_t k = 0; k < (size_t)slice_length; k++) {
+                        size_t target_k = index + step * k;
+                        self.set_gate_at(target_k, g);
+                    }
+                    return;
+                } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
+                    const CliffordString<MAX_BITWORD_WIDTH> &v = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(new_value);
+                    for (size_t k = 0; k < (size_t)slice_length; k++) {
+                        size_t target_k = index + step * k;
+                        self.set_gate_at(target_k, v.gate_at(k));
+                    }
+                    return;
+                }
+            } else {
+                if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
+                    self.set_gate_at(index, pybind11::cast<GateTypeWrapper>(new_value).type);
+                    return;
+                } else if (pybind11::isinstance<pybind11::str>(new_value)) {
+                    self.set_gate_at(index, GATE_DATA.at(pybind11::cast<std::string_view>(new_value)).id);
+                    return;
+                }
+            }
+
+            std::stringstream ss;
+            ss << "Don't know how to write an object of type ";
+            ss << pybind11::repr(pybind11::type::of(new_value));
+            ss << " to index ";
+            ss << pybind11::repr(index_or_slice);
+            throw std::invalid_argument(ss.str());
+        },
+        pybind11::arg("index_or_slice"),
+        pybind11::arg("new_value"),
+        clean_doc_string(R"DOC(
+            @signature def __setitem__(self, index_or_slice: Union[int, slice], new_value: Union[str, stim.GateData, stim.CliffordString]) -> None:
+            Returns a Clifford or substring from the CliffordString.
+
+            Args:
+                index_or_slice: The index of the Clifford to overwrite, or the slice
+                    of Cliffords to overwrite.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.CliffordString("I,X,Y,Z,H")
+
+                >>> s[2]
+                stim.gate_data('Y')
+
+                >>> s[-1]
+                stim.gate_data('H')
+
+                >>> s[:-1]
+                stim.CliffordString("I,X,Y,Z")
+
+                >>> s[::2]
+                stim.CliffordString("I,Y,H")
+        )DOC")
+            .data());
+
     c.def_static(
         "random",
         [](size_t num_qubits) {
@@ -304,193 +376,157 @@ void stim_pybind::pybind_clifford_string_methods(
         )DOC")
             .data());
 
-    /// Integer case is disabled until exposed encoding is decided upon.
-    //     c.def_static(
-    //         "gate_to_int",
-    //         [](const pybind11::object &gate) {
-    //             Gate raw_gate;
-    //             if (pybind11::isinstance<pybind11::str>(gate)) {
-    //                 raw_gate = GATE_DATA.at(pybind11::cast<std::string_view>(gate));
-    //             } else if (pybind11::isinstance<GateType>(gate)) {
-    //                 raw_gate = GATE_DATA.at(pybind11::cast<GateType>(gate));
-    //             } else {
-    //                 throw std::invalid_argument(
-    //                     "Don't know how to interpret this as a gate: " +
-    //                     pybind11::cast<std::string>(pybind11::repr(gate)));
-    //             }
-    //             if ((raw_gate.flags & GATE_IS_UNITARY) && (raw_gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
-    //                 auto vals = gate_to_bits(raw_gate.id);
-    //                 auto result = 0;
-    //                 for (size_t k = 0; k < vals.size(); k++) {
-    //                     result ^= vals[k] << k;
-    //                 }
-    //                 return result;
-    //             } else {
-    //                 throw std::invalid_argument(
-    //                     "Not a single qubit Clifford gate: " +
-    //                     pybind11::cast<std::string>(pybind11::repr(gate)));
-    //             }
-    //         },
-    //         pybind11::arg("gate"),
-    //         clean_doc_string(R"DOC(
-    //             Encodes a single qubit Clifford gate into a 6 bit integer.
-    //             @signature def gate_to_int(self, gate: Union[str, stim.GateData]) -> int:
-    //
-    //             The encoding is based on copying bits from the gate's stabilizer Tableau
-    //             directly into the bits of the integer. The first two bits (the least significant
-    //             bits) encode the X and Z signs, the second two bits encode the X output Pauli,
-    //             and the last two bits encode the Z output Pauli.
-    //
-    //             This binary integer:
-    //
-    //                 0bABCDXZ
-    //
-    //             Corresponds to this tableau:
-    //
-    //                 stim.Tableau.from_conjugated_generators(
-    //                     xs=[
-    //                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
-    //                     ],
-    //                     zs=[
-    //                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
-    //                     ],
-    //                 )
-    //
-    //             The explicit encoding is as follows:
-    //
-    //                  0 = 0b000000 = I
-    //                  1 = 0b000001 = X
-    //                  2 = 0b000010 = Z
-    //                  3 = 0b000011 = Y
-    //                  8 = 0b001000 = S
-    //                  9 = 0b001001 = H_XY
-    //                 10 = 0b001010 = S_DAG
-    //                 11 = 0b001011 = H_NXY
-    //                 <4 unused ids>
-    //                 16 = 0b010000 = SQRT_X_DAG
-    //                 17 = 0b010001 = SQRT_X
-    //                 18 = 0b010010 = H_YZ
-    //                 19 = 0b010011 = H_NYZ
-    //                 <8 unused ids>
-    //                 28 = 0b011100 = C_ZYX
-    //                 29 = 0b011101 = C_ZNYX
-    //                 30 = 0b011110 = C_ZYNX
-    //                 31 = 0b011111 = C_NZYX
-    //                 <24 unused ids>
-    //                 56 = 0b111000 = C_XYZ
-    //                 57 = 0b111001 = C_XYNZ
-    //                 58 = 0b111010 = C_XNYZ
-    //                 59 = 0b111011 = C_NXYZ
-    //                 60 = 0b111100 = H
-    //                 61 = 0b111101 = SQRT_Y_DAG
-    //                 62 = 0b111110 = SQRT_Y
-    //                 63 = 0b111111 = H_NXZ
-    //
-    //             Args:
-    //
-    //                 gate: The gate to encode into an integer. This can either be the name of
-    //                     the gate as a string, or a stim.GateData instance. The given gate must
-    //                     be a single qubit Clifford gate.
-    //
-    //             Examples:
-    //
-    //                 >>> stim.CliffordString.gate_to_int(stim.gate_data("S"))
-    //                 9
-    //
-    //                 >>> stim.CliffordString.gate_to_int("H")
-    //                 60
-    //
-    //                 >>> t = stim.gate_data("H").tableau
-    //                 >>> manual_id = 0
-    //                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "XY") << 0
-    //                 >>> manual_id ^= ("IXYZ"[t.x_output_pauli(0, 0)] in "YZ") << 1
-    //                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "XY") << 2
-    //                 >>> manual_id ^= ("IXYZ"[t.z_output_pauli(0, 0)] in "YZ") << 3
-    //                 >>> manual_id ^= (t.x_sign(0)) << 5
-    //                 >>> manual_id ^= (t.z_sign(0)) << 6
-    //                 >>> manual_id
-    //                 60
-    //         )DOC")
-    //             .data());
+    c.def(
+        "x_outputs",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self, bool bit_packed_signs) -> pybind11::object {
+            auto ps = self.x_outputs();
+            FlexPauliString result(std::move(ps));
+            return pybind11::make_tuple(
+                pybind11::cast(result),
+                simd_bits_to_numpy(self.x_signs, self.num_qubits, bit_packed_signs));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed_signs") = false,
+        clean_doc_string(R"DOC(
+            @signature def x_outputs(self, *, bit_packed_signs: bool = False) -> tuple[stim.PauliString, np.ndarray]:
+            Returns what each Clifford in the CliffordString conjugates an X input into.
 
-    /// Integer case is disabled until exposed encoding is decided upon.
-    //     c.def_static(
-    //         "int_to_gate",
-    //         [](size_t arg) -> GateType {
-    //             GateType result = GateType::NOT_A_GATE;
-    //             if (arg < INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE.size()) {
-    //                 result = INT_TO_SINGLE_QUBIT_CLIFFORD_TABLE[arg];
-    //             }
-    //             if (result == GateType::NOT_A_GATE) {
-    //                 throw std::invalid_argument("No single qubit Clifford gate is encoded as the integer " +
-    //                 std::to_string(arg) + ".");
-    //             }
-    //             return result;
-    //         },
-    //         pybind11::arg("arg"),
-    //         clean_doc_string(R"DOC(
-    //             Decodes a single qubit Clifford gate out of a 6 bit integer.
-    //
-    //             The encoding is based on the internal representation used to represent the gate
-    //             (designed to make applying operations fast). The gate is specified by 6 bits,
-    //             corresponding to bits (or inverted bits) from the gate's stabilizer tableau.
-    //
-    //             This binary integer:
-    //
-    //                 0bABCDXZ
-    //
-    //             Corresponds to this tableau:
-    //
-    //                 stim.Tableau.from_conjugated_generators(
-    //                     xs=[
-    //                         (-1)**X * stim.PauliString("_XZY"[A + 2*B]),
-    //                     ],
-    //                     zs=[
-    //                         (-1)**Z * stim.PauliString("_XZY"[C + 2*D]),
-    //                     ],
-    //                 )
-    //
-    //             The explicit encoding is as follows:
-    //
-    //                  0 = 0b000000 = I
-    //                  1 = 0b000001 = X
-    //                  2 = 0b000010 = Z
-    //                  3 = 0b000011 = Y
-    //                  8 = 0b001000 = S
-    //                  9 = 0b001001 = H_XY
-    //                 10 = 0b001010 = S_DAG
-    //                 11 = 0b001011 = H_NXY
-    //                 <4 unused ids>
-    //                 16 = 0b010000 = SQRT_X_DAG
-    //                 17 = 0b010001 = SQRT_X
-    //                 18 = 0b010010 = H_YZ
-    //                 19 = 0b010011 = H_NYZ
-    //                 <8 unused ids>
-    //                 28 = 0b011100 = C_ZYX
-    //                 29 = 0b011101 = C_ZNYX
-    //                 30 = 0b011110 = C_ZYNX
-    //                 31 = 0b011111 = C_NZYX
-    //                 <24 unused ids>
-    //                 56 = 0b111000 = C_XYZ
-    //                 57 = 0b111001 = C_XYNZ
-    //                 58 = 0b111010 = C_XNYZ
-    //                 59 = 0b111011 = C_NXYZ
-    //                 60 = 0b111100 = H
-    //                 61 = 0b111101 = SQRT_Y_DAG
-    //                 62 = 0b111110 = SQRT_Y
-    //                 63 = 0b111111 = H_NXZ
-    //
-    //             Args:
-    //                 arg: The encoded integer to decode into a gate.
-    //
-    //             Examples:
-    //
-    //                 >>> stim.CliffordString.int_to_gate(1)
-    //                 stim.gate_data("X")
-    //
-    //                 >>> stim.CliffordString.int_to_gate(9)
-    //                 stim.gate_data("S")
-    //
-    //         )DOC")
-    //             .data());
+            For example, H conjugates X into +Z and S_DAG conjugates X into -Y.
+
+            Combined with `z_outputs`, the results of this method completely specify
+            the single qubit Clifford applied to each qubit.
+
+            Args:
+                bit_packed_signs: Defaults to False. When False, the sign data is returned
+                    in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                    `np.uint8` and 8 bits are packed into each byte (in little endian
+                    order).
+
+            Returns:
+                A (paulis, signs) tuple.
+
+                `paulis` has type stim.PauliString. Its sign is always positive.
+
+                `signs` has type np.ndarray and an argument-dependent shape:
+                    bit_packed_signs=False:
+                        dtype=np.bool_
+                        shape=(num_qubits,)
+                    bit_packed_signs=True:
+                        dtype=np.uint8
+                        shape=(math.ceil(num_qubits / 8),)
+
+            Examples:
+                >>> import stim
+                >>> x_paulis, x_signs = stim.CliffordString("I,Y,H,S").x_outputs()
+                >>> x_paulis
+                stim.PauliString("+XXZY")
+                >>> x_signs
+                array([False,  True, False, False])
+
+                >>> stim.CliffordString("I,Y,H,S").x_outputs(bit_packed_signs=True)[1]
+                array([2], dtype=uint8)
+        )DOC")
+            .data());
+
+    c.def(
+        "y_outputs",
+        [](CliffordString<MAX_BITWORD_WIDTH> &self, bool bit_packed_signs) -> pybind11::object {
+            simd_bits<MAX_BITWORD_WIDTH> signs(self.num_qubits);
+            auto ys = self.y_outputs_and_signs(signs);
+            FlexPauliString result(std::move(ys));
+            return pybind11::make_tuple(
+                pybind11::cast(result),
+                simd_bits_to_numpy(signs, self.num_qubits, bit_packed_signs));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed_signs") = false,
+        clean_doc_string(R"DOC(
+            @signature def y_outputs(self, *, bit_packed_signs: bool = False) -> tuple[stim.PauliString, np.ndarray]:
+            Returns what each Clifford in the CliffordString conjugates a Y input into.
+
+            For example, H conjugates Y into -Y and S_DAG conjugates Y into +X.
+
+            Args:
+                bit_packed_signs: Defaults to False. When False, the sign data is returned
+                    in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                    `np.uint8` and 8 bits are packed into each byte (in little endian
+                    order).
+
+            Returns:
+                A (paulis, signs) tuple.
+
+                `paulis` has type stim.PauliString. Its sign is always positive.
+
+                `signs` has type np.ndarray and an argument-dependent shape:
+                    bit_packed_signs=False:
+                        dtype=np.bool_
+                        shape=(num_qubits,)
+                    bit_packed_signs=True:
+                        dtype=np.uint8
+                        shape=(math.ceil(num_qubits / 8),)
+
+            Examples:
+                >>> import stim
+                >>> y_paulis, y_signs = stim.CliffordString("I,X,H,S").y_outputs()
+                >>> y_paulis
+                stim.PauliString("+YYYX")
+                >>> y_signs
+                array([False,  True,  True,  True])
+
+                >>> stim.CliffordString("I,X,H,S").y_outputs(bit_packed_signs=True)[1]
+                array([14], dtype=uint8)
+        )DOC")
+            .data());
+
+    c.def(
+        "z_outputs",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self, bool bit_packed_signs) -> pybind11::object {
+            auto ps = self.z_outputs();
+            FlexPauliString result(std::move(ps));
+            return pybind11::make_tuple(
+                pybind11::cast(result),
+                simd_bits_to_numpy(self.z_signs, self.num_qubits, bit_packed_signs));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed_signs") = false,
+        clean_doc_string(R"DOC(
+            @signature def z_outputs(self, *, bit_packed_signs: bool = False) -> tuple[stim.PauliString, np.ndarray]:
+            Returns what each Clifford in the CliffordString conjugates a Z input into.
+
+            For example, H conjugates Z into +X and SQRT_X conjugates Z into -Y.
+
+            Combined with `x_outputs`, the results of this method completely specify
+            the single qubit Clifford applied to each qubit.
+
+            Args:
+                bit_packed_signs: Defaults to False. When False, the sign data is returned
+                    in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                    `np.uint8` and 8 bits are packed into each byte (in little endian
+                    order).
+
+            Returns:
+                A (paulis, signs) tuple.
+
+                `paulis` has type stim.PauliString. Its sign is always positive.
+
+                `signs` has type np.ndarray and an argument-dependent shape:
+                    bit_packed_signs=False:
+                        dtype=np.bool_
+                        shape=(num_qubits,)
+                    bit_packed_signs=True:
+                        dtype=np.uint8
+                        shape=(math.ceil(num_qubits / 8),)
+
+            Examples:
+                >>> import stim
+                >>> z_paulis, z_signs = stim.CliffordString("I,Y,H,S").z_outputs()
+                >>> z_paulis
+                stim.PauliString("+ZZXZ")
+                >>> z_signs
+                array([False,  True, False, False])
+
+                >>> stim.CliffordString("I,Y,H,S").z_outputs(bit_packed_signs=True)[1]
+                array([2], dtype=uint8)
+        )DOC")
+            .data());
 }

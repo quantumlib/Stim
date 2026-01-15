@@ -283,6 +283,44 @@ struct CliffordString {
         return *this;
     }
 
+    PauliString<W> x_outputs() const {
+        PauliString<W> result(num_qubits);
+        result.xs = inv_x2x;
+        result.zs = x2z;
+        result.xs.invert_bits();
+        result.xs.clear_bits_past(num_qubits);
+        return result;
+    }
+    PauliString<W> y_outputs_and_signs(simd_bits_range_ref<W> y_signs_out) const {
+        PauliString<W> result(num_qubits);
+        result.xs = inv_x2x;
+        result.zs = x2z;
+        y_signs_out = x_signs;
+        y_signs_out ^= z_signs;
+        simd_bits_range_ref<W>(result.xs).for_each_word(
+            result.zs,
+            z2x,
+            inv_z2z,
+            y_signs_out,
+            [](simd_word<W> &x_out, simd_word<W> &z_out, const simd_word<W> &x2, const simd_word<W> &inv_z2, simd_word<W> &y_sign) {
+                y_sign ^= ~x_out & ~inv_z2 & (z_out ^ x2);
+                y_sign ^= x_out & inv_z2 & z_out & x2;
+                x_out ^= ~x2;
+                z_out ^= ~inv_z2;
+            });
+        result.xs.clear_bits_past(num_qubits);
+        result.zs.clear_bits_past(num_qubits);
+        return result;
+    }
+    PauliString<W> z_outputs() const {
+        PauliString<W> result(num_qubits);
+        result.xs = z2x;
+        result.zs = inv_z2z;
+        result.zs.invert_bits();
+        result.zs.clear_bits_past(num_qubits);
+        return result;
+    }
+
     /// Out-of-place multiplication of rotations.
     CliffordString operator*(const CliffordString &rhs) const {
         CliffordString<W> result = CliffordString<W>(std::max(num_qubits, rhs.num_qubits));

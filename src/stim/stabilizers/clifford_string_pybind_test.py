@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from platform import python_version
 
+import numpy as np
+import pytest
 import stim
 
 
@@ -63,3 +66,72 @@ def test_random():
     c2 = stim.CliffordString.random(128)
     assert len(c1) == len(c2) == 128
     assert c1 != c2
+
+
+def test_set_item():
+    c = stim.CliffordString(5)
+    c[1] = "H"
+    assert c == stim.CliffordString("I,H,I,I,I")
+    with pytest.raises(ValueError, match="index"):
+        c[2:3] = None
+    with pytest.raises(ValueError, match="index"):
+        c[2] = None
+    c[2:4] = stim.CliffordString("X,Y")
+    assert c == stim.CliffordString("I,H,X,Y,I")
+    c[::2] = stim.CliffordString("S,Z,S_DAG")
+    assert c == stim.CliffordString("S,H,Z,Y,S_DAG")
+    c[:] = 'H'
+    assert c == stim.CliffordString("H,H,H,H,H")
+    c[:-2] = stim.gate_data('S')
+    assert c == stim.CliffordString("S,S,S,H,H")
+    c[0] = stim.gate_data('X')
+    assert c == stim.CliffordString("X,S,S,H,H")
+
+
+def all_cliffords_string():
+    c = stim.CliffordString(24)
+    r = 0
+    for g in stim.gate_data().values():
+        if g.is_unitary and g.is_single_qubit_gate:
+            c[r] = g
+            r += 1
+    return c
+
+
+def test_x_outputs():
+    paulis, signs = stim.CliffordString("I,X,Y,Z,H,S,S_DAG,C_XYZ,C_ZYX,SQRT_X,SQRT_X_DAG").x_outputs()
+    assert paulis == stim.PauliString("XXXXZYYYZXX")
+    np.testing.assert_array_equal(signs, [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0])
+
+    c = all_cliffords_string()
+    paulis, signs = c.x_outputs()
+    for k in range(len(c)):
+        expected = c[k].tableau.x_output(0)
+        assert (-1 if signs[k] else 1) == expected.sign
+        assert paulis[k] == expected[0]
+
+
+def test_y_outputs():
+    paulis, signs = stim.CliffordString("I,X,Y,Z,H,S,S_DAG,C_XYZ,C_ZYX,SQRT_X,SQRT_X_DAG").y_outputs()
+    assert paulis == stim.PauliString("YYYYYXXZXZZ")
+    np.testing.assert_array_equal(signs, [0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1])
+
+    c = all_cliffords_string()
+    paulis, signs = c.y_outputs()
+    for k in range(len(c)):
+        expected = c[k].tableau.y_output(0)
+        assert (-1 if signs[k] else 1) == expected.sign
+        assert paulis[k] == expected[0]
+
+
+def test_z_outputs():
+    paulis, signs = stim.CliffordString("I,X,Y,Z,H,S,S_DAG,C_XYZ,C_ZYX,SQRT_X,SQRT_X_DAG").z_outputs()
+    assert paulis == stim.PauliString("ZZZZXZZXYYY")
+    np.testing.assert_array_equal(signs, [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0])
+
+    c = all_cliffords_string()
+    paulis, signs = c.z_outputs()
+    for k in range(len(c)):
+        expected = c[k].tableau.z_output(0)
+        assert (-1 if signs[k] else 1) == expected.sign
+        assert paulis[k] == expected[0]

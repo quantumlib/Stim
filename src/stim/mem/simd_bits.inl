@@ -136,6 +136,11 @@ void simd_bits<W>::truncated_overwrite_from(simd_bits_range_ref<W> other, size_t
 }
 
 template <size_t W>
+void simd_bits<W>::clear_bits_past(size_t num_kept_bits) {
+    simd_bits_range_ref<W>(*this).clear_bits_past(num_kept_bits);
+}
+
+template <size_t W>
 bit_ref simd_bits<W>::operator[](size_t k) {
     return bit_ref(u64, k);
 }
