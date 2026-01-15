@@ -283,6 +283,22 @@ struct CliffordString {
         return *this;
     }
 
+    /// Inplace raises to a power.
+    void ipow(int64_t power) const {
+        power %= 12;
+        if (power < 0) {
+            power += 12;
+        }
+        for (size_t k = 0; k < x_signs.num_simd_words; k++) {
+            auto delta = word_at(k);
+            CliffordWord<bitword<W>> total{};
+            for (size_t step = 0; step < power; step++) {
+                total = total * delta;
+            }
+            set_word_at(k, total);
+        }
+    }
+
     PauliString<W> x_outputs() const {
         PauliString<W> result(num_qubits);
         result.xs = inv_x2x;

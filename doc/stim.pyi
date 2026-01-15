@@ -3999,6 +3999,36 @@ class CliffordString:
             >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
             stim.CliffordString("X,Y,Z")
         """
+    def __ipow__(
+        self,
+        num_qubits: int,
+    ) -> object:
+        """Mutates the CliffordString into itself raised to a power.
+
+        Args:
+            power: The power to raise the CliffordString's Cliffords to.
+                This value can be negative (e.g. -1 inverts the string).
+
+        Returns:
+            The mutated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+            >>> p **= 3
+            >>> p
+            stim.CliffordString("I,X,H,S_DAG,I")
+
+            >>> p **= 2
+            >>> p
+            stim.CliffordString("I,I,I,Z,I")
+
+            >>> alias = p
+            >>> alias **= 2
+            >>> p
+            stim.CliffordString("I,I,I,I,I")
+        """
     def __len__(
         self,
     ) -> int:
@@ -4025,6 +4055,42 @@ class CliffordString:
         arg0: stim.CliffordString,
     ) -> bool:
         """Determines if two Clifford strings have non-identical contents.
+        """
+    def __pow__(
+        self,
+        power: int,
+    ) -> stim.CliffordString:
+        """Returns the CliffordString raised to a power.
+
+        Args:
+            power: The power to raise the CliffordString's Cliffords to.
+                This value can be negative (e.g. -1 returns the inverse string).
+
+        Returns:
+            The Clifford string raised to the power.
+
+        Examples:
+            >>> import stim
+
+            >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**0
+            stim.CliffordString("I,I,I,I,I")
+
+            >>> p**1
+            stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**12000001
+            stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**2
+            stim.CliffordString("I,I,I,Z,C_ZYX")
+
+            >>> p**3
+            stim.CliffordString("I,X,H,S_DAG,I")
+
+            >>> p**-1
+            stim.CliffordString("I,X,H,S_DAG,C_ZYX")
         """
     def __repr__(
         self,
