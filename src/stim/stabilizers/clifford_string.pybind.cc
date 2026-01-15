@@ -440,6 +440,85 @@ void stim_pybind::pybind_clifford_string_methods(
             .data());
 
     c.def(
+        "__ipow__",
+        [](pybind11::object self, int64_t power) {
+            pybind11::cast<CliffordString<MAX_BITWORD_WIDTH> &>(self).ipow(power);
+            return self;
+        },
+        pybind11::arg("num_qubits"),
+        clean_doc_string(R"DOC(
+            Mutates the CliffordString into itself raised to a power.
+
+            Args:
+                power: The power to raise the CliffordString's Cliffords to.
+                    This value can be negative (e.g. -1 inverts the string).
+
+            Returns:
+                The mutated Clifford string.
+
+            Examples:
+                >>> import stim
+
+                >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+                >>> p **= 3
+                >>> p
+                stim.CliffordString("I,X,H,S_DAG,I")
+
+                >>> p **= 2
+                >>> p
+                stim.CliffordString("I,I,I,Z,I")
+
+                >>> alias = p
+                >>> alias **= 2
+                >>> p
+                stim.CliffordString("I,I,I,I,I")
+        )DOC")
+            .data());
+
+    c.def(
+        "__pow__",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self, int64_t power) -> CliffordString<MAX_BITWORD_WIDTH> {
+            auto copy = self;
+            copy.ipow(power);
+            return copy;
+        },
+        pybind11::arg("power"),
+        clean_doc_string(R"DOC(
+            Returns the CliffordString raised to a power.
+
+            Args:
+                power: The power to raise the CliffordString's Cliffords to.
+                    This value can be negative (e.g. -1 returns the inverse string).
+
+            Returns:
+                The Clifford string raised to the power.
+
+            Examples:
+                >>> import stim
+
+                >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+
+                >>> p**0
+                stim.CliffordString("I,I,I,I,I")
+
+                >>> p**1
+                stim.CliffordString("I,X,H,S,C_XYZ")
+
+                >>> p**12000001
+                stim.CliffordString("I,X,H,S,C_XYZ")
+
+                >>> p**2
+                stim.CliffordString("I,I,I,Z,C_ZYX")
+
+                >>> p**3
+                stim.CliffordString("I,X,H,S_DAG,I")
+
+                >>> p**-1
+                stim.CliffordString("I,X,H,S_DAG,C_ZYX")
+        )DOC")
+            .data());
+
+    c.def(
         "x_outputs",
         [](const CliffordString<MAX_BITWORD_WIDTH> &self, bool bit_packed_signs) -> pybind11::object {
             auto ps = self.x_outputs();

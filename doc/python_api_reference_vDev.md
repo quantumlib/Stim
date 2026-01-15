@@ -114,9 +114,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CliffordString.__getitem__`](#stim.CliffordString.__getitem__)
     - [`stim.CliffordString.__imul__`](#stim.CliffordString.__imul__)
     - [`stim.CliffordString.__init__`](#stim.CliffordString.__init__)
+    - [`stim.CliffordString.__ipow__`](#stim.CliffordString.__ipow__)
     - [`stim.CliffordString.__len__`](#stim.CliffordString.__len__)
     - [`stim.CliffordString.__mul__`](#stim.CliffordString.__mul__)
     - [`stim.CliffordString.__ne__`](#stim.CliffordString.__ne__)
+    - [`stim.CliffordString.__pow__`](#stim.CliffordString.__pow__)
     - [`stim.CliffordString.__repr__`](#stim.CliffordString.__repr__)
     - [`stim.CliffordString.__setitem__`](#stim.CliffordString.__setitem__)
     - [`stim.CliffordString.__str__`](#stim.CliffordString.__str__)
@@ -5188,6 +5190,43 @@ def __init__(
     """
 ```
 
+<a name="stim.CliffordString.__ipow__"></a>
+```python
+# stim.CliffordString.__ipow__
+
+# (in class stim.CliffordString)
+def __ipow__(
+    self,
+    num_qubits: int,
+) -> object:
+    """Mutates the CliffordString into itself raised to a power.
+
+    Args:
+        power: The power to raise the CliffordString's Cliffords to.
+            This value can be negative (e.g. -1 inverts the string).
+
+    Returns:
+        The mutated Clifford string.
+
+    Examples:
+        >>> import stim
+
+        >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+        >>> p **= 3
+        >>> p
+        stim.CliffordString("I,X,H,S_DAG,I")
+
+        >>> p **= 2
+        >>> p
+        stim.CliffordString("I,I,I,Z,I")
+
+        >>> alias = p
+        >>> alias **= 2
+        >>> p
+        stim.CliffordString("I,I,I,I,I")
+    """
+```
+
 <a name="stim.CliffordString.__len__"></a>
 ```python
 # stim.CliffordString.__len__
@@ -5233,6 +5272,49 @@ def __ne__(
     arg0: stim.CliffordString,
 ) -> bool:
     """Determines if two Clifford strings have non-identical contents.
+    """
+```
+
+<a name="stim.CliffordString.__pow__"></a>
+```python
+# stim.CliffordString.__pow__
+
+# (in class stim.CliffordString)
+def __pow__(
+    self,
+    power: int,
+) -> stim.CliffordString:
+    """Returns the CliffordString raised to a power.
+
+    Args:
+        power: The power to raise the CliffordString's Cliffords to.
+            This value can be negative (e.g. -1 returns the inverse string).
+
+    Returns:
+        The Clifford string raised to the power.
+
+    Examples:
+        >>> import stim
+
+        >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+
+        >>> p**0
+        stim.CliffordString("I,I,I,I,I")
+
+        >>> p**1
+        stim.CliffordString("I,X,H,S,C_XYZ")
+
+        >>> p**12000001
+        stim.CliffordString("I,X,H,S,C_XYZ")
+
+        >>> p**2
+        stim.CliffordString("I,I,I,Z,C_ZYX")
+
+        >>> p**3
+        stim.CliffordString("I,X,H,S_DAG,I")
+
+        >>> p**-1
+        stim.CliffordString("I,X,H,S_DAG,C_ZYX")
     """
 ```
 

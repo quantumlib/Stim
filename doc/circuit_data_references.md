@@ -38,6 +38,7 @@
 - [arXiv:2412.01391](https://arxiv.org/abs/2412.01391) → [GitHub repo for "Transversal Logical Clifford gates on rotated surface codes with reconfigurable neutral atom arrays"](https://github.com/Zihan-Chen-PhMA/Dynamical-S-gate-decoding/) (circuits are in the circuit_garage/ directory)
 - [arXiv:2412.14256](https://arxiv.org/abs/2412.14256) → [Data for "Scaling and logic in the color code on a superconducting quantum processor"](https://zenodo.org/records/14238944)
 - [arXiv:2412.14360](https://arxiv.org/abs/2412.14360) → [Data for "Demonstrating dynamic surface codes"](https://zenodo.org/records/14238907)
+- [arXiv:2412.15187](https://arxiv.org/abs/2412.15187) → [Stim circuits and results for "Universal quantum computation via scalable measurement-free error correction"](https://zenodo.org/records/15707012)
 
 ## 2025
 
