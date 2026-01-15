@@ -109,6 +109,21 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitTargetsInsideInstruction.target_range_end`](#stim.CircuitTargetsInsideInstruction.target_range_end)
     - [`stim.CircuitTargetsInsideInstruction.target_range_start`](#stim.CircuitTargetsInsideInstruction.target_range_start)
     - [`stim.CircuitTargetsInsideInstruction.targets_in_range`](#stim.CircuitTargetsInsideInstruction.targets_in_range)
+- [`stim.CliffordString`](#stim.CliffordString)
+    - [`stim.CliffordString.__eq__`](#stim.CliffordString.__eq__)
+    - [`stim.CliffordString.__getitem__`](#stim.CliffordString.__getitem__)
+    - [`stim.CliffordString.__imul__`](#stim.CliffordString.__imul__)
+    - [`stim.CliffordString.__init__`](#stim.CliffordString.__init__)
+    - [`stim.CliffordString.__len__`](#stim.CliffordString.__len__)
+    - [`stim.CliffordString.__mul__`](#stim.CliffordString.__mul__)
+    - [`stim.CliffordString.__ne__`](#stim.CliffordString.__ne__)
+    - [`stim.CliffordString.__repr__`](#stim.CliffordString.__repr__)
+    - [`stim.CliffordString.__setitem__`](#stim.CliffordString.__setitem__)
+    - [`stim.CliffordString.__str__`](#stim.CliffordString.__str__)
+    - [`stim.CliffordString.random`](#stim.CliffordString.random)
+    - [`stim.CliffordString.x_outputs`](#stim.CliffordString.x_outputs)
+    - [`stim.CliffordString.y_outputs`](#stim.CliffordString.y_outputs)
+    - [`stim.CliffordString.z_outputs`](#stim.CliffordString.z_outputs)
 - [`stim.CompiledDemSampler`](#stim.CompiledDemSampler)
     - [`stim.CompiledDemSampler.sample`](#stim.CompiledDemSampler.sample)
     - [`stim.CompiledDemSampler.sample_write`](#stim.CompiledDemSampler.sample_write)
@@ -5027,6 +5042,426 @@ def targets_in_range(
     """
 ```
 
+<a name="stim.CliffordString"></a>
+```python
+# stim.CliffordString
+
+# (at top-level in the stim module)
+class CliffordString:
+    """A tensor product of single qubit Clifford gates (e.g. "H \u2297 X \u2297 S").
+
+    Represents a collection of Clifford operations applied pairwise to a
+    collection of qubits. Ignores global phase.
+
+    Examples:
+        >>> import stim
+        >>> stim.CliffordString("H,S,C_XYZ") * stim.CliffordString("H,H,H")
+        stim.CliffordString("I,C_ZYX,SQRT_X_DAG")
+    """
+```
+
+<a name="stim.CliffordString.__eq__"></a>
+```python
+# stim.CliffordString.__eq__
+
+# (in class stim.CliffordString)
+def __eq__(
+    self,
+    arg0: stim.CliffordString,
+) -> bool:
+    """Determines if two Clifford strings have identical contents.
+    """
+```
+
+<a name="stim.CliffordString.__getitem__"></a>
+```python
+# stim.CliffordString.__getitem__
+
+# (in class stim.CliffordString)
+@overload
+def __getitem__(
+    self,
+    index_or_slice: int,
+) -> stim.GateData:
+    pass
+@overload
+def __getitem__(
+    self,
+    index_or_slice: slice,
+) -> stim.CliffordString:
+    pass
+def __getitem__(
+    self,
+    index_or_slice: Union[int, slice],
+) -> Union[stim.GateData, stim.CliffordString]:
+    """Returns a Clifford or substring from the CliffordString.
+
+    Args:
+        index_or_slice: The index of the Clifford to return, or the slice
+            corresponding to the sub CliffordString to return.
+
+    Returns:
+        The indexed Clifford (as a stim.GateData instance) or the sliced
+        CliffordString.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.CliffordString("I,X,Y,Z,H")
+
+        >>> s[2]
+        stim.gate_data('Y')
+
+        >>> s[-1]
+        stim.gate_data('H')
+
+        >>> s[:-1]
+        stim.CliffordString("I,X,Y,Z")
+
+        >>> s[::2]
+        stim.CliffordString("I,Y,H")
+    """
+```
+
+<a name="stim.CliffordString.__imul__"></a>
+```python
+# stim.CliffordString.__imul__
+
+# (in class stim.CliffordString)
+def __imul__(
+    self,
+    arg0: stim.CliffordString,
+) -> stim.CliffordString:
+    """Returns the product of two CliffordString instances.
+
+    Examples:
+        >>> import stim
+        >>> x = stim.CliffordString("S,X,X")
+        >>> y = stim.CliffordString("S,Z,H,Z")
+        >>> alias = x
+        >>> alias *= y
+        >>> x
+        stim.CliffordString("Z,Y,SQRT_Y,Z")
+    """
+```
+
+<a name="stim.CliffordString.__init__"></a>
+```python
+# stim.CliffordString.__init__
+
+# (in class stim.CliffordString)
+def __init__(
+    self,
+    arg: Union[int, str, stim.CliffordString, stim.PauliString],
+    /,
+) -> None:
+    """Initializes a stim.CliffordString from the given argument.
+
+    Args:
+        arg [position-only]: This can be a variety of types, including:
+            int: initializes an identity Clifford string of the given length.
+            str: initializes by parsing a comma-separated list of gate names.
+            stim.CliffordString: initializes by copying the given Clifford string.
+            stim.PauliString: initializes by copying from the given Pauli string
+                (ignores the sign of the Pauli string).
+            Iterable: initializes by interpreting each item as a Clifford.
+                Each item can be a single-qubit Clifford gate name (like "SQRT_X")
+                or stim.GateData instance.
+
+    Examples:
+        >>> import stim
+
+        >>> stim.CliffordString(5)
+        stim.CliffordString("I,I,I,I,I")
+
+        >>> stim.CliffordString("X,Y,Z,SQRT_X")
+        stim.CliffordString("X,Y,Z,SQRT_X")
+
+        >>> stim.CliffordString(["H", stim.gate_data("S")])
+        stim.CliffordString("H,S")
+
+        >>> stim.CliffordString(stim.PauliString("XYZ"))
+        stim.CliffordString("X,Y,Z")
+
+        >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
+        stim.CliffordString("X,Y,Z")
+    """
+```
+
+<a name="stim.CliffordString.__len__"></a>
+```python
+# stim.CliffordString.__len__
+
+# (in class stim.CliffordString)
+def __len__(
+    self,
+) -> int:
+    """Returns the number of Clifford operations in the string.
+
+    Examples:
+        >>> import stim
+        >>> len(stim.CliffordString("I,X,Y,Z,H"))
+        5
+    """
+```
+
+<a name="stim.CliffordString.__mul__"></a>
+```python
+# stim.CliffordString.__mul__
+
+# (in class stim.CliffordString)
+def __mul__(
+    self,
+    arg0: stim.CliffordString,
+) -> stim.CliffordString:
+    """Returns the product of two CliffordString instances.
+
+    Examples:
+        >>> import stim
+        >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
+        stim.CliffordString("Z,Y,SQRT_Y,Z")
+    """
+```
+
+<a name="stim.CliffordString.__ne__"></a>
+```python
+# stim.CliffordString.__ne__
+
+# (in class stim.CliffordString)
+def __ne__(
+    self,
+    arg0: stim.CliffordString,
+) -> bool:
+    """Determines if two Clifford strings have non-identical contents.
+    """
+```
+
+<a name="stim.CliffordString.__repr__"></a>
+```python
+# stim.CliffordString.__repr__
+
+# (in class stim.CliffordString)
+def __repr__(
+    self,
+) -> str:
+    """Returns text that is a valid python expression evaluating to an equivalent `stim.CliffordString`.
+    """
+```
+
+<a name="stim.CliffordString.__setitem__"></a>
+```python
+# stim.CliffordString.__setitem__
+
+# (in class stim.CliffordString)
+def __setitem__(
+    self,
+    index_or_slice: Union[int, slice],
+    new_value: Union[str, stim.GateData, stim.CliffordString],
+) -> None:
+    """Returns a Clifford or substring from the CliffordString.
+
+    Args:
+        index_or_slice: The index of the Clifford to overwrite, or the slice
+            of Cliffords to overwrite.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.CliffordString("I,X,Y,Z,H")
+
+        >>> s[2]
+        stim.gate_data('Y')
+
+        >>> s[-1]
+        stim.gate_data('H')
+
+        >>> s[:-1]
+        stim.CliffordString("I,X,Y,Z")
+
+        >>> s[::2]
+        stim.CliffordString("I,Y,H")
+    """
+```
+
+<a name="stim.CliffordString.__str__"></a>
+```python
+# stim.CliffordString.__str__
+
+# (in class stim.CliffordString)
+def __str__(
+    self,
+) -> str:
+    """Returns a string representation of the CliffordString's operations.
+    """
+```
+
+<a name="stim.CliffordString.random"></a>
+```python
+# stim.CliffordString.random
+
+# (in class stim.CliffordString)
+@staticmethod
+def random(
+    num_qubits: int,
+) -> stim.CliffordString:
+    """Samples a uniformly random CliffordString.
+
+    Args:
+        num_qubits: The number of qubits the CliffordString should act upon.
+
+    Examples:
+        >>> import stim
+        >>> p = stim.CliffordString.random(5)
+        >>> len(p)
+        5
+
+    Returns:
+        The sampled Clifford string.
+    """
+```
+
+<a name="stim.CliffordString.x_outputs"></a>
+```python
+# stim.CliffordString.x_outputs
+
+# (in class stim.CliffordString)
+def x_outputs(
+    self,
+    *,
+    bit_packed_signs: bool = False,
+) -> Tuple[stim.PauliString, np.ndarray]:
+    """Returns what each Clifford in the CliffordString conjugates an X input into.
+
+    For example, H conjugates X into +Z and S_DAG conjugates X into -Y.
+
+    Combined with `z_outputs`, the results of this method completely specify
+    the single qubit Clifford applied to each qubit.
+
+    Args:
+        bit_packed_signs: Defaults to False. When False, the sign data is returned
+            in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+            `np.uint8` and 8 bits are packed into each byte (in little endian
+            order).
+
+    Returns:
+        A (paulis, signs) tuple.
+
+        `paulis` has type stim.PauliString. Its sign is always positive.
+
+        `signs` has type np.ndarray and an argument-dependent shape:
+            bit_packed_signs=False:
+                dtype=np.bool_
+                shape=(num_qubits,)
+            bit_packed_signs=True:
+                dtype=np.uint8
+                shape=(math.ceil(num_qubits / 8),)
+
+    Examples:
+        >>> import stim
+        >>> x_paulis, x_signs = stim.CliffordString("I,Y,H,S").x_outputs()
+        >>> x_paulis
+        stim.PauliString("+XXZY")
+        >>> x_signs
+        array([False,  True, False, False])
+
+        >>> stim.CliffordString("I,Y,H,S").x_outputs(bit_packed_signs=True)[1]
+        array([2], dtype=uint8)
+    """
+```
+
+<a name="stim.CliffordString.y_outputs"></a>
+```python
+# stim.CliffordString.y_outputs
+
+# (in class stim.CliffordString)
+def y_outputs(
+    self,
+    *,
+    bit_packed_signs: bool = False,
+) -> Tuple[stim.PauliString, np.ndarray]:
+    """Returns what each Clifford in the CliffordString conjugates a Y input into.
+
+    For example, H conjugates Y into -Y and S_DAG conjugates Y into +X.
+
+    Args:
+        bit_packed_signs: Defaults to False. When False, the sign data is returned
+            in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+            `np.uint8` and 8 bits are packed into each byte (in little endian
+            order).
+
+    Returns:
+        A (paulis, signs) tuple.
+
+        `paulis` has type stim.PauliString. Its sign is always positive.
+
+        `signs` has type np.ndarray and an argument-dependent shape:
+            bit_packed_signs=False:
+                dtype=np.bool_
+                shape=(num_qubits,)
+            bit_packed_signs=True:
+                dtype=np.uint8
+                shape=(math.ceil(num_qubits / 8),)
+
+    Examples:
+        >>> import stim
+        >>> y_paulis, y_signs = stim.CliffordString("I,X,H,S").y_outputs()
+        >>> y_paulis
+        stim.PauliString("+YYYX")
+        >>> y_signs
+        array([False,  True,  True,  True])
+
+        >>> stim.CliffordString("I,X,H,S").y_outputs(bit_packed_signs=True)[1]
+        array([14], dtype=uint8)
+    """
+```
+
+<a name="stim.CliffordString.z_outputs"></a>
+```python
+# stim.CliffordString.z_outputs
+
+# (in class stim.CliffordString)
+def z_outputs(
+    self,
+    *,
+    bit_packed_signs: bool = False,
+) -> Tuple[stim.PauliString, np.ndarray]:
+    """Returns what each Clifford in the CliffordString conjugates a Z input into.
+
+    For example, H conjugates Z into +X and SQRT_X conjugates Z into -Y.
+
+    Combined with `x_outputs`, the results of this method completely specify
+    the single qubit Clifford applied to each qubit.
+
+    Args:
+        bit_packed_signs: Defaults to False. When False, the sign data is returned
+            in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+            `np.uint8` and 8 bits are packed into each byte (in little endian
+            order).
+
+    Returns:
+        A (paulis, signs) tuple.
+
+        `paulis` has type stim.PauliString. Its sign is always positive.
+
+        `signs` has type np.ndarray and an argument-dependent shape:
+            bit_packed_signs=False:
+                dtype=np.bool_
+                shape=(num_qubits,)
+            bit_packed_signs=True:
+                dtype=np.uint8
+                shape=(math.ceil(num_qubits / 8),)
+
+    Examples:
+        >>> import stim
+        >>> z_paulis, z_signs = stim.CliffordString("I,Y,H,S").z_outputs()
+        >>> z_paulis
+        stim.PauliString("+ZZXZ")
+        >>> z_signs
+        array([False,  True, False, False])
+
+        >>> stim.CliffordString("I,Y,H,S").z_outputs(bit_packed_signs=True)[1]
+        array([2], dtype=uint8)
+    """
+```
+
 <a name="stim.CompiledDemSampler"></a>
 ```python
 # stim.CompiledDemSampler
@@ -9299,7 +9734,7 @@ def __init__(
     the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
     "X_", output pauli string "ZZ", and measurement indices [-1].
 
-    Arguments:
+    Args:
         arg [position-only]: Defaults to None. Must be specified by itself if used.
             str: Initializes a flow by parsing the given shorthand text.
             stim.Flow: Initializes a copy of the given flow.
@@ -11077,7 +11512,7 @@ def __init__(
     pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
     'Y', or 'Z'.
 
-    Arguments:
+    Args:
         arg [position-only]: This can be a variety of types, including:
             None (default): initializes an empty Pauli string.
             int: initializes an identity Pauli string of the given length.

@@ -48,7 +48,7 @@ struct ReferenceSampleTree {
     /// Helper method for `simplified`.
     void flatten_and_simplify_into(std::vector<ReferenceSampleTree> &out) const;
     /// Helper method for `operator[]`.
-    bool try_get_bit_value(uint64_t desired_absolute_index, uint64_t & current_absolute_index, bool & bit_value) const;
+    bool try_get_bit_value(uint64_t desired_absolute_index, uint64_t &current_absolute_index, bool &bit_value) const;
 };
 std::ostream &operator<<(std::ostream &out, const ReferenceSampleTree &v);
 

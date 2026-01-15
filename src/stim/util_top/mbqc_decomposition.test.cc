@@ -1,10 +1,9 @@
 #include "stim/util_top/mbqc_decomposition.h"
 
-#include <stim/util_bot/test_util.test.h>
-
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
+#include "stim/util_bot/test_util.test.h"
 #include "stim/util_top/has_flow.h"
 
 using namespace stim;
