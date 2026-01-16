@@ -23,6 +23,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
+
 pybind11::class_<CliffordString<MAX_BITWORD_WIDTH>> stim_pybind::pybind_clifford_string(pybind11::module &m) {
     return pybind11::class_<CliffordString<MAX_BITWORD_WIDTH>>(
         m,
@@ -97,7 +98,7 @@ void stim_pybind::pybind_clifford_string_methods(
             }
 
             if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(arg)) {
-                auto copy = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(arg);
+                auto copy = pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(arg);
                 return copy;
             }
 
@@ -170,36 +171,6 @@ void stim_pybind::pybind_clifford_string_methods(
 
                 >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
                 stim.CliffordString("X,Y,Z")
-        )DOC")
-            .data());
-
-    c.def(
-        "__imul__",
-        &CliffordString<MAX_BITWORD_WIDTH>::operator*=,
-        clean_doc_string(R"DOC(
-            Returns the product of two CliffordString instances.
-
-            Examples:
-                >>> import stim
-                >>> x = stim.CliffordString("S,X,X")
-                >>> y = stim.CliffordString("S,Z,H,Z")
-                >>> alias = x
-                >>> alias *= y
-                >>> x
-                stim.CliffordString("Z,Y,SQRT_Y,Z")
-        )DOC")
-            .data());
-
-    c.def(
-        "__mul__",
-        &CliffordString<MAX_BITWORD_WIDTH>::operator*,
-        clean_doc_string(R"DOC(
-            Returns the product of two CliffordString instances.
-
-            Examples:
-                >>> import stim
-                >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
-                stim.CliffordString("Z,Y,SQRT_Y,Z")
         )DOC")
             .data());
 
@@ -294,7 +265,7 @@ void stim_pybind::pybind_clifford_string_methods(
                     return;
                 } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
                     const CliffordString<MAX_BITWORD_WIDTH> &v =
-                        pybind11::cast<CliffordString<MAX_BITWORD_WIDTH>>(new_value);
+                        pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(new_value);
                     if (v.num_qubits != (size_t)slice_length) {
                         std::stringstream ss;
                         ss << "Length mismatch. The targeted slice covers " << slice_length;
@@ -515,6 +486,165 @@ void stim_pybind::pybind_clifford_string_methods(
 
                 >>> p**-1
                 stim.CliffordString("I,X,H,S_DAG,C_ZYX")
+        )DOC")
+            .data());
+
+    c.def(
+        "__add__",
+        &CliffordString<MAX_BITWORD_WIDTH>::operator+,
+        pybind11::arg("rhs"),
+        clean_doc_string(R"DOC(
+            Concatenates two CliffordStrings.
+
+            Args:
+                rhs: The suffix of the concatenation.
+
+            Returns:
+                The concatenated Clifford string.
+
+            Examples:
+                >>> import stim
+                >>> stim.CliffordString("I,X,H") + stim.CliffordString("Y,S")
+                stim.CliffordString("I,X,H,Y,S")
+        )DOC")
+            .data());
+
+    c.def(
+        "__iadd__",
+        &CliffordString<MAX_BITWORD_WIDTH>::operator+=,
+        pybind11::arg("rhs"),
+        clean_doc_string(R"DOC(
+            Mutates the CliffordString by concatenating onto it.
+
+            Args:
+                rhs: The suffix to concatenate onto the target CliffordString.
+
+            Returns:
+                The mutated Clifford string.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.CliffordString("I,X,H")
+                >>> alias = c
+                >>> alias += stim.CliffordString("Y,S")
+                >>> c
+                stim.CliffordString("I,X,H,Y,S")
+        )DOC")
+            .data());
+
+    c.def(
+        "__rmul__",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self, size_t rhs) -> CliffordString<MAX_BITWORD_WIDTH> {
+            return self * rhs;
+        },
+        pybind11::arg("lhs"),
+        clean_doc_string(R"DOC(
+            CliffordString left-multiplication.
+
+            Args:
+                lhs: The number of times to repeat the Clifford string's contents.
+
+            Returns:
+                The repeated Clifford string.
+
+            Examples:
+                >>> import stim
+
+                >>> 2 * stim.CliffordString("I,X,H")
+                stim.CliffordString("I,X,H,I,X,H")
+
+                >>> 0 * stim.CliffordString("I,X,H")
+                stim.CliffordString("")
+
+                >>> 5 * stim.CliffordString("I")
+                stim.CliffordString("I,I,I,I,I")
+        )DOC")
+            .data());
+
+    c.def(
+        "__mul__",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self, pybind11::object rhs) -> CliffordString<MAX_BITWORD_WIDTH> {
+            if (pybind11::isinstance<pybind11::int_>(rhs)) {
+                return self * pybind11::cast<size_t>(rhs);
+            } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(rhs)) {
+                return self * pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(rhs);
+            } else {
+                std::stringstream ss;
+                ss << "Don't know how to multiply by ";
+                ss << pybind11::repr(rhs);
+                throw std::invalid_argument(ss.str());
+            }
+        },
+        clean_doc_string(R"DOC(
+            @signature def __mul__(self, rhs: Union[stim.CliffordString, int]) -> stim.CliffordString:
+            CliffordString multiplication.
+
+            Args:
+                rhs: Either a stim.CliffordString or an int. If rhs is a
+                    stim.CliffordString, then the Cliffords from each string are multiplied
+                    pairwise. If rhs is an int, it is the number of times to repeat the
+                    Clifford string's contents.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
+                stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+                >>> stim.CliffordString("I,X,H") * 3
+                stim.CliffordString("I,X,H,I,X,H,I,X,H")
+        )DOC")
+            .data());
+
+    c.def(
+        "__imul__",
+        [](pybind11::object self_obj, pybind11::object rhs) -> pybind11::object {
+            CliffordString<MAX_BITWORD_WIDTH> &self = pybind11::cast<CliffordString<MAX_BITWORD_WIDTH> &>(self_obj);
+            if (pybind11::isinstance<pybind11::int_>(rhs)) {
+                self *= pybind11::cast<size_t>(rhs);
+                return self_obj;
+            } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(rhs)) {
+                self *= pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(rhs);
+                return self_obj;
+            } else {
+                std::stringstream ss;
+                ss << "Don't know how to multiply by ";
+                ss << pybind11::repr(rhs);
+                throw std::invalid_argument(ss.str());
+            }
+        },
+        pybind11::arg("rhs"),
+        clean_doc_string(R"DOC(
+            @signature def __imul__(self, rhs: Union[stim.CliffordString, int]) -> stim.CliffordString:
+            Inplace CliffordString multiplication.
+
+            Mutates the CliffordString into itself multiplied by another CliffordString
+            (via pairwise Clifford multipliation) or by an integer (via repeating the
+            contents).
+
+            Args:
+                rhs: Either a stim.CliffordString or an int. If rhs is a
+                    stim.CliffordString, then the Cliffords from each string are multiplied
+                    pairwise. If rhs is an int, it is the number of times to repeat the
+                    Clifford string's contents.
+
+            Returns:
+                The mutated Clifford string.
+
+            Examples:
+                >>> import stim
+
+                >>> c = stim.CliffordString("S,X,X")
+                >>> alias = c
+                >>> alias *= stim.CliffordString("S,Z,H,Z")
+                >>> c
+                stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+                >>> c = stim.CliffordString("I,X,H")
+                >>> alias = c
+                >>> alias *= 2
+                >>> c
+                stim.CliffordString("I,X,H,I,X,H")
         )DOC")
             .data());
 

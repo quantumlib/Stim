@@ -3900,6 +3900,23 @@ class CliffordString:
         >>> stim.CliffordString("H,S,C_XYZ") * stim.CliffordString("H,H,H")
         stim.CliffordString("I,C_ZYX,SQRT_X_DAG")
     """
+    def __add__(
+        self,
+        rhs: stim.CliffordString,
+    ) -> stim.CliffordString:
+        """Concatenates two CliffordStrings.
+
+        Args:
+            rhs: The suffix of the concatenation.
+
+        Returns:
+            The concatenated Clifford string.
+
+        Examples:
+            >>> import stim
+            >>> stim.CliffordString("I,X,H") + stim.CliffordString("Y,S")
+            stim.CliffordString("I,X,H,Y,S")
+        """
     def __eq__(
         self,
         arg0: stim.CliffordString,
@@ -3948,20 +3965,59 @@ class CliffordString:
             >>> s[::2]
             stim.CliffordString("I,Y,H")
         """
-    def __imul__(
+    def __iadd__(
         self,
-        arg0: stim.CliffordString,
+        rhs: stim.CliffordString,
     ) -> stim.CliffordString:
-        """Returns the product of two CliffordString instances.
+        """Mutates the CliffordString by concatenating onto it.
+
+        Args:
+            rhs: The suffix to concatenate onto the target CliffordString.
+
+        Returns:
+            The mutated Clifford string.
 
         Examples:
             >>> import stim
-            >>> x = stim.CliffordString("S,X,X")
-            >>> y = stim.CliffordString("S,Z,H,Z")
-            >>> alias = x
-            >>> alias *= y
-            >>> x
+            >>> c = stim.CliffordString("I,X,H")
+            >>> alias = c
+            >>> alias += stim.CliffordString("Y,S")
+            >>> c
+            stim.CliffordString("I,X,H,Y,S")
+        """
+    def __imul__(
+        self,
+        rhs: Union[stim.CliffordString, int],
+    ) -> stim.CliffordString:
+        """Inplace CliffordString multiplication.
+
+        Mutates the CliffordString into itself multiplied by another CliffordString
+        (via pairwise Clifford multipliation) or by an integer (via repeating the
+        contents).
+
+        Args:
+            rhs: Either a stim.CliffordString or an int. If rhs is a
+                stim.CliffordString, then the Cliffords from each string are multiplied
+                pairwise. If rhs is an int, it is the number of times to repeat the
+                Clifford string's contents.
+
+        Returns:
+            The mutated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> c = stim.CliffordString("S,X,X")
+            >>> alias = c
+            >>> alias *= stim.CliffordString("S,Z,H,Z")
+            >>> c
             stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+            >>> c = stim.CliffordString("I,X,H")
+            >>> alias = c
+            >>> alias *= 2
+            >>> c
+            stim.CliffordString("I,X,H,I,X,H")
         """
     def __init__(
         self,
@@ -4041,14 +4097,24 @@ class CliffordString:
         """
     def __mul__(
         self,
-        arg0: stim.CliffordString,
+        rhs: Union[stim.CliffordString, int],
     ) -> stim.CliffordString:
-        """Returns the product of two CliffordString instances.
+        """CliffordString multiplication.
+
+        Args:
+            rhs: Either a stim.CliffordString or an int. If rhs is a
+                stim.CliffordString, then the Cliffords from each string are multiplied
+                pairwise. If rhs is an int, it is the number of times to repeat the
+                Clifford string's contents.
 
         Examples:
             >>> import stim
+
             >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
             stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+            >>> stim.CliffordString("I,X,H") * 3
+            stim.CliffordString("I,X,H,I,X,H,I,X,H")
         """
     def __ne__(
         self,
@@ -4096,6 +4162,30 @@ class CliffordString:
         self,
     ) -> str:
         """Returns text that is a valid python expression evaluating to an equivalent `stim.CliffordString`.
+        """
+    def __rmul__(
+        self,
+        lhs: int,
+    ) -> stim.CliffordString:
+        """CliffordString left-multiplication.
+
+        Args:
+            lhs: The number of times to repeat the Clifford string's contents.
+
+        Returns:
+            The repeated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> 2 * stim.CliffordString("I,X,H")
+            stim.CliffordString("I,X,H,I,X,H")
+
+            >>> 0 * stim.CliffordString("I,X,H")
+            stim.CliffordString("")
+
+            >>> 5 * stim.CliffordString("I")
+            stim.CliffordString("I,I,I,I,I")
         """
     def __setitem__(
         self,
