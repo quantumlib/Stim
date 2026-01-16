@@ -393,7 +393,7 @@ void stim_pybind::pybind_clifford_string_methods(
 
     c.def_static(
         "all_cliffords_string",
-        []() -> CliffordString<256> {
+        []() -> CliffordString<MAX_BITWORD_WIDTH> {
             CliffordString<MAX_BITWORD_WIDTH> result(24);
             result.set_gate_at(0, GateType::I);
             result.set_gate_at(4, GateType::H_XY);
