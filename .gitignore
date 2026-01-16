@@ -44,3 +44,6 @@ build.ninja
 node_modules
 MODULE.bazel.lock
 .ninja_lock
+crumble_js
+bundle.js
+.ipynb_checkpoints
