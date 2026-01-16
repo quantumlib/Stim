@@ -8,6 +8,7 @@ from typing import Tuple
 
 keep = {
     "__add__",
+    "__ipow__",
     "__radd__",
     "__eq__",
     "__call__",
@@ -72,6 +73,8 @@ skip = {
     "__post_init__",
     "__weakref__",
     "__abstractmethods__",
+    "__annotate_func__",
+    "__annotations_cache__",
 }
 
 

@@ -92,6 +92,7 @@
 #include "stim/simulators/sparse_rev_frame_tracker.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
+#include "stim/stabilizers/clifford_string.h"
 #include "stim/stabilizers/flex_pauli_string.h"
 #include "stim/stabilizers/flow.h"
 #include "stim/stabilizers/pauli_string.h"

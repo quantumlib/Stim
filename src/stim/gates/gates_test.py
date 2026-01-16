@@ -51,9 +51,63 @@ stim.GateData {
     '''.strip()
 
 
+def test_num_parens_arguments_range():
+    assert stim.gate_data('H').num_parens_arguments_range == range(0, 1)
+    assert stim.gate_data('M').num_parens_arguments_range == range(0, 2)
+
+
+def test_is_reset():
+    assert not stim.gate_data('H').is_reset
+    assert stim.gate_data('R').is_reset
+    assert stim.gate_data('MR').is_reset
+
+
+def test_is_two_qubit_gate():
+    assert not stim.gate_data('H').is_two_qubit_gate
+    assert stim.gate_data('CX').is_two_qubit_gate
+
+
+def test_is_single_qubit_gate():
+    assert stim.gate_data('H').is_single_qubit_gate
+    assert not stim.gate_data('CX').is_single_qubit_gate
+
+
+def test_is_noisy_gate():
+    assert stim.gate_data('X_ERROR').is_noisy_gate
+    assert not stim.gate_data('X').is_noisy_gate
+
+
+def test_produces_measurements():
+    assert stim.gate_data('MR').produces_measurements
+    assert not stim.gate_data('R').produces_measurements
+
+
+def test_takes_pauli_targets():
+    assert stim.gate_data('MPP').takes_pauli_targets
+    assert not stim.gate_data('MXX').takes_pauli_targets
+
+
+def test_aliases():
+    assert stim.gate_data('H').aliases == ['H', 'H_XZ']
+    assert stim.gate_data('CX').aliases == ['CNOT', 'CX', 'ZCX']
+
+
+def test_tableau():
+    assert stim.gate_data('H').tableau == stim.Tableau.from_named_gate('H')
+
+
+def test_name():
+    assert stim.gate_data('H').name == 'H'
+
+
 def test_gate_data_repr():
     val = stim.GateData('MPP')
     assert eval(repr(val), {"stim": stim}) == val
+
+
+def test_takes_measurement_record_targets():
+    assert not stim.gate_data('H').takes_measurement_record_targets
+    assert stim.gate_data('DETECTOR').takes_measurement_record_targets
 
 
 def test_gate_data_inverse():

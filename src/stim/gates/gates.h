@@ -383,6 +383,13 @@ struct GateDataMap {
         return items[(uint64_t)g];
     }
 
+    inline const Gate &at(GateType g) const {
+        if ((uint8_t)g >= items.size()) {
+            throw std::out_of_range("Gate index out of range");
+        }
+        return items[(uint8_t)g];
+    }
+
     inline const Gate &at(std::string_view text) const {
         auto h = gate_name_to_hash(text);
         const auto &entry = hashed_name_to_gate_type_table[h];

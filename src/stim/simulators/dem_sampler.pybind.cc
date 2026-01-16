@@ -308,7 +308,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
         pybind11::arg("replay_err_in_file") = pybind11::none(),
         pybind11::arg("replay_err_in_format") = "01",
         clean_doc_string(R"DOC(
-            @signature def sample_write(self, shots: int, *, det_out_file: Union[None, str, pathlib.Path], det_out_format: str = "01", obs_out_file: Union[None, str, pathlib.Path], obs_out_format: str = "01", err_out_file: Union[None, str, pathlib.Path] = None, err_out_format: str = "01", replay_err_in_file: Union[None, str, pathlib.Path] = None, replay_err_in_format: str = "01") -> None:
+            @signature def sample_write(self, shots: int, *, det_out_file: Union[None, str, pathlib.Path], det_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', obs_out_file: Union[None, str, pathlib.Path], obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', err_out_file: Union[None, str, pathlib.Path] = None, err_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', replay_err_in_file: Union[None, str, pathlib.Path] = None, replay_err_in_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01') -> None:
             Samples the detector error model and writes the results to disk.
 
             Args:
