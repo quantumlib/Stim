@@ -169,6 +169,52 @@ struct CliffordString {
         return result;
     }
 
+    CliffordString<W> operator+(const CliffordString<W> &other) const {
+        if (num_qubits + other.num_qubits < num_qubits) {
+            throw std::invalid_argument("Couldn't concatenate Clifford strings due to size overflowing.");
+        }
+        CliffordString<W> result(num_qubits + other.num_qubits);
+        for (size_t k = 0; k < num_qubits; k++) {
+            result.set_gate_at(k, gate_at(k));
+        }
+        for (size_t k = 0; k < other.num_qubits; k++) {
+            result.set_gate_at(num_qubits + k, other.gate_at(k));
+        }
+        return result;
+    }
+
+    CliffordString<W> &operator+=(const CliffordString<W> &other) {
+        CliffordString<W> tmp = *this + other;
+        *this = std::move(tmp);
+        return *this;
+    }
+
+    CliffordString<W> operator*(size_t repetitions) const {
+        if (repetitions == 0) {
+            return CliffordString<W>(0);
+        }
+
+        size_t new_num_qubits = num_qubits * repetitions;
+        if (new_num_qubits / repetitions != num_qubits) {
+            throw std::invalid_argument("Couldn't repeat CliffordString due to size overflowing.");
+        }
+
+        CliffordString<W> result(new_num_qubits);
+        for (size_t k = 0; k < num_qubits; k++) {
+            GateType g = gate_at(k);
+            for (size_t k2 = k; k2 < new_num_qubits; k2 += num_qubits) {
+                result.set_gate_at(k2, g);
+            }
+        }
+        return result;
+    }
+
+    CliffordString<W> &operator*=(size_t repetitions) {
+        CliffordString<W> tmp = *this * repetitions;
+        *this = std::move(tmp);
+        return *this;
+    }
+
     /// Extracts rotations k*W through (k+1)*W into a CliffordWord<W>.
     inline CliffordWord<bitword<W>> word_at(size_t k) const {
         return CliffordWord<bitword<W>>{
