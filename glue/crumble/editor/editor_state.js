@@ -226,7 +226,7 @@ class EditorState {
     clearMarkers() {
         let c = this.copyOfCurCircuit();
         for (let layer of c.layers) {
-            layer.markers = layer.markers.filter(e => e.gate.name !== 'MARKX' && e.gate.name !== 'MARKY' && e.gate.name !== 'MARKZ');
+            layer.markers = layer.markers.filter(e => !e.gate.name.endsWith('MARKX') && !e.gate.name.endsWith('MARKY') && !e.gate.name.endsWith('MARKZ'));
         }
         this.commit(c);
     }
