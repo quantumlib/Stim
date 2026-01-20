@@ -120,6 +120,18 @@ struct CliffordString;
 template <size_t W>
 std::ostream &operator<<(std::ostream &out, const CliffordString<W> &v);
 
+template <size_t W>
+GateType single_qubit_tableau_to_gate_type(const stim::Tableau<W> &tableau) {
+    return bits2gate(std::array<bool, 6>{
+        tableau.zs.signs[0],
+        tableau.xs.signs[0],
+        !tableau.xs.xt[0][0],
+        tableau.xs.zt[0][0],
+        tableau.zs.xt[0][0],
+        !tableau.zs.zt[0][0],
+    });
+}
+
 /// A string of single-qubit Clifford rotations.
 template <size_t W>
 struct CliffordString {

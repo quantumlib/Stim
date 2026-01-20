@@ -110,6 +110,36 @@ void stim_pybind::pybind_clifford_string_methods(
                 return result;
             }
 
+            if (pybind11::isinstance<Circuit>(arg)) {
+                const Circuit &circuit = pybind11::cast<const Circuit &>(arg);
+                size_t n = circuit.count_qubits();
+                CliffordString<MAX_BITWORD_WIDTH> result(n);
+                CliffordString<MAX_BITWORD_WIDTH> buffer(1);
+                circuit.for_each_operation([&](const CircuitInstruction &op) {
+                    const Gate &gate = GATE_DATA[op.gate_type];
+                    if ((gate.flags & GATE_IS_UNITARY) && (gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
+                        for (const auto &target : op.targets) {
+                            uint32_t q = target.qubit_value();
+                            buffer.set_gate_at(q % MAX_BITWORD_WIDTH, op.gate_type);
+                            result.set_word_at(q / MAX_BITWORD_WIDTH, buffer.word_at(0) * result.word_at(q / MAX_BITWORD_WIDTH));
+                            buffer.set_gate_at(q % MAX_BITWORD_WIDTH, GateType::I);
+                        }
+                    } else {
+                        switch (op.gate_type) {
+                        case GateType::QUBIT_COORDS:
+                        case GateType::SHIFT_COORDS:
+                        case GateType::DETECTOR:
+                        case GateType::OBSERVABLE_INCLUDE:
+                        case GateType::TICK:
+                            break;
+                        default:
+                            throw std::invalid_argument("Don't know how to convert circuit instruction into single qubit Clifford operations: " + op.str());
+                        }
+                    }
+                });
+                return result;
+            }
+
             pybind11::module collections = pybind11::module::import("collections.abc");
             pybind11::object iterable_type = collections.attr("Iterable");
             if (pybind11::isinstance(arg, iterable_type)) {
@@ -140,7 +170,7 @@ void stim_pybind::pybind_clifford_string_methods(
         pybind11::arg("arg"),
         pybind11::pos_only(),
         clean_doc_string(R"DOC(
-            @signature def __init__(self, arg: Union[int, str, stim.CliffordString, stim.PauliString], /) -> None:
+            @signature def __init__(self, arg: Union[int, str, stim.CliffordString, stim.PauliString, stim.Circuit], /) -> None:
             Initializes a stim.CliffordString from the given argument.
 
             Args:
@@ -150,6 +180,9 @@ void stim_pybind::pybind_clifford_string_methods(
                     stim.CliffordString: initializes by copying the given Clifford string.
                     stim.PauliString: initializes by copying from the given Pauli string
                         (ignores the sign of the Pauli string).
+                    stim.Circuit: initializes a CliffordString equivalent to the action
+                        of the circuit (as long as the circuit only contains single qubit
+                        unitary operations and annotations).
                     Iterable: initializes by interpreting each item as a Clifford.
                         Each item can be a single-qubit Clifford gate name (like "SQRT_X")
                         or stim.GateData instance.
@@ -171,6 +204,15 @@ void stim_pybind::pybind_clifford_string_methods(
 
                 >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
                 stim.CliffordString("X,Y,Z")
+
+                >>> stim.CliffordString(stim.Circuit('''
+                ...     H 0 1 2
+                ...     S 2 3
+                ...     TICK
+                ...     S 3
+                ...     I 6
+                ... '''))
+                stim.CliffordString("H,H,C_ZYX,Z,I,I,I")
         )DOC")
             .data());
 
@@ -248,44 +290,63 @@ void stim_pybind::pybind_clifford_string_methods(
            const pybind11::object &index_or_slice,
            const pybind11::object &new_value) {
             pybind11::ssize_t index, step, slice_length;
-            if (normalize_index_or_slice(index_or_slice, self.num_qubits, &index, &step, &slice_length)) {
-                if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
-                    GateType g = pybind11::cast<GateTypeWrapper>(new_value).type;
+            bool is_slice = normalize_index_or_slice(index_or_slice, self.num_qubits, &index, &step, &slice_length);
+            if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
+                GateType g = pybind11::cast<GateTypeWrapper>(new_value).type;
+                for (size_t k = 0; k < (size_t)slice_length; k++) {
+                    size_t target_k = index + step * k;
+                    self.set_gate_at(target_k, g);
+                }
+                return;
+            } else if (pybind11::isinstance<pybind11::str>(new_value)) {
+                GateType g = GATE_DATA.at(pybind11::cast<std::string_view>(new_value)).id;
+                for (size_t k = 0; k < (size_t)slice_length; k++) {
+                    size_t target_k = index + step * k;
+                    self.set_gate_at(target_k, g);
+                }
+                return;
+            } else if (pybind11::isinstance<Tableau<MAX_BITWORD_WIDTH>>(new_value)) {
+                const Tableau<MAX_BITWORD_WIDTH> &t = pybind11::cast<const Tableau<MAX_BITWORD_WIDTH> &>(new_value);
+                if (t.num_qubits == 1) {
+                    GateType g = single_qubit_tableau_to_gate_type(t);
                     for (size_t k = 0; k < (size_t)slice_length; k++) {
                         size_t target_k = index + step * k;
                         self.set_gate_at(target_k, g);
                     }
                     return;
-                } else if (pybind11::isinstance<pybind11::str>(new_value)) {
-                    GateType g = GATE_DATA.at(pybind11::cast<std::string_view>(new_value)).id;
-                    for (size_t k = 0; k < (size_t)slice_length; k++) {
-                        size_t target_k = index + step * k;
-                        self.set_gate_at(target_k, g);
-                    }
-                    return;
-                } else if (pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
-                    const CliffordString<MAX_BITWORD_WIDTH> &v =
-                        pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(new_value);
-                    if (v.num_qubits != (size_t)slice_length) {
-                        std::stringstream ss;
-                        ss << "Length mismatch. The targeted slice covers " << slice_length;
-                        ss << " values but the given CliffordString has " << v.num_qubits << " values.";
-                        throw std::invalid_argument(ss.str());
-                    }
-                    for (size_t k = 0; k < (size_t)slice_length; k++) {
-                        size_t target_k = index + step * k;
-                        self.set_gate_at(target_k, v.gate_at(k));
-                    }
-                    return;
                 }
-            } else {
-                if (pybind11::isinstance<GateTypeWrapper>(new_value)) {
-                    self.set_gate_at(index, pybind11::cast<GateTypeWrapper>(new_value).type);
-                    return;
-                } else if (pybind11::isinstance<pybind11::str>(new_value)) {
-                    self.set_gate_at(index, GATE_DATA.at(pybind11::cast<std::string_view>(new_value)).id);
-                    return;
+            } else if (is_slice && pybind11::isinstance<CliffordString<MAX_BITWORD_WIDTH>>(new_value)) {
+                const CliffordString<MAX_BITWORD_WIDTH> &v =
+                    pybind11::cast<const CliffordString<MAX_BITWORD_WIDTH> &>(new_value);
+                if (v.num_qubits != (size_t)slice_length) {
+                    std::stringstream ss;
+                    ss << "Length mismatch. The targeted slice covers " << slice_length;
+                    ss << " values but the given CliffordString has " << v.num_qubits << " values.";
+                    throw std::invalid_argument(ss.str());
                 }
+                for (size_t k = 0; k < (size_t)slice_length; k++) {
+                    size_t target_k = index + step * k;
+                    self.set_gate_at(target_k, v.gate_at(k));
+                }
+                return;
+            } else if (is_slice && pybind11::isinstance<FlexPauliString>(new_value)) {
+                const FlexPauliString &v = pybind11::cast<const FlexPauliString &>(new_value);
+                if (v.value.num_qubits != (size_t)slice_length) {
+                    std::stringstream ss;
+                    ss << "Length mismatch. The targeted slice covers " << slice_length;
+                    ss << " values but the given PauliString has " << v.value.num_qubits << " values.";
+                    throw std::invalid_argument(ss.str());
+                }
+                for (size_t k = 0; k < (size_t)slice_length; k++) {
+                    size_t target_k = index + step * k;
+                    self.inv_x2x[target_k] = 0;
+                    self.x2z[target_k] = 0;
+                    self.z2x[target_k] = 0;
+                    self.inv_z2z[target_k] = 0;
+                    self.x_signs[target_k] = v.value.zs[k];
+                    self.z_signs[target_k] = v.value.xs[k];
+                }
+                return;
             }
 
             std::stringstream ss;
@@ -298,7 +359,7 @@ void stim_pybind::pybind_clifford_string_methods(
         pybind11::arg("index_or_slice"),
         pybind11::arg("new_value"),
         clean_doc_string(R"DOC(
-            @signature def __setitem__(self, index_or_slice: Union[int, slice], new_value: Union[str, stim.GateData, stim.CliffordString]) -> None:
+            @signature def __setitem__(self, index_or_slice: Union[int, slice], new_value: Union[str, stim.GateData, stim.CliffordString, stim.PauliString, stim.Tableau]) -> None:
             Overwrites an indexed Clifford, or slice of Cliffords, with the given value.
 
             Args:
@@ -310,7 +371,10 @@ void stim_pybind::pybind_clifford_string_methods(
                         broadcast over the slice.
                     - stim.GateData: The single qubit Clifford gate to write to the index
                         or broadcast over the slice.
-                    - stim.CliffordString: Values to write into the slice.
+                    - stim.Tableau: Must be a single qubit tableau. Specifies the single
+                        qubit Clifford gate to write to the index or broadcast over the
+                        slice.
+                    - stim.CliffordString: String of Cliffords to write into the slice.
 
             Examples:
                 >>> import stim
@@ -335,6 +399,18 @@ void stim_pybind::pybind_clifford_string_methods(
                 >>> s[::2] = stim.CliffordString("X,Y,Z")
                 >>> s
                 stim.CliffordString("X,I,Y,I,Z")
+
+                >>> s[0] = stim.Tableau.from_named_gate("H")
+                >>> s
+                stim.CliffordString("H,I,Y,I,Z")
+
+                >>> s[:] = stim.Tableau.from_named_gate("S")
+                >>> s
+                stim.CliffordString("S,S,S,S,S")
+
+                >>> s[:4] = stim.PauliString("IXYZ")
+                >>> s
+                stim.CliffordString("I,X,Y,Z,S")
         )DOC")
             .data());
 
@@ -506,6 +582,30 @@ void stim_pybind::pybind_clifford_string_methods(
                 >>> import stim
                 >>> stim.CliffordString("I,X,H") + stim.CliffordString("Y,S")
                 stim.CliffordString("I,X,H,Y,S")
+        )DOC")
+            .data());
+
+    c.def(
+        "copy",
+        [](const CliffordString<MAX_BITWORD_WIDTH> &self) -> CliffordString<MAX_BITWORD_WIDTH> {
+            return self;
+        },
+        clean_doc_string(R"DOC(
+            Returns a copy of the CliffordString.
+
+            Returns:
+                The copy.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.CliffordString("H,X")
+                >>> alias = c
+                >>> copy = c.copy()
+                >>> c *= 5
+                >>> alias
+                stim.CliffordString("H,X,H,X,H,X,H,X,H,X")
+                >>> copy
+                stim.CliffordString("H,X")
         )DOC")
             .data());
 
