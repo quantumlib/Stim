@@ -117,6 +117,35 @@ def _run_processes_in_parallel(action_name, commands: list[list[str]]):
                 pass
 
 
+def find_cl_exe() -> str:
+    program_files = os.environ.get("ProgramFiles(x86)")
+    if program_files is None:
+        return 'cl.exe'
+
+    vswhere = pathlib.Path(program_files) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
+    if not vswhere.exists():
+        return 'cl.exe'
+
+    vs_root = subprocess.check_output([
+        str(vswhere),
+        "-latest",
+        "-products", "*",
+        "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "-property", "installationPath"
+    ], encoding='utf-8').strip()
+    if not vs_root:
+        return 'cl.exe'
+
+    msvc_root = pathlib.Path(vs_root) / "VC" / "Tools" / "MSVC"
+    version = sorted(msvc_root.iterdir())[-1].name
+    arch = "x64" if platform.machine().lower() in ("amd64", "x86_64") else "x86"
+    cl_path = msvc_root / version / "bin" / f"Host{arch}" / arch / "cl.exe"
+    if not cl_path.exists():
+        return 'cl.exe'
+
+    return str(cl_path)
+
+
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     wheel_name = f'stim-{__version__}-{_get_wheel_tag()}.whl'
     wheel_path = pathlib.Path(wheel_directory) / wheel_name
@@ -139,7 +168,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
         compiler = os.environ.get('CXX', None)
     if compiler is None:
         if is_windows:
-            compiler = 'cl.exe'
+            compiler = find_cl_exe()
         else:
             compiler = 'g++'
 
@@ -149,7 +178,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
         linker = config_settings.get("linker", None)
     if linker is None:
         if is_windows:
-            linker = 'link.exe'
+            linker = find_cl_exe()[:-6] + 'link.exe'
         else:
             linker = compiler
 
