@@ -70,7 +70,14 @@ def _get_content_hash(content: bytes) -> str:
     return f"sha256={hash_str},{len(content)}"
 
 
-def run_processes_in_parallel(action_name, commands: list[list[str]]):
+def _run_processes_in_parallel(action_name, commands: list[list[str]]):
+    """You're not gonna believe this, but this method...
+
+    ...runs processes in parallel.
+
+    It avoids starting more processes while cpu_count of them
+    are currently running.
+    """
     running = []
     try:
         cpus = os.cpu_count()
@@ -101,8 +108,7 @@ def run_processes_in_parallel(action_name, commands: list[list[str]]):
             left -= 1
             if left:
                 print(f"# {action_name} (remaining={left} running={len(running)})", file=sys.stderr)
-        print(f"# done {action_name}")
-
+        print(f"# done {action_name}", file=sys.stderr)
     finally:
         for r in running:
             try:
@@ -124,6 +130,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
     RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
+    is_windows = platform.system().lower().startswith('win')
     # Determine the compiler to use.
     compiler = None
     if compiler is None and config_settings is not None:
@@ -131,7 +138,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     if compiler is None:
         compiler = os.environ.get('CXX', None)
     if compiler is None:
-        if platform.system().startswith('Win'):
+        if is_windows:
             compiler = 'cl.exe'
         else:
             compiler = 'g++'
@@ -141,75 +148,122 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     if linker is None and config_settings is not None:
         linker = config_settings.get("linker", None)
     if linker is None:
-        linker = compiler
+        if is_windows:
+            linker = 'link.exe'
+        else:
+            linker = compiler
 
     # Plan out compiler and linker commands.
     configs = {
         '_detect_machine_architecture': ((), MUX_SOURCE_FILES),
         '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
-        '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
+        '_stim_sse2': (
+            ('/arch:SSE2',) if is_windows else ('-msse2', '-mno-avx2',),
+            RELEVANT_SOURCE_FILES,
+        ),
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # '_stim_avx': (('-msse2', '-mavx2',), RELEVANT_SOURCE_FILES),
     }
 
+    if is_windows:
+        so = 'pyd'
+    else:
+        so = 'so'
+
     with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir = pathlib.Path(temp_dir)
-        compile_commands = []
-        link_commands = []
+        link_outputs = []
+        temp_dir: pathlib.Path = pathlib.Path(temp_dir)
+        compile_commands: list[list[str]] = []
+        link_commands: list[list[str]] = []
         for name, (flags, files) in configs.items():
             object_paths = []
             for src_path in files:
-                out_path = str(temp_dir / name / src_path) + ".o"
+                out_path: str = str(temp_dir / name / src_path) + ".o"
                 object_paths.append(out_path)
                 pathlib.Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-                compiler_args = [
-                    compiler,
-                    "-c", src_path,
-                    "-o", out_path,
-                    "-Isrc",
-                    f"-I{pybind11.get_include()}",
-                    f"-I{sysconfig.get_path('include')}",
-                    "-Wall",
-                    "-fPIC",
-                    "-std=c++20",
-                    "-fno-strict-aliasing",
-                    "-fvisibility=hidden",
-                    "-O3",
-                    "-g0",
-                    "-DNDEBUG",
-                    f"-DVERSION_INFO={__version__}",
-                    f"-DSTIM_PYBIND11_MODULE_NAME={name}",
-                    *flags,
-                ]
-                compile_commands.append(compiler_args)
-            link_commands.append([
-                linker,
-                "-shared",
-                f"-DVERSION_INFO={__version__}",
-                "-o", str(temp_dir / name / f"{name}.so"),
-                *object_paths,
-            ])
+                if is_windows:
+                    compile_commands.append([
+                        compiler,
+                        "/c", src_path,
+                        f"/Fo{out_path}",
+                        "/Isrc",
+                        f"/I{pybind11.get_include()}",
+                        f"/I{sysconfig.get_path('include')}",
+                        "/W4",
+                        "/std=c++20",
+                        "/O2",
+                        "/MD",
+                        "/EHsc",
+                        "/nologo",
+                        "/DNDEBUG",
+                        f"/DVERSION_INFO={__version__}",
+                        f"/DSTIM_PYBIND11_MODULE_NAME={name}",
+                        *flags,
+                    ])
+                else:
+                    compile_commands.append([
+                        compiler,
+                        "-c", src_path,
+                        "-o", out_path,
+                        "-Isrc",
+                        f"-I{pybind11.get_include()}",
+                        f"-I{sysconfig.get_path('include')}",
+                        "-Wall",
+                        "-fPIC",
+                        "-std=c++20",
+                        "-fno-strict-aliasing",
+                        "-fvisibility=hidden",
+                        "-O3",
+                        "-g0",
+                        "-DNDEBUG",
+                        f"-DVERSION_INFO={__version__}",
+                        f"-DSTIM_PYBIND11_MODULE_NAME={name}",
+                        *flags,
+                    ])
+            link_out = str(temp_dir / name / f'{name}.{so}')
+            if is_windows:
+                link_commands.append([
+                    linker,
+                    "/DLL",
+                    f"/OUT:{link_out}",
+                    "/nologo",
+                    f"/LIBPATH:{pathlib.Path(sysconfig.get_config_var('BINDIR')) / 'libs'}",
+                    *object_paths,
+                ])
+            else:
+                link_commands.append([
+                    linker,
+                    "-shared",
+                    "-o", link_out,
+                    *object_paths,
+                ])
 
         # Perform compilation and linking.
-        run_processes_in_parallel("compiling", compile_commands)
-        run_processes_in_parallel("linking", link_commands)
+        _run_processes_in_parallel("compiling", compile_commands)
+        _run_processes_in_parallel("linking", link_commands)
 
-        # Create the wheel file.
+        # Define the files to put into the wheel file.
         files: dict[str, bytes] = {}
-
-        for name in configs.keys():
-            with open(temp_dir / name / f'{name}.so', 'rb') as f:
-                files[f'stim/{name}' + sysconfig.get_config_var('EXT_SUFFIX')] = f.read()
-
         dist_info_dir = f"stim-{__version__}.dist-info"
+        files[f'{dist_info_dir}/top_level.txt'] = "stim".encode('UTF-8')
+        files[f'{dist_info_dir}/WHEEL'] = f"""
+Wheel-Version: 1.0
+Generator: stim_custom_setup
+Root-Is-Purelib: false
+Tag: {_get_wheel_tag()}
+""".lstrip().encode('UTF-8')
+        with open('LICENSE', 'rb') as f:
+            files[f'{dist_info_dir}/license/LICENSE'] = f.read()
+        for file in pathlib.Path("glue/python/src/stim").iterdir():
+            with open(file, 'rb') as f:
+                files[f'stim/{file.name}'] = f.read()
+        for name in configs.keys():
+            with open(temp_dir / name / f'{name}.{so}', 'rb') as f:
+                files[f'stim/{name}' + sysconfig.get_config_var('EXT_SUFFIX')] = f.read()
         files[f'{dist_info_dir}/entry_points.txt'] = """
 [console_scripts]
 stim = stim._main_argv:main_argv
 """.strip().encode('UTF-8')
-
-        with open('LICENSE', 'rb') as f:
-            files[f'{dist_info_dir}/license/LICENSE'] = f.read()
-
         with open('glue/python/README.md', encoding='UTF-8') as f:
             files[f'{dist_info_dir}/METADATA'] = ("""
 Metadata-Version: 2.4
@@ -227,28 +281,16 @@ Requires-Dist: numpy
 
 """.lstrip() + f.read()).encode('UTF-8')
 
-        files[f'{dist_info_dir}/top_level.txt'] = "stim".encode('UTF-8')
-
-        files[f'{dist_info_dir}/WHEEL'] = f"""
-Wheel-Version: 1.0
-Generator: stim_custom_setup
-Root-Is-Purelib: false
-Tag: {_get_wheel_tag()}
-""".lstrip().encode('UTF-8')
-
-        for file in pathlib.Path("glue/python/src/stim").iterdir():
-            with open(file, 'rb') as f:
-                files[f'stim/{file.name}'] = f.read()
-
-        records = []
+        # Record files and their hashes in the RECORD file.
+        records = [f"{dist_info_dir}/RECORD,,"]
         for k, v in files.items():
             records.append(f"{k},{_get_content_hash(v)}")
-        records.append(f"{dist_info_dir}/RECORD,,")
         files[f'{dist_info_dir}/RECORD'] = "\n".join(records).encode('UTF-8')
 
-        with zipfile.ZipFile(wheel_path, 'w', compression=zipfile.ZIP_DEFLATED) as wheel:
+        # Write the wheel file.
+        with zipfile.ZipFile(wheel_path, 'w', compression=zipfile.ZIP_DEFLATED) as f:
             for k, v in files.items():
-                wheel.writestr(k, v)
+                f.writestr(k, v)
 
     return wheel_name
 
