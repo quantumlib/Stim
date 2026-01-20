@@ -153,7 +153,7 @@ void stim_pybind::pybind_flow_methods(pybind11::module &m, pybind11::class_<Flow
             the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
             "X_", output pauli string "ZZ", and measurement indices [-1].
 
-            Arguments:
+            Args:
                 arg [position-only]: Defaults to None. Must be specified by itself if used.
                     str: Initializes a flow by parsing the given shorthand text.
                     stim.Flow: Initializes a copy of the given flow.

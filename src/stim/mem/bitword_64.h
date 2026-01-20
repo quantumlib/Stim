@@ -111,6 +111,10 @@ struct bitword<64> {
         return bitword<64>(~val & other.val);
     }
 
+    inline bitword<64> operator~() const {
+        return {~val};
+    }
+
     inline uint16_t popcount() const {
         return std::popcount(val);
     }

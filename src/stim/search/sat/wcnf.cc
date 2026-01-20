@@ -53,7 +53,7 @@ struct MaxSATInstance {
     BoolRef new_bool() {
         return {num_variables++};
     }
-    void add_clause(Clause& clause) {
+    void add_clause(Clause &clause) {
         if (clause.weight != HARD_CLAUSE_WEIGHT) {
             if (clause.weight <= 0) {
                 throw std::invalid_argument("Clauses must have positive weight or HARD_CLAUSE_WEIGHT.");
@@ -62,7 +62,7 @@ struct MaxSATInstance {
         }
         clauses.push_back(clause);
     }
-    BoolRef Xor(BoolRef& x, BoolRef& y) {
+    BoolRef Xor(BoolRef &x, BoolRef &y) {
         if (x.variable == BOOL_LITERAL_FALSE) {
             return y;
         }
@@ -141,7 +141,7 @@ struct MaxSATInstance {
         ss << "p wcnf " << num_variables << " " << clauses.size() << " " << top << "\n";
 
         // Add clauses, 1 on each line.
-        for (const auto& clause : clauses) {
+        for (const auto &clause : clauses) {
             // WDIMACS clause format: weight var1 var2 ...
             // To show negation of a variable, the index should be negated.
             size_t qw = quantized_weight(weighted, quantization, top, clause.weight);
@@ -167,7 +167,7 @@ struct MaxSATInstance {
     }
 };
 
-std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool weighted, size_t quantization) {
+std::string sat_problem_as_wcnf_string(const DetectorErrorModel &model, bool weighted, size_t quantization) {
     MaxSATInstance inst;
 
     if (weighted and quantization < 1) {
@@ -195,11 +195,11 @@ std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool wei
     std::vector<BoolRef> observables_flipped(num_observables, BoolRef::False());
 
     size_t error_index = 0;
-    model.iter_flatten_error_instructions([&](const DemInstruction& e) {
+    model.iter_flatten_error_instructions([&](const DemInstruction &e) {
         if (!weighted or e.arg_data[0] != 0) {
             BoolRef err_x = errors_activated[error_index];
             // Add parity contribution to the detectors and observables
-            for (const auto& t : e.target_data) {
+            for (const auto &t : e.target_data) {
                 if (t.is_relative_detector_id()) {
                     detectors_activated[t.val()] = instance.Xor(detectors_activated[t.val()], err_x);
                 } else if (t.is_observable_id()) {
@@ -260,7 +260,7 @@ std::string sat_problem_as_wcnf_string(const DetectorErrorModel& model, bool wei
 }
 
 // Should ignore weights entirely and minimize the cardinality.
-std::string stim::shortest_error_sat_problem(const DetectorErrorModel& model, std::string_view format) {
+std::string stim::shortest_error_sat_problem(const DetectorErrorModel &model, std::string_view format) {
     if (format != "WDIMACS") {
         throw std::invalid_argument("Unsupported format.");
     }
@@ -268,7 +268,7 @@ std::string stim::shortest_error_sat_problem(const DetectorErrorModel& model, st
 }
 
 std::string stim::likeliest_error_sat_problem(
-    const DetectorErrorModel& model, int quantization, std::string_view format) {
+    const DetectorErrorModel &model, int quantization, std::string_view format) {
     if (format != "WDIMACS") {
         throw std::invalid_argument("Unsupported format.");
     }

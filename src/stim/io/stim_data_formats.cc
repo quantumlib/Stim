@@ -2,7 +2,7 @@
 
 using namespace stim;
 
-const std::map<std::string_view, FileFormatData>& stim::format_name_to_enum_map() {
+const std::map<std::string_view, FileFormatData> &stim::format_name_to_enum_map() {
     static const std::map<std::string_view, stim::FileFormatData> mapping{
         {
             "01",

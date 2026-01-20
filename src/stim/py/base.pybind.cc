@@ -49,6 +49,8 @@ bool stim_pybind::normalize_index_or_slice(
                 "Index " + std::to_string(pybind11::cast<pybind11::ssize_t>(index_or_slice)) +
                 " not in range for sequence of length " + std::to_string(length) + ".");
         }
+        *step = 0;
+        *slice_length = 1;
         return false;
     } catch (const pybind11::cast_error &) {
     }

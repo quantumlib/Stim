@@ -365,7 +365,7 @@ ostream_else_cout stim::find_output_stream_argument(
             msg << "Missing command line argument: '" << name_c_str << "'";
             throw std::invalid_argument(msg.str());
         }
-        return {nullptr};
+        return ostream_else_cout(nullptr);
     }
     if (*path_c_str == '\0') {
         std::stringstream msg;
@@ -378,7 +378,7 @@ ostream_else_cout stim::find_output_stream_argument(
         msg << "Failed to open '" << path_c_str << "'";
         throw std::invalid_argument(msg.str());
     }
-    return {std::move(f)};
+    return ostream_else_cout(std::move(f));
 }
 
 std::vector<std::string_view> stim::split_view(char splitter, std::string_view text) {

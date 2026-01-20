@@ -20,7 +20,7 @@ def main():
 """Stim {version}: a fast quantum stabilizer circuit library."""
 # (This is a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional
+from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Optional, Sequence, Literal
 if TYPE_CHECKING:
     import io
     import pathlib
