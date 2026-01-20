@@ -27,7 +27,7 @@ import pybind11
 __version__ = '1.16.dev0'
 
 
-def build_object_file(args: dict[Literal['src_path', 'compiler', 'temp_dir', 'module_name', 'flags'], Any]):
+def _build_object_file(args: dict[Literal['src_path', 'compiler', 'temp_dir', 'module_name', 'flags'], Any]):
     src_path: str = args['src_path']
     compiler: str = args['compiler']
     temp_dir: pathlib.Path = args['temp_dir']
@@ -60,7 +60,7 @@ def build_object_file(args: dict[Literal['src_path', 'compiler', 'temp_dir', 'mo
     return out_path
 
 
-def link_shared_object(args: dict[Literal['src_paths', 'linker', 'temp_dir', 'module_name'], Any]):
+def _link_shared_object(args: dict[Literal['src_paths', 'linker', 'temp_dir', 'module_name'], Any]):
     src_paths: tuple[str, ...] = args['src_paths']
     linker: str = args['linker']
     temp_dir: pathlib.Path = args['temp_dir']
@@ -78,7 +78,7 @@ def link_shared_object(args: dict[Literal['src_paths', 'linker', 'temp_dir', 'mo
     subprocess.check_call(linker_args, stderr=sys.stderr, stdout=sys.stdout)
 
 
-def get_wheel_tag() -> str:
+def _get_wheel_tag() -> str:
     python_tag = {
         'cpython': f'cp{sys.version_info.major}{sys.version_info.minor}',
     }.get(sys.implementation.name)
@@ -117,14 +117,15 @@ def get_wheel_tag() -> str:
     return f"{python_tag}-{abi_tag}-{plat_tag}"
 
 
-def get_content_hash(content: bytes) -> str:
+def _get_content_hash(content: bytes) -> str:
     digest = hashlib.sha256(content).digest()
     hash_str = base64.urlsafe_b64encode(digest).decode().rstrip("=")
     return f"sha256={hash_str},{len(content)}"
 
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
-    wheel_path = pathlib.Path(wheel_directory) / f'stim-{__version__}-{get_wheel_tag()}.whl'
+    wheel_name = f'stim-{__version__}-{_get_wheel_tag()}.whl'
+    wheel_path = pathlib.Path(wheel_directory) / wheel_name
 
     pool = multiprocessing.Pool()
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -185,8 +186,8 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
             })
 
         # Perform compilation and linking.
-        _ = list(pool.map(build_object_file, compile_commands))
-        _ = list(pool.map(link_shared_object, link_commands))
+        _ = list(pool.map(_build_object_file, compile_commands))
+        _ = list(pool.map(_link_shared_object, link_commands))
 
         # Create the wheel file.
         files: dict[str, bytes] = {}
@@ -227,7 +228,7 @@ Requires-Dist: numpy
 Wheel-Version: 1.0
 Generator: stim_custom_setup
 Root-Is-Purelib: false
-Tag: {get_wheel_tag()}
+Tag: {_get_wheel_tag()}
 """.lstrip().encode('UTF-8')
 
         for file in pathlib.Path("glue/python/src/stim").iterdir():
@@ -236,13 +237,15 @@ Tag: {get_wheel_tag()}
 
         records = []
         for k, v in files.items():
-            records.append(f"{k},{get_content_hash(v)}")
+            records.append(f"{k},{_get_content_hash(v)}")
         records.append(f"{dist_info_dir}/RECORD,,")
         files[f'{dist_info_dir}/RECORD'] = "\n".join(records).encode('UTF-8')
 
         with zipfile.ZipFile(wheel_path, 'w', compression=zipfile.ZIP_DEFLATED) as wheel:
             for k, v in files.items():
                 wheel.writestr(k, v)
+
+    return wheel_name
 
 
 if __name__ == '__main__':
