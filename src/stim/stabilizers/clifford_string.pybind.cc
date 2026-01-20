@@ -112,32 +112,7 @@ void stim_pybind::pybind_clifford_string_methods(
 
             if (pybind11::isinstance<Circuit>(arg)) {
                 const Circuit &circuit = pybind11::cast<const Circuit &>(arg);
-                size_t n = circuit.count_qubits();
-                CliffordString<MAX_BITWORD_WIDTH> result(n);
-                CliffordString<MAX_BITWORD_WIDTH> buffer(1);
-                circuit.for_each_operation([&](const CircuitInstruction &op) {
-                    const Gate &gate = GATE_DATA[op.gate_type];
-                    if ((gate.flags & GATE_IS_UNITARY) && (gate.flags & GATE_IS_SINGLE_QUBIT_GATE)) {
-                        for (const auto &target : op.targets) {
-                            uint32_t q = target.qubit_value();
-                            buffer.set_gate_at(q % MAX_BITWORD_WIDTH, op.gate_type);
-                            result.set_word_at(q / MAX_BITWORD_WIDTH, buffer.word_at(0) * result.word_at(q / MAX_BITWORD_WIDTH));
-                            buffer.set_gate_at(q % MAX_BITWORD_WIDTH, GateType::I);
-                        }
-                    } else {
-                        switch (op.gate_type) {
-                        case GateType::QUBIT_COORDS:
-                        case GateType::SHIFT_COORDS:
-                        case GateType::DETECTOR:
-                        case GateType::OBSERVABLE_INCLUDE:
-                        case GateType::TICK:
-                            break;
-                        default:
-                            throw std::invalid_argument("Don't know how to convert circuit instruction into single qubit Clifford operations: " + op.str());
-                        }
-                    }
-                });
-                return result;
+                return CliffordString<MAX_BITWORD_WIDTH>::from_circuit(circuit);
             }
 
             pybind11::module collections = pybind11::module::import("collections.abc");

@@ -276,6 +276,18 @@ struct CliffordString {
     }
 
     void inplace_then(CircuitInstruction inst) {
+        // Ignore annotations.
+        switch (inst.gate_type) {
+            case GateType::TICK:
+            case GateType::QUBIT_COORDS:
+            case GateType::SHIFT_COORDS:
+            case GateType::DETECTOR:
+            case GateType::OBSERVABLE_INCLUDE:
+                return;
+            default:
+                break;
+        }
+
         std::array<bool, 6> v = gate_to_bits(inst.gate_type);
         for (const auto &t : inst.targets) {
             if (!t.is_qubit_target()) {
