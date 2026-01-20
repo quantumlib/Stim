@@ -4021,7 +4021,7 @@ class CliffordString:
         """
     def __init__(
         self,
-        arg: Union[int, str, stim.CliffordString, stim.PauliString],
+        arg: Union[int, str, stim.CliffordString, stim.PauliString, stim.Circuit],
         /,
     ) -> None:
         """Initializes a stim.CliffordString from the given argument.
@@ -4033,6 +4033,9 @@ class CliffordString:
                 stim.CliffordString: initializes by copying the given Clifford string.
                 stim.PauliString: initializes by copying from the given Pauli string
                     (ignores the sign of the Pauli string).
+                stim.Circuit: initializes a CliffordString equivalent to the action
+                    of the circuit (as long as the circuit only contains single qubit
+                    unitary operations and annotations).
                 Iterable: initializes by interpreting each item as a Clifford.
                     Each item can be a single-qubit Clifford gate name (like "SQRT_X")
                     or stim.GateData instance.
@@ -4054,6 +4057,15 @@ class CliffordString:
 
             >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
             stim.CliffordString("X,Y,Z")
+
+            >>> stim.CliffordString(stim.Circuit('''
+            ...     H 0 1 2
+            ...     S 2 3
+            ...     TICK
+            ...     S 3
+            ...     I 6
+            ... '''))
+            stim.CliffordString("H,H,C_ZYX,Z,I,I,I")
         """
     def __ipow__(
         self,
@@ -4190,7 +4202,7 @@ class CliffordString:
     def __setitem__(
         self,
         index_or_slice: Union[int, slice],
-        new_value: Union[str, stim.GateData, stim.CliffordString],
+        new_value: Union[str, stim.GateData, stim.CliffordString, stim.PauliString, stim.Tableau],
     ) -> None:
         """Overwrites an indexed Clifford, or slice of Cliffords, with the given value.
 
@@ -4203,7 +4215,10 @@ class CliffordString:
                     broadcast over the slice.
                 - stim.GateData: The single qubit Clifford gate to write to the index
                     or broadcast over the slice.
-                - stim.CliffordString: Values to write into the slice.
+                - stim.Tableau: Must be a single qubit tableau. Specifies the single
+                    qubit Clifford gate to write to the index or broadcast over the
+                    slice.
+                - stim.CliffordString: String of Cliffords to write into the slice.
 
         Examples:
             >>> import stim
@@ -4228,6 +4243,18 @@ class CliffordString:
             >>> s[::2] = stim.CliffordString("X,Y,Z")
             >>> s
             stim.CliffordString("X,I,Y,I,Z")
+
+            >>> s[0] = stim.Tableau.from_named_gate("H")
+            >>> s
+            stim.CliffordString("H,I,Y,I,Z")
+
+            >>> s[:] = stim.Tableau.from_named_gate("S")
+            >>> s
+            stim.CliffordString("S,S,S,S,S")
+
+            >>> s[:4] = stim.PauliString("IXYZ")
+            >>> s
+            stim.CliffordString("I,X,Y,Z,S")
         """
     def __str__(
         self,
@@ -4255,6 +4282,25 @@ class CliffordString:
 
             >>> print(cliffords[16:])
             C_XYZ,C_XYNZ,C_NXYZ,C_XNYZ,C_ZYX,C_ZNYX,C_NZYX,C_ZYNX
+        """
+    def copy(
+        self,
+    ) -> stim.CliffordString:
+        """Returns a copy of the CliffordString.
+
+        Returns:
+            The copy.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.CliffordString("H,X")
+            >>> alias = c
+            >>> copy = c.copy()
+            >>> c *= 5
+            >>> alias
+            stim.CliffordString("H,X,H,X,H,X,H,X,H,X")
+            >>> copy
+            stim.CliffordString("H,X")
         """
     @staticmethod
     def random(
