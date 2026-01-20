@@ -260,9 +260,13 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                     *object_paths,
                 ])
             else:
+                osx_flags = []
+                if platform.system().lower() == 'darwin':
+                    osx_flags = ["-undefined", "dynamic_lookup"]
                 link_commands.append([
                     linker,
                     "-shared",
+                    *osx_flags,
                     "-o", link_out,
                     *object_paths,
                 ])
