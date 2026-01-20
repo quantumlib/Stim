@@ -127,6 +127,10 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     wheel_name = f'stim-{__version__}-{_get_wheel_tag()}.whl'
     wheel_path = pathlib.Path(wheel_directory) / wheel_name
 
+    # Without this line, `pip install` will fail when the
+    # multiprocessing method is set to `spawn` instead of `fork`.
+    os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
+
     pool = multiprocessing.Pool()
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
@@ -184,10 +188,6 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 'temp_dir': temp_dir / name,
                 'module_name': name,
             })
-
-        # Without this line, `pip install` will fail when the
-        # multiprocessing method is set to `spawn` instead of `fork`.
-        os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
 
         # Perform compilation and linking.
         _ = list(pool.map(_build_object_file, compile_commands))
