@@ -219,7 +219,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                         f"/I{pybind11.get_include()}",
                         f"/I{sysconfig.get_path('include')}",
                         "/W4",
-                        "/std=c++20",
+                        "/std:c++20",
                         "/O2",
                         "/MD",
                         "/EHsc",
