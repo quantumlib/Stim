@@ -218,7 +218,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
-    - run: make stim -j
+    - run: make stim -j $(getconf _NPROCESSORS_ONLN)
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
     runs-on: ubuntu-24.04
@@ -288,7 +288,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
-    - run: make libstim -j
+    - run: make libstim -j $(getconf _NPROCESSORS_ONLN)
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++20 test.cc out/libstim.a -I src
     - run: ./a.out test
@@ -298,7 +298,7 @@ jobs:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: mkdir install_dir
     - run: cmake . -DCMAKE_INSTALL_PREFIX=install_dir
-    - run: make -j
+    - run: make -j $(getconf _NPROCESSORS_ONLN)
     - run: make install
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++20 test.cc install_dir/lib/libstim.a -I install_dir/include
@@ -320,7 +320,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_perf -j
+    - run: make stim_perf -j $(getconf _NPROCESSORS_ONLN)
     - run: out/stim_perf
   test:
     runs-on: ubuntu-24.04
@@ -337,7 +337,7 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_test -j
+    - run: make stim_test -j $(getconf _NPROCESSORS_ONLN)
     - run: out/stim_test
   test_o3:
     runs-on: ubuntu-24.04
@@ -351,7 +351,7 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=256
-    - run: make stim_test_o3 -j
+    - run: make stim_test_o3 -j $(getconf _NPROCESSORS_ONLN)
     - run: out/stim_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-24.04
