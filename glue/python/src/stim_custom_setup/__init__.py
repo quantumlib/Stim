@@ -10,7 +10,6 @@ files in the exact way that I wanted.
 import base64
 import glob
 import hashlib
-import multiprocessing
 import os
 import pathlib
 import platform
@@ -147,13 +146,11 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     # Plan out compiler and linker commands.
     configs = {
         '_detect_machine_architecture': ((), MUX_SOURCE_FILES),
-        # '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
-        # '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
+        '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
+        '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # '_stim_avx': (('-msse2', '-mavx2',), RELEVANT_SOURCE_FILES),
     }
-
-    multiprocessing.set_start_method('spawn')
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
