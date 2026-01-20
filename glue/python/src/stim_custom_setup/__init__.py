@@ -8,6 +8,7 @@ files in the exact way that I wanted.
 """
 
 import base64
+import glob
 import hashlib
 import multiprocessing
 import os
@@ -17,65 +18,12 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import time
 import zipfile
-
-import glob
-from typing import Literal, Tuple, Any
 
 import pybind11
 
 __version__ = '1.16.dev0'
-
-
-def _build_object_file(args: dict[Literal['src_path', 'compiler', 'temp_dir', 'module_name', 'flags'], Any]):
-    src_path: str = args['src_path']
-    compiler: str = args['compiler']
-    temp_dir: pathlib.Path = args['temp_dir']
-    module_name: str = args['module_name']
-    flags: tuple[str, ...] = args['flags']
-
-    out_path = str(temp_dir / src_path) + ".o"
-    pathlib.Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    compiler_args = [
-        compiler,
-        "-c", src_path,
-        "-o", out_path,
-        "-Isrc",
-        f"-I{pybind11.get_include()}",
-        f"-I{sysconfig.get_path('include')}",
-        "-Wall",
-        "-fPIC",
-        "-std=c++20",
-        "-fno-strict-aliasing",
-        "-fvisibility=hidden",
-        "-O3",
-        "-g0",
-        "-DNDEBUG",
-        f"-DVERSION_INFO={__version__}",
-        f"-DSTIM_PYBIND11_MODULE_NAME={module_name}",
-        *flags,
-    ]
-    print(" ".join(compiler_args))
-    subprocess.check_call(compiler_args, stderr=sys.stderr, stdout=sys.stdout)
-    return out_path
-
-
-def _link_shared_object(args: dict[Literal['src_paths', 'linker', 'temp_dir', 'module_name'], Any]):
-    src_paths: tuple[str, ...] = args['src_paths']
-    linker: str = args['linker']
-    temp_dir: pathlib.Path = args['temp_dir']
-    module_name: str = args['module_name']
-
-    object_paths = [str(pathlib.Path(temp_dir) / src_path) + ".o" for src_path in src_paths]
-    linker_args = [
-        linker,
-        "-shared",
-        f"-DVERSION_INFO={__version__}",
-        "-o", str(temp_dir / f"{module_name}.so"),
-        *[str(e) for e in object_paths],
-    ]
-    print(" ".join(linker_args))
-    subprocess.check_call(linker_args, stderr=sys.stderr, stdout=sys.stdout)
 
 
 def _get_wheel_tag() -> str:
@@ -123,13 +71,45 @@ def _get_content_hash(content: bytes) -> str:
     return f"sha256={hash_str},{len(content)}"
 
 
-def workaround_path_loss(parent_sys_path):
-    # Without this line, `pip install` will fail when the
-    # multiprocessing method is set to `spawn` instead of `fork`.
-    import sys
-    for p in parent_sys_path:
-        if p not in sys.path:
-            sys.path.append(p)
+def run_processes_in_parallel(action_name, commands: list[list[str]]):
+    running = []
+    try:
+        cpus = os.cpu_count()
+        left = len(commands)
+        for step, cmd in enumerate(commands):
+            # Busy-wait until fewer than n subprocesses are running.
+            while len(running) == cpus:
+                time.sleep(0.001)
+                for k in range(cpus)[::-1]:
+                    return_code = running[k].poll()
+                    if return_code:
+                        raise RuntimeError("A sub-process failed.")
+                    if return_code is not None:
+                        running[k] = running[-1]
+                        running.pop()
+                        left -= 1
+
+            # Go!
+            print(" ".join(cmd), file=sys.stderr)
+            running.append(subprocess.Popen(cmd))
+            print(f"# {action_name} (remaining={left} running={len(running)})", file=sys.stderr)
+
+        # Wait for the remaining processes.
+        while running:
+            if running[-1].wait():
+                raise RuntimeError("A sub-process failed.")
+            running.pop()
+            left -= 1
+            if left:
+                print(f"# {action_name} (remaining={left} running={len(running)})", file=sys.stderr)
+        print(f"# done {action_name}")
+
+    finally:
+        for r in running:
+            try:
+                r.kill()
+            except:
+                pass
 
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
@@ -167,39 +147,55 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     # Plan out compiler and linker commands.
     configs = {
         '_detect_machine_architecture': ((), MUX_SOURCE_FILES),
-        '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
-        '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
+        # '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
+        # '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # '_stim_avx': (('-msse2', '-mavx2',), RELEVANT_SOURCE_FILES),
     }
+
+    multiprocessing.set_start_method('spawn')
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
         compile_commands = []
         link_commands = []
         for name, (flags, files) in configs.items():
-            for e in files:
-                compile_commands.append({
-                    'src_path': e,
-                    'compiler': compiler,
-                    'temp_dir': temp_dir / name,
-                    'module_name': name,
-                    'flags': flags,
-                })
-            link_commands.append({
-                'src_paths': files,
-                'linker': linker,
-                'temp_dir': temp_dir / name,
-                'module_name': name,
-            })
+            object_paths = []
+            for src_path in files:
+                out_path = str(temp_dir / name / src_path) + ".o"
+                object_paths.append(out_path)
+                pathlib.Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+                compiler_args = [
+                    compiler,
+                    "-c", src_path,
+                    "-o", out_path,
+                    "-Isrc",
+                    f"-I{pybind11.get_include()}",
+                    f"-I{sysconfig.get_path('include')}",
+                    "-Wall",
+                    "-fPIC",
+                    "-std=c++20",
+                    "-fno-strict-aliasing",
+                    "-fvisibility=hidden",
+                    "-O3",
+                    "-g0",
+                    "-DNDEBUG",
+                    f"-DVERSION_INFO={__version__}",
+                    f"-DSTIM_PYBIND11_MODULE_NAME={name}",
+                    *flags,
+                ]
+                compile_commands.append(compiler_args)
+            link_commands.append([
+                linker,
+                "-shared",
+                f"-DVERSION_INFO={__version__}",
+                "-o", str(temp_dir / name / f"{name}.so"),
+                *object_paths,
+            ])
 
-        with multiprocessing.Pool(
-            initializer=workaround_path_loss,
-            initargs=([str(e) for e in sys.path],),
-        ) as pool:
-            # Perform compilation and linking.
-            _ = list(pool.map(_build_object_file, compile_commands))
-            _ = list(pool.map(_link_shared_object, link_commands))
+        # Perform compilation and linking.
+        run_processes_in_parallel("compiling", compile_commands)
+        run_processes_in_parallel("linking", link_commands)
 
         # Create the wheel file.
         files: dict[str, bytes] = {}
