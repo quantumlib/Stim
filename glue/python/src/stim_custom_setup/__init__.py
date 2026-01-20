@@ -185,6 +185,10 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 'module_name': name,
             })
 
+        # Without this line, `pip install` will fail when the
+        # multiprocessing method is set to `spawn` instead of `fork`.
+        os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
+
         # Perform compilation and linking.
         _ = list(pool.map(_build_object_file, compile_commands))
         _ = list(pool.map(_link_shared_object, link_commands))
