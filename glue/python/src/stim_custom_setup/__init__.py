@@ -136,46 +136,45 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     wheel_name = f'stim-{__version__}-{_get_wheel_tag()}.whl'
     wheel_path = pathlib.Path(wheel_directory) / wheel_name
 
-    pool = multiprocessing.Pool(initializer=workaround_path_loss, initargs=sys.path)
+    # Collect source files.
+    ALL_SOURCE_FILES = glob.glob("src/**/*.cc", recursive=True)
+    MUX_SOURCE_FILES = glob.glob("src/**/march.pybind.cc", recursive=True)
+    TEST_FILES = glob.glob("src/**/*.test.cc", recursive=True)
+    PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
+    MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
+    HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
+    RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
+
+    # Determine the compiler to use.
+    compiler = None
+    if compiler is None and config_settings is not None:
+        compiler = config_settings.get("compiler", None)
+    if compiler is None:
+        compiler = os.environ.get('CXX', None)
+    if compiler is None:
+        if platform.system().startswith('Win'):
+            compiler = 'cl.exe'
+        else:
+            compiler = 'g++'
+
+    # Determine the linker to use.
+    linker = None
+    if linker is None and config_settings is not None:
+        linker = config_settings.get("linker", None)
+    if linker is None:
+        linker = compiler
+
+    # Plan out compiler and linker commands.
+    configs = {
+        '_detect_machine_architecture': ((), MUX_SOURCE_FILES),
+        '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
+        '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
+        # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
+        # '_stim_avx': (('-msse2', '-mavx2',), RELEVANT_SOURCE_FILES),
+    }
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
-
-        # Collect source files.
-        ALL_SOURCE_FILES = glob.glob("src/**/*.cc", recursive=True)
-        MUX_SOURCE_FILES = glob.glob("src/**/march.pybind.cc", recursive=True)
-        TEST_FILES = glob.glob("src/**/*.test.cc", recursive=True)
-        PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
-        MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
-        HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
-        RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
-
-        # Determine the compiler to use.
-        compiler = None
-        if compiler is None and config_settings is not None:
-            compiler = config_settings.get("compiler", None)
-        if compiler is None:
-            compiler = os.environ.get('CXX', None)
-        if compiler is None:
-            if platform.system().startswith('Win'):
-                compiler = 'cl.exe'
-            else:
-                compiler = 'g++'
-
-        # Determine the linker to use.
-        linker = None
-        if linker is None and config_settings is not None:
-            linker = config_settings.get("linker", None)
-        if linker is None:
-            linker = compiler
-
-        # Plan out compiler and linker commands.
-        configs = {
-            '_detect_machine_architecture': ((), MUX_SOURCE_FILES),
-            '_stim_polyfill': ((), RELEVANT_SOURCE_FILES),
-            '_stim_sse2': (('-msse2', '-mno-avx2',), RELEVANT_SOURCE_FILES),
-            # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-            # '_stim_avx': (('-msse2', '-mavx2',), RELEVANT_SOURCE_FILES),
-        }
         compile_commands = []
         link_commands = []
         for name, (flags, files) in configs.items():
@@ -194,9 +193,13 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 'module_name': name,
             })
 
-        # Perform compilation and linking.
-        _ = list(pool.map(_build_object_file, compile_commands))
-        _ = list(pool.map(_link_shared_object, link_commands))
+        with multiprocessing.Pool(
+            initializer=workaround_path_loss,
+            initargs=([str(e) for e in sys.path],),
+        ) as pool:
+            # Perform compilation and linking.
+            _ = list(pool.map(_build_object_file, compile_commands))
+            _ = list(pool.map(_link_shared_object, link_commands))
 
         # Create the wheel file.
         files: dict[str, bytes] = {}
