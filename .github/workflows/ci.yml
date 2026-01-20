@@ -29,19 +29,13 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-24.04, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-24.04, dist: cp39-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp311-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp312-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp314-manylinux_x86_64},
 
-          # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
-          # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
-          # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
+          # manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
           #
@@ -59,11 +53,7 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
           # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
           # {os: ubuntu-latest, dist: pp39-manylinux_i686},
 
           # musllinux builds disabled because scipy isn't prebuilt and fails to build.
@@ -74,27 +64,15 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
           # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macos-14, dist: cp38-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp39-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp313-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp314-macosx_x86_64, macosarch: x86_64},
 
-          {os: macos-14, dist: cp38-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp39-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
@@ -112,27 +90,13 @@ jobs:
           #     BLAS and LAPACK by setting the environment variables
           #     NPY_BLAS_ORDER="" and NPY_LAPACK_ORDER="" before building NumPy.
           #
-          # {os: macOS-10.15, dist: pp37-macosx_x86_64},
-          # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2025, dist: cp38-win_amd64},
-          {os: windows-2025, dist: cp39-win_amd64},
           {os: windows-2025, dist: cp310-win_amd64},
           {os: windows-2025, dist: cp311-win_amd64},
           {os: windows-2025, dist: cp312-win_amd64},
           {os: windows-2025, dist: cp313-win_amd64},
           {os: windows-2025, dist: cp314-win_amd64},
-
-          # cp38-win32 and cp39-win32 disabled because scipy fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #    Need python for 64-bit, but found 32-bit
-          #    ..\..\meson.build:82:0: ERROR: Python dependency not found
-          #
-          #{os: windows-2025, dist: cp38-win32},
-          #{os: windows-2025, dist: cp39-win32},
 
           # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
           #
@@ -254,7 +218,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
-    - run: make stim -j 2
+    - run: make stim -j
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
     runs-on: ubuntu-24.04
@@ -324,7 +288,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake .
-    - run: make libstim -j 2
+    - run: make libstim -j
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++20 test.cc out/libstim.a -I src
     - run: ./a.out test
@@ -334,7 +298,7 @@ jobs:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: mkdir install_dir
     - run: cmake . -DCMAKE_INSTALL_PREFIX=install_dir
-    - run: make -j 2
+    - run: make -j
     - run: make install
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ -std=c++20 test.cc install_dir/lib/libstim.a -I install_dir/include
@@ -356,7 +320,7 @@ jobs:
     steps:
     - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_perf -j 2
+    - run: make stim_perf -j
     - run: out/stim_perf
   test:
     runs-on: ubuntu-24.04
@@ -373,7 +337,7 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_test -j 2
+    - run: make stim_test -j
     - run: out/stim_test
   test_o3:
     runs-on: ubuntu-24.04
@@ -387,7 +351,7 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=256
-    - run: make stim_test_o3 -j 2
+    - run: make stim_test_o3 -j
     - run: out/stim_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-24.04
