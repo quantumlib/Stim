@@ -47,6 +47,7 @@ def build_object_file(args: dict[Literal['src_path', 'compiler', 'temp_dir', 'mo
         "-fPIC",
         "-std=c++20",
         "-fno-strict-aliasing",
+        "-fvisibility=hidden",
         "-O3",
         "-g0",
         "-DNDEBUG",
@@ -123,6 +124,8 @@ def get_content_hash(content: bytes) -> str:
 
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+    wheel_path = pathlib.Path(wheel_directory) / f'stim-{__version__}-{get_wheel_tag()}.whl'
+
     pool = multiprocessing.Pool()
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
@@ -190,7 +193,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 
         for name in configs.keys():
             with open(temp_dir / name / f'{name}.so', 'rb') as f:
-                files[f'stim/{name}{sysconfig.get_config_var('EXT_SUFFIX')}'] = f.read()
+                files[f'stim/{name}' + sysconfig.get_config_var('EXT_SUFFIX')] = f.read()
 
         dist_info_dir = f"stim-{__version__}.dist-info"
         files[f'{dist_info_dir}/entry_points.txt'] = """
@@ -237,11 +240,10 @@ Tag: {get_wheel_tag()}
         records.append(f"{dist_info_dir}/RECORD,,")
         files[f'{dist_info_dir}/RECORD'] = "\n".join(records).encode('UTF-8')
 
-        wheel_name = f'stim-{__version__}-{get_wheel_tag()}.whl'
-        with zipfile.ZipFile(wheel_name, 'w', compression=zipfile.ZIP_DEFLATED) as wheel:
+        with zipfile.ZipFile(wheel_path, 'w', compression=zipfile.ZIP_DEFLATED) as wheel:
             for k, v in files.items():
                 wheel.writestr(k, v)
 
 
 if __name__ == '__main__':
-    build_wheel(None)
+    build_wheel('')
