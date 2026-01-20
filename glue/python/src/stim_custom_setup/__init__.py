@@ -123,15 +123,20 @@ def _get_content_hash(content: bytes) -> str:
     return f"sha256={hash_str},{len(content)}"
 
 
+def workaround_path_loss(parent_sys_path):
+    # Without this line, `pip install` will fail when the
+    # multiprocessing method is set to `spawn` instead of `fork`.
+    import sys
+    for p in parent_sys_path:
+        if p not in sys.path:
+            sys.path.append(p)
+
+
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     wheel_name = f'stim-{__version__}-{_get_wheel_tag()}.whl'
     wheel_path = pathlib.Path(wheel_directory) / wheel_name
 
-    # Without this line, `pip install` will fail when the
-    # multiprocessing method is set to `spawn` instead of `fork`.
-    os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
-
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(initializer=workaround_path_loss, initargs=sys.path)
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
 
