@@ -43,8 +43,8 @@ class Circuit:
     """
     def __add__(
         self,
-        second: stim.Circuit,
-    ) -> stim.Circuit:
+        second: stim._stim_polyfill.Circuit,
+    ) -> stim._stim_polyfill.Circuit:
         """Creates a circuit by appending two circuits.
 
         Examples:
@@ -65,7 +65,7 @@ class Circuit:
         """
     def __eq__(
         self,
-        arg0: stim.Circuit,
+        arg0: stim._stim_polyfill.Circuit,
     ) -> bool:
         """Determines if two circuits have identical contents.
         """
@@ -125,8 +125,8 @@ class Circuit:
         """
     def __iadd__(
         self,
-        second: stim.Circuit,
-    ) -> stim.Circuit:
+        second: stim._stim_polyfill.Circuit,
+    ) -> stim._stim_polyfill.Circuit:
         """Appends a circuit into the receiving circuit (mutating it).
 
         Examples:
@@ -149,7 +149,7 @@ class Circuit:
     def __imul__(
         self,
         repetitions: int,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Mutates the circuit by putting its contents into a REPEAT block.
 
         Special case: if the repetition count is 0, the circuit is cleared.
@@ -222,7 +222,7 @@ class Circuit:
     def __mul__(
         self,
         repetitions: int,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Repeats the circuit using a REPEAT block.
 
         Has special cases for 0 repetitions and 1 repetitions.
@@ -252,7 +252,7 @@ class Circuit:
         """
     def __ne__(
         self,
-        arg0: stim.Circuit,
+        arg0: stim._stim_polyfill.Circuit,
     ) -> bool:
         """Determines if two circuits have non-identical contents.
         """
@@ -264,7 +264,7 @@ class Circuit:
     def __rmul__(
         self,
         repetitions: int,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Repeats the circuit using a REPEAT block.
 
         Has special cases for 0 repetitions and 1 repetitions.
@@ -490,7 +490,7 @@ class Circuit:
         self,
         *,
         seed: object = None,
-    ) -> stim.CompiledDetectorSampler:
+    ) -> stim._stim_polyfill.CompiledDetectorSampler:
         """Returns an object that can batch sample detection events from the circuit.
 
         Args:
@@ -535,7 +535,7 @@ class Circuit:
         self,
         *,
         skip_reference_sample: bool = False,
-    ) -> stim.CompiledMeasurementsToDetectionEventsConverter:
+    ) -> stim._stim_polyfill.CompiledMeasurementsToDetectionEventsConverter:
         """Creates a measurement-to-detection-event converter for the given circuit.
 
         The converter can efficiently compute detection events and observable flips
@@ -649,7 +649,7 @@ class Circuit:
         """
     def copy(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a copy of the circuit. An independent circuit with the same contents.
 
         Examples:
@@ -761,7 +761,7 @@ class Circuit:
         """
     def decomposed(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Recreates the circuit using (mostly) the {H,S,CX,M,R} gate set.
 
         The intent of this method is to simplify the circuit to use fewer gate types,
@@ -961,7 +961,7 @@ class Circuit:
         approximate_disjoint_errors: float = False,
         ignore_decomposition_failures: bool = False,
         block_decomposition_from_introducing_remnant_edges: bool = False,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
         Args:
@@ -1049,7 +1049,7 @@ class Circuit:
         """
     def diagram(
         self,
-        type: str = 'timeline-text',
+        type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text',
         *,
         tick: Union[None, int, range] = None,
         filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
@@ -1181,7 +1181,7 @@ class Circuit:
         *,
         dem_filter: object = None,
         reduce_to_one_representative_error: bool = False,
-    ) -> List[stim.ExplainedError]:
+    ) -> List[stim._stim_polyfill.ExplainedError]:
         """Explains how detector error model errors are produced by circuit errors.
 
         Args:
@@ -1234,7 +1234,7 @@ class Circuit:
         """
     def flattened(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Creates an equivalent circuit without REPEAT or SHIFT_COORDS.
 
         Returns:
@@ -1396,7 +1396,7 @@ class Circuit:
         before_round_data_depolarization: float = 0.0,
         before_measure_flip_probability: float = 0.0,
         after_reset_flip_probability: float = 0.0,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Generates common circuits.
 
         The generated circuits can include configurable noise.
@@ -1766,7 +1766,7 @@ class Circuit:
         """
     def inverse(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a circuit that applies the same operations but inverted and in reverse.
 
         If circuit starts with QUBIT_COORDS instructions, the returned circuit will
@@ -2212,7 +2212,7 @@ class Circuit:
         dont_explore_edges_with_degree_above: int,
         dont_explore_edges_increasing_symptom_degree: bool,
         canonicalize_circuit_errors: bool = False,
-    ) -> List[stim.ExplainedError]:
+    ) -> List[stim._stim_polyfill.ExplainedError]:
         """Searches for small sets of errors that form an undetectable logical error.
 
         THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of
@@ -2370,7 +2370,7 @@ class Circuit:
         *,
         ignore_ungraphlike_errors: bool = True,
         canonicalize_circuit_errors: bool = False,
-    ) -> List[stim.ExplainedError]:
+    ) -> List[stim._stim_polyfill.ExplainedError]:
         """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
         A "graphlike error" is an error that creates at most two detection events
@@ -2948,7 +2948,7 @@ class Circuit:
         """
     def with_inlined_feedback(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a circuit without feedback with rewritten detectors/observables.
 
         When a feedback operation affects the expected parity of a detector or
@@ -3002,7 +3002,7 @@ class Circuit:
         """
     def without_noise(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a copy of the circuit with all noise processes removed.
 
         Pure noise instructions, such as X_ERROR and DEPOLARIZE2, are not
@@ -3029,7 +3029,7 @@ class Circuit:
         """
     def without_tags(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a copy of the circuit with all tags removed.
 
         Returns:
@@ -3074,10 +3074,10 @@ class CircuitErrorLocation:
         self,
         *,
         tick_offset: int,
-        flipped_pauli_product: List[stim.GateTargetWithCoords],
+        flipped_pauli_product: List[stim._stim_polyfill.GateTargetWithCoords],
         flipped_measurement: object,
-        instruction_targets: stim.CircuitTargetsInsideInstruction,
-        stack_frames: List[stim.CircuitErrorLocationStackFrame],
+        instruction_targets: stim._stim_polyfill.CircuitTargetsInsideInstruction,
+        stack_frames: List[stim._stim_polyfill.CircuitErrorLocationStackFrame],
         noise_tag: str = '',
     ) -> None:
         """Creates a stim.CircuitErrorLocation.
@@ -3150,7 +3150,7 @@ class CircuitErrorLocation:
     @property
     def flipped_pauli_product(
         self,
-    ) -> List[stim.GateTargetWithCoords]:
+    ) -> List[stim._stim_polyfill.GateTargetWithCoords]:
         """The Pauli errors that the error mechanism applied to qubits.
 
         When the error is a measurement error, this will be an empty list.
@@ -3169,7 +3169,7 @@ class CircuitErrorLocation:
     @property
     def instruction_targets(
         self,
-    ) -> stim.CircuitTargetsInsideInstruction:
+    ) -> stim._stim_polyfill.CircuitTargetsInsideInstruction:
         """Within the error instruction, which may have hundreds of
         targets, which specific targets were being executed to
         produce the error.
@@ -3213,7 +3213,7 @@ class CircuitErrorLocation:
     @property
     def stack_frames(
         self,
-    ) -> List[stim.CircuitErrorLocationStackFrame]:
+    ) -> List[stim._stim_polyfill.CircuitErrorLocationStackFrame]:
         """Describes where in the circuit's execution the error happened.
 
         Multiple frames are needed because the error may occur within a loop,
@@ -3397,7 +3397,7 @@ class CircuitInstruction:
     """
     def __eq__(
         self,
-        arg0: stim.CircuitInstruction,
+        arg0: stim._stim_polyfill.CircuitInstruction,
     ) -> bool:
         """Determines if two `stim.CircuitInstruction`s are identical.
         """
@@ -3441,7 +3441,7 @@ class CircuitInstruction:
         """
     def __ne__(
         self,
-        arg0: stim.CircuitInstruction,
+        arg0: stim._stim_polyfill.CircuitInstruction,
     ) -> bool:
         """Determines if two `stim.CircuitInstruction`s are different.
         """
@@ -3559,7 +3559,7 @@ class CircuitInstruction:
         """
     def targets_copy(
         self,
-    ) -> List[stim.GateTarget]:
+    ) -> List[stim._stim_polyfill.GateTarget]:
         """Returns a copy of the targets of the instruction.
 
         Examples:
@@ -3596,14 +3596,14 @@ class CircuitRepeatBlock:
     """
     def __eq__(
         self,
-        arg0: stim.CircuitRepeatBlock,
+        arg0: stim._stim_polyfill.CircuitRepeatBlock,
     ) -> bool:
         """Determines if two `stim.CircuitRepeatBlock`s are identical.
         """
     def __init__(
         self,
         repeat_count: int,
-        body: stim.Circuit,
+        body: stim._stim_polyfill.Circuit,
         *,
         tag: str = '',
     ) -> None:
@@ -3627,7 +3627,7 @@ class CircuitRepeatBlock:
         """
     def __ne__(
         self,
-        arg0: stim.CircuitRepeatBlock,
+        arg0: stim._stim_polyfill.CircuitRepeatBlock,
     ) -> bool:
         """Determines if two `stim.CircuitRepeatBlock`s are different.
         """
@@ -3638,7 +3638,7 @@ class CircuitRepeatBlock:
         """
     def body_copy(
         self,
-    ) -> stim.Circuit:
+    ) -> stim._stim_polyfill.Circuit:
         """Returns a copy of the body of the repeat block.
 
         (Making a copy is enforced to make it clear that editing the result won't change
@@ -3752,7 +3752,7 @@ class CircuitTargetsInsideInstruction:
         args: List[float],
         target_range_start: int,
         target_range_end: int,
-        targets_in_range: List[stim.GateTargetWithCoords],
+        targets_in_range: List[stim._stim_polyfill.GateTargetWithCoords],
     ) -> None:
         """Creates a stim.CircuitTargetsInsideInstruction.
 
@@ -3871,7 +3871,7 @@ class CircuitTargetsInsideInstruction:
     @property
     def targets_in_range(
         self,
-    ) -> List[stim.GateTargetWithCoords]:
+    ) -> List[stim._stim_polyfill.GateTargetWithCoords]:
         """Returns the subset of targets of the gate/instruction that were being executed.
 
         Includes coordinate data with the targets.
@@ -3888,6 +3888,560 @@ class CircuitTargetsInsideInstruction:
             >>> loc: stim.CircuitErrorLocation = err[0].circuit_error_locations[0]
             >>> loc.instruction_targets.targets_in_range
             [stim.GateTargetWithCoords(0, [])]
+        """
+class CliffordString:
+    """A tensor product of single qubit Clifford gates (e.g. "H \u2297 X \u2297 S").
+
+    Represents a collection of Clifford operations applied pairwise to a
+    collection of qubits. Ignores global phase.
+
+    Examples:
+        >>> import stim
+        >>> stim.CliffordString("H,S,C_XYZ") * stim.CliffordString("H,H,H")
+        stim.CliffordString("I,C_ZYX,SQRT_X_DAG")
+    """
+    def __add__(
+        self,
+        rhs: stim._stim_polyfill.CliffordString,
+    ) -> stim._stim_polyfill.CliffordString:
+        """Concatenates two CliffordStrings.
+
+        Args:
+            rhs: The suffix of the concatenation.
+
+        Returns:
+            The concatenated Clifford string.
+
+        Examples:
+            >>> import stim
+            >>> stim.CliffordString("I,X,H") + stim.CliffordString("Y,S")
+            stim.CliffordString("I,X,H,Y,S")
+        """
+    def __eq__(
+        self,
+        arg0: stim._stim_polyfill.CliffordString,
+    ) -> bool:
+        """Determines if two Clifford strings have identical contents.
+        """
+    @overload
+    def __getitem__(
+        self,
+        index_or_slice: int,
+    ) -> stim.GateData:
+        pass
+    @overload
+    def __getitem__(
+        self,
+        index_or_slice: slice,
+    ) -> stim.CliffordString:
+        pass
+    def __getitem__(
+        self,
+        index_or_slice: Union[int, slice],
+    ) -> Union[stim.GateData, stim.CliffordString]:
+        """Returns a Clifford or substring from the CliffordString.
+
+        Args:
+            index_or_slice: The index of the Clifford to return, or the slice
+                corresponding to the sub CliffordString to return.
+
+        Returns:
+            The indexed Clifford (as a stim.GateData instance) or the sliced
+            CliffordString.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.CliffordString("I,X,Y,Z,H")
+
+            >>> s[2]
+            stim.gate_data('Y')
+
+            >>> s[-1]
+            stim.gate_data('H')
+
+            >>> s[:-1]
+            stim.CliffordString("I,X,Y,Z")
+
+            >>> s[::2]
+            stim.CliffordString("I,Y,H")
+        """
+    def __iadd__(
+        self,
+        rhs: stim._stim_polyfill.CliffordString,
+    ) -> stim._stim_polyfill.CliffordString:
+        """Mutates the CliffordString by concatenating onto it.
+
+        Args:
+            rhs: The suffix to concatenate onto the target CliffordString.
+
+        Returns:
+            The mutated Clifford string.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.CliffordString("I,X,H")
+            >>> alias = c
+            >>> alias += stim.CliffordString("Y,S")
+            >>> c
+            stim.CliffordString("I,X,H,Y,S")
+        """
+    def __imul__(
+        self,
+        rhs: Union[stim.CliffordString, int],
+    ) -> stim.CliffordString:
+        """Inplace CliffordString multiplication.
+
+        Mutates the CliffordString into itself multiplied by another CliffordString
+        (via pairwise Clifford multipliation) or by an integer (via repeating the
+        contents).
+
+        Args:
+            rhs: Either a stim.CliffordString or an int. If rhs is a
+                stim.CliffordString, then the Cliffords from each string are multiplied
+                pairwise. If rhs is an int, it is the number of times to repeat the
+                Clifford string's contents.
+
+        Returns:
+            The mutated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> c = stim.CliffordString("S,X,X")
+            >>> alias = c
+            >>> alias *= stim.CliffordString("S,Z,H,Z")
+            >>> c
+            stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+            >>> c = stim.CliffordString("I,X,H")
+            >>> alias = c
+            >>> alias *= 2
+            >>> c
+            stim.CliffordString("I,X,H,I,X,H")
+        """
+    def __init__(
+        self,
+        arg: Union[int, str, stim.CliffordString, stim.PauliString, stim.Circuit],
+        /,
+    ) -> None:
+        """Initializes a stim.CliffordString from the given argument.
+
+        Args:
+            arg [position-only]: This can be a variety of types, including:
+                int: initializes an identity Clifford string of the given length.
+                str: initializes by parsing a comma-separated list of gate names.
+                stim.CliffordString: initializes by copying the given Clifford string.
+                stim.PauliString: initializes by copying from the given Pauli string
+                    (ignores the sign of the Pauli string).
+                stim.Circuit: initializes a CliffordString equivalent to the action
+                    of the circuit (as long as the circuit only contains single qubit
+                    unitary operations and annotations).
+                Iterable: initializes by interpreting each item as a Clifford.
+                    Each item can be a single-qubit Clifford gate name (like "SQRT_X")
+                    or stim.GateData instance.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.CliffordString(5)
+            stim.CliffordString("I,I,I,I,I")
+
+            >>> stim.CliffordString("X,Y,Z,SQRT_X")
+            stim.CliffordString("X,Y,Z,SQRT_X")
+
+            >>> stim.CliffordString(["H", stim.gate_data("S")])
+            stim.CliffordString("H,S")
+
+            >>> stim.CliffordString(stim.PauliString("XYZ"))
+            stim.CliffordString("X,Y,Z")
+
+            >>> stim.CliffordString(stim.CliffordString("X,Y,Z"))
+            stim.CliffordString("X,Y,Z")
+
+            >>> stim.CliffordString(stim.Circuit('''
+            ...     H 0 1 2
+            ...     S 2 3
+            ...     TICK
+            ...     S 3
+            ...     I 6
+            ... '''))
+            stim.CliffordString("H,H,C_ZYX,Z,I,I,I")
+        """
+    def __ipow__(
+        self,
+        num_qubits: int,
+    ) -> object:
+        """Mutates the CliffordString into itself raised to a power.
+
+        Args:
+            power: The power to raise the CliffordString's Cliffords to.
+                This value can be negative (e.g. -1 inverts the string).
+
+        Returns:
+            The mutated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+            >>> p **= 3
+            >>> p
+            stim.CliffordString("I,X,H,S_DAG,I")
+
+            >>> p **= 2
+            >>> p
+            stim.CliffordString("I,I,I,Z,I")
+
+            >>> alias = p
+            >>> alias **= 2
+            >>> p
+            stim.CliffordString("I,I,I,I,I")
+        """
+    def __len__(
+        self,
+    ) -> int:
+        """Returns the number of Clifford operations in the string.
+
+        Examples:
+            >>> import stim
+            >>> len(stim.CliffordString("I,X,Y,Z,H"))
+            5
+        """
+    def __mul__(
+        self,
+        rhs: Union[stim.CliffordString, int],
+    ) -> stim.CliffordString:
+        """CliffordString multiplication.
+
+        Args:
+            rhs: Either a stim.CliffordString or an int. If rhs is a
+                stim.CliffordString, then the Cliffords from each string are multiplied
+                pairwise. If rhs is an int, it is the number of times to repeat the
+                Clifford string's contents.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.CliffordString("S,X,X") * stim.CliffordString("S,Z,H,Z")
+            stim.CliffordString("Z,Y,SQRT_Y,Z")
+
+            >>> stim.CliffordString("I,X,H") * 3
+            stim.CliffordString("I,X,H,I,X,H,I,X,H")
+        """
+    def __ne__(
+        self,
+        arg0: stim._stim_polyfill.CliffordString,
+    ) -> bool:
+        """Determines if two Clifford strings have non-identical contents.
+        """
+    def __pow__(
+        self,
+        power: int,
+    ) -> stim._stim_polyfill.CliffordString:
+        """Returns the CliffordString raised to a power.
+
+        Args:
+            power: The power to raise the CliffordString's Cliffords to.
+                This value can be negative (e.g. -1 returns the inverse string).
+
+        Returns:
+            The Clifford string raised to the power.
+
+        Examples:
+            >>> import stim
+
+            >>> p = stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**0
+            stim.CliffordString("I,I,I,I,I")
+
+            >>> p**1
+            stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**12000001
+            stim.CliffordString("I,X,H,S,C_XYZ")
+
+            >>> p**2
+            stim.CliffordString("I,I,I,Z,C_ZYX")
+
+            >>> p**3
+            stim.CliffordString("I,X,H,S_DAG,I")
+
+            >>> p**-1
+            stim.CliffordString("I,X,H,S_DAG,C_ZYX")
+        """
+    def __repr__(
+        self,
+    ) -> str:
+        """Returns text that is a valid python expression evaluating to an equivalent `stim.CliffordString`.
+        """
+    def __rmul__(
+        self,
+        lhs: int,
+    ) -> stim._stim_polyfill.CliffordString:
+        """CliffordString left-multiplication.
+
+        Args:
+            lhs: The number of times to repeat the Clifford string's contents.
+
+        Returns:
+            The repeated Clifford string.
+
+        Examples:
+            >>> import stim
+
+            >>> 2 * stim.CliffordString("I,X,H")
+            stim.CliffordString("I,X,H,I,X,H")
+
+            >>> 0 * stim.CliffordString("I,X,H")
+            stim.CliffordString("")
+
+            >>> 5 * stim.CliffordString("I")
+            stim.CliffordString("I,I,I,I,I")
+        """
+    def __setitem__(
+        self,
+        index_or_slice: Union[int, slice],
+        new_value: Union[str, stim.GateData, stim.CliffordString, stim.PauliString, stim.Tableau],
+    ) -> None:
+        """Overwrites an indexed Clifford, or slice of Cliffords, with the given value.
+
+        Args:
+            index_or_slice: The index of the Clifford to overwrite, or the slice
+                of Cliffords to overwrite.
+            new_value: Specifies the value to write into the Clifford string. This can
+                be set to a few different types of values:
+                - str: Name of the single qubit Clifford gate to write to the index or
+                    broadcast over the slice.
+                - stim.GateData: The single qubit Clifford gate to write to the index
+                    or broadcast over the slice.
+                - stim.Tableau: Must be a single qubit tableau. Specifies the single
+                    qubit Clifford gate to write to the index or broadcast over the
+                    slice.
+                - stim.CliffordString: String of Cliffords to write into the slice.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.CliffordString("I,I,I,I,I")
+
+            >>> s[1] = 'H'
+            >>> s
+            stim.CliffordString("I,H,I,I,I")
+
+            >>> s[2:] = 'SQRT_X'
+            >>> s
+            stim.CliffordString("I,H,SQRT_X,SQRT_X,SQRT_X")
+
+            >>> s[0] = stim.gate_data('S_DAG').inverse
+            >>> s
+            stim.CliffordString("S,H,SQRT_X,SQRT_X,SQRT_X")
+
+            >>> s[:] = 'I'
+            >>> s
+            stim.CliffordString("I,I,I,I,I")
+
+            >>> s[::2] = stim.CliffordString("X,Y,Z")
+            >>> s
+            stim.CliffordString("X,I,Y,I,Z")
+
+            >>> s[0] = stim.Tableau.from_named_gate("H")
+            >>> s
+            stim.CliffordString("H,I,Y,I,Z")
+
+            >>> s[:] = stim.Tableau.from_named_gate("S")
+            >>> s
+            stim.CliffordString("S,S,S,S,S")
+
+            >>> s[:4] = stim.PauliString("IXYZ")
+            >>> s
+            stim.CliffordString("I,X,Y,Z,S")
+        """
+    def __str__(
+        self,
+    ) -> str:
+        """Returns a string representation of the CliffordString's operations.
+        """
+    @staticmethod
+    def all_cliffords_string(
+    ) -> stim._stim_polyfill.CliffordString:
+        """Returns a stim.CliffordString containing each single qubit Clifford once.
+
+        Useful for things like testing that a method works on every single Clifford.
+
+        Examples:
+            >>> import stim
+            >>> cliffords = stim.CliffordString.all_cliffords_string()
+            >>> len(cliffords)
+            24
+
+            >>> print(cliffords[:8])
+            I,X,Y,Z,H_XY,S,S_DAG,H_NXY
+
+            >>> print(cliffords[8:16])
+            H,SQRT_Y_DAG,H_NXZ,SQRT_Y,H_YZ,H_NYZ,SQRT_X,SQRT_X_DAG
+
+            >>> print(cliffords[16:])
+            C_XYZ,C_XYNZ,C_NXYZ,C_XNYZ,C_ZYX,C_ZNYX,C_NZYX,C_ZYNX
+        """
+    def copy(
+        self,
+    ) -> stim._stim_polyfill.CliffordString:
+        """Returns a copy of the CliffordString.
+
+        Returns:
+            The copy.
+
+        Examples:
+            >>> import stim
+            >>> c = stim.CliffordString("H,X")
+            >>> alias = c
+            >>> copy = c.copy()
+            >>> c *= 5
+            >>> alias
+            stim.CliffordString("H,X,H,X,H,X,H,X,H,X")
+            >>> copy
+            stim.CliffordString("H,X")
+        """
+    @staticmethod
+    def random(
+        num_qubits: int,
+    ) -> stim._stim_polyfill.CliffordString:
+        """Samples a uniformly random CliffordString.
+
+        Args:
+            num_qubits: The number of qubits the CliffordString should act upon.
+
+        Examples:
+            >>> import stim
+            >>> p = stim.CliffordString.random(5)
+            >>> len(p)
+            5
+
+        Returns:
+            The sampled Clifford string.
+        """
+    def x_outputs(
+        self,
+        *,
+        bit_packed_signs: bool = False,
+    ) -> Tuple[stim.PauliString, np.ndarray]:
+        """Returns what each Clifford in the CliffordString conjugates an X input into.
+
+        For example, H conjugates X into +Z and S_DAG conjugates X into -Y.
+
+        Combined with `z_outputs`, the results of this method completely specify
+        the single qubit Clifford applied to each qubit.
+
+        Args:
+            bit_packed_signs: Defaults to False. When False, the sign data is returned
+                in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                `np.uint8` and 8 bits are packed into each byte (in little endian
+                order).
+
+        Returns:
+            A (paulis, signs) tuple.
+
+            `paulis` has type stim.PauliString. Its sign is always positive.
+
+            `signs` has type np.ndarray and an argument-dependent shape:
+                bit_packed_signs=False:
+                    dtype=np.bool_
+                    shape=(num_qubits,)
+                bit_packed_signs=True:
+                    dtype=np.uint8
+                    shape=(math.ceil(num_qubits / 8),)
+
+        Examples:
+            >>> import stim
+            >>> x_paulis, x_signs = stim.CliffordString("I,Y,H,S").x_outputs()
+            >>> x_paulis
+            stim.PauliString("+XXZY")
+            >>> x_signs
+            array([False,  True, False, False])
+
+            >>> stim.CliffordString("I,Y,H,S").x_outputs(bit_packed_signs=True)[1]
+            array([2], dtype=uint8)
+        """
+    def y_outputs(
+        self,
+        *,
+        bit_packed_signs: bool = False,
+    ) -> Tuple[stim.PauliString, np.ndarray]:
+        """Returns what each Clifford in the CliffordString conjugates a Y input into.
+
+        For example, H conjugates Y into -Y and S_DAG conjugates Y into +X.
+
+        Args:
+            bit_packed_signs: Defaults to False. When False, the sign data is returned
+                in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                `np.uint8` and 8 bits are packed into each byte (in little endian
+                order).
+
+        Returns:
+            A (paulis, signs) tuple.
+
+            `paulis` has type stim.PauliString. Its sign is always positive.
+
+            `signs` has type np.ndarray and an argument-dependent shape:
+                bit_packed_signs=False:
+                    dtype=np.bool_
+                    shape=(num_qubits,)
+                bit_packed_signs=True:
+                    dtype=np.uint8
+                    shape=(math.ceil(num_qubits / 8),)
+
+        Examples:
+            >>> import stim
+            >>> y_paulis, y_signs = stim.CliffordString("I,X,H,S").y_outputs()
+            >>> y_paulis
+            stim.PauliString("+YYYX")
+            >>> y_signs
+            array([False,  True,  True,  True])
+
+            >>> stim.CliffordString("I,X,H,S").y_outputs(bit_packed_signs=True)[1]
+            array([14], dtype=uint8)
+        """
+    def z_outputs(
+        self,
+        *,
+        bit_packed_signs: bool = False,
+    ) -> Tuple[stim.PauliString, np.ndarray]:
+        """Returns what each Clifford in the CliffordString conjugates a Z input into.
+
+        For example, H conjugates Z into +X and SQRT_X conjugates Z into -Y.
+
+        Combined with `x_outputs`, the results of this method completely specify
+        the single qubit Clifford applied to each qubit.
+
+        Args:
+            bit_packed_signs: Defaults to False. When False, the sign data is returned
+                in a numpy array with dtype `np.bool_`. When True, the dtype is instead
+                `np.uint8` and 8 bits are packed into each byte (in little endian
+                order).
+
+        Returns:
+            A (paulis, signs) tuple.
+
+            `paulis` has type stim.PauliString. Its sign is always positive.
+
+            `signs` has type np.ndarray and an argument-dependent shape:
+                bit_packed_signs=False:
+                    dtype=np.bool_
+                    shape=(num_qubits,)
+                bit_packed_signs=True:
+                    dtype=np.uint8
+                    shape=(math.ceil(num_qubits / 8),)
+
+        Examples:
+            >>> import stim
+            >>> z_paulis, z_signs = stim.CliffordString("I,Y,H,S").z_outputs()
+            >>> z_paulis
+            stim.PauliString("+ZZXZ")
+            >>> z_signs
+            array([False,  True, False, False])
+
+            >>> stim.CliffordString("I,Y,H,S").z_outputs(bit_packed_signs=True)[1]
+            array([2], dtype=uint8)
         """
 class CompiledDemSampler:
     """A helper class for efficiently sampler from a detector error model.
@@ -4073,13 +4627,13 @@ class CompiledDemSampler:
         shots: int,
         *,
         det_out_file: Union[None, str, pathlib.Path],
-        det_out_format: str = "01",
+        det_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         obs_out_file: Union[None, str, pathlib.Path],
-        obs_out_format: str = "01",
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         err_out_file: Union[None, str, pathlib.Path] = None,
-        err_out_format: str = "01",
+        err_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         replay_err_in_file: Union[None, str, pathlib.Path] = None,
-        replay_err_in_format: str = "01",
+        replay_err_in_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Samples the detector error model and writes the results to disk.
 
@@ -4151,7 +4705,7 @@ class CompiledDetectorSampler:
     """
     def __init__(
         self,
-        circuit: stim.Circuit,
+        circuit: stim._stim_polyfill.Circuit,
         *,
         seed: object = None,
     ) -> None:
@@ -4333,9 +4887,9 @@ class CompiledDetectorSampler:
         shots: int,
         *,
         filepath: Union[str, pathlib.Path],
-        format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
-        obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01',
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         prepend_observables: bool = False,
         append_observables: bool = False,
     ) -> None:
@@ -4389,7 +4943,7 @@ class CompiledMeasurementSampler:
     """
     def __init__(
         self,
-        circuit: stim.Circuit,
+        circuit: stim._stim_polyfill.Circuit,
         *,
         skip_reference_sample: bool = False,
         seed: object = None,
@@ -4539,8 +5093,8 @@ class CompiledMeasurementSampler:
         self,
         shots: int,
         *,
-        filepath: str,
-        format: str = '01',
+        filepath: Union[str, pathlib.Path],
+        format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Samples measurements from the circuit and writes them to a file.
 
@@ -4577,7 +5131,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
     """
     def __init__(
         self,
-        circuit: stim.Circuit,
+        circuit: stim._stim_polyfill.Circuit,
         *,
         skip_reference_sample: bool = False,
     ) -> None:
@@ -4639,7 +5193,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         *,
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
-        separate_observables: 'Literal[True]',
+        separate_observables: Literal[True],
         append_observables: bool = False,
         bit_packed: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -4731,15 +5285,15 @@ class CompiledMeasurementsToDetectionEventsConverter:
     def convert_file(
         self,
         *,
-        measurements_filepath: str,
-        measurements_format: str = '01',
-        sweep_bits_filepath: str = None,
-        sweep_bits_format: str = '01',
-        detection_events_filepath: str,
-        detection_events_format: str = '01',
+        measurements_filepath: Union[str, pathlib.Path],
+        measurements_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
+        sweep_bits_filepath: Optional[Union[str, pathlib.Path]] = None,
+        sweep_bits_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
+        detection_events_filepath: Union[str, pathlib.Path],
+        detection_events_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
         append_observables: bool = False,
-        obs_out_filepath: str = None,
-        obs_out_format: str = '01',
+        obs_out_filepath: Optional[Union[str, pathlib.Path]] = None,
+        obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01',
     ) -> None:
         """Reads measurement data from a file and writes detection events to another file.
 
@@ -4812,7 +5366,7 @@ class DemInstruction:
     """
     def __eq__(
         self,
-        arg0: stim.DemInstruction,
+        arg0: stim._stim_polyfill.DemInstruction,
     ) -> bool:
         """Determines if two instructions have identical contents.
         """
@@ -4852,7 +5406,7 @@ class DemInstruction:
         """
     def __ne__(
         self,
-        arg0: stim.DemInstruction,
+        arg0: stim._stim_polyfill.DemInstruction,
     ) -> bool:
         """Determines if two instructions have non-identical contents.
         """
@@ -4980,14 +5534,14 @@ class DemRepeatBlock:
     """
     def __eq__(
         self,
-        arg0: stim.DemRepeatBlock,
+        arg0: stim._stim_polyfill.DemRepeatBlock,
     ) -> bool:
         """Determines if two repeat blocks are identical.
         """
     def __init__(
         self,
         repeat_count: int,
-        block: stim.DetectorErrorModel,
+        block: stim._stim_polyfill.DetectorErrorModel,
     ) -> None:
         """Creates a stim.DemRepeatBlock.
 
@@ -5006,7 +5560,7 @@ class DemRepeatBlock:
         """
     def __ne__(
         self,
-        arg0: stim.DemRepeatBlock,
+        arg0: stim._stim_polyfill.DemRepeatBlock,
     ) -> bool:
         """Determines if two repeat blocks are different.
         """
@@ -5017,7 +5571,7 @@ class DemRepeatBlock:
         """
     def body_copy(
         self,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Returns a copy of the block's body, as a stim.DetectorErrorModel.
 
         Examples:
@@ -5066,7 +5620,7 @@ class DemTarget:
     """
     def __eq__(
         self,
-        arg0: stim.DemTarget,
+        arg0: stim._stim_polyfill.DemTarget,
     ) -> bool:
         """Determines if two `stim.DemTarget`s are identical.
         """
@@ -5092,7 +5646,7 @@ class DemTarget:
         """
     def __ne__(
         self,
-        arg0: stim.DemTarget,
+        arg0: stim._stim_polyfill.DemTarget,
     ) -> bool:
         """Determines if two `stim.DemTarget`s are different.
         """
@@ -5160,7 +5714,7 @@ class DemTarget:
     @staticmethod
     def logical_observable_id(
         index: int,
-    ) -> stim.DemTarget:
+    ) -> stim._stim_polyfill.DemTarget:
         """Returns a logical observable id identifying a frame change.
 
         Args:
@@ -5183,7 +5737,7 @@ class DemTarget:
     @staticmethod
     def relative_detector_id(
         index: int,
-    ) -> stim.DemTarget:
+    ) -> stim._stim_polyfill.DemTarget:
         """Returns a relative detector id (e.g. "D5" in a .dem file).
 
         Args:
@@ -5205,7 +5759,7 @@ class DemTarget:
         """
     @staticmethod
     def separator(
-    ) -> stim.DemTarget:
+    ) -> stim._stim_polyfill.DemTarget:
         """Returns a target separator (e.g. "^" in a .dem file).
 
         Examples:
@@ -5260,7 +5814,7 @@ class DemTargetWithCoords:
     """
     def __init__(
         self,
-        dem_target: stim.DemTarget,
+        dem_target: stim._stim_polyfill.DemTarget,
         coords: List[float],
     ) -> None:
         """Creates a stim.DemTargetWithCoords.
@@ -5300,7 +5854,7 @@ class DemTargetWithCoords:
     @property
     def dem_target(
         self,
-    ) -> stim.DemTarget:
+    ) -> stim._stim_polyfill.DemTarget:
         """Returns the actual DEM target as a `stim.DemTarget`.
 
         Examples:
@@ -5378,8 +5932,8 @@ class DetectorErrorModel:
     """
     def __add__(
         self,
-        second: stim.DetectorErrorModel,
-    ) -> stim.DetectorErrorModel:
+        second: stim._stim_polyfill.DetectorErrorModel,
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Creates a detector error model by appending two models.
 
         Examples:
@@ -5398,7 +5952,7 @@ class DetectorErrorModel:
         """
     def __eq__(
         self,
-        arg0: stim.DetectorErrorModel,
+        arg0: stim._stim_polyfill.DetectorErrorModel,
     ) -> bool:
         """Determines if two detector error models have identical contents.
         """
@@ -5454,8 +6008,8 @@ class DetectorErrorModel:
         """
     def __iadd__(
         self,
-        second: stim.DetectorErrorModel,
-    ) -> stim.DetectorErrorModel:
+        second: stim._stim_polyfill.DetectorErrorModel,
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Appends a detector error model into the receiving model (mutating it).
 
         Examples:
@@ -5476,7 +6030,7 @@ class DetectorErrorModel:
     def __imul__(
         self,
         repetitions: int,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Mutates the detector error model by putting its contents into a repeat block.
 
         Special case: if the repetition count is 0, the model is cleared.
@@ -5543,7 +6097,7 @@ class DetectorErrorModel:
     def __mul__(
         self,
         repetitions: int,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Repeats the detector error model using a repeat block.
 
         Has special cases for 0 repetitions and 1 repetitions.
@@ -5573,7 +6127,7 @@ class DetectorErrorModel:
         """
     def __ne__(
         self,
-        arg0: stim.DetectorErrorModel,
+        arg0: stim._stim_polyfill.DetectorErrorModel,
     ) -> bool:
         """Determines if two detector error models have non-identical contents.
         """
@@ -5585,7 +6139,7 @@ class DetectorErrorModel:
     def __rmul__(
         self,
         repetitions: int,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Repeats the detector error model using a repeat block.
 
         Has special cases for 0 repetitions and 1 repetitions.
@@ -5757,7 +6311,7 @@ class DetectorErrorModel:
         self,
         *,
         seed: object = None,
-    ) -> stim.CompiledDemSampler:
+    ) -> stim._stim_polyfill.CompiledDemSampler:
         """Returns a CompiledDemSampler that can batch sample from detector error models.
 
         Args:
@@ -5817,7 +6371,7 @@ class DetectorErrorModel:
         """
     def copy(
         self,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Returns a copy of the detector error model.
 
         The copy is an independent detector error model with the same contents.
@@ -5834,7 +6388,7 @@ class DetectorErrorModel:
         """
     def diagram(
         self,
-        type: str,
+        type: Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"] = 'matchgraph-svg',
     ) -> Any:
         """Returns a diagram of the circuit, from a variety of options.
 
@@ -5888,7 +6442,7 @@ class DetectorErrorModel:
         """
     def flattened(
         self,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Returns the detector error model without repeat or detector_shift instructions.
 
         Returns:
@@ -6069,7 +6623,7 @@ class DetectorErrorModel:
     def rounded(
         self,
         arg0: int,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Creates an equivalent detector error model but with rounded error probabilities.
 
         Args:
@@ -6105,7 +6659,7 @@ class DetectorErrorModel:
     def shortest_graphlike_error(
         self,
         ignore_ungraphlike_errors: bool = True,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
         Note that this method does not pay attention to error probabilities (other than
@@ -6227,7 +6781,7 @@ class DetectorErrorModel:
         """
     def without_tags(
         self,
-    ) -> stim.DetectorErrorModel:
+    ) -> stim._stim_polyfill.DetectorErrorModel:
         """Returns a copy of the detector error model with all tags removed.
 
         Returns:
@@ -6271,8 +6825,8 @@ class ExplainedError:
     def __init__(
         self,
         *,
-        dem_error_terms: List[stim.DemTargetWithCoords],
-        circuit_error_locations: List[stim.CircuitErrorLocation],
+        dem_error_terms: List[stim._stim_polyfill.DemTargetWithCoords],
+        circuit_error_locations: List[stim._stim_polyfill.CircuitErrorLocation],
     ) -> None:
         """Creates a stim.ExplainedError.
 
@@ -6301,7 +6855,7 @@ class ExplainedError:
     @property
     def circuit_error_locations(
         self,
-    ) -> List[stim.CircuitErrorLocation]:
+    ) -> List[stim._stim_polyfill.CircuitErrorLocation]:
         """The locations of circuit errors that produce the symptoms in dem_error_terms.
 
         Note: if this list contains a single entry, it may be because a result
@@ -6334,7 +6888,7 @@ class ExplainedError:
     @property
     def dem_error_terms(
         self,
-    ) -> List[stim.DemTargetWithCoords]:
+    ) -> List[stim._stim_polyfill.DemTargetWithCoords]:
         """The detectors and observables flipped by this error mechanism.
         """
 class FlipSimulator:
@@ -7335,7 +7889,7 @@ class FlippedMeasurement:
     @property
     def observable(
         self,
-    ) -> List[stim.GateTargetWithCoords]:
+    ) -> List[stim._stim_polyfill.GateTargetWithCoords]:
         """Returns the observable of the flipped measurement.
 
         For example, an `MX 5` measurement will have the observable X5.
@@ -7408,7 +7962,7 @@ class Flow:
     """
     def __eq__(
         self,
-        arg0: stim.Flow,
+        arg0: stim._stim_polyfill.Flow,
     ) -> bool:
         """Determines if two flows have identical contents.
         """
@@ -7428,7 +7982,7 @@ class Flow:
         the string "X_ -> ZZ xor rec[-1]" will result in a flow with input pauli string
         "X_", output pauli string "ZZ", and measurement indices [-1].
 
-        Arguments:
+        Args:
             arg [position-only]: Defaults to None. Must be specified by itself if used.
                 str: Initializes a flow by parsing the given shorthand text.
                 stim.Flow: Initializes a copy of the given flow.
@@ -7475,8 +8029,8 @@ class Flow:
         """
     def __mul__(
         self,
-        rhs: stim.Flow,
-    ) -> stim.Flow:
+        rhs: stim._stim_polyfill.Flow,
+    ) -> stim._stim_polyfill.Flow:
         """Computes the product of two flows.
 
         Args:
@@ -7502,7 +8056,7 @@ class Flow:
         """
     def __ne__(
         self,
-        arg0: stim.Flow,
+        arg0: stim._stim_polyfill.Flow,
     ) -> bool:
         """Determines if two flows have non-identical contents.
         """
@@ -7542,7 +8096,7 @@ class Flow:
         """
     def input_copy(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns a copy of the flow's input stabilizer.
 
         Examples:
@@ -7570,7 +8124,7 @@ class Flow:
         """
     def output_copy(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns a copy of the flow's output stabilizer.
 
         Examples:
@@ -7603,7 +8157,7 @@ class GateData:
     """
     def __eq__(
         self,
-        arg0: stim.GateData,
+        arg0: stim._stim_polyfill.GateData,
     ) -> bool:
         """Determines if two GateData instances are identical.
         """
@@ -7620,7 +8174,7 @@ class GateData:
         """
     def __ne__(
         self,
-        arg0: stim.GateData,
+        arg0: stim._stim_polyfill.GateData,
     ) -> bool:
         """Determines if two GateData instances are not identical.
         """
@@ -7690,7 +8244,7 @@ class GateData:
     @property
     def generalized_inverse(
         self,
-    ) -> stim.GateData:
+    ) -> stim._stim_polyfill.GateData:
         """The closest-thing-to-an-inverse for the gate, if forced to pick something.
 
         The generalized inverse of a unitary gate U is its actual inverse U^-1.
@@ -8262,7 +8816,7 @@ class GateTarget:
     """
     def __eq__(
         self,
-        arg0: stim.GateTarget,
+        arg0: stim._stim_polyfill.GateTarget,
     ) -> bool:
         """Determines if two `stim.GateTarget`s are identical.
         """
@@ -8291,7 +8845,7 @@ class GateTarget:
         """
     def __ne__(
         self,
-        arg0: stim.GateTarget,
+        arg0: stim._stim_polyfill.GateTarget,
     ) -> bool:
         """Determines if two `stim.GateTarget`s are different.
         """
@@ -8614,7 +9168,7 @@ class GateTargetWithCoords:
     @property
     def gate_target(
         self,
-    ) -> stim.GateTarget:
+    ) -> stim._stim_polyfill.GateTarget:
         """Returns the actual gate target as a `stim.GateTarget`.
 
         Examples:
@@ -8638,8 +9192,8 @@ class PauliString:
     """
     def __add__(
         self,
-        rhs: stim.PauliString,
-    ) -> stim.PauliString:
+        rhs: stim._stim_polyfill.PauliString,
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the tensor product of two Pauli strings.
 
         Concatenates the Pauli strings and multiplies their signs.
@@ -8661,7 +9215,7 @@ class PauliString:
         """
     def __eq__(
         self,
-        arg0: stim.PauliString,
+        arg0: stim._stim_polyfill.PauliString,
     ) -> bool:
         """Determines if two Pauli strings have identical contents.
         """
@@ -8710,8 +9264,8 @@ class PauliString:
         """
     def __iadd__(
         self,
-        rhs: stim.PauliString,
-    ) -> stim.PauliString:
+        rhs: stim._stim_polyfill.PauliString,
+    ) -> stim._stim_polyfill.PauliString:
         """Performs an inplace tensor product.
 
         Concatenates the given Pauli string onto the receiving string and multiplies
@@ -8737,7 +9291,7 @@ class PauliString:
     def __imul__(
         self,
         rhs: object,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Inplace right-multiplies the Pauli string.
 
         Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -8780,7 +9334,7 @@ class PauliString:
         """
     def __init__(
         self,
-        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, 'Literal["_", "I", "X", "Y", "Z"]']]] = None,
+        arg: Union[None, int, str, stim.PauliString, Iterable[Union[int, Literal["_", "I", "X", "Y", "Z"]]]] = None,
         /,
     ) -> None:
         """Initializes a stim.PauliString from the given argument.
@@ -8793,7 +9347,7 @@ class PauliString:
         pauli string is a series of integers seperated by '*' and prefixed by 'I', 'X',
         'Y', or 'Z'.
 
-        Arguments:
+        Args:
             arg [position-only]: This can be a variety of types, including:
                 None (default): initializes an empty Pauli string.
                 int: initializes an identity Pauli string of the given length.
@@ -8850,7 +9404,7 @@ class PauliString:
     def __itruediv__(
         self,
         rhs: complex,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Inplace divides the Pauli string by a complex unit.
 
         Args:
@@ -8885,7 +9439,7 @@ class PauliString:
     def __mul__(
         self,
         rhs: object,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Right-multiplies the Pauli string.
 
         Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -8936,13 +9490,13 @@ class PauliString:
         """
     def __ne__(
         self,
-        arg0: stim.PauliString,
+        arg0: stim._stim_polyfill.PauliString,
     ) -> bool:
         """Determines if two Pauli strings have non-identical contents.
         """
     def __neg__(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the negation of the pauli string.
 
         Examples:
@@ -8956,7 +9510,7 @@ class PauliString:
         """
     def __pos__(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns a pauli string with the same contents.
 
         Examples:
@@ -8976,7 +9530,7 @@ class PauliString:
     def __rmul__(
         self,
         lhs: object,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Left-multiplies the Pauli string.
 
         Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -9064,7 +9618,7 @@ class PauliString:
     def __truediv__(
         self,
         rhs: complex,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Divides the Pauli string by a complex unit.
 
         Args:
@@ -9180,7 +9734,7 @@ class PauliString:
         """
     def commutes(
         self,
-        other: stim.PauliString,
+        other: stim._stim_polyfill.PauliString,
     ) -> bool:
         """Determines if two Pauli strings commute or not.
 
@@ -9213,7 +9767,7 @@ class PauliString:
         """
     def copy(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns a copy of the pauli string.
 
         The copy is an independent pauli string with the same contents.
@@ -9229,8 +9783,8 @@ class PauliString:
         """
     def extended_product(
         self,
-        other: stim.PauliString,
-    ) -> Tuple[complex, stim.PauliString]:
+        other: stim._stim_polyfill.PauliString,
+    ) -> Tuple[complex, stim._stim_polyfill.PauliString]:
         """[DEPRECATED] Use multiplication (__mul__ or *) instead.
         """
     @staticmethod
@@ -9287,7 +9841,7 @@ class PauliString:
     def from_unitary_matrix(
         matrix: Iterable[Iterable[Union[int, float, complex]]],
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
         unsigned: bool = False,
     ) -> stim.PauliString:
         """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
@@ -9343,7 +9897,7 @@ class PauliString:
         min_weight: int = 0,
         max_weight: object = None,
         allowed_paulis: str = 'XYZ',
-    ) -> stim.PauliStringIterator:
+    ) -> stim._stim_polyfill.PauliStringIterator:
         """Returns an iterator that iterates over all matching pauli strings.
 
         Args:
@@ -9433,7 +9987,7 @@ class PauliString:
         num_qubits: int,
         *,
         allow_imaginary: bool = False,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Samples a uniformly random Hermitian Pauli string.
 
         Args:
@@ -9533,7 +10087,7 @@ class PauliString:
         """
     def to_tableau(
         self,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Creates a Tableau equivalent to this Pauli string.
 
         The tableau represents a Clifford operation that multiplies qubits
@@ -9577,7 +10131,7 @@ class PauliString:
     def to_unitary_matrix(
         self,
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> np.ndarray[np.complex64]:
         """Converts the pauli string into a unitary matrix.
 
@@ -9637,7 +10191,7 @@ class PauliStringIterator:
     """
     def __iter__(
         self,
-    ) -> stim.PauliStringIterator:
+    ) -> stim._stim_polyfill.PauliStringIterator:
         """Returns an independent copy of the pauli string iterator.
 
         Since for-loops and loop-comprehensions call `iter` on things they
@@ -9646,7 +10200,7 @@ class PauliStringIterator:
         """
     def __next__(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the next iterated pauli string.
         """
 class Tableau:
@@ -9684,8 +10238,8 @@ class Tableau:
     """
     def __add__(
         self,
-        rhs: stim.Tableau,
-    ) -> stim.Tableau:
+        rhs: stim._stim_polyfill.Tableau,
+    ) -> stim._stim_polyfill.Tableau:
         """Returns the direct sum (diagonal concatenation) of two Tableaus.
 
         Args:
@@ -9708,8 +10262,8 @@ class Tableau:
         """
     def __call__(
         self,
-        pauli_string: stim.PauliString,
-    ) -> stim.PauliString:
+        pauli_string: stim._stim_polyfill.PauliString,
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the equivalent PauliString after the Tableau's Clifford operation.
 
         If P is a Pauli product before a Clifford operation C, then this method returns
@@ -9740,14 +10294,14 @@ class Tableau:
         """
     def __eq__(
         self,
-        arg0: stim.Tableau,
+        arg0: stim._stim_polyfill.Tableau,
     ) -> bool:
         """Determines if two tableaus have identical contents.
         """
     def __iadd__(
         self,
-        rhs: stim.Tableau,
-    ) -> stim.Tableau:
+        rhs: stim._stim_polyfill.Tableau,
+    ) -> stim._stim_polyfill.Tableau:
         """Performs an inplace direct sum (diagonal concatenation).
 
         Args:
@@ -9804,8 +10358,8 @@ class Tableau:
         """
     def __mul__(
         self,
-        rhs: stim.Tableau,
-    ) -> stim.Tableau:
+        rhs: stim._stim_polyfill.Tableau,
+    ) -> stim._stim_polyfill.Tableau:
         """Returns the product of two tableaus.
 
         If the tableau T1 represents the Clifford operation with unitary C1,
@@ -9826,14 +10380,14 @@ class Tableau:
         """
     def __ne__(
         self,
-        arg0: stim.Tableau,
+        arg0: stim._stim_polyfill.Tableau,
     ) -> bool:
         """Determines if two tableaus have non-identical contents.
         """
     def __pow__(
         self,
         exponent: int,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Raises the tableau to an integer power.
 
         Large powers are reached efficiently using repeated squaring.
@@ -9895,7 +10449,7 @@ class Tableau:
         """
     def copy(
         self,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Returns a copy of the tableau. An independent tableau with the same contents.
 
         Examples:
@@ -9964,9 +10518,9 @@ class Tableau:
     @staticmethod
     def from_conjugated_generators(
         *,
-        xs: List[stim.PauliString],
-        zs: List[stim.PauliString],
-    ) -> stim.Tableau:
+        xs: List[stim._stim_polyfill.PauliString],
+        zs: List[stim._stim_polyfill.PauliString],
+    ) -> stim._stim_polyfill.Tableau:
         """Creates a tableau from the given outputs for each generator.
 
         Verifies that the tableau is well formed.
@@ -10002,7 +10556,7 @@ class Tableau:
     @staticmethod
     def from_named_gate(
         name: str,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Returns the tableau of a named Clifford gate.
 
         Args:
@@ -10212,7 +10766,7 @@ class Tableau:
     def from_state_vector(
         state_vector: Iterable[float],
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> stim.Tableau:
         """Creates a tableau representing the stabilizer state of the given state vector.
 
@@ -10273,7 +10827,7 @@ class Tableau:
     def from_unitary_matrix(
         matrix: Iterable[Iterable[float]],
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> stim.Tableau:
         """Creates a tableau from the unitary matrix of a Clifford operation.
 
@@ -10329,7 +10883,7 @@ class Tableau:
         self,
         *,
         unsigned: bool = False,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Computes the inverse of the tableau.
 
         The inverse T^-1 of a tableau T is the unique tableau with the property that
@@ -10396,7 +10950,7 @@ class Tableau:
         input_index: int,
         *,
         unsigned: bool = False,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Conjugates a single-qubit X Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).x_output(input_index)`.
@@ -10466,7 +11020,7 @@ class Tableau:
         input_index: int,
         *,
         unsigned: bool = False,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Conjugates a single-qubit Y Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).y_output(input_index)`.
@@ -10536,7 +11090,7 @@ class Tableau:
         input_index: int,
         *,
         unsigned: bool = False,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Conjugates a single-qubit Z Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).z_output(input_index)`.
@@ -10608,7 +11162,7 @@ class Tableau:
         num_qubits: int,
         *,
         unsigned: bool = False,
-    ) -> stim.TableauIterator:
+    ) -> stim._stim_polyfill.TableauIterator:
         """Returns an iterator that iterates over all Tableaus of a given size.
 
         Args:
@@ -10658,7 +11212,7 @@ class Tableau:
     @staticmethod
     def random(
         num_qubits: int,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Samples a uniformly random Clifford operation and returns its tableau.
 
         Args:
@@ -10678,8 +11232,8 @@ class Tableau:
         """
     def then(
         self,
-        second: stim.Tableau,
-    ) -> stim.Tableau:
+        second: stim._stim_polyfill.Tableau,
+    ) -> stim._stim_polyfill.Tableau:
         """Returns the result of composing two tableaus.
 
         If the tableau T1 represents the Clifford operation with unitary C1,
@@ -10702,7 +11256,7 @@ class Tableau:
         """
     def to_circuit(
         self,
-        method: 'Literal["elimination", "graph_state"]' = 'elimination',
+        method: Literal["elimination", "graph_state"] = 'elimination',
     ) -> stim.Circuit:
         """Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -10989,7 +11543,7 @@ class Tableau:
         """
     def to_pauli_string(
         self,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Return a Pauli string equivalent to the tableau.
 
         If the tableau is equivalent to a pauli product, creates
@@ -11021,7 +11575,7 @@ class Tableau:
         self,
         *,
         canonicalize: bool = False,
-    ) -> List[stim.PauliString]:
+    ) -> List[stim._stim_polyfill.PauliString]:
         """Returns the stabilizer generators of the tableau, optionally canonicalized.
 
         The stabilizer generators of the tableau are its Z outputs. Canonicalizing
@@ -11069,7 +11623,7 @@ class Tableau:
     def to_state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> np.ndarray[np.complex64]:
         """Returns the state vector produced by applying the tableau to the |0..0> state.
 
@@ -11121,7 +11675,7 @@ class Tableau:
     def to_unitary_matrix(
         self,
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> np.ndarray[np.complex64]:
         """Converts the tableau into a unitary matrix.
 
@@ -11166,7 +11720,7 @@ class Tableau:
     def x_output(
         self,
         target: int,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the result of conjugating a Pauli X by the tableau's Clifford operation.
 
         Args:
@@ -11241,7 +11795,7 @@ class Tableau:
     def y_output(
         self,
         target: int,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the result of conjugating a Pauli Y by the tableau's Clifford operation.
 
         Args:
@@ -11318,7 +11872,7 @@ class Tableau:
     def z_output(
         self,
         target: int,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the result of conjugating a Pauli Z by the tableau's Clifford operation.
 
         Args:
@@ -11404,7 +11958,7 @@ class TableauIterator:
     """
     def __iter__(
         self,
-    ) -> stim.TableauIterator:
+    ) -> stim._stim_polyfill.TableauIterator:
         """Returns an independent copy of the tableau iterator.
 
         Since for-loops and loop-comprehensions call `iter` on things they
@@ -11413,7 +11967,7 @@ class TableauIterator:
         """
     def __next__(
         self,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Returns the next iterated tableau.
         """
 class TableauSimulator:
@@ -11537,7 +12091,7 @@ class TableauSimulator:
         """
     def canonical_stabilizers(
         self,
-    ) -> List[stim.PauliString]:
+    ) -> List[stim._stim_polyfill.PauliString]:
         """Returns a standardized list of the simulator's current stabilizer generators.
 
         Two simulators have the same canonical stabilizers if and only if their current
@@ -11683,7 +12237,7 @@ class TableauSimulator:
         """
     def current_inverse_tableau(
         self,
-    ) -> stim.Tableau:
+    ) -> stim._stim_polyfill.Tableau:
         """Returns a copy of the internal state of the simulator as a stim.Tableau.
 
         Returns:
@@ -11873,7 +12427,7 @@ class TableauSimulator:
         """
     def do_circuit(
         self,
-        circuit: stim.Circuit,
+        circuit: stim._stim_polyfill.Circuit,
     ) -> None:
         """Applies a circuit to the simulator's state.
 
@@ -11892,7 +12446,7 @@ class TableauSimulator:
         """
     def do_pauli_string(
         self,
-        pauli_string: stim.PauliString,
+        pauli_string: stim._stim_polyfill.PauliString,
     ) -> None:
         """Applies the paulis from a pauli string to the simulator's state.
 
@@ -11908,7 +12462,7 @@ class TableauSimulator:
         """
     def do_tableau(
         self,
-        tableau: stim.Tableau,
+        tableau: stim._stim_polyfill.Tableau,
         targets: List[int],
     ) -> None:
         """Applies a custom tableau operation to qubits in the simulator.
@@ -12181,7 +12735,7 @@ class TableauSimulator:
         """
     def measure_observable(
         self,
-        observable: stim.PauliString,
+        observable: stim._stim_polyfill.PauliString,
         *,
         flip_probability: float = 0.0,
     ) -> bool:
@@ -12238,7 +12792,7 @@ class TableauSimulator:
     def peek_bloch(
         self,
         target: int,
-    ) -> stim.PauliString:
+    ) -> stim._stim_polyfill.PauliString:
         """Returns the state of the qubit as a single-qubit stim.PauliString stabilizer.
 
         This is a non-physical operation. It reports information about the qubit without
@@ -12283,7 +12837,7 @@ class TableauSimulator:
         """
     def peek_observable_expectation(
         self,
-        observable: stim.PauliString,
+        observable: stim._stim_polyfill.PauliString,
     ) -> int:
         """Determines the expected value of an observable.
 
@@ -12428,7 +12982,7 @@ class TableauSimulator:
         """
     def postselect_observable(
         self,
-        observable: stim.PauliString,
+        observable: stim._stim_polyfill.PauliString,
         *,
         desired_value: bool = False,
     ) -> None:
@@ -12687,7 +13241,7 @@ class TableauSimulator:
         """
     def set_inverse_tableau(
         self,
-        new_inverse_tableau: stim.Tableau,
+        new_inverse_tableau: stim._stim_polyfill.Tableau,
     ) -> None:
         """Overwrites the simulator's internal state with the given inverse tableau.
 
@@ -12843,7 +13397,7 @@ class TableauSimulator:
         self,
         state_vector: Iterable[float],
         *,
-        endian: str,
+        endian: Literal["little", "big"],
     ) -> None:
         """Sets the simulator's state to a superposition specified by an amplitude vector.
 
@@ -12989,7 +13543,7 @@ class TableauSimulator:
     def state_vector(
         self,
         *,
-        endian: str = 'little',
+        endian: Literal["little", "big"] = 'little',
     ) -> np.ndarray[np.complex64]:
         """Returns a wavefunction for the simulator's current state.
 
@@ -13484,7 +14038,7 @@ def main(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -13495,18 +14049,18 @@ def read_shot_data_file(
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    separate_observables: 'Literal[True]',
+    separate_observables: Literal[True],
 ) -> Tuple[np.ndarray, np.ndarray]:
     pass
 def read_shot_data_file(
     *,
     path: Union[str, pathlib.Path],
-    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
@@ -13611,7 +14165,7 @@ def target_combined_paulis(
         ''')
     """
 def target_combiner(
-) -> stim.GateTarget:
+) -> stim._stim_polyfill.GateTarget:
     """Returns a target combiner that can be used to build Pauli products.
 
     Examples:
@@ -13653,7 +14207,7 @@ def target_inv(
     """
 def target_logical_observable_id(
     index: int,
-) -> stim.DemTarget:
+) -> stim._stim_polyfill.DemTarget:
     """Returns a logical observable id identifying a frame change.
 
     Args:
@@ -13714,7 +14268,7 @@ def target_pauli(
     """
 def target_rec(
     lookback_index: int,
-) -> stim.GateTarget:
+) -> stim._stim_polyfill.GateTarget:
     """Returns a measurement record target with the given lookback.
 
     Measurement record targets are used to refer back to the measurement record;
@@ -13741,7 +14295,7 @@ def target_rec(
     """
 def target_relative_detector_id(
     index: int,
-) -> stim.DemTarget:
+) -> stim._stim_polyfill.DemTarget:
     """Returns a relative detector id (e.g. "D5" in a .dem file).
 
     Args:
@@ -13762,7 +14316,7 @@ def target_relative_detector_id(
         ''')
     """
 def target_separator(
-) -> stim.DemTarget:
+) -> stim._stim_polyfill.DemTarget:
     """Returns a target separator (e.g. "^" in a .dem file).
 
     Examples:
@@ -13780,7 +14334,7 @@ def target_separator(
     """
 def target_sweep_bit(
     sweep_bit_index: int,
-) -> stim.GateTarget:
+) -> stim._stim_polyfill.GateTarget:
     """Returns a sweep bit target that can be passed into `stim.Circuit.append`.
 
     Args:
@@ -13877,7 +14431,7 @@ def write_shot_data_file(
     *,
     data: np.ndarray,
     path: Union[str, pathlib.Path],
-    format: str,
+    format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"],
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
