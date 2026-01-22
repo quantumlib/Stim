@@ -2,3 +2,4 @@ matplotlib
 numpy
 stim
 scipy
+packaging
