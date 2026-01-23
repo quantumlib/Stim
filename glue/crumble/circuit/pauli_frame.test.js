@@ -36,6 +36,10 @@ test("pauli_frame.do_gate_vs_old_frame_updates", () => {
         if (g.name === 'DETECTOR' || g.name === 'OBSERVABLE_INCLUDE') {
             continue;
         }
+        if (g.name.startsWith('REVMARK')) {
+            // skipping REVMARKs since they are not supported by legacy implementation
+            continue;
+        }
         let before, after, returned;
         if (g.num_qubits === 1) {
             before = new PauliFrame(4, g.num_qubits);
