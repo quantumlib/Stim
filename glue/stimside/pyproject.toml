@@ -1,0 +1,22 @@
+# pyproject.toml
+
+# -------------------
+# Project Metadata
+# -------------------
+[project]
+name = "stimside"
+version = "0.1.0"
+description = "Stimside simulator to simulate loss using stim."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Matt McEwen", email = "mmcewen@google.com" },
+    { name = "Ming Li", email = "mliq@google.com" }
+]
+
+# Project dependencies are listed here.
+dependencies = [
+    "numpy",
+    "stim",
+    "sinter",
+]
