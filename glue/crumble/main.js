@@ -195,12 +195,12 @@ function makeChordHandlers() {
 
     res.set('shift+t', preview => editorState.rotate45(-1, preview));
     res.set('t', preview => editorState.rotate45(+1, preview));
-    res.set('escape', () => editorState.clearFocus);
+    res.set('escape', () => editorState.clearFocus());
     res.set('delete', preview => editorState.deleteAtFocus(preview));
     res.set('backspace', preview => editorState.deleteAtFocus(preview));
     res.set('ctrl+delete', preview => editorState.deleteCurLayer(preview));
     res.set('ctrl+insert', preview => editorState.insertLayer(preview));
-    res.set('ctrl+backspace', () => editorState.deleteCurLayer);
+    res.set('ctrl+backspace', preview => editorState.deleteCurLayer(preview));
     res.set('ctrl+z', preview => { if (!preview) editorState.undo() });
     res.set('ctrl+y', preview => { if (!preview) editorState.redo() });
     res.set('ctrl+shift+z', preview => { if (!preview) editorState.redo() });
