@@ -42,11 +42,6 @@ class TaskMetadata:
                         return_circuit.append(stim.CircuitInstruction('H', op.targets_copy()[1::2]))
 
                         return_circuit.append(stim.CircuitInstruction(
-                            'I_ERROR', 
-                            op.targets_copy(),
-                            tag = f"LEAKAGE_DEPOLARIZE_1"
-                            ))
-                        return_circuit.append(stim.CircuitInstruction(
                             'CZ', op.targets_copy(), tag="CONDITIONED_ON_PAIR: (U, U)"))
                         
                         return_circuit.append(stim.CircuitInstruction(
@@ -102,6 +97,7 @@ class TaskMetadata:
         return sinter.Task(
             circuit=circuit,
             detector_error_model=circuit.detector_error_model(decompose_errors=True),
+            decoder=self.sampler,
             json_metadata=self.json_metadata(),
         )
     
@@ -121,8 +117,8 @@ metadata = [
 ]
 
 ## Simulation limits
-max_shots = 1_000_000
-max_errors = 1_000_000
+max_shots = 1_000
+max_errors = 100
 
 if __name__ == '__main__':
     op_handler = LeakageUint8(unconditional_condition_on_U=False)

@@ -347,9 +347,11 @@ class TablesideSimulator:
             separate_observables=True,
         )
 
-    def get_detector_flips(self) -> NDArray[np.bool_]:
+    def get_detector_flips(self, append_observables=False) -> NDArray[np.bool_]:
         if self._detector_flips is None:
             self._convert_measurements_to_detector_flips()
+        if append_observables and self._observable_flips is not None:
+            return np.hstack([self._detector_flips, self._observable_flips])
         return self._detector_flips
 
     def get_observable_flips(self) -> NDArray[np.bool_]:
