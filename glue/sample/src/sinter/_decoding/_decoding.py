@@ -180,6 +180,8 @@ def sample_decode(*,
         decoder: The name of the decoder to use. Allowed values are:
             "pymatching":
                 Use pymatching min-weight-perfect-match decoder.
+            "pymatching-correlated":
+                Use pymatching min-weight-perfect-match decoder with correlated decoding enabled.
             "internal":
                 Use internal decoder with uncorrelated decoding.
             "internal_correlated":
