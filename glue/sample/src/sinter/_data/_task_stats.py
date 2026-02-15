@@ -79,6 +79,16 @@ class TaskStats:
         assert isinstance(self.decoder, str)
         assert isinstance(self.strong_id, str)
         assert self.json_metadata is None or isinstance(self.json_metadata, (int, float, str, dict, list, tuple))
+
+        if isinstance(self.errors, np.integer):
+            object.__setattr__(self, 'errors', int(self.errors))
+        if isinstance(self.shots, np.integer):
+            object.__setattr__(self, 'shots', int(self.shots))
+        if isinstance(self.discards, np.integer):
+            object.__setattr__(self, 'discards', int(self.discards))
+        if isinstance(self.seconds, (np.integer, np.floating)):
+            object.__setattr__(self, 'seconds', float(self.seconds))
+
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0

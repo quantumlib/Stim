@@ -40,6 +40,16 @@ class AnonTaskStats:
         assert isinstance(self.discards, (int, np.integer))
         assert isinstance(self.seconds, (int, float, np.integer, np.floating))
         assert isinstance(self.custom_counts, collections.Counter)
+
+        if isinstance(self.errors, np.integer):
+            object.__setattr__(self, 'errors', int(self.errors))
+        if isinstance(self.shots, np.integer):
+            object.__setattr__(self, 'shots', int(self.shots))
+        if isinstance(self.discards, np.integer):
+            object.__setattr__(self, 'discards', int(self.discards))
+        if isinstance(self.seconds, (np.integer, np.floating)):
+            object.__setattr__(self, 'seconds', float(self.seconds))
+
         assert self.errors >= 0
         assert self.discards >= 0
         assert self.seconds >= 0

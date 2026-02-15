@@ -1,4 +1,5 @@
 import collections
+import numpy as np
 
 import sinter
 
@@ -33,3 +34,11 @@ def test_add():
 
     assert a + b0 == sinter.AnonTaskStats(shots=270, errors=34, discards=43, seconds=52, custom_counts=collections.Counter({'a': 10, 'b': 20}))
     assert a0 + b == sinter.AnonTaskStats(shots=270, errors=34, discards=43, seconds=52, custom_counts=collections.Counter({'a': 1, 'c': 3}))
+
+def test_init_handles_np():
+    a0 = sinter.AnonTaskStats(shots=np.int64(220), errors=np.int64(0), discards=np.int64(0), seconds=np.float64(0.0), custom_counts=collections.Counter({'a': 10, 'b': 20}))
+
+    assert isinstance(a0.shots, int)
+    assert isinstance(a0.errors, int)
+    assert isinstance(a0.discards, int)
+    assert isinstance(a0.seconds, float)

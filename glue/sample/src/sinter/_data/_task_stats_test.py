@@ -1,4 +1,5 @@
 import collections
+import numpy as np
 
 import pytest
 
@@ -138,3 +139,19 @@ def test_is_equal_json_values():
     assert not _is_equal_json_values({'x': (1, 2)}, {'x': (1, 3)})
     assert not _is_equal_json_values(1, 2)
     assert _is_equal_json_values(1, 1)
+
+def test_init_handles_np():
+    v = sinter.TaskStats(
+        strong_id='test',
+        json_metadata={'a': [1, 2, 3]},
+        decoder='pymatching',
+        shots=np.int64(22),
+        errors=np.int64(3),
+        discards=np.int64(4),
+        seconds=np.float64(5),
+    )
+
+    assert isinstance(v.shots, int)
+    assert isinstance(v.errors, int)
+    assert isinstance(v.discards, int)
+    assert isinstance(v.seconds, float)
