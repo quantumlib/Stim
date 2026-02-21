@@ -21,16 +21,16 @@
 namespace stim {
 
 struct RaiiFile {
-    FILE* f;
+    FILE *f;
     bool responsible_for_closing;
-    RaiiFile(const char* optional_path, const char* mode);
-    RaiiFile(std::string_view optional_path, const char* mode);
-    RaiiFile(FILE* claim_ownership);
-    RaiiFile(const RaiiFile& other) = delete;
-    RaiiFile(RaiiFile&& other) noexcept;
+    RaiiFile(const char *optional_path, const char *mode);
+    RaiiFile(std::string_view optional_path, const char *mode);
+    RaiiFile(FILE *claim_ownership);
+    RaiiFile(const RaiiFile &other) = delete;
+    RaiiFile(RaiiFile &&other) noexcept;
     ~RaiiFile();
-    void open(std::string_view optional_path, const char* mode);
-    void open(const char* optional_path, const char* mode);
+    void open(std::string_view optional_path, const char *mode);
+    void open(const char *optional_path, const char *mode);
     void done();
 };
 

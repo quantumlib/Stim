@@ -212,6 +212,21 @@ void simd_bits_range_ref<W>::truncated_overwrite_from(simd_bits_range_ref<W> oth
 }
 
 template <size_t W>
+void simd_bits_range_ref<W>::clear_bits_past(size_t num_kept_bits) {
+    if (num_kept_bits >= num_bits_padded()) {
+        return;
+    }
+    size_t n8 = num_kept_bits >> 3;
+    if (num_kept_bits & 7) {
+        uint8_t m8 = uint8_t{0xFF} >> (8 - (num_kept_bits & 7));
+        u8[n8] &= m8;
+        memset(u8 + n8 + 1, 0, num_u8_padded() - n8 - 1);
+    } else {
+        memset(u8 + n8, 0, num_u8_padded() - n8);
+    }
+}
+
+template <size_t W>
 size_t simd_bits_range_ref<W>::popcnt() const {
     auto end = u64 + num_u64_padded();
     size_t result = 0;

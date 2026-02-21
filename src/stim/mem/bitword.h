@@ -178,6 +178,26 @@ inline bitword<W> operator^(const bitword<W> &self, int64_t mask) {
     return self ^ bitword<W>(mask);
 }
 
+template <size_t W>
+inline bitword<W> andnot(const bitword<W> &inv, const bitword<W> &val) {
+    return inv.andnot(val);
+}
+inline uint64_t andnot(uint64_t inv, uint64_t val) {
+    return ~inv & val;
+}
+inline uint32_t andnot(uint32_t inv, uint32_t val) {
+    return ~inv & val;
+}
+inline uint16_t andnot(uint16_t inv, uint16_t val) {
+    return ~inv & val;
+}
+inline uint8_t andnot(uint8_t inv, uint8_t val) {
+    return ~inv & val;
+}
+inline bool andnot(bool inv, bool val) {
+    return !inv && val;
+}
+
 }  // namespace stim
 
 #endif

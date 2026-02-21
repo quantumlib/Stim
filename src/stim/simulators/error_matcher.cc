@@ -179,12 +179,13 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
 
         assert(error_analyzer.error_class_probabilities.empty());
-        error_analyzer.tracker.undo_gate(CircuitInstruction{
-            op.gate_type,
-            op.args,
-            op.targets.sub(k, k + 1),
-            op.tag,
-        });
+        error_analyzer.tracker.undo_gate(
+            CircuitInstruction{
+                op.gate_type,
+                op.args,
+                op.targets.sub(k, k + 1),
+                op.tag,
+            });
         error_analyzer.mono_buf.clear();
         error_analyzer.error_class_probabilities.clear();
         error_analyzer.flushed_reversed_model.clear();
