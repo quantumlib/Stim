@@ -1155,7 +1155,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         &dem_diagram,
         pybind11::arg("type"),
         clean_doc_string(R"DOC(
-            @signature def diagram(self, type: str) -> Any:
+            @signature def diagram(self, type: Literal["matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html"] = 'matchgraph-svg') -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

@@ -3,6 +3,19 @@
 namespace stim {
 
 template <size_t W>
+void ReferenceSampleTree::decompress_into(simd_bits<W> &output) const {
+    std::vector<bool> v;
+    this->decompress_into(v);
+
+    simd_bits<W> result(v.size());
+    for (size_t k = 0; k < v.size(); k++) {
+        result[k] ^= v[k];
+    }
+
+    output = std::move(result);
+}
+
+template <size_t W>
 ReferenceSampleTree CompressedReferenceSampleHelper<W>::do_loop_with_no_folding(const Circuit &loop, uint64_t reps) {
     ReferenceSampleTree result;
     result.repetitions = 1;

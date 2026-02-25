@@ -149,6 +149,9 @@ struct simd_bits_range_ref {
         return num_simd_words * sizeof(bitword<W>) << 3;
     }
 
+    /// Sets all bits at the given position and beyond it to 0.
+    void clear_bits_past(size_t num_kept_bits);
+
     /// Runs a function on each word in the range, in sequential order.
     ///
     /// The words are passed by reference and have type bitword<W>.

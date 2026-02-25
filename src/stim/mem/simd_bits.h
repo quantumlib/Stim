@@ -89,6 +89,7 @@ struct simd_bits {
     bool operator<(const simd_bits_range_ref<W> other) const;
 
     void destructive_resize(size_t new_min_bits);
+    void preserving_resize(size_t new_min_bits);
 
     /// Returns a reference to the bit at offset k.
     bit_ref operator[](size_t k);
@@ -134,6 +135,8 @@ struct simd_bits {
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.
     void truncated_overwrite_from(simd_bits_range_ref<W> other, size_t num_bits);
+    /// Sets all bits at the given position and beyond it to 0.
+    void clear_bits_past(size_t num_kept_bits);
 
     /// Returns a description of the contents of the simd_bits.
     std::string str() const;

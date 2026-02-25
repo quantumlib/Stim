@@ -139,6 +139,10 @@ struct bitword<256> {
         return {_mm256_andnot_si256(val, other.val)};
     }
 
+    inline bitword<256> operator~() const {
+        return {_mm256_xor_si256(val, _mm256_set1_epi8(-1))};
+    }
+
     inline uint16_t popcount() const {
         auto v = to_u64_array();
         return std::popcount(v[0]) + std::popcount(v[1]) + std::popcount(v[2]) + (uint16_t)std::popcount(v[3]);

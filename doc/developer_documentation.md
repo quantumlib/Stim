@@ -202,11 +202,7 @@ include(FetchContent)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
         GIT_TAG v1.4.0)  # [[[<<<<<<< customize the version you want!!]]]
-FetchContent_GetProperties(stim)
-if(NOT stim_POPULATED)
-  FetchContent_Populate(stim)
-  add_subdirectory(${stim_SOURCE_DIR})
-endif()
+FetchContent_MakeAvailable(stim)
 ```
 
 (Replace `v1.4.0` with another version tag as appropriate.)

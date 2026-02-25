@@ -1,102 +1,147 @@
 #include "stim/util_top/missing_detectors.h"
 
-#include <stim/simulators/error_analyzer.h>
-#include <stim/util_bot/test_util.test.h>
-
 #include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
+#include "stim/simulators/error_analyzer.h"
+#include "stim/util_bot/test_util.test.h"
 #include "stim/util_top/has_flow.h"
 
 using namespace stim;
 
 TEST(missing_detectors, circuit) {
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         R 0
         M 0
         DETECTOR rec[-1]
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         R 0
         M 0
         DETECTOR rec[-1]
         DETECTOR rec[-1]
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         R 0
         M 0
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-1]
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         M 0
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-1]
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         M 0
-    )CIRCUIT"), true), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            true),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         R 0 1
         M 0 1
         DETECTOR rec[-1]
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-2]
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         MPP Z0*Z1 X0*X1
         TICK
         MPP Z0*Z1 X0*X1
         DETECTOR rec[-1] rec[-3]
         DETECTOR rec[-2] rec[-4]
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-4]
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         MPP Z0*Z1 X0*X1
         TICK
         MPP Z0*Z1 X0*X1
         DETECTOR rec[-1] rec[-3]
         DETECTOR rec[-2] rec[-4]
         DETECTOR rec[-1] rec[-3] rec[-2] rec[-4]
-    )CIRCUIT"), false), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            false),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-3] rec[-2] rec[-1]
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         MPP Z0*Z1 X0*X1
         TICK
         MPP Z0*Z1 X0*X1
         DETECTOR rec[-1] rec[-3]
         DETECTOR rec[-2] rec[-4]
-    )CIRCUIT"), true), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            true),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         MPP Z0*Z1 X0*X1
         TICK
         MPP Z0*Z1 X0*X1
         OBSERVABLE_INCLUDE(0) rec[-1]
         DETECTOR rec[-2] rec[-4]
         OBSERVABLE_INCLUDE(0) rec[-3]
-    )CIRCUIT"), true), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            true),
+        Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(missing_detectors(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        missing_detectors(
+            Circuit(R"CIRCUIT(
         OBSERVABLE_INCLUDE(0) Z0 Z1
         MPP Z0*Z1 X0*X1
         TICK
@@ -105,7 +150,9 @@ TEST(missing_detectors, circuit) {
         OBSERVABLE_INCLUDE(0) rec[-1]
         DETECTOR rec[-2] rec[-4]
         OBSERVABLE_INCLUDE(0) rec[-3]
-    )CIRCUIT"), true), Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+            true),
+        Circuit(R"CIRCUIT(
         DETECTOR rec[-3] rec[-1]
     )CIRCUIT"));
 }

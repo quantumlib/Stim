@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <stim/stabilizers/pauli_string.h>
 #include <vector>
 
 #include "sparse_rev_frame_tracker.h"
@@ -29,6 +28,7 @@
 #include "stim/mem/fixed_cap_vector.h"
 #include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/sparse_xor_vec.h"
+#include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
 

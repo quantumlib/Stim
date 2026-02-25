@@ -37,6 +37,10 @@ struct ReferenceSampleTree {
     /// Writes the contents of the tree into the given output vector.
     void decompress_into(std::vector<bool> &output) const;
 
+    /// Writes the contents of the tree into the given output simd_bits.
+    template <size_t W>
+    void decompress_into(simd_bits<W> &output) const;
+
     /// Folds redundant children into the repetition count, if they repeat this many times.
     ///
     /// For example, if the tree's children are [A, B, C, A, B, C] and the tree has no
@@ -48,7 +52,7 @@ struct ReferenceSampleTree {
     /// Helper method for `simplified`.
     void flatten_and_simplify_into(std::vector<ReferenceSampleTree> &out) const;
     /// Helper method for `operator[]`.
-    bool try_get_bit_value(uint64_t desired_absolute_index, uint64_t & current_absolute_index, bool & bit_value) const;
+    bool try_get_bit_value(uint64_t desired_absolute_index, uint64_t &current_absolute_index, bool &bit_value) const;
 };
 std::ostream &operator<<(std::ostream &out, const ReferenceSampleTree &v);
 
