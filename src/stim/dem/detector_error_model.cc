@@ -16,9 +16,11 @@
 
 #include "stim/dem/detector_error_model.h"
 
+#include <algorithm> 
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <numeric>
 
 #include "stim/util_bot/str_util.h"
 
@@ -792,4 +794,31 @@ DetectorErrorModel DetectorErrorModel::without_tags() const {
         }
     }
     return result;
+}
+
+bool DetectorErrorModel::equal_up_to_instruction_ordering(const DetectorErrorModel &other) const {
+    if (instructions.size() != other.instructions.size()) {
+        return false;
+    }
+
+    auto get_sorted_indices = [](const std::vector<DemInstruction> &ins) {
+        std::vector<size_t> indices(ins.size());
+        std::iota(indices.begin(), indices.end(), 0);
+        std::sort(indices.begin(), indices.end(), [&ins](size_t i, size_t j) {
+            return ins[i] < ins[j];
+        });
+        return indices;
+    };
+
+    // sort the indices to avoid copying instructions
+    auto sorted_lhs_indices = get_sorted_indices(instructions);
+    auto sorted_rhs_indices = get_sorted_indices(other.instructions);
+
+    for (size_t i = 0; i < sorted_lhs_indices.size(); i++) {
+        if (!(instructions[sorted_lhs_indices[i]] == other.instructions[sorted_rhs_indices[i]])) {
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -894,3 +894,21 @@ TEST(detector_error_model, parse_windows_newlines) {
         DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"),
         DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
 }
+
+TEST(detector_error_model, equal_up_to_instruction_ordering) {
+    DetectorErrorModel lhs(R"MODEL(
+        error(0.01) D0
+        error(0.002) D1 L0
+        detector(5, 10) D0
+        detector(5, 15) D1
+        logical_observable L0
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        error(0.002) D1 L0
+        error(0.01) D0
+        detector(5, 15) D1
+        detector(5, 10) D0
+        logical_observable L0
+    )MODEL");
+    EXPECT_TRUE(lhs.equal_up_to_instruction_ordering(rhs));
+}
