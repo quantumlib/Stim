@@ -64,7 +64,7 @@ def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[
 
 
 class CircuitTranslationTracker:
-    def __init__(self, flatten: bool):
+    def __init__(self, flatten: bool, measure_key: str | None = None):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
@@ -72,10 +72,14 @@ class CircuitTranslationTracker:
         self.tick_circuit = cirq.Circuit()
         self.flatten = flatten
         self.have_seen_loop = False
+        self.measure_key = measure_key
 
     def get_next_measure_id(self) -> int:
         self.num_measurements_seen += 1
         return self.num_measurements_seen - 1
+
+    def get_next_measure_key(self) -> str:
+        return self.measure_key or str(self.get_next_measure_id())
 
     def append_operation(self, op: cirq.Operation) -> None:
         self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
@@ -186,7 +190,7 @@ class CircuitTranslationTracker:
         for t in targets:
             if not t.is_qubit_target:
                 raise NotImplementedError(f"instruction={instruction!r}")
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(
                 MeasureAndOrResetGate(
                     measure=measure,
@@ -248,7 +252,7 @@ class CircuitTranslationTracker:
 
             obs = _stim_targets_to_dense_pauli_string(group)
             qubits = [cirq.LineQubit(t.value) for t in group]
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits).with_tags(*tags))
 
     def process_spp_dag(self, instruction: stim.CircuitInstruction) -> None:
@@ -290,7 +294,7 @@ class CircuitTranslationTracker:
             if targets[0].is_inverted_result_target ^ targets[1].is_inverted_result_target:
                 obs *= -1
             qubits = [cirq.LineQubit(targets[0].value), cirq.LineQubit(targets[1].value)]
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits).with_tags(*tags))
 
     def process_mxx(self, instruction: stim.CircuitInstruction) -> None:
@@ -309,7 +313,7 @@ class CircuitTranslationTracker:
             if t.value == 1:
                 obs *= -1
             qubits = []
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
 
     def process_correlated_error(self, instruction: stim.CircuitInstruction) -> None:
@@ -632,12 +636,14 @@ class CircuitTranslationTracker:
         }
 
 
-def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False) -> cirq.Circuit:
+def stim_circuit_to_cirq_circuit(
+    circuit: stim.Circuit, *, flatten: bool = False, measure_key: str | None = None
+) -> cirq.Circuit:
     """Converts a stim circuit into an equivalent cirq circuit.
 
     Qubit indices are turned into cirq.LineQubit instances. Measurements are
     keyed by their ordering (e.g. the first measurement is keyed "0", the second
-    is keyed "1", etc).
+    is keyed "1", etc) unless a fixed measure_key is provided.
 
     Not all circuits can be converted:
         - ELSE_CORRELATED_ERROR instructions are not supported.
@@ -652,6 +658,8 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False
             explicitly repeating their instructions multiple times. Also,
             SHIFT_COORDS instructions are removed by appropriately adjusting the
             coordinate metadata of later instructions.
+        measure_key: Defaults to None. If provided, all measurements are keyed
+            with this string instead of sequentially generated numbers.
 
     Returns:
         The converted circuit.
@@ -671,6 +679,6 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False
                   │
         1: ───────X──────────────────!M('0')───
     """
-    tracker = CircuitTranslationTracker(flatten=flatten)
+    tracker = CircuitTranslationTracker(flatten=flatten, measure_key=measure_key)
     tracker.process_circuit(repetitions=1, circuit=circuit)
     return tracker.output()
