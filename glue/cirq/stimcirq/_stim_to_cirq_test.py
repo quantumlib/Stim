@@ -810,7 +810,7 @@ def test_cirq_fixed_measure_key_order_ticks():
     measure_key = "m"
     for stim_circuit in stim_circuits:
         cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(
-            stim_circuit, measure_key=measure_key
+            stim_circuit, single_measure_key=measure_key
         )
         qubits = cirq.LineQubit.range(4)
         expected_order = [

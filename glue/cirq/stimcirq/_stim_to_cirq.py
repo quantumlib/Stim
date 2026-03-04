@@ -80,7 +80,9 @@ class CircuitTranslationTracker:
         return self.num_measurements_seen - 1
 
     def get_next_measure_key(self) -> str:
-        return self.single_measure_key or str(self.get_next_measure_id())
+        if self.single_measure_key is None:
+            return str(self.get_next_measure_id())
+        return self.single_measure_key
 
     def append_operation(self, op: cirq.Operation) -> None:
         self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
@@ -638,7 +640,7 @@ class CircuitTranslationTracker:
 
 
 def stim_circuit_to_cirq_circuit(
-    circuit: stim.Circuit, *, flatten: bool = False, measure_key: str | None = None
+    circuit: stim.Circuit, *, flatten: bool = False, single_measure_key: str | None = None
 ) -> cirq.Circuit:
     """Converts a stim circuit into an equivalent cirq circuit.
 
@@ -659,8 +661,8 @@ def stim_circuit_to_cirq_circuit(
             explicitly repeating their instructions multiple times. Also,
             SHIFT_COORDS instructions are removed by appropriately adjusting the
             coordinate metadata of later instructions.
-        measure_key: Defaults to None. If provided, all measurements are keyed
-            with this string instead of sequentially generated numbers.
+        single_measure_key: Defaults to None. If provided, all measurements are
+            keyed with this string instead of sequentially generated numbers.
 
     Returns:
         The converted circuit.
@@ -680,6 +682,8 @@ def stim_circuit_to_cirq_circuit(
                   │
         1: ───────X──────────────────!M('0')───
     """
-    tracker = CircuitTranslationTracker(flatten=flatten, measure_key=measure_key)
+    tracker = CircuitTranslationTracker(
+        flatten=flatten, single_measure_key=single_measure_key
+    )
     tracker.process_circuit(repetitions=1, circuit=circuit)
     return tracker.output()
