@@ -781,7 +781,7 @@ def test_round_trip_with_pauli_obs():
     assert restored_circuit == stim_circuit
 
 
-def test_cirq_fixed_measure_key_order_ticks():
+def test_single_measure_key_order():
     stim_circuits = [
         stim.Circuit(
             """
