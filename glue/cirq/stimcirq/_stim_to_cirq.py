@@ -640,7 +640,10 @@ class CircuitTranslationTracker:
 
 
 def stim_circuit_to_cirq_circuit(
-    circuit: stim.Circuit, *, flatten: bool = False, single_measure_key: str | None = None
+    circuit: stim.Circuit,
+    *,
+    flatten: bool = False,
+    single_measure_key: Optional[str] = None,
 ) -> cirq.Circuit:
     """Converts a stim circuit into an equivalent cirq circuit.
 
