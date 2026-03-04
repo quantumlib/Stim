@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Optional,
     Tuple,
     Union,
 )
@@ -64,7 +65,7 @@ def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[
 
 
 class CircuitTranslationTracker:
-    def __init__(self, flatten: bool, measure_key: str | None = None):
+    def __init__(self, flatten: bool, single_measure_key: Optional[str] = None):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
@@ -72,14 +73,14 @@ class CircuitTranslationTracker:
         self.tick_circuit = cirq.Circuit()
         self.flatten = flatten
         self.have_seen_loop = False
-        self.measure_key = measure_key
+        self.single_measure_key = single_measure_key
 
     def get_next_measure_id(self) -> int:
         self.num_measurements_seen += 1
         return self.num_measurements_seen - 1
 
     def get_next_measure_key(self) -> str:
-        return self.measure_key or str(self.get_next_measure_id())
+        return self.single_measure_key or str(self.get_next_measure_id())
 
     def append_operation(self, op: cirq.Operation) -> None:
         self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
