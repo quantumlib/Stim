@@ -36,3 +36,21 @@ BENCHMARK(find_graphlike_logical_error_surface_code_d25) {
         std::cout << "bad";
     }
 }
+
+BENCHMARK(find_graphlike_logical_error_surface_code_d11_r1000) {
+    CircuitGenParameters params(1000, 11, "rotated_memory_x");
+    params.after_clifford_depolarization = 0.001;
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    params.before_round_data_depolarization = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    auto model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
+
+    size_t total = 0;
+    benchmark_go([&]() {
+        total += stim::shortest_graphlike_undetectable_logical_error(model, false).instructions.size();
+    }).goal_millis(100);
+    if (total % 11 != 0 || total == 0) {
+        std::cout << "bad";
+    }
+}
