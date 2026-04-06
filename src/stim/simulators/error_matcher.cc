@@ -179,12 +179,13 @@ void ErrorMatcher::err_heralded_pauli_channel_1(const CircuitInstruction &op) {
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
 
         assert(error_analyzer.error_class_probabilities.empty());
-        error_analyzer.tracker.undo_gate(CircuitInstruction{
-            op.gate_type,
-            op.args,
-            op.targets.sub(k, k + 1),
-            op.tag,
-        });
+        error_analyzer.tracker.undo_gate(
+            CircuitInstruction{
+                op.gate_type,
+                op.args,
+                op.targets.sub(k, k + 1),
+                op.tag,
+            });
         error_analyzer.mono_buf.clear();
         error_analyzer.error_class_probabilities.clear();
         error_analyzer.flushed_reversed_model.clear();
@@ -222,8 +223,10 @@ void ErrorMatcher::err_pauli_channel_2(const CircuitInstruction &op) {
                 }
                 bool x0 = p0 & 1;
                 bool z0 = p0 & 2;
+                x0 ^= z0;
                 bool x1 = p1 & 1;
                 bool z1 = p1 & 2;
+                x1 ^= z1;
                 uint32_t m0 = x0 * TARGET_PAULI_X_BIT + z0 * TARGET_PAULI_Z_BIT;
                 uint32_t m1 = x1 * TARGET_PAULI_X_BIT + z1 * TARGET_PAULI_Z_BIT;
                 pair[0].data = t[k].data | m0;

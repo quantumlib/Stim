@@ -780,3 +780,49 @@ def test_round_trip_with_pauli_obs():
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
     restored_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert restored_circuit == stim_circuit
+
+
+def test_single_measure_key_order():
+    stim_circuits = [
+        stim.Circuit(
+            """
+            X 1
+            X 1 3
+            X 1 3
+            X 1 3 2
+            M 1
+            M 3
+            M 2
+            M 0
+            """
+        ),
+        stim.Circuit(
+            """
+            X 1
+            X 1
+            X 1
+            X 1
+            M 1 3
+            X 2
+            M 2 0
+            """
+        )
+    ]
+    measure_key = "m"
+    for stim_circuit in stim_circuits:
+        cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(
+            stim_circuit, single_measure_key=measure_key
+        )
+        qubits = cirq.LineQubit.range(4)
+        expected_order = [
+            qubits[targ.qubit_value] 
+            for inst in stim_circuit if inst.name == "M" 
+            for targ in inst.targets_copy()
+        ]
+        actual_order = []
+        for op in cirq_circuit.all_operations():
+            if isinstance(op.gate, cirq.MeasurementGate):
+                assert op.gate.key == measure_key
+                assert len(op.qubits) == 1
+                actual_order.append(op.qubits[0])
+        assert expected_order == actual_order

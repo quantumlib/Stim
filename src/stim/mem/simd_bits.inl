@@ -136,6 +136,11 @@ void simd_bits<W>::truncated_overwrite_from(simd_bits_range_ref<W> other, size_t
 }
 
 template <size_t W>
+void simd_bits<W>::clear_bits_past(size_t num_kept_bits) {
+    simd_bits_range_ref<W>(*this).clear_bits_past(num_kept_bits);
+}
+
+template <size_t W>
 bit_ref simd_bits<W>::operator[](size_t k) {
     return bit_ref(u64, k);
 }
@@ -285,6 +290,11 @@ bool simd_bits<W>::intersects(const simd_bits_range_ref<W> other) const {
 }
 
 template <size_t W>
+bool simd_bits<W>::is_subset_of_or_equal_to(const simd_bits_range_ref<W> other) const {
+    return simd_bits_range_ref<W>(*this).is_subset_of_or_equal_to(other);
+}
+
+template <size_t W>
 std::string simd_bits<W>::str() const {
     return simd_bits_range_ref<W>(*this).str();
 }
@@ -301,6 +311,16 @@ void simd_bits<W>::destructive_resize(size_t new_min_bits) {
         return;
     }
     *this = std::move(simd_bits<W>(new_min_bits));
+}
+
+template <size_t W>
+void simd_bits<W>::preserving_resize(size_t new_min_bits) {
+    if (min_bits_to_num_bits_padded<W>(new_min_bits) == num_bits_padded()) {
+        return;
+    }
+    simd_bits<W> new_storage(new_min_bits);
+    memcpy(new_storage.ptr_simd, ptr_simd, sizeof(bitword<W>) * std::min(num_simd_words, new_storage.num_simd_words));
+    *this = std::move(new_storage);
 }
 
 template <size_t W>

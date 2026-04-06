@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_UTIL_TOP_COUNT_DETERMINED_MEASUREMENTS_H
-#define _STIM_UTIL_TOP_COUNT_DETERMINED_MEASUREMENTS_H
+#ifndef _STIM_UTIL_TOP_MISSING_DETECTORS_H
+#define _STIM_UTIL_TOP_MISSING_DETECTORS_H
 
 #include "stim/circuit/circuit.h"
 
 namespace stim {
 
-template <size_t W>
-uint64_t count_determined_measurements(const Circuit &circuit, bool unknown_input = false);
+Circuit missing_detectors(const Circuit &circuit, bool unknown_input);
 
 }  // namespace stim
-
-#include "stim/util_top/count_determined_measurements.inl"
 
 #endif

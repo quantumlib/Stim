@@ -685,3 +685,26 @@ TEST_EACH_WORD_SIZE_W(simd_bits, out_of_place_bit_masking, {
     ASSERT_EQ((m0 | m1).ptr_simd[0], 0b0111);
     ASSERT_EQ((m0 ^ m1).ptr_simd[0], 0b0110);
 })
+
+TEST_EACH_WORD_SIZE_W(simd_bits, destructive_resize, {
+    simd_bits<W> m0(512);
+    m0[0] = true;
+    ASSERT_TRUE(m0.not_zero());
+    m0.destructive_resize(256);
+    ASSERT_FALSE(m0.not_zero());
+    m0[0] = true;
+    ASSERT_TRUE(m0.not_zero());
+    m0.destructive_resize(512);
+    ASSERT_FALSE(m0.not_zero());
+})
+
+TEST_EACH_WORD_SIZE_W(simd_bits, preserving_resize, {
+    auto rng = INDEPENDENT_TEST_RNG();
+    simd_bits<W> m0(256);
+    m0.randomize(m0.num_bits_padded(), rng);
+    auto copy = m0;
+    m0.preserving_resize(512);
+    ASSERT_EQ(m0.ptr_simd[0], copy.ptr_simd[0]);
+    m0.preserving_resize(256);
+    ASSERT_EQ(m0, copy);
+})

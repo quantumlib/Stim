@@ -366,7 +366,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::arg("obs_out_filepath") = pybind11::none(),
         pybind11::arg("obs_out_format") = "01",
         clean_doc_string(R"DOC(
-            @signature def sample_write(self, shots: int, *, filepath: Union[str, pathlib.Path], format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01', obs_out_filepath: Optional[Union[str, pathlib.Path]] = None, obs_out_format: 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]' = '01', prepend_observables: bool = False, append_observables: bool = False) -> None:
+            @signature def sample_write(self, shots: int, *, filepath: Union[str, pathlib.Path], format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', obs_out_filepath: Optional[Union[str, pathlib.Path]] = None, obs_out_format: Literal["01", "b8", "r8", "ptb64", "hits", "dets"] = '01', prepend_observables: bool = False, append_observables: bool = False) -> None:
             Samples detection events from the circuit and writes them to a file.
 
             Args:

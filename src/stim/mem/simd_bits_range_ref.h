@@ -118,6 +118,8 @@ struct simd_bits_range_ref {
     size_t countr_zero() const;
     /// Returns whether or not the two ranges have set bits in common.
     bool intersects(const simd_bits_range_ref other) const;
+    /// Returns whether or not all bits that are set in `other` are also set in this range.
+    bool is_subset_of_or_equal_to(const simd_bits_range_ref<W> other) const;
 
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.
@@ -146,6 +148,9 @@ struct simd_bits_range_ref {
     inline size_t num_bits_padded() const {
         return num_simd_words * sizeof(bitword<W>) << 3;
     }
+
+    /// Sets all bits at the given position and beyond it to 0.
+    void clear_bits_past(size_t num_kept_bits);
 
     /// Runs a function on each word in the range, in sequential order.
     ///

@@ -1784,7 +1784,7 @@ Example:
     # Apply Y to qubit 5 controlled by qubit 2.
     CY 2 5
 
-    # Perform CY 2 5 then CX 4 2.
+    # Perform CY 2 5 then CY 4 2.
     CY 2 5 4 2
 
     # Apply Y to qubit 6 if the most recent measurement result was TRUE.
@@ -3579,7 +3579,7 @@ Example:
 
     # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
     # Apply independently to qubit pairs (1,2), (5,6), and (8,3)
-    PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
+    PAULI_CHANNEL_2(0,0,0, 0,0.1,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
 
 Pauli Mixture:
 
@@ -4879,13 +4879,19 @@ detection event simulations and affect whether the observable is included in err
 makes it easier to benchmark all observables of a code, without having to introduce noiseless qubits entangled with the
 logical qubit to avoid the testing of the X observable anticommuting with the testing of the Z observable.
 
+Unlike a `DETECTOR` instruction which provides a complete description of a detector by listing all its constituent
+measurement records, an individual `OBSERVABLE_INCLUDE` instruction is not required to (and generally does not) fully
+describe a logical observable. Instead, measurement records or Pauli targets are added to it incrementally. A logical
+observable can be given both types of description: as a collection of Pauli targets and as a collection of measurement
+record targets.
+
 Parens Arguments:
 
     A non-negative integer specifying the index of the logical observable to add the measurement records to.
 
 Targets:
 
-    The measurement records to add to the specified observable.
+    The measurement records or Pauli terms to add to the specified observable.
 
 Example:
 
@@ -4920,6 +4926,12 @@ Example:
     DETECTOR rec[-3] rec[-6]
     OBSERVABLE_INCLUDE(0) X0 X1
     OBSERVABLE_INCLUDE(1) Z0 Z2
+
+    # Stim circuit may include a description of an observable in terms of Pauli targets
+    # alongside a description in terms of measurement records.
+    OBSERVABLE_INCLUDE(0) Z0 Z1
+    M 0 1
+    OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
 
 <a name="QUBIT_COORDS"></a>
 ### The 'QUBIT_COORDS' Instruction

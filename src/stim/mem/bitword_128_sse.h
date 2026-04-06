@@ -142,6 +142,10 @@ struct bitword<128> {
         return {_mm_andnot_si128(val, other.val)};
     }
 
+    inline bitword<128> operator~() const {
+        return {_mm_xor_si128(val, _mm_set1_epi8(-1))};
+    }
+
     inline uint16_t popcount() const {
         auto words = to_u64_array();
         return std::popcount(words[0]) + std::popcount(words[1]);

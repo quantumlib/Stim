@@ -25,7 +25,8 @@ and annotations for tasks such as detection event sampling and drawing the circu
 ## Encoding
 
 Stim circuit files are always encoded using UTF-8.
-Furthermore, the only place in the file where non-ASCII characters are permitted is inside of comments.
+
+(Also, the only place in the file where non-ASCII characters can validly appear is inside of comments and tags.)
 
 ## Syntax
 

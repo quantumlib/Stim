@@ -944,6 +944,151 @@ void stim_pybind::pybind_frame_simulator_methods(
             .data());
 
     c.def(
+        "append_measurement_flips",
+        [](FrameSimulator<MAX_BITWORD_WIDTH> &self, const pybind11::object &measurement_flip_data) {
+            if (pybind11::isinstance<pybind11::array_t<bool>>(measurement_flip_data)) {
+                const pybind11::array_t<bool> &arr = pybind11::cast<pybind11::array_t<bool>>(measurement_flip_data);
+                if (arr.ndim() == 1) {
+                    if ((size_t)arr.shape(0) != self.batch_size) {
+                        std::stringstream ss;
+                        ss << "dtype=np.bool_ and len(shape) == 1 but shape[0]=";
+                        ss << arr.shape(0) << " != batch_size=" << self.batch_size;
+                        throw std::invalid_argument(ss.str());
+                    }
+                    simd_bits_range_ref<MAX_BITWORD_WIDTH> r = self.m_record.record_zero_result_to_edit();
+                    memcpy_bits_from_numpy_to_simd(self.batch_size, measurement_flip_data, r);
+                    return;
+                } else if (arr.ndim() == 2) {
+                    if ((size_t)arr.shape(1) != self.batch_size) {
+                        std::stringstream ss;
+                        ss << "dtype=np.uint8 and len(shape) == 2 but shape[1]=";
+                        ss << arr.shape(1) << " != batch_size=" << self.batch_size;
+                        throw std::invalid_argument(ss.str());
+                    }
+
+                    size_t num_measurements = (size_t)arr.shape(0);
+                    for (size_t k = 0; k < num_measurements; k++) {
+                        simd_bits_range_ref<MAX_BITWORD_WIDTH> r = self.m_record.record_zero_result_to_edit();
+                        memcpy_bits_from_numpy_to_simd(self.batch_size, measurement_flip_data[pybind11::cast(k)], r);
+                    }
+                    return;
+                }
+            } else if (pybind11::isinstance<pybind11::array_t<uint8_t>>(measurement_flip_data)) {
+                const pybind11::array_t<bool> &arr = pybind11::cast<pybind11::array_t<uint8_t>>(measurement_flip_data);
+                auto byte_size = (self.batch_size + 7) / 8;
+                if (arr.ndim() == 1) {
+                    auto byte_size = (self.batch_size + 7) / 8;
+                    if ((size_t)arr.shape(0) != byte_size) {
+                        std::stringstream ss;
+                        ss << "dtype=np.uint8 and len(shape) == 1 but shape[0]=";
+                        ss << arr.shape(0) << " != (batch_size + 7) // 8=" << byte_size;
+                        throw std::invalid_argument(ss.str());
+                    }
+
+                    simd_bits_range_ref<MAX_BITWORD_WIDTH> r = self.m_record.record_zero_result_to_edit();
+                    memcpy_bits_from_numpy_to_simd(self.batch_size, measurement_flip_data, r);
+                    return;
+                } else if (arr.ndim() == 2) {
+                    if ((size_t)arr.shape(1) != byte_size) {
+                        std::stringstream ss;
+                        ss << "dtype=np.uint8 and len(shape) == 2 but shape[1]=";
+                        ss << arr.shape(1) << " != (batch_size + 7) // 8=" << byte_size;
+                        throw std::invalid_argument(ss.str());
+                    }
+
+                    size_t num_measurements = (size_t)arr.shape(0);
+                    for (size_t k = 0; k < num_measurements; k++) {
+                        simd_bits_range_ref<MAX_BITWORD_WIDTH> r = self.m_record.record_zero_result_to_edit();
+                        memcpy_bits_from_numpy_to_simd(self.batch_size, measurement_flip_data[pybind11::cast(k)], r);
+                    }
+                    return;
+                }
+            }
+
+            std::stringstream ss;
+            ss << "Unsupported dtype/shape combination for append_measurement_flips.\n";
+            ss << "\nSupported combinations are:\n";
+            ss << "    dtype=np.bool_, shape=(batch_size,)\n";
+            ss << "    dtype=np.uint8, shape=(math.ceil(batch_size / 8),)\n";
+            ss << "    dtype=np.bool_, shape=(num_measurements, batch_size)\n";
+            ss << "    dtype=np.uint8, shape=(num_measurements, math.ceil(batch_size / 8))";
+            throw std::invalid_argument(ss.str());
+        },
+        pybind11::arg("measurement_flip_data"),
+        clean_doc_string(R"DOC(
+            @signature def append_measurement_flips(self, measurement_flip_data: np.ndarray) -> None:
+            Appends measurement flip data to the simulator's measurement record.
+
+            Args:
+                measurement_flip_data: The flip data to append. The following shape/dtype
+                    combinations are supported.
+
+                    Single measurement without bit packing:
+                        shape=(self.batch_size,)
+                        dtype=np.bool_
+
+                    Single measurement with bit packing:
+                        shape=(math.ceil(self.batch_size / 8),)
+                        dtype=np.uint8
+
+                    Multiple measurements without bit packing:
+                        shape=(num_measurements, self.batch_size)
+                        dtype=np.bool_
+
+                    Multiple measurements with bit packing:
+                        shape=(num_measurements, math.ceil(self.batch_size / 8))
+                        dtype=np.uint8
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+                >>> sim = stim.FlipSimulator(batch_size=9)
+                >>> sim.append_measurement_flips(np.array(
+                ...     [0, 1, 0, 0, 1, 0, 0, 1, 1],
+                ...     dtype=np.bool_,
+                ... ))
+
+                >>> sim.get_measurement_flips()
+                array([[False,  True, False, False,  True, False, False,  True,  True]])
+
+                >>> sim.append_measurement_flips(np.array(
+                ...     [0b11001001, 0],
+                ...     dtype=np.uint8,
+                ... ))
+
+                >>> sim.get_measurement_flips()
+                array([[False,  True, False, False,  True, False, False,  True,  True],
+                       [ True, False, False,  True, False, False,  True,  True, False]])
+
+                >>> sim.append_measurement_flips(np.array(
+                ...     [[0b11111111, 0b1], [0b00000000, 0b0], [0b11111111, 0b1]],
+                ...     dtype=np.uint8,
+                ... ))
+
+                >>> sim.get_measurement_flips()
+                array([[False,  True, False, False,  True, False, False,  True,  True],
+                       [ True, False, False,  True, False, False,  True,  True, False],
+                       [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                       [False, False, False, False, False, False, False, False, False],
+                       [ True,  True,  True,  True,  True,  True,  True,  True,  True]])
+
+                >>> sim.append_measurement_flips(np.array(
+                ...     [[1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0]],
+                ...     dtype=np.bool_,
+                ... ))
+
+                >>> sim.get_measurement_flips()
+                array([[False,  True, False, False,  True, False, False,  True,  True],
+                       [ True, False, False,  True, False, False,  True,  True, False],
+                       [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                       [False, False, False, False, False, False, False, False, False],
+                       [ True,  True,  True,  True,  True,  True,  True,  True,  True],
+                       [ True, False,  True, False,  True, False,  True, False,  True],
+                       [False,  True, False,  True, False,  True, False,  True, False]])
+        )DOC")
+            .data());
+
+    c.def(
         "get_measurement_flips",
         &get_measurement_flips<MAX_BITWORD_WIDTH>,
         pybind11::kw_only(),
