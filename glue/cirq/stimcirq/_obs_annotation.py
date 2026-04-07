@@ -38,6 +38,8 @@ class CumulativeObservableAnnotation(cirq.Operation):
                 _qubits_to_pauli_keys.append((cirq.LineQubit(int(k[1:])), k))
             else:
                 qubit, basis_and_id = k
+                assert isinstance(basis_and_id, str)
+                assert isinstance(qubit, cirq.Qid)
                 _pauli_keys.append(basis_and_id)
                 _qubits_to_pauli_keys.append((qubit, basis_and_id))
         self._qubits_to_pauli_keys = tuple(_qubits_to_pauli_keys)
@@ -117,7 +119,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         edit_measurement_key_lengths: List[Tuple[str, int]],
         have_seen_loop: bool = False,
         tag: str,
-        targets: list[int],
+        targets: List[int],
         **kwargs,
     ):
         # Ideally these references would all be resolved ahead of time, to avoid the redundant
