@@ -1,8 +1,9 @@
-import {OFFSET_Y, rad} from "./config.js";
+import {rad} from "./config.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {marker_placement} from '../gates/gateset_markers.js';
 
-let TIMELINE_PITCH = 32;
+const TIMELINE_PITCH = 32;
+const QUBIT_HIGHLIGHT_SIZE = 40;
 
 /**
  * @param {!CanvasRenderingContext2D} ctx
@@ -110,6 +111,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         return x1 - x2;
     });
 
+    // Calculate base coordinates.
     let base_y2xy = new Map();
     let prev_y = undefined;
     let cur_x = 0;
@@ -130,6 +132,17 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             cur_run++;
         }
         base_y2xy.set(`${x},${y}`, [Math.round(cur_x) + 0.5, Math.round(cur_y) + 0.5]);
+    }
+
+
+    // Apply vertical scroll offset.
+    const maxScrollY = Math.max(0, cur_y - ctx.canvas.height + TIMELINE_PITCH); // Restrict scroll based on qubits drawn
+    const scrollY = Math.max(0, Math.min(snap.timelineScrollY, maxScrollY));
+
+    if (scrollY !== 0) {
+        for (let [key, [x, y]] of base_y2xy) {
+            base_y2xy.set(key, [x, y - scrollY]);
+        }
     }
 
     let x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);
@@ -211,22 +224,30 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
         // Draw links to timeslice viewer.
         ctx.globalAlpha = 0.5;
+        const mouseScreenX = snap.curMouseScreenX;
+        const mouseScreenY = snap.curMouseScreenY;
+        const zoom = snap.viewportZoom;
+
         for (let q of qubits) {
             let [x0, y0] = qubitTimeCoords(q, min_t_clamp - 1);
-            let [x1, y1] = timesliceQubitCoordsFunc(q);
-            if (snap.curMouseX > ctx.canvas.width / 2 && snap.curMouseY >= y0 + OFFSET_Y - TIMELINE_PITCH * 0.55 && snap.curMouseY <= y0 + TIMELINE_PITCH * 0.55 + OFFSET_Y) {
+            const [wx1, wy1] = timesliceQubitCoordsFunc(q);
+            // Convert from world to screen coordinates for qubit highlight.
+            const x1 = wx1 * zoom + snap.viewportX;
+            const y1 = wy1 * zoom + snap.viewportY;
+            if (mouseScreenX > ctx.canvas.width / 2 && mouseScreenY >= y0 - TIMELINE_PITCH * 0.55 && mouseScreenY <= y0 + TIMELINE_PITCH * 0.55) {
                 ctx.beginPath();
                 ctx.moveTo(x0, y0);
                 ctx.lineTo(x1, y1);
                 ctx.stroke();
                 ctx.fillStyle = 'black';
-                ctx.fillRect(x1 - 20, y1 - 20, 40, 40);
+                ctx.fillRect(x1 - (QUBIT_HIGHLIGHT_SIZE/2) * zoom, y1 - (QUBIT_HIGHLIGHT_SIZE/2) * zoom, QUBIT_HIGHLIGHT_SIZE * zoom, QUBIT_HIGHLIGHT_SIZE * zoom);
                 ctx.fillRect(ctx.canvas.width / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.width / 2, TIMELINE_PITCH * 2 / 3);
             }
         }
     } finally {
         ctx.restore();
     }
+    return maxScrollY;
 }
 
 export {drawTimeline}

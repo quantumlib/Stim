@@ -47,6 +47,12 @@ class EditorState {
         this.mouseDownX = /** @type {undefined|!number} */ undefined;
         this.mouseDownY = /** @type {undefined|!number} */ undefined;
         this.obs_val_draw_state = /** @type {!ObservableValue<StateSnapshot>} */ new ObservableValue(this.toSnapshot(undefined));
+        this.curMouseScreenX = /** @type {undefined|!number} */ undefined;
+        this.curMouseScreenY = /** @type {undefined|!number} */ undefined;
+        this.viewportX = 0;
+        this.viewportY = 0;
+        this.viewportZoom = 1;
+        this.timelineScrollY = 0;
     }
 
     flipTwoQubitGateOrderAtFocus(preview) {
@@ -201,17 +207,7 @@ class EditorState {
         if (previewCircuit === undefined) {
             previewCircuit = this.copyOfCurCircuit();
         }
-        return new StateSnapshot(
-            previewCircuit,
-            this.curLayer,
-            this.focusedSet,
-            this.timelineSet,
-            this.curMouseX,
-            this.curMouseY,
-            this.mouseDownX,
-            this.mouseDownY,
-            this.currentPositionsBoxesByMouseDrag(this.chorder.curModifiers.has("alt")),
-        );
+        return new StateSnapshot(previewCircuit, this.curLayer, this.focusedSet, this.timelineSet, this.curMouseX, this.curMouseY, this.mouseDownX, this.mouseDownY, this.currentPositionsBoxesByMouseDrag(this.chorder.curModifiers.has("alt")), this.viewportX, this.viewportY, this.viewportZoom, this.timelineScrollY, this.curMouseScreenX, this.curMouseScreenY);
     }
 
     force_redraw() {

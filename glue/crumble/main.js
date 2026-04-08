@@ -1,6 +1,6 @@
 import {Circuit} from "./circuit/circuit.js"
 import {minXY} from "./circuit/layer.js"
-import {pitch} from "./draw/config.js"
+import {MAX_QUBIT_COORDINATE, MAX_ZOOM, MIN_ZOOM, pitch} from "./draw/config.js"
 import {GATE_MAP} from "./gates/gateset.js"
 import {EditorState} from "./editor/editor_state.js";
 import {initUrlCircuitSync} from "./editor/sync_url_to_state.js";
@@ -8,7 +8,6 @@ import {draw} from "./draw/main_draw.js";
 import {drawToolbox} from "./keyboard/toolbox.js";
 import {Operation} from "./circuit/operation.js";
 import {make_mpp_gate} from './gates/gateset_mpp.js';
-import {PropagatedPauliFrames} from './circuit/propagated_pauli_frames.js';
 
 const OFFSET_X = -pitch + Math.floor(pitch / 4) + 0.5;
 const OFFSET_Y = -pitch + Math.floor(pitch / 4) + 0.5;
@@ -38,6 +37,14 @@ txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
 txtStimCircuit.addEventListener('keydown', ev => ev.stopPropagation());
 
 let editorState = /** @type {!EditorState} */ new EditorState(document.getElementById('cvn'));
+
+function toWorldMouseX(screenX) {
+    return (screenX - editorState.viewportX) / editorState.viewportZoom + OFFSET_X;
+}
+
+function toWorldMouseY(screenY) {
+    return (screenY - editorState.viewportY) / editorState.viewportZoom + OFFSET_Y;
+}
 
 btnExport.addEventListener('click', _ev => {
     exportCurrentState();
@@ -144,8 +151,10 @@ function exportCurrentState() {
 }
 
 editorState.canvas.addEventListener('mousemove', ev => {
-    editorState.curMouseX = ev.offsetX + OFFSET_X;
-    editorState.curMouseY = ev.offsetY + OFFSET_Y;
+    editorState.curMouseScreenX = ev.offsetX;
+    editorState.curMouseScreenY = ev.offsetY;
+    editorState.curMouseX = toWorldMouseX(ev.offsetX);
+    editorState.curMouseY = toWorldMouseY(ev.offsetY);
 
     // Scrubber.
     let w = editorState.canvas.width / 2;
@@ -159,10 +168,12 @@ editorState.canvas.addEventListener('mousemove', ev => {
 
 let isInScrubber = false;
 editorState.canvas.addEventListener('mousedown', ev => {
-    editorState.curMouseX = ev.offsetX + OFFSET_X;
-    editorState.curMouseY = ev.offsetY + OFFSET_Y;
-    editorState.mouseDownX = ev.offsetX + OFFSET_X;
-    editorState.mouseDownY = ev.offsetY + OFFSET_Y;
+    editorState.curMouseScreenX = ev.offsetX;
+    editorState.curMouseScreenY = ev.offsetY;
+    editorState.curMouseX = toWorldMouseX(ev.offsetX);
+    editorState.curMouseY = toWorldMouseY(ev.offsetY);
+    editorState.mouseDownX = toWorldMouseX(ev.offsetX);
+    editorState.mouseDownY = toWorldMouseY(ev.offsetY);
 
     // Scrubber.
     let w = editorState.canvas.width / 2;
@@ -179,13 +190,79 @@ editorState.canvas.addEventListener('mouseup', ev => {
     let highlightedArea = editorState.currentPositionsBoxesByMouseDrag(ev.altKey);
     editorState.mouseDownX = undefined;
     editorState.mouseDownY = undefined;
-    editorState.curMouseX = ev.offsetX + OFFSET_X;
-    editorState.curMouseY = ev.offsetY + OFFSET_Y;
+    editorState.curMouseScreenX = ev.offsetX;
+    editorState.curMouseScreenY = ev.offsetY;
+    editorState.curMouseX = toWorldMouseX(ev.offsetX);
+    editorState.curMouseY = toWorldMouseY(ev.offsetY);
     editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
     if (ev.buttons === 1) {
         isInScrubber = false;
     }
 });
+
+// Make sure qubit grid and timeline don't deviate from the area of interest.
+function restrictQubitGridAndTimeline() {
+    const width = editorState.canvas.width / 2;
+    const height = editorState.canvas.height;
+    const zoom = editorState.viewportZoom;
+    const gridMin = -1 * pitch - OFFSET_X;
+    const gridMax  = MAX_QUBIT_COORDINATE * pitch - OFFSET_X;
+
+    editorState.viewportX = Math.max(
+        width - gridMax  * zoom,
+        Math.min(-gridMin * zoom, editorState.viewportX)
+    );
+    editorState.viewportY = Math.max(
+        height - gridMax  * zoom,
+        Math.min(-gridMin * zoom, editorState.viewportY)
+    );
+
+    editorState.timelineScrollY = Math.max(
+        0,
+        editorState.timelineScrollY
+    );
+}
+
+function handleTimelineVerticalScroll(ev) {
+    editorState.timelineScrollY += ev.deltaY;
+    restrictQubitGridAndTimeline();
+    editorState.force_redraw();
+    return;
+}
+
+function handleQubitGridZoomPan(ev) {
+    if (ev.ctrlKey || ev.metaKey) {
+        // Handle zoom.
+        const zoomMultiplier = ev.deltaY < 0 ? 1.05 : (1 / 1.05);
+        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, editorState.viewportZoom * zoomMultiplier));
+        const ratio = newZoom / editorState.viewportZoom;
+        editorState.viewportZoom = newZoom;
+
+        // Center zoom around mouse.
+        editorState.viewportX = ev.offsetX - (ev.offsetX - editorState.viewportX) * ratio;
+        editorState.viewportY = ev.offsetY - (ev.offsetY - editorState.viewportY) * ratio;
+    } else {
+        // Handle pan.
+        editorState.viewportX -= ev.deltaX;
+        editorState.viewportY -= ev.deltaY;
+    }
+
+    editorState.curMouseX = toWorldMouseX(ev.offsetX);
+    editorState.curMouseY = toWorldMouseY(ev.offsetY);
+    restrictQubitGridAndTimeline();
+    editorState.force_redraw();
+}
+
+editorState.canvas.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const width = editorState.canvas.width / 2;
+
+    if (ev.offsetX > width) {
+        handleTimelineVerticalScroll(ev);
+    } else {
+        handleQubitGridZoomPan(ev);
+    }
+}, { passive: false });
 
 /**
  * @return {!Map<!string, !function(preview: !boolean) : void>}
@@ -504,7 +581,13 @@ editorState.rev.changes().subscribe(() => {
     drawToolbox(editorState.chorder.toEvent(false));
 });
 initUrlCircuitSync(editorState.rev);
-editorState.obs_val_draw_state.observable().subscribe(ds => requestAnimationFrame(() => draw(editorState.canvas.getContext('2d'), ds)));
+editorState.obs_val_draw_state.observable().subscribe(ds => requestAnimationFrame(() => {
+    const maxTimelineScrollY = draw(editorState.canvas.getContext('2d'), ds);
+    // Prevent over-scrolling.
+    if (editorState.timelineScrollY > maxTimelineScrollY) {
+        editorState.timelineScrollY = maxTimelineScrollY;
+    }
+}));
 window.addEventListener('focus', () => {
     editorState.chorder.handleFocusChanged();
 });

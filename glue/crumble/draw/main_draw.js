@@ -1,4 +1,4 @@
-import {pitch, rad, OFFSET_X, OFFSET_Y} from "./config.js"
+import {pitch, rad, OFFSET_X, OFFSET_Y, MAX_QUBIT_COORDINATE} from "./config.js"
 import {marker_placement} from "../gates/gateset_markers.js";
 import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
@@ -192,6 +192,15 @@ function defensiveDraw(ctx, body) {
     }
 }
 
+function switchToScreenCoordinates(ctx) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function switchToTransformationCoordinates(ctx, snap) {
+    const zoom = snap.viewportZoom;
+    ctx.setTransform(zoom, 0, 0, zoom, snap.viewportX, snap.viewportY);
+}
+
 /**
  * @param {!CanvasRenderingContext2D} ctx
  * @param {!StateSnapshot} snap
@@ -254,8 +263,10 @@ function draw(ctx, snap) {
     }
 
     defensiveDraw(ctx, () => {
-        ctx.fillStyle = 'white';
+        switchToScreenCoordinates(ctx);
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        switchToTransformationCoordinates(ctx, snap);
+
         let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY);
 
         // Draw the background polygons.
@@ -278,13 +289,13 @@ function draw(ctx, snap) {
 
         // Draw the grid of qubits.
         defensiveDraw(ctx, () => {
-            for (let qx = 0; qx < 100; qx += 0.5) {
+            for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += 0.5) {
                 let [x, _] = c2dCoordTransform(qx, 0);
                 let s = `${qx}`;
                 ctx.fillStyle = 'black';
                 ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
             }
-            for (let qy = 0; qy < 100; qy += 0.5) {
+            for (let qy = 0; qy < MAX_QUBIT_COORDINATE; qy += 0.5) {
                 let [_, y] = c2dCoordTransform(0, qy);
                 let s = `${qy}`;
                 ctx.fillStyle = 'black';
@@ -292,12 +303,12 @@ function draw(ctx, snap) {
             }
 
             ctx.strokeStyle = 'black';
-            for (let qx = 0; qx < 100; qx += 0.5) {
+            for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += 0.5) {
                 let [x, _] = c2dCoordTransform(qx, 0);
                 let s = `${qx}`;
                 ctx.fillStyle = 'black';
                 ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
-                for (let qy = qx % 1; qy < 100; qy += 1) {
+                for (let qy = qx % 1; qy < MAX_QUBIT_COORDINATE; qy += 1) {
                     let [x, y] = c2dCoordTransform(qx, qy);
                     ctx.fillStyle = 'white';
                     let isUnused = !usedQubitCoordSet.has(`${qx},${qy}`);
@@ -384,7 +395,8 @@ function draw(ctx, snap) {
         });
     });
 
-    drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
+    switchToScreenCoordinates(ctx);
+    const maxTimelineScrollY = drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
 
     // Draw scrubber.
     ctx.save();
@@ -485,6 +497,7 @@ function draw(ctx, snap) {
     } finally {
         ctx.restore();
     }
+    return maxTimelineScrollY;
 }
 
 export {xyToPos, draw, setDefensiveDrawEnabled, OFFSET_X, OFFSET_Y}

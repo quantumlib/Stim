@@ -17,8 +17,14 @@ class StateSnapshot {
      * @param {!number} mouseDownX
      * @param {!number} mouseDownY
      * @param {!Array<![!number, !number]>} boxHighlightPreview
+     * @param {!number} viewportX
+     * @param {!number} viewportY
+     * @param {!number} viewportZoom
+     * @param {!number} timelineScrollY
+     * @param {!number} curMouseScreenX
+     * @param {!number} curMouseScreenY
      */
-    constructor(circuit, curLayer, focusedSet, timelineSet, curMouseX, curMouseY, mouseDownX, mouseDownY, boxHighlightPreview) {
+    constructor(circuit, curLayer, focusedSet, timelineSet, curMouseX, curMouseY, mouseDownX, mouseDownY, boxHighlightPreview, viewportX=0, viewportY=0, viewportZoom=1, timelineScrollY=0, curMouseScreenX=undefined, curMouseScreenY=undefined) {
         this.circuit = circuit.copy();
         this.curLayer = curLayer;
         this.focusedSet = new Map(focusedSet.entries());
@@ -28,6 +34,12 @@ class StateSnapshot {
         this.mouseDownX = mouseDownX;
         this.mouseDownY = mouseDownY;
         this.boxHighlightPreview = [...boxHighlightPreview];
+        this.viewportX = viewportX;
+        this.viewportY = viewportY;
+        this.viewportZoom = viewportZoom;
+        this.timelineScrollY = timelineScrollY;
+        this.curMouseScreenX = curMouseScreenX;
+        this.curMouseScreenY = curMouseScreenY;
 
         while (this.circuit.layers.length <= this.curLayer) {
             this.circuit.layers.push(new Layer());
