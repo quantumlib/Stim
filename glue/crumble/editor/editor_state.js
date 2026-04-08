@@ -267,10 +267,10 @@ class EditorState {
             x2 -= gap;
             y1 += gap;
             y2 -= gap;
-            x1 = Math.floor(x1 * 2 / pitch + 0.5) / 2;
-            x2 = Math.floor(x2 * 2 / pitch + 0.5) / 2;
-            y1 = Math.floor(y1 * 2 / pitch + 0.5) / 2;
-            y2 = Math.floor(y2 * 2 / pitch + 0.5) / 2;
+            x1 = Math.floor(x1 * 2 / scaledPitch + 0.5) / 2;
+            x2 = Math.floor(x2 * 2 / scaledPitch + 0.5) / 2;
+            y1 = Math.floor(y1 * 2 / scaledPitch + 0.5) / 2;
+            y2 = Math.floor(y2 * 2 / scaledPitch + 0.5) / 2;
             let b = 1;
             if (x1 === x2 || y1 === y2) {
                 b = 2;
