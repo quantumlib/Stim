@@ -3,7 +3,7 @@ import {Chorder} from "../keyboard/chord.js";
 import {Layer, minXY} from "../circuit/layer.js";
 import {Revision} from "../base/revision.js";
 import {ObservableValue} from "../base/obs.js";
-import {pitch, rad} from "../draw/config.js";
+import {OFFSET_X, pitch, rad} from "../draw/config.js";
 import {xyToPos} from "../draw/main_draw.js";
 import {StateSnapshot} from "../draw/state_snapshot.js";
 import {Operation} from "../circuit/operation.js";
@@ -46,6 +46,10 @@ class EditorState {
         this.timelineSet = /** @type {!Map<!string, ![!number, !number]>} */ new Map();
         this.mouseDownX = /** @type {undefined|!number} */ undefined;
         this.mouseDownY = /** @type {undefined|!number} */ undefined;
+        this.scrollX = 0;
+        this.scrollY = 0;
+        this.timelineScrollY = 0;
+        this.zoomScale = 1.0;
         this.obs_val_draw_state = /** @type {!ObservableValue<StateSnapshot>} */ new ObservableValue(this.toSnapshot(undefined));
     }
 
@@ -210,6 +214,10 @@ class EditorState {
             this.curMouseY,
             this.mouseDownX,
             this.mouseDownY,
+            this.scrollX,
+            this.scrollY,
+            this.timelineScrollY,
+            this.zoomScale,
             this.currentPositionsBoxesByMouseDrag(this.chorder.curModifiers.has("alt")),
         );
     }
@@ -240,14 +248,21 @@ class EditorState {
         let curMouseY = this.curMouseY;
         let mouseDownX = this.mouseDownX;
         let mouseDownY = this.mouseDownY;
+        let scrollX = this.scrollX || 0;
+        let scrollY = this.scrollY || 0;
+        let timelineScrollY = this.timelineScrollY || 0;
+        let zoomScale = this.zoomScale || 1.0;
         let result = [];
         if (curMouseX !== undefined && mouseDownX !== undefined) {
-            let [sx, sy] = xyToPos(mouseDownX, mouseDownY);
-            let x1 = Math.min(curMouseX, mouseDownX);
-            let x2 = Math.max(curMouseX, mouseDownX);
-            let y1 = Math.min(curMouseY, mouseDownY);
-            let y2 = Math.max(curMouseY, mouseDownY);
-            let gap = pitch/4 - rad;
+            let [sx, sy] = xyToPos(mouseDownX, mouseDownY, scrollX, scrollY, zoomScale);
+            
+            let scaledPitch = pitch * zoomScale;
+
+            let x1 = Math.min(curMouseX, mouseDownX) - scrollX;
+            let x2 = Math.max(curMouseX, mouseDownX) - scrollX;
+            let y1 = Math.min(curMouseY, mouseDownY) - scrollY;
+            let y2 = Math.max(curMouseY, mouseDownY) - scrollY;
+            let gap = (pitch/4 - rad) * zoomScale;
             x1 += gap;
             x2 -= gap;
             y1 += gap;
@@ -261,7 +276,9 @@ class EditorState {
                 b = 2;
             }
             for (let x = x1; x <= x2; x += 0.5) {
+                if (x < 0) continue;
                 for (let y = y1; y <= y2; y += 0.5) {
+                    if (y < 0) continue;
                     if (x % 1 === y % 1) {
                         if (!parityLock || (sx % b === x % b && sy % b === y % b)) {
                             result.push([x, y]);
@@ -309,6 +326,47 @@ class EditorState {
         }, preview, true);
     }
 
+    /**
+     * @param {!number} dx
+     * @param {!number} dy
+     */
+    pan(dx, dy) {
+        this.scrollX += dx;
+        this.scrollY += dy;
+        this.force_redraw();
+    }
+    /**
+     * @param {!number} dy
+     */
+    timelinePan(dy) {
+        if( this.timelineScrollY + dy > 0) {
+            return;
+        }
+        this.timelineScrollY += dy;
+        this.force_redraw();
+    }
+    /**
+     * @param {!number} factor 
+     * @returns 
+     */
+    zoom(factor) {
+        if( this.zoomScale * factor < 0.1 || this.zoomScale * factor > 10) {
+            return;
+        }
+        this.zoomScale *= factor;
+        let mouseX = this.curMouseX || 0;
+        let mouseY = this.curMouseY || 0;
+        this.scrollX = mouseX - (mouseX - this.scrollX) * factor;
+        this.scrollY = mouseY - (mouseY - this.scrollY) * factor;
+        this.force_redraw();
+    }
+    resetView() {
+        this.scrollX = 0;
+        this.scrollY = 0;
+        this.timelineScrollY = 0;
+        this.zoomScale = 1.0;
+        this.force_redraw();
+    }
     /**
      * @param {!int} newLayer
      */
