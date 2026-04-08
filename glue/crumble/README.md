@@ -17,7 +17,7 @@ Crumble is not polished.**
 - [Using Crumble](#using-crumble)
   - [Loading and Saving Circuits](#loading-and-saving-circuits)
   - [Keyboard Controls](#keyboard-controls)
-    - [Mouse Controls](#mouse-controls)
+  - [Mouse Controls](#mouse-controls)
 - [Building Crumble](#building-crumble)
 - [Testing Crumble](#testing-crumble)
 
@@ -226,13 +226,13 @@ of the **Y gate** (y) (i.e. the gate `SQRT_YY_DAG 1 2`).
 
 **Interaction**
 
-- `Arrow Keys (Up/Down/Left/Right)`: Pan the Planar Layout view.
+- `Arrow Keys (Up/Down/Left/Right)`: Pan the Planar Layout view
 - `ctrl+0`: Reset View (reset both the planar view and the timeline scroll)
 - `ctrl+-`: Zoom out
 - `ctrl++` or `ctrl+=`: Zoom in
 
 <a name="mouse-commands"></a>
-### Mouse Controls
+## Mouse Controls
 
 Note: to `BoxSelect` means to press down the left mouse button, drag the mouse
 while holding the button down to outline a rectangular region, and then release
