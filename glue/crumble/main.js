@@ -234,14 +234,18 @@ editorState.canvas.addEventListener('mousedown', ev => {
     editorState.force_redraw();
 });
 
+function clearDragState(ev) {
+    isPanning = false;
+    isTimelinePanning = false;
+    isZooming = false;
+
+    editorState.mouseDownX = undefined;
+    editorState.mouseDownY = undefined;
+}
+
 editorState.canvas.addEventListener('mouseup', ev => {
     if ((isPanning || isTimelinePanning || isZooming) && ev.button === 1) {
-        isPanning = false;
-        isTimelinePanning = false;
-        isZooming = false;
-
-        editorState.mouseDownX = undefined;
-        editorState.mouseDownY = undefined;
+        clearDragState(ev);
         return;
     }
     let highlightedArea = editorState.currentPositionsBoxesByMouseDrag(ev.altKey);
@@ -252,6 +256,12 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
     if (ev.buttons === 1) {
         isInScrubber = false;
+    }
+});
+
+editorState.canvas.addEventListener('mouseenter', ev => {
+    if ((isPanning || isTimelinePanning || isZooming) && (ev.buttons & 4) === 0) {
+        clearDragState(ev);
     }
 });
 
