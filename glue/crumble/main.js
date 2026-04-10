@@ -136,8 +136,9 @@ btnPrevLayer.addEventListener('click', _ev => {
 });
 
 window.addEventListener('resize', _ev => {
-    editorState.canvas.width = editorState.canvas.scrollWidth;
-    editorState.canvas.height = editorState.canvas.scrollHeight;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
+    editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
     editorState.force_redraw();
 });
 
@@ -157,7 +158,7 @@ editorState.canvas.addEventListener('mousemove', ev => {
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    let w = editorState.canvas.width / 2;
+    let w = editorState.canvas.scrollWidth / 2;
     if (isInScrubber && ev.buttons === 1) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
@@ -174,7 +175,7 @@ editorState.canvas.addEventListener('mousedown', ev => {
     editorState.mouseDownY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    let w = editorState.canvas.width / 2;
+    let w = editorState.canvas.scrollWidth / 2;
     isInScrubber = ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1;
     if (isInScrubber) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
@@ -506,8 +507,9 @@ function handleKeyboardEvent(ev) {
 document.addEventListener('keydown', handleKeyboardEvent);
 document.addEventListener('keyup', handleKeyboardEvent);
 
-editorState.canvas.width = editorState.canvas.scrollWidth;
-editorState.canvas.height = editorState.canvas.scrollHeight;
+const devicePixelRatio = window.devicePixelRatio || 1;
+editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
+editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
 editorState.rev.changes().subscribe(() => {
     editorState.obs_val_draw_state.set(editorState.toSnapshot(undefined));
     drawToolbox(editorState.chorder.toEvent(false));
