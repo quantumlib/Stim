@@ -4,6 +4,26 @@ body {
 
 #main-container {
     padding: 4px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+#cvn {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid black;
+    margin: 0;
+    padding: 0;
+}
+
+table {
+    border: 1px solid black;
+    margin: 10px;
+    text-align: left;
+    border-collapse: collapse;
 }
 
 table tr {
