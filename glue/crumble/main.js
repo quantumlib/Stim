@@ -31,7 +31,8 @@ const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementByI
 const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
 const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
 const btnShowExamples = /** @type {!HTMLButtonElement} */ document.getElementById('btnShowExamples');
-const divExamples = /** @type{!HTMLDivElement} */ document.getElementById('examples-div');
+const dialogExamples = /** @type{!HTMLDialogElement} */ document.getElementById('examples-dialog');
+const btnDialogClose = /** @type{!HTMLDivElement} */ document.getElementById('examples-close-button');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
 txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
@@ -83,12 +84,20 @@ btnClearSelectedMarkers.addEventListener('click', _ev => {
 });
 
 btnShowExamples.addEventListener('click', _ev => {
-    if (divExamples.style.display === 'none') {
-        divExamples.style.display = 'block';
-        btnShowExamples.textContent = "Hide Example Circuits";
+    if (dialogExamples.open) {
+        dialogExamples.close();
     } else {
-        divExamples.style.display = 'none';
-        btnShowExamples.textContent = "Show Example Circuits";
+        dialogExamples.showModal();
+    }
+});
+
+btnDialogClose.addEventListener('click', _ev => {
+    dialogExamples.close();
+});
+
+dialogExamples.addEventListener('click', ev => {
+    if (ev.target === dialogExamples) {
+        dialogExamples.close();
     }
 });
 
@@ -522,6 +531,7 @@ for (let anchor of document.getElementById('examples-div').querySelectorAll('a')
         let circuitText = anchor.href.split('#circuit=')[1];
 
         editorState.rev.commit(circuitText);
+        dialogExamples.close();
         return false;
     };
 }
