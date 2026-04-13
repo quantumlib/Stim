@@ -205,7 +205,7 @@ function makeChordHandlers() {
 
     res.set('shift+t', preview => editorState.rotate45(-1, preview));
     res.set('t', preview => editorState.rotate45(+1, preview));
-    res.set('escape', () => editorState.clearFocus());
+    res.set('escape', () => {if (dialogExamples.open) dialogExamples.close(); else editorState.clearFocus()});
     res.set('delete', preview => editorState.deleteAtFocus(preview));
     res.set('backspace', preview => editorState.deleteAtFocus(preview));
     res.set('ctrl+delete', preview => editorState.deleteCurLayer(preview));
