@@ -21,16 +21,25 @@
 using namespace stim;
 
 RareErrorIterator::RareErrorIterator(float probability)
-    : next_candidate(0), is_one(probability == 1), dist(probability) {
+    : next_candidate(0), probability(probability) {
     if (!(probability >= 0 && probability <= 1)) {
         throw std::out_of_range("Invalid probability: " + std::to_string(probability));
+    }
+    if (0 < probability && probability < 1) {
+        dist = std::geometric_distribution<size_t>(probability);
     }
 }
 
 size_t RareErrorIterator::next(std::mt19937_64 &rng) {
-    size_t result = next_candidate + (is_one ? 0 : dist(rng));
-    next_candidate = result + 1;
-    return result;
+    if (probability == 0) {
+        return SIZE_MAX;
+    } else if (probability == 1) {
+        return next_candidate++;
+    } else {
+        size_t result = next_candidate + dist(rng);
+        next_candidate = result + 1;
+        return result;
+    }
 }
 
 std::vector<size_t> stim::sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng) {
