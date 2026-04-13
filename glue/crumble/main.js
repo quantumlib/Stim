@@ -49,6 +49,12 @@ btnImport.addEventListener('click', _ev => {
     editorState.commit(circuit);
 });
 
+function applyDevicePixelScaling() {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
+    editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
+}
+
 btnImportExport.addEventListener('click', _ev => {
     let div = /** @type{!HTMLDivElement} */ document.getElementById('divImportExport');
     if (div.style.display === 'none') {
@@ -62,6 +68,8 @@ btnImportExport.addEventListener('click', _ev => {
     }
     setTimeout(() => {
         window.scrollTo(0, 0);
+        applyDevicePixelScaling();
+        editorState.force_redraw();
     }, 0);
 });
 
@@ -136,9 +144,7 @@ btnPrevLayer.addEventListener('click', _ev => {
 });
 
 window.addEventListener('resize', _ev => {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
-    editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
+    applyDevicePixelScaling();
     editorState.force_redraw();
 });
 
@@ -507,9 +513,7 @@ function handleKeyboardEvent(ev) {
 document.addEventListener('keydown', handleKeyboardEvent);
 document.addEventListener('keyup', handleKeyboardEvent);
 
-const devicePixelRatio = window.devicePixelRatio || 1;
-editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
-editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
+applyDevicePixelScaling();
 editorState.rev.changes().subscribe(() => {
     editorState.obs_val_draw_state.set(editorState.toSnapshot(undefined));
     drawToolbox(editorState.chorder.toEvent(false));
