@@ -32,8 +32,10 @@ constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF124CULL;
 /// Gets more efficient as the hit probability drops.
 struct RareErrorIterator {
     size_t next_candidate;
-    bool is_one = false;
+    float probability;
     std::geometric_distribution<size_t> dist;
+    RareErrorIterator() = delete;
+    RareErrorIterator(const RareErrorIterator &) = delete;
     RareErrorIterator(float probability);
     size_t next(std::mt19937_64 &rng);
 
