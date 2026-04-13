@@ -3,7 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <title>Crumble</title>
-    <link rel="stylesheet" href="crumble.css">
+    <style>
+body {
+    font-family: sans-serif;
+}
+
+#main-container {
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+#cvn {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid black;
+    margin: 0;
+    padding: 0;
+}
+
+table {
+    border: 1px solid black;
+    margin: 10px;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+table tr {
+    border: 1px solid black;
+}
+table td {
+    border: 1px solid black;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+table th {
+    border: 1px solid black;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.table-divider {
+    border-top: 3px solid black;
+}
+
+#button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: flex-start;
+}
+
+.btn-group {
+    display: flex;
+    gap: 2px;
+    flex-direction: column;
+}
+
+#examples-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+#toolbox {
+    width: 370px;
+    height: 110px;
+    border: 1px solid black;
+    margin: 0;
+    padding: 0;
+}
+
+#txtStimCircuit {
+    width: 95vw;
+    height: 300px;
+    background-color: #FFFFB0;
+}
+
+#btnExport, #btnImport {
+    background-color: red;
+}
+    </style>
     <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABgWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kTlIA0EUhj+j4kHEwhQiFluolQFREUuNgggRQlTwKtzdnJBdw27ExlKwDVh4NF6FjbW2FraCIHiAWFpZKdpIWN8kgQQxDgzz8c/8j/f+Ad9RxrTchgGw7JwTnQppC4tLWtMrrfiAAC266WbHI5EwNdfXPXXqvAuqWrXf/bnaYnHXhDpNeMzMOjnhVeGRjVxW8Z7qwkzpMeFz4X5HGhR+VLpR4jfFySKrpgk4c9EJ4YCwlqxio4rNlGMJDwv3xCxb6vsWShxTvKnYyqyb5T7VhP64PT+rdNndTDHNDBE0DNZJkyFHUE5bFJeo3Idq+LuK/oi4DHGlMcUxyRoWetGP+oPf2bqJocFSJX8IGl8876MXmnagkPe872PPK5xA/TNc2RX/2hGMfoqer2g9h9C+BRfXFc3Yhctt6HzK6o5elOpl+xIJeD+Tb1qEjltoXS7lVr7n9AHmJKvwDewfQF9Saq/UmLu5Ord/35Tz+wHVp3JoxsjWZAAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+YKAhYQLxXIct8AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAx0lEQVRYw+2XwQ7EIAhEB+N/E76cnkgIa6OuWTFxvTWxdRgKDwmAYu+i+KDKPP62CJjHNYsQ7Psk8iGk7AxdmeGC1e0CvBBbKQK8ljQB5kK2AxcLsJLMdoBKZvQAULMOtk5IR7Dg294+yw4RymUBs3qQ5bHAO34vC8yFPwvSBFhJ3skC35Bq1sHHsKDGKfUX94J46HllGDjd5XnI5WjOXwXQSg5X95eXaaU3zXSjG3XJ79LW1ak1RsX9/qdsldqsPTppo66k6QGRuElWZ7d4CQAAAABJRU5ErkJggg==">
 </head>
 <body id="main-container" style="margin: 0">
@@ -19,7 +104,7 @@
                 <br>
             </div>
             <div style="display: inline-block">
-                <canvas id="toolbox" style="width: 370px; height: 110px; border: 1px solid black; margin: 0; padding: 0;">
+                <canvas id="toolbox">
                 </canvas>
             </div>
         </div>
@@ -57,11 +142,11 @@
     </div>
     <div id="divImportExport" style="display: none">
         <div>
-            <textarea id="txtStimCircuit" style="width: 95vw; height: 300px; background-color: #FFFFB0">
+            <textarea id="txtStimCircuit">
             </textarea>
         </div>
-        <button id="btnExport" style="background-color: red">↑ Export to Stim Circuit ↑</button>
-        <button id="btnImport" style="background-color: red">↓ Import from Stim Circuit ↓</button>
+        <button id="btnExport">↑ Export to Stim Circuit ↑</button>
+        <button id="btnImport">↓ Import from Stim Circuit ↓</button>
     </div>
     <canvas id="cvn" tabindex="0">
     </canvas>
@@ -168,7 +253,7 @@
                         Open Circuit
                     </a></td>
                 </tr>
-                <tr style="border-top: 3px solid black;">
+                <tr class="table-divider">
                     <td>Color Code</td>
                     <td>Superdense</td>
                     <td>Stability (X+Z)</td>
@@ -190,7 +275,7 @@
                         Open Circuit
                     </a></td>
                 </tr>
-                <tr style="border-top: 3px solid black;">
+                <tr class="table-divider">
                     <td>Surface Code</td>
                     <td>Standard (ИZ)</td>
                     <td>Prepare (RY)</td>
