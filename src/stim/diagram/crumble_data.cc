@@ -12,7 +12,177 @@ std::string stim_draw_internal::make_crumble_html() {
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(    <title>Crumble</title>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(    <link rel="stylesheet" href="crumble.css">
+    result.append(R"CRUMBLE_PART(    <style>
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(body {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    font-family: sans-serif;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#main-container {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding: 4px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    display: flex;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    flex-direction: column;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    height: 100vh;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    box-sizing: border-box;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#cvn {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    width: 100%;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    flex: 1;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    min-height: 0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    margin: 0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding: 0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(table {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    margin: 10px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    text-align: left;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border-collapse: collapse;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(table tr {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(table td {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding-left: 5px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding-right: 5px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(table th {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding-left: 5px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding-right: 5px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(.table-divider {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border-top: 3px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#button-container {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    display: flex;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    flex-wrap: wrap;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    gap: 4px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    align-items: flex-start;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(.btn-group {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    display: flex;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    gap: 2px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    flex-direction: column;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#examples-close-button {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    position: absolute;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    top: 10px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    right: 10px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    cursor: pointer;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    font-weight: 900;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#toolbox {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    width: 370px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    height: 110px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    border: 1px solid black;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    margin: 0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    padding: 0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#txtStimCircuit {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    width: 95vw;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    height: 300px;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    background-color: #FFFFB0;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(#btnExport, #btnImport {
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    background-color: red;
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(}
+)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(    </style>
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(    <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABgWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kTlIA0EUhj+j4kHEwhQiFluolQFREUuNgggRQlTwKtzdnJBdw27ExlKwDVh4NF6FjbW2FraCIHiAWFpZKdpIWN8kgQQxDgzz8c/8j/f+Ad9RxrTchgGw7JwTnQppC4tLWtMrrfiAAC266WbHI5EwNdfXPXXqvAuqWrXf/bnaYnHXhDpNeMzMOjnhVeGRjVxW8Z7qwkzpMeFz4X5HGhR+VLpR4jfFySKrpgk4c9EJ4YCwlqxio4rNlGMJDwv3xCxb6vsWShxTvKnYyqyb5T7VhP64PT+rdNndTDHNDBE0DNZJkyFHUE5bFJeo3Idq+LuK/oi4DHGlMcUxyRoWetGP+oPf2bqJocFSJX8IGl8876MXmnagkPe872PPK5xA/TNc2RX/2hGMfoqer2g9h9C+BRfXFc3Yhctt6HzK6o5elOpl+xIJeD+Tb1qEjltoXS7lVr7n9AHmJKvwDewfQF9Saq/UmLu5Ord/35Tz+wHVp3JoxsjWZAAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+YKAhYQLxXIct8AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAx0lEQVRYw+2XwQ7EIAhEB+N/E76cnkgIa6OuWTFxvTWxdRgKDwmAYu+i+KDKPP62CJjHNYsQ7Psk8iGk7AxdmeGC1e0CvBBbKQK8ljQB5kK2AxcLsJLMdoBKZvQAULMOtk5IR7Dg294+yw4RymUBs3qQ5bHAO34vC8yFPwvSBFhJ3skC35Bq1sHHsKDGKfUX94J46HllGDjd5XnI5WjOXwXQSg5X95eXaaU3zXSjG3XJ79LW1ak1RsX9/qdsldqsPTppo66k6QGRuElWZ7d4CQAAAABJRU)CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(5ErkJggg==">
@@ -45,7 +215,7 @@ std::string stim_draw_internal::make_crumble_html() {
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(            <div style="display: inline-block">
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(                <canvas id="toolbox" style="width: 370px; height: 110px; border: 1px solid black; margin: 0; padding: 0;">
+    result.append(R"CRUMBLE_PART(                <canvas id="toolbox">
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(                </canvas>
 )CRUMBLE_PART");
@@ -121,15 +291,15 @@ std::string stim_draw_internal::make_crumble_html() {
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(        <div>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(            <textarea id="txtStimCircuit" style="width: 95vw; height: 300px; background-color: #FFFFB0">
+    result.append(R"CRUMBLE_PART(            <textarea id="txtStimCircuit">
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(            </textarea>
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(        </div>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(        <button id="btnExport" style="background-color: red">↑ Export to Stim Circuit ↑</button>
+    result.append(R"CRUMBLE_PART(        <button id="btnExport">↑ Export to Stim Circuit ↑</button>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(        <button id="btnImport" style="background-color: red">↓ Import from Stim Circuit ↓</button>
+    result.append(R"CRUMBLE_PART(        <button id="btnImport">↓ Import from Stim Circuit ↓</button>
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(    </div>
 )CRUMBLE_PART");
@@ -415,7 +585,7 @@ std::string stim_draw_internal::make_crumble_html() {
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(                </tr>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(                <tr style="border-top: 3px solid black;">
+    result.append(R"CRUMBLE_PART(                <tr class="table-divider">
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(                    <td>Color Code</td>
 )CRUMBLE_PART");
@@ -466,7 +636,7 @@ std::string stim_draw_internal::make_crumble_html() {
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(                </tr>
 )CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(                <tr style="border-top: 3px solid black;">
+    result.append(R"CRUMBLE_PART(                <tr class="table-divider">
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(                    <td>Surface Code</td>
 )CRUMBLE_PART");
@@ -631,18 +801,18 @@ std::string stim_draw_internal::make_crumble_html() {
     result.append(R"CRUMBLE_PART(i),o+=i[0],a+=i[1];o/=n.length,a/=n.length,n.sort((t,r)=>{var[t,e]=t,[r,i]=r;return Math.atan2(e-a,t-o)-Math.atan2(i-a,r-o)});var s=this.xe().Ft(this.we.values()),h=s.Ut(),l=new Uint32Array(this.we.size);for(let t=0;t<n.length;t++){var[f,v]=n[t];l[t]=h.get(f+","+v)}s.yt[this.Ur].put(new F(r,"",new Float32Array(e),l)),this.Le(s,t)}}ni(t,r,e=void 0){void 0===e&&(e=void 0===r.X?[]:[r.X]),1===r.t?this.ii(t,r,e):2===r.t?this.oi(t,r,e):this.ai(t,r,e)}si(t,r){this.hi(t,r,!1)}li(t,r){this.hi(t,r,!0)}hi(t,r,e){var i=this.xe(),o=e?i.Pt(!1).Nt.length:r,a=T.le(i,r);for(let t=0;t<i.yt.length;t++){var n,s=0===t?new Y(new Map,new Set,[]):a.Gr(t-.5),h=a.Gr(t+.5),l=i.yt[t];for(n of new Set([...s.Hr.keys(),...h.Hr.keys()])){var f=s.Hr.get(n),v=h.Hr.get(n),c=l.et.get(n),d=void 0!==c?c.Z.name:void 0;let t=void 0;"MR"===d||"MRX"===d||"MRY"===d?t=f:void 0!==c&&0<c.m()&&(void 0===f?t=v:void 0===v?t=f:f!==v&&((d=new Set(["X","Y","Z"])).delete(f),d.delete(v),t=[...d][0])),void 0!==t&&l.it.push(new F(B.get(e?"DETECTOR":"OBSERVABLE_INC)CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(LUDE"),"",new Float32Array([o]),c.R))}l.it=l.it.filter(t=>!t.Z.name.startsWith("MARK")||t.Y[0]!==r)}this.Le(i,t)}fi(t,i){var r,e=this.xe(),o=T.le(e,i),a=this.Ur,n=0===a?new Y(new Map,new Set,[]):o.Gr(a-.5),s=o.Gr(a+.5),h=e.yt[a],l=new Set;for(r of new Set([...n.Hr.keys(),...s.Hr.keys()]))if(!l.has(r)){var f=n.Hr.get(r),v=s.Hr.get(r),c=h.et.get(r);if(void 0!==c){var d=c.Z.name;let e=void 0;if("R"===d||"M"===d||"MR"===d)e="Z";else if("RX"===d||"MX"===d||"MRX"===d)e="X";else{if("RY"!==d&&"MY"!==d&&"MRY"!==d){if("MXX"===d||"MYY"===d||"MZZ"===d){e=d[1];let t=0;for(var w of c.R){if(l.has(w)){t=-1;break}t+=n.Hr.get(w)===e}if(2===t)for(var u of c.R)l.add(u),h.it.push(new F(B.get("MARK"+e),"",new Float32Array([i]),new Uint32Array([u])));continue}if(d.startsWith("MPP:")){let r=0;for(let t=0;t<c.R.length;t++){var X=c.R[t];if(e=d[t+4],l.has(X)){r=-1;break}r+=n.Hr.get(X)===e}if(r>c.R.length/2)for(let t=0;t<c.R.length;t++){var M=c.R[t];e=d[t+4],l.add(M),h.it.push(new F(B.get("MARK"+e),"",new Float32Array([i]),new Uint32Arr)CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(ay([M])))}continue}continue}e="Y"}void 0===f&&void 0===v||(h.it.push(new F(B.get("MARK"+e),"",new Float32Array([i]),new Uint32Array([r]))),l.add(r))}}this.Le(e,t)}vi(t,i){let n=this.xe(),s=new Set;var r,e=n.Ut();for(r of this.we.keys())s.add(e.get(r));var o=(()=>{var t,r,{Nt:e,Dt:i}=n.Pt(!1);for(let t=0;t<e.length;t++){var o=T.fe(n,e[t].Tt);if(o.Gr(this.Ur+.5).ne(s))return[o,new F(B.get("DETECTOR"),"",new Float32Array([t]),new Uint32Array([]))]}for([t,r]of i.entries()){var a=T.fe(n,r);if(a.Gr(this.Ur+.5).ne(s))return[a,new F(B.get("OBSERVABLE_INCLUDE"),"",new Float32Array([t]),new Uint32Array([]))]}})();if(void 0!==o){let[r,e]=o;var a=this.xe();for(let t=0;t<a.yt.length;t++){var h,l=0===t?new Y(new Map,new Set,[]):r.Gr(t-.5),f=r.Gr(t+.5),v=a.yt[t];for(h of new Set([...l.Hr.keys(),...f.Hr.keys()])){var c=l.Hr.get(h),d=f.Hr.get(h),w=v.et.get(h),u=void 0!==w?w.Z.name:void 0;let t=void 0;"MR"===u||"MRX"===u||"MRY"===u||"R"===u||"RX"===u||"RY"===u?t=d:void 0!==w&&0<w.m()&&(void 0===c?t=d:void 0===d?t=c:c!==d&&((u=)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(new Set(["X","Y","Z"])).delete(c),u.delete(d),t=[...u][0])),void 0!==t&&v.it.push(new F(B.get("MARK"+t),"",new Float32Array([i]),new Uint32Array([h])))}v.it=v.it.filter(t=>t.Z.name!==e.Z.name||t.Y[0]!==e.Y[0])}this.Le(a,t)}}}(document.getElementById("cvn"));function zt(){var t=p.xe().xt().replaceAll("\nPOLYGON","\n#!pragma POLYGON").replaceAll("\nERR","\n#!pragma ERR").replaceAll("\nMARK","\n#!pragma MARK"),r=y;r.value=t+"\n",r.focus(),r.select()}r.addEventListener("click",t=>{zt()}),Dt.addEventListener("click",t=>{var r=y.value,r=u.It(r);p.commit(r)}),St.addEventListener("click",t=>{var r=document.getElementById("divImportExport");"none"===r.style.display?(r.style.display="block",St.textContent="Hide Import/Export",zt()):(r.style.display="none",St.textContent="Show Import/Export",y.value=""),setTimeout(()=>{window.scrollTo(0,0)},0)}),xt.addEventListener("click",t=>{p.Be()}),kt.addEventListener("click",t=>{p.Nr()}),Lt.addEventListener("click",t=>{p.de=new Map(p.we.entries()),p.Ge()}),Ut.addEventListener("clic)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(k",t=>{p.ei(!1),p.Ge()}),Gt.addEventListener("click",t=>{m.open?m.close():m.showModal()}),Ht.addEventListener("click",t=>{m.close()}),m.addEventListener("click",t=>{t.target===m&&m.close()}),Ft.addEventListener("click",t=>{p.de=new Map,p.Ge()}),gt.addEventListener("click",t=>{p.Dr()}),Ct.addEventListener("click",t=>{p.qe()}),Tt.addEventListener("click",t=>{p.Ve(1,!1)}),Nt.addEventListener("click",t=>{p.Ve(-1,!1)}),t.addEventListener("click",t=>{p.Ke(!1)}),Et.addEventListener("click",t=>{p.ze(!1)}),Pt.addEventListener("click",t=>{p.je(p.Ur+1)}),Ot.addEventListener("click",t=>{p.je(p.Ur-1)}),window.addEventListener("resize",t=>{var r=window.devicePixelRatio||1;p.canvas.width=p.canvas.scrollWidth*r,p.canvas.height=p.canvas.scrollHeight*r,p.Ge()}),p.canvas.addEventListener("mousemove",t=>{p.qr=t.offsetX+e,p.Wr=t.offsetY+v;var r=p.canvas.scrollWidth/2;Kt&&1===t.buttons?p.je(Math.floor((t.offsetX-r)/8)):p.Ge()});let Kt=!1;p.canvas.addEventListener("mousedown",t=>{p.qr=t.offsetX+e,p.Wr=t.offsetY+v,p.ue=t.offsetX+e,p)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(.Xe=t.offsetY+v;var r=p.canvas.scrollWidth/2;(Kt=t.offsetY<20&&t.offsetX>r&&1===t.buttons)?p.je(Math.floor((t.offsetX-r)/8)):p.Ge()}),p.canvas.addEventListener("mouseup",t=>{var r=p.$e(t.altKey);p.ue=void 0,p.Xe=void 0,p.qr=t.offsetX+e,p.Wr=t.offsetY+v,p.Je(r,t.shiftKey,t.ctrlKey),1===t.buttons&&(Kt=!1)});let Qt=void 0;async function $t(){let e=p.xe();e.yt=[e.yt[p.Ur]],0<p.we.size&&(e.yt[0]=e.yt[0].dt(t=>{var r=e.Rt[2*t],t=e.Rt[2*t+1];return p.we.has(r+","+t)}),[r,t]=P(p.we.values()),e=e.St(-r,-t));var t,r=e.xt();Qt=r;try{await navigator.clipboard.writeText(r)}catch(t){console.warn("Failed to write to clipboard. Using fallback emulated clipboard.",t)}}async function Bt(e){let i;try{i=await navigator.clipboard.readText()}catch(t){console.warn("Failed to read from clipboard. Using fallback emulated clipboard.",t),i=Qt}if(void 0!==i){let r=u.It(i);if(1!==r.yt.length)throw new Error(i);let t=p.xe();0<p.we.size&&([o,a]=P(p.we.values()),r=r.St(o,a));var o,a,n=[];for(let t=0;t<r.Rt.length;t+=2)n.push([r.Rt[t],r.Rt[t)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(+1]]);var s,h,l=(t=t.Ft(n)).Ut();for(s of p.we.keys()){var f=l.get(s);void 0!==f&&t.yt[p.Ur].Xt(f)}for(h of r.yt[0].nt()){var v,c=[];for(v of h.R){var d=r.Rt[2*v],w=r.Rt[2*v+1];c.push(l.get(d+","+w))}t.yt[p.Ur].put(new F(h.Z,h.tag,h.Y,new Uint32Array(c)))}p.Le(t,e)}}const qt=function(){let o=new Map;o.set("shift+t",t=>p.Ve(-1,t)),o.set("t",t=>p.Ve(1,t)),o.set("escape",()=>p.Ue()),o.set("delete",t=>p.He(t)),o.set("backspace",t=>p.He(t)),o.set("ctrl+delete",t=>p.ze(t)),o.set("ctrl+insert",t=>p.Ke(t)),o.set("ctrl+backspace",t=>p.ze(t)),o.set("ctrl+z",t=>{t||p.Nr()}),o.set("ctrl+y",t=>{t||p.Dr()}),o.set("ctrl+shift+z",t=>{t||p.Dr()}),o.set("ctrl+c",async t=>{await $t()}),o.set("ctrl+v",Bt),o.set("ctrl+x",async t=>{var r;await $t(),0===p.we.size?((r=p.xe()).yt[p.Ur].et.clear(),r.yt[p.Ur].it.length=0,p.Le(r,t)):p.He(t)}),o.set("l",t=>{t||(p.de=new Map(p.we.entries()),p.Ge())}),o.set(" ",t=>p.ei(t));for(let[t,r]of[["1",0],["2",1],["3",2],["4",3],["5",4],["6",5],["7",6],["8",7],["9",8],["0",9],["-",10],["=",11],["\\")CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(,12],["`",13]])o.set(""+t,t=>p.ri(t,r)),o.set(t+"+x",t=>p.ni(t,B.get("MARKX").M(r))),o.set(t+"+y",t=>p.ni(t,B.get("MARKY").M(r))),o.set(t+"+z",t=>p.ni(t,B.get("MARKZ").M(r))),o.set(t+"+d",t=>p.li(t,r)),o.set(t+"+o",t=>p.si(t,r)),o.set(t+"+j",t=>p.vi(t,r)),o.set(t+"+k",t=>p.fi(t,r));let r=.25;function a(t,r,e=void 0){for(var i of t){if(o.has(i))throw new Error("Chord collision: "+i);o.set(i,t=>p.ni(t,B.get(r)))}void 0!==e&&a(t.map(t=>"shift+"+t),e)}return o.set("p",t=>p.ni(t,B.get("POLYGON"),[1,0,0,r])),o.set("alt+p",t=>p.ni(t,B.get("POLYGON"),[0,1,0,r])),o.set("shift+p",t=>p.ni(t,B.get("POLYGON"),[0,0,1,r])),o.set("p+x",t=>p.ni(t,B.get("POLYGON"),[1,0,0,r])),o.set("p+y",t=>p.ni(t,B.get("POLYGON"),[0,1,0,r])),o.set("p+z",t=>p.ni(t,B.get("POLYGON"),[0,0,1,r])),o.set("p+x+y",t=>p.ni(t,B.get("POLYGON"),[1,1,0,r])),o.set("p+x+z",t=>p.ni(t,B.get("POLYGON"),[1,0,1,r])),o.set("p+y+z",t=>p.ni(t,B.get("POLYGON"),[0,1,1,r])),o.set("p+x+y+z",t=>p.ni(t,B.get("POLYGON"),[1,1,1,r])),o.set("m+p+x",t=>p.ni(t,f("X".repeat(p.we)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(.size)),[])),o.set("m+p+y",t=>p.ni(t,f("Y".repeat(p.we.size)),[])),o.set("m+p+z",t=>p.ni(t,f("Z".repeat(p.we.size)),[])),o.set("f",t=>p.De(t)),o.set("g",t=>p.Fe(t)),o.set("shift+>",t=>p.We((t,r)=>[t+1,r],t,!1)),o.set("shift+<",t=>p.We((t,r)=>[t-1,r],t,!1)),o.set("shift+v",t=>p.We((t,r)=>[t,r+1],t,!1)),o.set("shift+^",t=>p.We((t,r)=>[t,r-1],t,!1)),o.set(">",t=>p.We((t,r)=>[t+1,r],t,!1)),o.set("<",t=>p.We((t,r)=>[t-1,r],t,!1)),o.set("v",t=>p.We((t,r)=>[t,r+1],t,!1)),o.set("^",t=>p.We((t,r)=>[t,r-1],t,!1)),o.set(".",t=>p.We((t,r)=>[t+.5,r+.5],t,!1)),a(["h","h+y","h+x+z"],"H","H"),a(["h+z","h+x+y"],"H_XY","H_XY"),a(["h+x","h+y+z"],"H_YZ","H_YZ"),a(["s+x","s+y+z"],"SQRT_X","SQRT_X_DAG"),a(["s+y","s+x+z"],"SQRT_Y","SQRT_Y_DAG"),a(["s","s+z","s+x+y"],"S","S_DAG"),a(["r+x","r+y+z"],"RX"),a(["r+y","r+x+z"],"RY"),a(["r","r+z","r+x+y"],"R"),a(["m+x","m+y+z"],"MX"),a(["m+y","m+x+z"],"MY"),a(["m","m+z","m+x+y"],"M"),a(["m+r+x","m+r+y+z"],"MRX"),a(["m+r+y","m+r+x+z"],"MRY"),a(["m+r","m+r+z","m+r+x+y"],"MR"),a(["c"],"CX","C)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(X"),a(["c+x"],"CX","CX"),a(["c+y"],"CY","CY"),a(["c+z"],"CZ","CZ"),a(["j+x"],"X","X"),a(["j+y"],"Y","Y"),a(["j+z"],"Z","Z"),a(["c+x+y"],"XCY","XCY"),a(["alt+c+x"],"XCX","XCX"),a(["alt+c+y"],"YCY","YCY"),a(["w"],"SWAP","SWAP"),a(["w+x"],"CXSWAP",void 0),a(["c+w+x"],"CXSWAP",void 0),a(["i+w"],"ISWAP","ISWAP_DAG"),a(["w+z"],"CZSWAP",void 0),a(["c+w+z"],"CZSWAP",void 0),a(["c+w"],"CZSWAP",void 0),a(["c+t"],"C_XYZ","C_ZYX"),a(["c+s+x"],"SQRT_XX","SQRT_XX_DAG"),a(["c+s+y"],"SQRT_YY","SQRT_YY_DAG"),a(["c+s+z"],"SQRT_ZZ","SQRT_ZZ_DAG"),a(["c+s"],"SQRT_ZZ","SQRT_ZZ_DAG"),a(["c+m+x"],"MXX","MXX"),a(["c+m+y"],"MYY","MYY"),a(["c+m+z"],"MZZ","MZZ"),a(["c+m"],"MZZ","MZZ"),o}();function Wt(r){if(p.Oe.jt(r),"keydown"===r.type){if("q"===r.key.toLowerCase())return e=r.shiftKey?5:1,void p.je(p.Ur-e);if("e"===r.key.toLowerCase())return e=r.shiftKey?5:1,void p.je(p.Ur+e);if("Home"===r.key)return p.je(0),void r.preventDefault();if("End"===r.key)return p.je(p.xe().yt.length-1),void r.preventDefault()}var t=p.Oe.Bt;if(0!==t.length){)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(for(var e=t[t.length-1];0<t.length;)t.pop();var i=[...e.zt];if(0!==i.length){i.sort();let t="";e.altKey&&(t+="alt+"),e.ctrlKey&&(t+="ctrl+"),e.metaKey&&(t+="meta+"),e.shiftKey&&(t+="shift+");for(var o of i)t+=o+"+";t=t.substring(0,t.length-1);i=qt.get(t);void 0!==i?(i(e.Ht),r.preventDefault()):p.Qe(p.xe())}}}document.addEventListener("keydown",Wt),document.addEventListener("keyup",Wt);r=window.devicePixelRatio||1;p.canvas.width=p.canvas.scrollWidth*r,p.canvas.height=p.canvas.scrollHeight*r,p.rev.Er().subscribe(()=>{p.Te.set(p.Ne(void 0));var t=p.Oe.qt(!1),r=window.devicePixelRatio||1,a=(o.width=o.scrollWidth*r,o.height=o.scrollHeight*r,o.getContext("2d"));a.save(),a.scale(r,r),a.clearRect(0,0,o.scrollWidth,o.scrollHeight),a.textAlign="right",a.textBaseline="middle",a.fillText("X",7.5,24.5),a.fillText("Y",7.5,56.5),a.fillText("Z",7.5,88.5),a.textAlign="center",a.textBaseline="bottom";for(let t=0;t<R.length;t++)a.fillText(R[t],24.5+32*t,M);a.fillStyle="white",a.strokeStyle="black";var e=[["H_YZ","S_X","R_X","M_)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(X","MR_X","C_X","CXSWAP","√XX","M_XX","PX","X1"],["H","S_Y","R_Y","M_Y","MR_Y","C_Y","SWAP","√YY","M_YY","PY","Y1"],["H_XY","S","R","M","MR","C_Z","CZSWAP","√ZZ","M_ZZ","PZ","Z1"]];for(let r=0;r<R.length;r++)for(let t=0;t<3;t++)a.fillRect(M+32*r,M+32*t,28,28);for(let r=0;r<R.length;r++)for(let t=0;t<3;t++){var n=e[t][r];let i=M+32*r+14,o=M+32*t+14;if(n.startsWith("P")){a.beginPath();let r=3;"PX"===n?(r=4,a.fillStyle="red"):"PY"===n?(r=5,a.fillStyle="green",o+=1):"PZ"===n&&(r=3,a.fillStyle="blue",o+=2);var s,h=[];for(let t=0;t<r;t++){var l=2*Math.PI/r*(t+.5);h.push([Math.round(i+8.4*Math.sin(l)),Math.round(o+8.4*Math.cos(l))])}a.moveTo(h[h.length-1][0],h[h.length-1][1]);for(s of h)a.lineTo(s[0],s[1]);a.closePath(),a.globalAlpha*=.25,a.fill(),a.globalAlpha*=4}else if(n.endsWith("1")){a.beginPath(),a.moveTo(i+4.8,o-8),a.lineTo(i,o+3.2),a.lineTo(i-4.8,o-8),a.closePath();var f="X1"===n?"red":"Y1"===n?"green":"blue";a.fillStyle=f,a.strokeStyle=f,a.fill(),a.lineWidth=2,a.beginPath(),a.moveTo(i,o),a.lineTo(i+14,o),a.)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(stroke(),a.lineWidth=1}else if(a.fillStyle="black",-1!==n.indexOf("_")){var[v,c]=n.split("_");let t=16,r=0,e=0;for(;4<t&&(a.font=t+"pt monospace",r=a.measureText(v).width,a.font=.6*t+"pt monospace",e=a.measureText(c).width,!(r+e<=26));)--t;i-=(r+e)/2,a.font=t+"pt monospace",a.textAlign="left",a.textBaseline="middle",a.fillText(v,i,o),a.font=.6*t+"pt monospace",a.textAlign="left",a.textBaseline="top",a.fillText(c,i+r,o)}else{let t=16;for(;4<t&&(a.font=t+"pt monospace",!(a.measureText(n).width<=28));)--t;a.textAlign="center",a.textBaseline="middle",a.fillText(n,i,o)}}a.strokeStyle="black";for(let r=0;r<R.length;r++)for(let t=0;t<3;t++)a.strokeRect(M+32*r,M+32*t,28,28);void 0!==(r=At(t)).ge&&(a.fillStyle="rgba(255, 255, 0, "+.5*r.ge.strength+")",a.fillRect(0,M+32*r.ge.Ee-2,M+32*R.length,32)),void 0!==r.Se&&(a.fillStyle="rgba(255, 255, 0, "+.5*r.Se.strength+")",a.fillRect(M+32*r.Se.ke-2,0,32,106.5)),void 0!==r.Ce&&void 0!==r.Se&&(a.fillStyle="rgba(255, 0, 0, 0.5)",a.fillRect(M+32*r.Se.ke-2,M+32*r.Ce.Ee-2,32,32)),)CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART(a.textAlign="left",a.textBaseline="middle",a.fillStyle="black",a.restore()});{var Vt=p.rev;const jt=new Zt;Dt=()=>{try{var t,r=(()=>{var t=document.location.hash.substring(1),r=new Map;if(""!==t)for(var e of t.split("&")){var i,o=e.indexOf("=");-1!==o&&(i=e.substring(0,o),e=decodeURIComponent(e.substring(o+1)),r.set(i,e))}return r})(),e=(r.has("circuit")||("[[[DEFAULT-CIRCUIT-CONTENT-LITERAL]]]"===(t=document.getElementById("txtDefaultCircuit")).value.replaceAll("_","-")?r.set("circuit",""):r.set("circuit",t.value)),u.It(r.get("circuit"))),i=e.xt();Vt.clear(i),e.yt.every(t=>t.ut())&&1===r.size&&i===r.get("circuit")?jt.Ie():jt.be(i,Yt(i))}catch(t){throw new Error(t)}},window.addEventListener("popstate",Dt),Dt(),Vt.kr().Yr().Zr(1).subscribe(t=>{jt.be(t,Yt(t))})}p.Te.mr().subscribe(t=>requestAnimationFrame(()=>wt(p.canvas.getContext("2d"),t))),window.addEventListener("focus",()=>{p.Oe.Vt()}),window.addEventListener("blur",()=>{p.Oe.Vt()});for(let r of document.getElementById("examples-div").querySelectorAll("a"))CRUMBLE_PART");
-    result.append(R"CRUMBLE_PART()r.onclick=t=>{if(!(t.shiftKey||t.ctrlKey||t.altKey||0!==t.button))return t=r.href.split("#circuit=")[1],p.rev.commit(t),m.close(),!1};
+    result.append(R"CRUMBLE_PART(new Set(["X","Y","Z"])).delete(c),u.delete(d),t=[...u][0])),void 0!==t&&v.it.push(new F(B.get("MARK"+t),"",new Float32Array([i]),new Uint32Array([h])))}v.it=v.it.filter(t=>t.Z.name!==e.Z.name||t.Y[0]!==e.Y[0])}this.Le(a,t)}}}(document.getElementById("cvn"));function zt(){var t=window.devicePixelRatio||1;p.canvas.width=p.canvas.scrollWidth*t,p.canvas.height=p.canvas.scrollHeight*t}function Kt(){var t=p.xe().xt().replaceAll("\nPOLYGON","\n#!pragma POLYGON").replaceAll("\nERR","\n#!pragma ERR").replaceAll("\nMARK","\n#!pragma MARK"),r=y;r.value=t+"\n",r.focus(),r.select()}r.addEventListener("click",t=>{Kt()}),Dt.addEventListener("click",t=>{var r=y.value,r=u.It(r);p.commit(r)}),St.addEventListener("click",t=>{var r=document.getElementById("divImportExport");"none"===r.style.display?(r.style.display="block",St.textContent="Hide Import/Export",Kt()):(r.style.display="none",St.textContent="Show Import/Export",y.value=""),setTimeout(()=>{window.scrollTo(0,0),zt(),p.Ge()},0)}),xt.addEventListener("click",t=>{p.Be()}))CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(,kt.addEventListener("click",t=>{p.Nr()}),Lt.addEventListener("click",t=>{p.de=new Map(p.we.entries()),p.Ge()}),Ut.addEventListener("click",t=>{p.ei(!1),p.Ge()}),Gt.addEventListener("click",t=>{m.open?m.close():m.showModal()}),Ht.addEventListener("click",t=>{m.close()}),m.addEventListener("click",t=>{t.target===m&&m.close()}),Ft.addEventListener("click",t=>{p.de=new Map,p.Ge()}),gt.addEventListener("click",t=>{p.Dr()}),Ct.addEventListener("click",t=>{p.qe()}),Tt.addEventListener("click",t=>{p.Ve(1,!1)}),Nt.addEventListener("click",t=>{p.Ve(-1,!1)}),t.addEventListener("click",t=>{p.Ke(!1)}),Et.addEventListener("click",t=>{p.ze(!1)}),Pt.addEventListener("click",t=>{p.je(p.Ur+1)}),Ot.addEventListener("click",t=>{p.je(p.Ur-1)}),window.addEventListener("resize",t=>{zt(),p.Ge()}),p.canvas.addEventListener("mousemove",t=>{p.qr=t.offsetX+e,p.Wr=t.offsetY+v;var r=p.canvas.scrollWidth/2;Qt&&1===t.buttons?p.je(Math.floor((t.offsetX-r)/8)):p.Ge()});let Qt=!1;p.canvas.addEventListener("mousedown",t=>{p.qr=t.offsetX+e,p.Wr)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(=t.offsetY+v,p.ue=t.offsetX+e,p.Xe=t.offsetY+v;var r=p.canvas.scrollWidth/2;(Qt=t.offsetY<20&&t.offsetX>r&&1===t.buttons)?p.je(Math.floor((t.offsetX-r)/8)):p.Ge()}),p.canvas.addEventListener("mouseup",t=>{var r=p.$e(t.altKey);p.ue=void 0,p.Xe=void 0,p.qr=t.offsetX+e,p.Wr=t.offsetY+v,p.Je(r,t.shiftKey,t.ctrlKey),1===t.buttons&&(Qt=!1)});let $t=void 0;async function Bt(){let e=p.xe();e.yt=[e.yt[p.Ur]],0<p.we.size&&(e.yt[0]=e.yt[0].dt(t=>{var r=e.Rt[2*t],t=e.Rt[2*t+1];return p.we.has(r+","+t)}),[r,t]=P(p.we.values()),e=e.St(-r,-t));var t,r=e.xt();$t=r;try{await navigator.clipboard.writeText(r)}catch(t){console.warn("Failed to write to clipboard. Using fallback emulated clipboard.",t)}}async function qt(e){let i;try{i=await navigator.clipboard.readText()}catch(t){console.warn("Failed to read from clipboard. Using fallback emulated clipboard.",t),i=$t}if(void 0!==i){let r=u.It(i);if(1!==r.yt.length)throw new Error(i);let t=p.xe();0<p.we.size&&([o,a]=P(p.we.values()),r=r.St(o,a));var o,a,n=[];for(let t=0;t<r.Rt.len)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(gth;t+=2)n.push([r.Rt[t],r.Rt[t+1]]);var s,h,l=(t=t.Ft(n)).Ut();for(s of p.we.keys()){var f=l.get(s);void 0!==f&&t.yt[p.Ur].Xt(f)}for(h of r.yt[0].nt()){var v,c=[];for(v of h.R){var d=r.Rt[2*v],w=r.Rt[2*v+1];c.push(l.get(d+","+w))}t.yt[p.Ur].put(new F(h.Z,h.tag,h.Y,new Uint32Array(c)))}p.Le(t,e)}}const Wt=function(){let o=new Map;o.set("shift+t",t=>p.Ve(-1,t)),o.set("t",t=>p.Ve(1,t)),o.set("escape",()=>{m.open?m.close():p.Ue()}),o.set("delete",t=>p.He(t)),o.set("backspace",t=>p.He(t)),o.set("ctrl+delete",t=>p.ze(t)),o.set("ctrl+insert",t=>p.Ke(t)),o.set("ctrl+backspace",t=>p.ze(t)),o.set("ctrl+z",t=>{t||p.Nr()}),o.set("ctrl+y",t=>{t||p.Dr()}),o.set("ctrl+shift+z",t=>{t||p.Dr()}),o.set("ctrl+c",async t=>{await Bt()}),o.set("ctrl+v",qt),o.set("ctrl+x",async t=>{var r;await Bt(),0===p.we.size?((r=p.xe()).yt[p.Ur].et.clear(),r.yt[p.Ur].it.length=0,p.Le(r,t)):p.He(t)}),o.set("l",t=>{t||(p.de=new Map(p.we.entries()),p.Ge())}),o.set(" ",t=>p.ei(t));for(let[t,r]of[["1",0],["2",1],["3",2],["4",3],["5",4],["6",5],["7",)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(6],["8",7],["9",8],["0",9],["-",10],["=",11],["\\",12],["`",13]])o.set(""+t,t=>p.ri(t,r)),o.set(t+"+x",t=>p.ni(t,B.get("MARKX").M(r))),o.set(t+"+y",t=>p.ni(t,B.get("MARKY").M(r))),o.set(t+"+z",t=>p.ni(t,B.get("MARKZ").M(r))),o.set(t+"+d",t=>p.li(t,r)),o.set(t+"+o",t=>p.si(t,r)),o.set(t+"+j",t=>p.vi(t,r)),o.set(t+"+k",t=>p.fi(t,r));let r=.25;function a(t,r,e=void 0){for(var i of t){if(o.has(i))throw new Error("Chord collision: "+i);o.set(i,t=>p.ni(t,B.get(r)))}void 0!==e&&a(t.map(t=>"shift+"+t),e)}return o.set("p",t=>p.ni(t,B.get("POLYGON"),[1,0,0,r])),o.set("alt+p",t=>p.ni(t,B.get("POLYGON"),[0,1,0,r])),o.set("shift+p",t=>p.ni(t,B.get("POLYGON"),[0,0,1,r])),o.set("p+x",t=>p.ni(t,B.get("POLYGON"),[1,0,0,r])),o.set("p+y",t=>p.ni(t,B.get("POLYGON"),[0,1,0,r])),o.set("p+z",t=>p.ni(t,B.get("POLYGON"),[0,0,1,r])),o.set("p+x+y",t=>p.ni(t,B.get("POLYGON"),[1,1,0,r])),o.set("p+x+z",t=>p.ni(t,B.get("POLYGON"),[1,0,1,r])),o.set("p+y+z",t=>p.ni(t,B.get("POLYGON"),[0,1,1,r])),o.set("p+x+y+z",t=>p.ni(t,B.get("POLYGON"),[1,)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(1,1,r])),o.set("m+p+x",t=>p.ni(t,f("X".repeat(p.we.size)),[])),o.set("m+p+y",t=>p.ni(t,f("Y".repeat(p.we.size)),[])),o.set("m+p+z",t=>p.ni(t,f("Z".repeat(p.we.size)),[])),o.set("f",t=>p.De(t)),o.set("g",t=>p.Fe(t)),o.set("shift+>",t=>p.We((t,r)=>[t+1,r],t,!1)),o.set("shift+<",t=>p.We((t,r)=>[t-1,r],t,!1)),o.set("shift+v",t=>p.We((t,r)=>[t,r+1],t,!1)),o.set("shift+^",t=>p.We((t,r)=>[t,r-1],t,!1)),o.set(">",t=>p.We((t,r)=>[t+1,r],t,!1)),o.set("<",t=>p.We((t,r)=>[t-1,r],t,!1)),o.set("v",t=>p.We((t,r)=>[t,r+1],t,!1)),o.set("^",t=>p.We((t,r)=>[t,r-1],t,!1)),o.set(".",t=>p.We((t,r)=>[t+.5,r+.5],t,!1)),a(["h","h+y","h+x+z"],"H","H"),a(["h+z","h+x+y"],"H_XY","H_XY"),a(["h+x","h+y+z"],"H_YZ","H_YZ"),a(["s+x","s+y+z"],"SQRT_X","SQRT_X_DAG"),a(["s+y","s+x+z"],"SQRT_Y","SQRT_Y_DAG"),a(["s","s+z","s+x+y"],"S","S_DAG"),a(["r+x","r+y+z"],"RX"),a(["r+y","r+x+z"],"RY"),a(["r","r+z","r+x+y"],"R"),a(["m+x","m+y+z"],"MX"),a(["m+y","m+x+z"],"MY"),a(["m","m+z","m+x+y"],"M"),a(["m+r+x","m+r+y+z"],"MRX"),a(["m+r+y","m+r+x+z"],"MRY"))CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(,a(["m+r","m+r+z","m+r+x+y"],"MR"),a(["c"],"CX","CX"),a(["c+x"],"CX","CX"),a(["c+y"],"CY","CY"),a(["c+z"],"CZ","CZ"),a(["j+x"],"X","X"),a(["j+y"],"Y","Y"),a(["j+z"],"Z","Z"),a(["c+x+y"],"XCY","XCY"),a(["alt+c+x"],"XCX","XCX"),a(["alt+c+y"],"YCY","YCY"),a(["w"],"SWAP","SWAP"),a(["w+x"],"CXSWAP",void 0),a(["c+w+x"],"CXSWAP",void 0),a(["i+w"],"ISWAP","ISWAP_DAG"),a(["w+z"],"CZSWAP",void 0),a(["c+w+z"],"CZSWAP",void 0),a(["c+w"],"CZSWAP",void 0),a(["c+t"],"C_XYZ","C_ZYX"),a(["c+s+x"],"SQRT_XX","SQRT_XX_DAG"),a(["c+s+y"],"SQRT_YY","SQRT_YY_DAG"),a(["c+s+z"],"SQRT_ZZ","SQRT_ZZ_DAG"),a(["c+s"],"SQRT_ZZ","SQRT_ZZ_DAG"),a(["c+m+x"],"MXX","MXX"),a(["c+m+y"],"MYY","MYY"),a(["c+m+z"],"MZZ","MZZ"),a(["c+m"],"MZZ","MZZ"),o}();function Vt(r){if(p.Oe.jt(r),"keydown"===r.type){if("q"===r.key.toLowerCase())return e=r.shiftKey?5:1,void p.je(p.Ur-e);if("e"===r.key.toLowerCase())return e=r.shiftKey?5:1,void p.je(p.Ur+e);if("Home"===r.key)return p.je(0),void r.preventDefault();if("End"===r.key)return p.je(p.xe().yt.length-1),void )CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(r.preventDefault()}var t=p.Oe.Bt;if(0!==t.length){for(var e=t[t.length-1];0<t.length;)t.pop();var i=[...e.zt];if(0!==i.length){i.sort();let t="";e.altKey&&(t+="alt+"),e.ctrlKey&&(t+="ctrl+"),e.metaKey&&(t+="meta+"),e.shiftKey&&(t+="shift+");for(var o of i)t+=o+"+";t=t.substring(0,t.length-1);i=Wt.get(t);void 0!==i?(i(e.Ht),r.preventDefault()):p.Qe(p.xe())}}}document.addEventListener("keydown",Vt),document.addEventListener("keyup",Vt),zt(),p.rev.Er().subscribe(()=>{p.Te.set(p.Ne(void 0));var t=p.Oe.qt(!1),r=window.devicePixelRatio||1,a=(o.width=o.scrollWidth*r,o.height=o.scrollHeight*r,o.getContext("2d"));a.save(),a.scale(r,r),a.clearRect(0,0,o.scrollWidth,o.scrollHeight),a.textAlign="right",a.textBaseline="middle",a.fillText("X",7.5,24.5),a.fillText("Y",7.5,56.5),a.fillText("Z",7.5,88.5),a.textAlign="center",a.textBaseline="bottom";for(let t=0;t<R.length;t++)a.fillText(R[t],24.5+32*t,M);a.fillStyle="white",a.strokeStyle="black";var e=[["H_YZ","S_X","R_X","M_X","MR_X","C_X","CXSWAP","√XX","M_XX","PX","X1"],["H)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(","S_Y","R_Y","M_Y","MR_Y","C_Y","SWAP","√YY","M_YY","PY","Y1"],["H_XY","S","R","M","MR","C_Z","CZSWAP","√ZZ","M_ZZ","PZ","Z1"]];for(let r=0;r<R.length;r++)for(let t=0;t<3;t++)a.fillRect(M+32*r,M+32*t,28,28);for(let r=0;r<R.length;r++)for(let t=0;t<3;t++){var n=e[t][r];let i=M+32*r+14,o=M+32*t+14;if(n.startsWith("P")){a.beginPath();let r=3;"PX"===n?(r=4,a.fillStyle="red"):"PY"===n?(r=5,a.fillStyle="green",o+=1):"PZ"===n&&(r=3,a.fillStyle="blue",o+=2);var s,h=[];for(let t=0;t<r;t++){var l=2*Math.PI/r*(t+.5);h.push([Math.round(i+8.4*Math.sin(l)),Math.round(o+8.4*Math.cos(l))])}a.moveTo(h[h.length-1][0],h[h.length-1][1]);for(s of h)a.lineTo(s[0],s[1]);a.closePath(),a.globalAlpha*=.25,a.fill(),a.globalAlpha*=4}else if(n.endsWith("1")){a.beginPath(),a.moveTo(i+4.8,o-8),a.lineTo(i,o+3.2),a.lineTo(i-4.8,o-8),a.closePath();var f="X1"===n?"red":"Y1"===n?"green":"blue";a.fillStyle=f,a.strokeStyle=f,a.fill(),a.lineWidth=2,a.beginPath(),a.moveTo(i,o),a.lineTo(i+14,o),a.stroke(),a.lineWidth=1}else if(a.fillStyle="black",-)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(1!==n.indexOf("_")){var[v,c]=n.split("_");let t=16,r=0,e=0;for(;4<t&&(a.font=t+"pt monospace",r=a.measureText(v).width,a.font=.6*t+"pt monospace",e=a.measureText(c).width,!(r+e<=26));)--t;i-=(r+e)/2,a.font=t+"pt monospace",a.textAlign="left",a.textBaseline="middle",a.fillText(v,i,o),a.font=.6*t+"pt monospace",a.textAlign="left",a.textBaseline="top",a.fillText(c,i+r,o)}else{let t=16;for(;4<t&&(a.font=t+"pt monospace",!(a.measureText(n).width<=28));)--t;a.textAlign="center",a.textBaseline="middle",a.fillText(n,i,o)}}a.strokeStyle="black";for(let r=0;r<R.length;r++)for(let t=0;t<3;t++)a.strokeRect(M+32*r,M+32*t,28,28);void 0!==(r=At(t)).ge&&(a.fillStyle="rgba(255, 255, 0, "+.5*r.ge.strength+")",a.fillRect(0,M+32*r.ge.Ee-2,M+32*R.length,32)),void 0!==r.Se&&(a.fillStyle="rgba(255, 255, 0, "+.5*r.Se.strength+")",a.fillRect(M+32*r.Se.ke-2,0,32,106.5)),void 0!==r.Ce&&void 0!==r.Se&&(a.fillStyle="rgba(255, 0, 0, 0.5)",a.fillRect(M+32*r.Se.ke-2,M+32*r.Ce.Ee-2,32,32)),a.textAlign="left",a.textBaseline="middle",a.fillSty)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(le="black",a.restore()});{var jt=p.rev;const Jt=new Zt;r=()=>{try{var t,r=(()=>{var t=document.location.hash.substring(1),r=new Map;if(""!==t)for(var e of t.split("&")){var i,o=e.indexOf("=");-1!==o&&(i=e.substring(0,o),e=decodeURIComponent(e.substring(o+1)),r.set(i,e))}return r})(),e=(r.has("circuit")||("[[[DEFAULT-CIRCUIT-CONTENT-LITERAL]]]"===(t=document.getElementById("txtDefaultCircuit")).value.replaceAll("_","-")?r.set("circuit",""):r.set("circuit",t.value)),u.It(r.get("circuit"))),i=e.xt();jt.clear(i),e.yt.every(t=>t.ut())&&1===r.size&&i===r.get("circuit")?Jt.Ie():Jt.be(i,Yt(i))}catch(t){throw new Error(t)}},window.addEventListener("popstate",r),r(),jt.kr().Yr().Zr(1).subscribe(t=>{Jt.be(t,Yt(t))})}p.Te.mr().subscribe(t=>requestAnimationFrame(()=>wt(p.canvas.getContext("2d"),t))),window.addEventListener("focus",()=>{p.Oe.Vt()}),window.addEventListener("blur",()=>{p.Oe.Vt()});for(let r of document.getElementById("examples-div").querySelectorAll("a"))r.onclick=t=>{if(!(t.shiftKey||t.ctrlKey||t.altKey||0!)CRUMBLE_PART");
+    result.append(R"CRUMBLE_PART(==t.button))return t=r.href.split("#circuit=")[1],p.rev.commit(t),m.close(),!1};
 )CRUMBLE_PART");
     result.append(R"CRUMBLE_PART(</script>
 )CRUMBLE_PART");
