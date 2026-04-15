@@ -146,7 +146,7 @@ StimOpTypeHandler = Callable[[stim.Circuit, cirq.Operation, List[int], str, List
 def _stim_append_classically_controlled_gate(
         circuit: stim.Circuit,
         op: cirq.ClassicallyControlledOperation,
-        targets: list[int],
+        targets: List[int],
         tag: str,
         measurement_key_lengths: List[Tuple[str, int]]):
 
