@@ -42,6 +42,62 @@ def test_cirq_to_stim_to_cirq_feedback_pauli():
     )
 
 
+def test_stim_to_cirq_conversion():
+    with pytest.raises(NotImplementedError, match="wrong target"):
+        stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+            M 0
+            TICK
+            XCZ rec[-1] 3
+        """))
+    with pytest.raises(NotImplementedError, match="wrong target"):
+        stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+            M 0
+            TICK
+            YCZ rec[-1] 3
+        """))
+    with pytest.raises(NotImplementedError, match="wrong target"):
+        stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+            M 0
+            TICK
+            CY 3 rec[-1]
+        """))
+    with pytest.raises(NotImplementedError, match="wrong target"):
+        stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+            M 0
+            TICK
+            CX 3 rec[-1]
+        """))
+    with pytest.raises(NotImplementedError, match="Two classical"):
+        stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+            M 0 1
+            TICK
+            CZ rec[-1] rec[-2]
+        """))
+
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+        M 0
+        TICK
+        ZCX rec[-1] 0
+        ZCY rec[-1] 1
+        ZCZ rec[-1] 2
+        XCZ 3 rec[-1]
+        YCZ 4 rec[-1]
+        ZCZ 5 rec[-1]
+    """)) == cirq.Circuit(
+        cirq.Moment(
+            cirq.measure(cirq.LineQubit(0), key=cirq.MeasurementKey(name='0')),
+        ),
+        cirq.Moment(
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.X).on(cirq.LineQubit(0)),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.Y).on(cirq.LineQubit(1)),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.Z).on(cirq.LineQubit(2)),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.X).on(cirq.LineQubit(3)),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.Y).on(cirq.LineQubit(4)),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.Z).on(cirq.LineQubit(5)),
+        ),
+    )
+
+
 def test_stim_conversion():
     a, b, c = cirq.LineQubit.range(3)
 
@@ -99,17 +155,6 @@ def test_stim_conversion():
         TICK
     """
     )
-
-
-# def test_simulation():
-#     a = cirq.LineQubit(0)
-#     s = cirq.Simulator().sample(
-#         cirq.Circuit(
-#             cirq.X(a), cirq.measure(a, key="a"), stimcirq.DetAnnotation(parity_keys=["a"])
-#         ),
-#         repetitions=3,
-#     )
-#     np.testing.assert_array_equal(s["a"], [1, 1, 1])
 
 
 def test_diagram():

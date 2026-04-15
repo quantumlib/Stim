@@ -51,9 +51,8 @@ class FeedbackPauli(cirq.Gate):
     def __repr__(self) -> str:
         return (
             f'stimcirq.FeedbackPauli('
-            + f'relative_measurement_index={self.relative_measurement_index!r}, ' * (self.relative_measurement_index is not None)
-            + f'pauli={self.pauli!r}, '
-            f')'
+            f'relative_measurement_index={self.relative_measurement_index!r}, '
+            f'pauli={self.pauli!r})'
         )
 
     def _stim_conversion_(
