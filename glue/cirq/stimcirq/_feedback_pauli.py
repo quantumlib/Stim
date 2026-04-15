@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import cirq
 import stim
@@ -11,7 +11,7 @@ class FeedbackPauli(cirq.Gate):
     def __init__(
         self,
         *,
-        relative_measurement_index: int | None = None,
+        relative_measurement_index: Optional[int] = None,
         pauli: cirq.Pauli,
     ):
         r"""
