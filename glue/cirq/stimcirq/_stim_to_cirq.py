@@ -26,6 +26,7 @@ from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._sweep_pauli import SweepPauli
+from ._feedback_pauli import FeedbackPauli
 
 
 def _stim_targets_to_dense_pauli_string(
@@ -439,6 +440,16 @@ class CircuitTranslationTracker:
                         SweepPauli(
                             stim_sweep_bit_index=a.value,
                             cirq_sweep_symbol=f'sweep[{a.value}]',
+                            pauli=self.pauli_gate,
+                        ).on(cirq.LineQubit(b.value)).with_tags(*tags)
+                    )
+                elif a.is_measurement_record_target or b.is_measurement_record_target:
+                    if b.is_sweep_bit_target:
+                        a, b = b, a
+                    assert not a.is_inverted_result_target
+                    tracker.append_operation(
+                        FeedbackPauli(
+                            relative_measurement_index=a.value,
                             pauli=self.pauli_gate,
                         ).on(cirq.LineQubit(b.value)).with_tags(*tags)
                     )
