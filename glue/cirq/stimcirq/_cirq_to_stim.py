@@ -140,7 +140,7 @@ def cirq_circuit_to_stim_data(
 
 
 StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int], str], None]
-StimOpTypeHandler = Callable[[stim.Circuit, cirq.Operation, List[int], str, list[tuple[str, int]]], None]
+StimOpTypeHandler = Callable[[stim.Circuit, cirq.Operation, List[int], str, List[Tuple[str, int]]], None]
 
 
 def _stim_append_classically_controlled_gate(
@@ -148,7 +148,7 @@ def _stim_append_classically_controlled_gate(
         op: cirq.ClassicallyControlledOperation,
         targets: list[int],
         tag: str,
-        measurement_key_lengths: list[tuple[str, int]]):
+        measurement_key_lengths: List[Tuple[str, int]]):
 
     if len(op.classical_controls) != 1:
         raise NotImplementedError(f'Stim only supports single-control Pauli feedback, but got {op=}')
