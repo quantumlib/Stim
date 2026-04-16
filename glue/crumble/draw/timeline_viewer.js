@@ -160,7 +160,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
     const offsetY = Math.max(-maxOffsetY, Math.min(0, snap.timelineOffsetY ?? 0));
 
     const lastLayerOffset = (numLayers - 1 - snap.curLayer - (min_t_clamp - min_t_free)) * x_pitch;
-    const minOffsetX = -Math.max(0, 0.5 * w + lastLayerOffset);
+    const minOffsetX = -Math.max(0, lastLayerOffset - 0.5 * w + 2*x_pitch);
     const maxOffsetX = Math.max(0, (min_t_clamp - 1) * x_pitch);
     const offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, snap.timelineOffsetX ?? 0));
 
