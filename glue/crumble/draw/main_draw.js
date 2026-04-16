@@ -1,4 +1,4 @@
-import {pitch, rad, OFFSET_X, OFFSET_Y, MAX_QUBIT_COORDINATE} from "./config.js"
+import {pitch, rad, OFFSET_X, OFFSET_Y, MAX_QUBIT_COORDINATE, LABEL_GAP} from "./config.js"
 import {marker_placement} from "../gates/gateset_markers.js";
 import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
@@ -265,6 +265,45 @@ function draw(ctx, snap) {
     defensiveDraw(ctx, () => {
         switchToScreenCoordinates(ctx);
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Draw grid tick-mark labels.
+        defensiveDraw(ctx, () => {
+            ctx.fillStyle = 'black';
+
+            let tickMarkInterval = 0.5;
+            if (snap.viewportZoom < 0.85) tickMarkInterval = 1;
+            if (snap.viewportZoom < 0.3) tickMarkInterval = 2;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(LABEL_GAP, 0, ctx.canvas.width - LABEL_GAP, ctx.canvas.height);
+            ctx.clip();
+            for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += tickMarkInterval) {
+                let [x, _] = c2dCoordTransform(qx, 0);
+                const screenX = x * snap.viewportZoom + snap.viewportX;
+                let s = `${qx}`;
+                ctx.fillText(s, screenX - ctx.measureText(s).width / 2, 15);
+            }
+            ctx.restore();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, LABEL_GAP, ctx.canvas.width, ctx.canvas.height - LABEL_GAP);
+            ctx.clip();
+            for (let qy = 0; qy < MAX_QUBIT_COORDINATE; qy += tickMarkInterval) {
+                let [_, y] = c2dCoordTransform(0, qy);
+                const screenY = y * snap.viewportZoom + snap.viewportY;
+                let s = `${qy}`;
+                ctx.fillText(s, 18 - ctx.measureText(s).width, screenY);
+            }
+            ctx.restore();
+        });
+
+        // Apply clipping on all content so it doesn't overlap on tick labels.
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(LABEL_GAP, LABEL_GAP, ctx.canvas.width, ctx.canvas.height - LABEL_GAP);
+        ctx.clip();
         switchToTransformationCoordinates(ctx, snap);
 
         let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY);
@@ -289,25 +328,8 @@ function draw(ctx, snap) {
 
         // Draw the grid of qubits.
         defensiveDraw(ctx, () => {
-            for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += 0.5) {
-                let [x, _] = c2dCoordTransform(qx, 0);
-                let s = `${qx}`;
-                ctx.fillStyle = 'black';
-                ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
-            }
-            for (let qy = 0; qy < MAX_QUBIT_COORDINATE; qy += 0.5) {
-                let [_, y] = c2dCoordTransform(0, qy);
-                let s = `${qy}`;
-                ctx.fillStyle = 'black';
-                ctx.fillText(s, 18 - ctx.measureText(s).width, y);
-            }
-
             ctx.strokeStyle = 'black';
             for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += 0.5) {
-                let [x, _] = c2dCoordTransform(qx, 0);
-                let s = `${qx}`;
-                ctx.fillStyle = 'black';
-                ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
                 for (let qy = qx % 1; qy < MAX_QUBIT_COORDINATE; qy += 1) {
                     let [x, y] = c2dCoordTransform(qx, qy);
                     ctx.fillStyle = 'white';
