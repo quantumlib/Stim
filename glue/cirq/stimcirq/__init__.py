@@ -3,6 +3,7 @@ from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
 from ._det_annotation import DetAnnotation
+from ._feedback_pauli import FeedbackPauli
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._stim_sampler import StimSampler
@@ -19,6 +20,7 @@ from ._ii_gate import IIGate
 JSON_RESOLVERS_DICT = {
     "CumulativeObservableAnnotation": CumulativeObservableAnnotation,
     "DetAnnotation": DetAnnotation,
+    "FeedbackPauli": FeedbackPauli,
     "MeasureAndOrResetGate": MeasureAndOrResetGate,
     "ShiftCoordsAnnotation": ShiftCoordsAnnotation,
     "SweepPauli": SweepPauli,
