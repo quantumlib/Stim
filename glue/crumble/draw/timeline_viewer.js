@@ -264,7 +264,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
         for (let q of qubits) {
             let [x0, y0] = qubitTimeCoords(q, min_t_clamp - 1);
-            x0 -= offsetX;  // Lines start at frozen position to math labels.
+            x0 -= offsetX;  // Lines start at frozen position to match labels.
             const [wx1, wy1] = timesliceQubitCoordsFunc(q);
             // Convert from world to screen coordinates for qubit highlight.
             const x1 = wx1 * zoom + snap.viewportX;
