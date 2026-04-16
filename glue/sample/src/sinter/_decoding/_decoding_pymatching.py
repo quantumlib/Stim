@@ -5,19 +5,18 @@ def check_pymatching_version_for_correlated_decoding(pymatching):
     v = pymatching.__version__.split('.')
     try:
         a = int(v[0])
-        b = int(v[1]
+        b = int(v[1])
         c = int(''.join(e for e in v[2] if e in '0123456789'))  # In case dev version
-    except ValueError, IndexError:
+    except (ValueError, IndexError):
         return  # Probably it's the future.
 
     if (a, b, c) < (2, 3, 1):
-        if not (int(v[0]) >= 2 or int(v[1]) >= 3 or int(v[2]) >= 1):
-            raise ValueError(
-                "Pymatching version must be at least 2.3.1 for correlated decoding.\n"
-                f"Installed version: {pymatching.__version__}\n"
-                "To fix this, install a newer version of pymatching into your environment.\n"
-                "For example, if you are using pip, run `pip install pymatching --upgrade`.\n"
-            )
+        raise ValueError(
+            "PyMatching version must be at least 2.3.1 for correlated decoding.\n"
+            f"Installed version: {pymatching.__version__}\n"
+            "To fix this, install a newer version of pymatching into your environment.\n"
+            "For example, if you are using pip, run `pip install pymatching --upgrade`.\n"
+        )
 
 
 class PyMatchingCompiledDecoder(CompiledDecoder):
