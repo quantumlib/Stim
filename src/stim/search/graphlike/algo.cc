@@ -15,7 +15,7 @@
 #include "stim/search/graphlike/algo.h"
 
 #include <algorithm>
-#include <map>
+#include <unordered_map>
 #include <queue>
 #include <sstream>
 
@@ -27,7 +27,7 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, const SearchState &final_state) {
+DetectorErrorModel backtrack_path(const std::unordered_map<SearchState, SearchState, SearchStateHash> &back_map, const SearchState &final_state) {
     DetectorErrorModel out;
     auto cur_state = final_state;
     while (true) {
@@ -55,7 +55,7 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
     }
 
     std::queue<SearchState> queue;
-    std::map<SearchState, SearchState> back_map;
+    std::unordered_map<SearchState, SearchState, SearchStateHash> back_map;
     // Mark the vacuous dead-end state as already seen.
     back_map.emplace(empty_search_state, empty_search_state);
 

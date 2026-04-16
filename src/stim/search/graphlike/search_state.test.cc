@@ -148,3 +148,11 @@ TEST(search_graphlike, DemAdjGraphSearchState_canonical_ordering) {
 TEST(search_graphlike, DemAdjGraphSearchState_str) {
     ASSERT_EQ(SearchState(1, 2, obs_mask(3)).str(), "D1 D2 L0 L1 ");
 }
+
+TEST(search_graphlike, SearchStateHash_operator) {
+    ASSERT_EQ(SearchStateHash{}(SearchState(1, 2, obs_mask(3))), SearchStateHash{}(SearchState(2, 1, obs_mask(3))));
+    ASSERT_EQ(SearchStateHash{}(SearchState(1, 2, obs_mask(3))), SearchStateHash{}(SearchState(1, 2, obs_mask(3))));
+
+    ASSERT_NE(SearchStateHash{}(SearchState(1, 2, obs_mask(3))), SearchStateHash{}(SearchState(2, 2, obs_mask(3))));
+    ASSERT_NE(SearchStateHash{}(SearchState(1, 2, obs_mask(3))), SearchStateHash{}(SearchState(1, 2, obs_mask(4))));
+}

@@ -26,7 +26,7 @@ std::unordered_map<std::string_view, size_t> line_freq_with_lifetime_matching_ar
     std::unordered_map<std::string_view, size_t> result{};
     size_t start = 0;
     for (size_t k = 0; k <= data.size(); k++) {
-        if (data[k] == '\n' || data[k] == '\0') {
+        if (k == data.size() || data[k] == '\n' || data[k] == '\0') {
             result[data.substr(start, k - start)]++;
             start = k + 1;
         }
