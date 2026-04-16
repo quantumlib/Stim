@@ -396,7 +396,7 @@ function draw(ctx, snap) {
     });
 
     switchToScreenCoordinates(ctx);
-    const maxTimelineScrollY = drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
+    const timelineDrawSummary = drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
 
     // Draw scrubber.
     ctx.save();
@@ -497,7 +497,7 @@ function draw(ctx, snap) {
     } finally {
         ctx.restore();
     }
-    return maxTimelineScrollY;
+    return timelineDrawSummary;
 }
 
 export {xyToPos, draw, setDefensiveDrawEnabled, OFFSET_X, OFFSET_Y}

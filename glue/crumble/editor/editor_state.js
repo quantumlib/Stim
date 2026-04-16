@@ -31,6 +31,28 @@ function rotated45Transform(steps) {
     return (x, y) => [vx[0]*x + vy[0]*y, vx[1]*x + vy[1]*y];
 }
 
+const Panels = Object.freeze({
+    TIMESLICE: 'timeslice', // qubit grid (left panel)
+    TIMELINE:  'timeline', // circuit timeline (right panel)
+});
+
+class PanDragAnchor {
+    /**
+     * @param {!number} screenX - X coordinate of drag start
+     * @param {!number} screenY - Y coordinate of drag start
+     * @param {!number} offsetX - X offset from drag start
+     * @param {!number} offsetY - Y offset from drag start
+     * @param {!string} activeDragPanel - marks which panel is currently used in drag: PanSide.TIMESLICE or PanSide.TIMELINE
+     */
+    constructor(screenX, screenY, offsetX, offsetY, activeDragPanel) {
+        this.screenX = screenX;
+        this.screenY = screenY;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.activeDragPanel = activeDragPanel;
+    }
+}
+
 class EditorState {
     /**
      * @param {!HTMLCanvasElement} canvas
@@ -52,7 +74,10 @@ class EditorState {
         this.viewportX = 0;
         this.viewportY = 0;
         this.viewportZoom = 1;
-        this.timelineScrollY = 0;
+        this.timelineOffsetX = 0;
+        this.timelineOffsetY = 0;
+        this.isPanDragging = false;
+        this.panDragAnchor = /** @type {undefined|!PanDragAnchor} */ undefined;
     }
 
     flipTwoQubitGateOrderAtFocus(preview) {
@@ -207,7 +232,7 @@ class EditorState {
         if (previewCircuit === undefined) {
             previewCircuit = this.copyOfCurCircuit();
         }
-        return new StateSnapshot(previewCircuit, this.curLayer, this.focusedSet, this.timelineSet, this.curMouseX, this.curMouseY, this.mouseDownX, this.mouseDownY, this.currentPositionsBoxesByMouseDrag(this.chorder.curModifiers.has("alt")), this.viewportX, this.viewportY, this.viewportZoom, this.timelineScrollY, this.curMouseScreenX, this.curMouseScreenY);
+        return new StateSnapshot(previewCircuit, this.curLayer, this.focusedSet, this.timelineSet, this.curMouseX, this.curMouseY, this.mouseDownX, this.mouseDownY, this.currentPositionsBoxesByMouseDrag(this.chorder.curModifiers.has("alt")), this.viewportX, this.viewportY, this.viewportZoom, this.timelineOffsetX, this.timelineOffsetY, this.curMouseScreenX, this.curMouseScreenY);
     }
 
     force_redraw() {
@@ -310,6 +335,7 @@ class EditorState {
      */
     changeCurLayerTo(newLayer) {
         this.curLayer = Math.max(newLayer, 0);
+        this.timelineOffsetX = 0;
         this.force_redraw();
     }
 
@@ -776,4 +802,4 @@ class EditorState {
     }
 }
 
-export {EditorState, StateSnapshot}
+export {EditorState, StateSnapshot, PanDragAnchor, Panels}

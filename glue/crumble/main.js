@@ -2,7 +2,7 @@ import {Circuit} from "./circuit/circuit.js"
 import {minXY} from "./circuit/layer.js"
 import {MAX_QUBIT_COORDINATE, MAX_ZOOM, MIN_ZOOM, pitch} from "./draw/config.js"
 import {GATE_MAP} from "./gates/gateset.js"
-import {EditorState} from "./editor/editor_state.js";
+import {EditorState, PanDragAnchor, Panels} from "./editor/editor_state.js";
 import {initUrlCircuitSync} from "./editor/sync_url_to_state.js";
 import {draw} from "./draw/main_draw.js";
 import {drawToolbox} from "./keyboard/toolbox.js";
@@ -153,6 +153,24 @@ function exportCurrentState() {
 editorState.canvas.addEventListener('mousemove', ev => {
     editorState.curMouseScreenX = ev.offsetX;
     editorState.curMouseScreenY = ev.offsetY;
+
+    // Handle middle click + drag panning.
+    if (editorState.isPanDragging) {
+        const anchor = editorState.panDragAnchor;
+        const newOffsetX = anchor.offsetX + (ev.offsetX - anchor.screenX);
+        const newOffsetY = anchor.offsetY + (ev.offsetY - anchor.screenY);
+        if (anchor.activeDragPanel === Panels.TIMESLICE) {
+            editorState.viewportX = newOffsetX;
+            editorState.viewportY = newOffsetY;
+        } else {
+            editorState.timelineOffsetX = newOffsetX;
+            editorState.timelineOffsetY = newOffsetY;
+        }
+        restrictTimeSliceAndTimelineViews();
+        editorState.force_redraw();
+        return;
+    }
+
     editorState.curMouseX = toWorldMouseX(ev.offsetX);
     editorState.curMouseY = toWorldMouseY(ev.offsetY);
 
@@ -168,6 +186,23 @@ editorState.canvas.addEventListener('mousemove', ev => {
 
 let isInScrubber = false;
 editorState.canvas.addEventListener('mousedown', ev => {
+    const w = editorState.canvas.width / 2;
+
+    // Middle-click initiates pan drag.
+    if (ev.button === 1) {
+        ev.preventDefault();
+        editorState.isPanDragging = true;
+        const targetPanel = ev.offsetX > w ? Panels.TIMELINE : Panels.TIMESLICE;
+        editorState.panDragAnchor = new PanDragAnchor(
+            ev.offsetX,
+            ev.offsetY,
+            targetPanel === Panels.TIMESLICE ? editorState.viewportX : editorState.timelineOffsetX,
+            targetPanel === Panels.TIMESLICE ? editorState.viewportY : editorState.timelineOffsetY,
+            targetPanel,
+        );
+        return;
+    }
+
     editorState.curMouseScreenX = ev.offsetX;
     editorState.curMouseScreenY = ev.offsetY;
     editorState.curMouseX = toWorldMouseX(ev.offsetX);
@@ -176,7 +211,6 @@ editorState.canvas.addEventListener('mousedown', ev => {
     editorState.mouseDownY = toWorldMouseY(ev.offsetY);
 
     // Scrubber.
-    let w = editorState.canvas.width / 2;
     isInScrubber = ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1;
     if (isInScrubber) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
@@ -187,6 +221,12 @@ editorState.canvas.addEventListener('mousedown', ev => {
 });
 
 editorState.canvas.addEventListener('mouseup', ev => {
+    if (ev.button === 1) {
+        editorState.isPanDragging = false;
+        editorState.panDragAnchor = undefined;
+        return;
+    }
+
     let highlightedArea = editorState.currentPositionsBoxesByMouseDrag(ev.altKey);
     editorState.mouseDownX = undefined;
     editorState.mouseDownY = undefined;
@@ -201,7 +241,7 @@ editorState.canvas.addEventListener('mouseup', ev => {
 });
 
 // Make sure qubit grid and timeline don't deviate from the area of interest.
-function restrictQubitGridAndTimeline() {
+function restrictTimeSliceAndTimelineViews() {
     const width = editorState.canvas.width / 2;
     const height = editorState.canvas.height;
     const zoom = editorState.viewportZoom;
@@ -217,15 +257,13 @@ function restrictQubitGridAndTimeline() {
         Math.min(-gridMin * zoom, editorState.viewportY)
     );
 
-    editorState.timelineScrollY = Math.max(
-        0,
-        editorState.timelineScrollY
-    );
+    editorState.timelineOffsetY = Math.min(0, editorState.timelineOffsetY);
 }
 
 function handleTimelineVerticalScroll(ev) {
-    editorState.timelineScrollY += ev.deltaY;
-    restrictQubitGridAndTimeline();
+    editorState.timelineOffsetX -= ev.deltaX;
+    editorState.timelineOffsetY -= ev.deltaY;
+    restrictTimeSliceAndTimelineViews();
     editorState.force_redraw();
     return;
 }
@@ -249,7 +287,7 @@ function handleQubitGridZoomPan(ev) {
 
     editorState.curMouseX = toWorldMouseX(ev.offsetX);
     editorState.curMouseY = toWorldMouseY(ev.offsetY);
-    restrictQubitGridAndTimeline();
+    restrictTimeSliceAndTimelineViews();
     editorState.force_redraw();
 }
 
@@ -582,11 +620,10 @@ editorState.rev.changes().subscribe(() => {
 });
 initUrlCircuitSync(editorState.rev);
 editorState.obs_val_draw_state.observable().subscribe(ds => requestAnimationFrame(() => {
-    const maxTimelineScrollY = draw(editorState.canvas.getContext('2d'), ds);
-    // Prevent over-scrolling.
-    if (editorState.timelineScrollY > maxTimelineScrollY) {
-        editorState.timelineScrollY = maxTimelineScrollY;
-    }
+    const drawSummary = draw(editorState.canvas.getContext('2d'), ds);
+    // Prevent timeline over-panning.
+    editorState.timelineOffsetX = Math.max(drawSummary.minOffsetX, Math.min(editorState.timelineOffsetX, drawSummary.maxOffsetX));
+    editorState.timelineOffsetY = Math.max(editorState.timelineOffsetY, -drawSummary.maxOffsetY);
 }));
 window.addEventListener('focus', () => {
     editorState.chorder.handleFocusChanged();

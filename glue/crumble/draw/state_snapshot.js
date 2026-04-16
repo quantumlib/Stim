@@ -20,11 +20,12 @@ class StateSnapshot {
      * @param {!number} viewportX
      * @param {!number} viewportY
      * @param {!number} viewportZoom
-     * @param {!number} timelineScrollY
+     * @param {!number} timelineOffsetX
+     * @param {!number} timelineOffsetY
      * @param {!number} curMouseScreenX
      * @param {!number} curMouseScreenY
      */
-    constructor(circuit, curLayer, focusedSet, timelineSet, curMouseX, curMouseY, mouseDownX, mouseDownY, boxHighlightPreview, viewportX, viewportY, viewportZoom, timelineScrollY, curMouseScreenX, curMouseScreenY) {
+    constructor(circuit, curLayer, focusedSet, timelineSet, curMouseX, curMouseY, mouseDownX, mouseDownY, boxHighlightPreview, viewportX, viewportY, viewportZoom, timelineOffsetX, timelineOffsetY, curMouseScreenX, curMouseScreenY) {
         this.circuit = circuit.copy();
         this.curLayer = curLayer;
         this.focusedSet = new Map(focusedSet.entries());
@@ -37,7 +38,8 @@ class StateSnapshot {
         this.viewportX = viewportX;
         this.viewportY = viewportY;
         this.viewportZoom = viewportZoom;
-        this.timelineScrollY = timelineScrollY;
+        this.timelineOffsetX = timelineOffsetX;
+        this.timelineOffsetY = timelineOffsetY;
         this.curMouseScreenX = curMouseScreenX;
         this.curMouseScreenY = curMouseScreenY;
 
