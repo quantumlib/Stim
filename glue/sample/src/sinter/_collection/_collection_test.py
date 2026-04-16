@@ -1,5 +1,4 @@
 import collections
-from importlib.metadata import metadata
 import multiprocessing
 import pathlib
 import tempfile
@@ -81,9 +80,6 @@ def test_collect():
     assert 1 <= d[0.04].errors <= 100
 
 def test_collect_postselection():
-    def postselect_all_detectors_predicate(index: int, metadata: any, coords: tuple) -> bool:
-        return True
-
     tasks = []
     for p in [0.01, 0.02, 0.03, 0.04]:
         circuit = stim.Circuit.generated(
@@ -95,7 +91,7 @@ def test_collect_postselection():
         mask = sinter._collection.post_selection_mask_from_predicate(
             circuit_or_dem=circuit,
             metadata={},
-            postselected_detectors_predicate=postselect_all_detectors_predicate,
+            postselected_detectors_predicate=lambda _a, _b, _c: True,
         )
         tasks.append(sinter.Task(
             circuit=circuit,
