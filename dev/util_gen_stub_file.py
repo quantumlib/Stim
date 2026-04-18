@@ -37,6 +37,8 @@ keep = {
     "__next__",
 }
 skip = {
+    "__annotate_func__",
+    "__annotations_cache__",
     "__firstlineno__",
     "__static_attributes__",
     "__replace__",

@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Optional,
     Tuple,
     Union,
 )
@@ -25,6 +26,7 @@ from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._sweep_pauli import SweepPauli
+from ._feedback_pauli import FeedbackPauli
 
 
 def _stim_targets_to_dense_pauli_string(
@@ -64,7 +66,7 @@ def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[
 
 
 class CircuitTranslationTracker:
-    def __init__(self, flatten: bool):
+    def __init__(self, flatten: bool, single_measure_key: Optional[str] = None):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
@@ -72,10 +74,16 @@ class CircuitTranslationTracker:
         self.tick_circuit = cirq.Circuit()
         self.flatten = flatten
         self.have_seen_loop = False
+        self.single_measure_key = single_measure_key
 
     def get_next_measure_id(self) -> int:
         self.num_measurements_seen += 1
         return self.num_measurements_seen - 1
+
+    def get_next_measure_key(self) -> str:
+        if self.single_measure_key is None:
+            return str(self.get_next_measure_id())
+        return self.single_measure_key
 
     def append_operation(self, op: cirq.Operation) -> None:
         self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
@@ -186,7 +194,7 @@ class CircuitTranslationTracker:
         for t in targets:
             if not t.is_qubit_target:
                 raise NotImplementedError(f"instruction={instruction!r}")
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(
                 MeasureAndOrResetGate(
                     measure=measure,
@@ -248,7 +256,7 @@ class CircuitTranslationTracker:
 
             obs = _stim_targets_to_dense_pauli_string(group)
             qubits = [cirq.LineQubit(t.value) for t in group]
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits).with_tags(*tags))
 
     def process_spp_dag(self, instruction: stim.CircuitInstruction) -> None:
@@ -290,7 +298,7 @@ class CircuitTranslationTracker:
             if targets[0].is_inverted_result_target ^ targets[1].is_inverted_result_target:
                 obs *= -1
             qubits = [cirq.LineQubit(targets[0].value), cirq.LineQubit(targets[1].value)]
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits).with_tags(*tags))
 
     def process_mxx(self, instruction: stim.CircuitInstruction) -> None:
@@ -309,7 +317,7 @@ class CircuitTranslationTracker:
             if t.value == 1:
                 obs *= -1
             qubits = []
-            key = str(self.get_next_measure_id())
+            key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
 
     def process_correlated_error(self, instruction: stim.CircuitInstruction) -> None:
@@ -407,9 +415,11 @@ class CircuitTranslationTracker:
             tracker.process_gate_instruction(gate=self.gate, instruction=instruction)
 
     class SweepableGateHandler:
-        def __init__(self, pauli_gate: cirq.Pauli, gate: cirq.Gate):
+        def __init__(self, pauli_gate: cirq.Pauli, gate: cirq.Gate, allow_first: bool, allow_second: bool):
             self.pauli_gate = pauli_gate
             self.gate = gate
+            self.allow_first = allow_first
+            self.allow_second = allow_second
 
         def __call__(
             self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction
@@ -422,8 +432,12 @@ class CircuitTranslationTracker:
             for k in range(0, len(targets), 2):
                 a = targets[k]
                 b = targets[k + 1]
+                if not a.is_qubit_target and not self.allow_first:
+                    raise NotImplementedError(f"Classical control is on the wrong target: instruction={instruction!r}")
+                if not b.is_qubit_target and not self.allow_second:
+                    raise NotImplementedError(f"Classical control is on the wrong target: instruction={instruction!r}")
                 if not a.is_qubit_target and not b.is_qubit_target:
-                    raise NotImplementedError(f"instruction={instruction!r}")
+                    raise NotImplementedError(f"Two classical controls: instruction={instruction!r}")
                 if a.is_sweep_bit_target or b.is_sweep_bit_target:
                     if b.is_sweep_bit_target:
                         a, b = b, a
@@ -432,6 +446,16 @@ class CircuitTranslationTracker:
                         SweepPauli(
                             stim_sweep_bit_index=a.value,
                             cirq_sweep_symbol=f'sweep[{a.value}]',
+                            pauli=self.pauli_gate,
+                        ).on(cirq.LineQubit(b.value)).with_tags(*tags)
+                    )
+                elif a.is_measurement_record_target or b.is_measurement_record_target:
+                    if b.is_measurement_record_target:
+                        a, b = b, a
+                    assert not a.is_inverted_result_target
+                    tracker.append_operation(
+                        FeedbackPauli(
+                            relative_measurement_index=a.value,
                             pauli=self.pauli_gate,
                         ).on(cirq.LineQubit(b.value)).with_tags(*tags)
                     )
@@ -585,17 +609,17 @@ class CircuitTranslationTracker:
             "ISWAP_DAG": gate(cirq.ISWAP ** -1),
             "XCX": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.X, False)),
             "XCY": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False)),
-            "XCZ": sweep_gate(cirq.X, cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False)),
+            "XCZ": sweep_gate(cirq.X, cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False), False, True),
             "YCX": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False)),
             "YCY": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False)),
-            "YCZ": sweep_gate(cirq.Y, cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False)),
-            "CX": sweep_gate(cirq.X, cirq.CNOT),
-            "CNOT": sweep_gate(cirq.X, cirq.CNOT),
-            "ZCX": sweep_gate(cirq.X, cirq.CNOT),
-            "CY": sweep_gate(cirq.Y, cirq.Y.controlled(1)),
-            "ZCY": sweep_gate(cirq.Y, cirq.Y.controlled(1)),
-            "CZ": sweep_gate(cirq.Z, cirq.CZ),
-            "ZCZ": sweep_gate(cirq.Z, cirq.CZ),
+            "YCZ": sweep_gate(cirq.Y, cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False), False, True),
+            "CX": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "CNOT": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "ZCX": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "CY": sweep_gate(cirq.Y, cirq.Y.controlled(1), True, False),
+            "ZCY": sweep_gate(cirq.Y, cirq.Y.controlled(1), True, False),
+            "CZ": sweep_gate(cirq.Z, cirq.CZ, True, True),
+            "ZCZ": sweep_gate(cirq.Z, cirq.CZ, True, True),
             "DEPOLARIZE1": noise(lambda p: cirq.DepolarizingChannel(p, 1)),
             "DEPOLARIZE2": noise(lambda p: cirq.DepolarizingChannel(p, 2)),
             "X_ERROR": noise(cirq.X.with_probability),
@@ -632,12 +656,17 @@ class CircuitTranslationTracker:
         }
 
 
-def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False) -> cirq.Circuit:
+def stim_circuit_to_cirq_circuit(
+    circuit: stim.Circuit,
+    *,
+    flatten: bool = False,
+    single_measure_key: Optional[str] = None,
+) -> cirq.Circuit:
     """Converts a stim circuit into an equivalent cirq circuit.
 
     Qubit indices are turned into cirq.LineQubit instances. Measurements are
     keyed by their ordering (e.g. the first measurement is keyed "0", the second
-    is keyed "1", etc).
+    is keyed "1", etc) unless a fixed measure_key is provided.
 
     Not all circuits can be converted:
         - ELSE_CORRELATED_ERROR instructions are not supported.
@@ -652,6 +681,8 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False
             explicitly repeating their instructions multiple times. Also,
             SHIFT_COORDS instructions are removed by appropriately adjusting the
             coordinate metadata of later instructions.
+        single_measure_key: Defaults to None. If provided, all measurements are
+            keyed with this string instead of sequentially generated numbers.
 
     Returns:
         The converted circuit.
@@ -671,6 +702,8 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit, *, flatten: bool = False
                   │
         1: ───────X──────────────────!M('0')───
     """
-    tracker = CircuitTranslationTracker(flatten=flatten)
+    tracker = CircuitTranslationTracker(
+        flatten=flatten, single_measure_key=single_measure_key
+    )
     tracker.process_circuit(repetitions=1, circuit=circuit)
     return tracker.output()
