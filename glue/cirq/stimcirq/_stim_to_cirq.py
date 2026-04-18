@@ -26,6 +26,7 @@ from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
 from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._sweep_pauli import SweepPauli
+from ._feedback_pauli import FeedbackPauli
 
 
 def _stim_targets_to_dense_pauli_string(
@@ -414,9 +415,11 @@ class CircuitTranslationTracker:
             tracker.process_gate_instruction(gate=self.gate, instruction=instruction)
 
     class SweepableGateHandler:
-        def __init__(self, pauli_gate: cirq.Pauli, gate: cirq.Gate):
+        def __init__(self, pauli_gate: cirq.Pauli, gate: cirq.Gate, allow_first: bool, allow_second: bool):
             self.pauli_gate = pauli_gate
             self.gate = gate
+            self.allow_first = allow_first
+            self.allow_second = allow_second
 
         def __call__(
             self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction
@@ -429,8 +432,12 @@ class CircuitTranslationTracker:
             for k in range(0, len(targets), 2):
                 a = targets[k]
                 b = targets[k + 1]
+                if not a.is_qubit_target and not self.allow_first:
+                    raise NotImplementedError(f"Classical control is on the wrong target: instruction={instruction!r}")
+                if not b.is_qubit_target and not self.allow_second:
+                    raise NotImplementedError(f"Classical control is on the wrong target: instruction={instruction!r}")
                 if not a.is_qubit_target and not b.is_qubit_target:
-                    raise NotImplementedError(f"instruction={instruction!r}")
+                    raise NotImplementedError(f"Two classical controls: instruction={instruction!r}")
                 if a.is_sweep_bit_target or b.is_sweep_bit_target:
                     if b.is_sweep_bit_target:
                         a, b = b, a
@@ -439,6 +446,16 @@ class CircuitTranslationTracker:
                         SweepPauli(
                             stim_sweep_bit_index=a.value,
                             cirq_sweep_symbol=f'sweep[{a.value}]',
+                            pauli=self.pauli_gate,
+                        ).on(cirq.LineQubit(b.value)).with_tags(*tags)
+                    )
+                elif a.is_measurement_record_target or b.is_measurement_record_target:
+                    if b.is_measurement_record_target:
+                        a, b = b, a
+                    assert not a.is_inverted_result_target
+                    tracker.append_operation(
+                        FeedbackPauli(
+                            relative_measurement_index=a.value,
                             pauli=self.pauli_gate,
                         ).on(cirq.LineQubit(b.value)).with_tags(*tags)
                     )
@@ -592,17 +609,17 @@ class CircuitTranslationTracker:
             "ISWAP_DAG": gate(cirq.ISWAP ** -1),
             "XCX": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.X, False)),
             "XCY": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False)),
-            "XCZ": sweep_gate(cirq.X, cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False)),
+            "XCZ": sweep_gate(cirq.X, cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False), False, True),
             "YCX": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False)),
             "YCY": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False)),
-            "YCZ": sweep_gate(cirq.Y, cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False)),
-            "CX": sweep_gate(cirq.X, cirq.CNOT),
-            "CNOT": sweep_gate(cirq.X, cirq.CNOT),
-            "ZCX": sweep_gate(cirq.X, cirq.CNOT),
-            "CY": sweep_gate(cirq.Y, cirq.Y.controlled(1)),
-            "ZCY": sweep_gate(cirq.Y, cirq.Y.controlled(1)),
-            "CZ": sweep_gate(cirq.Z, cirq.CZ),
-            "ZCZ": sweep_gate(cirq.Z, cirq.CZ),
+            "YCZ": sweep_gate(cirq.Y, cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False), False, True),
+            "CX": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "CNOT": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "ZCX": sweep_gate(cirq.X, cirq.CNOT, True, False),
+            "CY": sweep_gate(cirq.Y, cirq.Y.controlled(1), True, False),
+            "ZCY": sweep_gate(cirq.Y, cirq.Y.controlled(1), True, False),
+            "CZ": sweep_gate(cirq.Z, cirq.CZ, True, True),
+            "ZCZ": sweep_gate(cirq.Z, cirq.CZ, True, True),
             "DEPOLARIZE1": noise(lambda p: cirq.DepolarizingChannel(p, 1)),
             "DEPOLARIZE2": noise(lambda p: cirq.DepolarizingChannel(p, 2)),
             "X_ERROR": noise(cirq.X.with_probability),
