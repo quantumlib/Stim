@@ -266,6 +266,8 @@ def parse_leakage_tag(op: stim.CircuitInstruction) -> LeakageParams | None:
             raise ValueError("Only II_ERROR and SWAP can have a LEAKAGE_SWAP tag.")
         return None
     elif tag.startswith("LEAKAGE_DETECTOR"):
+        if op.name != "DETECTOR":
+            raise ValueError("Only DETECTOR can have a LEAKAGE_DETECTOR tag.")
         return None
 
     # from here on out, we raise an error on anything malformed
