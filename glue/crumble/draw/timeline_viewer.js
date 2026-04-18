@@ -129,7 +129,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             cur_x += rad * 0.25;
             cur_run++;
         }
-        base_y2xy.set(`${x},${y}`, [Math.round(cur_x) + 0.5, Math.round(cur_y) + 0.5]);
+        base_y2xy.set(`${x},${y}`, [Math.round(cur_x) + 0.5, Math.round(cur_y + snap.timelineScrollY) + 0.5]);
     }
 
     let x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);

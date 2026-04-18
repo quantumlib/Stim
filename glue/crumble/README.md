@@ -11,11 +11,13 @@ Crumble is not polished.**
 
 ## Index
 
+- [Crumble](#crumble)
+  - [Index](#index)
 - [Accessing Crumble](#accessing-crumble)
 - [Using Crumble](#using-crumble)
-    - [Loading and Saving Circuits](#loading-saving)
-    - [Keyboard Controls](#keyboard-commands)
-    - [Mouse Controls](#mouse-commands)
+  - [Loading and Saving Circuits](#loading-and-saving-circuits)
+  - [Keyboard Controls](#keyboard-controls)
+  - [Mouse Controls](#mouse-controls)
 - [Building Crumble](#building-crumble)
 - [Testing Crumble](#testing-crumble)
 
@@ -222,8 +224,15 @@ of the **two qubit variant** (c)
 of the **square root** (s)
 of the **Y gate** (y) (i.e. the gate `SQRT_YY_DAG 1 2`).
 
+**Interaction**
+
+- `Arrow Keys (Up/Down/Left/Right)`: Pan the Planar Layout view
+- `ctrl+0`: Reset View (reset both the planar view and the timeline scroll)
+- `ctrl+-`: Zoom out
+- `ctrl++` or `ctrl+=`: Zoom in
+
 <a name="mouse-commands"></a>
-### Mouse Controls
+## Mouse Controls
 
 Note: to `BoxSelect` means to press down the left mouse button, drag the mouse
 while holding the button down to outline a rectangular region, and then release
@@ -244,6 +253,12 @@ qubits with the same parity as the initially clicked qubit at the start of the
 box selection action. The specific parity being used depends on context. For
 example, when selecting a column of qubits, the row parity is used. When
 selecting a 2d region, the subgrid parity is used.
+
+- `shift+MMB` (Middle Mouse Button):
+  - Drag on the left (planar layout) to pan the planar layout view
+  - Drag on the right to scroll vertically through the wires
+- `ctrl+MMB`:
+  - Drag vertically on the left (planar layout) to zoom in/out
 
 <a name="building-crumble"></a>
 # Building Crumble

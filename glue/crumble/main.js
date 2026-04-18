@@ -1,6 +1,6 @@
 import {Circuit} from "./circuit/circuit.js"
 import {minXY} from "./circuit/layer.js"
-import {pitch} from "./draw/config.js"
+import {pitch, step} from "./draw/config.js"
 import {GATE_MAP} from "./gates/gateset.js"
 import {EditorState} from "./editor/editor_state.js";
 import {initUrlCircuitSync} from "./editor/sync_url_to_state.js";
@@ -31,6 +31,7 @@ const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementByI
 const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
 const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
 const btnShowExamples = /** @type {!HTMLButtonElement} */ document.getElementById('btnShowExamples');
+const btnResetView = /** @type {!HTMLButtonElement} */ document.getElementById('btnResetView');
 const divExamples = /** @type{!HTMLDivElement} */ document.getElementById('examples-div');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
@@ -125,6 +126,10 @@ btnNextLayer.addEventListener('click', _ev => {
 btnPrevLayer.addEventListener('click', _ev => {
     editorState.changeCurLayerTo(editorState.curLayer - 1);
 });
+btnResetView.addEventListener('click', _ev => {
+    editorState.resetView();
+});
+
 
 window.addEventListener('resize', _ev => {
     editorState.canvas.width = editorState.canvas.scrollWidth;
@@ -144,6 +149,28 @@ function exportCurrentState() {
 }
 
 editorState.canvas.addEventListener('mousemove', ev => {
+    if (isPanning) {
+        const dx = ev.clientX - lastPanX;
+        const dy = ev.clientY - lastPanY;
+        editorState.pan(dx, dy);
+        lastPanX = ev.clientX;
+        lastPanY = ev.clientY;
+        return;
+    }
+    if (isTimelinePanning) {
+        const dy = ev.clientY - lastPanY;
+        editorState.timelinePan(dy);
+        lastPanY = ev.clientY;
+        editorState.force_redraw();
+        return;
+    }
+    if (isZooming) {
+        const dy = ev.clientY - lastZoomY;
+        editorState.zoom(1.0 + dy * 0.01);
+        lastZoomY = ev.clientY;
+        return;
+    }
+
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
 
@@ -158,6 +185,12 @@ editorState.canvas.addEventListener('mousemove', ev => {
 });
 
 let isInScrubber = false;
+let isPanning = false; // Add scrolling by dragging with shift+MMB, no touchpad support yet
+let isTimelinePanning = false; // Add vertical scrolling of the timeline by dragging with shift+MMB in the timeline area, no touchpad support yet
+let lastPanX = 0;
+let lastPanY = 0;
+let isZooming = false; // Add zooming by dragging with ctrl+MMB, no touchpad support yet
+let lastZoomY = 0;
 editorState.canvas.addEventListener('mousedown', ev => {
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
@@ -172,10 +205,49 @@ editorState.canvas.addEventListener('mousedown', ev => {
         return;
     }
 
+    
+    if (ev.button === 1 && ev.shiftKey) {
+        if(ev.offsetX <= w){ // Panning for the planar view
+            isPanning = true;
+            lastPanX = ev.clientX;
+            lastPanY = ev.clientY;
+            ev.preventDefault();
+            return;
+        }
+        else{ // Panning for the timeline view
+            isTimelinePanning = true;
+            lastPanY = ev.clientY;
+            ev.preventDefault();
+            return;
+        }
+    }
+
+    if (ev.button === 1 && ev.ctrlKey && ev.offsetX <= w) {
+        isZooming = true;
+        lastZoomY = ev.clientY;
+        ev.preventDefault();
+        return;
+    }
+
+
+
     editorState.force_redraw();
 });
 
+function clearDragState(ev) {
+    isPanning = false;
+    isTimelinePanning = false;
+    isZooming = false;
+
+    editorState.mouseDownX = undefined;
+    editorState.mouseDownY = undefined;
+}
+
 editorState.canvas.addEventListener('mouseup', ev => {
+    if ((isPanning || isTimelinePanning || isZooming) && ev.button === 1) {
+        clearDragState(ev);
+        return;
+    }
     let highlightedArea = editorState.currentPositionsBoxesByMouseDrag(ev.altKey);
     editorState.mouseDownX = undefined;
     editorState.mouseDownY = undefined;
@@ -184,6 +256,12 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
     if (ev.buttons === 1) {
         isInScrubber = false;
+    }
+});
+
+editorState.canvas.addEventListener('mouseenter', ev => {
+    if ((isPanning || isTimelinePanning || isZooming) && (ev.buttons & 4) === 0) {
+        clearDragState(ev);
     }
 });
 
@@ -224,6 +302,10 @@ function makeChordHandlers() {
         }
     });
     res.set(' ', preview => editorState.unmarkFocusInferBasis(preview));
+    res.set('ctrl+0', () => editorState.resetView());
+    res.set('ctrl++', () => editorState.zoom(1.25));
+    res.set('ctrl+=', () => editorState.zoom(1.25));
+    res.set('ctrl+-', () => editorState.zoom(0.8));
 
     for (let [key, val] of [
         ['1', 0],
@@ -432,6 +514,22 @@ const CHORD_HANDLERS = makeChordHandlers();
 function handleKeyboardEvent(ev) {
     editorState.chorder.handleKeyEvent(ev);
     if (ev.type === 'keydown') {
+        if( ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(ev.key)) {
+            ev.preventDefault();
+            if (ev.key === 'ArrowUp') {
+                editorState.pan(0, -step);
+            }
+            if (ev.key === 'ArrowDown') {
+                editorState.pan(0, step);
+            }
+            if (ev.key === 'ArrowLeft') {
+                editorState.pan(-step, 0);
+            }
+            if (ev.key === 'ArrowRight') {
+                editorState.pan(step, 0);
+            }
+            return;
+        }
         if (ev.key.toLowerCase() === 'q') {
             let d = ev.shiftKey ? 5 : 1;
             editorState.changeCurLayerTo(editorState.curLayer - d);
