@@ -323,6 +323,7 @@ CONDITION_TAG_PARSERS = [
 
 ADDITIONAL_TAGS = [
     "LEAKAGE_MEASUREMENT",
+    "LEAKAGE_SWAP"
 ]
 
 
@@ -396,6 +397,10 @@ def parse_leakage_tag(op: stim.CircuitInstruction) -> LeakageParams | None:
         if op.name != "MPAD":
             raise ValueError("Only MPAD can have a LEAKAGE_MEASUREMENT tag.")
         return _parse_leakage_measurement(tag)
+    elif tag.startswith("LEAKAGE_SWAP"):
+        if op.name not in ["II_ERROR", "SWAP", "II"]:
+            raise ValueError("Only II_ERROR and SWAP can have a LEAKAGE_SWAP tag.")
+        return None
 
     # from here on out, we raise an error on anything malformed
     match = LEAKAGE_TAG_MATCH.fullmatch(tag)
@@ -466,6 +471,7 @@ def parse_leakage_tag(op: stim.CircuitInstruction) -> LeakageParams | None:
             f"Failed to recognise existing leakage tag name {name}. "
             "This one is on us, not you. File a bug."
         )
+
     raise ValueError(
         f"Unrecognised LEAKAGE tag name {name}: "
         f"must be one of {

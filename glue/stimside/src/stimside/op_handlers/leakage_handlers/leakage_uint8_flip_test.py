@@ -177,6 +177,27 @@ class TestCompiledLeakageUint8:
         assert np.all(xs_before == xs_after)  # Check for NO depolarization
         assert np.all(zs_before == zs_after)
 
+    def test_leakage_swap(self):
+        circuit_a = stim.Circuit(
+            """
+            R 0 1
+            H 0 1
+            I_ERROR[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0
+            II[LEAKAGE_SWAP] 0 1
+        """
+        )
+        fss_a = self._get_simulator_for_circuit(circuit_a)
+        fss_a.interactive_do(circuit_a[0])
+        fss_a.interactive_do(circuit_a[1])
+        assert np.all(fss_a.compiled_op_handler.state[0, :] == 0)
+
+        fss_a.interactive_do(circuit_a[2])
+        assert np.all(fss_a.compiled_op_handler.state[0, :] == 2)
+        assert np.all(fss_a.compiled_op_handler.state[1, :] == 0)
+        fss_a.interactive_do(circuit_a[3])
+        assert np.all(fss_a.compiled_op_handler.state[0, :] == 0)
+        assert np.all(fss_a.compiled_op_handler.state[1, :] == 2)
+
     def test_leakage_transition_Z(self):
         circuit = stim.Circuit(
             """
