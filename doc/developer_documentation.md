@@ -518,8 +518,9 @@ cibuildwheels can also be invoked locally, assuming you have Docker installed, u
 
 ```bash
 CIBW_BUILD=cp39-manylinux_x86_64 cibuildwheel --platform linux
+CIBW_BUILD=cp39-manylinux_aarch64 CIBW_ARCHS_LINUX=aarch64 cibuildwheel --platform linux
 # output goes into wheelhouse/
-````
+```
 
 When these wheels are finished building, they are automatically uploaded to
 pypi as a dev version of stim.
