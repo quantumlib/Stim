@@ -135,6 +135,13 @@ struct DetectorErrorModel {
 
     /// Returns an equivalent detector error model with no repeat blocks or detector_shift instructions.
     DetectorErrorModel flattened() const;
+
+    /// Returns true if the detector error model is equal to the other detector error model up to instruction ordering.
+    ///
+    /// For example, error(0.01) D0 error(0.002) D1 L0 is considered the same as error(0.002) D1 L0 error(0.01) D0.
+    ///
+    /// Note: requires O(n log n) time due to sorting. Prefer `==` when you know the instructions are in the same order.
+    bool equal_up_to_instruction_ordering(const DetectorErrorModel &other) const;
 };
 
 void print_detector_error_model(std::ostream &out, const DetectorErrorModel &v, size_t indent);
