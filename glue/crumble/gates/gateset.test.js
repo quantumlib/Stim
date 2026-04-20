@@ -26,6 +26,9 @@ test("gateset.expected_gates", () => {
     expectedGates.add("MARKY");
     expectedGates.add("MARKZ");
     expectedGates.add("MARK");
+    expectedGates.add("REVMARKX");
+    expectedGates.add("REVMARKY");
+    expectedGates.add("REVMARKZ");
     expectedGates.add("RZ");
     expectedGates.add("MZ");
     expectedGates.add("MRZ");

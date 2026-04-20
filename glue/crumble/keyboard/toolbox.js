@@ -6,8 +6,10 @@ let DIAM = 28;
 let PITCH = DIAM + 4;
 let PAD = 10.5;
 
-let COLUMNS = ['H', 'S', 'R', 'M', 'MR', 'C', 'W', 'SC', 'MC', 'P', '1-9'];
+let COLUMNS = ['H', 'S', 'R', 'M', 'MR', 'C', 'W', 'SC', 'MC', 'P', '1-9', '⇧1-9'];
 let DEF_ROW = [1,    2,   2,   2,  2,     1,   2,   2,    2,    -1, -1, -1];
+
+let COLORMAP = { 'X1': 'red', 'Y1': 'green', 'Z1': 'blue', 'X1N': '#ff7777', 'Y1N': '#77ff77', 'Z1N': '#7777ff' };
 
 /**
  * @param {!ChordEvent} ev
@@ -92,6 +94,13 @@ function make_pos_to_gate_dict() {
         result.set(`${x},-1`, GATE_MAP.get("MARK").withDefaultArgument(k));
         x += 1;
     }
+    // Add entries for the '⇧1-9' column (column 11)
+    for (let k = 0; k < 4; k++) {
+        result.set(`${x},0`, GATE_MAP.get("REVMARKX").withDefaultArgument(k));
+        result.set(`${x},1`, GATE_MAP.get("REVMARKY").withDefaultArgument(k));
+        result.set(`${x},2`, GATE_MAP.get("REVMARKZ").withDefaultArgument(k));
+        x += 1;
+    }
     return result;
 }
 let POS_TO_GATE_DICT = make_pos_to_gate_dict();
@@ -145,9 +154,9 @@ function drawToolbox(ev) {
 
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
-    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'MR_X', 'C_X', 'CXSWAP', '√XX', 'M_XX', 'PX', 'X1'];
-    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'MR_Y', 'C_Y', 'SWAP',   '√YY', 'M_YY',  'PY',  'Y1'];
-    let zGates = ['H_XY', 'S',   'R',   'M',   'MR',   'C_Z', 'CZSWAP', '√ZZ', 'M_ZZ', 'PZ', 'Z1'];
+    let xGates = ['H_YZ', 'S_X', 'R_X', 'M_X', 'MR_X', 'C_X', 'CXSWAP', '√XX', 'M_XX', 'PX', 'X1', 'X1N'];
+    let yGates = ['H',    'S_Y', 'R_Y', 'M_Y', 'MR_Y', 'C_Y', 'SWAP',   '√YY', 'M_YY',  'PY',  'Y1', 'Y1N'];
+    let zGates = ['H_XY', 'S',   'R',   'M',   'MR',   'C_Z', 'CZSWAP', '√ZZ', 'M_ZZ', 'PZ', 'Z1', 'Z1N'];
     let gates = [xGates, yGates, zGates];
     for (let k = 0; k < COLUMNS.length; k++) {
         for (let p = 0; p < 3; p++) {
@@ -193,20 +202,25 @@ function drawToolbox(ev) {
                 ctx.globalAlpha *= 4;
                 continue;
             }
-            if (text.endsWith('1')) {
+            if (text.endsWith('1') || text.endsWith('1N')) {
                 ctx.beginPath();
                 ctx.moveTo(cx + PITCH * 0.15, cy - PITCH * 0.25);
                 ctx.lineTo(cx, cy + PITCH * 0.1);
                 ctx.lineTo(cx - PITCH * 0.15, cy - PITCH * 0.25);
                 ctx.closePath();
-                let color = text === 'X1' ? 'red' : text === 'Y1' ? 'green' : 'blue';
+                let color = COLORMAP[text] || 'black';
                 ctx.fillStyle = color;
                 ctx.strokeStyle = color;
                 ctx.fill();
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + DIAM * 0.5, cy);
+                if (text.endsWith('1N')) {
+                    // Draw a negated arrow (arrow pointing left instead of right)
+                    ctx.lineTo(cx - DIAM * 0.5, cy);
+                } else {
+                    ctx.lineTo(cx + DIAM * 0.5, cy);
+                }
                 ctx.stroke();
                 ctx.lineWidth = 1;
                 continue;
