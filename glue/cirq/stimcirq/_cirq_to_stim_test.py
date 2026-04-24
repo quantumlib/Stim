@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import stim
 import stimcirq
+import sympy
 from stimcirq._cirq_to_stim import cirq_circuit_to_stim_data, gate_to_stim_append_func
 
 
@@ -425,3 +426,30 @@ def test_round_trip_example_circuit():
     cirq_circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit.flattened())
     circuit_back = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert len(circuit_back.shortest_graphlike_error()) == 3
+
+
+def test_xor_feedback():
+    a, b, c, d, e = cirq.LineQubit.range(5)
+    cirq_circuit = cirq.Circuit([
+        cirq.Moment(
+            cirq.measure(a, key='a'),
+            cirq.measure(b, key='b'),
+            cirq.measure(c, key='c'),
+            cirq.measure(d, key='d'),
+        ),
+        cirq.Moment(
+            cirq.X(e).with_classical_controls(cirq.SympyCondition(sympy.Xor(
+                sympy.Symbol('a'),
+                sympy.Symbol('b'),
+                sympy.Symbol('c'),
+                sympy.Symbol('d'),
+            ))),
+        ),
+    ])
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert stim_circuit == stim.Circuit("""
+        M 0 1 2 3
+        TICK
+        CX rec[-4] 4 rec[-3] 4 rec[-2] 4 rec[-1] 4
+        TICK
+    """)

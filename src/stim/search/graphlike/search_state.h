@@ -42,6 +42,22 @@ struct SearchState {
 };
 std::ostream &operator<<(std::ostream &out, const SearchState &v);
 
+inline void hash_combine(size_t &h, uint64_t x) {
+    h ^= std::hash<uint64_t>{}(x) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2); // mimic Boost's hash-combine function
+}
+
+struct SearchStateHash {
+    size_t operator()(const SearchState &s) const {
+        SearchState c = s.canonical();
+        size_t h = std::hash<uint64_t>{}(c.det_active);
+        hash_combine(h, c.det_held);
+        for (size_t i = 0; i < c.obs_mask.num_u64_padded(); i++) {
+            hash_combine(h, c.obs_mask.u64[i]);
+        }
+        return h;
+    }
+};
+
 }  // namespace impl_search_graphlike
 }  // namespace stim
 

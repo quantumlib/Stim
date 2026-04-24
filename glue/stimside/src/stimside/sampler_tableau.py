@@ -23,16 +23,18 @@ class TablesideSampler(sinter.Sampler):
             | None
         ) = None,
         decoder: sinter.Decoder = sinter.BUILT_IN_DECODERS["pymatching"],
+        seed: int | None = None,
     ):
         self.op_handler = op_handler
         self.decoder: sinter.Decoder = decoder
         self.batch_size = batch_size
         self.dem_gen = dem_gen
+        self.seed = seed
 
     def compiled_sampler_for_task(self, task: sinter.Task) -> sinter.CompiledSampler:
         if task.circuit is None:
             raise ValueError(
-                "FlipsideSampler requires a circuit in the task to compile a sampler."
+                "TablesideSampler requires a circuit in the task to compile a sampler."
             )
         if self.dem_gen is None:
             dem_gen = task.detector_error_model or task.circuit.detector_error_model()
@@ -50,6 +52,7 @@ class TablesideSampler(sinter.Sampler):
                 # The op_handler only handles 1 shot,
                 # But the simulator generates multiple shots with the modified circuit on demand
             ),
+            seed=self.seed,
         )
 
 
@@ -64,12 +67,14 @@ class CompiledTablesideSampler(sinter.CompiledSampler):
         ),
         compiled_op_handler: CompiledOpHandler,
         batch_size: int,
+        seed: int | None = None,
     ):
         self.circuit = circuit
         self.tab_simulator = TablesideSimulator(
             circuit=circuit,
             compiled_op_handler=compiled_op_handler,
             batch_size=batch_size,
+            seed=seed,
         )
 
         self.batch_size = batch_size

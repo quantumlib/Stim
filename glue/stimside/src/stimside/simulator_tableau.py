@@ -65,7 +65,7 @@ class TablesideSimulator:
 
         self.np_rng = np.random.default_rng(seed=seed)
 
-        self._tableau_simulator = stim.TableauSimulator()
+        self._tableau_simulator = stim.TableauSimulator(seed=seed)
         self._new_circuit = stim.Circuit()
         self._construct_reference_circuit = construct_reference_circuit
         if self._construct_reference_circuit:
@@ -125,7 +125,7 @@ class TablesideSimulator:
 
         # self._tableau_simulator.set_inverse_tableau(stim.Tableau(0))
         # Without a clear method from the TableauSimulator, we will just initiate a new one for now
-        self._tableau_simulator = stim.TableauSimulator()
+        self._tableau_simulator = stim.TableauSimulator(seed=self.seed)
         self._new_circuit.clear()
         self._final_measurement_records = None
 

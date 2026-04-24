@@ -196,7 +196,11 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
     def handle_op(self, op: stim.CircuitInstruction, sss: TablesideSimulator):
         """handle a single stim CircuitInstruction."""
         if op not in self.claimed_ops_keys:
-            if self.unconditional_condition_on_U:
+            if op.tag == "LEAKAGE_SWAP":
+                self.leakage_swap(op=op)
+                sss._do_bare_instruction(op)
+                return
+            elif self.unconditional_condition_on_U:
                 op_name = op.name
                 gate_data = stim.GateData(op_name)
                 if gate_data.produces_measurements or not (
@@ -246,6 +250,16 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 self.leakage_measurement(op, tss=sss, params=params)
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
+
+    def leakage_swap(
+        self,
+        op: stim.CircuitInstruction
+    ):
+        """Implement swaping of leakage states"""
+        for target in op.target_groups():
+            state_old = self.state[target[0].value]
+            self.state[target[0].value] = self.state[target[1].value]
+            self.state[target[1].value] = state_old
 
     def leakage_conditioning(
         self,

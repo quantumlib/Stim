@@ -81,7 +81,7 @@ def classify_discards_and_errors(
             out_count_observable_error_combos[err_key] += 1
 
     num_errors = np.count_nonzero(fail_mask)
-    return num_discards, num_errors
+    return int(num_discards), int(num_errors)
 
 
 class DiskDecoder(CompiledDecoder):

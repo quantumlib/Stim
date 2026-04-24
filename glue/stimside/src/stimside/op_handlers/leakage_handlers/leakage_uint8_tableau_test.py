@@ -123,6 +123,28 @@ class TestCompiledLeakageUint8:
         assert np.any(records[:, :] == 0)
         assert np.any(records[:, :] == 1)
 
+    def test_leakage_swap(self):
+        # Part a: Computational to Leaked
+        circuit_a = stim.Circuit(
+            """
+            R 0 1
+            H 0 1
+            I_ERROR[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0
+            II[LEAKAGE_SWAP] 0 1
+        """
+        )
+        tss_a = self._get_simulator_for_circuit(circuit_a)
+        tss_a.interactive_do(circuit_a[0])
+        tss_a.interactive_do(circuit_a[1])
+        assert np.all(tss_a._compiled_op_handler.state[:] == 0)
+        tss_a.interactive_do(circuit_a[2])
+        assert np.all(tss_a._compiled_op_handler.state[0] == 2)
+        assert np.all(tss_a._compiled_op_handler.state[1] == 0)
+
+        tss_a.interactive_do(circuit_a[3])
+        assert np.all(tss_a._compiled_op_handler.state[0] == 0)
+        assert np.all(tss_a._compiled_op_handler.state[1] == 2)
+
     def test_leakage_transition_2(self):
         # Test case: (U, U) -> (L2, L3)
         circuit = stim.Circuit(

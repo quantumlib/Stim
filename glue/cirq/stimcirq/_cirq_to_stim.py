@@ -5,9 +5,8 @@ from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tup
 
 import cirq
 import stim
+import sympy
 
-from ._i_error_gate import IErrorGate
-from ._ii_error_gate import IIErrorGate
 from ._ii_gate import IIGate
 
 
@@ -142,6 +141,58 @@ def cirq_circuit_to_stim_data(
 
 
 StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int], str], None]
+StimOpTypeHandler = Callable[[stim.Circuit, cirq.Operation, List[int], str, List[Tuple[str, int]]], None]
+
+
+def _stim_append_classically_controlled_gate(
+        circuit: stim.Circuit,
+        op: cirq.ClassicallyControlledOperation,
+        targets: List[int],
+        tag: str,
+        measurement_key_lengths: List[Tuple[str, int]]):
+
+    if len(op.classical_controls) != 1:
+        raise NotImplementedError(f'Stim only supports single-control Pauli feedback, but got {op=}')
+    controls: list[cirq.KeyCondition] = []
+    single_control, = op.classical_controls
+    if isinstance(single_control, cirq.KeyCondition):
+        controls.append(single_control)
+    elif isinstance(single_control, cirq.SympyCondition) and isinstance(single_control.expr, sympy.Xor) and all(isinstance(e, sympy.Symbol) for e in single_control.expr.args):
+        for symbol in single_control.expr.args:
+            controls.append(cirq.KeyCondition(key=cirq.MeasurementKey(str(symbol)), index=-1))
+    else:
+        raise NotImplementedError(f'Stim only supports single-control Pauli feedback (i.e. a `cirq.KeyCondition` control), but got {single_control=}')
+    gate = op.without_classical_controls().gate
+
+    if gate == cirq.X:
+        stim_gate = 'X'
+    elif gate == cirq.Y:
+        stim_gate = 'Y'
+    elif gate == cirq.Z:
+        stim_gate = 'Z'
+    else:
+        raise NotImplementedError(f'Stim only supports Pauli feedback, but got {op=}')
+    assert len(targets) == 1
+
+    for control in controls:
+        skips_left = control.index
+        for offset in range(len(measurement_key_lengths)):
+            m_key, m_len = measurement_key_lengths[-1 - offset]
+            if m_len != 1:
+                raise NotImplementedError(f"multi-qubit measurement {m_key!r}")
+            if m_key == control.key:
+                if skips_left > 0:
+                    skips_left -= 1
+                else:
+                    rec_target = stim.target_rec(-1 - offset)
+                    break
+        else:
+            raise ValueError(
+                f"{control!r} was processed before the measurement it referenced."
+                f" Make sure the referenced measurements keys are actually in the circuit, and come"
+                f" in an earlier moment (or earlier in the same moment's operation order)."
+            )
+        circuit.append(f"C{stim_gate}", [rec_target, targets[0]], tag=tag)
 
 
 @functools.lru_cache(maxsize=1)
@@ -275,6 +326,14 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
         ),
         cirq.RandomGateChannel: cast(StimTypeHandler, _stim_append_random_gate_channel),
         cirq.DepolarizingChannel: cast(StimTypeHandler, _stim_append_depolarizing_channel),
+    }
+
+
+@functools.lru_cache()
+def op_type_to_stim_append_func() -> Dict[Type[cirq.Operation], StimOpTypeHandler]:
+    """A dictionary mapping specific gate types to stim circuit appending functions."""
+    return {
+        cirq.ClassicallyControlledOperation: _stim_append_classically_controlled_gate,
     }
 
 
@@ -454,7 +513,8 @@ class CirqToStimHelper:
 
     def process_operations(self, operations: Iterable[cirq.Operation]) -> None:
         g2f = gate_to_stim_append_func()
-        t2f = gate_type_to_stim_append_func()
+        tg2f = gate_type_to_stim_append_func()
+        to2f = op_type_to_stim_append_func()
         for op in operations:
             assert isinstance(op, cirq.Operation)
             tag = self.tag_func(op)
@@ -500,9 +560,14 @@ class CirqToStimHelper:
                 continue
 
             # Look for recognized gate types like cirq.DepolarizingChannel.
-            type_append_func = t2f.get(type(gate))
+            type_append_func = tg2f.get(type(gate))
             if type_append_func is not None:
                 type_append_func(self.out, gate, targets, tag=tag)
+                continue
+
+            op_type_append_func = to2f.get(type(op))
+            if op_type_append_func is not None:
+                op_type_append_func(self.out, op, targets, tag, self.key_out)
                 continue
 
             # Ask unrecognized operations to decompose themselves into simpler operations.

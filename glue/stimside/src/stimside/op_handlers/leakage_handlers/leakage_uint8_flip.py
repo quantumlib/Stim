@@ -1,5 +1,6 @@
 import dataclasses
 import itertools as it
+from copy import copy
 
 import numpy as np
 from numpy.typing import NDArray
@@ -111,6 +112,8 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
             ]:
                 # if we're depolarizing on leak, these instructions undo that error, so we re-depolarize
                 self._depolarize_leaked_qubits(fss=sss, op=op)
+            elif op.tag == "LEAKAGE_SWAP":
+                self.leakage_swap(op=op)
             return
 
         params = self.ops_to_params[op]
@@ -127,6 +130,16 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                 self.leakage_projection_Z(op=op, fss=sss, params=params)
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
+
+    def leakage_swap(
+        self,
+        op: stim.CircuitInstruction
+    ):
+        """Implement swaping of leakage states"""
+        for target in op.target_groups():
+            state_old = copy(self.state[target[0].value])
+            self.state[target[0].value] = copy(self.state[target[1].value])
+            self.state[target[1].value] = state_old
 
     def _depolarize_leaked_qubits(
         self, op: stim.CircuitInstruction, fss: FlipsideSimulator
