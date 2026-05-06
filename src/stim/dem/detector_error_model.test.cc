@@ -895,7 +895,7 @@ TEST(detector_error_model, parse_windows_newlines) {
         DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
 }
 
-TEST(detector_error_model, equal_up_to_instruction_ordering) {
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_flattened) {
     DetectorErrorModel lhs(R"MODEL(
         error(0.01) D0
         error(0.002) D1 L0
@@ -910,5 +910,5 @@ TEST(detector_error_model, equal_up_to_instruction_ordering) {
         detector(5, 10) D0
         logical_observable L0
     )MODEL");
-    EXPECT_TRUE(lhs.equal_up_to_instruction_ordering(rhs));
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
 }

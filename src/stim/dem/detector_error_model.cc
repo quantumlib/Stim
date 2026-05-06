@@ -16,7 +16,7 @@
 
 #include "stim/dem/detector_error_model.h"
 
-#include <algorithm> 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -796,29 +796,85 @@ DetectorErrorModel DetectorErrorModel::without_tags() const {
     return result;
 }
 
-bool DetectorErrorModel::equal_up_to_instruction_ordering(const DetectorErrorModel &other) const {
-    if (instructions.size() != other.instructions.size()) {
-        return false;
-    }
+bool is_structural(DemInstructionType type) {
+    return type == DemInstructionType::DEM_SHIFT_DETECTORS || type == DemInstructionType::DEM_REPEAT_BLOCK;
+}
 
-    auto get_sorted_indices = [](const std::vector<DemInstruction> &ins) {
-        std::vector<size_t> indices(ins.size());
-        std::iota(indices.begin(), indices.end(), 0);
-        std::sort(indices.begin(), indices.end(), [&ins](size_t i, size_t j) {
-            return ins[i] < ins[j];
-        });
-        return indices;
+bool is_equal_up_to_instruction_ordering_helper(const DetectorErrorModel &a, const DetectorErrorModel &b) {
+    size_t index_in_a = 0;
+    size_t index_in_b = 0;
+
+    auto get_next_segment = [](const DetectorErrorModel &dem, size_t &i) {
+        std::vector<DemInstruction> segment;
+        while (i < dem.instructions.size() && !is_structural(dem.instructions[i].type)) {
+            segment.push_back(dem.instructions[i]);
+            i++;
+        }
+        std::sort(segment.begin(), segment.end());
+        return segment;
     };
 
-    // sort the indices to avoid copying instructions
-    auto sorted_lhs_indices = get_sorted_indices(instructions);
-    auto sorted_rhs_indices = get_sorted_indices(other.instructions);
-
-    for (size_t i = 0; i < sorted_lhs_indices.size(); i++) {
-        if (!(instructions[sorted_lhs_indices[i]] == other.instructions[sorted_rhs_indices[i]])) {
+    while (true) {
+        // compare next segments
+        auto segment_a = get_next_segment(a, index_in_a);
+        auto segment_b = get_next_segment(b, index_in_b);
+        if (segment_a != segment_b) {
             return false;
         }
-    }
 
-    return true;
+        // check for terminating condition
+        bool traversed_a = index_in_a == a.instructions.size();
+        bool traversed_b = index_in_b == b.instructions.size();
+        if (traversed_a || traversed_b) {
+            return traversed_a && traversed_b;
+        }
+
+        // compare next structural ops
+        const auto &structural_op_a = a.instructions[index_in_a];
+        const auto &structural_op_b = b.instructions[index_in_b];
+
+        if (structural_op_a.type != structural_op_b.type) {
+            return false;
+        }
+
+        if (structural_op_a.tag != structural_op_b.tag) {
+            return false;
+        }
+
+        if (structural_op_a.type == DemInstructionType::DEM_SHIFT_DETECTORS) {
+            // check coordinate shift
+            if (structural_op_a.arg_data != structural_op_b.arg_data) {
+                return false;
+            }
+            // check index shift
+            if (structural_op_a.target_data[0].data != structural_op_b.target_data[0].data) {
+                return false;
+            }
+            // advance to next payload op
+            index_in_a++;
+            index_in_b++;
+            continue;
+        }
+
+        if (structural_op_a.type == DemInstructionType::DEM_REPEAT_BLOCK) {
+            // check reps
+            if (structural_op_a.repeat_block_rep_count() != structural_op_b.repeat_block_rep_count()) {
+                return false;
+            }
+            // check equality of repeat body
+            const auto &body_a = structural_op_a.repeat_block_body(a);
+            const auto &body_b = structural_op_b.repeat_block_body(b);
+            if (!is_equal_up_to_instruction_ordering_helper(body_a, body_b)) {
+                return false;
+            }
+            // advance to next payload op
+            index_in_a++;
+            index_in_b++;
+            continue;
+        }
+    }
+}
+
+bool DetectorErrorModel::is_equal_up_to_instruction_ordering(const DetectorErrorModel &other) const {
+    return is_equal_up_to_instruction_ordering_helper(*this, other);
 }
