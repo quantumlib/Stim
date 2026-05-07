@@ -20,7 +20,6 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
-#include <numeric>
 
 #include "stim/util_bot/str_util.h"
 
