@@ -356,7 +356,7 @@ class CircuitTranslationTracker:
             else:
                 pauli_targets.append(f'{t.pauli_type}{t.value}')
 
-        if self.have_seen_loop:
+        if self.have_seen_loop or self.single_measure_key:
             return [], [t.value for t in meas_targets], pauli_targets
         else:
             return [str(self.num_measurements_seen + t.value) for t in meas_targets], [], pauli_targets
@@ -666,14 +666,12 @@ def stim_circuit_to_cirq_circuit(
 
     Qubit indices are turned into cirq.LineQubit instances. Measurements are
     keyed by their ordering (e.g. the first measurement is keyed "0", the second
-    is keyed "1", etc) unless a fixed measure_key is provided.
+    is keyed "1", etc) unless a single_measure_key is provided. If using a single
+    measurement key, all measurements will use that key and all detectors and
+    observable include annotations will use relative indexing.
 
     Not all circuits can be converted:
         - ELSE_CORRELATED_ERROR instructions are not supported.
-
-    Not all circuits can be converted with perfect 1:1 fidelity:
-        - DETECTOR annotations are discarded.
-        - OBSERVABLE_INCLUDE annotations are discarded.
 
     Args:
         circuit: The stim circuit to convert into a cirq circuit.
