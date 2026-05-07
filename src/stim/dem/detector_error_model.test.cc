@@ -895,9 +895,10 @@ TEST(detector_error_model, parse_windows_newlines) {
         DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
 }
 
+/// Without structural barriers, a segment compares as an order-insensitive instruction sequence.
 TEST(detector_error_model, is_equal_up_to_instruction_ordering_flattened) {
     DetectorErrorModel lhs(R"MODEL(
-        error(0.01) D0
+        error[dead](0.01) D0
         error(0.002) D1 L0
         detector(5, 10) D0
         detector(5, 15) D1
@@ -905,10 +906,220 @@ TEST(detector_error_model, is_equal_up_to_instruction_ordering_flattened) {
     )MODEL");
     DetectorErrorModel rhs(R"MODEL(
         error(0.002) D1 L0
-        error(0.01) D0
+        error[dead](0.01) D0
         detector(5, 15) D1
         detector(5, 10) D0
         logical_observable L0
+    )MODEL");
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Segment comparison includes tags, so a mismatched tag causes inequality.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_flattened_tag_mismatch) {
+    DetectorErrorModel lhs(R"MODEL(
+        error[dead](0.01) D0
+        error(0.002) D1 L0
+        detector(5, 10) D0
+        detector(5, 15) D1
+        logical_observable L0
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        error(0.002) D1 L0
+        error[beef](0.01) D0
+        detector(5, 15) D1
+        detector(5, 10) D0
+        logical_observable L0
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// An extra `shift_detectors` barrier (even shifting by 0) makes models not equal.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_shift_missing) {
+    DetectorErrorModel lhs(R"MODEL(
+        error(0.1) D0
+        shift_detectors 0
+        error(0.2) D1
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        error(0.1) D0
+        error(0.2) D1
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// `shift_detectors(...)` barriers must match exactly (including the coordinate shift vector).
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_shift_mismatch) {
+    DetectorErrorModel lhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors(0, 1) 1
+        detector(5, 10) D0
+        detector(5, 15) D1
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors(1, 1) 1
+        detector(5, 15) D1
+        detector(5, 10) D0
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// `shift_detectors` barriers must match exactly (including tags).
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_shift_tag_mismatch) {
+    DetectorErrorModel lhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[dead](0, 1) 1
+        detector(5, 10) D0
+        detector(5, 15) D1
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[beef](0, 1) 1
+        detector(5, 15) D1
+        detector(5, 10) D0
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Segment order-insensitivity is allowed on either side of a matching `shift_detectors` barrier.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_shift_once) {
+    DetectorErrorModel lhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[dead](0, 1) 1
+        detector(5, 10) D0
+        detector(5, 15) D1
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[dead](0, 1) 1
+        detector(5, 15) D1
+        detector(5, 10) D0
+    )MODEL");
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Multiple `shift_detectors` barriers create multiple independently order-insensitive segments.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_shift_twice) {
+    DetectorErrorModel lhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[dead](0, 1) 1
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors 1
+        error(0.01) D0
+        error(0.002) D1 L0
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        detector(5, 10) D0
+        detector(5, 15) D1
+        shift_detectors[dead](0, 1) 1
+        detector(5, 15) D1
+        detector(5, 10) D0
+        shift_detectors 1
+        error(0.002) D1 L0
+        error(0.01) D0
+    )MODEL");
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// `repeat` blocks are structural barriers and must match on repetition count.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_repeat_reps_mismatch) {
+    DetectorErrorModel lhs(R"MODEL(
+        repeat 3 {
+            error(0.002) D1 L0
+            error(0.01) D0
+            shift_detectors 1
+        }
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        repeat 2 {
+            error(0.002) D1 L0
+            error(0.01) D0
+            shift_detectors 1
+        }
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Identical `repeat` blocks compare equal without unrolling.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_repeat) {
+    DetectorErrorModel lhs(R"MODEL(
+        repeat 3 {
+            error(0.002) D1 L0
+            error(0.01) D0
+            shift_detectors 1
+        }
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        repeat 3 {
+            error(0.002) D1 L0
+            error(0.01) D0
+            shift_detectors 1
+        }
+    )MODEL");
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// A `repeat` block is not equal to an unrolled equivalent (barrier alignment is required).
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_repeat_versus_inline) {
+    DetectorErrorModel lhs(R"MODEL(
+        repeat 2 {
+            error(0.1) D0
+            shift_detectors 1
+        }
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        error(0.1) D0
+        shift_detectors 1
+        error(0.1) D0
+        shift_detectors 1
+    )MODEL");
+    EXPECT_FALSE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Empty segments between consecutive structural barriers are handled correctly.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_consecutive_barriers_ok) {
+    DetectorErrorModel lhs(R"MODEL(
+        shift_detectors 1
+        shift_detectors 2
+        error(0.1) D0
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        shift_detectors 1
+        shift_detectors 2
+        error(0.1) D0
+    )MODEL");
+    EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
+}
+
+/// Nested `repeat` blocks compare recursively, allowing order-insensitive segments inside the inner body.
+TEST(detector_error_model, is_equal_up_to_instruction_ordering_nested_repeats) {
+    DetectorErrorModel lhs(R"MODEL(
+        repeat 2 {
+            repeat 3 {
+                error(0.1) D0
+                error(0.2) D1
+                shift_detectors 1
+            }
+            shift_detectors 5
+        }
+    )MODEL");
+    DetectorErrorModel rhs(R"MODEL(
+        repeat 2 {
+            repeat 3 {
+                error(0.2) D1
+                error(0.1) D0
+                shift_detectors 1
+            }
+            shift_detectors 5
+        }
     )MODEL");
     EXPECT_TRUE(lhs.is_equal_up_to_instruction_ordering(rhs));
 }

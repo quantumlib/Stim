@@ -850,7 +850,7 @@ bool is_equal_up_to_instruction_ordering_helper(const DetectorErrorModel &a, con
             if (structural_op_a.target_data[0].data != structural_op_b.target_data[0].data) {
                 return false;
             }
-            // advance to next payload op
+            // advance to next op
             index_in_a++;
             index_in_b++;
             continue;
@@ -867,7 +867,7 @@ bool is_equal_up_to_instruction_ordering_helper(const DetectorErrorModel &a, con
             if (!is_equal_up_to_instruction_ordering_helper(body_a, body_b)) {
                 return false;
             }
-            // advance to next payload op
+            // advance to next op
             index_in_a++;
             index_in_b++;
             continue;
