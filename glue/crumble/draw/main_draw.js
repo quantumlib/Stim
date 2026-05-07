@@ -10,17 +10,18 @@ import {beginPathPolygon} from './draw_util.js';
  * @param {!number|undefined} y
  * @return {![undefined, undefined]|![!number, !number]}
  */
-function xyToPos(x, y) {
+function xyToPos(x, y, scrollX = 0, scrollY = 0, zoomScale = 1.0) {
     if (x === undefined || y === undefined) {
         return [undefined, undefined];
     }
-    let focusX = x / pitch;
-    let focusY = y / pitch;
+    let focusX = (x - scrollX) / (pitch * zoomScale);
+    let focusY = (y - scrollY) / (pitch * zoomScale);
     let roundedX = Math.floor(focusX * 2 + 0.5) / 2;
     let roundedY = Math.floor(focusY * 2 + 0.5) / 2;
     let centerX = roundedX*pitch;
     let centerY = roundedY*pitch;
-    if (Math.abs(centerX - x) <= rad && Math.abs(centerY - y) <= rad && roundedX % 1 === roundedY % 1) {
+    let scaledRad = rad * zoomScale;
+    if (Math.abs(centerX - x) <= scaledRad && Math.abs(centerY - y) <= scaledRad && roundedX % 1 === roundedY % 1) {
         return [roundedX, roundedY];
     }
     return [undefined, undefined];
@@ -198,6 +199,7 @@ function defensiveDraw(ctx, body) {
  */
 function draw(ctx, snap) {
     let circuit = snap.circuit;
+    let zoom = snap.zoomScale || 1.0;
 
     let numPropagatedLayers = 0;
     for (let layer of circuit.layers) {
@@ -209,12 +211,17 @@ function draw(ctx, snap) {
         }
     }
 
-    let c2dCoordTransform = (x, y) => [x*pitch - OFFSET_X, y*pitch - OFFSET_Y];
+    let c2dCoordTransform = (x, y) => [x * pitch * snap.zoomScale - OFFSET_X + snap.scrollX, y * pitch * snap.zoomScale - OFFSET_Y + snap.scrollY];
     let qubitDrawCoords = q => {
         let x = circuit.qubitCoordData[2 * q];
         let y = circuit.qubitCoordData[2 * q + 1];
         return c2dCoordTransform(x, y);
     };
+    let logicCoords = q => {
+        let x = circuit.qubitCoordData[2 * q];
+        let y = circuit.qubitCoordData[2 * q + 1];
+        return [x * pitch, y * pitch];
+    }
     let propagatedMarkerLayers = /** @type {!Map<!int, !PropagatedPauliFrames>} */ new Map();
     for (let mi = 0; mi < numPropagatedLayers; mi++) {
         propagatedMarkerLayers.set(mi, PropagatedPauliFrames.fromCircuit(circuit, mi));
@@ -253,10 +260,12 @@ function draw(ctx, snap) {
         }
     }
 
+    let scaledRad = rad * snap.zoomScale;
+
     defensiveDraw(ctx, () => {
         ctx.fillStyle = 'white';
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY);
+        let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY, snap.scrollX, snap.scrollY);
 
         // Draw the background polygons.
         let lastPolygonLayer = snap.curLayer;
@@ -268,35 +277,47 @@ function draw(ctx, snap) {
                 }
             }
         }
+        
+        
+
+        ctx.save();
+        ctx.translate(- OFFSET_X + snap.scrollX, - OFFSET_Y + snap.scrollY);
+        ctx.scale(zoom, zoom);
+
         let polygonMarkers = [...circuit.layers[lastPolygonLayer].markers];
         polygonMarkers.sort((a, b) => b.id_targets.length - a.id_targets.length);
         for (let op of polygonMarkers) {
             if (op.gate.name === 'POLYGON') {
-                op.id_draw(qubitDrawCoords, ctx);
+                op.id_draw(logicCoords, ctx);
             }
         }
+        ctx.restore();
 
         // Draw the grid of qubits.
         defensiveDraw(ctx, () => {
-            for (let qx = 0; qx < 100; qx += 0.5) {
+            let qStep = 0.5;
+            if (snap.zoomScale < 0.2) {
+                qStep = 5.0;
+            } else if (snap.zoomScale < 0.5) {
+                qStep = 2.0;
+            } else if (snap.zoomScale < 0.8) {
+                qStep = 1.0;
+            }
+            for (let qx = 0; qx < 100; qx += qStep) {
                 let [x, _] = c2dCoordTransform(qx, 0);
                 let s = `${qx}`;
                 ctx.fillStyle = 'black';
                 ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
             }
-            for (let qy = 0; qy < 100; qy += 0.5) {
+            for (let qy = 0; qy < 100; qy += qStep) {
                 let [_, y] = c2dCoordTransform(0, qy);
                 let s = `${qy}`;
                 ctx.fillStyle = 'black';
                 ctx.fillText(s, 18 - ctx.measureText(s).width, y);
             }
-
+            
             ctx.strokeStyle = 'black';
             for (let qx = 0; qx < 100; qx += 0.5) {
-                let [x, _] = c2dCoordTransform(qx, 0);
-                let s = `${qx}`;
-                ctx.fillStyle = 'black';
-                ctx.fillText(s, x - ctx.measureText(s).width / 2, 15);
                 for (let qy = qx % 1; qy < 100; qy += 1) {
                     let [x, y] = c2dCoordTransform(qx, qy);
                     ctx.fillStyle = 'white';
@@ -308,8 +329,8 @@ function draw(ctx, snap) {
                     if (isVeryUnused) {
                         ctx.globalAlpha *= 0.25;
                     }
-                    ctx.fillRect(x - rad, y - rad, 2*rad, 2*rad);
-                    ctx.strokeRect(x - rad, y - rad, 2*rad, 2*rad);
+                    ctx.fillRect(x - scaledRad, y - scaledRad, 2 * scaledRad, 2 * scaledRad);
+                    ctx.strokeRect(x - scaledRad, y - scaledRad, 2 * scaledRad, 2 * scaledRad);
                     if (isUnused) {
                         ctx.globalAlpha *= 4;
                     }
@@ -320,42 +341,48 @@ function draw(ctx, snap) {
             }
         });
 
+        ctx.save();
+        ctx.translate(- OFFSET_X + snap.scrollX, - OFFSET_Y + snap.scrollY);
+        ctx.scale(zoom, zoom);
+
         for (let [mi, p] of propagatedMarkerLayers.entries()) {
-            drawCrossMarkers(ctx, snap, qubitDrawCoords, p, mi);
+            drawCrossMarkers(ctx, snap, logicCoords, p, mi);
         }
 
         for (let op of circuit.layers[snap.curLayer].iter_gates_and_markers()) {
             if (op.gate.name !== 'POLYGON') {
-                op.id_draw(qubitDrawCoords, ctx);
+                op.id_draw(logicCoords, ctx);
             }
         }
-
+        
         defensiveDraw(ctx, () => {
             ctx.globalAlpha *= 0.25
             for (let [qx, qy] of snap.timelineSet.values()) {
                 let [x, y] = c2dCoordTransform(qx, qy);
                 ctx.fillStyle = 'yellow';
-                ctx.fillRect(x - rad * 1.25, y - rad * 1.25, 2.5*rad, 2.5*rad);
+                ctx.fillRect(x - scaledRad * 1.25, y - scaledRad * 1.25, 2.5 * scaledRad, 2.5 * scaledRad);
             }
         });
+
+        drawMarkers(ctx, snap, logicCoords, propagatedMarkerLayers);
+
+        ctx.restore();
 
         defensiveDraw(ctx, () => {
             ctx.globalAlpha *= 0.5
             for (let [qx, qy] of snap.focusedSet.values()) {
                 let [x, y] = c2dCoordTransform(qx, qy);
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(x - rad * 1.25, y - rad * 1.25, 2.5*rad, 2.5*rad);
+                ctx.fillRect(x - scaledRad * 1.25, y - scaledRad * 1.25, 2.5 * scaledRad, 2.5 * scaledRad);
             }
         });
-
-        drawMarkers(ctx, snap, qubitDrawCoords, propagatedMarkerLayers);
 
         if (focusX !== undefined) {
             ctx.save();
             ctx.globalAlpha *= 0.5;
             let [x, y] = c2dCoordTransform(focusX, focusY);
             ctx.fillStyle = 'red';
-            ctx.fillRect(x - rad, y - rad, 2*rad, 2*rad);
+            ctx.fillRect(x - scaledRad, y - scaledRad, 2 * scaledRad, 2 * scaledRad);
             ctx.restore();
         }
 
@@ -379,11 +406,13 @@ function draw(ctx, snap) {
             }
             for (let [qx, qy] of snap.boxHighlightPreview) {
                 let [x, y] = c2dCoordTransform(qx, qy);
-                ctx.fillRect(x - rad, y - rad, rad*2, rad*2);
+                ctx.fillRect(x - scaledRad, y - scaledRad, 2 * scaledRad, 2 * scaledRad);
             }
         });
-    });
 
+        ctx.font = `10px sans-serif`;
+    });
+    
     drawTimeline(ctx, snap, propagatedMarkerLayers, qubitDrawCoords, circuit.layers.length);
 
     // Draw scrubber.
