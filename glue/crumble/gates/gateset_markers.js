@@ -180,6 +180,36 @@ function *iter_gates_markers() {
             ctx.fillRect(x1 - rad, y1 - rad, rad, rad);
         }
     );
+        yield new Gate(
+        'REVMARKX',
+        1,
+        true,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        make_marker_drawer('#ff7777'),
+    );
+    yield new Gate(
+        'REVMARKY',
+        1,
+        true,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        make_marker_drawer('#77ff77'),
+    );
+    yield new Gate(
+        'REVMARKZ',
+        1,
+        true,
+        true,
+        undefined,
+        () => {},
+        () => {},
+        make_marker_drawer('#7777ff'),
+    );
 }
 
 export {iter_gates_markers, marker_placement};
