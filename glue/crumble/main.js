@@ -31,7 +31,8 @@ const btnTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementByI
 const btnClearTimelineFocus = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearTimelineFocus');
 const btnClearSelectedMarkers = /** @type{!HTMLButtonElement} */ document.getElementById('btnClearSelectedMarkers');
 const btnShowExamples = /** @type {!HTMLButtonElement} */ document.getElementById('btnShowExamples');
-const divExamples = /** @type{!HTMLDivElement} */ document.getElementById('examples-div');
+const dialogExamples = /** @type{!HTMLDialogElement} */ document.getElementById('examples-dialog');
+const btnDialogClose = /** @type{!HTMLDivElement} */ document.getElementById('examples-close-button');
 
 // Prevent typing in the import/export text editor from causing changes in the main circuit editor.
 txtStimCircuit.addEventListener('keyup', ev => ev.stopPropagation());
@@ -48,6 +49,12 @@ btnImport.addEventListener('click', _ev => {
     editorState.commit(circuit);
 });
 
+function applyDevicePixelScaling() {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    editorState.canvas.width = editorState.canvas.scrollWidth * devicePixelRatio;
+    editorState.canvas.height = editorState.canvas.scrollHeight * devicePixelRatio;
+}
+
 btnImportExport.addEventListener('click', _ev => {
     let div = /** @type{!HTMLDivElement} */ document.getElementById('divImportExport');
     if (div.style.display === 'none') {
@@ -61,6 +68,8 @@ btnImportExport.addEventListener('click', _ev => {
     }
     setTimeout(() => {
         window.scrollTo(0, 0);
+        applyDevicePixelScaling();
+        editorState.force_redraw();
     }, 0);
 });
 
@@ -83,12 +92,20 @@ btnClearSelectedMarkers.addEventListener('click', _ev => {
 });
 
 btnShowExamples.addEventListener('click', _ev => {
-    if (divExamples.style.display === 'none') {
-        divExamples.style.display = 'block';
-        btnShowExamples.textContent = "Hide Example Circuits";
+    if (dialogExamples.open) {
+        dialogExamples.close();
     } else {
-        divExamples.style.display = 'none';
-        btnShowExamples.textContent = "Show Example Circuits";
+        dialogExamples.showModal();
+    }
+});
+
+btnDialogClose.addEventListener('click', _ev => {
+    dialogExamples.close();
+});
+
+dialogExamples.addEventListener('click', ev => {
+    if (ev.target === dialogExamples) {
+        dialogExamples.close();
     }
 });
 
@@ -127,8 +144,7 @@ btnPrevLayer.addEventListener('click', _ev => {
 });
 
 window.addEventListener('resize', _ev => {
-    editorState.canvas.width = editorState.canvas.scrollWidth;
-    editorState.canvas.height = editorState.canvas.scrollHeight;
+    applyDevicePixelScaling();
     editorState.force_redraw();
 });
 
@@ -148,7 +164,7 @@ editorState.canvas.addEventListener('mousemove', ev => {
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    let w = editorState.canvas.width / 2;
+    let w = editorState.canvas.scrollWidth / 2;
     if (isInScrubber && ev.buttons === 1) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
         return;
@@ -165,7 +181,7 @@ editorState.canvas.addEventListener('mousedown', ev => {
     editorState.mouseDownY = ev.offsetY + OFFSET_Y;
 
     // Scrubber.
-    let w = editorState.canvas.width / 2;
+    let w = editorState.canvas.scrollWidth / 2;
     isInScrubber = ev.offsetY < 20 && ev.offsetX > w && ev.buttons === 1;
     if (isInScrubber) {
         editorState.changeCurLayerTo(Math.floor((ev.offsetX - w) / 8));
@@ -195,7 +211,7 @@ function makeChordHandlers() {
 
     res.set('shift+t', preview => editorState.rotate45(-1, preview));
     res.set('t', preview => editorState.rotate45(+1, preview));
-    res.set('escape', () => editorState.clearFocus());
+    res.set('escape', () => {if (dialogExamples.open) dialogExamples.close(); else editorState.clearFocus()});
     res.set('delete', preview => editorState.deleteAtFocus(preview));
     res.set('backspace', preview => editorState.deleteAtFocus(preview));
     res.set('ctrl+delete', preview => editorState.deleteCurLayer(preview));
@@ -497,8 +513,7 @@ function handleKeyboardEvent(ev) {
 document.addEventListener('keydown', handleKeyboardEvent);
 document.addEventListener('keyup', handleKeyboardEvent);
 
-editorState.canvas.width = editorState.canvas.scrollWidth;
-editorState.canvas.height = editorState.canvas.scrollHeight;
+applyDevicePixelScaling();
 editorState.rev.changes().subscribe(() => {
     editorState.obs_val_draw_state.set(editorState.toSnapshot(undefined));
     drawToolbox(editorState.chorder.toEvent(false));
@@ -522,6 +537,7 @@ for (let anchor of document.getElementById('examples-div').querySelectorAll('a')
         let circuitText = anchor.href.split('#circuit=')[1];
 
         editorState.rev.commit(circuitText);
+        dialogExamples.close();
         return false;
     };
 }

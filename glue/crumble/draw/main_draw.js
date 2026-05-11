@@ -197,6 +197,9 @@ function defensiveDraw(ctx, body) {
  * @param {!StateSnapshot} snap
  */
 function draw(ctx, snap) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
     let circuit = snap.circuit;
 
     let numPropagatedLayers = 0;
@@ -255,7 +258,7 @@ function draw(ctx, snap) {
 
     defensiveDraw(ctx, () => {
         ctx.fillStyle = 'white';
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
         let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY);
 
         // Draw the background polygons.
@@ -390,7 +393,7 @@ function draw(ctx, snap) {
     ctx.save();
     try {
         ctx.strokeStyle = 'black';
-        ctx.translate(Math.floor(ctx.canvas.width / 2), 0);
+        ctx.translate(Math.floor(ctx.canvas.clientWidth / 2), 0);
         for (let k = 0; k < circuit.layers.length; k++) {
             let hasPolygons = false;
             let hasXMarker = false;
@@ -485,6 +488,7 @@ function draw(ctx, snap) {
     } finally {
         ctx.restore();
     }
+    ctx.restore(); // restore devicePixelRatio scale
 }
 
 export {xyToPos, draw, setDefensiveDrawEnabled, OFFSET_X, OFFSET_Y}
