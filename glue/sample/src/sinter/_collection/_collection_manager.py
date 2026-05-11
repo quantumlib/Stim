@@ -227,6 +227,8 @@ class CollectionManager:
 
             shots_left = options.max_shots
             errors_left = options.max_errors
+            if shots_left is None:
+                raise ValueError("Didn't specify --max_shots.")
             if errors_left is None:
                 errors_left = shots_left
             errors_left = min(errors_left, shots_left)

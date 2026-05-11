@@ -177,13 +177,7 @@ def sample_decode(*,
             were executed. The detection fraction is the ratio of these two
             numbers.
         num_shots: The number of sample shots to take from the circuit.
-        decoder: The name of the decoder to use. Allowed values are:
-            "pymatching":
-                Use pymatching min-weight-perfect-match decoder.
-            "internal":
-                Use internal decoder with uncorrelated decoding.
-            "internal_correlated":
-                Use internal decoder with correlated decoding.
+        decoder: The name of the decoder to use. For example, 'pymatching'.
         tmp_dir: An existing directory that is currently empty where temporary
             files can be written as part of performing decoding. If set to
             None, one is created using the tempfile package.
