@@ -4,6 +4,7 @@ import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {beginPathPolygon} from './draw_util.js';
+import {minXY} from "../circuit/layer.js";
 
 /**
  * @param {!number|undefined} x
@@ -341,10 +342,15 @@ function draw(ctx, snap) {
 
         defensiveDraw(ctx, () => {
             ctx.globalAlpha *= 0.5
+            let [minX, minY] = minXY(snap.focusedSet.values());
             for (let [qx, qy] of snap.focusedSet.values()) {
                 let [x, y] = c2dCoordTransform(qx, qy);
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(x - rad * 1.25, y - rad * 1.25, 2.5*rad, 2.5*rad);
+                let w = 1.25;
+                if (qx === minX && qy === minY) {
+                    w = 1.5;
+                }
+                ctx.fillRect(x - rad * w, y - rad * w, 2*w*rad, 2*w*rad);
             }
         });
 

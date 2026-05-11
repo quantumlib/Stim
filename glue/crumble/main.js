@@ -276,6 +276,7 @@ function makeChordHandlers() {
     res.set('v', preview => editorState.applyCoordinateTransform((x, y) => [x, y + 1], preview, false));
     res.set('^', preview => editorState.applyCoordinateTransform((x, y) => [x, y - 1], preview, false));
     res.set('.', preview => editorState.applyCoordinateTransform((x, y) => [x + 0.5, y + 0.5], preview, false));
+    res.set('b', preview => editorState.applyQubitLocationSwap(preview));
 
     /**
      * @param {!Array<!string>} chords

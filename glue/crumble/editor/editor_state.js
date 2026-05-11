@@ -297,6 +297,62 @@ class EditorState {
     }
 
     /**
+     * @param {!boolean} preview
+     */
+    applyQubitLocationSwap(preview) {
+        let [x, y] = xyToPos(this.curMouseX, this.curMouseY);
+        let [minX, minY] = minXY(this.focusedSet.values());
+        let dst = new Map();
+        let src = new Map();
+        if (x !== undefined && minX !== undefined) {
+            let dx = x - minX;
+            let dy = y - minY;
+
+            for (let [x1, y1] of this.focusedSet.values()) {
+                let k1 = `${x1},${y1}`;
+                let x2 = x1 + dx;
+                let y2 = y1 + dy;
+                let k2 = `${x2},${y2}`;
+                dst.set(k1, [x2, y2]);
+                src.set(k2, [x1, y1]);
+            }
+            for (let k of src.keys()) {
+                if (dst.has(k)) {
+                    continue;
+                }
+                let [x, y] = src.get(k);
+                while (true) {
+                    let prev = src.get(`${x},${y}`);
+                    if (prev === undefined) {
+                        break;
+                    }
+                    [x, y] = prev;
+                }
+                dst.set(k, [x, y]);
+            }
+        } else if (this.focusedSet.size === 2) {
+            let [[x1, y1], [x2, y2]] = [...this.focusedSet.values()];
+            console.log(x1, y1, x2, y2);
+            let k1 = `${x1},${y1}`;
+            let k2 = `${x2},${y2}`;
+            dst.set(k1, [x2, y2]);
+            dst.set(k2, [x1, y1]);
+        } else {
+            return;
+        }
+
+        let transform = (x, y) => {
+            let v = dst.get(`${x},${y}`);
+            if (v !== undefined) {
+                return v;
+            }
+            return [x, y];
+        };
+
+        this.applyCoordinateTransform(transform, preview, true);
+    }
+
+    /**
      * @param {!int} steps
      * @param {!boolean} preview
      */
