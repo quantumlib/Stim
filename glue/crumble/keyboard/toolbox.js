@@ -7,7 +7,7 @@ let PITCH = DIAM + 4;
 let PAD = 10.5;
 
 let COLUMNS = ['H', 'S', 'R', 'M', 'MR', 'C', 'W', 'SC', 'MC', 'P', '1-9'];
-let DEF_ROW = [1,    2,   2,   2,  2,     1,   2,   2,    2,    -1, -1, -1];
+let DEF_ROW = [1,    2,   2,   2,  2,     0,   2,   2,    2,    -1, -1, -1];
 
 /**
  * @param {!ChordEvent} ev
