@@ -348,6 +348,7 @@ function draw(ctx, snap) {
                 ctx.fillStyle = 'blue';
                 let w = 1.25;
                 if (qx === minX && qy === minY) {
+                    // The root selected qubit (used for certain UX broadcasting actions) is shown slightly bigger.
                     w = 1.5;
                 }
                 ctx.fillRect(x - rad * w, y - rad * w, 2*w*rad, 2*w*rad);
