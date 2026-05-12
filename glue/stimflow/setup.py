@@ -16,6 +16,8 @@ from setuptools import setup
 
 with open('README.md', encoding='UTF-8') as f:
     long_description = f.read()
+with open('requirements.txt', encoding='UTF-8') as f:
+    requirements = f.read().splitlines()
 
 __version__ = '1.16.dev0'
 
@@ -32,7 +34,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     python_requires='>=3.6.0',
-    data_files=['README.md'],
-    install_requires=['stim'],
+    data_files=['README.md', 'requirements.txt'],
+    install_requires=requirements,
     tests_require=['pytest', 'python3-distutils'],
 )

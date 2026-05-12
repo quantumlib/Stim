@@ -128,9 +128,9 @@
     - [`stimflow.LayerCircuit.with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type`](#stimflow.LayerCircuit.with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type)
     - [`stimflow.LayerCircuit.with_whole_rotation_layers_slid_earlier`](#stimflow.LayerCircuit.with_whole_rotation_layers_slid_earlier)
     - [`stimflow.LayerCircuit.without_empty_layers`](#stimflow.LayerCircuit.without_empty_layers)
-- [`stimflow.LineData`](#stimflow.LineData)
-    - [`stimflow.LineData.__init__`](#stimflow.LineData.__init__)
-    - [`stimflow.LineData.fused`](#stimflow.LineData.fused)
+- [`stimflow.LineDataFor3DModel`](#stimflow.LineDataFor3DModel)
+    - [`stimflow.LineDataFor3DModel.__init__`](#stimflow.LineDataFor3DModel.__init__)
+    - [`stimflow.LineDataFor3DModel.fused`](#stimflow.LineDataFor3DModel.fused)
 - [`stimflow.MeasureLayer`](#stimflow.MeasureLayer)
     - [`stimflow.MeasureLayer.append_into_stim_circuit`](#stimflow.MeasureLayer.append_into_stim_circuit)
     - [`stimflow.MeasureLayer.copy`](#stimflow.MeasureLayer.copy)
@@ -230,8 +230,8 @@
     - [`stimflow.StimCircuitLoom.weave`](#stimflow.StimCircuitLoom.weave)
     - [`stimflow.StimCircuitLoom.weaved_target_rec_from_c0`](#stimflow.StimCircuitLoom.weaved_target_rec_from_c0)
     - [`stimflow.StimCircuitLoom.weaved_target_rec_from_c1`](#stimflow.StimCircuitLoom.weaved_target_rec_from_c1)
-- [`stimflow.TextData`](#stimflow.TextData)
-    - [`stimflow.TextData.__init__`](#stimflow.TextData.__init__)
+- [`stimflow.TextDataFor3DModel`](#stimflow.TextDataFor3DModel)
+    - [`stimflow.TextDataFor3DModel.__init__`](#stimflow.TextDataFor3DModel.__init__)
 - [`stimflow.Tile`](#stimflow.Tile)
     - [`stimflow.Tile.__init__`](#stimflow.Tile.__init__)
     - [`stimflow.Tile.basis`](#stimflow.Tile.basis)
@@ -246,10 +246,10 @@
     - [`stimflow.Tile.with_transformed_bases`](#stimflow.Tile.with_transformed_bases)
     - [`stimflow.Tile.with_transformed_coords`](#stimflow.Tile.with_transformed_coords)
     - [`stimflow.Tile.with_xz_flipped`](#stimflow.Tile.with_xz_flipped)
-- [`stimflow.TriangleData`](#stimflow.TriangleData)
-    - [`stimflow.TriangleData.__init__`](#stimflow.TriangleData.__init__)
-    - [`stimflow.TriangleData.fused`](#stimflow.TriangleData.fused)
-    - [`stimflow.TriangleData.rect`](#stimflow.TriangleData.rect)
+- [`stimflow.TriangleDataFor3DModel`](#stimflow.TriangleDataFor3DModel)
+    - [`stimflow.TriangleDataFor3DModel.__init__`](#stimflow.TriangleDataFor3DModel.__init__)
+    - [`stimflow.TriangleDataFor3DModel.fused`](#stimflow.TriangleDataFor3DModel.fused)
+    - [`stimflow.TriangleDataFor3DModel.rect`](#stimflow.TriangleDataFor3DModel.rect)
 - [`stimflow.Viewable3dModelGLTF`](#stimflow.Viewable3dModelGLTF)
     - [`stimflow.Viewable3dModelGLTF.html_viewer`](#stimflow.Viewable3dModelGLTF.html_viewer)
 - [`stimflow.append_reindexed_content_to_circuit`](#stimflow.append_reindexed_content_to_circuit)
@@ -257,7 +257,6 @@
 - [`stimflow.circuit_to_dem_target_measurement_records_map`](#stimflow.circuit_to_dem_target_measurement_records_map)
 - [`stimflow.circuit_with_xz_flipped`](#stimflow.circuit_with_xz_flipped)
 - [`stimflow.compile_chunks_into_circuit`](#stimflow.compile_chunks_into_circuit)
-- [`stimflow.complex_key`](#stimflow.complex_key)
 - [`stimflow.count_measurement_layers`](#stimflow.count_measurement_layers)
 - [`stimflow.find_d1_error`](#stimflow.find_d1_error)
 - [`stimflow.find_d2_error`](#stimflow.find_d2_error)
@@ -2186,24 +2185,41 @@ def without_empty_layers(
     """
 ```
 
-<a name="stimflow.LineData"></a>
+<a name="stimflow.LineDataFor3DModel"></a>
 ```python
-# stimflow.LineData
+# stimflow.LineDataFor3DModel
 
 # (at top-level in the stimflow module)
-class LineData:
+class LineDataFor3DModel:
+    """Coordinates and colors of lines to draw in a 3d model.
+
+    Example:
+        >>> import stimflow as sf
+        >>> red_square_outline = sf.LineDataFor3DModel(
+        ...     rgba=(1, 0, 0, 1),
+        ...     edge_list=[
+        ...         # A square made of four lines.
+        ...         [(0, 0, 0), (0, 1, 0)],
+        ...         [(0, 1, 0), (1, 1, 0)],
+        ...         [(1, 1, 0), (1, 0, 0)],
+        ...         [(1, 0, 0), (0, 0, 0)],
+        ...     ],
+        ... )
+        >>> model = sf.make_3d_model([red_square_outline])
+        >>> assert model.html_viewer() is not None
+    """
 ```
 
-<a name="stimflow.LineData.__init__"></a>
+<a name="stimflow.LineDataFor3DModel.__init__"></a>
 ```python
-# stimflow.LineData.__init__
+# stimflow.LineDataFor3DModel.__init__
 
-# (in class stimflow.LineData)
+# (in class stimflow.LineDataFor3DModel)
 def __init__(
     self,
     *,
     rgba: tuple[float, float, float, float],
-    edge_list: np.ndarray,
+    edge_list: np.ndarray | Iterable[Sequence[Sequence[float]]],
 ):
     """Lines with associated color information.
 
@@ -2218,14 +2234,14 @@ def __init__(
     """
 ```
 
-<a name="stimflow.LineData.fused"></a>
+<a name="stimflow.LineDataFor3DModel.fused"></a>
 ```python
-# stimflow.LineData.fused
+# stimflow.LineDataFor3DModel.fused
 
-# (in class stimflow.LineData)
+# (in class stimflow.LineDataFor3DModel)
 def fused(
-    data: Iterable[LineData],
-) -> list[LineData]:
+    data: Iterable[LineDataFor3DModel],
+) -> list[LineDataFor3DModel]:
     """Attempts to combine line data instances into fewer instances.
     """
 ```
@@ -3567,26 +3583,42 @@ def weaved_target_rec_from_c1(
     """
 ```
 
-<a name="stimflow.TextData"></a>
+<a name="stimflow.TextDataFor3DModel"></a>
 ```python
-# stimflow.TextData
+# stimflow.TextDataFor3DModel
 
 # (at top-level in the stimflow module)
-class TextData:
+class TextDataFor3DModel:
+    """Details about text to draw in a 3d model.
+
+    The intent is to draw the text as a filled rectangle containing the text.
+    The data specifies the orientation of the rectangle and the text to place inside of it.
+
+    Example:
+        >>> import stimflow as sf
+        >>> hello_banner = sf.TextDataFor3DModel(
+        ...     text='hello',
+        ...     start=(0, 0, 0),
+        ...     forward=(1, 0, 0),
+        ...     up=(0, 1, 0),
+        ... )
+        >>> model = sf.make_3d_model([hello_banner])
+        >>> assert model.html_viewer() is not None
+    """
 ```
 
-<a name="stimflow.TextData.__init__"></a>
+<a name="stimflow.TextDataFor3DModel.__init__"></a>
 ```python
-# stimflow.TextData.__init__
+# stimflow.TextDataFor3DModel.__init__
 
-# (in class stimflow.TextData)
+# (in class stimflow.TextDataFor3DModel)
 def __init__(
     self,
     *,
     text: str,
-    start: Sequence[float],
-    forward: Sequence[float],
-    up: Sequence[float],
+    start: tuple[float, float, float] | Sequence[float],
+    forward: tuple[float, float, float] | Sequence[float],
+    up: tuple[float, float, float] | Sequence[float],
     mirror_backside: bool = True,
 ):
     """Describes a rectangle showing text.
@@ -3597,12 +3629,14 @@ def __init__(
             This is the `bottom_left` of the rectangle, in 3d.
         forward: The 3d direction along which the text grows as the message gets longer.
             This is the `bottom_right - bottom_left` of the rectangle, in 3d.
-            The length of this vector is ignored.
-        up: A 3d direction along which the text is oriented.
+            The length of this vector is ignored; the length of the rectangle is determined
+            automatically from the desired text.
+        up: The 3d direction along which the text is oriented.
             This is the `top_left - bottom_left` of the rectangle, in 3d.
-            The length of this vector is ignored.
+            The length of this vector is ignored; the height of the rectangle is determined
+            automatically from the text.
             Should be perpendicular to `forward`.
-        mirror_backside: Determines whether or not the text on the back of the rectangle
+        mirror_backside: Determines whether the text on the back of the rectangle
             is mirrored (making it readable) or not (keeping the forward direction consistent).
             Defaults to True (readable on both sides).
     """
@@ -3789,24 +3823,39 @@ def with_xz_flipped(
 ) -> Tile:
 ```
 
-<a name="stimflow.TriangleData"></a>
+<a name="stimflow.TriangleDataFor3DModel"></a>
 ```python
-# stimflow.TriangleData
+# stimflow.TriangleDataFor3DModel
 
 # (at top-level in the stimflow module)
-class TriangleData:
+class TriangleDataFor3DModel:
+    """Coordinates and colors of triangles to draw in a 3d model.
+
+    Example:
+        >>> import stimflow as sf
+        >>> red_square = sf.TriangleDataFor3DModel(
+        ...     rgba=(1, 0, 0, 1),
+        ...     triangle_list=[
+        ...         # A square made of two triangles.
+        ...         [(0, 0, 0), (0, 1, 0), (1, 0, 0)],
+        ...         [(1, 1, 0), (0, 1, 0), (1, 0, 0)],
+        ...     ],
+        ... )
+        >>> model = sf.make_3d_model([red_square])
+        >>> assert model.html_viewer() is not None
+    """
 ```
 
-<a name="stimflow.TriangleData.__init__"></a>
+<a name="stimflow.TriangleDataFor3DModel.__init__"></a>
 ```python
-# stimflow.TriangleData.__init__
+# stimflow.TriangleDataFor3DModel.__init__
 
-# (in class stimflow.TriangleData)
+# (in class stimflow.TriangleDataFor3DModel)
 def __init__(
     self,
     *,
     rgba: tuple[float, float, float, float],
-    triangle_list: np.ndarray,
+    triangle_list: np.ndarray | Iterable[Sequence[Sequence[float]]],
 ):
     """Triangles with associated color information.
 
@@ -3818,33 +3867,46 @@ def __init__(
             Axis 0 is the triangle axis (each entry is a triangle).
             Axis 1 is the ABC vertex axis (each entry is a vertex from the triangle).
             Axis 2 is the XYZ coordinate axis (each entry is a coordinate from the vertex).
+
+    Example:
+        >>> import stimflow as sf
+        >>> red_square = sf.TriangleDataFor3DModel(
+        ...     rgba=(1, 0, 0, 1),
+        ...     triangle_list=[
+        ...         # A square made of two triangles.
+        ...         [(0, 0, 0), (0, 1, 0), (1, 0, 0)],
+        ...         [(1, 1, 0), (0, 1, 0), (1, 0, 0)],
+        ...     ],
+        ... )
+        >>> model = sf.make_3d_model([red_square])
+        >>> assert model.html_viewer() is not None
     """
 ```
 
-<a name="stimflow.TriangleData.fused"></a>
+<a name="stimflow.TriangleDataFor3DModel.fused"></a>
 ```python
-# stimflow.TriangleData.fused
+# stimflow.TriangleDataFor3DModel.fused
 
-# (in class stimflow.TriangleData)
+# (in class stimflow.TriangleDataFor3DModel)
 def fused(
-    data: Iterable[TriangleData],
-) -> list[TriangleData]:
+    data: Iterable[TriangleDataFor3DModel],
+) -> list[TriangleDataFor3DModel]:
     """Attempts to combine triangle data instances into fewer instances.
     """
 ```
 
-<a name="stimflow.TriangleData.rect"></a>
+<a name="stimflow.TriangleDataFor3DModel.rect"></a>
 ```python
-# stimflow.TriangleData.rect
+# stimflow.TriangleDataFor3DModel.rect
 
-# (in class stimflow.TriangleData)
+# (in class stimflow.TriangleDataFor3DModel)
 def rect(
     *,
     rgba: tuple[float, float, float, float],
     origin: Iterable[float],
     d1: Iterable[float],
     d2: Iterable[float],
-) -> TriangleData:
+) -> TriangleDataFor3DModel:
     """Creates a pair of triangles forming a rectangle.
 
     Args:
@@ -3986,16 +4048,6 @@ def compile_chunks_into_circuit(
     """
 ```
 
-<a name="stimflow.complex_key"></a>
-```python
-# stimflow.complex_key
-
-# (at top-level in the stimflow module)
-def complex_key(
-    c: complex,
-) -> Any:
-```
-
 <a name="stimflow.count_measurement_layers"></a>
 ```python
 # stimflow.count_measurement_layers
@@ -4080,13 +4132,13 @@ def html_viewer_for_gltf_model(
 
 # (at top-level in the stimflow module)
 def make_3d_model(
-    elements: Iterable[TriangleData | LineData | TextData],
+    elements: Iterable[TriangleDataFor3DModel | LineDataFor3DModel | TextDataFor3DModel],
 ) -> Viewable3dModelGLTF:
-    """Creates a 3d model containing the elements.
+    """Creates a 3d model containing the given elements.
 
     Args:
         elements: A list of objects to include in the model. The list can include triangles
-            (TriangleData), lines (LineData), and text (TextData).
+            (TriangleDataFor3DModel), lines (LineDataFor3DModel), and text (TextDataFor3DModel).
 
     Returns:
         The 3d model, as a `stimflow.gltf_model`.
@@ -4094,6 +4146,52 @@ def make_3d_model(
         `stimflow.gltf_model` inherits from `pygltflib.GLTF2` but adds a `_repr_html_` class
         (creating a 3d viewer in Jupyter notebooks) and a `write_viewer_to` method for
         saving a standalone HTML viewer.
+
+    Example:
+        >>> import stimflow as sf
+        >>> red_square = sf.TriangleDataFor3DModel(
+        ...     rgba=(1, 0, 0, 1),
+        ...     triangle_list=[
+        ...         # A square made of two triangles.
+        ...         [(0, 0, 0), (0, 1, 0), (1, 0, 0)],
+        ...         [(1, 1, 0), (0, 1, 0), (1, 0, 0)],
+        ...     ],
+        ... )
+        >>> blue_square_outline = sf.LineDataFor3DModel(
+        ...     rgba=(0, 0, 1, 1),
+        ...     edge_list=[
+        ...         # A square made of four lines.
+        ...         [(0, 0, 2), (0, 1, 2)],
+        ...         [(0, 1, 2), (1, 1, 2)],
+        ...         [(1, 1, 2), (1, 0, 2)],
+        ...         [(1, 0, 2), (0, 0, 2)],
+        ...     ],
+        ... )
+        >>> hello_banner = sf.TextDataFor3DModel(
+        ...     text='hello',
+        ...     start=(0, 0, 5),
+        ...     forward=(1, 0, 0),
+        ...     up=(0, 1, 0),
+        ... )
+        >>> model: sf.Viewable3dModelGLTF = sf.make_3d_model([
+        ...     red_square,
+        ...     hello_banner,
+        ...     blue_square_outline,
+        ... ])
+        >>> viewer: sf.str_html = model.html_viewer()
+        >>>
+        >>> # This line is commented out so that running doctest doesn't create a file
+        >>> # The 'write_to' method writes a file and also announces the written file:// URL to stderr.
+        >>> # viewer.write_to('tmp.html')
+        >>>
+        >>> print(viewer[:162] + "...")
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+        </head>
+        <body>
+          <a download="model.gltf" id="stim-3d-viewer-download-link" href="data:text/plain;base64,...
     """
 ```
 
@@ -4111,15 +4209,32 @@ def min_max_complex(
 
     Args:
         coords: The complex numbers to place a bounding box around.
-        default: If no elements are included, the bounding box will cover this
-            single value when the collection of complex numbers is empty. If
-            this argument isn't set (or is set to None), an exception will be
-            raised instead when given an empty collection.
+        default: If no elements are included, the returned minimum and maximum
+            will be equal to this value. If this argument isn't set (or is set to None),
+            an exception will be raised instead when given an empty collection. The
+            default value is not used when coords is not empty.
 
     Returns:
-        A pair of complex values (c_min, c_max) where c_min's real component
-        where c_min is the minimum corner of the bounding box and c_max is the
-        maximum corner of the bounding box.
+        A pair of complex values (c_min, c_max) where c_min is the minimum corner of
+        the bounding box and c_max is the maximum corner of the bounding box.
+
+    Raises:
+        ValueError:
+            An empty list of coords was given, and a default value wasn't specified.
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.min_max_complex([1+2j, 2+1j])
+        ((1+1j), (2+2j))
+        >>> sf.min_max_complex([1+2j, 2+1j, 1+3j])
+        ((1+1j), (2+3j))
+        >>> sf.min_max_complex([], default=4+3j)
+        ((4+3j), (4+3j))
+        >>> sf.min_max_complex([1])
+        ((1+0j), (1+0j))
+        >>> sf.min_max_complex([1, 3, 2])
+        ((1+0j), (3+0j))
+        >>> sf.min_max_complex([2j, 1j, 3j])
+        (1j, 3j)
     """
 ```
 
@@ -4131,6 +4246,19 @@ def min_max_complex(
 def sorted_complex(
     values: Iterable[complex],
 ) -> list[complex]:
+    """Sorts complex numbers by real then imaginary coordinate.
+
+    Args:
+        values: The complex numbers to sort.
+
+    Returns:
+        The sorted list.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.sorted_complex([0, 1, 1j, 1 + 1j])
+        [0, 1j, 1, (1+1j)]
+    """
 ```
 
 <a name="stimflow.stim_circuit_html_viewer"></a>
@@ -4387,5 +4515,26 @@ def xor_sorted(
         vals: The items to sort.
         key: An optional key function, mapping the items to keys that determine the
             sorted order. Unequal items with the same key don't cancel.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.xor_sorted([1])
+        [1]
+        >>> sf.xor_sorted([1, 1])
+        []
+        >>> sf.xor_sorted([1, 1, 1])
+        [1]
+        >>> sf.xor_sorted([1, 1, 1, 1])
+        []
+        >>> sf.xor_sorted([3, 1, 2, 1])
+        [2, 3]
+        >>> sf.xor_sorted([3, 1, 2, 1, 3])
+        [2]
+        >>> sf.xor_sorted([5, 4, 3, 2, 1, 4])
+        [1, 2, 3, 5]
+        >>> sf.xor_sorted([*range(10), *range(2, 6)])
+        [0, 1, 6, 7, 8, 9]
+        >>> sf.xor_sorted([61, 91, 83, 72, 61], key=lambda e: e % 10)
+        [91, 72, 83]
     """
 ```

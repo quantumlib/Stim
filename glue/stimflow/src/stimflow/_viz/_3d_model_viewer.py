@@ -25,8 +25,7 @@ def html_viewer_for_gltf_model(model: pygltflib.GLTF2) -> str_html:
     model_data_uri = f"""data:text/plain;base64,{base64.b64encode(model_bytes).decode()}"""
 
     return str_html(
-        r'''
-<!DOCTYPE html>
+        r'''<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />

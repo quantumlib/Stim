@@ -23,7 +23,6 @@ from stimflow._core import (
     append_reindexed_content_to_circuit,
     circuit_to_dem_target_measurement_records_map,
     circuit_with_xz_flipped,
-    complex_key,
     count_measurement_layers,
     Flow,
     gate_counts_for_circuit,
@@ -49,12 +48,12 @@ from stimflow._layers import (
     transpile_to_z_basis_interaction_circuit,
 )
 from stimflow._viz import (
-    LineData,
-    TriangleData,
+    LineDataFor3DModel,
+    TriangleDataFor3DModel,
     Viewable3dModelGLTF,
     html_viewer_for_gltf_model,
     make_3d_model,
     stim_circuit_html_viewer,
     svg,
-    TextData,
+    TextDataFor3DModel,
 )

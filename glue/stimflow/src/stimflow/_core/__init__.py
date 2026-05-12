@@ -9,7 +9,6 @@ from stimflow._core._circuit_util import (
     stim_circuit_with_transformed_moments,
 )
 from stimflow._core._complex_util import (
-    complex_key,
     min_max_complex,
     sorted_complex,
     xor_sorted,

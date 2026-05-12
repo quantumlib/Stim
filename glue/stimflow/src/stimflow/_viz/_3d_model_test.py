@@ -3,17 +3,17 @@ import json
 import numpy as np
 
 import stimflow
-from stimflow._viz._3d_model import TextData
+from stimflow._viz._3d_model import TextDataFor3DModel
 
 
 def test_make_3d_model():
     model = stimflow.make_3d_model(
         [
-            stimflow.TriangleData(
+            stimflow.TriangleDataFor3DModel(
                 rgba=(1, 0, 0, 1),
                 triangle_list=np.array([[[1, 0, 0], [0, 1, 0], [0, 0, 1]]], dtype=np.float32),
             ),
-            stimflow.TriangleData(
+            stimflow.TriangleDataFor3DModel(
                 rgba=(1, 0, 1, 1),
                 triangle_list=np.array([[[1, 1, 0], [0, 1, 0], [0, 0, 1]]], dtype=np.float32),
             ),
@@ -90,11 +90,11 @@ def test_make_3d_model():
 def test_make_3d_model_html_viewer():
     model = stimflow.make_3d_model(
         [
-            stimflow.TriangleData(
+            stimflow.TriangleDataFor3DModel(
                 rgba=(1, 0, 0, 1),
                 triangle_list=np.array([[[1, 0, 0], [0, 1, 0], [0, 0, 1]]], dtype=np.float32),
             ),
-            stimflow.TriangleData(
+            stimflow.TriangleDataFor3DModel(
                 rgba=(1, 0, 1, 1),
                 triangle_list=np.array([[[1, 1, 0], [0, 1, 0], [0, 0, 1]]], dtype=np.float32),
             ),
@@ -108,14 +108,14 @@ def test_make_3d_model_html_viewer():
 def test_3d_text():
     model = stimflow.make_3d_model(
         [
-            stimflow.TriangleData(
+            stimflow.TriangleDataFor3DModel(
                 rgba=(1, 0, 0, 1),
                 triangle_list=np.array([[[0, 0, 0], [1, 0, 0], [0, 1, 0]]], dtype=np.float32),
             ),
-            stimflow.LineData(
+            stimflow.LineDataFor3DModel(
                 rgba=(0, 0, 1, 1), edge_list=np.array([[[0, 0, 0], [1, 1, 1]]], dtype=np.float32)
             ),
-            TextData(text="test", start=[0, 0, 0], forward=(1, 0, 0), up=(0, 1, 0)),
+            TextDataFor3DModel(text="test", start=[0, 0, 0], forward=(1, 0, 0), up=(0, 1, 0)),
         ]
     )
     assert model is not None
