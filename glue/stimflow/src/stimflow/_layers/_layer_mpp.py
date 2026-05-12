@@ -8,11 +8,11 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class MppLayer(Layer):
+class LayerMpp(Layer):
     targets: list[list[stim.GateTarget]] = dataclasses.field(default_factory=list)
 
-    def copy(self) -> MppLayer:
-        return MppLayer(targets=[list(e) for e in self.targets])
+    def copy(self) -> LayerMpp:
+        return LayerMpp(targets=[list(e) for e in self.targets])
 
     def touched(self) -> set[int]:
         return {t.value for mpp in self.targets for t in mpp}

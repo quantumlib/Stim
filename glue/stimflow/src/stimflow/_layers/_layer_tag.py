@@ -8,11 +8,11 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class TagLayer(Layer):
+class LayerTag(Layer):
     circuit: stim.Circuit = dataclasses.field(default_factory=stim.Circuit)
 
-    def copy(self) -> TagLayer:
-        return TagLayer(circuit=self.circuit)
+    def copy(self) -> LayerTag:
+        return LayerTag(circuit=self.circuit)
 
     def touched(self) -> set[int]:  # set of qubit touched by it
         tagged_gate_targets = self.circuit[0].target_groups()[0]

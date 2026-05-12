@@ -12,7 +12,7 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class RotationLayer(Layer):
+class LayerRotation(Layer):
     """A layer of single qubit Clifford rotation gates."""
 
     named_rotations: dict[int, str] = dataclasses.field(default_factory=dict)
@@ -20,12 +20,12 @@ class RotationLayer(Layer):
     def touched(self) -> set[int]:
         return {k for k, v in self.named_rotations.items() if v != "I"}
 
-    def copy(self) -> RotationLayer:
-        return RotationLayer(dict(self.named_rotations))
+    def copy(self) -> LayerRotation:
+        return LayerRotation(dict(self.named_rotations))
 
-    def inverse(self) -> RotationLayer:
+    def inverse(self) -> LayerRotation:
         t = single_qubit_clifford_inverse_table()
-        return RotationLayer({q: t[r] for q, r in self.named_rotations.items()})
+        return LayerRotation({q: t[r] for q, r in self.named_rotations.items()})
 
     def append_into_stim_circuit(self, out: stim.Circuit) -> None:
         gate2targets: dict[str, list[int]] = {}
@@ -64,16 +64,16 @@ class RotationLayer(Layer):
         return not any(self.named_rotations.values())
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        from stimflow._layers._det_obs_annotation_layer import DetObsAnnotationLayer
-        from stimflow._layers._feedback_layer import FeedbackLayer
-        from stimflow._layers._reset_layer import ResetLayer
-        from stimflow._layers._shift_coord_annotation_layer import ShiftCoordAnnotationLayer
+        from stimflow._layers._layer_det_obs_annotation import DetObsAnnotationLayer
+        from stimflow._layers._layer_feedback import LayerFeedback
+        from stimflow._layers._layer_reset import LayerReset
+        from stimflow._layers._layer_shift_coord_annotation import LayerShiftCoordAnnotation
 
-        if isinstance(next_layer, (DetObsAnnotationLayer, ShiftCoordAnnotationLayer)):
+        if isinstance(next_layer, (DetObsAnnotationLayer, LayerShiftCoordAnnotation)):
             return [next_layer, self]
-        if isinstance(next_layer, FeedbackLayer):
+        if isinstance(next_layer, LayerFeedback):
             return [next_layer.before(self), self]
-        if isinstance(next_layer, ResetLayer):
+        if isinstance(next_layer, LayerReset):
             trimmed = self.copy()
             for t in next_layer.targets.keys():
                 trimmed.named_rotations.pop(t, None)
@@ -81,7 +81,7 @@ class RotationLayer(Layer):
                 return [trimmed, next_layer]
             else:
                 return [next_layer]
-        if isinstance(next_layer, RotationLayer):
+        if isinstance(next_layer, LayerRotation):
             result = self.copy()
             for q, r in next_layer.named_rotations.items():
                 result.append_named_rotation(r, q)

@@ -4,14 +4,14 @@ import dataclasses
 
 import stim
 
-from stimflow._layers._det_obs_annotation_layer import DetObsAnnotationLayer
-from stimflow._layers._interact_layer import InteractLayer
+from stimflow._layers._layer_det_obs_annotation import DetObsAnnotationLayer
+from stimflow._layers._layer_interact import LayerInteract
 from stimflow._layers._layer import Layer
-from stimflow._layers._shift_coord_annotation_layer import ShiftCoordAnnotationLayer
+from stimflow._layers._layer_shift_coord_annotation import LayerShiftCoordAnnotation
 
 
 @dataclasses.dataclass
-class SwapLayer(Layer):
+class LayerSwap(Layer):
     """A layer of swap gates."""
 
     targets1: list[int] = dataclasses.field(default_factory=list)
@@ -27,8 +27,8 @@ class SwapLayer(Layer):
             d[b] = a
         return d
 
-    def copy(self) -> SwapLayer:
-        return SwapLayer(targets1=list(self.targets1), targets2=list(self.targets2))
+    def copy(self) -> LayerSwap:
+        return LayerSwap(targets1=list(self.targets1), targets2=list(self.targets2))
 
     def append_into_stim_circuit(self, out: stim.Circuit) -> None:
         pairs = []
@@ -41,20 +41,20 @@ class SwapLayer(Layer):
             out.append("SWAP", pair)
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        if isinstance(next_layer, InteractLayer):
-            from stimflow._layers._interact_swap_layer import InteractSwapLayer
+        if isinstance(next_layer, LayerInteract):
+            from stimflow._layers._layer_interact_swap import LayerInteractSwap
 
             pairs1 = {frozenset([a, b]) for a, b in zip(self.targets1, self.targets2)}
             pairs2 = {frozenset([a, b]) for a, b in zip(next_layer.targets1, next_layer.targets2)}
             if pairs1 == pairs2:
                 i = next_layer.copy()
                 i.targets1, i.targets2 = i.targets2, i.targets1
-                return [InteractSwapLayer(i_layer=i)]
-        if isinstance(next_layer, (ShiftCoordAnnotationLayer, DetObsAnnotationLayer)):
+                return [LayerInteractSwap(i_layer=i)]
+        if isinstance(next_layer, (LayerShiftCoordAnnotation, DetObsAnnotationLayer)):
             return [next_layer, self]
-        if isinstance(next_layer, SwapLayer):
+        if isinstance(next_layer, LayerSwap):
             total_swaps = self.to_swap_dict()
-            leftover_swaps = SwapLayer()
+            leftover_swaps = LayerSwap()
             for a, b in zip(next_layer.targets1, next_layer.targets2):
                 a2 = total_swaps.get(a)
                 b2 = total_swaps.get(b)
@@ -69,7 +69,7 @@ class SwapLayer(Layer):
                     leftover_swaps.targets2.append(b)
             result: list[Layer | None] = []
             if total_swaps:
-                new_layer = SwapLayer()
+                new_layer = LayerSwap()
                 for k, v in total_swaps.items():
                     if k < v:
                         new_layer.targets1.append(k)

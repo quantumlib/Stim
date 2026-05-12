@@ -8,9 +8,9 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class EmptyLayer(Layer):
-    def copy(self) -> EmptyLayer:
-        return EmptyLayer()
+class LayerEmpty(Layer):
+    def copy(self) -> LayerEmpty:
+        return LayerEmpty()
 
     def touched(self) -> set[int]:
         return set()

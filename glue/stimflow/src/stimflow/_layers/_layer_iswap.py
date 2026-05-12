@@ -8,14 +8,14 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class ISwapLayer(Layer):
+class LayerISwap(Layer):
     """A layer of iswap gates."""
 
     targets1: list[int] = dataclasses.field(default_factory=list)
     targets2: list[int] = dataclasses.field(default_factory=list)
 
-    def copy(self) -> ISwapLayer:
-        return ISwapLayer(targets1=list(self.targets1), targets2=list(self.targets2))
+    def copy(self) -> LayerISwap:
+        return LayerISwap(targets1=list(self.targets1), targets2=list(self.targets2))
 
     def touched(self) -> set[int]:
         return set(self.targets1 + self.targets2)

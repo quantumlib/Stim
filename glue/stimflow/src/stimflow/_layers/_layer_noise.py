@@ -8,13 +8,13 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class NoiseLayer(Layer):
+class LayerNoise(Layer):
     """A layer of noise operations."""
 
     circuit: stim.Circuit = dataclasses.field(default_factory=stim.Circuit)
 
-    def copy(self) -> NoiseLayer:
-        return NoiseLayer(circuit=self.circuit.copy())
+    def copy(self) -> LayerNoise:
+        return LayerNoise(circuit=self.circuit.copy())
 
     def touched(self) -> set[int]:
         return {

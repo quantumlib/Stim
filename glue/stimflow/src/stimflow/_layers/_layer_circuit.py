@@ -5,24 +5,24 @@ from typing import Any, cast, Literal, TypeVar
 
 import stim
 
-from stimflow._layers._det_obs_annotation_layer import DetObsAnnotationLayer
-from stimflow._layers._empty_layer import EmptyLayer
-from stimflow._layers._feedback_layer import FeedbackLayer
-from stimflow._layers._interact_layer import InteractLayer
-from stimflow._layers._interact_swap_layer import InteractSwapLayer
-from stimflow._layers._iswap_layer import ISwapLayer
+from stimflow._layers._layer_det_obs_annotation import DetObsAnnotationLayer
+from stimflow._layers._layer_empty import LayerEmpty
+from stimflow._layers._layer_feedback import LayerFeedback
+from stimflow._layers._layer_interact import LayerInteract
+from stimflow._layers._layer_interact_swap import LayerInteractSwap
+from stimflow._layers._layer_iswap import LayerISwap
 from stimflow._layers._layer import Layer
-from stimflow._layers._loop_layer import LoopLayer
-from stimflow._layers._measure_layer import MeasureLayer
-from stimflow._layers._mpp_layer import MppLayer
-from stimflow._layers._noise_layer import NoiseLayer
-from stimflow._layers._qubit_coord_annotation_layer import QubitCoordAnnotationLayer
-from stimflow._layers._reset_layer import ResetLayer
-from stimflow._layers._rotation_layer import RotationLayer
-from stimflow._layers._shift_coord_annotation_layer import ShiftCoordAnnotationLayer
-from stimflow._layers._sqrt_pp_layer import SqrtPPLayer
-from stimflow._layers._swap_layer import SwapLayer
-from stimflow._layers._tag_layer import TagLayer
+from stimflow._layers._layer_loop import LayerLoop
+from stimflow._layers._layer_measure import LayerMeasure
+from stimflow._layers._layer_mpp import LayerMpp
+from stimflow._layers._layer_noise import LayerNoise
+from stimflow._layers._layer_qubit_coord_annotation import LayerQubitCoordAnnotation
+from stimflow._layers._layer_reset import LayerReset
+from stimflow._layers._layer_rotation import LayerRotation
+from stimflow._layers._layer_shift_coord_annotation import LayerShiftCoordAnnotation
+from stimflow._layers._layer_sqrt_pp import LayerSqrtPP
+from stimflow._layers._layer_swap import LayerSwap
+from stimflow._layers._layer_tag import LayerTag
 
 TLayer = TypeVar("TLayer")
 
@@ -31,8 +31,8 @@ TLayer = TypeVar("TLayer")
 class LayerCircuit:
     """A stabilizer circuit represented as a series of typed layers.
 
-    For example, the circuit could be a `ResetLayer`, then a `RotationLayer`,
-    then a few `InteractLayer`s, then a `MeasureLayer`.
+    For example, the circuit could be a `LayerReset`, then a `LayerRotation`,
+    then a few `LayerInteract`s, then a `LayerMeasure`.
     """
 
     layers: list[Layer] = dataclasses.field(default_factory=list)
@@ -55,29 +55,29 @@ class LayerCircuit:
     def _feed(self, kind: type[TLayer]) -> TLayer:
         if not self.layers:
             self.layers.append(cast(Layer, kind()))
-        elif isinstance(self.layers[-1], EmptyLayer):
+        elif isinstance(self.layers[-1], LayerEmpty):
             self.layers[-1] = cast(Layer, kind())
         elif not isinstance(self.layers[-1], kind):
             self.layers.append(cast(Layer, kind()))
         return cast(TLayer, self.layers[-1])
 
     def _feed_reset(self, basis: Literal["X", "Y", "Z"], targets: list[stim.GateTarget]):
-        layer = self._feed(ResetLayer)
+        layer = self._feed(LayerReset)
         for t in targets:
             layer.targets[t.value] = basis
 
     def _feed_tag(self, instruction: stim.CircuitInstruction):
-        layer = self._feed(TagLayer)
+        layer = self._feed(LayerTag)
         layer.circuit.append(instruction)
 
     def _feed_m(self, basis: Literal["X", "Y", "Z"], targets: list[stim.GateTarget]):
-        layer = self._feed(MeasureLayer)
+        layer = self._feed(LayerMeasure)
         for t in targets:
             layer.bases.append(basis)
             layer.targets.append(t.value)
 
     def _feed_mpp(self, targets: list[stim.GateTarget]):
-        layer = self._feed(MppLayer)
+        layer = self._feed(LayerMpp)
         start = 0
         end = 1
         while start < len(targets):
@@ -88,7 +88,7 @@ class LayerCircuit:
             end += 1
 
     def _feed_qubit_coords(self, targets: list[stim.GateTarget], gate_args: list[float]):
-        layer = self._feed(QubitCoordAnnotationLayer)
+        layer = self._feed(LayerQubitCoordAnnotation)
         for target in targets:
             assert target.is_qubit_target
             q = target.value
@@ -97,22 +97,22 @@ class LayerCircuit:
             layer.coords[q] = list(gate_args)
 
     def _feed_shift_coords(self, gate_args: list[float]):
-        self._feed(ShiftCoordAnnotationLayer).offset_by(gate_args)
+        self._feed(LayerShiftCoordAnnotation).offset_by(gate_args)
 
     def _feed_named_rotation_instruction(self, instruction: stim.CircuitInstruction):
-        layer = self._feed(RotationLayer)
+        layer = self._feed(LayerRotation)
         name = instruction.name
         for t in instruction.targets_copy():
             layer.append_named_rotation(name, t.value)
 
     def _feed_swap(self, targets: list[stim.GateTarget]):
-        layer = self._feed(SwapLayer)
+        layer = self._feed(LayerSwap)
         for k in range(0, len(targets), 2):
             layer.targets1.append(targets[k].value)
             layer.targets2.append(targets[k + 1].value)
 
     def _feed_cxswap(self, targets: list[stim.GateTarget]):
-        layer: InteractSwapLayer = self._feed(InteractSwapLayer)
+        layer: LayerInteractSwap = self._feed(LayerInteractSwap)
         for k in range(0, len(targets), 2):
             layer.i_layer.targets1.append(targets[k].value)
             layer.i_layer.targets2.append(targets[k + 1].value)
@@ -120,7 +120,7 @@ class LayerCircuit:
             layer.i_layer.bases2.append("X")
 
     def _feed_swapcx(self, targets: list[stim.GateTarget]):
-        layer: InteractSwapLayer = self._feed(InteractSwapLayer)
+        layer: LayerInteractSwap = self._feed(LayerInteractSwap)
         for k in range(0, len(targets), 2):
             layer.i_layer.targets1.append(targets[k].value)
             layer.i_layer.targets2.append(targets[k + 1].value)
@@ -128,13 +128,13 @@ class LayerCircuit:
             layer.i_layer.bases2.append("Z")
 
     def _feed_iswap(self, targets: list[stim.GateTarget]):
-        layer = self._feed(ISwapLayer)
+        layer = self._feed(LayerISwap)
         for k in range(0, len(targets), 2):
             layer.targets1.append(targets[k].value)
             layer.targets2.append(targets[k + 1].value)
 
     def _feed_sqrt_pp(self, basis: Literal["X", "Y", "Z"], targets: list[stim.GateTarget]):
-        layer = self._feed(SqrtPPLayer)
+        layer = self._feed(LayerSqrtPP)
         for k in range(0, len(targets), 2):
             layer.targets1.append(targets[k].value)
             layer.targets2.append(targets[k + 1].value)
@@ -148,7 +148,7 @@ class LayerCircuit:
     ):
         is_feedback = any(t.is_sweep_bit_target or t.is_measurement_record_target for t in targets)
         if is_feedback:
-            f_layer: FeedbackLayer = self._feed(FeedbackLayer)
+            f_layer: LayerFeedback = self._feed(LayerFeedback)
             for k in range(0, len(targets), 2):
                 c = targets[k]
                 t = targets[k + 1]
@@ -160,7 +160,7 @@ class LayerCircuit:
                 f_layer.controls.append(c)
                 f_layer.targets.append(t.value)
         else:
-            i_layer: InteractLayer = self._feed(InteractLayer)
+            i_layer: LayerInteract = self._feed(LayerInteract)
             for k in range(0, len(targets), 2):
                 i_layer.bases1.append(basis1)
                 i_layer.bases2.append(basis2)
@@ -174,7 +174,7 @@ class LayerCircuit:
             gate_data = stim.gate_data(instruction.name)
             if isinstance(instruction, stim.CircuitRepeatBlock):
                 result.layers.append(
-                    LoopLayer(
+                    LayerLoop(
                         body=LayerCircuit.from_stim_circuit(instruction.body_copy()),
                         repetitions=instruction.repeat_count,
                     )
@@ -248,7 +248,7 @@ class LayerCircuit:
                 result._feed_swapcx(instruction.targets_copy())
 
             elif instruction.name == "TICK":
-                result.layers.append(EmptyLayer())
+                result.layers.append(LayerEmpty())
 
             elif instruction.name == "SQRT_XX" or instruction.name == "SQRT_XX_DAG":
                 result._feed_sqrt_pp("X", instruction.targets_copy())
@@ -263,7 +263,7 @@ class LayerCircuit:
                 or instruction.name == "Z_ERROR"
                 or instruction.name == "DEPOLARIZE2"
             ):
-                result._feed(NoiseLayer).circuit.append(instruction)
+                result._feed(LayerNoise).circuit.append(instruction)
 
             else:
                 raise NotImplementedError(f"{instruction=}")
@@ -281,22 +281,22 @@ class LayerCircuit:
 
     def with_qubit_coords_at_start(self) -> LayerCircuit:
         k = len(self.layers)
-        merged_layer = QubitCoordAnnotationLayer()
+        merged_layer = LayerQubitCoordAnnotation()
         rev_layers: list[Layer] = []
         while k > 0:
             k -= 1
             layer = self.layers[k]
-            if isinstance(layer, QubitCoordAnnotationLayer):
+            if isinstance(layer, LayerQubitCoordAnnotation):
                 intersection = merged_layer.coords.keys() & layer.coords.keys()
                 if intersection:
                     raise ValueError(
                         f"Qubit coords specified twice for qubits {sorted(intersection)}"
                     )
                 merged_layer.coords.update(layer.coords)
-            elif isinstance(layer, ShiftCoordAnnotationLayer):
+            elif isinstance(layer, LayerShiftCoordAnnotation):
                 merged_layer.offset_by(layer.shift)
                 rev_layers.append(layer)
-            elif isinstance(layer, LoopLayer):
+            elif isinstance(layer, LayerLoop):
                 if merged_layer.coords:
                     raise NotImplementedError("Moving qubit coords across a loop.")
                 rev_layers.append(layer)
@@ -328,9 +328,9 @@ class LayerCircuit:
             return end_resets
 
         layer = self.layers[k]
-        if isinstance(layer, ResetLayer):
+        if isinstance(layer, LayerReset):
             return layer.touched()
-        if isinstance(layer, LoopLayer):
+        if isinstance(layer, LayerLoop):
             return layer.body._resets_at_layer(0, end_resets=set())
         return set()
 
@@ -354,11 +354,11 @@ class LayerCircuit:
         new_layers: list[Layer] = [layer.copy() for layer in self.layers]
 
         for k, layer in enumerate(new_layers):
-            if isinstance(layer, LoopLayer):
+            if isinstance(layer, LayerLoop):
                 layer.body = layer.body.with_rotations_before_resets_removed(
                     loop_boundary_resets=self._resets_at_layer(k + 1, end_resets=all_touched)
                 )
-            elif isinstance(layer, RotationLayer):
+            elif isinstance(layer, LayerRotation):
                 drops = []
                 for q, gate in layer.named_rotations.items():
                     if gate != "I":
@@ -388,7 +388,7 @@ class LayerCircuit:
                 if start_layer < 0 or start_layer >= len(sets):
                     return None
                 if (
-                    isinstance(new_layers[start_layer], RotationLayer)
+                    isinstance(new_layers[start_layer], LayerRotation)
                     and not new_layers[start_layer].is_vacuous()
                 ):
                     return start_layer
@@ -399,7 +399,7 @@ class LayerCircuit:
         cur_layer_index = 0
         while cur_layer_index < len(new_layers):
             layer = new_layers[cur_layer_index]
-            if isinstance(layer, RotationLayer):
+            if isinstance(layer, LayerRotation):
                 rewrites = {}
                 for q, r in layer.named_rotations.items():
                     if r == "I":
@@ -416,7 +416,7 @@ class LayerCircuit:
                         if r == "I":
                             continue
                         new_layer_index = rewrites[q]
-                        new_layer: RotationLayer = cast(RotationLayer, new_layers[new_layer_index])
+                        new_layer: LayerRotation = cast(LayerRotation, new_layers[new_layer_index])
                         if new_layer_index > cur_layer_index:
                             new_layer.prepend_named_rotation(r, q)
                         else:
@@ -427,7 +427,7 @@ class LayerCircuit:
                             sets[new_layer_index].remove(q)
                     layer.named_rotations.clear()
                     sets[cur_layer_index].clear()
-            elif isinstance(layer, LoopLayer):
+            elif isinstance(layer, LayerLoop):
                 layer.body = layer.body.with_clearable_rotation_layers_cleared()
             cur_layer_index += 1
         return LayerCircuit([layer for layer in new_layers if not layer.is_vacuous()])
@@ -468,28 +468,28 @@ class LayerCircuit:
         new_layers: list[Layer] = []
         for layer in self.layers:
             handled = False
-            if isinstance(layer, LoopLayer):
+            if isinstance(layer, LayerLoop):
                 loop_layers = list(layer.body.layers)
                 rot_layer_index = len(loop_layers) - 1
                 while rot_layer_index > 0:
                     if isinstance(
                         loop_layers[rot_layer_index],
-                        (DetObsAnnotationLayer, ShiftCoordAnnotationLayer),
+                        (DetObsAnnotationLayer, LayerShiftCoordAnnotation),
                     ):
                         rot_layer_index -= 1
                         continue
-                    if isinstance(loop_layers[rot_layer_index], RotationLayer):
+                    if isinstance(loop_layers[rot_layer_index], LayerRotation):
                         break
                     # Loop didn't end with a rotation layer; give up.
                     rot_layer_index = 0
                 if rot_layer_index > 0:
                     handled = True
-                    popped = cast(RotationLayer, loop_layers.pop(rot_layer_index))
+                    popped = cast(LayerRotation, loop_layers.pop(rot_layer_index))
                     loop_layers.insert(0, popped)
 
                     new_layers.append(popped.inverse())
                     new_layers.append(
-                        LoopLayer(body=LayerCircuit(loop_layers), repetitions=layer.repetitions)
+                        LayerLoop(body=LayerCircuit(loop_layers), repetitions=layer.repetitions)
                     )
                     new_layers.append(popped.copy())
             if not handled:
@@ -505,7 +505,7 @@ class LayerCircuit:
                 if start_layer < 0:
                     return None
                 l = new_layers[start_layer]
-                if isinstance(l, RotationLayer) and qubit in l.named_rotations:
+                if isinstance(l, LayerRotation) and qubit in l.named_rotations:
                     return start_layer
                 if qubit in sets[start_layer]:
                     return None
@@ -514,7 +514,7 @@ class LayerCircuit:
         cur_layer_index = 0
         while cur_layer_index < len(new_layers):
             layer = new_layers[cur_layer_index]
-            if isinstance(layer, RotationLayer):
+            if isinstance(layer, LayerRotation):
                 rewrites = {}
                 for q, gate in layer.named_rotations.items():
                     if gate == "I":
@@ -523,28 +523,28 @@ class LayerCircuit:
                     if v is not None:
                         rewrites[q] = v
                 for q, dst in rewrites.items():
-                    new_layer: RotationLayer = cast(RotationLayer, new_layers[dst])
+                    new_layer: LayerRotation = cast(LayerRotation, new_layers[dst])
                     new_layer.append_named_rotation(layer.named_rotations.pop(q), q)
                     sets[cur_layer_index].remove(q)
                     if new_layer.named_rotations.get(q):
                         sets[dst].add(q)
                     elif q in sets[dst]:
                         sets[dst].remove(q)
-            elif isinstance(layer, LoopLayer):
+            elif isinstance(layer, LayerLoop):
                 layer.body = layer.body.with_rotations_merged_earlier()
             cur_layer_index += 1
         return LayerCircuit([layer for layer in new_layers if not layer.is_vacuous()])
 
     def with_whole_rotation_layers_slid_earlier(self) -> LayerCircuit:
         rev_layers: list[Layer] = []
-        cur_rot_layer: RotationLayer | None = None
+        cur_rot_layer: LayerRotation | None = None
         cur_rot_touched: set[int] | None = None
         for layer in self.layers[::-1]:
             if cur_rot_layer is not None and not layer.touched().isdisjoint(cur_rot_touched):
                 rev_layers.append(cur_rot_layer)
                 cur_rot_layer = None
                 cur_rot_touched = None
-            if isinstance(layer, RotationLayer):
+            if isinstance(layer, LayerRotation):
                 layer = layer.copy()
                 if cur_rot_layer is not None:
                     layer.named_rotations.update(cur_rot_layer.named_rotations)
@@ -586,7 +586,7 @@ class LayerCircuit:
         """
         new_layers: list[Layer] = []
         for layer in self.layers:
-            if isinstance(layer, LoopLayer):
+            if isinstance(layer, LayerLoop):
                 if layer.repetitions == 0:
                     pass
                 elif layer.repetitions == 1:
@@ -597,7 +597,7 @@ class LayerCircuit:
                 else:
                     new_layers.extend(layer.body.layers)
                     new_layers.append(
-                        LoopLayer(body=layer.body.copy(), repetitions=layer.repetitions - 2)
+                        LayerLoop(body=layer.body.copy(), repetitions=layer.repetitions - 2)
                     )
                     new_layers.extend(layer.body.layers)
                     assert layer.repetitions > 2
@@ -613,10 +613,10 @@ class LayerCircuit:
         """
         new_layers: list[Layer] = []
         for layer in self.layers:
-            if isinstance(layer, EmptyLayer):
+            if isinstance(layer, LayerEmpty):
                 pass
-            elif isinstance(layer, LoopLayer):
-                new_layers.append(LoopLayer(layer.body.without_empty_layers(), layer.repetitions))
+            elif isinstance(layer, LayerLoop):
+                new_layers.append(LayerLoop(layer.body.without_empty_layers(), layer.repetitions))
             else:
                 new_layers.append(layer)
         return LayerCircuit(new_layers)
@@ -660,7 +660,7 @@ class LayerCircuit:
         k = 0
         while k < len(new_layers):
             cur_layer = new_layers[k]
-            if isinstance(cur_layer, LoopLayer):
+            if isinstance(cur_layer, LayerLoop):
                 body_layers = cur_layer.body.layers
                 reps = cur_layer.repetitions
                 while k >= len(body_layers) and new_layers[k - len(body_layers) : k] == body_layers:
@@ -673,7 +673,7 @@ class LayerCircuit:
                 ):
                     new_layers[k + 1 : k + 1 + len(body_layers)] = []
                     reps += 1
-                new_layers[k] = LoopLayer(LayerCircuit(body_layers), reps)
+                new_layers[k] = LayerLoop(LayerCircuit(body_layers), reps)
             k += 1
         return LayerCircuit(new_layers)
 
@@ -701,21 +701,21 @@ class LayerCircuit:
         k = 0
         while k < len(self.layers):
             cur_layer = self.layers[k]
-            if isinstance(cur_layer, MeasureLayer):
-                m1: MeasureLayer = cur_layer
+            if isinstance(cur_layer, LayerMeasure):
+                m1: LayerMeasure = cur_layer
                 k2 = k + 1
                 while k2 < len(self.layers) and isinstance(
-                    self.layers[k2], (DetObsAnnotationLayer, ShiftCoordAnnotationLayer)
+                    self.layers[k2], (DetObsAnnotationLayer, LayerShiftCoordAnnotation)
                 ):
                     k2 += 1
-                if k2 < len(self.layers) and isinstance(self.layers[k2], MeasureLayer):
-                    m2: MeasureLayer = cast(MeasureLayer, self.layers[k2])
+                if k2 < len(self.layers) and isinstance(self.layers[k2], LayerMeasure):
+                    m2: LayerMeasure = cast(LayerMeasure, self.layers[k2])
                     if set(m1.targets).isdisjoint(set(m2.targets)):
                         new_layers.append(
-                            MeasureLayer(targets=m1.targets + m2.targets, bases=m1.bases + m2.bases)
+                            LayerMeasure(targets=m1.targets + m2.targets, bases=m1.bases + m2.bases)
                         )
                         for k3 in range(k + 1, k2):
-                            l3: DetObsAnnotationLayer | ShiftCoordAnnotationLayer
+                            l3: DetObsAnnotationLayer | LayerShiftCoordAnnotation
                             l3 = cast(Any, self.layers[k3])
                             new_layers.append(l3.with_rec_targets_shifted_by(-len(m2.targets)))
                         k = k2 + 1
@@ -774,14 +774,14 @@ class LayerCircuit:
 
     def with_irrelevant_tail_layers_removed(self) -> LayerCircuit:
         irrelevant_layer_types_at_end = (
-            ResetLayer,
-            InteractLayer,
-            FeedbackLayer,
-            RotationLayer,
-            SwapLayer,
-            ISwapLayer,
-            InteractSwapLayer,
-            EmptyLayer,
+            LayerReset,
+            LayerInteract,
+            LayerFeedback,
+            LayerRotation,
+            LayerSwap,
+            LayerISwap,
+            LayerInteractSwap,
+            LayerEmpty,
         )
         tail = []
         result = list(self.layers)

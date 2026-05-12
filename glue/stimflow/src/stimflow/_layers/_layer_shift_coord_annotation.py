@@ -9,7 +9,7 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class ShiftCoordAnnotationLayer(Layer):
+class LayerShiftCoordAnnotation(Layer):
     shift: list[float] = dataclasses.field(default_factory=list)
 
     def offset_by(self, args: Iterable[float]):
@@ -19,8 +19,8 @@ class ShiftCoordAnnotationLayer(Layer):
             else:
                 self.shift[k] += arg
 
-    def copy(self) -> ShiftCoordAnnotationLayer:
-        return ShiftCoordAnnotationLayer(shift=self.shift)
+    def copy(self) -> LayerShiftCoordAnnotation:
+        return LayerShiftCoordAnnotation(shift=self.shift)
 
     def touched(self) -> set[int]:
         return set()
@@ -35,11 +35,11 @@ class ShiftCoordAnnotationLayer(Layer):
         out.append("SHIFT_COORDS", [], self.shift)
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        if isinstance(next_layer, ShiftCoordAnnotationLayer):
+        if isinstance(next_layer, LayerShiftCoordAnnotation):
             result = self.copy()
             result.offset_by(next_layer.shift)
             return [result]
         return [self, next_layer]
 
-    def with_rec_targets_shifted_by(self, shift: int) -> ShiftCoordAnnotationLayer:
+    def with_rec_targets_shifted_by(self, shift: int) -> LayerShiftCoordAnnotation:
         return self.copy()

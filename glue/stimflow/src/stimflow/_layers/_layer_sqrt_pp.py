@@ -5,13 +5,13 @@ import dataclasses
 
 import stim
 
-from stimflow._layers._interact_layer import InteractLayer
+from stimflow._layers._layer_interact import LayerInteract
 from stimflow._layers._layer import Layer
-from stimflow._layers._rotation_layer import RotationLayer
+from stimflow._layers._layer_rotation import LayerRotation
 
 
 @dataclasses.dataclass
-class SqrtPPLayer(Layer):
+class LayerSqrtPP(Layer):
     targets1: list[int] = dataclasses.field(default_factory=list)
     targets2: list[int] = dataclasses.field(default_factory=list)
     bases: list[str] = dataclasses.field(default_factory=list)
@@ -19,14 +19,14 @@ class SqrtPPLayer(Layer):
     def touched(self) -> set[int]:
         return set(self.targets1 + self.targets2)
 
-    def copy(self) -> SqrtPPLayer:
-        return SqrtPPLayer(
+    def copy(self) -> LayerSqrtPP:
+        return LayerSqrtPP(
             targets1=list(self.targets1), targets2=list(self.targets2), bases=list(self.bases)
         )
 
     def to_z_basis(self) -> list[Layer]:
-        interact = InteractLayer()
-        rot = RotationLayer()
+        interact = LayerInteract()
+        rot = LayerRotation()
         for q1, q2, b in zip(self.targets1, self.targets2, self.bases):
             interact.targets1.append(q1)
             interact.targets2.append(q2)

@@ -1,4 +1,4 @@
-from stimflow._layers._feedback_layer import _basis_before_rotation
+from stimflow._layers._layer_feedback import _basis_before_rotation
 
 
 def test_basis_before_rotation():

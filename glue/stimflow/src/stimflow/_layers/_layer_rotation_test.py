@@ -6,14 +6,14 @@ import stimflow
 
 
 def test_fuses_rotations():
-    layer = stimflow.RotationLayer()
+    layer = stimflow.LayerRotation()
     layer.append_named_rotation("H", 0)
     layer.append_named_rotation("H_NXZ", 0)
     assert layer.named_rotations[0] == "Y"
 
 
 def test_output():
-    layer = stimflow.RotationLayer()
+    layer = stimflow.LayerRotation()
 
     layer.append_named_rotation("H", 0)
     layer.append_named_rotation("C_XYZ", 0)

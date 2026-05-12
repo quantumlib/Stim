@@ -1,8 +1,8 @@
 import stim
 
-from stimflow._layers._interact_layer import InteractLayer
+from stimflow._layers._layer_interact import LayerInteract
 from stimflow._layers._layer_circuit import LayerCircuit
-from stimflow._layers._reset_layer import ResetLayer
+from stimflow._layers._layer_reset import LayerReset
 
 
 def test_with_squashed_rotations():
@@ -473,8 +473,8 @@ def test_with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer()
     """
             )
         )
-        .with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type(ResetLayer)
-        .with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer(InteractLayer)
+        .with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type(LayerReset)
+        .with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer(LayerInteract)
         == LayerCircuit.from_stim_circuit(
             stim.Circuit(
                 """

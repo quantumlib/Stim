@@ -9,22 +9,22 @@ from stimflow._layers._data import gate_to_unsigned_pauli_change_inverse
 from stimflow._layers._layer import Layer
 
 if TYPE_CHECKING:
-    from stimflow._layers._rotation_layer import RotationLayer
+    from stimflow._layers._rotation_layer import LayerRotation
 
 
 @dataclasses.dataclass
-class FeedbackLayer(Layer):
+class LayerFeedback(Layer):
     controls: list[stim.GateTarget] = dataclasses.field(default_factory=list)
     targets: list[int] = dataclasses.field(default_factory=list)
     bases: list[Literal["X", "Y", "Z"]] = dataclasses.field(default_factory=list)
 
-    def with_rec_targets_shifted_by(self, shift: int) -> FeedbackLayer:
+    def with_rec_targets_shifted_by(self, shift: int) -> LayerFeedback:
         result = self.copy()
         result.controls = [stim.target_rec(t.value + shift) for t in result.controls]
         return result
 
-    def copy(self) -> FeedbackLayer:
-        return FeedbackLayer(
+    def copy(self) -> LayerFeedback:
+        return LayerFeedback(
             targets=list(self.targets), controls=list(self.controls), bases=list(self.bases)
         )
 
@@ -37,8 +37,8 @@ class FeedbackLayer(Layer):
     def implies_eventual_tick_after(self) -> bool:
         return False
 
-    def before(self, layer: RotationLayer) -> FeedbackLayer:
-        return FeedbackLayer(
+    def before(self, layer: LayerRotation) -> LayerFeedback:
+        return LayerFeedback(
             controls=list(self.controls),
             targets=list(self.targets),
             bases=[

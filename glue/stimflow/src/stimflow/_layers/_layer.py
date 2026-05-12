@@ -33,15 +33,15 @@ class Layer:
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
         """Returns an equivalent series of layers that has been optimized.
 
-        For example, if this is a RotationLayer and next_layer is also a RotationLayer,
-        then the result will be a single merged RotationLayer.
+        For example, if this is a LayerRotation and next_layer is also a LayerRotation,
+        then the result will be a single merged LayerRotation.
         """
         return [self, next_layer]
 
     def is_vacuous(self) -> bool:
         """Returns True if the layer doesn't do anything.
 
-        For example, a RotationLayer with no rotations is vacuous.
+        For example, a LayerRotation with no rotations is vacuous.
         """
         return False
 

@@ -12,21 +12,21 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass
-class LoopLayer(Layer):
+class LayerLoop(Layer):
     body: LayerCircuit
     repetitions: int
 
-    def copy(self) -> LoopLayer:
-        return LoopLayer(body=self.body.copy(), repetitions=self.repetitions)
+    def copy(self) -> LayerLoop:
+        return LayerLoop(body=self.body.copy(), repetitions=self.repetitions)
 
     def touched(self) -> set[int]:
         return self.body.touched()
 
     def to_z_basis(self) -> list[Layer]:
-        return [LoopLayer(body=self.body.to_z_basis(), repetitions=self.repetitions)]
+        return [LayerLoop(body=self.body.to_z_basis(), repetitions=self.repetitions)]
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        optimized = LoopLayer(
+        optimized = LayerLoop(
             body=self.body.with_locally_optimized_layers(), repetitions=self.repetitions
         )
         return [optimized, next_layer]

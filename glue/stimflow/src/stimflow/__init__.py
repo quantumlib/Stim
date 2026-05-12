@@ -39,11 +39,11 @@ from stimflow._core import (
     xor_sorted,
 )
 from stimflow._layers import (
-    InteractLayer,
+    LayerInteract,
     LayerCircuit,
-    MeasureLayer,
-    ResetLayer,
-    RotationLayer,
+    LayerMeasure,
+    LayerReset,
+    LayerRotation,
     transpile_to_z_basis_interaction_circuit,
 )
 from stimflow._viz import (

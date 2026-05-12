@@ -5,24 +5,24 @@ import dataclasses
 import stim
 
 from stimflow._layers._layer import Layer
-from stimflow._layers._rotation_layer import RotationLayer
+from stimflow._layers._layer_rotation import LayerRotation
 
 
 @dataclasses.dataclass
-class MeasureLayer(Layer):
+class LayerMeasure(Layer):
     """A layer of single qubit Pauli basis measurement operations."""
 
     targets: list[int] = dataclasses.field(default_factory=list)
     bases: list[str] = dataclasses.field(default_factory=list)
 
-    def copy(self) -> MeasureLayer:
-        return MeasureLayer(targets=list(self.targets), bases=list(self.bases))
+    def copy(self) -> LayerMeasure:
+        return LayerMeasure(targets=list(self.targets), bases=list(self.bases))
 
     def touched(self) -> set[int]:
         return set(self.targets)
 
     def to_z_basis(self) -> list[Layer]:
-        rot = RotationLayer(
+        rot = LayerRotation(
             {
                 q: "I" if b == "Z" else "H" if b == "X" else "H_YZ"
                 for q, b in zip(self.targets, self.bases)
@@ -30,7 +30,7 @@ class MeasureLayer(Layer):
         )
         return [
             rot,
-            MeasureLayer(targets=list(self.targets), bases=["Z"] * len(self.targets)),
+            LayerMeasure(targets=list(self.targets), bases=["Z"] * len(self.targets)),
             rot.copy(),
         ]
 
@@ -39,15 +39,15 @@ class MeasureLayer(Layer):
             out.append("M" + b, [t])
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        if isinstance(next_layer, MeasureLayer) and set(self.targets).isdisjoint(
+        if isinstance(next_layer, LayerMeasure) and set(self.targets).isdisjoint(
             next_layer.targets
         ):
             return [
-                MeasureLayer(
+                LayerMeasure(
                     targets=self.targets + next_layer.targets, bases=self.bases + next_layer.bases
                 )
             ]
-        if isinstance(next_layer, RotationLayer) and set(self.targets).isdisjoint(
+        if isinstance(next_layer, LayerRotation) and set(self.targets).isdisjoint(
             next_layer.named_rotations.keys()
         ):
             return [next_layer, self]

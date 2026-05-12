@@ -9,7 +9,7 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class QubitCoordAnnotationLayer(Layer):
+class LayerQubitCoordAnnotation(Layer):
     coords: dict[int, list[float]] = dataclasses.field(default_factory=dict)
 
     def offset_by(self, args: Iterable[float]):
@@ -20,7 +20,7 @@ class QubitCoordAnnotationLayer(Layer):
                         qubit_coords[index] += offset
 
     def copy(self) -> Layer:
-        return QubitCoordAnnotationLayer(coords=dict(self.coords))
+        return LayerQubitCoordAnnotation(coords=dict(self.coords))
 
     def touched(self) -> set[int]:
         return set()

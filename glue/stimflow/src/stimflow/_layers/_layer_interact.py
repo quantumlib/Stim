@@ -9,7 +9,7 @@ from stimflow._layers._layer import Layer
 
 
 @dataclasses.dataclass
-class InteractLayer(Layer):
+class LayerInteract(Layer):
     """A layer of controlled Pauli gates (like CX, CZ, and XCY)."""
 
     targets1: list[int] = dataclasses.field(default_factory=list)
@@ -20,8 +20,8 @@ class InteractLayer(Layer):
     def touched(self) -> set[int]:
         return set(self.targets1 + self.targets2)
 
-    def copy(self) -> InteractLayer:
-        return InteractLayer(
+    def copy(self) -> LayerInteract:
+        return LayerInteract(
             targets1=list(self.targets1),
             targets2=list(self.targets2),
             bases1=list(self.bases1),
@@ -29,9 +29,9 @@ class InteractLayer(Layer):
         )
 
     def rotate_to_z_layer(self):
-        from stimflow._layers._rotation_layer import RotationLayer
+        from stimflow._layers._layer_rotation import LayerRotation
 
-        result = RotationLayer()
+        result = LayerRotation()
         for targets, bases in [(self.targets1, self.bases1), (self.targets2, self.bases2)]:
             for q, b in zip(targets, bases):
                 if b == "X":
@@ -44,7 +44,7 @@ class InteractLayer(Layer):
         rot = self.rotate_to_z_layer()
         return [
             rot,
-            InteractLayer(
+            LayerInteract(
                 targets1=list(self.targets1),
                 targets2=list(self.targets2),
                 bases1=["Z"] * len(self.targets1),
@@ -70,19 +70,19 @@ class InteractLayer(Layer):
                 out.append(gate, pair)
 
     def locally_optimized(self, next_layer: Layer | None) -> list[Layer | None]:
-        from stimflow._layers._interact_swap_layer import InteractSwapLayer
-        from stimflow._layers._swap_layer import SwapLayer
+        from stimflow._layers._layer_interact_swap import LayerInteractSwap
+        from stimflow._layers._layer_swap import LayerSwap
 
-        if isinstance(next_layer, SwapLayer):
+        if isinstance(next_layer, LayerSwap):
             pairs1 = {frozenset([a, b]) for a, b in zip(self.targets1, self.targets2)}
             pairs2 = {frozenset([a, b]) for a, b in zip(next_layer.targets1, next_layer.targets2)}
             if pairs1 == pairs2:
-                return [InteractSwapLayer(i_layer=self.copy())]
-        elif isinstance(next_layer, InteractLayer) and self.touched().isdisjoint(
+                return [LayerInteractSwap(i_layer=self.copy())]
+        elif isinstance(next_layer, LayerInteract) and self.touched().isdisjoint(
             next_layer.touched()
         ):
             return [
-                InteractLayer(
+                LayerInteract(
                     targets1=self.targets1 + next_layer.targets1,
                     targets2=self.targets2 + next_layer.targets2,
                     bases1=self.bases1 + next_layer.bases1,
