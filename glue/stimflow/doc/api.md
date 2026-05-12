@@ -290,7 +290,26 @@ import numpy as np
 
 # (at top-level in the stimflow module)
 class Chunk:
-    """A circuit chunk with accompanying stabilizer flow assertions.
+    """A circuit with accompanying stabilizer flow assertions.
+
+    This object is intended to be immutable.
+    Some of its fields are editable types, but it is assumed they do not change
+    (e.g. computations may be cached).
+    Don't do things like appending to the circuit of a chunk after the chunk is created.
+
+    Example:
+        >>> import stimflow as sf
+        >>> import stim
+        >>> chunk = sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(1, 2) 0
+        ...         H 0
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=sf.PauliMap({1+2j: "X"}), end=sf.PauliMap({1+2j: "Z"})),
+        ...     ],
+        ... )
+        >>> chunk.verify()
     """
 ```
 
@@ -311,7 +330,7 @@ def __init__(
     q2i: dict[complex, int] | None = None,
     o2i: dict[Any, int] | None = None,
 ):
-    """
+    """Creates a `stimflow.Chunk` with the given values.
 
     Args:
         circuit: The circuit implementing the chunk's functionality.
@@ -330,16 +349,32 @@ def __init__(
             flowing in.
         wants_to_merge_with_next: Defaults to False. When set to True,
             the chunk compiler won't insert a TICK between this chunk
-            and the next chunk.
+            and the next chunk. For example, this is useful when creating a
+            transversal initialization chunk.
         wants_to_merge_with_prev: Defaults to False. When set to True,
             the chunk compiler won't insert a TICK between this chunk
-            and the previous chunk.
+            and the previous chunk. For example, this is useful when creating a
+            transversal measurement chunk.
         q2i: Defaults to None (infer from QUBIT_COORDS instructions in circuit else
             raise an exception). The stimflow-qubit-coordinate-to-stim-qubit-index mapping
             used to translate between stimflow's qubit keys and stim's qubit keys.
         o2i: Defaults to None (raise an exception if observables present in circuit).
             The stimflow-observable-key-to-stim-observable-index mapping used to translate
             between stimflow's observable keys and stim's observable keys.
+
+    Example:
+        >>> import stimflow as sf
+        >>> import stim
+        >>> chunk = sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(1, 2) 0
+        ...         H 0
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=sf.PauliMap({1+2j: "X"}), end=sf.PauliMap({1+2j: "Z"})),
+        ...     ],
+        ... )
+        >>> chunk.verify()
     """
 ```
 
@@ -552,7 +587,42 @@ def verify_distance_is_at_least(
 ):
     """Verifies undetected logical errors require at least the given number of physical errors.
 
-    By default, verifies using a uniform depolarizing circuit noise model.
+    Args:
+        minimum_distance: The minimum distance to verify. Currently this must be at most 3.
+        noise: The noise model to use. Defaults to a uniform depolarizing circuit noise model
+            that allows multiple operations per tick and where two qubit gates apply two qubit
+            depolarizing noise.
+
+    Example:
+        >>> import stimflow as sf
+        >>> import stim
+        >>> lz = sf.PauliMap({0: "Z"}).with_name("LZ")
+        >>> zz01 = sf.PauliMap.from_zs([0, 1])
+        >>> zz12 = sf.PauliMap.from_zs([1, 2])
+        >>> zz23 = sf.PauliMap.from_zs([2, 3])
+        >>> zz34 = sf.PauliMap.from_zs([3, 4])
+        >>> chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(1, 0) 1
+        ...         QUBIT_COORDS(2, 0) 2
+        ...         QUBIT_COORDS(3, 0) 3
+        ...         QUBIT_COORDS(4, 0) 4
+        ...         MZZ 0 1 1 2 2 3 3 4
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=zz01, mids=[0]),
+        ...         sf.Flow(start=zz12, mids=[1]),
+        ...         sf.Flow(start=zz23, mids=[2]),
+        ...         sf.Flow(start=zz34, mids=[3]),
+        ...         sf.Flow(end=zz01, mids=[0]),
+        ...         sf.Flow(end=zz12, mids=[1]),
+        ...         sf.Flow(end=zz23, mids=[2]),
+        ...         sf.Flow(end=zz34, mids=[3]),
+        ...     ],
+        ... )
+        >>> chunk.verify_distance_is_at_least(3)
     """
 ```
 
@@ -2364,6 +2434,7 @@ def uniform_depolarizing(
     p: float,
     *,
     single_qubit_only: bool = False,
+    allow_multiple_uses_of_a_qubit_in_one_tick: bool = False,
 ) -> NoiseModel:
     """Near-standard circuit depolarizing noise.
 
@@ -2375,6 +2446,14 @@ def uniform_depolarizing(
 
     Non-demolition measurement is treated a bit unusually in that it is the result that is
     flipped instead of the input qubit. The input qubit is depolarized.
+
+    Args:
+        single_qubit_only: Defaults to False. When False, two qubit gates apply two
+            qubit depolarizing noise (DEPOLARIZE2). When True, they instead apply single qubit
+            depolarizing noise (DEPOLARIZE1).
+        allow_multiple_uses_of_a_qubit_in_one_tick: Defaults to False. When False, an error will be
+            raised if attempting to add noise to a circuit that operates on a qubit
+            multiple times between TICK operations. When set to True, no error is raised.
     """
 ```
 
