@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 class ChunkReflow:
     """An adapter chunk for attaching chunks describing the same thing in different ways.
 
+    (This class is still a work in progress; it is not simple to use and it
+    doesn't achieve all the desired functionality.)
+
     For example, consider two surface code idle round chunks where one has the logical
     operator on the left side and the other has the logical operator on the right side.
     They can't be directly concatenated, because their flows don't match. But a reflow

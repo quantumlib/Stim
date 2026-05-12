@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import stim
 
-import stimflow
+from stimflow._layers._layer_rotation import LayerRotation
 
 
 def test_fuses_rotations():
-    layer = stimflow.LayerRotation()
+    layer = LayerRotation()
     layer.append_named_rotation("H", 0)
     layer.append_named_rotation("H_NXZ", 0)
     assert layer.named_rotations[0] == "Y"
 
 
 def test_output():
-    layer = stimflow.LayerRotation()
+    layer = LayerRotation()
 
     layer.append_named_rotation("H", 0)
     layer.append_named_rotation("C_XYZ", 0)

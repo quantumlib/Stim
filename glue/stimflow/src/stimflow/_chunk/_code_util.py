@@ -14,46 +14,6 @@ if TYPE_CHECKING:
     from stimflow._chunk._chunk_reflow import ChunkReflow
 
 
-def circuit_to_cycle_code_slices(circuit: stim.Circuit) -> dict[int, StabilizerCode]:
-    from stimflow._chunk._patch import Patch
-    from stimflow._chunk._stabilizer_code import StabilizerCode
-
-    t = 0
-    ticks = set()
-    for inst in circuit.flattened():
-        if inst.name == "TICK":
-            t += 1
-        elif inst.name in ["R", "RX"]:
-            if t - 1 not in ticks and t - 2 not in ticks:
-                ticks.add(max(t - 1, 0))
-        elif inst.name in ["M", "MX"]:
-            ticks.add(t)
-
-    regions = circuit.detecting_regions(ticks=ticks)
-    layers: dict[int, list[tuple[stim.DemTarget, stim.PauliString]]] = collections.defaultdict(list)
-    for dem_target, tick2paulis in regions.items():
-        for tick, pauli_string in tick2paulis.items():
-            layers[tick].append((dem_target, pauli_string))
-
-    i2q = {k: r + i * 1j for k, (r, i) in circuit.get_final_qubit_coordinates().items()}
-
-    codes = {}
-    for tick, layer in sorted(layers.items()):
-        obs = []
-        tiles = []
-        for dem_target, pauli_string in layer:
-            pauli_map = PauliMap(
-                {i2q[q]: "_XYZ"[pauli_string[q]] for q in pauli_string.pauli_indices()}
-            )
-            if dem_target.is_relative_detector_id():
-                tiles.append(pauli_map.to_tile().with_edits(flags={str(dem_target.val)}))
-            else:
-                obs.append(pauli_map)
-        codes[tick] = StabilizerCode(stabilizers=Patch(tiles), logicals=obs)
-
-    return codes
-
-
 def find_d1_error(
     obj: stim.Circuit | stim.DetectorErrorModel,
 ) -> stim.ExplainedError | stim.DemInstruction | None:

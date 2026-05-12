@@ -335,7 +335,11 @@ def test_compile_postselected_chunks():
         flows=[stimflow.Flow(center=0, start=stimflow.PauliMap({0: "Z"}), mids=[0])],
     )
 
-    assert stimflow.compile_chunks_into_circuit([chunk1, chunk2, chunk3]).flattened() == stim.Circuit(
+    compiler = stimflow.ChunkCompiler()
+    compiler.append(chunk1)
+    compiler.append(chunk2)
+    compiler.append(chunk3)
+    assert compiler.finish_circuit().flattened() == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
         R 0
@@ -348,16 +352,13 @@ def test_compile_postselected_chunks():
         """
     )
 
-    assert stimflow.compile_chunks_into_circuit(
-        [
-            chunk1.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk1.flows]),
-            chunk2,
-            chunk3,
-        ],
-        metadata_func=lambda flow: stimflow.FlowMetadata(
-            extra_coords=[999] if "postselect" in flow.flags else []
-        ),
-    ).flattened() == stim.Circuit(
+    compiler = stimflow.ChunkCompiler(metadata_func=lambda flow: stimflow.FlowMetadata(
+        extra_coords=[999] if "postselect" in flow.flags else []
+    ))
+    compiler.append(chunk1.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk1.flows]))
+    compiler.append(chunk2)
+    compiler.append(chunk3)
+    assert compiler.finish_circuit().flattened() == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
             R 0
@@ -370,16 +371,13 @@ def test_compile_postselected_chunks():
             """
     )
 
-    assert stimflow.compile_chunks_into_circuit(
-        [
-            chunk1,
-            chunk2.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk2.flows]),
-            chunk3,
-        ],
-        metadata_func=lambda flow: stimflow.FlowMetadata(
-            extra_coords=[999] if "postselect" in flow.flags else []
-        ),
-    ).flattened() == stim.Circuit(
+    compiler = stimflow.ChunkCompiler(metadata_func=lambda flow: stimflow.FlowMetadata(
+        extra_coords=[999] if "postselect" in flow.flags else []
+    ))
+    compiler.append(chunk1)
+    compiler.append(chunk2.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk2.flows]))
+    compiler.append(chunk3)
+    assert compiler.finish_circuit().flattened() == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
         R 0
@@ -392,16 +390,13 @@ def test_compile_postselected_chunks():
     """
     )
 
-    assert stimflow.compile_chunks_into_circuit(
-        [
-            chunk1,
-            chunk2,
-            chunk3.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk3.flows]),
-        ],
-        metadata_func=lambda flow: stimflow.FlowMetadata(
-            extra_coords=[999] if "postselect" in flow.flags else []
-        ),
-    ).flattened() == stim.Circuit(
+    compiler = stimflow.ChunkCompiler(metadata_func=lambda flow: stimflow.FlowMetadata(
+        extra_coords=[999] if "postselect" in flow.flags else []
+    ))
+    compiler.append(chunk1)
+    compiler.append(chunk2)
+    compiler.append(chunk3.with_edits(flows=[f.with_edits(flags={"postselect"}) for f in chunk3.flows]))
+    assert compiler.finish_circuit().flattened() == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
         R 0
@@ -414,18 +409,15 @@ def test_compile_postselected_chunks():
     """
     )
 
-    assert stimflow.compile_chunks_into_circuit(
-        [
-            chunk1,
-            chunk2.with_edits(
-                flows=[f.with_edits(flags={"postselect"}) if f.start else f for f in chunk2.flows]
-            ),
-            chunk3,
-        ],
-        metadata_func=lambda flow: stimflow.FlowMetadata(
-            extra_coords=[999] if "postselect" in flow.flags else []
-        ),
-    ).flattened() == stim.Circuit(
+    compiler = stimflow.ChunkCompiler(metadata_func=lambda flow: stimflow.FlowMetadata(
+        extra_coords=[999] if "postselect" in flow.flags else []
+    ))
+    compiler.append(chunk1)
+    compiler.append(chunk2.with_edits(
+        flows=[f.with_edits(flags={"postselect"}) if f.start else f for f in chunk2.flows]
+    ))
+    compiler.append(chunk3)
+    assert compiler.finish_circuit().flattened() == stim.Circuit(
         """
             QUBIT_COORDS(0, 0) 0
             R 0

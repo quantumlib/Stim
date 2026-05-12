@@ -16,10 +16,77 @@ _SWAP_CONJUGATED_MAP = {"XCZ": "CX", "YCZ": "CY", "YCX": "XCY", "SWAPCX": "CXSWA
 
 
 class ChunkBuilder:
-    """Helper class for building stim circuits.
+    """A helper class for building chunks.
 
-    Handles qubit indexing (complex -> int).
-    Handles measurement tracking (naming results and referring to them by name).
+    This class takes care of details like converting qubit coordinates into qubit indices,
+    storing and retrieving measurement indices, and accumulating flow data.
+
+    Example:
+        >>> import stimflow as sf
+
+        >>> # Build a repetition code idling chunk.
+        >>> d = 5
+        >>> data_qubits = range(d)
+        >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+        >>> builder = sf.ChunkBuilder()
+        >>> builder.append("R", measure_qubits)
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m-0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m+0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("M", measure_qubits)
+        >>> for m in measure_qubits:
+        ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
+        ...     builder.add_flow(start=stabilizer, ms=[m])
+        ...     builder.add_flow(end=stabilizer, ms=[m])
+        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_name("LZ")
+        >>> builder.add_flow(start=obs, end=obs)
+        >>> chunk = builder.finish_chunk()
+
+        >>> chunk.verify()
+        >>> print(chunk.to_closed_circuit())
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(0.5, 0) 1
+        QUBIT_COORDS(1, 0) 2
+        QUBIT_COORDS(1.5, 0) 3
+        QUBIT_COORDS(2, 0) 4
+        QUBIT_COORDS(2.5, 0) 5
+        QUBIT_COORDS(3, 0) 6
+        QUBIT_COORDS(3.5, 0) 7
+        QUBIT_COORDS(4, 0) 8
+        QUBIT_COORDS(4.5, 0) 9
+        QUBIT_COORDS(5, 0) 10
+        OBSERVABLE_INCLUDE(0) Z0
+        TICK
+        MPP Z0*Z2 Z4*Z6 Z8*Z10
+        TICK
+        MPP Z2*Z4 Z6*Z8
+        TICK
+        R 9 7 5 3 1
+        TICK
+        CX 8 9 6 7 4 5 2 3 0 1
+        TICK
+        CX 8 7 6 5 4 3 2 1 10 9
+        TICK
+        M 9 7 5 3 1
+        DETECTOR(4.5, 0, 0) rec[-8] rec[-5]
+        DETECTOR(3.5, 0, 0) rec[-6] rec[-4]
+        DETECTOR(2.5, 0, 0) rec[-9] rec[-3]
+        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
+        DETECTOR(0.5, 0, 0) rec[-10] rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+        MPP Z0*Z2 Z4*Z6 Z8*Z10
+        TICK
+        MPP Z2*Z4 Z6*Z8
+        DETECTOR(0.5, 0, 0) rec[-6] rec[-5]
+        DETECTOR(2.5, 0, 0) rec[-8] rec[-4]
+        DETECTOR(4.5, 0, 0) rec[-10] rec[-3]
+        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
+        DETECTOR(3.5, 0, 0) rec[-9] rec[-1]
+        TICK
+        OBSERVABLE_INCLUDE(0) Z0
     """
 
     def __init__(
@@ -31,6 +98,11 @@ class ChunkBuilder:
         Args:
             allowed_qubits: Defaults to None (everything allowed). Specifies the qubit positions
                 that the circuit is permitted to contain.
+
+        >>> import stimflow as sf
+        >>> data_qubits = range(5)
+        >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+        >>> builder = sf.ChunkBuilder(allowed_qubits=[*data_qubits, *measure_qubits])
         """
         self.allowed_qubits: set[complex] | None = None if allowed_qubits is None else set(allowed_qubits)
         self._num_measurements: int = 0

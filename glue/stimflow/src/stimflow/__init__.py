@@ -7,8 +7,6 @@ from stimflow._chunk import (
     ChunkInterface,
     ChunkLoop,
     ChunkReflow,
-    circuit_to_cycle_code_slices,
-    compile_chunks_into_circuit,
     find_d1_error,
     find_d2_error,
     FlowMetadata,
@@ -39,11 +37,7 @@ from stimflow._core import (
     xor_sorted,
 )
 from stimflow._layers import (
-    LayerInteract,
     LayerCircuit,
-    LayerMeasure,
-    LayerReset,
-    LayerRotation,
     transpile_to_z_basis_interaction_circuit,
 )
 from stimflow._viz import (

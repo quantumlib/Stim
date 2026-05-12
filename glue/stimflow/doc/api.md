@@ -119,34 +119,6 @@
     - [`stimflow.LayerCircuit.with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type`](#stimflow.LayerCircuit.with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type)
     - [`stimflow.LayerCircuit.with_whole_rotation_layers_slid_earlier`](#stimflow.LayerCircuit.with_whole_rotation_layers_slid_earlier)
     - [`stimflow.LayerCircuit.without_empty_layers`](#stimflow.LayerCircuit.without_empty_layers)
-- [`stimflow.LayerInteract`](#stimflow.LayerInteract)
-    - [`stimflow.LayerInteract.append_into_stim_circuit`](#stimflow.LayerInteract.append_into_stim_circuit)
-    - [`stimflow.LayerInteract.copy`](#stimflow.LayerInteract.copy)
-    - [`stimflow.LayerInteract.locally_optimized`](#stimflow.LayerInteract.locally_optimized)
-    - [`stimflow.LayerInteract.rotate_to_z_layer`](#stimflow.LayerInteract.rotate_to_z_layer)
-    - [`stimflow.LayerInteract.to_z_basis`](#stimflow.LayerInteract.to_z_basis)
-    - [`stimflow.LayerInteract.touched`](#stimflow.LayerInteract.touched)
-- [`stimflow.LayerMeasure`](#stimflow.LayerMeasure)
-    - [`stimflow.LayerMeasure.append_into_stim_circuit`](#stimflow.LayerMeasure.append_into_stim_circuit)
-    - [`stimflow.LayerMeasure.copy`](#stimflow.LayerMeasure.copy)
-    - [`stimflow.LayerMeasure.locally_optimized`](#stimflow.LayerMeasure.locally_optimized)
-    - [`stimflow.LayerMeasure.to_z_basis`](#stimflow.LayerMeasure.to_z_basis)
-    - [`stimflow.LayerMeasure.touched`](#stimflow.LayerMeasure.touched)
-- [`stimflow.LayerReset`](#stimflow.LayerReset)
-    - [`stimflow.LayerReset.append_into_stim_circuit`](#stimflow.LayerReset.append_into_stim_circuit)
-    - [`stimflow.LayerReset.copy`](#stimflow.LayerReset.copy)
-    - [`stimflow.LayerReset.locally_optimized`](#stimflow.LayerReset.locally_optimized)
-    - [`stimflow.LayerReset.to_z_basis`](#stimflow.LayerReset.to_z_basis)
-    - [`stimflow.LayerReset.touched`](#stimflow.LayerReset.touched)
-- [`stimflow.LayerRotation`](#stimflow.LayerRotation)
-    - [`stimflow.LayerRotation.append_into_stim_circuit`](#stimflow.LayerRotation.append_into_stim_circuit)
-    - [`stimflow.LayerRotation.append_named_rotation`](#stimflow.LayerRotation.append_named_rotation)
-    - [`stimflow.LayerRotation.copy`](#stimflow.LayerRotation.copy)
-    - [`stimflow.LayerRotation.inverse`](#stimflow.LayerRotation.inverse)
-    - [`stimflow.LayerRotation.is_vacuous`](#stimflow.LayerRotation.is_vacuous)
-    - [`stimflow.LayerRotation.locally_optimized`](#stimflow.LayerRotation.locally_optimized)
-    - [`stimflow.LayerRotation.prepend_named_rotation`](#stimflow.LayerRotation.prepend_named_rotation)
-    - [`stimflow.LayerRotation.touched`](#stimflow.LayerRotation.touched)
 - [`stimflow.LineDataFor3DModel`](#stimflow.LineDataFor3DModel)
     - [`stimflow.LineDataFor3DModel.__init__`](#stimflow.LineDataFor3DModel.__init__)
     - [`stimflow.LineDataFor3DModel.fused`](#stimflow.LineDataFor3DModel.fused)
@@ -250,10 +222,8 @@
 - [`stimflow.Viewable3dModelGLTF`](#stimflow.Viewable3dModelGLTF)
     - [`stimflow.Viewable3dModelGLTF.html_viewer`](#stimflow.Viewable3dModelGLTF.html_viewer)
 - [`stimflow.append_reindexed_content_to_circuit`](#stimflow.append_reindexed_content_to_circuit)
-- [`stimflow.circuit_to_cycle_code_slices`](#stimflow.circuit_to_cycle_code_slices)
 - [`stimflow.circuit_to_dem_target_measurement_records_map`](#stimflow.circuit_to_dem_target_measurement_records_map)
 - [`stimflow.circuit_with_xz_flipped`](#stimflow.circuit_with_xz_flipped)
-- [`stimflow.compile_chunks_into_circuit`](#stimflow.compile_chunks_into_circuit)
 - [`stimflow.count_measurement_layers`](#stimflow.count_measurement_layers)
 - [`stimflow.find_d1_error`](#stimflow.find_d1_error)
 - [`stimflow.find_d2_error`](#stimflow.find_d2_error)
@@ -703,10 +673,77 @@ def with_xz_flipped(
 
 # (at top-level in the stimflow module)
 class ChunkBuilder:
-    """Helper class for building stim circuits.
+    """A helper class for building chunks.
 
-    Handles qubit indexing (complex -> int).
-    Handles measurement tracking (naming results and referring to them by name).
+    This class takes care of details like converting qubit coordinates into qubit indices,
+    storing and retrieving measurement indices, and accumulating flow data.
+
+    Example:
+        >>> import stimflow as sf
+
+        >>> # Build a repetition code idling chunk.
+        >>> d = 5
+        >>> data_qubits = range(d)
+        >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+        >>> builder = sf.ChunkBuilder()
+        >>> builder.append("R", measure_qubits)
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m-0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m+0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("M", measure_qubits)
+        >>> for m in measure_qubits:
+        ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
+        ...     builder.add_flow(start=stabilizer, ms=[m])
+        ...     builder.add_flow(end=stabilizer, ms=[m])
+        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_name("LZ")
+        >>> builder.add_flow(start=obs, end=obs)
+        >>> chunk = builder.finish_chunk()
+
+        >>> chunk.verify()
+        >>> print(chunk.to_closed_circuit())
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(0.5, 0) 1
+        QUBIT_COORDS(1, 0) 2
+        QUBIT_COORDS(1.5, 0) 3
+        QUBIT_COORDS(2, 0) 4
+        QUBIT_COORDS(2.5, 0) 5
+        QUBIT_COORDS(3, 0) 6
+        QUBIT_COORDS(3.5, 0) 7
+        QUBIT_COORDS(4, 0) 8
+        QUBIT_COORDS(4.5, 0) 9
+        QUBIT_COORDS(5, 0) 10
+        OBSERVABLE_INCLUDE(0) Z0
+        TICK
+        MPP Z0*Z2 Z4*Z6 Z8*Z10
+        TICK
+        MPP Z2*Z4 Z6*Z8
+        TICK
+        R 9 7 5 3 1
+        TICK
+        CX 8 9 6 7 4 5 2 3 0 1
+        TICK
+        CX 8 7 6 5 4 3 2 1 10 9
+        TICK
+        M 9 7 5 3 1
+        DETECTOR(4.5, 0, 0) rec[-8] rec[-5]
+        DETECTOR(3.5, 0, 0) rec[-6] rec[-4]
+        DETECTOR(2.5, 0, 0) rec[-9] rec[-3]
+        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
+        DETECTOR(0.5, 0, 0) rec[-10] rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+        MPP Z0*Z2 Z4*Z6 Z8*Z10
+        TICK
+        MPP Z2*Z4 Z6*Z8
+        DETECTOR(0.5, 0, 0) rec[-6] rec[-5]
+        DETECTOR(2.5, 0, 0) rec[-8] rec[-4]
+        DETECTOR(4.5, 0, 0) rec[-10] rec[-3]
+        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
+        DETECTOR(3.5, 0, 0) rec[-9] rec[-1]
+        TICK
+        OBSERVABLE_INCLUDE(0) Z0
     """
 ```
 
@@ -724,6 +761,11 @@ def __init__(
     Args:
         allowed_qubits: Defaults to None (everything allowed). Specifies the qubit positions
             that the circuit is permitted to contain.
+
+    >>> import stimflow as sf
+    >>> data_qubits = range(5)
+    >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+    >>> builder = sf.ChunkBuilder(allowed_qubits=[*data_qubits, *measure_qubits])
     """
 ```
 
@@ -1494,6 +1536,9 @@ def with_repetitions(
 class ChunkReflow:
     """An adapter chunk for attaching chunks describing the same thing in different ways.
 
+    (This class is still a work in progress; it is not simple to use and it
+    doesn't achieve all the desired functionality.)
+
     For example, consider two surface code idle round chunks where one has the logical
     operator on the left side and the other has the logical operator on the right side.
     They can't be directly concatenated, because their flows don't match. But a reflow
@@ -2142,310 +2187,6 @@ def without_empty_layers(
     Empty layers are sometimes created as a byproduct of certain optimizations, or may have been
     present in the original circuit. Usually they are unwanted, and this method removes them.
     """
-```
-
-<a name="stimflow.LayerInteract"></a>
-```python
-# stimflow.LayerInteract
-
-# (at top-level in the stimflow module)
-@dataclasses.dataclass
-class LayerInteract:
-    """A layer of controlled Pauli gates (like CX, CZ, and XCY).
-    """
-    targets1: list[int]
-    targets2: list[int]
-    bases1: list[str]
-    bases2: list[str]
-```
-
-<a name="stimflow.LayerInteract.append_into_stim_circuit"></a>
-```python
-# stimflow.LayerInteract.append_into_stim_circuit
-
-# (in class stimflow.LayerInteract)
-def append_into_stim_circuit(
-    self,
-    out: stim.Circuit,
-) -> None:
-```
-
-<a name="stimflow.LayerInteract.copy"></a>
-```python
-# stimflow.LayerInteract.copy
-
-# (in class stimflow.LayerInteract)
-def copy(
-    self,
-) -> LayerInteract:
-```
-
-<a name="stimflow.LayerInteract.locally_optimized"></a>
-```python
-# stimflow.LayerInteract.locally_optimized
-
-# (in class stimflow.LayerInteract)
-def locally_optimized(
-    self,
-    next_layer: Layer | None,
-) -> list[Layer | None]:
-```
-
-<a name="stimflow.LayerInteract.rotate_to_z_layer"></a>
-```python
-# stimflow.LayerInteract.rotate_to_z_layer
-
-# (in class stimflow.LayerInteract)
-def rotate_to_z_layer(
-    self,
-):
-```
-
-<a name="stimflow.LayerInteract.to_z_basis"></a>
-```python
-# stimflow.LayerInteract.to_z_basis
-
-# (in class stimflow.LayerInteract)
-def to_z_basis(
-    self,
-) -> list[Layer]:
-```
-
-<a name="stimflow.LayerInteract.touched"></a>
-```python
-# stimflow.LayerInteract.touched
-
-# (in class stimflow.LayerInteract)
-def touched(
-    self,
-) -> set[int]:
-```
-
-<a name="stimflow.LayerMeasure"></a>
-```python
-# stimflow.LayerMeasure
-
-# (at top-level in the stimflow module)
-@dataclasses.dataclass
-class LayerMeasure:
-    """A layer of single qubit Pauli basis measurement operations.
-    """
-    targets: list[int]
-    bases: list[str]
-```
-
-<a name="stimflow.LayerMeasure.append_into_stim_circuit"></a>
-```python
-# stimflow.LayerMeasure.append_into_stim_circuit
-
-# (in class stimflow.LayerMeasure)
-def append_into_stim_circuit(
-    self,
-    out: stim.Circuit,
-) -> None:
-```
-
-<a name="stimflow.LayerMeasure.copy"></a>
-```python
-# stimflow.LayerMeasure.copy
-
-# (in class stimflow.LayerMeasure)
-def copy(
-    self,
-) -> LayerMeasure:
-```
-
-<a name="stimflow.LayerMeasure.locally_optimized"></a>
-```python
-# stimflow.LayerMeasure.locally_optimized
-
-# (in class stimflow.LayerMeasure)
-def locally_optimized(
-    self,
-    next_layer: Layer | None,
-) -> list[Layer | None]:
-```
-
-<a name="stimflow.LayerMeasure.to_z_basis"></a>
-```python
-# stimflow.LayerMeasure.to_z_basis
-
-# (in class stimflow.LayerMeasure)
-def to_z_basis(
-    self,
-) -> list[Layer]:
-```
-
-<a name="stimflow.LayerMeasure.touched"></a>
-```python
-# stimflow.LayerMeasure.touched
-
-# (in class stimflow.LayerMeasure)
-def touched(
-    self,
-) -> set[int]:
-```
-
-<a name="stimflow.LayerReset"></a>
-```python
-# stimflow.LayerReset
-
-# (at top-level in the stimflow module)
-@dataclasses.dataclass
-class LayerReset:
-    """A layer of reset gates.
-    """
-    targets: dict[int, Literal['X', 'Y', 'Z']]
-```
-
-<a name="stimflow.LayerReset.append_into_stim_circuit"></a>
-```python
-# stimflow.LayerReset.append_into_stim_circuit
-
-# (in class stimflow.LayerReset)
-def append_into_stim_circuit(
-    self,
-    out: stim.Circuit,
-) -> None:
-```
-
-<a name="stimflow.LayerReset.copy"></a>
-```python
-# stimflow.LayerReset.copy
-
-# (in class stimflow.LayerReset)
-def copy(
-    self,
-) -> LayerReset:
-```
-
-<a name="stimflow.LayerReset.locally_optimized"></a>
-```python
-# stimflow.LayerReset.locally_optimized
-
-# (in class stimflow.LayerReset)
-def locally_optimized(
-    self,
-    next_layer: Layer | None,
-) -> list[Layer | None]:
-```
-
-<a name="stimflow.LayerReset.to_z_basis"></a>
-```python
-# stimflow.LayerReset.to_z_basis
-
-# (in class stimflow.LayerReset)
-def to_z_basis(
-    self,
-) -> list[Layer]:
-```
-
-<a name="stimflow.LayerReset.touched"></a>
-```python
-# stimflow.LayerReset.touched
-
-# (in class stimflow.LayerReset)
-def touched(
-    self,
-) -> set[int]:
-```
-
-<a name="stimflow.LayerRotation"></a>
-```python
-# stimflow.LayerRotation
-
-# (at top-level in the stimflow module)
-@dataclasses.dataclass
-class LayerRotation:
-    """A layer of single qubit Clifford rotation gates.
-    """
-    named_rotations: dict[int, str]
-```
-
-<a name="stimflow.LayerRotation.append_into_stim_circuit"></a>
-```python
-# stimflow.LayerRotation.append_into_stim_circuit
-
-# (in class stimflow.LayerRotation)
-def append_into_stim_circuit(
-    self,
-    out: stim.Circuit,
-) -> None:
-```
-
-<a name="stimflow.LayerRotation.append_named_rotation"></a>
-```python
-# stimflow.LayerRotation.append_named_rotation
-
-# (in class stimflow.LayerRotation)
-def append_named_rotation(
-    self,
-    name: str,
-    target: int,
-):
-```
-
-<a name="stimflow.LayerRotation.copy"></a>
-```python
-# stimflow.LayerRotation.copy
-
-# (in class stimflow.LayerRotation)
-def copy(
-    self,
-) -> LayerRotation:
-```
-
-<a name="stimflow.LayerRotation.inverse"></a>
-```python
-# stimflow.LayerRotation.inverse
-
-# (in class stimflow.LayerRotation)
-def inverse(
-    self,
-) -> LayerRotation:
-```
-
-<a name="stimflow.LayerRotation.is_vacuous"></a>
-```python
-# stimflow.LayerRotation.is_vacuous
-
-# (in class stimflow.LayerRotation)
-def is_vacuous(
-    self,
-) -> bool:
-```
-
-<a name="stimflow.LayerRotation.locally_optimized"></a>
-```python
-# stimflow.LayerRotation.locally_optimized
-
-# (in class stimflow.LayerRotation)
-def locally_optimized(
-    self,
-    next_layer: Layer | None,
-) -> list[Layer | None]:
-```
-
-<a name="stimflow.LayerRotation.prepend_named_rotation"></a>
-```python
-# stimflow.LayerRotation.prepend_named_rotation
-
-# (in class stimflow.LayerRotation)
-def prepend_named_rotation(
-    self,
-    name: str,
-    target: int,
-):
-```
-
-<a name="stimflow.LayerRotation.touched"></a>
-```python
-# stimflow.LayerRotation.touched
-
-# (in class stimflow.LayerRotation)
-def touched(
-    self,
-) -> set[int]:
 ```
 
 <a name="stimflow.LineDataFor3DModel"></a>
@@ -4056,16 +3797,6 @@ def append_reindexed_content_to_circuit(
     """
 ```
 
-<a name="stimflow.circuit_to_cycle_code_slices"></a>
-```python
-# stimflow.circuit_to_cycle_code_slices
-
-# (at top-level in the stimflow module)
-def circuit_to_cycle_code_slices(
-    circuit: stim.Circuit,
-) -> dict[int, StabilizerCode]:
-```
-
 <a name="stimflow.circuit_to_dem_target_measurement_records_map"></a>
 ```python
 # stimflow.circuit_to_dem_target_measurement_records_map
@@ -4084,35 +3815,6 @@ def circuit_to_dem_target_measurement_records_map(
 def circuit_with_xz_flipped(
     circuit: stim.Circuit,
 ) -> stim.Circuit:
-```
-
-<a name="stimflow.compile_chunks_into_circuit"></a>
-```python
-# stimflow.compile_chunks_into_circuit
-
-# (at top-level in the stimflow module)
-def compile_chunks_into_circuit(
-    chunks: list[Chunk | ChunkLoop | ChunkReflow],
-    *,
-    use_magic_time_boundaries: bool = False,
-    metadata_func: Callable[[Flow], FlowMetadata] = lambda _: FlowMetadata(),
-) -> stim.Circuit:
-    """Stitches together a series of chunks into a fault tolerant circuit.
-
-    Args:
-        chunks: The sequence of chunks to compile into a circuit.
-        use_magic_time_boundaries: Defaults to False. When False, an error will be raised if the
-            first chunk has any non-empty input flows or the last chunk has any non-empty output
-            flows (indicating the circuit is not complete). When True, the compiler will
-            automatically close those flows by inserting MPP and OBSERVABLE_INCLUDE instructions to
-            explain the dangling flows.
-        metadata_func: Defaults to using no metadata. This function should take a stimflow.Flow and
-            return a stimflow.FlowMetadata. The metadata is used for adding tags to coordinates to
-            DETECTOR instructions and tags to DETECTOR/OBSERVABLE_INCLUDE instructions.
-
-    Returns:
-        The compiled circuit.
-    """
 ```
 
 <a name="stimflow.count_measurement_layers"></a>

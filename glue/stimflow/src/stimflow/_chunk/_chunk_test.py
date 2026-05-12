@@ -83,7 +83,11 @@ def test_reflow():
     chunk1.verify()
     chunk2.verify()
     reflow.verify()
-    stimflow.compile_chunks_into_circuit([chunk1, reflow, chunk2])
+    compiler = stimflow.ChunkCompiler()
+    compiler.append(chunk1)
+    compiler.append(reflow)
+    compiler.append(chunk2)
+    assert compiler.finish_circuit() is not None
 
 
 def test_from_circuit_with_mpp_boundaries_simple():

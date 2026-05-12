@@ -2,12 +2,11 @@
 
 from stimflow._chunk._chunk import Chunk
 from stimflow._chunk._chunk_builder import ChunkBuilder
-from stimflow._chunk._chunk_compiler import ChunkCompiler, compile_chunks_into_circuit
+from stimflow._chunk._chunk_compiler import ChunkCompiler
 from stimflow._chunk._chunk_interface import ChunkInterface
 from stimflow._chunk._chunk_loop import ChunkLoop
 from stimflow._chunk._chunk_reflow import ChunkReflow
 from stimflow._chunk._code_util import (
-    circuit_to_cycle_code_slices,
     find_d1_error,
     find_d2_error,
     transversal_code_transition_chunks,
