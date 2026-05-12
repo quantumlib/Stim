@@ -480,7 +480,7 @@ jobs:
       - run: pip install -e glue/stimflow
       - run: pip install pytest
       - run: pytest glue/stimflow
-      - run: dev/doctest_proper.py --module stimflow --suppress_examples_warning_for stimflow.str_svg stimflow.str_html
+      - run: dev/doctest_proper.py --module stimflow --suppress_examples_warning_for stimflow.str_svg stimflow.str_html stimflow.Viewable3dModelGLTF
   test_sinter:
     runs-on: ubuntu-24.04
     steps:

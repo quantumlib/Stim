@@ -11,8 +11,7 @@ from stimflow._chunk._code_util import (
     find_d1_error,
     find_d2_error,
     transversal_code_transition_chunks,
-    verify_distance_is_at_least_2,
-    verify_distance_is_at_least_3,
+    verify_distance_is_at_least,
 )
 from stimflow._chunk._flow_metadata import FlowMetadata
 from stimflow._chunk._patch import Patch

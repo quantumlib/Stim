@@ -549,3 +549,33 @@ def test_embedded_observables():
         o2i={"L2": 2},
     )
     chunk.verify()
+
+
+def test_verify_distance():
+    lz = stimflow.PauliMap({0: "Z"}).with_name("LZ")
+    zz01 = stimflow.PauliMap.from_zs([0, 1])
+    zz12 = stimflow.PauliMap.from_zs([1, 2])
+    zz23 = stimflow.PauliMap.from_zs([2, 3])
+    zz34 = stimflow.PauliMap.from_zs([3, 4])
+    chunk = stimflow.Chunk(
+        stim.Circuit("""
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(1, 0) 1
+            QUBIT_COORDS(2, 0) 2
+            QUBIT_COORDS(3, 0) 3
+            QUBIT_COORDS(4, 0) 4
+            MZZ 0 1 1 2 2 3 3 4
+        """),
+        flows=[
+            stimflow.Flow(start=lz, end=lz),
+            stimflow.Flow(start=zz01, mids=[0]),
+            stimflow.Flow(start=zz12, mids=[1]),
+            stimflow.Flow(start=zz23, mids=[2]),
+            stimflow.Flow(start=zz34, mids=[3]),
+            stimflow.Flow(end=zz01, mids=[0]),
+            stimflow.Flow(end=zz12, mids=[1]),
+            stimflow.Flow(end=zz23, mids=[2]),
+            stimflow.Flow(end=zz34, mids=[3]),
+        ],
+    )
+    chunk.verify_distance_is_at_least(3)

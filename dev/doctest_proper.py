@@ -25,6 +25,9 @@ SKIPPED_FIELDS = {
     '__doc__',
     '__loader__',
     '__file__',
+    '__firstlineno__',
+    '__static_attributes__',
+    '__match_args__',
 }
 
 

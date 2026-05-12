@@ -7,8 +7,7 @@ from typing import Any, cast, Literal, TYPE_CHECKING
 import stim
 
 from stimflow._chunk._code_util import (
-    verify_distance_is_at_least_2,
-    verify_distance_is_at_least_3,
+    verify_distance_is_at_least,
 )
 from stimflow._chunk._patch import Patch
 from stimflow._chunk._stabilizer_code import StabilizerCode
@@ -31,7 +30,27 @@ if TYPE_CHECKING:
 
 
 class Chunk:
-    """A circuit chunk with accompanying stabilizer flow assertions."""
+    """A circuit with accompanying stabilizer flow assertions.
+
+    This object is intended to be immutable.
+    Some of its fields are editable types, but it is assumed they do not change
+    (e.g. computations may be cached).
+    Don't do things like appending to the circuit of a chunk after the chunk is created.
+
+    Example:
+        >>> import stimflow as sf
+        >>> import stim
+        >>> chunk = sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(1, 2) 0
+        ...         H 0
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=sf.PauliMap({1+2j: "X"}), end=sf.PauliMap({1+2j: "Z"})),
+        ...     ],
+        ... )
+        >>> chunk.verify()
+    """
 
     def __init__(
         self,
@@ -45,7 +64,7 @@ class Chunk:
         q2i: dict[complex, int] | None = None,
         o2i: dict[Any, int] | None = None,
     ):
-        """
+        """Creates a `stimflow.Chunk` with the given values.
 
         Args:
             circuit: The circuit implementing the chunk's functionality.
@@ -64,16 +83,32 @@ class Chunk:
                 flowing in.
             wants_to_merge_with_next: Defaults to False. When set to True,
                 the chunk compiler won't insert a TICK between this chunk
-                and the next chunk.
+                and the next chunk. For example, this is useful when creating a
+                transversal initialization chunk.
             wants_to_merge_with_prev: Defaults to False. When set to True,
                 the chunk compiler won't insert a TICK between this chunk
-                and the previous chunk.
+                and the previous chunk. For example, this is useful when creating a
+                transversal measurement chunk.
             q2i: Defaults to None (infer from QUBIT_COORDS instructions in circuit else
                 raise an exception). The stimflow-qubit-coordinate-to-stim-qubit-index mapping
                 used to translate between stimflow's qubit keys and stim's qubit keys.
             o2i: Defaults to None (raise an exception if observables present in circuit).
                 The stimflow-observable-key-to-stim-observable-index mapping used to translate
                 between stimflow's observable keys and stim's observable keys.
+
+        Example:
+            >>> import stimflow as sf
+            >>> import stim
+            >>> chunk = sf.Chunk(
+            ...     circuit=stim.Circuit('''
+            ...         QUBIT_COORDS(1, 2) 0
+            ...         H 0
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=sf.PauliMap({1+2j: "X"}), end=sf.PauliMap({1+2j: "Z"})),
+            ...     ],
+            ... )
+            >>> chunk.verify()
         """
         if q2i is None:
             q2i = {x + 1j * y: i for i, (x, y) in circuit.get_final_qubit_coordinates().items()}
@@ -522,35 +557,58 @@ class Chunk:
         compiler.append_magic_end_chunk(self.end_interface())
         return compiler.finish_circuit()
 
-    def verify_distance_is_at_least_2(self, *, noise: float | NoiseModel = 1e-3):
-        """Verifies undetected logical errors require at least 2 physical errors.
-
-        By default, verifies using a uniform depolarizing circuit noise model.
-        """
-        __tracebackhide__ = True
-        circuit = self.to_closed_circuit()
-        if isinstance(noise, float):
-            noise = NoiseModel.uniform_depolarizing(1e-3)
-        circuit = noise.noisy_circuit_skipping_mpp_boundaries(circuit)
-        verify_distance_is_at_least_2(circuit)
-
     def to_coord_circuit(self) -> stim.Circuit:
         coords = stim.Circuit()
         for q, i in self.q2i.items():
             coords.append("QUBIT_COORDS", [i], [q.real, q.imag])
         return coords + self.circuit
 
-    def verify_distance_is_at_least_3(self, *, noise: float | NoiseModel = 1e-3):
-        """Verifies undetected logical errors require at least 3 physical errors.
+    def verify_distance_is_at_least(self, minimum_distance: int, *, noise: float | NoiseModel = 1e-3):
+        """Verifies undetected logical errors require at least the given number of physical errors.
 
-        By default, verifies using a uniform depolarizing circuit noise model.
+        Args:
+            minimum_distance: The minimum distance to verify. Currently this must be at most 3.
+            noise: The noise model to use. Defaults to a uniform depolarizing circuit noise model
+                that allows multiple operations per tick and where two qubit gates apply two qubit
+                depolarizing noise.
+
+        Example:
+            >>> import stimflow as sf
+            >>> import stim
+            >>> lz = sf.PauliMap({0: "Z"}).with_name("LZ")
+            >>> zz01 = sf.PauliMap.from_zs([0, 1])
+            >>> zz12 = sf.PauliMap.from_zs([1, 2])
+            >>> zz23 = sf.PauliMap.from_zs([2, 3])
+            >>> zz34 = sf.PauliMap.from_zs([3, 4])
+            >>> chunk = sf.Chunk(
+            ...     stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(1, 0) 1
+            ...         QUBIT_COORDS(2, 0) 2
+            ...         QUBIT_COORDS(3, 0) 3
+            ...         QUBIT_COORDS(4, 0) 4
+            ...         MZZ 0 1 1 2 2 3 3 4
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=lz, end=lz),
+            ...         sf.Flow(start=zz01, mids=[0]),
+            ...         sf.Flow(start=zz12, mids=[1]),
+            ...         sf.Flow(start=zz23, mids=[2]),
+            ...         sf.Flow(start=zz34, mids=[3]),
+            ...         sf.Flow(end=zz01, mids=[0]),
+            ...         sf.Flow(end=zz12, mids=[1]),
+            ...         sf.Flow(end=zz23, mids=[2]),
+            ...         sf.Flow(end=zz34, mids=[3]),
+            ...     ],
+            ... )
+            >>> chunk.verify_distance_is_at_least(3)
         """
         __tracebackhide__ = True
         circuit = self.to_closed_circuit()
         if isinstance(noise, float):
-            noise = NoiseModel.uniform_depolarizing(1e-3)
+            noise = NoiseModel.uniform_depolarizing(1e-3, allow_multiple_uses_of_a_qubit_in_one_tick=True)
         circuit = noise.noisy_circuit_skipping_mpp_boundaries(circuit)
-        verify_distance_is_at_least_3(circuit)
+        verify_distance_is_at_least(circuit, minimum_distance)
 
     def find_logical_error(
         self,
@@ -563,7 +621,7 @@ class Chunk:
         circuit = self.to_closed_circuit()
         if not skip_adding_noise:
             if isinstance(noise, float):
-                noise = NoiseModel.uniform_depolarizing(1e-3)
+                noise = NoiseModel.uniform_depolarizing(1e-3, allow_multiple_uses_of_a_qubit_in_one_tick=True)
             circuit = noise.noisy_circuit_skipping_mpp_boundaries(
                 circuit, immune_qubit_coords=noiseless_qubits
             )
@@ -727,9 +785,9 @@ class Chunk:
         for flow in self.flows:
             inp = stim.PauliString(len(self.q2i))
             out = stim.PauliString(len(self.q2i))
-            for q, p in flow.start.qubits.items():
+            for q, p in flow.start.items():
                 inp[self.q2i[q]] = p
-            for q, p in flow.end.qubits.items():
+            for q, p in flow.end.items():
                 out[self.q2i[q]] = p
             stim_flows.append(
                 stim.Flow(input=inp, output=out, measurements=cast(Any, flow.measurement_indices))

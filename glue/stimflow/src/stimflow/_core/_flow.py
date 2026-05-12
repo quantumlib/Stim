@@ -48,12 +48,6 @@ class Flow:
                 "color" of the flow in a color code.
             sign: Defaults to None (unsigned). The expected sign of the flow.
         """
-        if start == "auto":
-            raise ValueError(f"stimflow.Flow no longer supports {start=}. Use stimflow.FlowSemiAuto instead.")
-        if end == "auto":
-            raise ValueError(f"stimflow.Flow no longer supports {end=}. Use stimflow.FlowSemiAuto instead.")
-        if mids == "auto":
-            raise ValueError(f"stimflow.Flow no longer supports {mids=}. Use stimflow.FlowSemiAuto instead.")
         if obs_key is None and center is None:
             if isinstance(start, Tile) and start.measure_qubit is not None:
                 center = start.measure_qubit

@@ -255,8 +255,8 @@ def test_partial_observable_include_memory_experiment():
     builder_end.add_discarded_flow_input(stab_z0)
     builder_end.add_discarded_flow_input(stab_z1)
     builder_end.add_flow(start=obs_z)
-    builder_end.add_flow(start=stab_x, ms=stab_x.qubits)
-    builder_end.add_flow(start=obs_x, ms=obs_x.qubits)
+    builder_end.add_flow(start=stab_x, ms=stab_x.keys())
+    builder_end.add_flow(start=obs_x, ms=obs_x.keys())
     chunk_end = builder_end.finish_chunk()
 
     chunk_init.verify()

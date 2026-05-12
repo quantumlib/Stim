@@ -278,7 +278,17 @@ class StabilizerCode:
         """Returns the tiles of the code's stabilizer patch."""
         return self.stabilizers.tiles
 
-    def verify_distance_is_at_least_2(self):
+    def verify_distance_is_at_least(self, minimum_distance: int):
+        if minimum_distance == 2:
+            self._verify_distance_is_at_least_2()
+        elif minimum_distance == 3:
+            self._verify_distance_is_at_least_3()
+        elif minimum_distance < 2:
+            return
+        else:
+            raise NotImplementedError("Only minimum_distance=2 and minimum_distance=3 are implemented efficiently.")
+
+    def _verify_distance_is_at_least_2(self):
         """Verifies undetected logical errors require at least 2 physical errors.
 
         Verifies using a code capacity noise model.
@@ -308,13 +318,13 @@ class StabilizerCode:
                         f"\n    {loc.gate_target.pauli_type} at {loc.coords}"
                     )
 
-    def verify_distance_is_at_least_3(self):
+    def _verify_distance_is_at_least_3(self):
         """Verifies undetected logical errors require at least 3 physical errors.
 
         Verifies using a code capacity noise model.
         """
         __tracebackhide__ = True
-        self.verify_distance_is_at_least_2()
+        self._verify_distance_is_at_least_2()
         seen = {}
         circuit = self.make_code_capacity_circuit(noise=1e-3)
         for inst in circuit.detector_error_model().flattened():

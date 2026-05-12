@@ -135,7 +135,17 @@ def find_d2_error(
     return None
 
 
-def verify_distance_is_at_least_2(obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode):
+def verify_distance_is_at_least(obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode, minimum_distance: int):
+    if minimum_distance == 2:
+        _verify_distance_is_at_least_2(obj)
+    elif minimum_distance == 3:
+        _verify_distance_is_at_least_3(obj)
+    elif minimum_distance < 2:
+        return
+    else:
+        raise NotImplementedError("Only minimum_distance=2 and minimum_distance=3 are implemented efficiently.")
+
+def _verify_distance_is_at_least_2(obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode):
     __tracebackhide__ = True
     if isinstance(obj, StabilizerCode):
         obj.verify_distance_is_at_least_2()
@@ -145,7 +155,7 @@ def verify_distance_is_at_least_2(obj: stim.Circuit | stim.DetectorErrorModel | 
         raise ValueError(f"Found a distance 1 error: {err}")
 
 
-def verify_distance_is_at_least_3(obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode):
+def _verify_distance_is_at_least_3(obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode):
     __tracebackhide__ = True
     err = find_d2_error(obj)
     if err is not None:
@@ -215,7 +225,7 @@ def transversal_code_transition_chunks(
     reflow = ChunkReflow.from_auto_rewrite_transitions_using_stable(
         stable=[
             cast(PauliMap, flow.start)
-            for flow in next_builder.flows
+            for flow in next_builder._flows
             if flow.obs_key is None
             if flow.start
         ],

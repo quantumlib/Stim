@@ -5,29 +5,18 @@ import stimflow
 
 
 def test_verify_distance_is_at_least_23():
-    stimflow.verify_distance_is_at_least_2(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit(
             """
             R 0
             X_ERROR(0.125) 0
             M 0
             """
-        )
+        ),
+        2,
     )
 
-    stimflow.verify_distance_is_at_least_2(
-        stim.Circuit(
-            """
-            R 0
-            X_ERROR(0.125) 0
-            M 0
-            DETECTOR rec[-1]
-            OBSERVABLE_INCLUDE(0) rec[-1]
-            """
-        )
-    )
-
-    stimflow.verify_distance_is_at_least_2(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit(
             """
             R 0
@@ -36,11 +25,25 @@ def test_verify_distance_is_at_least_23():
             DETECTOR rec[-1]
             OBSERVABLE_INCLUDE(0) rec[-1]
             """
-        ).detector_error_model()
+        ),
+        2,
+    )
+
+    stimflow.verify_distance_is_at_least(
+        stim.Circuit(
+            """
+            R 0
+            X_ERROR(0.125) 0
+            M 0
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+            """
+        ).detector_error_model(),
+        2,
     )
 
     with pytest.raises(ValueError, match="distance 1 error"):
-        stimflow.verify_distance_is_at_least_2(
+        stimflow.verify_distance_is_at_least(
             stim.Circuit(
                 """
                 R 0
@@ -48,11 +51,12 @@ def test_verify_distance_is_at_least_23():
                 M 0
                 OBSERVABLE_INCLUDE(0) rec[-1]
                 """
-            )
+            ),
+            2,
         )
 
     with pytest.raises(ValueError, match="distance 1 error"):
-        stimflow.verify_distance_is_at_least_3(
+        stimflow.verify_distance_is_at_least(
             stim.Circuit(
                 """
                 R 0
@@ -60,62 +64,69 @@ def test_verify_distance_is_at_least_23():
                 M 0
                 OBSERVABLE_INCLUDE(0) rec[-1]
                 """
-            )
+            ),
+            3,
         )
 
-    stimflow.verify_distance_is_at_least_2(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit.generated(
             code_task="repetition_code:memory",
             distance=2,
             rounds=3,
             after_clifford_depolarization=1e-3,
-        )
+        ),
+        2,
     )
 
-    stimflow.verify_distance_is_at_least_2(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit.generated(
             code_task="repetition_code:memory",
             distance=3,
             rounds=3,
             after_clifford_depolarization=1e-3,
-        )
+        ),
+        minimum_distance=2,
     )
 
-    stimflow.verify_distance_is_at_least_2(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit.generated(
             code_task="repetition_code:memory",
             distance=9,
             rounds=3,
             after_clifford_depolarization=1e-3,
-        )
+        ),
+        2,
     )
 
-    stimflow.verify_distance_is_at_least_3(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit.generated(
             code_task="repetition_code:memory",
             distance=3,
             rounds=3,
             after_clifford_depolarization=1e-3,
-        )
+        ),
+        3,
     )
 
-    stimflow.verify_distance_is_at_least_3(
+    stimflow.verify_distance_is_at_least(
         stim.Circuit.generated(
             code_task="repetition_code:memory",
             distance=9,
             rounds=3,
             after_clifford_depolarization=1e-3,
-        )
+        ),
+        3,
     )
 
     with pytest.raises(ValueError, match="distance 2 error"):
-        stimflow.verify_distance_is_at_least_3(
+        stimflow.verify_distance_is_at_least(
             stim.Circuit.generated(
                 code_task="repetition_code:memory",
                 distance=2,
                 rounds=3,
                 after_clifford_depolarization=1e-3,
-            )
+            ),
+            3,
         )
 
 

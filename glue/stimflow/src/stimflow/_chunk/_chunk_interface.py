@@ -141,7 +141,7 @@ class ChunkInterface:
             q
             for pauli_string_list in [self.ports, self.discards]
             for ps in pauli_string_list
-            for q in ps.qubits
+            for q in ps
         )
 
     def to_patch(self) -> Patch:

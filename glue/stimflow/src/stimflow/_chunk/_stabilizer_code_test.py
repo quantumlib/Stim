@@ -133,9 +133,9 @@ def test_verify_distance_is_at_least_3():
         ],
     )
     with pytest.raises(ValueError, match="distance 1 error"):
-        distance_1_code.verify_distance_is_at_least_2()
+        distance_1_code.verify_distance_is_at_least(2)
     with pytest.raises(ValueError, match="distance 1 error"):
-        distance_1_code.verify_distance_is_at_least_3()
+        distance_1_code.verify_distance_is_at_least(3)
 
     distance_2_code = stimflow.StabilizerCode(
         stabilizers=stimflow.Patch(
@@ -151,9 +151,9 @@ def test_verify_distance_is_at_least_3():
             )
         ],
     )
-    distance_2_code.verify_distance_is_at_least_2()
+    distance_2_code.verify_distance_is_at_least(2)
     with pytest.raises(ValueError, match="distance 2 error"):
-        distance_2_code.verify_distance_is_at_least_3()
+        distance_2_code.verify_distance_is_at_least(3)
 
     perfect_code = stimflow.StabilizerCode(
         stabilizers=stimflow.Patch(
@@ -171,8 +171,8 @@ def test_verify_distance_is_at_least_3():
             )
         ],
     )
-    perfect_code.verify_distance_is_at_least_2()
-    perfect_code.verify_distance_is_at_least_3()
+    perfect_code.verify_distance_is_at_least(2)
+    perfect_code.verify_distance_is_at_least(3)
 
 
 def test_with_integer_coordinates():

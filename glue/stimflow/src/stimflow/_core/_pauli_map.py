@@ -23,7 +23,22 @@ _multiplication_table: dict[
 
 
 class PauliMap:
-    """A qubit-to-pauli mapping."""
+    """An immutable qubit-to-pauli mapping.
+
+    Similar to a stim.PauliString, but sparse instead of dense and also PauliMap
+    doesn't track signs (i.e. X*Y produces Z instead of i*Z).
+
+    The mapping can also be given a name. In some contexts, stimflow requires that Pauli mappings
+    have a name (e.g. when specifying the Pauli mapping of a logical operator for a stabilizer code).
+
+    Examples:
+        >>> import stimflow as sf
+        >>> p1 = sf.PauliMap({0: "X", 1: "Y", 2: "Z"})
+        >>> p2 = sf.PauliMap.from_xs([1, 2, 3])
+        >>> p3 = sf.PauliMap({"Z": [3, 4j]})
+        >>> print(p1 * p2 * p3)
+        X0*Z4j*Z1*Y2*Y3
+    """
 
     def __init__(
         self,
@@ -45,22 +60,47 @@ class PauliMap:
             name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
                 in order to identify the Pauli map. A common convention used in the library is that
                 named Pauli maps correspond to logical operators.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> import stim
+
+            >>> print(sf.PauliMap())
+            I
+
+            >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}))
+            X0*Y1*Z2
+
+            >>> print(sf.PauliMap({"X": [1, 2], "Y": 1+1j}))
+            X1*Y(1+1j)*X2
+
+            >>> print(sf.PauliMap(stim.PauliString("XYZ_X")))
+            X0*Y1*Z2*X4
+
+            >>> print(sf.PauliMap(sf.Tile(data_qubits=[1, 2, 3], bases="X")))
+            X1*X2*X3
+
+            >>> print(sf.PauliMap({0: "X", "Y": [0, 1]}))
+            Z0*Y1
+
+            >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, name="test"))
+            (name='test') X0*Y1*Z2
         """
 
-        self.qubits: dict[complex, Literal["X", "Y", "Z"]]
-        self.name = name
+        self._dict: dict[complex, Literal["X", "Y", "Z"]]
+        self.name: Any = name
         self._hash: int
 
         from stimflow._core._tile import Tile
 
         if isinstance(mapping, Tile):
-            self.qubits = dict(mapping.to_pauli_map().qubits)
+            self._dict = dict(mapping.to_pauli_map().items())
         elif isinstance(mapping, PauliMap):
-            self.qubits = dict(mapping.qubits)
+            self._dict = dict(mapping.items())
         elif isinstance(mapping, stim.PauliString):
-            self.qubits = {q: cast(Any, "_XYZ"[mapping[q]]) for q in mapping.pauli_indices()}
+            self._dict = {q: cast(Any, "_XYZ"[mapping[q]]) for q in mapping.pauli_indices()}
         elif mapping is not None:
-            self.qubits = {}
+            self._dict = {}
             for k, v in mapping.items():
                 if (v == "X" or v == "Y" or v == "Z") and isinstance(k, (int, float, complex)):
                     self._mul_term(k, cast(Any, v))
@@ -77,10 +117,10 @@ class PauliMap:
                 else:
                     raise ValueError(f"Don't know how to interpret {k=}: {v=} as a pauli mapping.")
 
-            self.qubits = {complex(q): self.qubits[q] for q in sorted_complex(self.keys())}
+            self._dict = {complex(q): self._dict[q] for q in sorted_complex(self.keys())}
         else:
-            self.qubits = {}
-        self._hash = hash((self.name, tuple(self.qubits.items())))
+            self._dict = {}
+        self._hash = hash((self.name, tuple(self._dict.items())))
 
     @staticmethod
     def from_xs(xs: Iterable[complex], *, name: Any = None) -> PauliMap:
@@ -98,32 +138,32 @@ class PauliMap:
         return PauliMap({"Z": zs}, name=name)
 
     def __contains__(self, item: complex) -> bool:
-        """Determines if the PauliMap contains maps the given qubit to a non-identity Pauli."""
-        return self.qubits.__contains__(item)
+        """Determines if the PauliMap maps the given qubit to a non-identity Pauli."""
+        return self._dict.__contains__(item)
 
     def items(self) -> Iterable[tuple[complex, Literal["X", "Y", "Z"]]]:
         """Returns the (qubit, basis) pairs of the PauliMap."""
-        return self.qubits.items()
+        return self._dict.items()
 
     def values(self) -> Iterable[Literal["X", "Y", "Z"]]:
         """Returns the bases used by the PauliMap."""
-        return self.qubits.values()
+        return self._dict.values()
 
     def keys(self) -> Set[complex]:
         """Returns the qubits of the PauliMap."""
-        return self.qubits.keys()
+        return self._dict.keys()
 
     def get(self, key: complex, default: Any = None) -> Any:
-        return self.qubits.get(key, default)
+        return self._dict.get(key, default)
 
     def __getitem__(self, item: complex) -> Literal["I", "X", "Y", "Z"]:
-        return cast(Any, self.qubits.get(item, "I"))
+        return cast(Any, self._dict.get(item, "I"))
 
     def __len__(self) -> int:
-        return len(self.qubits)
+        return len(self._dict)
 
     def __iter__(self) -> Iterator[complex]:
-        return self.qubits.__iter__()
+        return self._dict.__iter__()
 
     def with_name(self, name: Any) -> PauliMap:
         """Returns the same PauliMap, but with the given name.
@@ -133,16 +173,16 @@ class PauliMap:
         return PauliMap(self, name=name)
 
     def _mul_term(self, q: complex, b: Literal["X", "Y", "Z"]):
-        new_b = _multiplication_table[self.qubits.pop(q, None)][b]
+        new_b = _multiplication_table[self._dict.pop(q, None)][b]
         if new_b is not None:
-            self.qubits[q] = new_b
+            self._dict[q] = new_b
 
     def with_basis(self, basis: Literal["X", "Y", "Z"]) -> PauliMap:
         """Returns the same PauliMap, but with all its qubits mapped to the given basis."""
         return PauliMap({q: basis for q in self.keys()}, name=self.name)
 
     def __bool__(self) -> bool:
-        return bool(self.qubits)
+        return bool(self._dict)
 
     def __mul__(self, other: PauliMap | Tile) -> PauliMap:
         from stimflow._core._tile import Tile
@@ -152,8 +192,8 @@ class PauliMap:
 
         result: dict[complex, Literal["X", "Y", "Z"]] = {}
         for q in self.keys() | other.keys():
-            a = self.qubits.get(q, "I")
-            b = other.qubits.get(q, "I")
+            a = self._dict.get(q, "I")
+            b = other._dict.get(q, "I")
             ax = a in "XY"
             az = a in "YZ"
             bx = b in "XY"
@@ -170,14 +210,14 @@ class PauliMap:
             s2 = ""
         else:
             s2 = f", name={self.name!r}"
-        qs = sorted_complex(self.qubits)
+        qs = sorted_complex(self._dict)
         if len(self) > 1:
             p = set(self.values())
             if p == {'X'}:
                 return f"stimflow.PauliMap.from_xs({qs!r}{s2})"
             if p == {'Z'}:
                 return f"stimflow.PauliMap.from_zs({qs!r}{s2})"
-        s = {q: self.qubits[q] for q in qs}
+        s = {q: self._dict[q] for q in qs}
         return f"stimflow.PauliMap({s!r}{s2})"
 
     def __str__(self) -> str:
@@ -188,7 +228,9 @@ class PauliMap:
                 return str(c.real)
             return str(c)
 
-        result = "*".join(f"{self.qubits[q]}{simplify(q)}" for q in sorted_complex(self.keys()))
+        result = "*".join(f"{self._dict[q]}{simplify(q)}" for q in sorted_complex(self.keys()))
+        if not result:
+            result = 'I'
         if self.name is not None:
             result = f"(name={self.name!r}) " + result
         return result
@@ -196,12 +238,12 @@ class PauliMap:
     def with_xz_flipped(self) -> PauliMap:
         """Returns the same PauliMap, but with all qubits conjugated by H."""
         remap = {"X": "Z", "Y": "Y", "Z": "X"}
-        return PauliMap({q: remap[p] for q, p in self.qubits.items()}, name=self.name)
+        return PauliMap({q: remap[p] for q, p in self._dict.items()}, name=self.name)
 
     def with_xy_flipped(self) -> PauliMap:
         """Returns the same PauliMap, but with all qubits conjugated by H_XY."""
         remap = {"X": "Y", "Y": "X", "Z": "Z"}
-        return PauliMap({q: remap[p] for q, p in self.qubits.items()}, name=self.name)
+        return PauliMap({q: remap[p] for q, p in self._dict.items()}, name=self.name)
 
     def commutes(self, other: PauliMap) -> bool:
         """Determines if the pauli map commutes with another pauli map."""
@@ -211,12 +253,12 @@ class PauliMap:
         """Determines if the pauli map anticommutes with another pauli map."""
         t = 0
         for q in self.keys() & other.keys():
-            t += self.qubits[q] != other.qubits[q]
+            t += self._dict[q] != other._dict[q]
         return t % 2 == 1
 
     def with_transformed_coords(self, transform: Callable[[complex], complex]) -> PauliMap:
         """Returns the same PauliMap but with coordinates transformed by the given function."""
-        return PauliMap({transform(q): p for q, p in self.qubits.items()}, name=self.name)
+        return PauliMap({transform(q): p for q, p in self._dict.items()}, name=self.name)
 
     def to_stim_pauli_string(
         self, q2i: dict[complex, int], *, num_qubits: int | None = None
@@ -253,10 +295,10 @@ class PauliMap:
     def __eq__(self, other) -> bool:
         if not isinstance(other, PauliMap):
             return NotImplemented
-        return self.qubits == other.qubits
+        return self._dict == other._dict
 
     def _sort_key(self) -> Any:
-        return tuple((q.real, q.imag, p) for q, p in self.qubits.items())
+        return tuple((q.real, q.imag, p) for q, p in self._dict.items())
 
     def __lt__(self, other) -> bool:
         if not isinstance(other, PauliMap):

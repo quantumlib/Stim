@@ -38,12 +38,12 @@ class ChunkBuilder:
         self.circuit: stim.Circuit = stim.Circuit()
         self.q2i: dict[complex, int] = {}
         self.o2i: dict[Any, int] = {}
-        self.flows: list[Flow] = []
-        self.flows_with_auto_ms: list[Flow] = []
-        self.flows_with_auto_start: list[Flow] = []
-        self.flows_with_auto_end: list[Flow] = []
-        self.discarded_output_flows: list[PauliMap] = []
-        self.discarded_input_flows: list[PauliMap] = []
+        self._flows: list[Flow] = []
+        self._flows_with_auto_ms: list[Flow] = []
+        self._flows_with_auto_start: list[Flow] = []
+        self._flows_with_auto_end: list[Flow] = []
+        self._discarded_output_flows: list[PauliMap] = []
+        self._discarded_input_flows: list[PauliMap] = []
 
         # Index allowed qubits.
         if allowed_qubits is not None:
@@ -162,12 +162,12 @@ class ChunkBuilder:
     def add_discarded_flow_input(self, flow: PauliMap | Tile) -> None:
         if isinstance(flow, Tile):
             flow = flow.to_pauli_map()
-        self.discarded_input_flows.append(flow)
+        self._discarded_input_flows.append(flow)
 
     def add_discarded_flow_output(self, flow: PauliMap | Tile) -> None:
         if isinstance(flow, Tile):
             flow = flow.to_pauli_map()
-        self.discarded_output_flows.append(flow)
+        self._discarded_output_flows.append(flow)
 
     def add_flow(
         self,
@@ -233,15 +233,15 @@ class ChunkBuilder:
                              f"    {start=}"
                              f"    {ms=}"
                              f"    {end=}")
-        out = self.flows
+        out = self._flows
         if start == "auto":
-            out = self.flows_with_auto_start
+            out = self._flows_with_auto_start
             start = None
         elif end == "auto":
-            out = self.flows_with_auto_end
+            out = self._flows_with_auto_end
             end = None
         elif ms == "auto":
-            out = self.flows_with_auto_ms
+            out = self._flows_with_auto_ms
             ms = ()
 
         out.append(
@@ -274,19 +274,19 @@ class ChunkBuilder:
         end_fails = []
 
         solved_starts = _solve_auto_flow_starts(
-            flows=self.flows_with_auto_start,
+            flows=self._flows_with_auto_start,
             circuit=self.circuit,
             q2i=self.q2i,
             failure_out=start_fails,
         )
         solved_ends = _solve_auto_flow_ends(
-            flows=self.flows_with_auto_end,
+            flows=self._flows_with_auto_end,
             circuit=self.circuit,
             q2i=self.q2i,
             failure_out=end_fails,
         )
         solved_ms = _solve_auto_flow_ms(
-            flows=self.flows_with_auto_ms,
+            flows=self._flows_with_auto_ms,
             circuit=self.circuit,
             q2i=self.q2i,
             o2i=self.o2i,
@@ -350,9 +350,9 @@ class ChunkBuilder:
             circuit=out_circuit,
             q2i=self.q2i,
             o2i=self.o2i,
-            flows=self.flows + solved_starts + solved_ms + solved_ends,
-            discarded_inputs=self.discarded_input_flows,
-            discarded_outputs=self.discarded_output_flows,
+            flows=self._flows + solved_starts + solved_ms + solved_ends,
+            discarded_inputs=self._discarded_input_flows,
+            discarded_outputs=self._discarded_output_flows,
             wants_to_merge_with_next=wants_to_merge_with_next,
             wants_to_merge_with_prev=wants_to_merge_with_prev,
         )
@@ -488,7 +488,7 @@ class ChunkBuilder:
                     arg = self._ensure_obs_index_of(targets.name)
 
                 self._ensure_indices(
-                    targets.qubits,
+                    targets.keys(),
                     context_gate=gate,
                     context_targets=targets,
                     context_arg=arg,

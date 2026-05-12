@@ -19,8 +19,7 @@
     - [`stimflow.Chunk.to_coord_circuit`](#stimflow.Chunk.to_coord_circuit)
     - [`stimflow.Chunk.to_html_viewer`](#stimflow.Chunk.to_html_viewer)
     - [`stimflow.Chunk.verify`](#stimflow.Chunk.verify)
-    - [`stimflow.Chunk.verify_distance_is_at_least_2`](#stimflow.Chunk.verify_distance_is_at_least_2)
-    - [`stimflow.Chunk.verify_distance_is_at_least_3`](#stimflow.Chunk.verify_distance_is_at_least_3)
+    - [`stimflow.Chunk.verify_distance_is_at_least`](#stimflow.Chunk.verify_distance_is_at_least)
     - [`stimflow.Chunk.with_edits`](#stimflow.Chunk.with_edits)
     - [`stimflow.Chunk.with_flag_added_to_all_flows`](#stimflow.Chunk.with_flag_added_to_all_flows)
     - [`stimflow.Chunk.with_obs_flows_as_det_flows`](#stimflow.Chunk.with_obs_flows_as_det_flows)
@@ -73,8 +72,7 @@
     - [`stimflow.ChunkLoop.to_closed_circuit`](#stimflow.ChunkLoop.to_closed_circuit)
     - [`stimflow.ChunkLoop.to_html_viewer`](#stimflow.ChunkLoop.to_html_viewer)
     - [`stimflow.ChunkLoop.verify`](#stimflow.ChunkLoop.verify)
-    - [`stimflow.ChunkLoop.verify_distance_is_at_least_2`](#stimflow.ChunkLoop.verify_distance_is_at_least_2)
-    - [`stimflow.ChunkLoop.verify_distance_is_at_least_3`](#stimflow.ChunkLoop.verify_distance_is_at_least_3)
+    - [`stimflow.ChunkLoop.verify_distance_is_at_least`](#stimflow.ChunkLoop.verify_distance_is_at_least)
     - [`stimflow.ChunkLoop.with_repetitions`](#stimflow.ChunkLoop.with_repetitions)
 - [`stimflow.ChunkReflow`](#stimflow.ChunkReflow)
     - [`stimflow.ChunkReflow.end_code`](#stimflow.ChunkReflow.end_code)
@@ -216,8 +214,7 @@
     - [`stimflow.StabilizerCode.transversal_measure_chunk`](#stimflow.StabilizerCode.transversal_measure_chunk)
     - [`stimflow.StabilizerCode.used_set`](#stimflow.StabilizerCode.used_set)
     - [`stimflow.StabilizerCode.verify`](#stimflow.StabilizerCode.verify)
-    - [`stimflow.StabilizerCode.verify_distance_is_at_least_2`](#stimflow.StabilizerCode.verify_distance_is_at_least_2)
-    - [`stimflow.StabilizerCode.verify_distance_is_at_least_3`](#stimflow.StabilizerCode.verify_distance_is_at_least_3)
+    - [`stimflow.StabilizerCode.verify_distance_is_at_least`](#stimflow.StabilizerCode.verify_distance_is_at_least)
     - [`stimflow.StabilizerCode.with_edits`](#stimflow.StabilizerCode.with_edits)
     - [`stimflow.StabilizerCode.with_integer_coordinates`](#stimflow.StabilizerCode.with_integer_coordinates)
     - [`stimflow.StabilizerCode.with_observables_from_basis`](#stimflow.StabilizerCode.with_observables_from_basis)
@@ -276,8 +273,7 @@
 - [`stimflow.svg`](#stimflow.svg)
 - [`stimflow.transpile_to_z_basis_interaction_circuit`](#stimflow.transpile_to_z_basis_interaction_circuit)
 - [`stimflow.transversal_code_transition_chunks`](#stimflow.transversal_code_transition_chunks)
-- [`stimflow.verify_distance_is_at_least_2`](#stimflow.verify_distance_is_at_least_2)
-- [`stimflow.verify_distance_is_at_least_3`](#stimflow.verify_distance_is_at_least_3)
+- [`stimflow.verify_distance_is_at_least`](#stimflow.verify_distance_is_at_least)
 - [`stimflow.xor_sorted`](#stimflow.xor_sorted)
 ```python
 # Types used by the method definitions.
@@ -543,33 +539,18 @@ def verify(
     """
 ```
 
-<a name="stimflow.Chunk.verify_distance_is_at_least_2"></a>
+<a name="stimflow.Chunk.verify_distance_is_at_least"></a>
 ```python
-# stimflow.Chunk.verify_distance_is_at_least_2
+# stimflow.Chunk.verify_distance_is_at_least
 
 # (in class stimflow.Chunk)
-def verify_distance_is_at_least_2(
+def verify_distance_is_at_least(
     self,
+    minimum_distance: int,
     *,
     noise: float | NoiseModel = 0.001,
 ):
-    """Verifies undetected logical errors require at least 2 physical errors.
-
-    By default, verifies using a uniform depolarizing circuit noise model.
-    """
-```
-
-<a name="stimflow.Chunk.verify_distance_is_at_least_3"></a>
-```python
-# stimflow.Chunk.verify_distance_is_at_least_3
-
-# (in class stimflow.Chunk)
-def verify_distance_is_at_least_3(
-    self,
-    *,
-    noise: float | NoiseModel = 0.001,
-):
-    """Verifies undetected logical errors require at least 3 physical errors.
+    """Verifies undetected logical errors require at least the given number of physical errors.
 
     By default, verifies using a uniform depolarizing circuit noise model.
     """
@@ -1405,35 +1386,20 @@ def verify(
 ):
 ```
 
-<a name="stimflow.ChunkLoop.verify_distance_is_at_least_2"></a>
+<a name="stimflow.ChunkLoop.verify_distance_is_at_least"></a>
 ```python
-# stimflow.ChunkLoop.verify_distance_is_at_least_2
+# stimflow.ChunkLoop.verify_distance_is_at_least
 
 # (in class stimflow.ChunkLoop)
-def verify_distance_is_at_least_2(
+def verify_distance_is_at_least(
     self,
+    minimum_distance: int,
     *,
     noise: float | NoiseModel = 0.001,
 ):
-    """Verifies undetected logical errors require at least 2 physical errors.
+    """Verifies undetected logical errors require at least the given number of physical errors.
 
     Verifies using a uniform depolarizing circuit noise model.
-    """
-```
-
-<a name="stimflow.ChunkLoop.verify_distance_is_at_least_3"></a>
-```python
-# stimflow.ChunkLoop.verify_distance_is_at_least_3
-
-# (in class stimflow.ChunkLoop)
-def verify_distance_is_at_least_3(
-    self,
-    *,
-    noise: float | NoiseModel = 0.001,
-):
-    """Verifies undetected logical errors require at least 3 physical errors.
-
-    By default, verifies using a uniform depolarizing circuit noise model.
     """
 ```
 
@@ -2636,7 +2602,21 @@ def with_xz_flipped(
 
 # (at top-level in the stimflow module)
 class PauliMap:
-    """A qubit-to-pauli mapping.
+    """An immutable qubit-to-pauli mapping.
+
+    Similar to a stim.PauliString, but sparse instead of dense and also PauliMap
+    doesn't track signs (i.e. X*Y produces Z instead of i*Z).
+
+    The mapping can also be given a name. In some contexts, stimflow requires that Pauli mappings
+    have a name (e.g. when specifying the Pauli mapping of a logical operator for a stabilizer code).
+
+    Examples:
+        >>> import stimflow as sf
+        >>> p1 = sf.PauliMap({0: "X", 1: "Y", 2: "Z"})
+        >>> p2 = sf.PauliMap.from_xs([1, 2, 3])
+        >>> p3 = sf.PauliMap({"Z": [3, 4j]})
+        >>> print(p1 * p2 * p3)
+        X0*Z4j*Z1*Y2*Y3
     """
 ```
 
@@ -2658,6 +2638,31 @@ def __init__(
         name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
             in order to identify the Pauli map. A common convention used in the library is that
             named Pauli maps correspond to logical operators.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> import stim
+
+        >>> print(sf.PauliMap())
+        I
+
+        >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}))
+        X0*Y1*Z2
+
+        >>> print(sf.PauliMap({"X": [1, 2], "Y": 1+1j}))
+        X1*Y(1+1j)*X2
+
+        >>> print(sf.PauliMap(stim.PauliString("XYZ_X")))
+        X0*Y1*Z2*X4
+
+        >>> print(sf.PauliMap(sf.Tile(data_qubits=[1, 2, 3], bases="X")))
+        X1*X2*X3
+
+        >>> print(sf.PauliMap({0: "X", "Y": [0, 1]}))
+        Z0*Y1
+
+        >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, name="test"))
+        (name='test') X0*Y1*Z2
     """
 ```
 
@@ -3364,32 +3369,15 @@ def verify(
     """
 ```
 
-<a name="stimflow.StabilizerCode.verify_distance_is_at_least_2"></a>
+<a name="stimflow.StabilizerCode.verify_distance_is_at_least"></a>
 ```python
-# stimflow.StabilizerCode.verify_distance_is_at_least_2
+# stimflow.StabilizerCode.verify_distance_is_at_least
 
 # (in class stimflow.StabilizerCode)
-def verify_distance_is_at_least_2(
+def verify_distance_is_at_least(
     self,
+    minimum_distance: int,
 ):
-    """Verifies undetected logical errors require at least 2 physical errors.
-
-    Verifies using a code capacity noise model.
-    """
-```
-
-<a name="stimflow.StabilizerCode.verify_distance_is_at_least_3"></a>
-```python
-# stimflow.StabilizerCode.verify_distance_is_at_least_3
-
-# (in class stimflow.StabilizerCode)
-def verify_distance_is_at_least_3(
-    self,
-):
-    """Verifies undetected logical errors require at least 3 physical errors.
-
-    Verifies using a code capacity noise model.
-    """
 ```
 
 <a name="stimflow.StabilizerCode.with_edits"></a>
@@ -4476,23 +4464,14 @@ def transversal_code_transition_chunks(
 ) -> tuple[Chunk, ChunkReflow, Chunk]:
 ```
 
-<a name="stimflow.verify_distance_is_at_least_2"></a>
+<a name="stimflow.verify_distance_is_at_least"></a>
 ```python
-# stimflow.verify_distance_is_at_least_2
+# stimflow.verify_distance_is_at_least
 
 # (at top-level in the stimflow module)
-def verify_distance_is_at_least_2(
+def verify_distance_is_at_least(
     obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode,
-):
-```
-
-<a name="stimflow.verify_distance_is_at_least_3"></a>
-```python
-# stimflow.verify_distance_is_at_least_3
-
-# (at top-level in the stimflow module)
-def verify_distance_is_at_least_3(
-    obj: stim.Circuit | stim.DetectorErrorModel | StabilizerCode,
+    minimum_distance: int,
 ):
 ```
 

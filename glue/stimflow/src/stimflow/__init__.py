@@ -16,8 +16,7 @@ from stimflow._chunk import (
     StabilizerCode,
     StimCircuitLoom,
     transversal_code_transition_chunks,
-    verify_distance_is_at_least_2,
-    verify_distance_is_at_least_3,
+    verify_distance_is_at_least,
 )
 from stimflow._core import (
     append_reindexed_content_to_circuit,

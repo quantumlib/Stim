@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 import stim
 
 from stimflow._chunk._code_util import (
-    verify_distance_is_at_least_2,
-    verify_distance_is_at_least_3,
+    verify_distance_is_at_least,
 )
 from stimflow._chunk._patch import Patch
 from stimflow._chunk._stabilizer_code import StabilizerCode
@@ -116,29 +115,17 @@ class ChunkLoop:
         compiler.append_magic_end_chunk()
         return compiler.finish_circuit()
 
-    def verify_distance_is_at_least_2(self, *, noise: float | NoiseModel = 1e-3):
-        """Verifies undetected logical errors require at least 2 physical errors.
+    def verify_distance_is_at_least(self, minimum_distance: int, *, noise: float | NoiseModel = 1e-3):
+        """Verifies undetected logical errors require at least the given number of physical errors.
 
         Verifies using a uniform depolarizing circuit noise model.
         """
         __tracebackhide__ = True
         circuit = self.to_closed_circuit()
         if isinstance(noise, float):
-            noise = NoiseModel.uniform_depolarizing(1e-3)
+            noise = NoiseModel.uniform_depolarizing(1e-3, allow_multiple_uses_of_a_qubit_in_one_tick=True)
         circuit = noise.noisy_circuit_skipping_mpp_boundaries(circuit)
-        verify_distance_is_at_least_2(circuit)
-
-    def verify_distance_is_at_least_3(self, *, noise: float | NoiseModel = 1e-3):
-        """Verifies undetected logical errors require at least 3 physical errors.
-
-        By default, verifies using a uniform depolarizing circuit noise model.
-        """
-        __tracebackhide__ = True
-        circuit = self.to_closed_circuit()
-        if isinstance(noise, float):
-            noise = NoiseModel.uniform_depolarizing(1e-3)
-        circuit = noise.noisy_circuit_skipping_mpp_boundaries(circuit)
-        verify_distance_is_at_least_3(circuit)
+        verify_distance_is_at_least(circuit, minimum_distance)
 
     def find_logical_error(
         self,
@@ -153,7 +140,7 @@ class ChunkLoop:
         """
         circuit = self.to_closed_circuit()
         if isinstance(noise, float):
-            noise = NoiseModel.uniform_depolarizing(1e-3)
+            noise = NoiseModel.uniform_depolarizing(1e-3, allow_multiple_uses_of_a_qubit_in_one_tick=True)
         circuit = noise.noisy_circuit_skipping_mpp_boundaries(
             circuit, immune_qubit_coords=noiseless_qubits
         )

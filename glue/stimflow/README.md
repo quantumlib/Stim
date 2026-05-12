@@ -2,17 +2,27 @@ stimflow: annealed utilities for creating QEC circuits
 =================================================
 
 stimflow is a library for creating quantum error correction circuits.
-In particular, stimflow decomposes the circuit creation problem into making and combining *chunks*.
-A *chunk* is a circuit combined with stabilizer flow assertions the circuit is supposed to satisfy.
-stimflow provides tools for making chunks, verifying chunks, debugging chunks, and compiling chunks into a complete final circuit.
-
-If you're getting started, see stimflow's [getting started notebook](doc/getting_started.ipynb).
-
-See stimflow's [API reference](doc/api.md) for the suite available methods and types.
 
 stimflow's design philosophy is to be a tool box, not a black box.
-For example, stimflow does not include methods for creating surface code circuits or other standard codes.
-Instead it provides tools that can be used to more easily create those circuits.
+For example, stimflow does *not* include a `make_surface_code` method.
+Instead it provides tools that can be used to more easily create a surface code circuit from scratch.
+The hope is that these tools then make it easier to create as-yet-unknown constructions in the future.
+
+stimflow decomposes the circuit creation problem into making and combining *chunks*.
+A *Chunk* is a circuit combined with stabilizer flow assertions that the circuit is supposed to satisfy.
+stimflow provides tools for making chunks (`stimflow.ChunkBuilder`), verifying chunks (`stimflow.Chunk.verify`), debugging chunks (`stimflow.Chunk.to_html_viewer`), and compiling sequences of chunks into a complete final circuit (`stimflow.ChunkCompiler`).
+
+stimflow also includes functionality for:
+
+- Transpiling (`stimflow.transpile_to_z_basis_interaction_circuit(...)`)
+- Adding Noise (`stimflow.NoiseModel.uniform_depolarizing(p).noisy_circuit(...)`)
+- Visualizing (`stimflow.make_3d_model`, `stimflow.stim_circuit_html_viewer`)
+
+# Documentation
+
+See stimflow's [getting started notebook](doc/getting_started.ipynb).
+
+See stimflow's [API reference](doc/api.md).
 
 # Backwards Compatibility Warning
 

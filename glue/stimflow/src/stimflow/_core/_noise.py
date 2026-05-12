@@ -156,7 +156,12 @@ class NoiseModel:
         )
 
     @staticmethod
-    def uniform_depolarizing(p: float, *, single_qubit_only: bool = False) -> NoiseModel:
+    def uniform_depolarizing(
+            p: float,
+            *,
+            single_qubit_only: bool = False,
+            allow_multiple_uses_of_a_qubit_in_one_tick: bool = False,
+    ) -> NoiseModel:
         """Near-standard circuit depolarizing noise.
 
         Everything has the same parameter p.
@@ -167,6 +172,14 @@ class NoiseModel:
 
         Non-demolition measurement is treated a bit unusually in that it is the result that is
         flipped instead of the input qubit. The input qubit is depolarized.
+
+        Args:
+            single_qubit_only: Defaults to False. When False, two qubit gates apply two
+                qubit depolarizing noise (DEPOLARIZE2). When True, they instead apply single qubit
+                depolarizing noise (DEPOLARIZE1).
+            allow_multiple_uses_of_a_qubit_in_one_tick: Defaults to False. When False, an error will be
+                raised if attempting to add noise to a circuit that operates on a qubit
+                multiple times between TICK operations. When set to True, no error is raised.
         """
         dep2 = "DEPOLARIZE1" if single_qubit_only else "DEPOLARIZE2"
         return NoiseModel(
@@ -192,6 +205,7 @@ class NoiseModel:
                 "RY": NoiseRule(after={"X_ERROR": p}),
                 "R": NoiseRule(after={"X_ERROR": p}),
             },
+            allow_multiple_uses_of_a_qubit_in_one_tick=allow_multiple_uses_of_a_qubit_in_one_tick,
         )
 
     def _noise_rule_for_split_operation(
