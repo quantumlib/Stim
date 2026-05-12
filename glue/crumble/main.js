@@ -197,7 +197,7 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.mouseDownY = undefined;
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
-    editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
+    editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey || ev.metaKey);
     if (ev.buttons === 1) {
         isInScrubber = false;
     }
@@ -233,6 +233,27 @@ function makeChordHandlers() {
             editorState.deleteAtFocus(preview);
         }
     });
+    // Below, we allow for mac users to use the "command" key (meta) instead of "control"
+    res.set('meta+delete', preview => editorState.deleteCurLayer(preview));
+    res.set('meta+backspace', preview => editorState.deleteCurLayer(preview));
+    res.set('meta+enter', preview => editorState.insertLayer(preview));
+    res.set('meta+z', preview => { if (!preview) editorState.undo() });
+    res.set('meta+y', preview => { if (!preview) editorState.redo() });
+    res.set('meta+shift+z', preview => { if (!preview) editorState.redo() });
+    res.set('meta+c', async preview => { await copyToClipboard(); });
+    res.set('meta+v', pasteFromClipboard);
+    res.set('meta+x', async preview => {
+        await copyToClipboard();
+        if (editorState.focusedSet.size === 0) {
+            let c = editorState.copyOfCurCircuit();
+            c.layers[editorState.curLayer].id_ops.clear();
+            c.layers[editorState.curLayer].markers.length = 0;
+            editorState.commit_or_preview(c, preview);
+        } else {
+            editorState.deleteAtFocus(preview);
+        }
+    });
+    
     res.set('l', preview => {
         if (!preview) {
             editorState.timelineSet = new Map(editorState.focusedSet.entries());
@@ -532,7 +553,7 @@ window.addEventListener('blur', () => {
 for (let anchor of document.getElementById('examples-div').querySelectorAll('a')) {
     anchor.onclick = ev => {
         // Don't stop the user from e.g. opening the example in a new tab using ctrl+click.
-        if (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.button !== 0) {
+        if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey || ev.button !== 0) {
             return undefined;
         }
         let circuitText = anchor.href.split('#circuit=')[1];
