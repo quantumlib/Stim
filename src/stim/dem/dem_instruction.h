@@ -1,6 +1,7 @@
 #ifndef _STIM_DEM_DEM_INSTRUCTION_H
 #define _STIM_DEM_DEM_INSTRUCTION_H
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
