@@ -248,7 +248,6 @@ class ChunkBuilder:
         end: PauliMap | Tile | Literal["auto"] | None = None,
         ms: Iterable[Any] | Literal["auto"] = (),
         ignore_unmatched_ms: bool = False,
-        obs_key: Any = None,
         center: complex | None = None,
         flags: Iterable[str] = frozenset(),
         sign: bool | None = None,
@@ -271,8 +270,6 @@ class ChunkBuilder:
             ignore_unmatched_ms: Defaults to False. When set to False, unrecognized measurement
                 ids cause the method to raise an exception instead of adding the flow. When set
                 to True, unrecognized measurements are silently discarded.
-            obs_key: Defaults to None (not a logical operator). If this is set to a value other
-                than None, it identifies the logical operator whose flow the flow is describing.
             center: Defaults to None (unused). Optional metadata specifying coordinates for the
                 flow. Typically these coordinates will end up being exposed as the parens args
                 on the DETECTOR instruction created when producing a stim circuit. When not
@@ -305,23 +302,28 @@ class ChunkBuilder:
                              f"    {start=}"
                              f"    {ms=}"
                              f"    {end=}")
+        if isinstance(start, PauliMap):
+            obs_key = start.name
+        elif isinstance(end, PauliMap):
+            obs_key = end.name
+        else:
+            obs_key = None
         out = self._flows
         if start == "auto":
             out = self._flows_with_auto_start
-            start = None
+            start = PauliMap(name=obs_key)
         elif end == "auto":
             out = self._flows_with_auto_end
-            end = None
+            end = PauliMap(name=obs_key)
         elif ms == "auto":
             out = self._flows_with_auto_ms
             ms = ()
 
         out.append(
             Flow(
-                start=cast(PauliMap, start),
-                end=cast(PauliMap, end),
-                mids=self.lookup_mids(ms, ignore_unmatched=ignore_unmatched_ms),
-                obs_key=obs_key,
+                start=start,
+                end=end,
+                measurement_indices=self.lookup_mids(ms, ignore_unmatched=ignore_unmatched_ms),
                 center=center,
                 flags=flags,
                 sign=sign,

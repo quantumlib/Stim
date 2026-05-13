@@ -24,8 +24,7 @@ class Flow:
         *,
         start: PauliMap | Tile | None = None,
         end: PauliMap | Tile | None = None,
-        mids: Iterable[int] = (),
-        obs_key: Any = None,
+        measurement_indices: Iterable[int] = (),
         center: complex | None = None,
         flags: Iterable[Any] = frozenset(),
         sign: bool | None = None,
@@ -37,65 +36,58 @@ class Flow:
                 circuit (before *all* operations, including resets).
             end: Defaults to None (empty). The Pauli product operator at the end of the
                 circuit (after *all* operations, including measurements).
-            mids: Defaults to empty. Indices of measurements that mediate the flow (that multiply
+            measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
                 into it as it traverses the circuit).
             center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
                 when the flow is completed into a detector. Incompatible with obs_key.
-            obs_key: Defaults to None (detector flow). Identifies that this is an observable flow
-                (instead of a detector flow) and gives a name that be used when linking chunks.
             flags: Defaults to empty. Custom information about the flow, that can be used by code
                 operating on chunks for a variety of purposes. For example, this could identify the
                 "color" of the flow in a color code.
             sign: Defaults to None (unsigned). The expected sign of the flow.
         """
-        if obs_key is None and center is None:
-            if isinstance(start, Tile) and start.measure_qubit is not None:
-                center = start.measure_qubit
-            if isinstance(end, Tile) and end.measure_qubit is not None:
-                center = end.measure_qubit
-        if obs_key is None and center is None:
-            qubits: list[complex] = []
-            if isinstance(start, PauliMap):
-                qubits.extend(start.keys())
-            if isinstance(end, PauliMap):
-                qubits.extend(end.keys())
-            if isinstance(start, Tile):
-                qubits.extend(start.data_set)
-            if isinstance(end, Tile):
-                qubits.extend(end.data_set)
-            center = sum(qubits) / (len(qubits) or 1)
-        if isinstance(flags, str):
-            raise TypeError(f"{flags=} is a str instead of a set")
-        if obs_key is None and isinstance(start, PauliMap) and start.name is not None:
-            obs_key = start.name
-        if obs_key is None and isinstance(end, PauliMap) and end.name is not None:
-            obs_key = end.name
-        if isinstance(start, PauliMap) and start.name is not None:
-            assert obs_key == start.name
-            start = start.with_name(None)
-        if isinstance(end, PauliMap) and end.name is not None:
-            assert obs_key == end.name
-            end = end.with_name(None)
-
         if start is not None and not isinstance(start, (PauliMap, Tile)):
-            raise ValueError(
+            raise TypeError(
                 f"{start=} is not None and not isinstance(start, (stimflow.PauliMap, stimflow.Tile))"
             )
         if end is not None and not isinstance(end, (PauliMap, Tile)):
-            raise ValueError(
+            raise TypeError(
                 f"{end=} is not None and not isinstance(end, (stimflow.PauliMap, stimflow.Tile))"
             )
+        if isinstance(flags, str):
+            raise TypeError(f"{flags=} is a str instead of a set")
+        if isinstance(start, PauliMap) and isinstance(end, PauliMap) and start.name != end.name:
+            raise ValueError(f'{start.name=} != {end.name=}')
+
+        if center is None and isinstance(start, Tile):
+            center = start.measure_qubit
+        if center is None and isinstance(end, Tile):
+            center = end.measure_qubit
+
+        if isinstance(start, PauliMap):
+            obs_key = start.name
+        elif isinstance(end, PauliMap):
+            obs_key = end.name
+        else:
+            obs_key = None
         if isinstance(start, Tile):
-            start = start.to_pauli_map()
+            start = start.to_pauli_map().with_name(obs_key)
         elif start is None:
-            start = PauliMap()
+            start = PauliMap(name=obs_key)
         if isinstance(end, Tile):
-            end = end.to_pauli_map()
+            end = end.to_pauli_map().with_name(obs_key)
         elif end is None:
-            end = PauliMap()
-        self.start: PauliMap = start.with_name(obs_key)
-        self.end: PauliMap = end.with_name(obs_key)
-        self.measurement_indices: tuple[int, ...] = tuple(xor_sorted(mids))
+            end = PauliMap(name=obs_key)
+
+        if center is None:
+            qubits: list[complex] = []
+            qubits.extend(start.keys())
+            qubits.extend(end.keys())
+            if qubits:
+                center = sum(qubits) / len(qubits)
+
+        self.start: PauliMap = start
+        self.end: PauliMap = end
+        self.measurement_indices: tuple[int, ...] = tuple(xor_sorted(measurement_indices))
         self.flags: frozenset[Any] = frozenset(flags)
         self.center: complex | None = center
         self.sign: bool | None = sign
@@ -134,20 +126,18 @@ class Flow:
         start: PauliMap = _UNSPECIFIED,
         end: PauliMap = _UNSPECIFIED,
         measurement_indices: Iterable[int] = _UNSPECIFIED,
-        obs_key: Any = _UNSPECIFIED,
-        center: complex = _UNSPECIFIED,
+        center: complex | None = _UNSPECIFIED,
         flags: Iterable[str] = _UNSPECIFIED,
         sign: Any = _UNSPECIFIED,
     ) -> Flow:
         return Flow(
             start=self.start if start is _UNSPECIFIED else start,
             end=self.end if end is _UNSPECIFIED else end,
-            mids=(
+            measurement_indices=(
                 self.measurement_indices
                 if measurement_indices is _UNSPECIFIED
                 else cast(Any, measurement_indices)
             ),
-            obs_key=self.obs_key if obs_key is _UNSPECIFIED else obs_key,
             center=self.center if center is _UNSPECIFIED else center,
             flags=self.flags if flags is _UNSPECIFIED else flags,
             sign=self.sign if sign is _UNSPECIFIED else sign,
@@ -224,7 +214,6 @@ class Flow:
             f"end={self.end!r}, "
             f"measurement_indices={self.measurement_indices!r}, "
             f"flags={self.flags!r}, "
-            f"obs_key={self.obs_key!r}, "
             f"center={self.center!r}, "
             f"sign={self.sign!r}"
         )
@@ -239,7 +228,7 @@ class Flow:
             center=None if self.center is None else transform(self.center),
         )
 
-    def fuse_with_next_flow(self, next_flow: Flow, *, next_flow_measure_offset: int) -> Flow:
+    def fused_with_next_flow(self, next_flow: Flow, *, next_flow_measure_offset: int) -> Flow:
         if next_flow.start != self.end:
             raise ValueError("other.start != self.end")
         if next_flow.obs_key != self.obs_key:
@@ -256,11 +245,10 @@ class Flow:
             start=self.start,
             end=next_flow.end,
             center=new_center,
-            mids=(
+            measurement_indices=(
                 *(m + next_flow_measure_offset * (m < 0) for m in self.measurement_indices),
                 *(m + next_flow_measure_offset for m in next_flow.measurement_indices),
             ),
-            obs_key=self.obs_key,
             flags=self.flags | next_flow.flags,
             sign=(
                 None if self.sign is None or next_flow.sign is None else self.sign ^ next_flow.sign
@@ -292,7 +280,7 @@ class Flow:
         return Flow(
             start=new_start,
             end=new_end,
-            mids=xor_sorted(self.measurement_indices + other.measurement_indices),
+            measurement_indices=xor_sorted(self.measurement_indices + other.measurement_indices),
             obs_key=self.obs_key,
             flags=self.flags | other.flags,
             center=new_center,

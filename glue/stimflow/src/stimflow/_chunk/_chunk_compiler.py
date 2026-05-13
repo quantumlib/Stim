@@ -169,7 +169,7 @@ class ChunkCompiler:
             targets = [stim.target_pauli(self.q2i[q], p) for q, p in obs_port.items()]
             self.open_flows[obs_port] = Flow(end=obs_port)
             obs_index = self.o2i.setdefault(obs_port.name, len(self.o2i))
-            metadata = self.metadata_func(Flow(obs_key=obs_port.name))
+            metadata = self.metadata_func(Flow(start=PauliMap(name=obs_port.name)))
             self.circuit.append("OBSERVABLE_INCLUDE", targets, arg=obs_index, tag=metadata.tag)
             self.circuit.append("TICK")
 
@@ -177,7 +177,7 @@ class ChunkCompiler:
             for port in layer:
                 assert port not in self.open_flows
                 targets = [stim.target_pauli(self.q2i[q], p) for q, p in port.items()]
-                self.open_flows[port] = Flow(end=port, mids=[self.num_measurements])
+                self.open_flows[port] = Flow(end=port, measurement_indices=[self.num_measurements])
                 self.circuit.append("MPP", stim.target_combined_paulis(targets))
                 self.num_measurements += 1
             self.circuit.append("TICK")
@@ -215,8 +215,8 @@ class ChunkCompiler:
                 targets = [stim.target_pauli(self.q2i[q], p) for q, p in port.items()]
                 flow = self.open_flows.pop(port)
                 assert flow != "discard"
-                flow = cast(Flow, flow).fuse_with_next_flow(
-                    Flow(start=port, mids=[self.num_measurements]), next_flow_measure_offset=0
+                flow = cast(Flow, flow).fused_with_next_flow(
+                    Flow(start=port, measurement_indices=[self.num_measurements]), next_flow_measure_offset=0
                 )
                 self.circuit.append("MPP", stim.target_combined_paulis(targets))
                 self.num_measurements += 1
@@ -227,11 +227,11 @@ class ChunkCompiler:
             targets = [stim.target_pauli(self.q2i[q], p) for q, p in obs_port.items()]
             flow = self.open_flows.pop(obs_port)
             assert flow != "discard"
-            flow = cast(Flow, flow).fuse_with_next_flow(
+            flow = flow.fused_with_next_flow(
                 Flow(start=obs_port), next_flow_measure_offset=0
             )
             obs_index = self.o2i.setdefault(obs_port.name, len(self.o2i))
-            metadata = self.metadata_func(Flow(obs_key=obs_port.name))
+            metadata = self.metadata_func(Flow(start=PauliMap(name=obs_port.name)))
             self.circuit.append("OBSERVABLE_INCLUDE", targets, arg=obs_index, tag=metadata.tag)
             completed_flows.append(flow)
         self._append_detectors(completed_flows=completed_flows)
@@ -304,7 +304,7 @@ class ChunkCompiler:
                 else Flow(
                     start=None,
                     end=output,
-                    mids=tuple(sorted(measurements)),
+                    measurement_indices=tuple(sorted(measurements)),
                     flags=flags,
                     center=sum(centers) / len(centers) if centers else None,
                 )
@@ -507,7 +507,8 @@ class ChunkCompiler:
             if flow.obs_key is None:
                 dt = detector_pos_usage_counts[flow.center]
                 detector_pos_usage_counts[flow.center] += 1
-                coords = (flow.center.real, flow.center.imag, dt, *metadata.extra_coords)
+                coord = flow.center if flow.center is not None else -1
+                coords = (coord.real, coord.imag, dt, *metadata.extra_coords)
                 inserted_ops.append("DETECTOR", rec_targets, coords, tag=metadata.tag)
             else:
                 obs_index = self.o2i.setdefault(flow.obs_key, len(self.o2i))
@@ -581,7 +582,7 @@ class ChunkCompiler:
             elif isinstance(prev, Flow):
                 # Matched! Fuse them together.
                 result.append(
-                    prev.fuse_with_next_flow(
+                    prev.fused_with_next_flow(
                         new_flow, next_flow_measure_offset=self.num_measurements
                     )
                 )

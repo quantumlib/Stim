@@ -91,7 +91,7 @@
 - [`stimflow.Flow`](#stimflow.Flow)
     - [`stimflow.Flow.__init__`](#stimflow.Flow.__init__)
     - [`stimflow.Flow.__mul__`](#stimflow.Flow.__mul__)
-    - [`stimflow.Flow.fuse_with_next_flow`](#stimflow.Flow.fuse_with_next_flow)
+    - [`stimflow.Flow.fused_with_next_flow`](#stimflow.Flow.fused_with_next_flow)
     - [`stimflow.Flow.obs_key`](#stimflow.Flow.obs_key)
     - [`stimflow.Flow.to_stim_flow`](#stimflow.Flow.to_stim_flow)
     - [`stimflow.Flow.with_edits`](#stimflow.Flow.with_edits)
@@ -582,14 +582,14 @@ def verify_distance_is_at_least(
         ...     '''),
         ...     flows=[
         ...         sf.Flow(start=lz, end=lz),
-        ...         sf.Flow(start=zz01, mids=[0]),
-        ...         sf.Flow(start=zz12, mids=[1]),
-        ...         sf.Flow(start=zz23, mids=[2]),
-        ...         sf.Flow(start=zz34, mids=[3]),
-        ...         sf.Flow(end=zz01, mids=[0]),
-        ...         sf.Flow(end=zz12, mids=[1]),
-        ...         sf.Flow(end=zz23, mids=[2]),
-        ...         sf.Flow(end=zz34, mids=[3]),
+        ...         sf.Flow(start=zz01, measurement_indices=[0]),
+        ...         sf.Flow(start=zz12, measurement_indices=[1]),
+        ...         sf.Flow(start=zz23, measurement_indices=[2]),
+        ...         sf.Flow(start=zz34, measurement_indices=[3]),
+        ...         sf.Flow(end=zz01, measurement_indices=[0]),
+        ...         sf.Flow(end=zz12, measurement_indices=[1]),
+        ...         sf.Flow(end=zz23, measurement_indices=[2]),
+        ...         sf.Flow(end=zz34, measurement_indices=[3]),
         ...     ],
         ... )
         >>> chunk.verify_distance_is_at_least(3)
@@ -803,7 +803,6 @@ def add_flow(
     end: "PauliMap | Tile | Literal['auto'] | None" = None,
     ms: "Iterable[Any] | Literal['auto']" = (),
     ignore_unmatched_ms: bool = False,
-    obs_key: Any = None,
     center: complex | None = None,
     flags: Iterable[str] = frozenset(),
     sign: bool | None = None,
@@ -826,8 +825,6 @@ def add_flow(
         ignore_unmatched_ms: Defaults to False. When set to False, unrecognized measurement
             ids cause the method to raise an exception instead of adding the flow. When set
             to True, unrecognized measurements are silently discarded.
-        obs_key: Defaults to None (not a logical operator). If this is set to a value other
-            than None, it identifies the logical operator whose flow the flow is describing.
         center: Defaults to None (unused). Optional metadata specifying coordinates for the
             flow. Typically these coordinates will end up being exposed as the parens args
             on the DETECTOR instruction created when producing a stim circuit. When not
@@ -1709,8 +1706,7 @@ def __init__(
     *,
     start: PauliMap | Tile | None = None,
     end: PauliMap | Tile | None = None,
-    mids: Iterable[int] = (),
-    obs_key: Any = None,
+    measurement_indices: Iterable[int] = (),
     center: complex | None = None,
     flags: Iterable[Any] = frozenset(),
     sign: bool | None = None,
@@ -1722,12 +1718,10 @@ def __init__(
             circuit (before *all* operations, including resets).
         end: Defaults to None (empty). The Pauli product operator at the end of the
             circuit (after *all* operations, including measurements).
-        mids: Defaults to empty. Indices of measurements that mediate the flow (that multiply
+        measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
             into it as it traverses the circuit).
         center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
             when the flow is completed into a detector. Incompatible with obs_key.
-        obs_key: Defaults to None (detector flow). Identifies that this is an observable flow
-            (instead of a detector flow) and gives a name that be used when linking chunks.
         flags: Defaults to empty. Custom information about the flow, that can be used by code
             operating on chunks for a variety of purposes. For example, this could identify the
             "color" of the flow in a color code.
@@ -1750,12 +1744,12 @@ def __mul__(
     """
 ```
 
-<a name="stimflow.Flow.fuse_with_next_flow"></a>
+<a name="stimflow.Flow.fused_with_next_flow"></a>
 ```python
-# stimflow.Flow.fuse_with_next_flow
+# stimflow.Flow.fused_with_next_flow
 
 # (in class stimflow.Flow)
-def fuse_with_next_flow(
+def fused_with_next_flow(
     self,
     next_flow: Flow,
     *,
@@ -1798,8 +1792,7 @@ def with_edits(
     start: PauliMap = <keep_original>,
     end: PauliMap = <keep_original>,
     measurement_indices: Iterable[int] = <keep_original>,
-    obs_key: Any = <keep_original>,
-    center: complex = <keep_original>,
+    center: complex | None = <keep_original>,
     flags: Iterable[str] = <keep_original>,
     sign: Any = <keep_original>,
 ) -> Flow:

@@ -13,7 +13,7 @@ def test_inverse_flows():
         """
         ),
         q2i={0: 0, 1: 1, 2: 2, 3: 3, 4: 4},
-        flows=[stimflow.Flow(center=0, start=stimflow.PauliMap({}), mids=[0], end=stimflow.PauliMap({1: "Z"}))],
+        flows=[stimflow.Flow(center=0, start=stimflow.PauliMap({}), measurement_indices=[0], end=stimflow.PauliMap({1: "Z"}))],
     )
 
     inverted = chunk.time_reversed()
@@ -67,7 +67,7 @@ def test_reflow():
             MPP Z0*Z1
         """
         ),
-        flows=[stimflow.Flow(end=xx, mids=[0], center=0), stimflow.Flow(end=zz, mids=[1], center=0)],
+        flows=[stimflow.Flow(end=xx, measurement_indices=[0], center=0), stimflow.Flow(end=zz, measurement_indices=[1], center=0)],
     )
     chunk2 = stimflow.Chunk(
         q2i={0: 0, 1: 1},
@@ -76,7 +76,7 @@ def test_reflow():
             MPP Y0*Y1
         """
         ),
-        flows=[stimflow.Flow(start=yy, mids=[0], center=0)],
+        flows=[stimflow.Flow(start=yy, measurement_indices=[0], center=0)],
         discarded_inputs=[xx],
     )
     reflow = stimflow.ChunkReflow({yy: [xx, zz], xx: [xx]})
@@ -109,8 +109,7 @@ def test_from_circuit_with_mpp_boundaries_simple():
             stimflow.Flow(
                 start=stimflow.PauliMap.from_xs([1 + 2j]),
                 end=stimflow.PauliMap.from_zs([1 + 2j]),
-                mids=(),
-                obs_key=None,
+                measurement_indices=(),
                 center=1 + 2j,
             )
         ],
@@ -168,8 +167,7 @@ def test_from_circuit_with_mpp_boundaries_simple():
             stimflow.Flow(
                 start=stimflow.PauliMap.from_xs([1 + 2j]),
                 end=stimflow.PauliMap.from_zs([1 + 2j]),
-                mids=(0,),
-                obs_key=None,
+                measurement_indices=(0,),
                 center=1 + 2j,
             )
         ],
@@ -207,10 +205,9 @@ def test_from_circuit_with_mpp_boundaries_simple():
         q2i={1 + 2j: 0, 1 + 3j: 1},
         flows=[
             stimflow.Flow(
-                start=stimflow.PauliMap.from_xs([1 + 2j]),
-                end=stimflow.PauliMap.from_zs([1 + 2j]),
-                mids=(0,),
-                obs_key=0,
+                start=stimflow.PauliMap.from_xs([1 + 2j]).with_name(0),
+                end=stimflow.PauliMap.from_zs([1 + 2j]).with_name(0),
+                measurement_indices=(0,),
                 center=1 + 2j,
             )
         ],
@@ -468,7 +465,7 @@ def test_chunk_viewer():
         """
         ),
         q2i={0: 0, 1: 1, 2: 2, 3: 3, 4: 4},
-        flows=[stimflow.Flow(center=0, start=stimflow.PauliMap({}), mids=[0], end=stimflow.PauliMap({1: "Z"}))],
+        flows=[stimflow.Flow(center=0, start=stimflow.PauliMap({}), measurement_indices=[0], end=stimflow.PauliMap({1: "Z"}))],
     )
     assert chunk.to_html_viewer() is not None
 
@@ -487,17 +484,17 @@ def test_anticommuting_obs_flows():
             """
         ),
         flows=[
-            stimflow.Flow(start=stimflow.PauliMap({"X": [0, 1, 1j, 1 + 1j]}), mids=[0]),
-            stimflow.Flow(end=stimflow.PauliMap({"X": [0, 1, 1j, 1 + 1j]}), mids=[0]),
-            stimflow.Flow(start=stimflow.PauliMap({"Z": [0, 1]}), mids=[1]),
-            stimflow.Flow(end=stimflow.PauliMap({"Z": [0, 1]}), mids=[1]),
-            stimflow.Flow(start=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), mids=[2]),
-            stimflow.Flow(end=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), mids=[2]),
+            stimflow.Flow(start=stimflow.PauliMap({"X": [0, 1, 1j, 1 + 1j]}), measurement_indices=[0]),
+            stimflow.Flow(end=stimflow.PauliMap({"X": [0, 1, 1j, 1 + 1j]}), measurement_indices=[0]),
+            stimflow.Flow(start=stimflow.PauliMap({"Z": [0, 1]}), measurement_indices=[1]),
+            stimflow.Flow(end=stimflow.PauliMap({"Z": [0, 1]}), measurement_indices=[1]),
+            stimflow.Flow(start=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), measurement_indices=[2]),
+            stimflow.Flow(end=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), measurement_indices=[2]),
             stimflow.Flow(
-                start=stimflow.PauliMap({"X": [0, 1]}), end=stimflow.PauliMap({"X": [0, 1]}), obs_key="X"
+                start=stimflow.PauliMap({"X": [0, 1]}).with_name("X"), end=stimflow.PauliMap({"X": [0, 1]}).with_name("X"),
             ),
             stimflow.Flow(
-                start=stimflow.PauliMap({"Z": [0, 1j]}), end=stimflow.PauliMap({"Z": [0, 1j]}), obs_key="Z"
+                start=stimflow.PauliMap({"Z": [0, 1j]}).with_name("Z"), end=stimflow.PauliMap({"Z": [0, 1j]}).with_name("Z"),
             ),
         ],
     )
@@ -572,14 +569,14 @@ def test_verify_distance():
         """),
         flows=[
             stimflow.Flow(start=lz, end=lz),
-            stimflow.Flow(start=zz01, mids=[0]),
-            stimflow.Flow(start=zz12, mids=[1]),
-            stimflow.Flow(start=zz23, mids=[2]),
-            stimflow.Flow(start=zz34, mids=[3]),
-            stimflow.Flow(end=zz01, mids=[0]),
-            stimflow.Flow(end=zz12, mids=[1]),
-            stimflow.Flow(end=zz23, mids=[2]),
-            stimflow.Flow(end=zz34, mids=[3]),
+            stimflow.Flow(start=zz01, measurement_indices=[0]),
+            stimflow.Flow(start=zz12, measurement_indices=[1]),
+            stimflow.Flow(start=zz23, measurement_indices=[2]),
+            stimflow.Flow(start=zz34, measurement_indices=[3]),
+            stimflow.Flow(end=zz01, measurement_indices=[0]),
+            stimflow.Flow(end=zz12, measurement_indices=[1]),
+            stimflow.Flow(end=zz23, measurement_indices=[2]),
+            stimflow.Flow(end=zz34, measurement_indices=[3]),
         ],
     )
     chunk.verify_distance_is_at_least(3)

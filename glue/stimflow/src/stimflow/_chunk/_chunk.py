@@ -379,15 +379,19 @@ class Chunk:
 
             start_pm = PauliMap(start_ps).with_transformed_coords(lambda i: i2q[i])
             end_pm = PauliMap(end_ps).with_transformed_coords(lambda i: i2q[i])
+            if target.is_logical_observable_id():
+                start_pm = start_pm.with_name(target.val)
+                end_pm = end_pm.with_name(target.val)
+            center = sum(start_pm.keys()) + sum(end_pm.keys())
+            if center:
+                center /= len(start_pm) + len(end_pm)
 
             flows.append(
                 Flow(
                     start=start_pm,
                     end=end_pm,
-                    mids=[m - record_range.start for m in records[target] if m in record_range],
-                    obs_key=None if target.is_relative_detector_id() else target.val,
-                    center=(sum(start_pm.keys()) + sum(end_pm.keys()))
-                    / (len(start_pm) + len(end_pm)),
+                    measurement_indices=[m - record_range.start for m in records[target] if m in record_range],
+                    center=center,
                 )
             )
 
@@ -591,14 +595,14 @@ class Chunk:
             ...     '''),
             ...     flows=[
             ...         sf.Flow(start=lz, end=lz),
-            ...         sf.Flow(start=zz01, mids=[0]),
-            ...         sf.Flow(start=zz12, mids=[1]),
-            ...         sf.Flow(start=zz23, mids=[2]),
-            ...         sf.Flow(start=zz34, mids=[3]),
-            ...         sf.Flow(end=zz01, mids=[0]),
-            ...         sf.Flow(end=zz12, mids=[1]),
-            ...         sf.Flow(end=zz23, mids=[2]),
-            ...         sf.Flow(end=zz34, mids=[3]),
+            ...         sf.Flow(start=zz01, measurement_indices=[0]),
+            ...         sf.Flow(start=zz12, measurement_indices=[1]),
+            ...         sf.Flow(start=zz23, measurement_indices=[2]),
+            ...         sf.Flow(start=zz34, measurement_indices=[3]),
+            ...         sf.Flow(end=zz01, measurement_indices=[0]),
+            ...         sf.Flow(end=zz12, measurement_indices=[1]),
+            ...         sf.Flow(end=zz23, measurement_indices=[2]),
+            ...         sf.Flow(end=zz34, measurement_indices=[3]),
             ...     ],
             ... )
             >>> chunk.verify_distance_is_at_least(3)
@@ -802,9 +806,8 @@ class Chunk:
                     center=flow.center,
                     start=flow.end,
                     end=flow.start,
-                    mids=[m + nm for m in rev_flow.measurements_copy()],
+                    measurement_indices=[m + nm for m in rev_flow.measurements_copy()],
                     flags=flow.flags,
-                    obs_key=flow.obs_key,
                 )
                 for flow, rev_flow in zip(self.flows, rev_flows, strict=True)
             ],
