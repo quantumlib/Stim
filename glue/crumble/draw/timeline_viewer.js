@@ -113,7 +113,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
  * @param {!int} numLayers
  */
 function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers) {
-    let w = Math.floor(ctx.canvas.width / 2);
+    let w = Math.floor(ctx.canvas.clientWidth / 2);
 
     let qubits = snap.timelineQubits();
     qubits.sort((a, b) => {
@@ -150,13 +150,12 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
 
     const x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);
-    const num_cols_half = Math.floor(ctx.canvas.width / 4 / x_pitch);
-
+    const num_cols_half = Math.floor(ctx.canvas.clientWidth / 4 / x_pitch);
     let min_t_free = snap.curLayer - num_cols_half + 1;
     let min_t_clamp = Math.max(0, Math.min(min_t_free, numLayers - num_cols_half*2 + 1));
 
 
-    const maxOffsetY = Math.max(0, cur_y - ctx.canvas.height + TIMELINE_PITCH);
+    const maxOffsetY = Math.max(0, cur_y - ctx.canvas.clientHeight + TIMELINE_PITCH);
     const offsetY = Math.max(-maxOffsetY, Math.min(0, snap.timelineOffsetY ?? 0));
 
     const lastLayerOffset = (numLayers - 1 - snap.curLayer - (min_t_clamp - min_t_free)) * x_pitch;
@@ -193,12 +192,12 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
     ctx.save();
     try {
-        ctx.clearRect(w, 0, w, ctx.canvas.height);
+        ctx.clearRect(w, 0, w, ctx.canvas.clientHeight);
 
         // Apply clipping to prevent content from overlapping on labels and outside timeline panel.
         ctx.save();
         ctx.beginPath();
-        ctx.rect(label_col_x, 0, ctx.canvas.width - label_col_x, ctx.canvas.height);
+        ctx.rect(label_col_x, 0, ctx.canvas.clientWidth - label_col_x, ctx.canvas.clientHeight);
         ctx.clip();
 
         // Draw colored indicators showing Pauli propagation.
@@ -212,7 +211,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         ctx.fillStyle = 'black';
         {
             let x1 = t2t(snap.curLayer) + w * 1.5 - x_pitch / 2 + offsetX;
-            ctx.fillRect(x1, 0, x_pitch, ctx.canvas.height);
+            ctx.fillRect(x1, 0, x_pitch, ctx.canvas.clientHeight);
         }
         ctx.globalAlpha *= 2;
 
@@ -269,14 +268,14 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
             // Convert from world to screen coordinates for qubit highlight.
             const x1 = wx1 * zoom + snap.viewportX;
             const y1 = wy1 * zoom + snap.viewportY;
-            if (mouseScreenX > ctx.canvas.width / 2 && mouseScreenY >= y0 - TIMELINE_PITCH * 0.55 && mouseScreenY <= y0 + TIMELINE_PITCH * 0.55) {
+            if (mouseScreenX > ctx.canvas.clientWidth / 2 && mouseScreenY >= y0 - TIMELINE_PITCH * 0.55 && mouseScreenY <= y0 + TIMELINE_PITCH * 0.55) {
                 ctx.beginPath();
                 ctx.moveTo(x0, y0);
                 ctx.lineTo(x1, y1);
                 ctx.stroke();
                 ctx.fillStyle = 'black';
                 ctx.fillRect(x1 - (QUBIT_HIGHLIGHT_SIZE/2) * zoom, y1 - (QUBIT_HIGHLIGHT_SIZE/2) * zoom, QUBIT_HIGHLIGHT_SIZE * zoom, QUBIT_HIGHLIGHT_SIZE * zoom);
-                ctx.fillRect(ctx.canvas.width / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.width / 2, TIMELINE_PITCH * 2 / 3);
+                ctx.fillRect(ctx.canvas.clientWidth / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.clientWidth / 2, TIMELINE_PITCH * 2 / 3);
             }
         }
     } finally {

@@ -318,6 +318,67 @@ class EditorState {
     }
 
     /**
+     * @param {!boolean} preview
+     */
+    applyQubitLocationSwap(preview) {
+        let [x, y] = xyToPos(this.curMouseX, this.curMouseY);
+        let [minX, minY] = minXY(this.focusedSet.values());
+        let dst = new Map();
+        if (x !== undefined && minX !== undefined) {
+            // Displace selected qubits such that the root selected qubit moves to the mouse hover location.
+            let dx = x - minX;
+            let dy = y - minY;
+
+            // Choose where each selected qubit will go.
+            let src = new Map();
+            for (let [x1, y1] of this.focusedSet.values()) {
+                let k1 = `${x1},${y1}`;
+                let x2 = x1 + dx;
+                let y2 = y1 + dy;
+                let k2 = `${x2},${y2}`;
+                dst.set(k1, [x2, y2]);
+                src.set(k2, [x1, y1]);
+            }
+
+            // Qubits overwritten by the move are moved into the locations vacated by the move.
+            for (let k of src.keys()) {
+                if (dst.has(k)) {
+                    continue;
+                }
+                let [x, y] = src.get(k);
+                while (true) {
+                    // Follow the move backwards.
+                    let prev = src.get(`${x},${y}`);
+                    if (prev === undefined) {
+                        break;
+                    }
+                    [x, y] = prev;
+                }
+                dst.set(k, [x, y]);
+            }
+        } else if (this.focusedSet.size === 2) {
+            // Swap the two selected qubits.
+            let [[x1, y1], [x2, y2]] = [...this.focusedSet.values()];
+            let k1 = `${x1},${y1}`;
+            let k2 = `${x2},${y2}`;
+            dst.set(k1, [x2, y2]);
+            dst.set(k2, [x1, y1]);
+        } else {
+            return;
+        }
+
+        // Coordinate transform is to follow the dst map, falling back to staying at current location.
+        let transform = (x, y) => {
+            let v = dst.get(`${x},${y}`);
+            if (v !== undefined) {
+                return v;
+            }
+            return [x, y];
+        };
+        this.applyCoordinateTransform(transform, preview, true);
+    }
+
+    /**
      * @param {!int} steps
      * @param {!boolean} preview
      */

@@ -4,6 +4,7 @@ import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {beginPathPolygon} from './draw_util.js';
+import {minXY} from "../circuit/layer.js";
 
 /**
  * @param {!number|undefined} x
@@ -193,12 +194,15 @@ function defensiveDraw(ctx, body) {
 }
 
 function switchToScreenCoordinates(ctx) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 }
 
 function switchToTransformationCoordinates(ctx, snap) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
     const zoom = snap.viewportZoom;
-    ctx.setTransform(zoom, 0, 0, zoom, snap.viewportX, snap.viewportY);
+    ctx.setTransform(zoom * devicePixelRatio, 0, 0, zoom * devicePixelRatio,
+                     snap.viewportX * devicePixelRatio, snap.viewportY * devicePixelRatio);
 }
 
 /**
@@ -206,6 +210,9 @@ function switchToTransformationCoordinates(ctx, snap) {
  * @param {!StateSnapshot} snap
  */
 function draw(ctx, snap) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
     let circuit = snap.circuit;
 
     let numPropagatedLayers = 0;
@@ -264,7 +271,7 @@ function draw(ctx, snap) {
 
     defensiveDraw(ctx, () => {
         switchToScreenCoordinates(ctx);
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
 
         // Draw grid tick-mark labels.
         defensiveDraw(ctx, () => {
@@ -276,7 +283,7 @@ function draw(ctx, snap) {
 
             ctx.save();
             ctx.beginPath();
-            ctx.rect(LABEL_GAP, 0, ctx.canvas.width - LABEL_GAP, ctx.canvas.height);
+            ctx.rect(LABEL_GAP, 0, ctx.canvas.clientWidth - LABEL_GAP, ctx.canvas.clientHeight);
             ctx.clip();
             for (let qx = 0; qx < MAX_QUBIT_COORDINATE; qx += tickMarkInterval) {
                 let [x, _] = c2dCoordTransform(qx, 0);
@@ -288,7 +295,7 @@ function draw(ctx, snap) {
 
             ctx.save();
             ctx.beginPath();
-            ctx.rect(0, LABEL_GAP, ctx.canvas.width, ctx.canvas.height - LABEL_GAP);
+            ctx.rect(0, LABEL_GAP, ctx.canvas.clientWidth, ctx.canvas.clientHeight - LABEL_GAP);
             ctx.clip();
             for (let qy = 0; qy < MAX_QUBIT_COORDINATE; qy += tickMarkInterval) {
                 let [_, y] = c2dCoordTransform(0, qy);
@@ -302,7 +309,7 @@ function draw(ctx, snap) {
         // Apply clipping on all content so it doesn't overlap on tick labels.
         ctx.save();
         ctx.beginPath();
-        ctx.rect(LABEL_GAP, LABEL_GAP, ctx.canvas.width, ctx.canvas.height - LABEL_GAP);
+        ctx.rect(LABEL_GAP, LABEL_GAP, ctx.canvas.clientWidth, ctx.canvas.clientHeight - LABEL_GAP);
         ctx.clip();
         switchToTransformationCoordinates(ctx, snap);
 
@@ -374,10 +381,16 @@ function draw(ctx, snap) {
 
         defensiveDraw(ctx, () => {
             ctx.globalAlpha *= 0.5
+            let [minX, minY] = minXY(snap.focusedSet.values());
             for (let [qx, qy] of snap.focusedSet.values()) {
                 let [x, y] = c2dCoordTransform(qx, qy);
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(x - rad * 1.25, y - rad * 1.25, 2.5*rad, 2.5*rad);
+                let w = 1.25;
+                if (qx === minX && qy === minY) {
+                    // The root selected qubit (used for certain UX broadcasting actions) is shown slightly bigger.
+                    w = 1.5;
+                }
+                ctx.fillRect(x - rad * w, y - rad * w, 2*w*rad, 2*w*rad);
             }
         });
 
@@ -424,7 +437,7 @@ function draw(ctx, snap) {
     ctx.save();
     try {
         ctx.strokeStyle = 'black';
-        ctx.translate(Math.floor(ctx.canvas.width / 2), 0);
+        ctx.translate(Math.floor(ctx.canvas.clientWidth / 2), 0);
         for (let k = 0; k < circuit.layers.length; k++) {
             let hasPolygons = false;
             let hasXMarker = false;
@@ -519,6 +532,7 @@ function draw(ctx, snap) {
     } finally {
         ctx.restore();
     }
+    ctx.restore(); // restore devicePixelRatio scale
     return timelineDrawSummary;
 }
 
