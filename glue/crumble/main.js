@@ -222,37 +222,7 @@ function makeChordHandlers() {
     res.set('ctrl+shift+z', preview => { if (!preview) editorState.redo() });
     res.set('ctrl+c', async preview => { await copyToClipboard(); });
     res.set('ctrl+v', pasteFromClipboard);
-    res.set('ctrl+x', async preview => {
-        await copyToClipboard();
-        if (editorState.focusedSet.size === 0) {
-            let c = editorState.copyOfCurCircuit();
-            c.layers[editorState.curLayer].id_ops.clear();
-            c.layers[editorState.curLayer].markers.length = 0;
-            editorState.commit_or_preview(c, preview);
-        } else {
-            editorState.deleteAtFocus(preview);
-        }
-    });
-    // Below, we allow for mac users to use the "command" key (meta) instead of "control"
-    res.set('meta+delete', preview => editorState.deleteCurLayer(preview));
-    res.set('meta+backspace', preview => editorState.deleteCurLayer(preview));
-    res.set('meta+enter', preview => editorState.insertLayer(preview));
-    res.set('meta+z', preview => { if (!preview) editorState.undo() });
-    res.set('meta+y', preview => { if (!preview) editorState.redo() });
-    res.set('meta+shift+z', preview => { if (!preview) editorState.redo() });
-    res.set('meta+c', async preview => { await copyToClipboard(); });
-    res.set('meta+v', pasteFromClipboard);
-    res.set('meta+x', async preview => {
-        await copyToClipboard();
-        if (editorState.focusedSet.size === 0) {
-            let c = editorState.copyOfCurCircuit();
-            c.layers[editorState.curLayer].id_ops.clear();
-            c.layers[editorState.curLayer].markers.length = 0;
-            editorState.commit_or_preview(c, preview);
-        } else {
-            editorState.deleteAtFocus(preview);
-        }
-    });
+    res.set('ctrl+x', cutToClipboard);
     
     res.set('l', preview => {
         if (!preview) {
@@ -463,12 +433,78 @@ async function pasteFromClipboard(preview) {
     editorState.commit_or_preview(newCircuit, preview);
 }
 
+async function cutToClipboard(preview) {
+    await copyToClipboard();
+    if (editorState.focusedSet.size === 0) {
+        let c = editorState.copyOfCurCircuit();
+        c.layers[editorState.curLayer].id_ops.clear();
+        c.layers[editorState.curLayer].markers.length = 0;
+        editorState.commit_or_preview(c, preview);
+    } else {
+        editorState.deleteAtFocus(preview);
+    }
+}
+
 const CHORD_HANDLERS = makeChordHandlers();
 /**
  * @param {!KeyboardEvent} ev
  */
-function handleKeyboardEvent(ev) {
+async function handleKeyboardEvent(ev) {
+    if (ev.type === 'keydown' && ev.metaKey) {
+        if (ev.repeat) {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            return;
+        }
+
+        let key = ev.key.toLowerCase();
+
+        if (key === 'z' && !ev.shiftKey) {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.undo();
+            return;
+        }
+        if ((key === 'z' && ev.shiftKey) || key === 'y') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.redo();
+            return;
+        }
+        if (key === 'c') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            await copyToClipboard();
+            return;
+        }
+        if (key === 'v') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            await pasteFromClipboard(false);
+            return;
+        }
+        if (key === 'x') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            await cutToClipboard(false);
+            return;
+        }
+        if (key === 'backspace' || key === 'delete') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.deleteCurLayer(false);
+            return;
+        }
+        if (key === 'enter') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.insertLayer(false);
+            return;
+        }
+    }
+
     editorState.chorder.handleKeyEvent(ev);
+        
     if (ev.type === 'keydown') {
         if (ev.key.toLowerCase() === 'q') {
             let d = ev.shiftKey ? 5 : 1;
