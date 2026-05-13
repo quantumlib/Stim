@@ -144,8 +144,8 @@ def test_transversal_code_transition_chunk():
         ],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1, 2]).with_name("X"),
-                stimflow.PauliMap.from_zs([0j + 1, 1j + 1, 2j + 1]).with_name("Z"),
+                stimflow.PauliMap.from_xs([0, 1, 2]).with_obs_name("X"),
+                stimflow.PauliMap.from_zs([0j + 1, 1j + 1, 2j + 1]).with_obs_name("Z"),
             )
         ],
     )

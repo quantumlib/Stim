@@ -51,13 +51,13 @@ class PauliMap:
             | None
         ) = None,
         *,
-        name: Any = None,
+        obs_name: Any = None,
     ):
         """Initializes a PauliMap using maps of Paulis to/from qubits.
 
         Args:
             mapping: The association between qubits and paulis, specifiable in a variety of ways.
-            name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
+            obs_name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
                 in order to identify the Pauli map. A common convention used in the library is that
                 named Pauli maps correspond to logical operators.
 
@@ -83,12 +83,12 @@ class PauliMap:
             >>> print(sf.PauliMap({0: "X", "Y": [0, 1]}))
             Z0*Y1
 
-            >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, name="test"))
-            (name='test') X0*Y1*Z2
+            >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, obs_name="test"))
+            (obs_name='test') X0*Y1*Z2
         """
 
         self._dict: dict[complex, Literal["X", "Y", "Z"]]
-        self.name: Any = name
+        self.obs_name: Any = obs_name
         self._hash: int
 
         from stimflow._core._tile import Tile
@@ -120,22 +120,22 @@ class PauliMap:
             self._dict = {complex(q): self._dict[q] for q in sorted_complex(self.keys())}
         else:
             self._dict = {}
-        self._hash = hash((self.name, tuple(self._dict.items())))
+        self._hash = hash((self.obs_name, tuple(self._dict.items())))
 
     @staticmethod
     def from_xs(xs: Iterable[complex], *, name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the X basis."""
-        return PauliMap({"X": xs}, name=name)
+        return PauliMap({"X": xs}, obs_name=name)
 
     @staticmethod
     def from_ys(ys: Iterable[complex], *, name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the Y basis."""
-        return PauliMap({"Y": ys}, name=name)
+        return PauliMap({"Y": ys}, obs_name=name)
 
     @staticmethod
     def from_zs(zs: Iterable[complex], *, name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the Z basis."""
-        return PauliMap({"Z": zs}, name=name)
+        return PauliMap({"Z": zs}, obs_name=name)
 
     def __contains__(self, item: complex) -> bool:
         """Determines if the PauliMap maps the given qubit to a non-identity Pauli."""
@@ -165,12 +165,12 @@ class PauliMap:
     def __iter__(self) -> Iterator[complex]:
         return self._dict.__iter__()
 
-    def with_name(self, name: Any) -> PauliMap:
+    def with_obs_name(self, name: Any) -> PauliMap:
         """Returns the same PauliMap, but with the given name.
 
         Names are used to identify logical operators.
         """
-        return PauliMap(self, name=name)
+        return PauliMap(self, obs_name=name)
 
     def _mul_term(self, q: complex, b: Literal["X", "Y", "Z"]):
         new_b = _multiplication_table[self._dict.pop(q, None)][b]
@@ -179,7 +179,7 @@ class PauliMap:
 
     def with_basis(self, basis: Literal["X", "Y", "Z"]) -> PauliMap:
         """Returns the same PauliMap, but with all its qubits mapped to the given basis."""
-        return PauliMap({q: basis for q in self.keys()}, name=self.name)
+        return PauliMap({q: basis for q in self.keys()}, obs_name=self.obs_name)
 
     def __bool__(self) -> bool:
         return bool(self._dict)
@@ -206,10 +206,10 @@ class PauliMap:
         return PauliMap(result)
 
     def __repr__(self) -> str:
-        if self.name is None:
+        if self.obs_name is None:
             s2 = ""
         else:
-            s2 = f", name={self.name!r}"
+            s2 = f", obs_name={self.obs_name!r}"
         qs = sorted_complex(self._dict)
         if len(self) > 1:
             p = set(self.values())
@@ -231,19 +231,19 @@ class PauliMap:
         result = "*".join(f"{self._dict[q]}{simplify(q)}" for q in sorted_complex(self.keys()))
         if not result:
             result = 'I'
-        if self.name is not None:
-            result = f"(name={self.name!r}) " + result
+        if self.obs_name is not None:
+            result = f"(obs_name={self.obs_name!r}) " + result
         return result
 
     def with_xz_flipped(self) -> PauliMap:
         """Returns the same PauliMap, but with all qubits conjugated by H."""
         remap = {"X": "Z", "Y": "Y", "Z": "X"}
-        return PauliMap({q: remap[p] for q, p in self._dict.items()}, name=self.name)
+        return PauliMap({q: remap[p] for q, p in self._dict.items()}, obs_name=self.obs_name)
 
     def with_xy_flipped(self) -> PauliMap:
         """Returns the same PauliMap, but with all qubits conjugated by H_XY."""
         remap = {"X": "Y", "Y": "X", "Z": "Z"}
-        return PauliMap({q: remap[p] for q, p in self._dict.items()}, name=self.name)
+        return PauliMap({q: remap[p] for q, p in self._dict.items()}, obs_name=self.obs_name)
 
     def commutes(self, other: PauliMap) -> bool:
         """Determines if the pauli map commutes with another pauli map."""
@@ -258,7 +258,7 @@ class PauliMap:
 
     def with_transformed_coords(self, transform: Callable[[complex], complex]) -> PauliMap:
         """Returns the same PauliMap but with coordinates transformed by the given function."""
-        return PauliMap({transform(q): p for q, p in self._dict.items()}, name=self.name)
+        return PauliMap({transform(q): p for q, p in self._dict.items()}, obs_name=self.obs_name)
 
     def to_stim_pauli_string(
         self, q2i: dict[complex, int], *, num_qubits: int | None = None

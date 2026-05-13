@@ -70,11 +70,11 @@ class StabilizerCode:
 
         seen_names = set()
         for obs in self.flat_logicals:
-            if obs.name is None:
+            if obs.obs_name is None:
                 raise ValueError(f"Unnamed logical operator: {obs!r}")
-            if obs.name in seen_names:
-                raise ValueError(f"Name collision {obs.name=}")
-            seen_names.add(obs.name)
+            if obs.obs_name in seen_names:
+                raise ValueError(f"Name collision {obs.obs_name=}")
+            seen_names.add(obs.obs_name)
 
     @property
     def patch(self) -> Patch:
@@ -135,7 +135,7 @@ class StabilizerCode:
             x = full_tableau.x_output(k)
             x2 = PauliMap(x).with_transformed_coords(cast(Any, i2q.__getitem__))
             z2 = PauliMap(z).with_transformed_coords(cast(Any, i2q.__getitem__))
-            new_logicals.append((x2.with_name(f"inferred_X{k}"), z2.with_name(f"inferred_Z{k}")))
+            new_logicals.append((x2.with_obs_name(f"inferred_X{k}"), z2.with_obs_name(f"inferred_Z{k}")))
 
         return StabilizerCode(
             stabilizers=self.patch,
@@ -202,7 +202,7 @@ class StabilizerCode:
                 total *= obs.with_transformed_coords(
                     lambda e: q.real * pitch.real + q.imag * pitch.imag * 1j + e
                 )
-            return total.with_name((over_obs.name, under_index))
+            return total.with_obs_name((over_obs.obs_name, under_index))
 
         new_stabilizers = []
         for stabilizer in over.stabilizers:
@@ -248,7 +248,7 @@ class StabilizerCode:
             if len(b1) == 1 and len(b2) == 1:
                 # For example, we have X and Z specified and the user asked for Y.
                 # Note that this works even if the X doesn't exactly overlap the Z.
-                return (a1 * a2).with_name((a1.name, a2.name))
+                return (a1 * a2).with_obs_name((a1.obs_name, a2.obs_name))
         if default != "__!not_specified":
             return default
         raise ValueError(f"Couldn't return a basis {basis} observable from {obs=}.")

@@ -71,13 +71,13 @@ class ChunkCompiler:
 
         lines.append("    det_flows {")
         for key, flow in self.open_flows.items():
-            if isinstance(flow, Flow) and flow.obs_key is None:
+            if isinstance(flow, Flow) and flow.obs_name is None:
                 lines.append(f"        {flow.end}, ms={flow.measurement_indices}")
         lines.append("    }")
 
         lines.append("    obs_flows {")
         for key, flow in self.open_flows.items():
-            if isinstance(flow, Flow) and flow.obs_key is not None:
+            if isinstance(flow, Flow) and flow.obs_name is not None:
                 lines.append(f"        {flow.key_end}: ms={flow.measurement_indices}")
         lines.append("    }")
 
@@ -116,13 +116,13 @@ class ChunkCompiler:
 
         obs2i: dict[int, int | Literal["discard"]] = {}
         next_obs_index = 0
-        for obs_key, obs_index in sorted(self.o2i.items(), key=lambda e: e[1]):
-            if obs_key in self.discarded_observables:
+        for obs_name, obs_index in sorted(self.o2i.items(), key=lambda e: e[1]):
+            if obs_name in self.discarded_observables:
                 obs2i[obs_index] = "discard"
-            elif isinstance(obs_key, int):
+            elif isinstance(obs_name, int):
                 obs2i[obs_index] = next_obs_index
                 next_obs_index += 1
-        for obs_key, obs_index in sorted(self.o2i.items(), key=lambda e: e[1]):
+        for obs_name, obs_index in sorted(self.o2i.items(), key=lambda e: e[1]):
             if obs_index not in obs2i:
                 obs2i[obs_index] = next_obs_index
                 next_obs_index += 1
@@ -160,16 +160,16 @@ class ChunkCompiler:
         self.waiting_for_magic_init = False
 
         self.ensure_qubits_included(expected.used_set)
-        self.ensure_observables_included(port.name for port in sorted(expected.ports))
-        self.ensure_observables_included(port.name for port in sorted(expected.discards))
-        obs_ports = sorted(port for port in expected.ports if port.name is not None)
+        self.ensure_observables_included(port.obs_name for port in sorted(expected.ports))
+        self.ensure_observables_included(port.obs_name for port in sorted(expected.discards))
+        obs_ports = sorted(port for port in expected.ports if port.obs_name is not None)
         for obs_port in obs_ports:
             assert obs_port not in self.open_flows
-            assert obs_port.name is not None
+            assert obs_port.obs_name is not None
             targets = [stim.target_pauli(self.q2i[q], p) for q, p in obs_port.items()]
             self.open_flows[obs_port] = Flow(end=obs_port)
-            obs_index = self.o2i.setdefault(obs_port.name, len(self.o2i))
-            metadata = self.metadata_func(Flow(start=PauliMap(name=obs_port.name)))
+            obs_index = self.o2i.setdefault(obs_port.obs_name, len(self.o2i))
+            metadata = self.metadata_func(Flow(start=PauliMap(obs_name=obs_port.obs_name)))
             self.circuit.append("OBSERVABLE_INCLUDE", targets, arg=obs_index, tag=metadata.tag)
             self.circuit.append("TICK")
 
@@ -195,9 +195,9 @@ class ChunkCompiler:
         if expected is None:
             expected = self.cur_end_interface()
         self.ensure_qubits_included(expected.used_set)
-        self.ensure_observables_included(port.name for port in sorted(expected.ports))
-        self.ensure_observables_included(port.name for port in sorted(expected.discards))
-        obs_ports: list[PauliMap] = sorted(port for port in expected.ports if port.name is not None)
+        self.ensure_observables_included(port.obs_name for port in sorted(expected.ports))
+        self.ensure_observables_included(port.obs_name for port in sorted(expected.discards))
+        obs_ports: list[PauliMap] = sorted(port for port in expected.ports if port.obs_name is not None)
         completed_flows = []
         for discarded in expected.discards:
             v = self.open_flows.pop(discarded)
@@ -230,8 +230,8 @@ class ChunkCompiler:
             flow = flow.fused_with_next_flow(
                 Flow(start=obs_port), next_flow_measure_offset=0
             )
-            obs_index = self.o2i.setdefault(obs_port.name, len(self.o2i))
-            metadata = self.metadata_func(Flow(start=PauliMap(name=obs_port.name)))
+            obs_index = self.o2i.setdefault(obs_port.obs_name, len(self.o2i))
+            metadata = self.metadata_func(Flow(start=PauliMap(obs_name=obs_port.obs_name)))
             self.circuit.append("OBSERVABLE_INCLUDE", targets, arg=obs_index, tag=metadata.tag)
             completed_flows.append(flow)
         self._append_detectors(completed_flows=completed_flows)
@@ -268,8 +268,8 @@ class ChunkCompiler:
 
     def _append_chunk_reflow(self, *, chunk_reflow: ChunkReflow) -> None:
         for ps in chunk_reflow.discard_in:
-            if ps.name is not None:
-                self.discarded_observables.add(ps.name)
+            if ps.obs_name is not None:
+                self.discarded_observables.add(ps.obs_name)
         next_flows: dict[PauliMap, Flow | Literal["discard"]] = {}
         for output, inputs in chunk_reflow.out2in.items():
             measurements: set[int] = set()
@@ -357,11 +357,11 @@ class ChunkCompiler:
         # Attach new flows to existing flows.
         next_flows, completed_flows = self._compute_next_flows(chunk=chunk)
         for ps in chunk.discarded_inputs:
-            if ps.name is not None:
-                self.discarded_observables.add(ps.name)
+            if ps.obs_name is not None:
+                self.discarded_observables.add(ps.obs_name)
         for ps in chunk.discarded_outputs:
-            if ps.name is not None:
-                self.discarded_observables.add(ps.name)
+            if ps.obs_name is not None:
+                self.discarded_observables.add(ps.obs_name)
         self.num_measurements += chunk.circuit.num_measurements
         self.open_flows = next_flows
 
@@ -487,11 +487,11 @@ class ChunkCompiler:
 
         # Dump observable changes.
         for key, flow in list(self.open_flows.items()):
-            if key.name is not None and isinstance(flow, Flow) and flow.measurement_indices:
+            if key.obs_name is not None and isinstance(flow, Flow) and flow.measurement_indices:
                 dump_targets: list[stim.GateTarget] = []
                 for m in flow.measurement_indices:
                     dump_targets.append(stim.target_rec(m - self.num_measurements))
-                obs_index = self.o2i.setdefault(flow.obs_key, len(self.o2i))
+                obs_index = self.o2i.setdefault(flow.obs_name, len(self.o2i))
                 inserted_ops.append("OBSERVABLE_INCLUDE", dump_targets, obs_index)
                 self.open_flows[key] = flow.with_edits(measurement_indices=[])
 
@@ -504,14 +504,14 @@ class ChunkCompiler:
                     stim.target_rec(self._canonicalize_measurement_index_to_negative(m))
                 )
             metadata = self.metadata_func(flow)
-            if flow.obs_key is None:
+            if flow.obs_name is None:
                 dt = detector_pos_usage_counts[flow.center]
                 detector_pos_usage_counts[flow.center] += 1
                 coord = flow.center if flow.center is not None else -1
                 coords = (coord.real, coord.imag, dt, *metadata.extra_coords)
                 inserted_ops.append("DETECTOR", rec_targets, coords, tag=metadata.tag)
             else:
-                obs_index = self.o2i.setdefault(flow.obs_key, len(self.o2i))
+                obs_index = self.o2i.setdefault(flow.obs_name, len(self.o2i))
                 if rec_targets:
                     if metadata.extra_coords:
                         raise ValueError(

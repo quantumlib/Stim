@@ -22,7 +22,7 @@ class ChunkInterface:
         layers: collections.defaultdict[int, list[PauliMap]] = collections.defaultdict(list)
 
         for port in sorted(self.ports):
-            if port.name is None:
+            if port.obs_name is None:
                 layer_index = 0
                 while any((q, layer_index) in qubit_used for q in port.keys()):
                     layer_index += 1
@@ -88,8 +88,8 @@ class ChunkInterface:
     def without_keyed(self) -> ChunkInterface:
         """Returns the same chunk interface, but without logical flows (named flows)."""
         return ChunkInterface(
-            ports=[port for port in self.ports if port.name is None],
-            discards=[discard for discard in self.discards if discard.name is None],
+            ports=[port for port in self.ports if port.obs_name is None],
+            discards=[discard for discard in self.discards if discard.obs_name is None],
         )
 
     def with_discards_as_ports(self) -> ChunkInterface:
@@ -151,7 +151,7 @@ class ChunkInterface:
                 Tile(bases="".join(port.values()), data_qubits=port.keys(), measure_qubit=None)
                 for pauli_string_list in [self.ports, self.discards]
                 for port in pauli_string_list
-                if port.name is None
+                if port.obs_name is None
             ]
         )
 
@@ -163,6 +163,6 @@ class ChunkInterface:
                 port
                 for pauli_string_list in [self.ports, self.discards]
                 for port in pauli_string_list
-                if port.name is not None
+                if port.obs_name is not None
             ],
         )

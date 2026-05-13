@@ -102,7 +102,7 @@ class ChunkReflow:
 
         unsolved: list[tuple[PauliMap, PauliMap]] = []
         for inp, out in transitions:
-            assert inp.name == out.name
+            assert inp.obs_name == out.obs_name
             if inp == out:
                 new_out2in[out] = [inp]
             else:
@@ -172,7 +172,7 @@ class ChunkReflow:
         tiles: list[Tile] = []
         observables: list[PauliMap] = []
         for obs in self.removed_inputs:
-            if obs.name is None:
+            if obs.obs_name is None:
                 tiles.append(Tile(data_qubits=obs.keys(), bases="".join(obs.values())))
             else:
                 observables.append(obs)
@@ -185,7 +185,7 @@ class ChunkReflow:
         tiles: list[Tile] = []
         observables: list[PauliMap] = []
         for obs in self.out2in.keys():
-            if obs.name is None:
+            if obs.obs_name is None:
                 tiles.append(Tile(data_qubits=obs.keys(), bases="".join(obs.values())))
             else:
                 observables.append(obs)

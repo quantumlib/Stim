@@ -39,7 +39,7 @@ class Flow:
             measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
                 into it as it traverses the circuit).
             center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
-                when the flow is completed into a detector. Incompatible with obs_key.
+                when the flow is completed into a detector. Incompatible with obs_name.
             flags: Defaults to empty. Custom information about the flow, that can be used by code
                 operating on chunks for a variety of purposes. For example, this could identify the
                 "color" of the flow in a color code.
@@ -55,8 +55,8 @@ class Flow:
             )
         if isinstance(flags, str):
             raise TypeError(f"{flags=} is a str instead of a set")
-        if isinstance(start, PauliMap) and isinstance(end, PauliMap) and start.name != end.name:
-            raise ValueError(f'{start.name=} != {end.name=}')
+        if isinstance(start, PauliMap) and isinstance(end, PauliMap) and start.obs_name != end.obs_name:
+            raise ValueError(f'{start.obs_name=} != {end.obs_name=}')
 
         if center is None and isinstance(start, Tile):
             center = start.measure_qubit
@@ -64,19 +64,19 @@ class Flow:
             center = end.measure_qubit
 
         if isinstance(start, PauliMap):
-            obs_key = start.name
+            obs_name = start.obs_name
         elif isinstance(end, PauliMap):
-            obs_key = end.name
+            obs_name = end.obs_name
         else:
-            obs_key = None
+            obs_name = None
         if isinstance(start, Tile):
-            start = start.to_pauli_map().with_name(obs_key)
+            start = start.to_pauli_map().with_obs_name(obs_name)
         elif start is None:
-            start = PauliMap(name=obs_key)
+            start = PauliMap(obs_name=obs_name)
         if isinstance(end, Tile):
-            end = end.to_pauli_map().with_name(obs_key)
+            end = end.to_pauli_map().with_obs_name(obs_name)
         elif end is None:
-            end = PauliMap(name=obs_key)
+            end = PauliMap(obs_name=obs_name)
 
         if center is None:
             qubits: list[complex] = []
@@ -99,12 +99,12 @@ class Flow:
         if self.sign:
             out.sign = -1
         included_observables: list[int] | None
-        if self.obs_key is None:
+        if self.obs_name is None:
             included_observables = None
         elif o2i is None:
-            raise ValueError(f"{self.obs_key=} is not None but {o2i=}")
+            raise ValueError(f"{self.obs_name=} is not None but {o2i=}")
         else:
-            v = o2i[self.obs_key]
+            v = o2i[self.obs_name]
             if v is None:
                 included_observables = None
             else:
@@ -117,8 +117,8 @@ class Flow:
         )
 
     @property
-    def obs_key(self) -> Any:
-        return self.start.name
+    def obs_name(self) -> Any:
+        return self.start.obs_name
 
     def with_edits(
         self,
@@ -150,7 +150,7 @@ class Flow:
             self.start == other.start
             and self.end == other.end
             and self.measurement_indices == other.measurement_indices
-            and self.obs_key == other.obs_key
+            and self.obs_name == other.obs_name
             and self.flags == other.flags
             and self.center == other.center
             and self.sign == other.sign
@@ -162,7 +162,7 @@ class Flow:
                 self.start,
                 self.end,
                 self.measurement_indices,
-                self.obs_key,
+                self.obs_name,
                 self.flags,
                 self.center,
                 self.sign,
@@ -196,7 +196,7 @@ class Flow:
         if not end_terms:
             end_terms.append("1")
 
-        key = "" if self.obs_key is None else f" (obs={self.obs_key})"
+        key = "" if self.obs_name is None else f" (obs={self.obs_name})"
         result = f'{"*".join(start_terms)} -> {"*".join(end_terms)}{key}'
         if self.sign is None:
             pass
@@ -231,8 +231,8 @@ class Flow:
     def fused_with_next_flow(self, next_flow: Flow, *, next_flow_measure_offset: int) -> Flow:
         if next_flow.start != self.end:
             raise ValueError("other.start != self.end")
-        if next_flow.obs_key != self.obs_key:
-            raise ValueError("other.obs_key != self.obs_key")
+        if next_flow.obs_name != self.obs_name:
+            raise ValueError("other.obs_name != self.obs_name")
         if self.center is None:
             new_center = next_flow.center
         elif next_flow.center is None:
@@ -260,8 +260,8 @@ class Flow:
 
         The product of A -> B and C -> D is (A*C) -> (B*D).
         """
-        if self.obs_key != other.obs_key:
-            raise ValueError(f"{self.obs_key=} != {other.obs_key=}")
+        if self.obs_name != other.obs_name:
+            raise ValueError(f"{self.obs_name=} != {other.obs_name=}")
         if (self.sign is None) != (other.sign is None):
             raise ValueError(f"({self.sign=} is None) != ({other.sign=} is None)")
 
@@ -281,7 +281,7 @@ class Flow:
             start=new_start,
             end=new_end,
             measurement_indices=xor_sorted(self.measurement_indices + other.measurement_indices),
-            obs_key=self.obs_key,
+            obs_name=self.obs_name,
             flags=self.flags | other.flags,
             center=new_center,
             sign=(None if self.sign is None else self.sign ^ other.sign),

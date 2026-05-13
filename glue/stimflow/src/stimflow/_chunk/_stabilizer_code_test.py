@@ -12,13 +12,13 @@ def test_make_phenom_circuit_for_stabilizer_code():
             stimflow.Tile(bases="X", data_qubits=[0 + 1j, 1 + 1j], measure_qubit=0.5 + 1j),
         ]
     )
-    obs_x = stimflow.PauliMap({0: "X", 1j: "X"}).with_name("LX")
-    obs_z = stimflow.PauliMap({0: "Z", 1: "Z"}).with_name("LZ")
+    obs_x = stimflow.PauliMap({0: "X", 1j: "X"}).with_obs_name("LX")
+    obs_z = stimflow.PauliMap({0: "Z", 1: "Z"}).with_obs_name("LZ")
 
     assert stimflow.StabilizerCode(stabilizers=patch, logicals=[(obs_x, obs_z)]).make_phenom_circuit(
         noise=stimflow.NoiseRule(flip_result=0.125, after={"DEPOLARIZE1": 0.25}),
         rounds=100,
-        metadata_func=lambda flow: stimflow.FlowMetadata(tag=(flow.obs_key or "") + "A"),
+        metadata_func=lambda flow: stimflow.FlowMetadata(tag=(flow.obs_name or "") + "A"),
     ) == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
@@ -68,14 +68,14 @@ def test_make_code_capacity_circuit_for_stabilizer_code():
             stimflow.Tile(bases="X", data_qubits=[0 + 1j, 1 + 1j], measure_qubit=0.5 + 1j),
         ]
     )
-    obs_x = stimflow.PauliMap({0: "X", 1j: "X"}).with_name("LX")
-    obs_z = stimflow.PauliMap({0: "Z", 1: "Z"}).with_name("LZ")
+    obs_x = stimflow.PauliMap({0: "X", 1j: "X"}).with_obs_name("LX")
+    obs_z = stimflow.PauliMap({0: "Z", 1: "Z"}).with_obs_name("LZ")
 
     assert stimflow.StabilizerCode(
         stabilizers=patch, logicals=[(obs_x, obs_z)]
     ).make_code_capacity_circuit(
         noise=stimflow.NoiseRule(after={"DEPOLARIZE1": 0.25}),
-        metadata_func=lambda flow: stimflow.FlowMetadata(tag=(flow.obs_key or "") + "B"),
+        metadata_func=lambda flow: stimflow.FlowMetadata(tag=(flow.obs_name or "") + "B"),
     ) == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
@@ -127,8 +127,8 @@ def test_verify_distance_is_at_least_3():
         stabilizers=stimflow.Patch([stimflow.Tile(bases="XXXX", data_qubits=[0, 1, 2, 3])]),
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1]).with_name("LX"),
-                stimflow.PauliMap.from_zs([0, 2]).with_name("LZ"),
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX"),
+                stimflow.PauliMap.from_zs([0, 2]).with_obs_name("LZ"),
             )
         ],
     )
@@ -146,8 +146,8 @@ def test_verify_distance_is_at_least_3():
         ),
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1]).with_name("LX"),
-                stimflow.PauliMap.from_zs([0, 2]).with_name("LZ"),
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX"),
+                stimflow.PauliMap.from_zs([0, 2]).with_obs_name("LZ"),
             )
         ],
     )
@@ -166,8 +166,8 @@ def test_verify_distance_is_at_least_3():
         ),
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1, 2, 3, 4]).with_name("LX"),
-                stimflow.PauliMap.from_zs([0, 1, 2, 3, 4]).with_name("LZ"),
+                stimflow.PauliMap.from_xs([0, 1, 2, 3, 4]).with_obs_name("LX"),
+                stimflow.PauliMap.from_zs([0, 1, 2, 3, 4]).with_obs_name("LZ"),
             )
         ],
     )
@@ -183,12 +183,12 @@ def test_with_integer_coordinates():
         ],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1]).with_name("LX1"),
-                stimflow.PauliMap.from_zs([0, 1j]).with_name("LZ1"),
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([0, 1j]).with_obs_name("LZ1"),
             ),
             (
-                stimflow.PauliMap.from_xs([0, 1j]).with_name("LX2"),
-                stimflow.PauliMap.from_zs([0, 1]).with_name("LZ2"),
+                stimflow.PauliMap.from_xs([0, 1j]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_zs([0, 1]).with_obs_name("LZ2"),
             ),
         ],
     )
@@ -201,12 +201,12 @@ def test_with_integer_coordinates():
         ],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1]).with_name("LX1"),
-                stimflow.PauliMap.from_zs([0, 2j]).with_name("LZ1"),
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([0, 2j]).with_obs_name("LZ1"),
             ),
             (
-                stimflow.PauliMap.from_xs([0, 2j]).with_name("LX2"),
-                stimflow.PauliMap.from_zs([0, 1]).with_name("LZ2"),
+                stimflow.PauliMap.from_xs([0, 2j]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_zs([0, 1]).with_obs_name("LZ2"),
             ),
         ],
     )
@@ -220,12 +220,12 @@ def test_physical_to_logical():
         ],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([0, 1]).with_name("LX1"),
-                stimflow.PauliMap.from_zs([0, 1j]).with_name("LZ1"),
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([0, 1j]).with_obs_name("LZ1"),
             ),
             (
-                stimflow.PauliMap.from_xs([0, 1j]).with_name("LX2"),
-                stimflow.PauliMap.from_zs([0, 1]).with_name("LZ2"),
+                stimflow.PauliMap.from_xs([0, 1j]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_zs([0, 1]).with_obs_name("LZ2"),
             ),
         ],
     )
@@ -252,12 +252,12 @@ def test_concat_over():
         stabilizers=[stimflow.PauliMap.from_xs([a, b, c, d]), stimflow.PauliMap.from_zs([a, b, c, d])],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([a, b]).with_name("LX1"),
-                stimflow.PauliMap.from_zs([a, c]).with_name("LX2"),
+                stimflow.PauliMap.from_xs([a, b]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([a, c]).with_obs_name("LX2"),
             ),
             (
-                stimflow.PauliMap.from_zs([a, b]).with_name("LZ1"),
-                stimflow.PauliMap.from_xs([a, c]).with_name("LZ2"),
+                stimflow.PauliMap.from_zs([a, b]).with_obs_name("LZ1"),
+                stimflow.PauliMap.from_xs([a, c]).with_obs_name("LZ2"),
             ),
         ],
     )
@@ -278,12 +278,12 @@ def test_to_svg():
         stabilizers=[stimflow.PauliMap.from_xs([a, b, c, d]), stimflow.PauliMap.from_zs([a, b, c, d])],
         logicals=[
             (
-                stimflow.PauliMap.from_xs([a, b]).with_name("LX1"),
-                stimflow.PauliMap.from_zs([a, c]).with_name("LZ1"),
+                stimflow.PauliMap.from_xs([a, b]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([a, c]).with_obs_name("LZ1"),
             ),
             (
-                stimflow.PauliMap.from_zs([a, b]).with_name("LX2"),
-                stimflow.PauliMap.from_xs([a, c]).with_name("LZ2"),
+                stimflow.PauliMap.from_zs([a, b]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_xs([a, c]).with_obs_name("LZ2"),
             ),
         ],
     )
@@ -303,12 +303,12 @@ def test_with_remaining_degrees_of_freedom_as_logicals():
         logicals=[
             # Not sure how stable the exact answer is.
             (
-                stimflow.PauliMap({"X": [1, 2]}).with_name("inferred_X0"),
-                stimflow.PauliMap({"Z": [0, 2]}).with_name("inferred_Z0"),
+                stimflow.PauliMap({"X": [1, 2]}).with_obs_name("inferred_X0"),
+                stimflow.PauliMap({"Z": [0, 2]}).with_obs_name("inferred_Z0"),
             ),
             (
-                stimflow.PauliMap({"X": [1, 3]}).with_name("inferred_X1"),
-                stimflow.PauliMap({"Z": [0, 3]}).with_name("inferred_Z1"),
+                stimflow.PauliMap({"X": [1, 3]}).with_obs_name("inferred_X1"),
+                stimflow.PauliMap({"Z": [0, 3]}).with_obs_name("inferred_Z1"),
             ),
         ],
     )

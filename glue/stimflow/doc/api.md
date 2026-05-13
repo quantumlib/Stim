@@ -92,7 +92,7 @@
     - [`stimflow.Flow.__init__`](#stimflow.Flow.__init__)
     - [`stimflow.Flow.__mul__`](#stimflow.Flow.__mul__)
     - [`stimflow.Flow.fused_with_next_flow`](#stimflow.Flow.fused_with_next_flow)
-    - [`stimflow.Flow.obs_key`](#stimflow.Flow.obs_key)
+    - [`stimflow.Flow.obs_name`](#stimflow.Flow.obs_name)
     - [`stimflow.Flow.to_stim_flow`](#stimflow.Flow.to_stim_flow)
     - [`stimflow.Flow.with_edits`](#stimflow.Flow.with_edits)
     - [`stimflow.Flow.with_transformed_coords`](#stimflow.Flow.with_transformed_coords)
@@ -160,7 +160,7 @@
     - [`stimflow.PauliMap.to_tile`](#stimflow.PauliMap.to_tile)
     - [`stimflow.PauliMap.values`](#stimflow.PauliMap.values)
     - [`stimflow.PauliMap.with_basis`](#stimflow.PauliMap.with_basis)
-    - [`stimflow.PauliMap.with_name`](#stimflow.PauliMap.with_name)
+    - [`stimflow.PauliMap.with_obs_name`](#stimflow.PauliMap.with_obs_name)
     - [`stimflow.PauliMap.with_transformed_coords`](#stimflow.PauliMap.with_transformed_coords)
     - [`stimflow.PauliMap.with_xy_flipped`](#stimflow.PauliMap.with_xy_flipped)
     - [`stimflow.PauliMap.with_xz_flipped`](#stimflow.PauliMap.with_xz_flipped)
@@ -566,7 +566,7 @@ def verify_distance_is_at_least(
     Example:
         >>> import stimflow as sf
         >>> import stim
-        >>> lz = sf.PauliMap({0: "Z"}).with_name("LZ")
+        >>> lz = sf.PauliMap({0: "Z"}).with_obs_name("LZ")
         >>> zz01 = sf.PauliMap.from_zs([0, 1])
         >>> zz12 = sf.PauliMap.from_zs([1, 2])
         >>> zz23 = sf.PauliMap.from_zs([2, 3])
@@ -697,7 +697,7 @@ class ChunkBuilder:
         ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
         ...     builder.add_flow(start=stabilizer, ms=[m])
         ...     builder.add_flow(end=stabilizer, ms=[m])
-        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_name("LZ")
+        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
 
@@ -1721,7 +1721,7 @@ def __init__(
         measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
             into it as it traverses the circuit).
         center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
-            when the flow is completed into a detector. Incompatible with obs_key.
+            when the flow is completed into a detector. Incompatible with obs_name.
         flags: Defaults to empty. Custom information about the flow, that can be used by code
             operating on chunks for a variety of purposes. For example, this could identify the
             "color" of the flow in a color code.
@@ -1757,13 +1757,13 @@ def fused_with_next_flow(
 ) -> Flow:
 ```
 
-<a name="stimflow.Flow.obs_key"></a>
+<a name="stimflow.Flow.obs_name"></a>
 ```python
-# stimflow.Flow.obs_key
+# stimflow.Flow.obs_name
 
 # (in class stimflow.Flow)
 @property
-def obs_key(
+def obs_name(
     self,
 ):
 ```
@@ -2604,13 +2604,13 @@ def __init__(
     self,
     mapping: "dict[complex, Literal['X, 'Y, 'Z'] | str] | dict[Literal['X, 'Y, 'Z'] | str, complex | Iterable[complex]] | PauliMap | Tile | stim.PauliString | None" = None,
     *,
-    name: Any = None,
+    obs_name: Any = None,
 ):
     """Initializes a PauliMap using maps of Paulis to/from qubits.
 
     Args:
         mapping: The association between qubits and paulis, specifiable in a variety of ways.
-        name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
+        obs_name: Defaults to None (no name). Can be set to an arbitrary hashable equatable value,
             in order to identify the Pauli map. A common convention used in the library is that
             named Pauli maps correspond to logical operators.
 
@@ -2636,8 +2636,8 @@ def __init__(
         >>> print(sf.PauliMap({0: "X", "Y": [0, 1]}))
         Z0*Y1
 
-        >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, name="test"))
-        (name='test') X0*Y1*Z2
+        >>> print(sf.PauliMap({0: "X", 1: "Y", 2: "Z"}, obs_name="test"))
+        (obs_name='test') X0*Y1*Z2
     """
 ```
 
@@ -2810,12 +2810,12 @@ def with_basis(
     """
 ```
 
-<a name="stimflow.PauliMap.with_name"></a>
+<a name="stimflow.PauliMap.with_obs_name"></a>
 ```python
-# stimflow.PauliMap.with_name
+# stimflow.PauliMap.with_obs_name
 
 # (in class stimflow.PauliMap)
-def with_name(
+def with_obs_name(
     self,
     name: Any,
 ) -> PauliMap:

@@ -205,8 +205,8 @@ def test_from_circuit_with_mpp_boundaries_simple():
         q2i={1 + 2j: 0, 1 + 3j: 1},
         flows=[
             stimflow.Flow(
-                start=stimflow.PauliMap.from_xs([1 + 2j]).with_name(0),
-                end=stimflow.PauliMap.from_zs([1 + 2j]).with_name(0),
+                start=stimflow.PauliMap.from_xs([1 + 2j]).with_obs_name(0),
+                end=stimflow.PauliMap.from_zs([1 + 2j]).with_obs_name(0),
                 measurement_indices=(0,),
                 center=1 + 2j,
             )
@@ -491,10 +491,10 @@ def test_anticommuting_obs_flows():
             stimflow.Flow(start=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), measurement_indices=[2]),
             stimflow.Flow(end=stimflow.PauliMap({"Z": [1j, 1 + 1j]}), measurement_indices=[2]),
             stimflow.Flow(
-                start=stimflow.PauliMap({"X": [0, 1]}).with_name("X"), end=stimflow.PauliMap({"X": [0, 1]}).with_name("X"),
+                start=stimflow.PauliMap({"X": [0, 1]}).with_obs_name("X"), end=stimflow.PauliMap({"X": [0, 1]}).with_obs_name("X"),
             ),
             stimflow.Flow(
-                start=stimflow.PauliMap({"Z": [0, 1j]}).with_name("Z"), end=stimflow.PauliMap({"Z": [0, 1j]}).with_name("Z"),
+                start=stimflow.PauliMap({"Z": [0, 1j]}).with_obs_name("Z"), end=stimflow.PauliMap({"Z": [0, 1j]}).with_obs_name("Z"),
             ),
         ],
     )
@@ -546,14 +546,14 @@ def test_embedded_observables():
             OBSERVABLE_INCLUDE(2) rec[-1]
         """
         ),
-        flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_name("L2"))],
+        flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_obs_name("L2"))],
         o2i={"L2": 2},
     )
     chunk.verify()
 
 
 def test_verify_distance():
-    lz = stimflow.PauliMap({0: "Z"}).with_name("LZ")
+    lz = stimflow.PauliMap({0: "Z"}).with_obs_name("LZ")
     zz01 = stimflow.PauliMap.from_zs([0, 1])
     zz12 = stimflow.PauliMap.from_zs([1, 2])
     zz23 = stimflow.PauliMap.from_zs([2, 3])

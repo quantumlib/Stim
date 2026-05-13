@@ -40,7 +40,7 @@ class ChunkBuilder:
         ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
         ...     builder.add_flow(start=stabilizer, ms=[m])
         ...     builder.add_flow(end=stabilizer, ms=[m])
-        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_name("LZ")
+        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
 
@@ -303,18 +303,18 @@ class ChunkBuilder:
                              f"    {ms=}"
                              f"    {end=}")
         if isinstance(start, PauliMap):
-            obs_key = start.name
+            obs_name = start.obs_name
         elif isinstance(end, PauliMap):
-            obs_key = end.name
+            obs_name = end.obs_name
         else:
-            obs_key = None
+            obs_name = None
         out = self._flows
         if start == "auto":
             out = self._flows_with_auto_start
-            start = PauliMap(name=obs_key)
+            start = PauliMap(obs_name=obs_name)
         elif end == "auto":
             out = self._flows_with_auto_end
-            end = PauliMap(name=obs_key)
+            end = PauliMap(obs_name=obs_name)
         elif ms == "auto":
             out = self._flows_with_auto_ms
             ms = ()
@@ -534,32 +534,32 @@ class ChunkBuilder:
 
         elif data.name == "DETECTOR" or data.name == "OBSERVABLE_INCLUDE":
             if isinstance(targets, PauliMap) and data.name == "OBSERVABLE_INCLUDE":
-                if arg is None and targets.name is None:
+                if arg is None and targets.obs_name is None:
                     raise ValueError(
                         "Received a stimflow.PauliMap target for an OBSERVABLE_INCLUDE instruction, but can't figure out its name.\n"
                         "(The name is used in order to give consistent index to OBSERVABLE_INCLUDE instructions.)\n"
                         "(The mapping is stored in the field `stimflow.ChunkBuilder.o2i`.)\n"
                         "\n"
                         "You can do either of the following to fix the error:\n"
-                        "   (a) Pass in a PauliMap with a name (see `stimflow.PauliMap.with_name(name)`)\n"
+                        "   (a) Pass in a PauliMap with a name (see `stimflow.PauliMap.with_obs_name(name)`)\n"
                         "   (b) Do a manual override by adding `arg=index` to the `stimflow.ChunkBuilder.append` call\n"
                         "\n"
                         "Note that, if you do both (a) and (b), the builder will remember the "
                         "name-to-index association."
                     )
-                elif arg is not None and targets.name is not None:
+                elif arg is not None and targets.obs_name is not None:
                     if not isinstance(arg, (int, float)) or arg != int(arg):
                         raise ValueError(f"{arg=} isn't an integer.")
-                    old_arg = self.o2i.get(targets.name)
+                    old_arg = self.o2i.get(targets.obs_name)
                     if old_arg is None:
-                        self.o2i[targets.name] = int(arg)
+                        self.o2i[targets.obs_name] = int(arg)
                     elif old_arg != arg:
                         raise ValueError(
-                            f"Specified {arg=} and {targets=} but {self.o2i[targets.name]=} is "
+                            f"Specified {arg=} and {targets=} but {self.o2i[targets.obs_name]=} is "
                             f"inconsistent with {arg=}."
                         )
                 elif arg is None:
-                    arg = self._ensure_obs_index_of(targets.name)
+                    arg = self._ensure_obs_index_of(targets.obs_name)
 
                 self._ensure_indices(
                     targets.keys(),

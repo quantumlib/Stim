@@ -97,7 +97,7 @@ def test_chunk_compiler_obs_flow_eager_dump():
             R 0
         """
             ),
-            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([0]).with_name(0), center=0)],
+            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([0]).with_obs_name(0), center=0)],
         )
     )
     compiler.append(
@@ -110,8 +110,8 @@ def test_chunk_compiler_obs_flow_eager_dump():
             ),
             flows=[
                 stimflow.Flow(
-                    start=stimflow.PauliMap.from_zs([0]).with_name(0),
-                    end=stimflow.PauliMap.from_zs([0]).with_name(0),
+                    start=stimflow.PauliMap.from_zs([0]).with_obs_name(0),
+                    end=stimflow.PauliMap.from_zs([0]).with_obs_name(0),
                     measurement_indices=[0],
                     center=0,
                 )
@@ -126,7 +126,7 @@ def test_chunk_compiler_obs_flow_eager_dump():
             M 0
         """
             ),
-            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_name(0), measurement_indices=[0], center=0)],
+            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_obs_name(0), measurement_indices=[0], center=0)],
         )
     )
     assert compiler.finish_circuit() == stim.Circuit(
@@ -248,7 +248,7 @@ def test_chunk_compiler_loop_obs():
             R 0
         """
             ),
-            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([0]).with_name(3), center=0)],
+            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([0]).with_obs_name(3), center=0)],
         )
     )
     compiler.append(
@@ -263,8 +263,8 @@ def test_chunk_compiler_loop_obs():
                     ),
                     flows=[
                         stimflow.Flow(
-                            start=stimflow.PauliMap.from_zs([0]).with_name(3),
-                            end=stimflow.PauliMap.from_zs([0]).with_name(3),
+                            start=stimflow.PauliMap.from_zs([0]).with_obs_name(3),
+                            end=stimflow.PauliMap.from_zs([0]).with_obs_name(3),
                             measurement_indices=[0],
                             center=0,
                         )
@@ -282,7 +282,7 @@ def test_chunk_compiler_loop_obs():
             M 0
         """
             ),
-            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_name(3), measurement_indices=[0], center=0)],
+            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0]).with_obs_name(3), measurement_indices=[0], center=0)],
         )
     )
     assert compiler.finish_circuit() == stim.Circuit(
@@ -501,8 +501,8 @@ def test_drop_observable_later():
             ),
             q2i={0: 0, 1: 1},
             flows=[
-                stimflow.Flow(end=zz.with_name("a"), measurement_indices=[1]),
-                stimflow.Flow(end=xx.with_name("b"), measurement_indices=[0]),
+                stimflow.Flow(end=zz.with_obs_name("a"), measurement_indices=[1]),
+                stimflow.Flow(end=xx.with_obs_name("b"), measurement_indices=[0]),
             ],
         )
     )
@@ -515,8 +515,8 @@ def test_drop_observable_later():
         """
             ),
             q2i={0: 0, 1: 1},
-            discarded_inputs=[zz.with_name("a")],
-            flows=[stimflow.Flow(start=xx.with_name("b"), measurement_indices=[0])],
+            discarded_inputs=[zz.with_obs_name("a")],
+            flows=[stimflow.Flow(start=xx.with_obs_name("b"), measurement_indices=[0])],
         )
     )
 

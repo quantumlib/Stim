@@ -138,8 +138,8 @@ def test_make_surface_code_first_round():
             tiles.append(stimflow.Tile(measure_qubit=m, data_qubits=data, bases=basis))
 
     patch = stimflow.Patch(tiles)
-    obs_x = stimflow.PauliMap({q: "X" for q in patch.data_set if q.real == 0}).with_name("LX")
-    obs_z = stimflow.PauliMap({q: "Z" for q in patch.data_set if q.imag == 0}).with_name("LZ")
+    obs_x = stimflow.PauliMap({q: "X" for q in patch.data_set if q.real == 0}).with_obs_name("LX")
+    obs_z = stimflow.PauliMap({q: "Z" for q in patch.data_set if q.imag == 0}).with_obs_name("LZ")
     code = stimflow.StabilizerCode(patch, logicals=[(obs_x, obs_z)]).with_transformed_coords(
         lambda e: e * (1 - 1j)
     )
@@ -218,8 +218,8 @@ def test_skip_unknown_2qm():
 
 
 def test_partial_observable_include_memory_experiment():
-    obs_x = stimflow.PauliMap.from_xs([0, 1]).with_name("LX")
-    obs_z = stimflow.PauliMap.from_zs([0, 1j]).with_name("LZ")
+    obs_x = stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX")
+    obs_z = stimflow.PauliMap.from_zs([0, 1j]).with_obs_name("LZ")
     stab_z0 = stimflow.PauliMap.from_zs([0, 1])
     stab_z1 = stimflow.PauliMap.from_zs([1j, 1 + 1j])
     stab_x = stimflow.PauliMap.from_xs([0, 1, 1j, 1 + 1j])

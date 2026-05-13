@@ -86,7 +86,7 @@ def _solve_auto_flow_ms(
         sub_o2i = collections.defaultdict(lambda: None)
     for k, flow in enumerate(result):
         flow = result[k]
-        has_obs_with_auto_measurements |= flow.obs_key is not None
+        has_obs_with_auto_measurements |= flow.obs_name is not None
         stim_flows.append(flow.to_stim_flow(q2i=q2i, o2i=sub_o2i))
 
     if has_obs_with_auto_measurements and circuit.num_observables:

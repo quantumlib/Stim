@@ -129,8 +129,8 @@ class Chunk:
                 )
             o2i = {}
             for flow in flows:
-                if flow.obs_key is not None and flow.obs_key not in o2i:
-                    o2i[flow.obs_key] = len(o2i)
+                if flow.obs_name is not None and flow.obs_name not in o2i:
+                    o2i[flow.obs_name] = len(o2i)
 
         self.q2i: dict[complex, int] = q2i
         self.o2i: dict[Any, int] = o2i
@@ -192,7 +192,7 @@ class Chunk:
                 if inp in old_discarded_outputs:
                     new_discarded_outputs.append(out)
                     break
-                f = i2f[inp].with_edits(obs_key=None)
+                f = i2f[inp].with_edits(obs_name=None)
                 if acc is None:
                     acc = f
                 else:
@@ -200,7 +200,7 @@ class Chunk:
             else:
                 assert acc is not None
                 assert acc.end == out
-                new_flows.append(acc.with_edits(obs_key=out.name))
+                new_flows.append(acc.with_edits(obs_name=out.obs_name))
         if used_outputs != must_match_outputs:
             lines = ["Unmatched reflows."]
             for e in must_match_outputs - used_outputs:
@@ -297,8 +297,8 @@ class Chunk:
                     new_discarded_outputs.append(flow.end)
 
         for flow in new_flows:
-            if flow.obs_key is not None:
-                compiler.o2i.setdefault(flow.obs_key, len(compiler.o2i))
+            if flow.obs_name is not None:
+                compiler.o2i.setdefault(flow.obs_name, len(compiler.o2i))
         result = Chunk(
             circuit=combined_circuit,
             q2i=compiler.q2i,
@@ -329,7 +329,7 @@ class Chunk:
         return "\n".join(lines)
 
     def with_obs_flows_as_det_flows(self) -> Chunk:
-        return self.with_edits(flows=[flow.with_edits(obs_key=None) for flow in self.flows])
+        return self.with_edits(flows=[flow.with_edits(obs_name=None) for flow in self.flows])
 
     def with_flag_added_to_all_flows(self, flag: str) -> Chunk:
         return self.with_edits(
@@ -380,8 +380,8 @@ class Chunk:
             start_pm = PauliMap(start_ps).with_transformed_coords(lambda i: i2q[i])
             end_pm = PauliMap(end_ps).with_transformed_coords(lambda i: i2q[i])
             if target.is_logical_observable_id():
-                start_pm = start_pm.with_name(target.val)
-                end_pm = end_pm.with_name(target.val)
+                start_pm = start_pm.with_obs_name(target.val)
+                end_pm = end_pm.with_obs_name(target.val)
             center = sum(start_pm.keys()) + sum(end_pm.keys())
             if center:
                 center /= len(start_pm) + len(end_pm)
@@ -445,7 +445,7 @@ class Chunk:
         if collisions:
             msg = [f"{side} interface had collisions:"]
             for a, b in sorted(collisions):
-                msg.append(f"    {a}, obs_key={b}")
+                msg.append(f"    {a}, obs_name={b}")
             raise ValueError("\n".join(msg))
 
         return tuple(sorted(result_set))
@@ -579,7 +579,7 @@ class Chunk:
         Example:
             >>> import stimflow as sf
             >>> import stim
-            >>> lz = sf.PauliMap({0: "Z"}).with_name("LZ")
+            >>> lz = sf.PauliMap({0: "Z"}).with_obs_name("LZ")
             >>> zz01 = sf.PauliMap.from_zs([0, 1])
             >>> zz12 = sf.PauliMap.from_zs([1, 2])
             >>> zz23 = sf.PauliMap.from_zs([2, 3])
@@ -871,13 +871,13 @@ class Chunk:
     def start_code(self) -> StabilizerCode:
         return StabilizerCode(
             self.start_patch(),
-            logicals=[flow.start for flow in self.flows if flow.obs_key is not None],
+            logicals=[flow.start for flow in self.flows if flow.obs_name is not None],
         )
 
     def end_code(self) -> StabilizerCode:
         return StabilizerCode(
             self.end_patch(),
-            logicals=[flow.end for flow in self.flows if flow.obs_key is not None],
+            logicals=[flow.end for flow in self.flows if flow.obs_name is not None],
         )
 
     def start_patch(self) -> Patch:
@@ -893,7 +893,7 @@ class Chunk:
                 )
                 for flow in self.flows
                 if flow.start
-                if flow.obs_key is None
+                if flow.obs_name is None
             ]
         )
 
@@ -910,7 +910,7 @@ class Chunk:
                 )
                 for flow in self.flows
                 if flow.end
-                if flow.obs_key is None
+                if flow.obs_name is None
             ]
         )
 

@@ -42,8 +42,8 @@ def test_solve_flow_auto_flow_measurements_with_observable():
         _solve_auto_flow_ms(
             flows=[
                 stimflow.Flow(
-                    start=stimflow.PauliMap.from_xs([1, 2]).with_name("L2"),
-                    end=stimflow.PauliMap.from_zs([1, 2]).with_name("L2"),
+                    start=stimflow.PauliMap.from_xs([1, 2]).with_obs_name("L2"),
+                    end=stimflow.PauliMap.from_zs([1, 2]).with_obs_name("L2"),
                 )
             ],
             circuit=stim.Circuit(
@@ -57,8 +57,8 @@ def test_solve_flow_auto_flow_measurements_with_observable():
         )
         == [
             stimflow.Flow(
-                start=stimflow.PauliMap.from_xs([1, 2]).with_name("L2"),
-                end=stimflow.PauliMap.from_zs([1, 2]).with_name("L2"),
+                start=stimflow.PauliMap.from_xs([1, 2]).with_obs_name("L2"),
+                end=stimflow.PauliMap.from_zs([1, 2]).with_obs_name("L2"),
                 measurement_indices=[0],
             ),
         ]

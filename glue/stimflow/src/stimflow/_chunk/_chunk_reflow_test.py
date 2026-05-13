@@ -44,14 +44,14 @@ def test_from_auto_rewrite_xyz():
 
 def test_from_auto_rewrite_keyed():
     result = stimflow.ChunkReflow.from_auto_rewrite(
-        inputs=[stimflow.PauliMap({"X": [2, 3]}), stimflow.PauliMap({"Z": [2, 3]}).with_name("test")],
+        inputs=[stimflow.PauliMap({"X": [2, 3]}), stimflow.PauliMap({"Z": [2, 3]}).with_obs_name("test")],
         out2in={stimflow.PauliMap({"Y": [2, 3]}): "auto"},
     )
     assert result == stimflow.ChunkReflow(
         out2in={
             stimflow.PauliMap({"Y": [2, 3]}): [
                 stimflow.PauliMap({"X": [2, 3]}),
-                stimflow.PauliMap({"Z": [2, 3]}).with_name("test"),
+                stimflow.PauliMap({"Z": [2, 3]}).with_obs_name("test"),
             ]
         }
     )
@@ -67,5 +67,5 @@ def test_from_auto_rewrite_transitions_using_stable():
         stable=[x12], transitions=[(x1, x2)]
     ) == stimflow.ChunkReflow(out2in={x12: [x12], x2: [x12, x1]})
     assert stimflow.ChunkReflow.from_auto_rewrite_transitions_using_stable(
-        stable=[y12], transitions=[(z12.with_name("test"), x12.with_name("test"))]
-    ) == stimflow.ChunkReflow(out2in={y12: [y12], x12.with_name("test"): [y12, z12.with_name("test")]})
+        stable=[y12], transitions=[(z12.with_obs_name("test"), x12.with_obs_name("test"))]
+    ) == stimflow.ChunkReflow(out2in={y12: [y12], x12.with_obs_name("test"): [y12, z12.with_obs_name("test")]})

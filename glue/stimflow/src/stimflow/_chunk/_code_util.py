@@ -133,7 +133,8 @@ def transversal_code_transition_chunks(
                 # Anticommutes.
                 return None
         return PauliMap(
-            {q: p for q, p in original.items() if q not in dissipated}, name=original.name
+            {q: p for q, p in original.items() if q not in dissipated},
+            obs_name=original.obs_name,
         )
 
     from stimflow._chunk._chunk_builder import ChunkBuilder
@@ -153,12 +154,12 @@ def transversal_code_transition_chunks(
         else:
             prev_builder.add_flow(start=tile, end=end, ms=start.keys() - end.keys())
     for k, obs in enumerate(prev_code.flat_logicals):
-        assert obs.name is not None
+        assert obs.obs_name is not None
         end = clipped(obs, measured)
         if end is None:
             prev_builder.add_discarded_flow_input(obs)
         else:
-            prev_key2obs[obs.name] = end
+            prev_key2obs[obs.obs_name] = end
             prev_builder.add_flow(start=obs, end=end, ms=obs.keys() - end.keys())
 
     next_builder = ChunkBuilder(next_code.data_set)
@@ -173,12 +174,12 @@ def transversal_code_transition_chunks(
         else:
             next_builder.add_flow(start=start, end=tile)
     for obs in next_code.flat_logicals:
-        assert obs.name is not None
+        assert obs.obs_name is not None
         start = clipped(obs, reset)
         if start is None:
             next_builder.add_discarded_flow_output(obs)
         else:
-            next_obs2key[obs.name] = start
+            next_obs2key[obs.obs_name] = start
             next_builder.add_flow(start=start, end=obs)
 
     prev_chunk = prev_builder.finish_chunk(wants_to_merge_with_prev=True)
@@ -186,12 +187,12 @@ def transversal_code_transition_chunks(
         stable=[
             cast(PauliMap, flow.start)
             for flow in next_builder._flows
-            if flow.obs_key is None
+            if flow.obs_name is None
             if flow.start
         ],
         transitions=[
-            (prev_key2obs[obs_key], next_obs2key[obs_key])
-            for obs_key in next_obs2key.keys() & prev_key2obs.keys()
+            (prev_key2obs[obs_name], next_obs2key[obs_name])
+            for obs_name in next_obs2key.keys() & prev_key2obs.keys()
         ],
     )
     next_chunk = next_builder.finish_chunk(wants_to_merge_with_next=True)

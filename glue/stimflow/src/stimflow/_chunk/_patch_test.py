@@ -35,8 +35,8 @@ def test_with_remaining_degrees_of_freedom_as_logicals():
         stabilizers=[stimflow.PauliMap({"X": [0, 1, 2, 3]}), stimflow.PauliMap({"Z": [0, 1, 2, 3]})],
         logicals=[
             # Not sure how stable the exact answer is.
-            (stimflow.PauliMap({"X": [1, 2]}, name="X1"), stimflow.PauliMap({"Z": [0, 2]}, name="Z1")),
-            (stimflow.PauliMap({"X": [1, 3]}, name="X2"), stimflow.PauliMap({"Z": [0, 3]}, name="Z2")),
+            (stimflow.PauliMap({"X": [1, 2]}, obs_name="X1"), stimflow.PauliMap({"Z": [0, 2]}, obs_name="Z1")),
+            (stimflow.PauliMap({"X": [1, 3]}, obs_name="X2"), stimflow.PauliMap({"Z": [0, 3]}, obs_name="Z2")),
         ],
     )
 
