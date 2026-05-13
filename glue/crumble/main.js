@@ -477,12 +477,6 @@ async function handleKeyboardEvent(ev) {
             await copyToClipboard();
             return;
         }
-        if (key === 'v') {
-            ev.preventDefault();
-            editorState.chorder.handleFocusChanged();
-            await pasteFromClipboard(false);
-            return;
-        }
         if (key === 'x') {
             ev.preventDefault();
             editorState.chorder.handleFocusChanged();
