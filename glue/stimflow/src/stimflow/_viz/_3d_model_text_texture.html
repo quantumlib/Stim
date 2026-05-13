@@ -1,0 +1,57 @@
+<meta charset="utf-8">
+<body style="margin: 0">
+<canvas width="1024" height="1024" id="cv" style="border: 1px solid black; margin: 0; padding: 0">
+</canvas>
+<script>
+
+/**
+ *
+ * @param {!int} i
+ * @returns {{x: !number, y: !number}}
+ */
+function pickRect(i) {
+    let x = i % 16;
+    let y = Math.floor(i / 16);
+    return {x, y}
+}
+
+/**
+ *
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {!string} text
+ * @param {!string} fill
+ * @param {!string} stroke
+ * @param {!int} i
+ */
+function drawRect(ctx, text, fill, stroke, i) {
+    let {x, y} = pickRect(i);
+    let scale = 4;
+    x *= scale;
+    y *= scale;
+
+    ctx.font = '80pt monospace';
+    let w = ctx.measureText(text).width;
+    ctx.fillStyle = fill;
+    ctx.fillRect(x * 16, y * 32, 32 * scale, 32 * scale);
+    ctx.fillStyle = 'black';
+    ctx.fillStyle = stroke;
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, x * 16 + 8 * scale - w / 2, y * 32 + 18 * scale);
+}
+
+/**
+ * @param {!CanvasRenderingContext2D} ctx
+ */
+function draw(ctx) {
+    for (let a = 0; a < 256; a++) {
+	drawRect(ctx, "�", "red", "#000", a);
+    }
+    for (let a = 32; a < 126; a++) {
+        drawRect(ctx, String.fromCharCode(a), "#fff", "#000", a);
+    }
+}
+
+draw(document.getElementById('cv').getContext('2d'))
+
+</script>
+</body>
