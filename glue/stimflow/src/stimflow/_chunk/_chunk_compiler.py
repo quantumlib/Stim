@@ -72,13 +72,13 @@ class ChunkCompiler:
         lines.append("    det_flows {")
         for key, flow in self.open_flows.items():
             if isinstance(flow, Flow) and flow.obs_name is None:
-                lines.append(f"        {flow.end}, ms={flow.measurement_indices}")
+                lines.append(f"        {flow.end}, measurements={flow.measurement_indices}")
         lines.append("    }")
 
         lines.append("    obs_flows {")
         for key, flow in self.open_flows.items():
             if isinstance(flow, Flow) and flow.obs_name is not None:
-                lines.append(f"        {flow.key_end}: ms={flow.measurement_indices}")
+                lines.append(f"        {flow.key_end}: measurements={flow.measurement_indices}")
         lines.append("    }")
 
         lines.append(f"    num_measurements = {self.num_measurements}")

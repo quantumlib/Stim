@@ -650,8 +650,8 @@ class StabilizerCode:
                 builder.append(
                     "MPP", [tile], measure_key_func=lambda _: f"det{k1},{k2}", arg=noise.flip_result
                 )
-                builder.add_flow(end=tile, ms=[f"det{k1},{k2}"])
-                builder.add_flow(start=tile, ms=[f"det{k1},{k2}"])
+                builder.add_flow(end=tile, measurements=[f"det{k1},{k2}"])
+                builder.add_flow(start=tile, measurements=[f"det{k1},{k2}"])
 
         measure_chunk = builder.finish_chunk()
 

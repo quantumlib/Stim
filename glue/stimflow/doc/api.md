@@ -35,8 +35,7 @@
     - [`stimflow.ChunkBuilder.append_feedback`](#stimflow.ChunkBuilder.append_feedback)
     - [`stimflow.ChunkBuilder.finish_chunk`](#stimflow.ChunkBuilder.finish_chunk)
     - [`stimflow.ChunkBuilder.has_measurement`](#stimflow.ChunkBuilder.has_measurement)
-    - [`stimflow.ChunkBuilder.lookup_mids`](#stimflow.ChunkBuilder.lookup_mids)
-    - [`stimflow.ChunkBuilder.record_measurement_group`](#stimflow.ChunkBuilder.record_measurement_group)
+    - [`stimflow.ChunkBuilder.lookup_measurement_indices`](#stimflow.ChunkBuilder.lookup_measurement_indices)
 - [`stimflow.ChunkCompiler`](#stimflow.ChunkCompiler)
     - [`stimflow.ChunkCompiler.__init__`](#stimflow.ChunkCompiler.__init__)
     - [`stimflow.ChunkCompiler.append`](#stimflow.ChunkCompiler.append)
@@ -695,8 +694,8 @@ class ChunkBuilder:
         >>> builder.append("M", measure_qubits)
         >>> for m in measure_qubits:
         ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
-        ...     builder.add_flow(start=stabilizer, ms=[m])
-        ...     builder.add_flow(end=stabilizer, ms=[m])
+        ...     builder.add_flow(start=stabilizer, measurements=[m])
+        ...     builder.add_flow(end=stabilizer, measurements=[m])
         >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
@@ -762,10 +761,11 @@ def __init__(
         allowed_qubits: Defaults to None (everything allowed). Specifies the qubit positions
             that the circuit is permitted to contain.
 
-    >>> import stimflow as sf
-    >>> data_qubits = range(5)
-    >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
-    >>> builder = sf.ChunkBuilder(allowed_qubits=[*data_qubits, *measure_qubits])
+    Examples:
+        >>> import stimflow as sf
+        >>> data_qubits = range(5)
+        >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+        >>> builder = sf.ChunkBuilder(allowed_qubits=[*data_qubits, *measure_qubits])
     """
 ```
 
@@ -778,6 +778,65 @@ def add_discarded_flow_input(
     self,
     flow: PauliMap | Tile,
 ) -> None:
+    """Annotates that an input stabilizer won't be used.
+
+    When compiling chunks, it is normally an error if the output flows of one
+    chunk don't match up with the input flows of the next. For example, a
+    Z basis transversal measurement can't measure the X stabilizers of a code,
+    so a chunk performing can't declare flows with X basis inputs. But this
+    would cause an error during compilation, due the prior idling chunk having
+    X basis output flows. Adding the X basis stabilizers as discarded flow inputs
+    of the transversal chunk explicitly indicates that it is expected for this
+    mismatch to occur, so that no error is raised.
+
+    Example:
+        >>> import stimflow as sf
+        >>> xx = sf.PauliMap.from_xs([0, 1])
+        >>> zz = sf.PauliMap.from_zs([0, 1])
+
+        >>> init_builder = sf.ChunkBuilder()
+        >>> init_builder.append("R", [0, 1])
+        >>> init_builder.add_flow(end=zz)
+        >>> init_builder.add_discarded_flow_output(sf.PauliMap.from_xs([0, 1]))
+        >>> init_chunk = init_builder.finish_chunk()
+        >>> init_chunk.verify()
+
+        >>> idle_builder = sf.ChunkBuilder()
+        >>> idle_builder.append("MXX", [(0, 1)], measure_key_func=lambda e: ('X', e))
+        >>> idle_builder.append("TICK")
+        >>> idle_builder.append("MZZ", [(0, 1)], measure_key_func=lambda e: ('Z', e))
+        >>> idle_builder.add_flow(start=xx, measurements=[('X', (0, 1))])
+        >>> idle_builder.add_flow(start=zz, measurements=[('Z', (0, 1))])
+        >>> idle_builder.add_flow(end=xx, measurements=[('X', (0, 1))])
+        >>> idle_builder.add_flow(end=zz, measurements=[('Z', (0, 1))])
+        >>> idle_chunk = idle_builder.finish_chunk()
+        >>> idle_chunk.verify()
+
+        >>> end_builder = sf.ChunkBuilder()
+        >>> end_builder.append("M", [0, 1])
+        >>> end_builder.add_flow(start=zz, measurements=[0, 1])
+        >>> end_builder.add_discarded_flow_input(sf.PauliMap.from_xs([0, 1]))
+        >>> end_chunk = end_builder.finish_chunk()
+        >>> end_chunk.verify()
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append(init_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(end_chunk)
+        >>> print(compiler.finish_circuit())
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        R 0 1
+        TICK
+        MXX 0 1
+        TICK
+        MZZ 0 1
+        DETECTOR(0.5, 0, 0) rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+        M 0 1
+        DETECTOR(0.5, 0, 0) rec[-3] rec[-2] rec[-1]
+    """
 ```
 
 <a name="stimflow.ChunkBuilder.add_discarded_flow_output"></a>
@@ -789,6 +848,65 @@ def add_discarded_flow_output(
     self,
     flow: PauliMap | Tile,
 ) -> None:
+    """Annotates that an output stabilizer won't be used.
+
+    When compiling chunks, it is normally an error if the output flows of one
+    chunk don't match up with the input flows of the next. For example, a
+    Z basis transversal preparation can't prepare the X stabilizers of a code,
+    so a chunk performing can't declare flows with X basis inputs. But this
+    would cause an error during compilation, due the next idling chunk having
+    X basis input flows. Adding the X basis stabilizers as discarded flow outputs
+    of the transversal chunk explicitly indicates that it is expected for this
+    mismatch to occur, so that no error is raised.
+
+    Example:
+        >>> import stimflow as sf
+        >>> xx = sf.PauliMap.from_xs([0, 1])
+        >>> zz = sf.PauliMap.from_zs([0, 1])
+
+        >>> init_builder = sf.ChunkBuilder()
+        >>> init_builder.append("R", [0, 1])
+        >>> init_builder.add_flow(end=zz)
+        >>> init_builder.add_discarded_flow_output(sf.PauliMap.from_xs([0, 1]))
+        >>> init_chunk = init_builder.finish_chunk()
+        >>> init_chunk.verify()
+
+        >>> idle_builder = sf.ChunkBuilder()
+        >>> idle_builder.append("MXX", [(0, 1)], measure_key_func=lambda e: ('X', e))
+        >>> idle_builder.append("TICK")
+        >>> idle_builder.append("MZZ", [(0, 1)], measure_key_func=lambda e: ('Z', e))
+        >>> idle_builder.add_flow(start=xx, measurements=[('X', (0, 1))])
+        >>> idle_builder.add_flow(start=zz, measurements=[('Z', (0, 1))])
+        >>> idle_builder.add_flow(end=xx, measurements=[('X', (0, 1))])
+        >>> idle_builder.add_flow(end=zz, measurements=[('Z', (0, 1))])
+        >>> idle_chunk = idle_builder.finish_chunk()
+        >>> idle_chunk.verify()
+
+        >>> end_builder = sf.ChunkBuilder()
+        >>> end_builder.append("M", [0, 1])
+        >>> end_builder.add_flow(start=zz, measurements=[0, 1])
+        >>> end_builder.add_discarded_flow_input(sf.PauliMap.from_xs([0, 1]))
+        >>> end_chunk = end_builder.finish_chunk()
+        >>> end_chunk.verify()
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append(init_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(end_chunk)
+        >>> print(compiler.finish_circuit())
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        R 0 1
+        TICK
+        MXX 0 1
+        TICK
+        MZZ 0 1
+        DETECTOR(0.5, 0, 0) rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+        M 0 1
+        DETECTOR(0.5, 0, 0) rec[-3] rec[-2] rec[-1]
+    """
 ```
 
 <a name="stimflow.ChunkBuilder.add_flow"></a>
@@ -801,8 +919,8 @@ def add_flow(
     *,
     start: "PauliMap | Tile | Literal['auto'] | None" = None,
     end: "PauliMap | Tile | Literal['auto'] | None" = None,
-    ms: "Iterable[Any] | Literal['auto']" = (),
-    ignore_unmatched_ms: bool = False,
+    measurements: "Iterable[Any] | Literal['auto']" = (),
+    ignore_unknown_measurements: bool = False,
     center: complex | None = None,
     flags: Iterable[str] = frozenset(),
     sign: bool | None = None,
@@ -818,15 +936,15 @@ def add_flow(
         end: Defaults to None (empty). The stabilizer that the flow ends as, at the
             end of the circuit. If the flow ends within the circuit, this should
             be set to None or an empty PauliMap.
-        ms: Defaults to empty. The keys identifying measurements mediate the flow.
+        measurements: Defaults to empty. The keys identifying measurements mediate the flow.
             For example, if a stabilizer is measured by a circuit then this would
             typically be a singleton list containing the measurement that reveals
             the stabilizer's value.
-        ignore_unmatched_ms: Defaults to False. When set to False, unrecognized measurement
+        ignore_unknown_measurements: Defaults to False. When set to False, unrecognized measurement
             ids cause the method to raise an exception instead of adding the flow. When set
             to True, unrecognized measurements are silently discarded.
         center: Defaults to None (unused). Optional metadata specifying coordinates for the
-            flow. Typically these coordinates will end up being exposed as the parens args
+            flow. Typically, these coordinates will end up being exposed as the parens args
             on the DETECTOR instruction created when producing a stim circuit. When not
             specified, the coordinates will instead be inferred in some heuristic way.
         flags: Defaults to empty. Hashable equatable values associated with the flow. When
@@ -845,9 +963,9 @@ def add_flow(
         >>> builder.append('TICK')
         >>> builder.append('CX', [(1j, 0)])
 
-        >>> builder.add_flow(end=sf.PauliMap.from_xs([0, 1j]), ms=[1j])
+        >>> builder.add_flow(end=sf.PauliMap.from_xs([0, 1j]), measurements=[1j])
         >>> builder.add_flow(end=sf.PauliMap.from_zs([0, 1j]))
-        >>> builder.add_flow(start=sf.PauliMap.from_xs([1j]), ms=[1j])
+        >>> builder.add_flow(start=sf.PauliMap.from_xs([1j]), measurements=[1j])
 
         >>> builder.finish_chunk().verify()
     """
@@ -905,7 +1023,7 @@ def append(
     stored in the measurement tracker keyed by the position of the qubit
     being measured (or by a custom key, if `measure_key_func` is specified).
     The indices of the measurements can be looked up later via
-    `builder.lookup_mids([key1, key2, ...])`.
+    `builder.lookup_measurement_indices([key1, key2, ...])`.
 
     Args:
         gate: The name of the gate to append, such as "H" or "M" or "CX".
@@ -923,7 +1041,7 @@ def append(
             qubit multiple times. This function can transform that position
             into a different value (for example, you might set
             `measure_key_func=lambda pos: (pos, 'first_cycle')` for
-            measurements during the first cycle of the circuit.
+            measurements during the first cycle of the circuit).
         tag: Defaults to "" (no tag). A custom tag to attach to the
             instruction(s) appended into the stim circuit.
         unknown_qubit_append_mode: Defaults to 'auto'. The available options are:
@@ -981,51 +1099,65 @@ def has_measurement(
     self,
     key: Any,
 ) -> bool:
+    """Determines if a measurement with the given key has been performed.
+
+    Args:
+        key: The measurement key.
+
+    Returns:
+        Whether a measurement with the given key has been performed.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> builder = sf.ChunkBuilder()
+        >>> builder.append("M", [1 + 2j])
+        >>> builder.has_measurement(1 + 2j)
+        True
+        >>> builder.has_measurement(1 + 3j)
+        False
+    """
 ```
 
-<a name="stimflow.ChunkBuilder.lookup_mids"></a>
+<a name="stimflow.ChunkBuilder.lookup_measurement_indices"></a>
 ```python
-# stimflow.ChunkBuilder.lookup_mids
+# stimflow.ChunkBuilder.lookup_measurement_indices
 
 # (in class stimflow.ChunkBuilder)
-def lookup_mids(
+def lookup_measurement_indices(
     self,
     keys: Iterable[Any],
     *,
-    ignore_unmatched: bool = False,
+    ignore_unknown_measurements: bool = False,
 ) -> list[int]:
     """Looks up measurement indices by key.
 
-    Measurement keys are created automatically when appending measurement operations into the
-    circuit via the builder's append method. They are also created manually by methods like
-    `builder.record_measurement_group`.
+    Measurement keys are created automatically by the `append` method when appending
+    measurement operations (optionally tweaked by the `measure_key_func` argument).
 
     Args:
         keys: The measurement keys to lookup.
-        ignore_unmatched: Defaults to False. If set to True, keys that don't correspond
+        ignore_unknown_measurements: Defaults to False. If set to True, keys that don't correspond
             to measurements are ignored instead of raising an error.
 
     Returns:
         A list of offsets indicating when the measurements occurred.
-    """
-```
 
-<a name="stimflow.ChunkBuilder.record_measurement_group"></a>
-```python
-# stimflow.ChunkBuilder.record_measurement_group
+    Examples:
+        >>> import stimflow as sf
+        >>> builder = sf.ChunkBuilder()
+        >>> builder.append("M", [1 + 2j])
+        >>> builder.append("MX", [2j, 3j], measure_key_func=lambda e: str(e) + "test")
 
-# (in class stimflow.ChunkBuilder)
-def record_measurement_group(
-    self,
-    sub_keys: Iterable[Any],
-    *,
-    key: Any,
-) -> None:
-    """Combines multiple measurement keys into one key.
+        >>> builder.lookup_measurement_indices([1 + 2j])
+        [0]
+        >>> builder.lookup_measurement_indices(["2jtest"])
+        [1]
+        >>> builder.lookup_measurement_indices(["2jtest", 1 + 2j])
+        [0, 1]
 
-    Args:
-        sub_keys: The measurement keys to combine.
-        key: Where to store the combined result.
+        >>> builder.append("MZZ", [(0, 1)])
+        >>> builder.lookup_measurement_indices([(1, 0)])
+        [3]
     """
 ```
 

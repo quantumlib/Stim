@@ -97,8 +97,8 @@ def make_idle_round(d: int) -> sf.Chunk:
 
     # Assert the circuit should be preparing and measuring the stabilizers.
     for tile in code.tiles:
-        builder.add_flow(start=tile, ms=[tile.measure_qubit])
-        builder.add_flow(end=tile, ms=[tile.measure_qubit])
+        builder.add_flow(start=tile, measurements=[tile.measure_qubit])
+        builder.add_flow(end=tile, measurements=[tile.measure_qubit])
     # Assert the circuit should be preserving the logical operators.
     for obs in code.flat_logicals:
         builder.add_flow(start=obs, end=obs)

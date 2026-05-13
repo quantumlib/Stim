@@ -23,7 +23,7 @@ def _solve_auto_flow_starts(
 
     new_flows = []
     for flow in flows:
-        stim_end = cast(PauliMap, flow.end).to_stim_pauli_string(q2i, num_qubits=num_qubits)
+        stim_end = flow.end.to_stim_pauli_string(q2i, num_qubits=num_qubits)
         try:
             stim_start = stim_end.before(circuit)
         except ValueError:
@@ -48,7 +48,7 @@ def _solve_auto_flow_ends(
 
     new_flows = []
     for flow in flows:
-        stim_start = cast(PauliMap, flow.start).to_stim_pauli_string(q2i, num_qubits=num_qubits)
+        stim_start = flow.start.to_stim_pauli_string(q2i, num_qubits=num_qubits)
         try:
             stim_end = stim_start.after(circuit)
         except ValueError:

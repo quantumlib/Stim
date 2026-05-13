@@ -152,7 +152,7 @@ def transversal_code_transition_chunks(
         if end is None:
             prev_builder.add_discarded_flow_input(tile)
         else:
-            prev_builder.add_flow(start=tile, end=end, ms=start.keys() - end.keys())
+            prev_builder.add_flow(start=tile, end=end, measurements=start.keys() - end.keys())
     for k, obs in enumerate(prev_code.flat_logicals):
         assert obs.obs_name is not None
         end = clipped(obs, measured)
@@ -160,7 +160,7 @@ def transversal_code_transition_chunks(
             prev_builder.add_discarded_flow_input(obs)
         else:
             prev_key2obs[obs.obs_name] = end
-            prev_builder.add_flow(start=obs, end=end, ms=obs.keys() - end.keys())
+            prev_builder.add_flow(start=obs, end=end, measurements=obs.keys() - end.keys())
 
     next_builder = ChunkBuilder(next_code.data_set)
     next_obs2key = {}

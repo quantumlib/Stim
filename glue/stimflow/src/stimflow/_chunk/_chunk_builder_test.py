@@ -39,28 +39,28 @@ def test_append_measurements():
     builder = stimflow.ChunkBuilder(range(6))
 
     builder.append("MXX", [(2, 3)])
-    assert builder.lookup_mids([(2, 3)]) == [0]
-    assert builder.lookup_mids([(3, 2)]) == [0]
+    assert builder.lookup_measurement_indices([(2, 3)]) == [0]
+    assert builder.lookup_measurement_indices([(3, 2)]) == [0]
 
     builder.append("MYY", [(5, 4)])
-    assert builder.lookup_mids([(4, 5)]) == [1]
-    assert builder.lookup_mids([(5, 4)]) == [1]
+    assert builder.lookup_measurement_indices([(4, 5)]) == [1]
+    assert builder.lookup_measurement_indices([(5, 4)]) == [1]
 
     builder.append("M", [3])
-    assert builder.lookup_mids([3]) == [2]
+    assert builder.lookup_measurement_indices([3]) == [2]
 
 
 def test_append_measurements_canonical_order():
     builder = stimflow.ChunkBuilder(range(6))
 
     builder.append("MX", [5, 2, 3])
-    assert builder.lookup_mids([2]) == [0]
-    assert builder.lookup_mids([3]) == [1]
-    assert builder.lookup_mids([5]) == [2]
+    assert builder.lookup_measurement_indices([2]) == [0]
+    assert builder.lookup_measurement_indices([3]) == [1]
+    assert builder.lookup_measurement_indices([5]) == [2]
 
     builder.append("MZZ", [(5, 2), (3, 4)])
-    assert builder.lookup_mids([(2, 5)]) == [3]
-    assert builder.lookup_mids([(3, 4)]) == [4]
+    assert builder.lookup_measurement_indices([(2, 5)]) == [3]
+    assert builder.lookup_measurement_indices([(3, 4)]) == [4]
 
     assert builder.circuit == stim.Circuit(
         """
@@ -76,8 +76,8 @@ def test_append_mpp():
     xxx = stimflow.PauliMap.from_xs([2 + 3j, 5 + 7j, 11 + 13j])
     z_z = stimflow.PauliMap.from_zs([11 + 13j, 2 + 3j])
     builder.append("MPP", [xxx, z_z])
-    assert builder.lookup_mids([xxx]) == [0]
-    assert builder.lookup_mids([z_z]) == [1]
+    assert builder.lookup_measurement_indices([xxx]) == [0]
+    assert builder.lookup_measurement_indices([z_z]) == [1]
 
     assert builder.circuit == stim.Circuit(
         """
@@ -199,9 +199,9 @@ def test_skip_unknown_1qm():
         M 1 2 3
     """
     )
-    assert builder.lookup_mids([1]) == [0]
-    assert builder.lookup_mids([2]) == [1]
-    assert builder.lookup_mids([3]) == [2]
+    assert builder.lookup_measurement_indices([1]) == [0]
+    assert builder.lookup_measurement_indices([2]) == [1]
+    assert builder.lookup_measurement_indices([3]) == [2]
 
 
 def test_skip_unknown_2qm():
@@ -213,8 +213,8 @@ def test_skip_unknown_2qm():
         MZZ 0 1 2 3
     """
     )
-    assert builder.lookup_mids([(0, 1)]) == builder.lookup_mids([(1, 0)]) == [0]
-    assert builder.lookup_mids([(2, 3)]) == builder.lookup_mids([(3, 2)]) == [1]
+    assert builder.lookup_measurement_indices([(0, 1)]) == builder.lookup_measurement_indices([(1, 0)]) == [0]
+    assert builder.lookup_measurement_indices([(2, 3)]) == builder.lookup_measurement_indices([(3, 2)]) == [1]
 
 
 def test_partial_observable_include_memory_experiment():
@@ -239,12 +239,12 @@ def test_partial_observable_include_memory_experiment():
     builder_bulk.append("MPP", [stab_z1])
     builder_bulk.append("MPP", [stab_x])
 
-    builder_bulk.add_flow(start=stab_z0, ms=[stab_z0])
-    builder_bulk.add_flow(start=stab_z1, ms=[stab_z1])
-    builder_bulk.add_flow(start=stab_x, ms=[stab_x])
-    builder_bulk.add_flow(end=stab_z0, ms=[stab_z0])
-    builder_bulk.add_flow(end=stab_z1, ms=[stab_z1])
-    builder_bulk.add_flow(end=stab_x, ms=[stab_x])
+    builder_bulk.add_flow(start=stab_z0, measurements=[stab_z0])
+    builder_bulk.add_flow(start=stab_z1, measurements=[stab_z1])
+    builder_bulk.add_flow(start=stab_x, measurements=[stab_x])
+    builder_bulk.add_flow(end=stab_z0, measurements=[stab_z0])
+    builder_bulk.add_flow(end=stab_z1, measurements=[stab_z1])
+    builder_bulk.add_flow(end=stab_x, measurements=[stab_x])
     builder_bulk.add_flow(start=obs_x, end=obs_x)
     builder_bulk.add_flow(start=obs_z, end=obs_z)
     chunk_bulk = builder_bulk.finish_chunk()
@@ -255,8 +255,8 @@ def test_partial_observable_include_memory_experiment():
     builder_end.add_discarded_flow_input(stab_z0)
     builder_end.add_discarded_flow_input(stab_z1)
     builder_end.add_flow(start=obs_z)
-    builder_end.add_flow(start=stab_x, ms=stab_x.keys())
-    builder_end.add_flow(start=obs_x, ms=obs_x.keys())
+    builder_end.add_flow(start=stab_x, measurements=stab_x.keys())
+    builder_end.add_flow(start=obs_x, measurements=obs_x.keys())
     chunk_end = builder_end.finish_chunk()
 
     chunk_init.verify()
