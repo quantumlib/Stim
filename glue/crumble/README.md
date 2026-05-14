@@ -124,7 +124,7 @@ button (now labelled "Hide Import/Export") again.
 - `ctrl+y` or `cmd+y`: Redo
 - `ctrl+shift+z` or `cmd+shift+z`: Redo
 - `ctrl+c` or `cmd+c`: Copy selection to clipboard (or entire layer if nothing selected).
-- `ctrl+v`: Paste clipboard contents at current selection (or entire layer if nothing selected).
+- `ctrl+v` or `cmd+v`: Paste clipboard contents at current selection (or entire layer if nothing selected).
 - `ctrl+x` or `cmd+x`: Cut selection to clipboard (or entire layer if nothing selected).
 - `f`: Reverse direction of selected two qubit gates (e.g. exchange the controls and targets of a CNOT).
 - `g`: Reverse order of circuit layers, from the current layer to the next empty layer.
