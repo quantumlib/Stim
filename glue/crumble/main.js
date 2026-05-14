@@ -351,6 +351,8 @@ function makeChordHandlers() {
 }
 
 let fallbackEmulatedClipboard = undefined;
+let pendingMetaPaste = false;
+let pendingMetaPasteTimeout = undefined;
 async function copyToClipboard() {
     let c = editorState.copyOfCurCircuit();
     c.layers = [c.layers[editorState.curLayer]]
@@ -433,6 +435,64 @@ async function pasteFromClipboard(preview) {
     editorState.commit_or_preview(newCircuit, preview);
 }
 
+/**
+ * @param {!string} text
+ * @param {!boolean} preview
+ */
+function pasteTextFromClipboardEvent(text, preview) {
+    let pastedCircuit = Circuit.fromStimCircuit(text);
+    if (pastedCircuit.layers.length !== 1) {
+        throw new Error(text);
+    }
+    let newCircuit = editorState.copyOfCurCircuit();
+    if (editorState.focusedSet.size > 0) {
+        let [x, y] = minXY(editorState.focusedSet.values());
+        pastedCircuit = pastedCircuit.shifted(x, y);
+    }
+
+    // Include new coordinates.
+    let usedCoords = [];
+    for (let q = 0; q < pastedCircuit.qubitCoordData.length; q += 2) {
+        usedCoords.push([pastedCircuit.qubitCoordData[q], pastedCircuit.qubitCoordData[q + 1]]);
+    }
+    newCircuit = newCircuit.withCoordsIncluded(usedCoords);
+    let c2q = newCircuit.coordToQubitMap();
+
+    // Remove existing content at paste location.
+    for (let key of editorState.focusedSet.keys()) {
+        let q = c2q.get(key);
+        if (q !== undefined) {
+            newCircuit.layers[editorState.curLayer].id_pop_at(q);
+        }
+    }
+
+    // Add content to paste location.
+    for (let op of pastedCircuit.layers[0].iter_gates_and_markers()) {
+        let newTargets = [];
+        for (let q of op.id_targets) {
+            let x = pastedCircuit.qubitCoordData[2*q];
+            let y = pastedCircuit.qubitCoordData[2*q+1];
+            newTargets.push(c2q.get(`${x},${y}`));
+        }
+        newCircuit.layers[editorState.curLayer].put(new Operation(
+            op.gate,
+            op.tag,
+            op.args,
+            new Uint32Array(newTargets),
+        ));
+    }
+
+    editorState.commit_or_preview(newCircuit, preview);
+}
+
+function clearPendingMetaPaste() {
+    pendingMetaPaste = false;
+    if (pendingMetaPasteTimeout !== undefined) {
+        clearTimeout(pendingMetaPasteTimeout);
+        pendingMetaPasteTimeout = undefined;
+    }
+}
+
 async function cutToClipboard(preview) {
     await copyToClipboard();
     if (editorState.focusedSet.size === 0) {
@@ -475,6 +535,12 @@ async function handleKeyboardEvent(ev) {
             ev.preventDefault();
             editorState.chorder.handleFocusChanged();
             await copyToClipboard();
+            return;
+        }
+        if (key === 'v') {
+            editorState.chorder.handleFocusChanged();
+            pendingMetaPaste = true;
+            pendingMetaPasteTimeout = setTimeout(clearPendingMetaPaste, 1000);
             return;
         }
         if (key === 'x') {
@@ -562,6 +628,20 @@ async function handleKeyboardEvent(ev) {
     }
 }
 
+document.addEventListener('paste', ev => {
+    if (!pendingMetaPaste) {
+        return;
+    }
+    clearPendingMetaPaste();
+
+    let text = ev.clipboardData.getData('text/plain');
+    if (text === '') {
+        return;
+    }
+
+    ev.preventDefault();
+    pasteTextFromClipboardEvent(text, false);
+});
 document.addEventListener('keydown', handleKeyboardEvent);
 document.addEventListener('keyup', handleKeyboardEvent);
 
