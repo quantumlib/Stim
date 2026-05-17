@@ -118,8 +118,7 @@ button (now labelled "Hide Import/Export") again.
 - `backspace`: Delete gates at current selection.
 - `ctrl+delete` or `cmd+delete`: Delete current circuit layer.
 - `ctrl+backspace`: Delete current circuit layer.
-- `ctrl+insert`: Insert empty layer at current circuit layer, pushing current circuit layer ahead in time.
-- `ctrl+insert` or`cmd+enter`: Insert empty layer at current circuit layer, pushing current circuit layer ahead in time.
+- `ctrl+insert` or `cmd+enter`: Insert empty layer at current circuit layer, pushing current circuit layer ahead in time.
 - `ctrl+z` or `cmd+z`: Undo
 - `ctrl+y` or `cmd+y`: Redo
 - `ctrl+shift+z` or `cmd+shift+z`: Redo
