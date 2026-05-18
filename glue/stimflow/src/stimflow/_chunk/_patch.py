@@ -22,7 +22,7 @@ class Patch:
             elif isinstance(tile, PauliMap):
                 kept_tiles.append(tile.to_tile())
             else:
-                raise ValueError(f"Don't know how to interpret this as a stimflow.Tile: {tile=}")
+                raise ValueError(f"Don't know how to convert a {type(tile)} into a stimflow.Tile: {tile=}")
         if not do_not_sort:
             kept_tiles = sorted(kept_tiles)
 

@@ -275,25 +275,20 @@ def _draw_patch(
                     f"WARNING: No logical error will be drawn.\n    Reason: {ex}",
                     file=sys.stderr,
                 )
-                err = []
-            for e in err:
-                for loc in e.circuit_error_locations:
-                    for loc2 in loc.flipped_pauli_product:
-                        real, imag = loc2.coords
-                        q = real + 1j * imag
-                        p = loc2.gate_target.pauli_type
-                        labels.append(
-                            (
-                                q,
-                                p + "!",
-                                {
-                                    "text-anchor": "middle",
-                                    "dominant-baseline": "central",
-                                    "font-size": scale_factor * 1.1,
-                                    "fill": BASE_COLORS_DARK[p],
-                                },
-                            )
-                        )
+                err = {}
+            for q, p in err.items():
+                labels.append(
+                    (
+                        q,
+                        p + "!",
+                        {
+                            "text-anchor": "middle",
+                            "dominant-baseline": "central",
+                            "font-size": scale_factor * 1.1,
+                            "fill": BASE_COLORS_DARK[p],
+                        },
+                    )
+                )
 
     if isinstance(obj, StabilizerCode) and show_obs:
         _draw_obs(

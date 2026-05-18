@@ -358,16 +358,27 @@ class StabilizerCode:
     def find_distance(self, *, max_search_weight: int) -> int:
         return len(self.find_logical_error(max_search_weight=max_search_weight))
 
-    def find_logical_error(self, *, max_search_weight: int) -> list[stim.ExplainedError]:
+    def find_logical_error(self, *, max_search_weight: int, return_stim_explained_error: bool = False) -> PauliMap | list[stim.ExplainedError]:
         circuit = self.make_code_capacity_circuit(noise=1e-3)
         if max_search_weight == 2:
-            return circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
-        return circuit.search_for_undetectable_logical_errors(
-            dont_explore_edges_with_degree_above=max_search_weight,
-            dont_explore_detection_event_sets_with_size_above=max_search_weight,
-            dont_explore_edges_increasing_symptom_degree=False,
-            canonicalize_circuit_errors=True,
-        )
+            result = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
+        else:
+            result = circuit.search_for_undetectable_logical_errors(
+                dont_explore_edges_with_degree_above=max_search_weight,
+                dont_explore_detection_event_sets_with_size_above=max_search_weight,
+                dont_explore_edges_increasing_symptom_degree=False,
+                canonicalize_circuit_errors=True,
+            )
+        if return_stim_explained_error:
+            return result
+
+        pauli_map = {}
+        for err in result:
+            for loc in err.circuit_error_locations:
+                for term in loc.flipped_pauli_product:
+                    real, imag = term.coords
+                    pauli_map[real + 1j*imag] = term.gate_target.pauli_type
+        return PauliMap(pauli_map)
 
     def with_observables_from_basis(self, basis: Literal["X", "Y", "Z"]) -> StabilizerCode:
         if basis == "X":
