@@ -5,7 +5,7 @@ import functools
 from collections.abc import Callable, Iterable, Iterator
 from typing import Literal, overload, TYPE_CHECKING
 
-from stimflow._core import PauliMap, str_svg, Tile
+from stimflow._core import PauliMap, str_svg, Tile, min_max_complex
 
 if TYPE_CHECKING:
     from stimflow._chunk._stabilizer_code import StabilizerCode
@@ -38,6 +38,9 @@ class Patch:
     @overload
     def __getitem__(self, item: slice) -> Patch:
         pass
+
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(self.used_set, default=0)
 
     def __getitem__(self, item: int | slice) -> Patch | Tile:
         if isinstance(item, slice):

@@ -245,6 +245,15 @@ def _draw_patch(
     stabilizer_style: Literal["polygon", "circles"] | None,
     observable_style: Literal["label", "polygon", "circles"],
 ) -> None:
+    from stimflow._chunk import Patch, StabilizerCode, ChunkInterface
+    if hasattr(obj, "_inline_svg_"):
+        obj._inline_svg_(
+            out_lines=out_lines,
+            q2p=q2p,
+        )
+        return
+    if not isinstance(obj, (Patch, StabilizerCode, ChunkInterface, stim.Circuit)):
+        raise NotImplementedError(f'{type(obj)=}')
     if isinstance(obj, stim.Circuit):
         from stimflow._viz._viz_circuit_layer_svg import append_circuit_layer_to_svg
 
@@ -309,9 +318,9 @@ def _draw_patch(
 
     all_points = set(system_qubits)
     if show_data_qubits:
-        all_points |= obj.data_set
+        all_points |= getattr(obj, 'data_set', set())
     if show_measure_qubits:
-        all_points |= obj.measure_set
+        all_points |= getattr(obj, 'measure_set', set())
     if show_coords and all_points:
         all_x = sorted({q.real for q in all_points})
         all_y = sorted({q.imag for q in all_points})

@@ -5,7 +5,7 @@ from typing import Any, cast, Literal, TYPE_CHECKING
 
 import stim
 
-from stimflow._core._complex_util import sorted_complex
+from stimflow._core._complex_util import sorted_complex, min_max_complex
 
 if TYPE_CHECKING:
     from stimflow._core._tile import Tile
@@ -121,6 +121,15 @@ class PauliMap:
         else:
             self._dict = {}
         self._hash = hash((self.obs_name, tuple(self._dict.items())))
+
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(self.keys(), default=0)
+
+    def _inline_svg_(self, *, q2p: Callable[[complex], complex], out_lines: list[str]):
+        scale = abs(q2p(1) - q2p(0))
+        for q, p in self.items():
+            pt = q2p(q)
+            out_lines.append(f'''<text x="{pt.real}" y="{pt.imag}" dominant-baseline="central" text-anchor="middle" font-size="{scale}">{p}</text>''')
 
     @staticmethod
     def from_xs(xs: Iterable[complex], *, name: Any = None) -> PauliMap:

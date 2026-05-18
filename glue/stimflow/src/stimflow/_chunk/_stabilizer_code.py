@@ -355,6 +355,9 @@ class StabilizerCode:
                         f"\n    {loc2.gate_target.pauli_type} at {loc2.coords}"
                     )
 
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(self.used_set, default=0)
+
     def find_distance(self, *, max_search_weight: int) -> int:
         return len(self.find_logical_error(max_search_weight=max_search_weight))
 
