@@ -394,6 +394,11 @@ async function pasteFromClipboard(preview) {
 }
 
 /**
+ * Applies already-read clipboard text at the current focus.
+ *
+ * Text can come from navigator.clipboard for Ctrl+V, or from a browser paste
+ * event for Cmd+V. Keeping this shared avoids duplicating paste behavior.
+ *
  * @param {!string} text
  * @param {!boolean} preview
  */
