@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = '1.17.dev0'
 
 from stimflow._chunk import (
     Chunk,
