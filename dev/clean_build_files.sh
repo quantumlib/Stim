@@ -2,7 +2,7 @@
 set -e
 
 #########################################################################
-# Deletes files created by cmake, python setup.py, and other build steps.
+# Deletes files created by cmake, pip install ., and other build steps.
 #########################################################################
 
 # Get to this script's git repo root.

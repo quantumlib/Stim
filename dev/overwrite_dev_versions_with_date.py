@@ -23,7 +23,7 @@ def main():
     # Generate dev version starting from major.minor version.
     # (Requires the existing version to have a 'dev' suffix.)
     # (Uses the timestamp of the HEAD commit, to ensure consistency when run multiple times.)
-    with open('setup.py') as f:
+    with open('glue/python/src/stim_custom_setup/__init__.py') as f:
         maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^__version__ = '[^']+'", line)]
         maj_version, min_version, patch = maj_min_version_line.split()[-1].strip("'").split('.')
         if 'dev' not in patch:
@@ -33,7 +33,7 @@ def main():
 
     # Overwrite existing versions.
     package_setup_files = [
-        "setup.py",
+        "glue/python/src/stim_custom_setup/__init__.py",
         "glue/cirq/setup.py",
         "glue/cirq/stimcirq/__init__.py",
         "glue/zx/stimzx/__init__.py",
