@@ -7,7 +7,7 @@ let PITCH = DIAM + 4;
 let PAD = 10.5;
 
 let COLUMNS = ['H', 'S', 'R', 'M', 'MR', 'C', 'W', 'SC', 'MC', 'P', '1-9'];
-let DEF_ROW = [1,    2,   2,   2,  2,     1,   2,   2,    2,    -1, -1, -1];
+let DEF_ROW = [1,    2,   2,   2,  2,     0,   2,   2,    2,    -1, -1, -1];
 
 /**
  * @param {!ChordEvent} ev
@@ -128,10 +128,13 @@ function getToolboxFocusedData(ev) {
  * @param {!ChordEvent} ev
  */
 function drawToolbox(ev) {
-    toolboxCanvas.width = toolboxCanvas.scrollWidth;
-    toolboxCanvas.height = toolboxCanvas.scrollHeight;
-    let ctx = toolboxCanvas.getContext('2d');
-    ctx.clearRect(0, 0, toolboxCanvas.width, toolboxCanvas.height);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    toolboxCanvas.width = toolboxCanvas.scrollWidth * devicePixelRatio;
+    toolboxCanvas.height = toolboxCanvas.scrollHeight * devicePixelRatio;
+    const ctx = toolboxCanvas.getContext('2d');
+    ctx.save();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.clearRect(0, 0, toolboxCanvas.scrollWidth, toolboxCanvas.scrollHeight);
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText('X', PAD - 3, PAD + DIAM / 2);
@@ -277,6 +280,7 @@ function drawToolbox(ev) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
+    ctx.restore();
 }
 
 export {getToolboxFocusedData, drawToolbox};
