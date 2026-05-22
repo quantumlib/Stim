@@ -64,9 +64,9 @@ class ChunkInterface:
         elif other is not None:
             flat.extend(other)
 
-        from stimflow._viz import svg
+        from stimflow._viz import svg_viewer
 
-        return svg(
+        return svg_viewer(
             objects=flat,
             show_obs=show_obs,
             show_measure_qubits=show_measure_qubits,

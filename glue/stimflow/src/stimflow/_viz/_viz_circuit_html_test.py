@@ -25,5 +25,5 @@ def test_viewer_works_with_all_gates():
         else:
             targets = [0, 1]
         circuit.append(name, targets, args)
-    viewer = stimflow.stim_circuit_html_viewer(circuit)
+    viewer = stimflow.html_viewer(circuit)
     assert viewer is not None

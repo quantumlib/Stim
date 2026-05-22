@@ -245,6 +245,15 @@ def _draw_patch(
     stabilizer_style: Literal["polygon", "circles"] | None,
     observable_style: Literal["label", "polygon", "circles"],
 ) -> None:
+    from stimflow._chunk import Patch, StabilizerCode, ChunkInterface
+    if hasattr(obj, "_inline_svg_"):
+        obj._inline_svg_(
+            out_lines=out_lines,
+            q2p=q2p,
+        )
+        return
+    if not isinstance(obj, (Patch, StabilizerCode, ChunkInterface, stim.Circuit)):
+        raise NotImplementedError(f'{type(obj)=}')
     if isinstance(obj, stim.Circuit):
         from stimflow._viz._viz_circuit_layer_svg import append_circuit_layer_to_svg
 
@@ -275,25 +284,20 @@ def _draw_patch(
                     f"WARNING: No logical error will be drawn.\n    Reason: {ex}",
                     file=sys.stderr,
                 )
-                err = []
-            for e in err:
-                for loc in e.circuit_error_locations:
-                    for loc2 in loc.flipped_pauli_product:
-                        real, imag = loc2.coords
-                        q = real + 1j * imag
-                        p = loc2.gate_target.pauli_type
-                        labels.append(
-                            (
-                                q,
-                                p + "!",
-                                {
-                                    "text-anchor": "middle",
-                                    "dominant-baseline": "central",
-                                    "font-size": scale_factor * 1.1,
-                                    "fill": BASE_COLORS_DARK[p],
-                                },
-                            )
-                        )
+                err = {}
+            for q, p in err.items():
+                labels.append(
+                    (
+                        q,
+                        p + "!",
+                        {
+                            "text-anchor": "middle",
+                            "dominant-baseline": "central",
+                            "font-size": scale_factor * 1.1,
+                            "fill": BASE_COLORS_DARK[p],
+                        },
+                    )
+                )
 
     if isinstance(obj, StabilizerCode) and show_obs:
         _draw_obs(
@@ -314,9 +318,9 @@ def _draw_patch(
 
     all_points = set(system_qubits)
     if show_data_qubits:
-        all_points |= obj.data_set
+        all_points |= getattr(obj, 'data_set', set())
     if show_measure_qubits:
-        all_points |= obj.measure_set
+        all_points |= getattr(obj, 'measure_set', set())
     if show_coords and all_points:
         all_x = sorted({q.real for q in all_points})
         all_y = sorted({q.imag for q in all_points})

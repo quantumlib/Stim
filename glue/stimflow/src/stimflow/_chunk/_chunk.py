@@ -509,20 +509,9 @@ class Chunk:
         tile_color_func: Callable[[Tile], tuple[float, float, float, float]] | None = None,
         known_error: Iterable[stim.ExplainedError] | None = None,
     ) -> str_html:
-        from stimflow._viz import stim_circuit_html_viewer
-
-        circuit = self.to_closed_circuit()
-        if background is None:
-            start = self.start_patch()
-            end = self.end_patch()
-            if len(start.tiles) == 0:
-                background = end
-            elif len(end.tiles) == 0:
-                background = start
-            else:
-                background = {0: start, circuit.num_ticks: end}
-        return stim_circuit_html_viewer(
-            circuit, background=background, tile_color_func=tile_color_func, known_error=known_error
+        from stimflow._viz import html_viewer
+        return html_viewer(
+            self, background=background, tile_color_func=tile_color_func, known_error=known_error
         )
 
     def __mul__(self, other: int) -> ChunkLoop:

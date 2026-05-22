@@ -5,7 +5,7 @@ import functools
 from collections.abc import Callable, Iterable, Iterator
 from typing import Literal, overload, TYPE_CHECKING
 
-from stimflow._core import PauliMap, str_svg, Tile
+from stimflow._core import PauliMap, str_svg, Tile, min_max_complex
 
 if TYPE_CHECKING:
     from stimflow._chunk._stabilizer_code import StabilizerCode
@@ -22,7 +22,7 @@ class Patch:
             elif isinstance(tile, PauliMap):
                 kept_tiles.append(tile.to_tile())
             else:
-                raise ValueError(f"Don't know how to interpret this as a stimflow.Tile: {tile=}")
+                raise ValueError(f"Don't know how to convert a {type(tile)} into a stimflow.Tile: {tile=}")
         if not do_not_sort:
             kept_tiles = sorted(kept_tiles)
 
@@ -38,6 +38,9 @@ class Patch:
     @overload
     def __getitem__(self, item: slice) -> Patch:
         pass
+
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(self.used_set, default=0)
 
     def __getitem__(self, item: int | slice) -> Patch | Tile:
         if isinstance(item, slice):
@@ -113,12 +116,12 @@ class Patch:
         tile_color_func: Callable[[Tile], str] | None = None,
     ) -> str_svg:
         from stimflow._chunk._stabilizer_code import StabilizerCode
-        from stimflow._viz import svg
+        from stimflow._viz import svg_viewer
 
         patches = [self] + ([other] if isinstance(other, (Patch, StabilizerCode)) else list(other))
 
-        return svg(
-            objects=patches,
+        return svg_viewer(
+            patches,
             show_measure_qubits=show_measure_qubits,
             show_data_qubits=show_data_qubits,
             show_order=show_order,
