@@ -5,6 +5,7 @@ from typing import Any, cast, Literal, TypeVar
 
 import stim
 
+from stimflow._core import min_max_complex
 from stimflow._layers._layer_det_obs_annotation import DetObsAnnotationLayer
 from stimflow._layers._layer_empty import LayerEmpty
 from stimflow._layers._layer_feedback import LayerFeedback
@@ -36,6 +37,12 @@ class LayerCircuit:
     """
 
     layers: list[Layer] = dataclasses.field(default_factory=list)
+
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(
+            v[0] + v[1] * 1j
+            for v in obj.to_stim_circuit().get_final_qubit_coordinates().values()
+        )
 
     def touched(self) -> set[int]:
         result = set()

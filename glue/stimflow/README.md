@@ -16,7 +16,7 @@ stimflow also includes functionality for:
 
 - Transpiling (`stimflow.transpile_to_z_basis_interaction_circuit(...)`)
 - Adding Noise (`stimflow.NoiseModel.uniform_depolarizing(p).noisy_circuit(...)`)
-- Visualizing (`stimflow.make_3d_model`, `stimflow.stim_circuit_html_viewer`)
+- Visualizing (`stimflow.make_3d_model`, `stimflow.html_viewer`)
 
 # Documentation
 
@@ -63,8 +63,8 @@ def make_surface_code(d: int) -> sf.StabilizerCode:
             ))
 
     patch = sf.Patch(tiles)
-    obs_x = sf.PauliMap.from_xs([q for q in patch.data_set if q.real == 0]).with_name('X')
-    obs_z = sf.PauliMap.from_zs([q for q in patch.data_set if q.imag == 0]).with_name('Z')
+    obs_x = sf.PauliMap.from_xs([q for q in patch.data_set if q.real == 0]).with_obs_name('X')
+    obs_z = sf.PauliMap.from_zs([q for q in patch.data_set if q.imag == 0]).with_obs_name('Z')
     return sf.StabilizerCode(patch, logicals=[(obs_x, obs_z)])
 
 
@@ -131,7 +131,7 @@ def main():
     noisy_circuit = sf.NoiseModel.uniform_depolarizing(1e-3).noisy_circuit(circuit)
     distance = len(noisy_circuit.shortest_graphlike_error())
     assert distance == 7
-    sf.stim_circuit_html_viewer(noisy_circuit, background=code).write_to('tmp2.html')
+    sf.html_viewer(noisy_circuit, background=code).write_to('tmp2.html')
 
 
 if __name__ == "__main__":

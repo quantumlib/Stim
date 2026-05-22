@@ -281,7 +281,6 @@ class Flow:
             start=new_start,
             end=new_end,
             measurement_indices=xor_sorted(self.measurement_indices + other.measurement_indices),
-            obs_name=self.obs_name,
             flags=self.flags | other.flags,
             center=new_center,
             sign=(None if self.sign is None else self.sign ^ other.sign),
