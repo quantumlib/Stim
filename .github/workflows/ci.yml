@@ -217,6 +217,10 @@ jobs:
         with:
           name: dist-sinter
           path: dist-sinter
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+        with:
+          name: dist-stimflow
+          path: dist-stimflow
       - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
         with:
           user: __token__
@@ -232,6 +236,11 @@ jobs:
           user: __token__
           packages_dir: dist-sinter
           password: ${{ secrets.pypi_token_sinter }}
+      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+        with:
+          user: __token__
+          packages_dir: dist-stimflow
+          password: ${{ secrets.pypi_token_stimflow }}
   run_main:
     runs-on: ubuntu-24.04
     steps:
