@@ -7,7 +7,7 @@ import math
 import random
 import sys
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import stim
 
@@ -750,7 +750,7 @@ def append_patch_polygons(
         out.append(line)
 
 
-def stim_circuit_html_viewer(
+def _stim_circuit_html_viewer(
     circuit: stim.Circuit,
     *,
     background: (

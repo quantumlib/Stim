@@ -228,18 +228,18 @@
 - [`stimflow.find_d2_error`](#stimflow.find_d2_error)
 - [`stimflow.gate_counts_for_circuit`](#stimflow.gate_counts_for_circuit)
 - [`stimflow.gates_used_by_circuit`](#stimflow.gates_used_by_circuit)
+- [`stimflow.html_viewer`](#stimflow.html_viewer)
 - [`stimflow.html_viewer_for_gltf_model`](#stimflow.html_viewer_for_gltf_model)
 - [`stimflow.make_3d_model`](#stimflow.make_3d_model)
 - [`stimflow.min_max_complex`](#stimflow.min_max_complex)
 - [`stimflow.sorted_complex`](#stimflow.sorted_complex)
-- [`stimflow.stim_circuit_html_viewer`](#stimflow.stim_circuit_html_viewer)
 - [`stimflow.stim_circuit_with_transformed_coords`](#stimflow.stim_circuit_with_transformed_coords)
 - [`stimflow.stim_circuit_with_transformed_moments`](#stimflow.stim_circuit_with_transformed_moments)
 - [`stimflow.str_html`](#stimflow.str_html)
     - [`stimflow.str_html.write_to`](#stimflow.str_html.write_to)
 - [`stimflow.str_svg`](#stimflow.str_svg)
     - [`stimflow.str_svg.write_to`](#stimflow.str_svg.write_to)
-- [`stimflow.svg`](#stimflow.svg)
+- [`stimflow.svg_viewer`](#stimflow.svg_viewer)
 - [`stimflow.transpile_to_z_basis_interaction_circuit`](#stimflow.transpile_to_z_basis_interaction_circuit)
 - [`stimflow.transversal_code_transition_chunks`](#stimflow.transversal_code_transition_chunks)
 - [`stimflow.verify_distance_is_at_least`](#stimflow.verify_distance_is_at_least)
@@ -3093,7 +3093,8 @@ def find_logical_error(
     self,
     *,
     max_search_weight: int,
-) -> list[stim.ExplainedError]:
+    return_stim_explained_error: bool = False,
+) -> PauliMap | list[stim.ExplainedError]:
 ```
 
 <a name="stimflow.StabilizerCode.flat_logicals"></a>
@@ -4010,6 +4011,40 @@ def gates_used_by_circuit(
     """
 ```
 
+<a name="stimflow.html_viewer"></a>
+```python
+# stimflow.html_viewer
+
+# (at top-level in the stimflow module)
+def html_viewer(
+    obj: stim.Circuit | Any,
+    *,
+    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | dict[int, stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface] | None = None,
+    tile_color_func: Callable[[stimflow.Tile], tuple[float, float, float, float] | tuple[float, float, float] | str] | None = None,
+    width: int = 500,
+    height: int = 500,
+    known_error: Iterable[stim.ExplainedError] | None = None,
+) -> str_html:
+    """Creates an HTML page for viewing the given object.
+
+    Args:
+        obj: The object to be visualized.
+        background: Something to draw in the background of the viewer (e.g. the
+            stimflow.StabilizerCode implemented by the circuit being viewed).
+        tile_color_func: Customizes how stabilizers and other operators are drawn.
+        width: The width of the viewer.
+        height: The height of the viewer.
+        known_error: An error (e.g. returned from stim.Circuit.shortest_graphlike_error)
+            to show as part of the object.
+
+    Returns:
+        The HTML string (as a stimflow.str_html, which inherits from python's `str`).
+
+        (The result is of type stimflow.str_html so that its viewer is shown automatically
+        in Jupyter notebooks, and also for convenience methods like `write_to`.)
+    """
+```
+
 <a name="stimflow.html_viewer_for_gltf_model"></a>
 ```python
 # stimflow.html_viewer_for_gltf_model
@@ -4155,22 +4190,6 @@ def sorted_complex(
     """
 ```
 
-<a name="stimflow.stim_circuit_html_viewer"></a>
-```python
-# stimflow.stim_circuit_html_viewer
-
-# (at top-level in the stimflow module)
-def stim_circuit_html_viewer(
-    circuit: stim.Circuit,
-    *,
-    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | dict[int, stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface] | None = None,
-    tile_color_func: Callable[[stimflow.Tile], tuple[float, float, float, float] | tuple[float, float, float] | str] | None = None,
-    width: int = 500,
-    height: int = 500,
-    known_error: Iterable[stim.ExplainedError] | None = None,
-) -> str_html:
-```
-
 <a name="stimflow.stim_circuit_with_transformed_coords"></a>
 ```python
 # stimflow.stim_circuit_with_transformed_coords
@@ -4304,15 +4323,15 @@ def write_to(
     """
 ```
 
-<a name="stimflow.svg"></a>
+<a name="stimflow.svg_viewer"></a>
 ```python
-# stimflow.svg
+# stimflow.svg_viewer
 
 # (at top-level in the stimflow module)
-def svg(
-    objects: Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit],
+def svg_viewer(
+    obj: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any],
     *,
-    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | None = None,
+    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | None = None,
     title: str | list[str] | None = None,
     canvas_height: int | None = None,
     show_order: bool = False,

@@ -89,9 +89,9 @@ class ChunkCompiler:
         copy = self.copy()
         if copy.open_flows:
             copy.append_magic_end_chunk()
-        from stimflow._viz import stim_circuit_html_viewer
+        from stimflow._viz import html_viewer
 
-        return stim_circuit_html_viewer(
+        return html_viewer(
             circuit=copy.finish_circuit(), background=self.cur_end_interface()
         )
 
