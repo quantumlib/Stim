@@ -116,12 +116,12 @@ class Patch:
         tile_color_func: Callable[[Tile], str] | None = None,
     ) -> str_svg:
         from stimflow._chunk._stabilizer_code import StabilizerCode
-        from stimflow._viz import svg
+        from stimflow._viz import svg_viewer
 
         patches = [self] + ([other] if isinstance(other, (Patch, StabilizerCode)) else list(other))
 
-        return svg(
-            objects=patches,
+        return svg_viewer(
+            patches,
             show_measure_qubits=show_measure_qubits,
             show_data_qubits=show_data_qubits,
             show_order=show_order,

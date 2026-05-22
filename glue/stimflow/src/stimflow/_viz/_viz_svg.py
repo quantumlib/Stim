@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Iterable
-from typing import Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING, Any
 
 import stim
 from stimflow import PauliMap
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     import stimflow
 
 
-def svg(
-    objects: Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any],
+def svg_viewer(
+    obj: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any],
     *,
     background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | None = None,
     title: str | list[str] | None = None,
@@ -42,29 +42,34 @@ def svg(
     show_frames: bool = True,
     pad: float | None = None,
 ) -> stimflow.str_svg:
-    """Returns an SVG image of the given objects."""
+    """Returns an SVG image of the given objects.
+    """
+    from stimflow._chunk import Patch, StabilizerCode, ChunkInterface
+    if hasattr(obj, '_inline_svg_') or isinstance(obj, (Patch, StabilizerCode, ChunkInterface, stim.Circuit, PauliMap)):
+        objects = [obj]
+    else:
+        objects = obj
+
     system_qubits = frozenset(system_qubits)
     if canvas_height is None:
         canvas_height = 500
 
     extra_used_coords = frozenset(extra_used_coords)
-    from stimflow._layers import LayerCircuit
-    from stimflow._chunk import Patch, StabilizerCode
 
     min_max_points: set[complex] = set()
     min_max_points.update(system_qubits)
     min_max_points.update(extra_used_coords)
-    for obj in [*objects, background]:
-        if obj is None:
+    for e in [*objects, background]:
+        if e is None:
             continue
-        elif hasattr(obj, '_min_max_complex_'):
-            min_max_points.update(obj._min_max_complex_())
-        elif isinstance(obj, stim.Circuit):
+        elif hasattr(e, '_min_max_complex_'):
+            min_max_points.update(e._min_max_complex_())
+        elif isinstance(e, stim.Circuit):
             min_max_points.update(
-                v[0] + v[1] * 1j for v in obj.get_final_qubit_coordinates().values()
+                v[0] + v[1] * 1j for v in e.get_final_qubit_coordinates().values()
             )
         else:
-            raise NotImplementedError(f"Don't know how to determine qubits used by {type(obj)=}")
+            raise NotImplementedError(f"Don't know how to determine qubits used by {type(e)=}")
     if show_all_qubits:
         system_qubits = frozenset(min_max_points)
     from stimflow._core import min_max_complex

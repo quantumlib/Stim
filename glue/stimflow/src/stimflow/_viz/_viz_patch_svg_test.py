@@ -30,5 +30,5 @@ def test_patch_svg_runs():
             ),
         ]
     )
-    svg_content = stimflow.svg([patch])
+    svg_content = stimflow.svg_viewer([patch])
     assert svg_content is not None

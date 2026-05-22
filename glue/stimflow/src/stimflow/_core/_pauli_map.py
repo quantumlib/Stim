@@ -212,7 +212,7 @@ class PauliMap:
             c = "IXZY"[cx + cz * 2]
             if c != "I":
                 result[q] = cast(Literal["X", "Y", "Z"], c)
-        return PauliMap(result)
+        return PauliMap(result, obs_name=self.obs_name if self.obs_name == other.obs_name else None)
 
     def __repr__(self) -> str:
         if self.obs_name is None:

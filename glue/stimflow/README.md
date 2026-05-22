@@ -16,7 +16,7 @@ stimflow also includes functionality for:
 
 - Transpiling (`stimflow.transpile_to_z_basis_interaction_circuit(...)`)
 - Adding Noise (`stimflow.NoiseModel.uniform_depolarizing(p).noisy_circuit(...)`)
-- Visualizing (`stimflow.make_3d_model`, `stimflow.stim_circuit_html_viewer`)
+- Visualizing (`stimflow.make_3d_model`, `stimflow.html_viewer`)
 
 # Documentation
 
@@ -131,7 +131,7 @@ def main():
     noisy_circuit = sf.NoiseModel.uniform_depolarizing(1e-3).noisy_circuit(circuit)
     distance = len(noisy_circuit.shortest_graphlike_error())
     assert distance == 7
-    sf.stim_circuit_html_viewer(noisy_circuit, background=code).write_to('tmp2.html')
+    sf.html_viewer(noisy_circuit, background=code).write_to('tmp2.html')
 
 
 if __name__ == "__main__":

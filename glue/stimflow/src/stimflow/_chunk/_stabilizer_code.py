@@ -473,7 +473,7 @@ class StabilizerCode:
                 t2 = tile2.to_pauli_map()
                 if not t1.commutes(t2):
                     raise ValueError(
-                        f"Tile stabilizer {t1=} anticommutes with tile stabilizer {t2=}."
+                        f"The following two stabilizers anticommute:\n    {t1}\n    {t2}\n\nMore details:\n\n{tile1!r}\n\n{tile2!r}"
                     )
 
         for tile in self.stabilizers.tiles:
@@ -552,10 +552,10 @@ class StabilizerCode:
         elif other is not None:
             flat.extend(other)
 
-        from stimflow._viz import svg
+        from stimflow._viz import svg_viewer
 
-        return svg(
-            objects=flat,
+        return svg_viewer(
+            flat,
             title=title,
             show_obs=show_obs,
             canvas_height=canvas_height,
