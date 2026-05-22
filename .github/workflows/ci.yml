@@ -239,7 +239,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
         with:
           user: __token__
-          packages_dir: dist-sinter
+          packages_dir: dist-stimflow
           password: ${{ secrets.pypi_token_stimflow }}
   run_main:
     runs-on: ubuntu-24.04
