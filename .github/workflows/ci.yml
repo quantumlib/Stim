@@ -29,19 +29,13 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-24.04, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-24.04, dist: cp39-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp310-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp311-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp312-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp314-manylinux_x86_64},
 
-          # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
-          # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
-          # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
+          # manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
           #
@@ -59,11 +53,7 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
           # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
           # {os: ubuntu-latest, dist: pp39-manylinux_i686},
 
           # musllinux builds disabled because scipy isn't prebuilt and fails to build.
@@ -74,27 +64,15 @@ jobs:
           #     libraries found. To build Scipy from sources, BLAS & LAPACK
           #     libraries need to be installed.
           #
-          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
           # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macos-14, dist: cp38-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp39-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp313-macosx_x86_64, macosarch: x86_64},
           {os: macos-14, dist: cp314-macosx_x86_64, macosarch: x86_64},
 
-          {os: macos-14, dist: cp38-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp39-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
           {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
@@ -112,27 +90,13 @@ jobs:
           #     BLAS and LAPACK by setting the environment variables
           #     NPY_BLAS_ORDER="" and NPY_LAPACK_ORDER="" before building NumPy.
           #
-          # {os: macOS-10.15, dist: pp37-macosx_x86_64},
-          # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2025, dist: cp38-win_amd64},
-          {os: windows-2025, dist: cp39-win_amd64},
           {os: windows-2025, dist: cp310-win_amd64},
           {os: windows-2025, dist: cp311-win_amd64},
           {os: windows-2025, dist: cp312-win_amd64},
           {os: windows-2025, dist: cp313-win_amd64},
           {os: windows-2025, dist: cp314-win_amd64},
-
-          # cp38-win32 and cp39-win32 disabled because scipy fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #    Need python for 64-bit, but found 32-bit
-          #    ..\..\meson.build:82:0: ERROR: Python dependency not found
-          #
-          #{os: windows-2025, dist: cp38-win32},
-          #{os: windows-2025, dist: cp39-win32},
 
           # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
           #
@@ -171,6 +135,8 @@ jobs:
       - run: cd glue/cirq && python setup.py bdist_wheel
       - run: cd glue/sample && python setup.py sdist
       - run: cd glue/sample && python setup.py bdist_wheel
+      - run: cd glue/stimflow && python setup.py sdist
+      - run: cd glue/stimflow && python setup.py bdist_wheel
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-sinter"
@@ -187,6 +153,14 @@ jobs:
         with:
           name: "bdist-stimcirq"
           path: glue/cirq/dist/*.whl
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: "dist-stimflow"
+          path: glue/stimflow/dist/*.tar.gz
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: "bdist-stimflow"
+          path: glue/stimflow/dist/*.whl
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: "dist-stim-sdist"
@@ -208,6 +182,15 @@ jobs:
     - run: cd glue/sample && python setup.py sdist
     - run: pip install glue/sample/dist/*
     - run: python -c "import sinter"
+  check_sdist_installs_stimflow:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+    - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
+    - run: python -m pip install setuptools
+    - run: cd glue/stimflow && python setup.py sdist
+    - run: pip install glue/stimflow/dist/*
+    - run: python -c "import stimflow"
   merge_upload_artifacts:
     needs: ["build_dist", "build_sdist"]
     runs-on: ubuntu-24.04
