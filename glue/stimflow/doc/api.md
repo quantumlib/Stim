@@ -1,4 +1,4 @@
-# stimflow v0.1.0 API Reference
+# stimflow (Development Version) API Reference
 
 ## Index
 - [`stimflow.Chunk`](#stimflow.Chunk)

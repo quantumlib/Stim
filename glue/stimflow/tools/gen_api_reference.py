@@ -2,6 +2,7 @@
 
 import dataclasses
 import inspect
+import sys
 import types
 from collections.abc import Iterator
 from typing import Any, cast
@@ -318,7 +319,11 @@ def main():
         if all("[DEPRECATED]" not in line for line in obj.lines)
     ]
 
-    print(f"# stimflow v{stimflow.__version__} API Reference")
+    if "dev" in stimflow.__version__ or stimflow.__version__ == "VERSION_INFO" or "-dev" in sys.argv:
+        version = "(Development Version)"
+    else:
+        version = "v" + stimflow.__version__
+    print(f"# stimflow {version} API Reference")
     print()
     print("## Index")
     for obj in objects:
