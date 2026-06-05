@@ -4,6 +4,7 @@ import {drawTimeline} from "./timeline_viewer.js";
 import {PropagatedPauliFrames} from "../circuit/propagated_pauli_frames.js";
 import {stroke_connector_to} from "../gates/gate_draw_util.js"
 import {beginPathPolygon} from './draw_util.js';
+import {minXY} from "../circuit/layer.js";
 
 /**
  * @param {!number|undefined} x
@@ -197,6 +198,9 @@ function defensiveDraw(ctx, body) {
  * @param {!StateSnapshot} snap
  */
 function draw(ctx, snap) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
     let circuit = snap.circuit;
 
     let numPropagatedLayers = 0;
@@ -255,7 +259,7 @@ function draw(ctx, snap) {
 
     defensiveDraw(ctx, () => {
         ctx.fillStyle = 'white';
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
         let [focusX, focusY] = xyToPos(snap.curMouseX, snap.curMouseY);
 
         // Draw the background polygons.
@@ -341,10 +345,16 @@ function draw(ctx, snap) {
 
         defensiveDraw(ctx, () => {
             ctx.globalAlpha *= 0.5
+            let [minX, minY] = minXY(snap.focusedSet.values());
             for (let [qx, qy] of snap.focusedSet.values()) {
                 let [x, y] = c2dCoordTransform(qx, qy);
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(x - rad * 1.25, y - rad * 1.25, 2.5*rad, 2.5*rad);
+                let w = 1.25;
+                if (qx === minX && qy === minY) {
+                    // The root selected qubit (used for certain UX broadcasting actions) is shown slightly bigger.
+                    w = 1.5;
+                }
+                ctx.fillRect(x - rad * w, y - rad * w, 2*w*rad, 2*w*rad);
             }
         });
 
@@ -390,7 +400,7 @@ function draw(ctx, snap) {
     ctx.save();
     try {
         ctx.strokeStyle = 'black';
-        ctx.translate(Math.floor(ctx.canvas.width / 2), 0);
+        ctx.translate(Math.floor(ctx.canvas.clientWidth / 2), 0);
         for (let k = 0; k < circuit.layers.length; k++) {
             let hasPolygons = false;
             let hasXMarker = false;
@@ -485,6 +495,7 @@ function draw(ctx, snap) {
     } finally {
         ctx.restore();
     }
+    ctx.restore(); // restore devicePixelRatio scale
 }
 
 export {xyToPos, draw, setDefensiveDrawEnabled, OFFSET_X, OFFSET_Y}

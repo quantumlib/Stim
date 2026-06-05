@@ -98,7 +98,7 @@ function drawTimelineMarkers(ctx, ds, qubitTimeCoordFunc, propagatedMarkers, mi,
  * @param {!int} numLayers
  */
 function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFunc, numLayers) {
-    let w = Math.floor(ctx.canvas.width / 2);
+    let w = Math.floor(ctx.canvas.clientWidth / 2);
 
     let qubits = snap.timelineQubits();
     qubits.sort((a, b) => {
@@ -133,7 +133,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
     }
 
     let x_pitch = TIMELINE_PITCH + Math.ceil(rad*max_run*0.25);
-    let num_cols_half = Math.floor(ctx.canvas.width / 4 / x_pitch);
+    let num_cols_half = Math.floor(ctx.canvas.clientWidth / 4 / x_pitch);
     let min_t_free = snap.curLayer - num_cols_half + 1;
     let min_t_clamp = Math.max(0, Math.min(min_t_free, numLayers - num_cols_half*2 + 1));
     let max_t = Math.min(min_t_clamp + num_cols_half*2 + 2, numLayers);
@@ -157,7 +157,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
 
     ctx.save();
     try {
-        ctx.clearRect(w, 0, w, ctx.canvas.height);
+        ctx.clearRect(w, 0, w, ctx.canvas.clientHeight);
 
         // Draw colored indicators showing Pauli propagation.
         let hitCounts = new Map();
@@ -170,7 +170,7 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         ctx.fillStyle = 'black';
         {
             let x1 = t2t(snap.curLayer) + w * 1.5 - x_pitch / 2;
-            ctx.fillRect(x1, 0, x_pitch, ctx.canvas.height);
+            ctx.fillRect(x1, 0, x_pitch, ctx.canvas.clientHeight);
         }
         ctx.globalAlpha *= 2;
 
@@ -214,14 +214,14 @@ function drawTimeline(ctx, snap, propagatedMarkerLayers, timesliceQubitCoordsFun
         for (let q of qubits) {
             let [x0, y0] = qubitTimeCoords(q, min_t_clamp - 1);
             let [x1, y1] = timesliceQubitCoordsFunc(q);
-            if (snap.curMouseX > ctx.canvas.width / 2 && snap.curMouseY >= y0 + OFFSET_Y - TIMELINE_PITCH * 0.55 && snap.curMouseY <= y0 + TIMELINE_PITCH * 0.55 + OFFSET_Y) {
+            if (snap.curMouseX > ctx.canvas.clientWidth / 2 && snap.curMouseY >= y0 + OFFSET_Y - TIMELINE_PITCH * 0.55 && snap.curMouseY <= y0 + TIMELINE_PITCH * 0.55 + OFFSET_Y) {
                 ctx.beginPath();
                 ctx.moveTo(x0, y0);
                 ctx.lineTo(x1, y1);
                 ctx.stroke();
                 ctx.fillStyle = 'black';
                 ctx.fillRect(x1 - 20, y1 - 20, 40, 40);
-                ctx.fillRect(ctx.canvas.width / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.width / 2, TIMELINE_PITCH * 2 / 3);
+                ctx.fillRect(ctx.canvas.clientWidth / 2, y0 - TIMELINE_PITCH / 3, ctx.canvas.clientWidth / 2, TIMELINE_PITCH * 2 / 3);
             }
         }
     } finally {

@@ -90,6 +90,35 @@ test("editor_state.markFocusInferBasis", () => {
     `));
 });
 
+test("editor_state.markFocusInferBasis", () => {
+    let state = new EditorState(undefined);
+    state.commit(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 1) 0
+        QUBIT_COORDS(0, 2) 1
+        QUBIT_COORDS(0, 3) 2
+        H 0
+        TICK
+        S 1
+        TICK
+        X 2
+    `));
+
+    state.changeFocus([[0, 1], [0, 2]], false, false);
+    state.curMouseX = 0 * pitch;
+    state.curMouseY = 2 * pitch;
+    state.applyQubitLocationSwap(false);
+    assertThat(state.copyOfCurCircuit()).isEqualTo(Circuit.fromStimCircuit(`
+        QUBIT_COORDS(0, 1) 0
+        QUBIT_COORDS(0, 2) 1
+        QUBIT_COORDS(0, 3) 2
+        H 1
+        TICK
+        S 2
+        TICK
+        X 0
+    `));
+});
+
 test("editor_state.writeGateToFocus", () => {
     let state = new EditorState(undefined);
     state.changeFocus([[0, 0], [0, 1]], false, false);
