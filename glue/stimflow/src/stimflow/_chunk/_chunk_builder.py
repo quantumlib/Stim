@@ -446,9 +446,9 @@ class ChunkBuilder:
             >>> # 2 ───────────@─────── 2
             >>> builder.append('R', [1])
             >>> builder.append('TICK')
-            >>> builder.append('CX', [0, 1])
+            >>> builder.append('CX', [(0, 1)])
             >>> builder.append('TICK')
-            >>> builder.append('CX', [2, 1])
+            >>> builder.append('CX', [(2, 1)])
             >>> builder.append('TICK')
             >>> builder.append('M', [1])
 
