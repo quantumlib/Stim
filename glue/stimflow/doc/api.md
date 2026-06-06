@@ -976,9 +976,9 @@ def add_flow(
         >>> # 2 ───────────@─────── 2
         >>> builder.append('R', [1])
         >>> builder.append('TICK')
-        >>> builder.append('CX', [0, 1])
+        >>> builder.append('CX', [(0, 1)])
         >>> builder.append('TICK')
-        >>> builder.append('CX', [2, 1])
+        >>> builder.append('CX', [(2, 1)])
         >>> builder.append('TICK')
         >>> builder.append('M', [1])
 
@@ -1224,6 +1224,66 @@ def lookup_measurement_indices(
 # (at top-level in the stimflow module)
 class ChunkCompiler:
     """Compiles appended chunks into a unified circuit.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
@@ -1242,6 +1302,66 @@ def __init__(
     Args:
         metadata_func: Determines coordinate data appended to detectors
             (after x, y, and t). Defaults to None (no extra metadata).
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
