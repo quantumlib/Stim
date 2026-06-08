@@ -397,19 +397,29 @@ class ChunkBuilder:
     ) -> None:
         """Declares that the circuit being built should have a given stabilizer flow.
 
-        When chunks are concatenated, their flows are paired up in order to form detectors.
+        When chunks are concatenated, their flows are matched up in order to form detectors.
+        At most one of `start`, `end`, and `measurements` can be set to "auto" in order to
+        infer it.
 
         Args:
             start: Defaults to None (empty). The stabilizer that the flow starts as, at the
                 beginning of the circuit. If the flow begins within the circuit, this should
-                be set to None or an empty PauliMap.
+                be set to None or an empty PauliMap. If this is set to "auto", it will be
+                inferred  by backpropagation from `end` and `measurements`.
             end: Defaults to None (empty). The stabilizer that the flow ends as, at the
                 end of the circuit. If the flow ends within the circuit, this should
-                be set to None or an empty PauliMap.
+                be set to None or an empty PauliMap. If this is set to "auto", it will be
+                inferred by forward propagating from `start` and measurements` (no resets will
+                be included in the forward propagation).
             measurements: Defaults to empty. The keys identifying measurements mediate the flow.
                 For example, if a stabilizer is measured by a circuit then this would
                 typically be a singleton list containing the measurement that reveals
-                the stabilizer's value.
+                the stabilizer's value. If this is set to "auto", it will be inferred from
+                `start` and `end` by Gaussian elimination via `stim.Circuit.flow_generators`.
+
+                Caution: beware using "auto" when the solution isn't unique (e.g. this is
+                common if the circuit includes multiple rounds of stabilizer measurement), as
+                it may select a solution you don't expect.
             ignore_unknown_measurements: Defaults to False. When set to False, unrecognized measurement
                 ids cause the method to raise an exception instead of adding the flow. When set
                 to True, unrecognized measurements are silently discarded.
@@ -428,22 +438,68 @@ class ChunkBuilder:
         Examples:
             >>> import stimflow as sf
             >>> builder = sf.ChunkBuilder()
-            >>> builder.append('R', [0])
-            >>> builder.append('MX', [1j])
-            >>> builder.append('TICK')
-            >>> builder.append('CX', [(1j, 0)])
 
-            >>> builder.add_flow(end=sf.PauliMap.from_xs([0, 1j]), measurements=[1j])
-            >>> builder.add_flow(end=sf.PauliMap.from_zs([0, 1j]))
-            >>> builder.add_flow(start=sf.PauliMap.from_xs([1j]), measurements=[1j])
+            >>> # 0 ───────@─────────── 0
+            >>> #          │
+            >>> # 1 ───R───X───X───M─── 1
+            >>> #              │
+            >>> # 2 ───────────@─────── 2
+            >>> builder.append('R', [1])
+            >>> builder.append('TICK')
+            >>> builder.append('CX', [(0, 1)])
+            >>> builder.append('TICK')
+            >>> builder.append('CX', [(2, 1)])
+            >>> builder.append('TICK')
+            >>> builder.append('M', [1])
+
+            >>> # 0 z━━━━━━━@─────────── 0
+            >>> #           ┃
+            >>> # 1  ───R━━━X━━━X━━[M]── 1
+            >>> #               ┃
+            >>> # 2 z━━━━━━━━━━━@─────── 2
+            >>> builder.add_flow(
+            ...     start=sf.PauliMap({0: 'Z', 2: 'Z'}),
+            ...     measurements=[1],
+            ... )
+
+            >>> # 0 ───────@━━━━━━━━━━━z 0
+            >>> #          ┃
+            >>> # 1 ───R━━━X━━━X━━[M]──  1
+            >>> #              ┃
+            >>> # 2 ───────────@━━━━━━━z 2
+            >>> builder.add_flow(
+            ...     measurements=[1],
+            ...     end=sf.PauliMap({0: 'Z', 2: 'Z'}),
+            ... )
+
+            >>> # 0 x═══════@═══════════x 0
+            >>> #           ║
+            >>> # 1  ───R───X═══X───M───  1
+            >>> #               ║
+            >>> # 2 x═══════════@═══════x 2
+            >>> builder.add_flow(
+            ...     start=sf.PauliMap({0: 'X', 2: 'X'}),
+            ...     end=sf.PauliMap({0: 'X', 2: 'X'}),
+            ... )
+
+            >>> # 0 z━━━━━━━@───────────  0
+            >>> #           ┃
+            >>> # 1  ───R━━━X━━━X━━[M]──  1
+            >>> #               ┃
+            >>> # 2  ───────────@━━━━━━━z 2
+            >>> builder.add_flow(
+            ...     start=sf.PauliMap({0: 'Z'}),
+            ...     measurements=[1],
+            ...     end=sf.PauliMap({2: 'Z'}),
+            ... )
 
             >>> builder.finish_chunk().verify()
         """
         auto_count = (start == "auto") + (end == "auto") + (measurements == "auto")
         if auto_count > 1:
-            raise ValueError("Only one of `start`, `end`, and `ms` can be set to auto.\n"
-                             f"    {start=}"
-                             f"    {measurements=}"
+            raise ValueError("Only one of `start`, `end`, and `measurements` can be set to 'auto'.\n"
+                             f"    {start=}\n"
+                             f"    {measurements=}\n"
                              f"    {end=}")
         if isinstance(start, PauliMap):
             obs_name = start.obs_name

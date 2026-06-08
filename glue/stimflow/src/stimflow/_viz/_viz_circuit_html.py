@@ -985,8 +985,9 @@ def _stim_circuit_html_viewer(
     escaped = escaped.replace(", ", ",").replace(" ", "_")
     escaped = escaped.replace("QUBIT_COORDS", "Q")
     escaped = escaped.replace("DETECTOR", "DT")
-    escaped = escaped.replace("(", "%28").replace(")", "%29")
-    escaped = escaped.replace("[", "%5B").replace("]", "%5D")
+    for c in "%()[]&?#/=@ &<>\"'\\":
+        c_esc = '%' + hex(ord(c))[2:].rjust(2, '0').upper()
+        escaped = escaped.replace(c, c_esc)
     local_server_crumble_url = f"""https://algassert.com/crumble#circuit={escaped}"""
 
     from stimflow._core import str_html
@@ -1005,7 +1006,7 @@ def _stim_circuit_html_viewer(
         <button id="btnNext">Next Layer (hotkey: e)</button>
         <a id="crumble-link" href="{local_server_crumble_url}">Open in Crumble</a>
         <div id="viewer"
-         style="border: 1px solid black; margin-bottom: 50px; width: 100%; height: 90vh;
+         style="border: 1px solid black; margin-bottom: 50px; width: 100%; height: 500px;
          resize: both; overflow: auto" tabindex="1" autofocus
          >"""
         + all_svg_image_tags
@@ -1028,6 +1029,9 @@ def _stim_circuit_html_viewer(
                 }
                 let layers = [];
                 let container = document.getElementById("circuit-viewer-container");
+                if (window.self === window.top) {
+                    container.querySelector("#viewer").style.height = "90vh";
+                }
                 container.id = 'circuit-viewer-container-do-not-find-again';
                 while (true) {
                     let svg = container.querySelector('#layer' + layers.length);

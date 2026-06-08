@@ -927,19 +927,29 @@ def add_flow(
 ) -> None:
     """Declares that the circuit being built should have a given stabilizer flow.
 
-    When chunks are concatenated, their flows are paired up in order to form detectors.
+    When chunks are concatenated, their flows are matched up in order to form detectors.
+    At most one of `start`, `end`, and `measurements` can be set to "auto" in order to
+    infer it.
 
     Args:
         start: Defaults to None (empty). The stabilizer that the flow starts as, at the
             beginning of the circuit. If the flow begins within the circuit, this should
-            be set to None or an empty PauliMap.
+            be set to None or an empty PauliMap. If this is set to "auto", it will be
+            inferred  by backpropagation from `end` and `measurements`.
         end: Defaults to None (empty). The stabilizer that the flow ends as, at the
             end of the circuit. If the flow ends within the circuit, this should
-            be set to None or an empty PauliMap.
+            be set to None or an empty PauliMap. If this is set to "auto", it will be
+            inferred by forward propagating from `start` and measurements` (no resets will
+            be included in the forward propagation).
         measurements: Defaults to empty. The keys identifying measurements mediate the flow.
             For example, if a stabilizer is measured by a circuit then this would
             typically be a singleton list containing the measurement that reveals
-            the stabilizer's value.
+            the stabilizer's value. If this is set to "auto", it will be inferred from
+            `start` and `end` by Gaussian elimination via `stim.Circuit.flow_generators`.
+
+            Caution: beware using "auto" when the solution isn't unique (e.g. this is
+            common if the circuit includes multiple rounds of stabilizer measurement), as
+            it may select a solution you don't expect.
         ignore_unknown_measurements: Defaults to False. When set to False, unrecognized measurement
             ids cause the method to raise an exception instead of adding the flow. When set
             to True, unrecognized measurements are silently discarded.
@@ -958,14 +968,60 @@ def add_flow(
     Examples:
         >>> import stimflow as sf
         >>> builder = sf.ChunkBuilder()
-        >>> builder.append('R', [0])
-        >>> builder.append('MX', [1j])
-        >>> builder.append('TICK')
-        >>> builder.append('CX', [(1j, 0)])
 
-        >>> builder.add_flow(end=sf.PauliMap.from_xs([0, 1j]), measurements=[1j])
-        >>> builder.add_flow(end=sf.PauliMap.from_zs([0, 1j]))
-        >>> builder.add_flow(start=sf.PauliMap.from_xs([1j]), measurements=[1j])
+        >>> # 0 ───────@─────────── 0
+        >>> #          │
+        >>> # 1 ───R───X───X───M─── 1
+        >>> #              │
+        >>> # 2 ───────────@─────── 2
+        >>> builder.append('R', [1])
+        >>> builder.append('TICK')
+        >>> builder.append('CX', [(0, 1)])
+        >>> builder.append('TICK')
+        >>> builder.append('CX', [(2, 1)])
+        >>> builder.append('TICK')
+        >>> builder.append('M', [1])
+
+        >>> # 0 z━━━━━━━@─────────── 0
+        >>> #           ┃
+        >>> # 1  ───R━━━X━━━X━━[M]── 1
+        >>> #               ┃
+        >>> # 2 z━━━━━━━━━━━@─────── 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'Z', 2: 'Z'}),
+        ...     measurements=[1],
+        ... )
+
+        >>> # 0 ───────@━━━━━━━━━━━z 0
+        >>> #          ┃
+        >>> # 1 ───R━━━X━━━X━━[M]──  1
+        >>> #              ┃
+        >>> # 2 ───────────@━━━━━━━z 2
+        >>> builder.add_flow(
+        ...     measurements=[1],
+        ...     end=sf.PauliMap({0: 'Z', 2: 'Z'}),
+        ... )
+
+        >>> # 0 x═══════@═══════════x 0
+        >>> #           ║
+        >>> # 1  ───R───X═══X───M───  1
+        >>> #               ║
+        >>> # 2 x═══════════@═══════x 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'X', 2: 'X'}),
+        ...     end=sf.PauliMap({0: 'X', 2: 'X'}),
+        ... )
+
+        >>> # 0 z━━━━━━━@───────────  0
+        >>> #           ┃
+        >>> # 1  ───R━━━X━━━X━━[M]──  1
+        >>> #               ┃
+        >>> # 2  ───────────@━━━━━━━z 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'Z'}),
+        ...     measurements=[1],
+        ...     end=sf.PauliMap({2: 'Z'}),
+        ... )
 
         >>> builder.finish_chunk().verify()
     """
@@ -1168,6 +1224,66 @@ def lookup_measurement_indices(
 # (at top-level in the stimflow module)
 class ChunkCompiler:
     """Compiles appended chunks into a unified circuit.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
@@ -1186,6 +1302,66 @@ def __init__(
     Args:
         metadata_func: Determines coordinate data appended to detectors
             (after x, y, and t). Defaults to None (no extra metadata).
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
