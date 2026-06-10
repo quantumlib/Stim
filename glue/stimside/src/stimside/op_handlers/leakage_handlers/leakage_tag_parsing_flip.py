@@ -1,8 +1,16 @@
-import re
 from typing import Literal, cast
 
 import stim  # type: ignore[import-untyped]
 
+from stimside.op_handlers.leakage_handlers.common_parsing import (
+    LEAKAGE_TAG_MATCH,
+    MEASURE_TAG_MATCH,
+    LEAKAGE_TRANSITIONS_1_MATCH,
+    LEAKAGE_TRANSITIONS_2_MATCH,
+    try_as_integer,
+    split_arguments,
+    parse_list_of_targets,
+)
 from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageControlledErrorParams,
     LeakageParams,
@@ -11,25 +19,6 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageTransitionZParams,
     LeakageMeasurementParams
 )
-
-LEAKAGE_TAG_MATCH = re.compile(r"(?P<name>LEAKAGE_\w+):(?P<args>.+)")
-# you can use this by doing
-# match = LEAKAGE_TAG_MATCH.fullmatch(tag)
-# the result is None if the tag isn't formatted correctly
-# otherwise the result has named groups:
-#   match.group('name')
-#   match.group('args')
-
-MEASURE_TAG_MATCH = re.compile(r"LEAKAGE_MEASUREMENT\s*:(?P<args>.+):(?P<targets>.+)")
-## "MPAD[LEAKAGE_MEASUREMENT: (0.1, 0) (0.2, 1) (0.9, 2) (0.99, 3) : 1 3 5 7]"
-
-LEAKAGE_TRANSITIONS_1_MATCH = re.compile(
-    r"(?P<s0>[\dU]+)(?P<direction>[-<]->)(?P<s1>[\dU]+)"
-)
-LEAKAGE_TRANSITIONS_2_MATCH = re.compile(
-    r"(?P<s0>[\dU])_(?P<s1>[\dU])(?P<direction>[-<]->)(?P<s2>[\dUV])_(?P<s3>[\dUV])"
-)
-
 
 def _parse_leakage_controlled_error(
     args_tuples: list[tuple[str, ...]], tag: str
@@ -165,18 +154,6 @@ def _parse_leakage_projection_z(
         projections.append((p, state))
     return LeakageMeasurementParams(args=tuple(projections), targets=None, from_tag=tag)
 
-def _parse_list_of_targets(targets: str) -> list[int]:
-    """Parse a space-separated list of qubit targets."""
-    targets_set = []
-    for target in targets.split():
-        if target.isdigit():
-            targets_set += [int(target)]
-        else:
-            raise ValueError(
-                "Targets in tag are not integers separated" f" by spaces: {targets}"
-            )
-    return targets_set
-
 def _parse_leakage_measurement(tag: str) -> LeakageMeasurementParams:
     """
     Parse a LEAKAGE_MEASUREMENT tag.
@@ -195,17 +172,7 @@ def _parse_leakage_measurement(tag: str) -> LeakageMeasurementParams:
 
     projections: list[tuple[float, int]] = []
     if args:
-        stripped_args = args.strip()
-        if not stripped_args:
-            raise ValueError(f"Empty arguments in tag '{tag}'")
-        if not (stripped_args.startswith("(") and stripped_args.endswith(")")):
-            raise ValueError(
-                f"Arguments must be enclosed in parentheses in tag '{tag}'"
-            )
-        # Strip outer parens and split by ') ('
-        # re.split(r"\)\s*,*\s*\(", stripped_args[1:-1])
-        args_list = stripped_args[1:-1].split(") (")
-        args_tuples = [tuple(b.strip() for b in a.split(",")) for a in args_list]
+        args_tuples = split_arguments(args)
 
         for a in args_tuples:
             if len(a) != 2:
@@ -223,7 +190,7 @@ def _parse_leakage_measurement(tag: str) -> LeakageMeasurementParams:
             else:
                 projections.append((p, state))
 
-    targets = _parse_list_of_targets(target_args)
+    targets = parse_list_of_targets(target_args)
     return LeakageMeasurementParams(
         args=tuple(projections), targets=tuple(targets), from_tag=tag
     )
@@ -273,18 +240,7 @@ def parse_leakage_tag(op: stim.CircuitInstruction) -> LeakageParams | None:
     name = match.group("name")
     args = match.group("args")
 
-    args_tuples = []
-    if args:
-        stripped_args = args.strip()
-        if not stripped_args:
-            raise ValueError(f"Empty arguments in tag '{tag}'")
-        if not (stripped_args.startswith("(") and stripped_args.endswith(")")):
-            raise ValueError(
-                f"Arguments must be enclosed in parentheses in tag '{tag}'"
-            )
-        # Strip outer parens and split by ') ('
-        args_list = stripped_args[1:-1].split(") (")
-        args_tuples = [tuple(b.strip() for b in a.split(",")) for a in args_list]
+    args_tuples = split_arguments(args) if args else []
 
     # Check tag is attached to a reasonable gate
     # first check qubit-arity
@@ -352,9 +308,3 @@ def _parse_leakage_in_circuit_recurse(
                 parsed_tags[op] = parsed
 
     return parsed_tags
-
-
-def try_as_integer(state: str) -> int | str:
-    if state.isdigit():
-        return int(state)
-    return state

@@ -3,6 +3,16 @@ import re
 
 import stim  # type: ignore[import-untyped]
 
+from stimside.op_handlers.leakage_handlers.common_parsing import (
+    LEAKAGE_TAG_MATCH,
+    CONDITION_TAG_MATCH,
+    MEASURE_TAG_MATCH,
+    LEAKAGE_TRANSITIONS_1_MATCH,
+    LEAKAGE_TRANSITIONS_2_MATCH,
+    try_as_integer,
+    split_arguments,
+    parse_list_of_targets,
+)
 from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageParams,
     LeakageTransition1Params,
@@ -10,35 +20,6 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams,
 )
-
-CONDITION_TAG_MATCH = re.compile(
-    r"(?P<name>CONDITIONED_ON_[A-Z]+)\s*:(?P<args>[^:]+):*(?P<targets>.+)*"
-)
-## Conditional tag. Specififies if qubit is in certain states, do op otherwise do nothing
-## Examples:
-##  "CONDITIONED_ON_SELF: U 2 3" : 1 qubit op
-##  DEPOLARIZE1[CONDITIONED_ON_OTHER: U 2 3: 10 12 14 16](0.1) 9 11 13 15 : 1 qubit op
-##  "CONDITIONED_ON_PAIR: (2, 3) (U, 2) (U, 3)" : 2 qubit op
-## Can condition on U, L, or specific state
-
-MEASURE_TAG_MATCH = re.compile(r"LEAKAGE_MEASUREMENT\s*:(?P<args>.+):(?P<targets>.+)")
-## "MPAD[LEAKAGE_MEASUREMENT: (0.1, 0) (0.2, 1) (0.9, 2) (0.99, 3) : 1 3 5 7]"
-
-LEAKAGE_TAG_MATCH = re.compile(r"(?P<name>LEAKAGE_\w+):(?P<args>.+)")
-# you can use this by doing
-# match = LEAKAGE_TAG_MATCH.fullmatch(tag)
-# the result is None if the tag isn't formatted correctly
-# otherwise the result has named groups:
-#   match.group('name')
-#   match.group('args')
-
-LEAKAGE_TRANSITIONS_1_MATCH = re.compile(
-    r"(?P<s0>[\dU])(?P<direction>[-<]->)(?P<s1>[\dU])"
-)
-LEAKAGE_TRANSITIONS_2_MATCH = re.compile(
-    r"(?P<s0>[\dU])_(?P<s1>[\dU])(?P<direction>[-<]->)(?P<s2>[\dUVDXYZ])_(?P<s3>[\dUVDXYZ])"
-)
-
 
 def _parse_leakage_transition_1(
     args_tuples: list[tuple[str, ...]], tag: str
@@ -163,17 +144,7 @@ def _parse_leakage_measurement(tag: str) -> LeakageMeasurementParams:
 
     projections: list[tuple[float, int]] = []
     if args:
-        stripped_args = args.strip()
-        if not stripped_args:
-            raise ValueError(f"Empty arguments in tag '{tag}'")
-        if not (stripped_args.startswith("(") and stripped_args.endswith(")")):
-            raise ValueError(
-                f"Arguments must be enclosed in parentheses in tag '{tag}'"
-            )
-        # Strip outer parens and split by ') ('
-        # re.split(r"\)\s*,*\s*\(", stripped_args[1:-1])
-        args_list = stripped_args[1:-1].split(") (")
-        args_tuples = [tuple(b.strip() for b in a.split(",")) for a in args_list]
+        args_tuples = split_arguments(args)
 
         for a in args_tuples:
             if len(a) != 2:
@@ -191,7 +162,7 @@ def _parse_leakage_measurement(tag: str) -> LeakageMeasurementParams:
             else:
                 projections.append((p, state))
 
-    targets = _parse_list_of_targets(target_args)
+    targets = parse_list_of_targets(target_args)
     return LeakageMeasurementParams(
         args=tuple(projections), targets=tuple(targets), from_tag=tag
     )
@@ -251,19 +222,6 @@ def _parse_list_of_states(args: str) -> set[str | int]:
     return set(_combine_conditioned_states(states))
 
 
-def _parse_list_of_targets(targets: str) -> list[int]:
-    """Parse a space-separated list of qubit targets."""
-    targets_set = []
-    for target in targets.split():
-        if target.isdigit():
-            targets_set += [int(target)]
-        else:
-            raise ValueError(
-                "Targets in tag are not integers separated" f" by spaces: {targets}"
-            )
-    return targets_set
-
-
 def _parse_conditioned_on_self(args: str, tag: str) -> LeakageConditioningParams:
     """Parse a CONDITIONED_ON_SELF tag."""
     states = _parse_list_of_states(args)
@@ -276,7 +234,7 @@ def _parse_conditioned_on_other(
     """Parse a CONDITIONED_ON_OTHER tag."""
     states = _parse_list_of_states(args)
 
-    target_list = _parse_list_of_targets(targets)
+    target_list = parse_list_of_targets(targets)
     return LeakageConditioningParams(
         args=(tuple(states),), from_tag=tag, targets=tuple(target_list)
     )
@@ -285,8 +243,8 @@ def _parse_conditioned_on_other(
 def _parse_conditioned_on_pair(args: str, tag: str) -> LeakageConditioningParams:
     """Parse a CONDITIONED_ON_PAIR tag."""
     states: list[list[int | str]] = [[], []]
-    for arg in (args.strip())[1:-1].split(") ("):
-        state_pair = arg.strip().split(",")
+    args_tuples = split_arguments(args)
+    for state_pair in args_tuples:
         if len(state_pair) != 2:
             raise ValueError(
                 f"The argument in a CONDITIONED_ON_PAIR tag {tag} does not have exactly"
@@ -408,18 +366,7 @@ def parse_leakage_tag(op: stim.CircuitInstruction) -> LeakageParams | None:
     name = match.group("name")
     args = match.group("args")
 
-    args_tuples = []
-    if args:
-        stripped_args = args.strip()
-        if not stripped_args:
-            raise ValueError(f"Empty arguments in tag '{tag}'")
-        if not (stripped_args.startswith("(") and stripped_args.endswith(")")):
-            raise ValueError(
-                f"Arguments must be enclosed in parentheses in tag '{tag}'"
-            )
-        # Strip outer parens and split by ') ('
-        args_list = re.split(r"\)\s*,*\s*\(", stripped_args[1:-1])  # .split(") (")
-        args_tuples = [tuple(b.strip() for b in a.split(",")) for a in args_list]
+    args_tuples = split_arguments(args) if args else []
 
     # Check tag is attached to a reasonable gate
     # first check qubit-arity
@@ -497,10 +444,3 @@ def _parse_leakage_in_circuit_recurse(
                 parsed_tags[op] = parsed
 
     return parsed_tags
-
-
-def try_as_integer(state: str) -> int | str:
-    """Try to parse a state as an integer, otherwise return the stripped string."""
-    if state.isdigit():
-        return int(state)
-    return state.strip()
