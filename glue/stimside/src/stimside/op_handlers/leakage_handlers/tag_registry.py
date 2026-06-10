@@ -137,3 +137,23 @@ def parse_leakage_tag(op: stim.CircuitInstruction, simulator: Literal["flip", "t
     # 3. Validate & Parse
     tag_def.validate(op, simulator)
     return tag_def.parser_func(op, match, simulator)
+
+
+# --- CIRCUIT PARSING ---
+
+def _parse_leakage_in_circuit_recurse(
+    circuit: stim.Circuit, simulator: Literal["flip", "tableau"]
+) -> dict[stim.CircuitInstruction, LeakageParams]:
+    """Recursive helper to parse all present leakage tags in a circuit."""
+    parsed_tags = {}
+    for op in circuit:
+        if isinstance(op, stim.CircuitRepeatBlock):
+            parsed_tags.update(
+                _parse_leakage_in_circuit_recurse(op.body_copy(), simulator=simulator)
+            )
+        elif op.tag != "":
+            parsed = parse_leakage_tag(op, simulator=simulator)
+            if parsed is not None:
+                parsed_tags[op] = parsed
+
+    return parsed_tags
