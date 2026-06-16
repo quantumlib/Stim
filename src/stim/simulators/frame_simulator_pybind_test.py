@@ -587,8 +587,6 @@ def test_generate_bernoulli_samples():
     assert np.all(v == 0)
 
     sim.generate_bernoulli_samples(256 - 101, p=1, bit_packed=True, out=v[1:-11])
-    for k in v:
-        print(k)
     assert np.all(v[1:-12] == 0xFF)
     assert v[-12] == 7
     assert np.all(v[-11:] == 0)
