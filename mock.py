@@ -4,7 +4,8 @@ import stim
 import numpy as np
 
 
-def main():
+def test_x():
+    print("TEST PROGRESSION: START", file=sys.stderr)
     circuit = stim.Circuit(
         """
         H 0 1
@@ -22,4 +23,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    test_x()

@@ -26,6 +26,6 @@ jobs:
   test_repro:
     runs-on: windows-2025
     steps:
-    - run: pip install stim~=1.17.dev
     - uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
-    - run: python {project}/mock.py
+    - run: pip install stim~=1.17.dev pytest
+    - run: pytest --capture=no --verbose {project}/mock.py
