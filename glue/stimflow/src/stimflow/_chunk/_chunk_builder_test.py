@@ -311,3 +311,31 @@ def test_partial_observable_include_memory_experiment():
     assert np.count_nonzero(dets) == 0
     assert 200 <= np.count_nonzero(obs[:, 0]) <= 300  # Some measurements included in partial X obs
     assert np.count_nonzero(obs[:, 1]) == 0  # No measurements included in partial Z obs
+
+
+def test_auto_obs():
+    builder = stimflow.ChunkBuilder(allowed_qubits=[0, 1])
+    builder.append("R", [0])
+    builder.add_flow(
+        start="auto",
+        end=stimflow.PauliMap({0: 'Z', 1: 'Z'}, obs_name='test'),
+    )
+    builder.add_flow(
+        start=stimflow.PauliMap({1: 'Z'}, obs_name='test2'),
+        end="auto",
+    )
+    chunk = builder.finish_chunk()
+    chunk.verify()
+
+    assert chunk.flows == (
+        stimflow.Flow(
+            start=stimflow.PauliMap({1: 'Z'}, obs_name='test'),
+            end=stimflow.PauliMap({0: 'Z', 1: 'Z'}, obs_name='test'),
+            center=0.5,
+        ),
+        stimflow.Flow(
+            start=stimflow.PauliMap({1: 'Z'}, obs_name='test2'),
+            end=stimflow.PauliMap({1: 'Z'}, obs_name='test2'),
+            center=1,
+        ),
+    )

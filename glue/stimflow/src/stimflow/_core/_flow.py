@@ -209,14 +209,21 @@ class Flow:
         return result
 
     def __repr__(self):
-        return (
-            f"stimflow.Flow(start={self.start!r}, "
-            f"end={self.end!r}, "
-            f"measurement_indices={self.measurement_indices!r}, "
-            f"flags={self.flags!r}, "
-            f"center={self.center!r}, "
-            f"sign={self.sign!r}"
-        )
+        lines = ["stimflow.Flow("]
+        if self.start:
+            lines.append(f"start={self.start!r},")
+        if self.end:
+            lines.append(f"end={self.end!r},")
+        if self.measurement_indices:
+            lines.append(f"measurement_indices={self.measurement_indices!r},")
+        if self.flags:
+            lines.append(f"flags={self.flags!r},")
+        if self.center is not None:
+            lines.append(f"center={self.center!r},")
+        if self.sign is not None:
+            lines.append(f"sign={self.sign!r},")
+        lines.append(")")
+        return '\n'.join(lines)
 
     def with_xz_flipped(self) -> Flow:
         return self.with_edits(start=self.start.with_xz_flipped(), end=self.end.with_xz_flipped())
