@@ -1,7 +1,9 @@
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 
-#include "stim/circuit/circuit.pybind.h"
+#include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
+#include "stim/simulators/tableau_simulator.h"
 
 #define xstr_literal(s) str_literal(s)
 #define str_literal(s) #s
@@ -15,7 +17,16 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         Stim: A fast stabilizer circuit library.
     )pbdoc";
 
-    auto c_circuit = pybind_circuit(m);
-
-    pybind_circuit_methods(m, c_circuit);
+    m.def(
+        "test",
+        []() {
+            Circuit self;
+            self.append_from_text(R"CIRCUIT(
+                MPP X0*X1 Y0*Y1
+            )CIRCUIT");
+            auto ref = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(self);
+            simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(ref.ptr_simd, ref.num_simd_words);
+            size_t num_measure = self.count_measurements();
+            return simd_bits_to_numpy(reference_sample, num_measure, false);
+        });
 }
