@@ -15,6 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
+          {os: ubuntu-24.04, dist: cp314-manylinux_x86_64},
           {os: windows-2025, dist: cp314-win_amd64},
         ]
     env:
