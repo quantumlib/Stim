@@ -1,2 +1,0 @@
-pygltflib
-stim
