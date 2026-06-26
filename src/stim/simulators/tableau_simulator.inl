@@ -22,11 +22,11 @@
 namespace stim {
 
 template <size_t W>
-TableauSimulator<W>::TableauSimulator(std::mt19937_64 &&rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
+TableauSimulator<W>::TableauSimulator(std::mt19937_64 &&rng, size_t num_qubits, int8_t sign_bias)
     : inv_state(Tableau<W>::identity(num_qubits)),
       rng(std::move(rng)),
       sign_bias(sign_bias),
-      measurement_record(std::move(record)),
+      measurement_record(),
       last_correlated_error_occurred(false) {
 }
 
@@ -222,7 +222,7 @@ void TableauSimulator<W>::do_MX(const CircuitInstruction &target_data) {
         auto q = t.qubit_value();
         bool flipped = t.is_inverted_result_target();
         bool b = inv_state.xs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(target_data);
 }
@@ -242,7 +242,7 @@ void TableauSimulator<W>::do_MXX_disjoint_controls_segment(const CircuitInstruct
         auto q = t1.qubit_value();
         bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
         bool b = inv_state.xs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
@@ -265,7 +265,7 @@ void TableauSimulator<W>::do_MYY_disjoint_controls_segment(const CircuitInstruct
         auto q = t1.qubit_value();
         bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
         bool b = inv_state.eval_y_obs(q).sign ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
@@ -288,7 +288,7 @@ void TableauSimulator<W>::do_MZZ_disjoint_controls_segment(const CircuitInstruct
         auto q = t1.qubit_value();
         bool flipped = t1.is_inverted_result_target() ^ t2.is_inverted_result_target();
         bool b = inv_state.zs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(inst.args, inst.targets.size() / 2);
 
@@ -320,7 +320,7 @@ void TableauSimulator<W>::do_MZZ(const CircuitInstruction &inst) {
 template <size_t W>
 void TableauSimulator<W>::do_MPAD(const CircuitInstruction &inst) {
     for (const auto &t : inst.targets) {
-        measurement_record.record_result(t.qubit_value() != 0);
+        measurement_record.push_back(t.qubit_value() != 0);
     }
     noisify_new_measurements(inst);
 }
@@ -335,7 +335,7 @@ void TableauSimulator<W>::do_MY(const CircuitInstruction &target_data) {
         auto q = t.qubit_value();
         bool flipped = t.is_inverted_result_target();
         bool b = inv_state.eval_y_obs(q).sign ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(target_data);
 }
@@ -350,7 +350,7 @@ void TableauSimulator<W>::do_MZ(const CircuitInstruction &target_data) {
         auto q = t.qubit_value();
         bool flipped = t.is_inverted_result_target();
         bool b = inv_state.zs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
     }
     noisify_new_measurements(target_data);
 }
@@ -384,12 +384,12 @@ bool TableauSimulator<W>::measure_pauli_string(const PauliStringRef<W> pauli_str
         p = 1 - p;
     }
     if (targets.empty()) {
-        measurement_record.record_result(std::bernoulli_distribution(p)(rng));
+        measurement_record.push_back(std::bernoulli_distribution(p)(rng));
     } else {
         targets.pop_back();
         do_MPP(CircuitInstruction{GateType::MPP, &p, targets, ""});
     }
-    return measurement_record.lookback(1);
+    return measurement_record.back();
 }
 
 template <size_t W>
@@ -404,7 +404,7 @@ void TableauSimulator<W>::do_MRX(const CircuitInstruction &target_data) {
         auto q = t.qubit_value();
         bool flipped = t.is_inverted_result_target();
         bool b = inv_state.xs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
         inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
@@ -424,7 +424,7 @@ void TableauSimulator<W>::do_MRY(const CircuitInstruction &target_data) {
         bool flipped = t.is_inverted_result_target();
         bool cur_sign = inv_state.eval_y_obs(q).sign;
         bool b = cur_sign ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
         inv_state.zs.signs[q] ^= cur_sign;
     }
     noisify_new_measurements(target_data);
@@ -442,7 +442,7 @@ void TableauSimulator<W>::do_MRZ(const CircuitInstruction &target_data) {
         auto q = t.qubit_value();
         bool flipped = t.is_inverted_result_target();
         bool b = inv_state.zs.signs[q] ^ flipped;
-        measurement_record.record_result(b);
+        measurement_record.push_back(b);
         inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
@@ -454,9 +454,9 @@ void TableauSimulator<W>::noisify_new_measurements(SpanRef<const double> args, s
     if (args.empty()) {
         return;
     }
-    size_t last = measurement_record.storage.size() - 1;
+    size_t last = measurement_record.size() - 1;
     RareErrorIterator::for_samples(args[0], num_targets, rng, [&](size_t k) {
-        measurement_record.storage[last - k] = !measurement_record.storage[last - k];
+        measurement_record[last - k] = !measurement_record[last - k];
     });
 }
 
@@ -726,7 +726,14 @@ bool TableauSimulator<W>::read_measurement_record(uint32_t encoded_target) const
         return false;
     }
     assert(encoded_target & TARGET_RECORD_BIT);
-    return measurement_record.lookback(encoded_target ^ TARGET_RECORD_BIT);
+    auto lookback = encoded_target ^ TARGET_RECORD_BIT;
+    if (lookback > measurement_record.size()) {
+        throw std::out_of_range("Referred to a measurement record before the beginning of time.");
+    }
+    if (lookback == 0) {
+        throw std::out_of_range("Lookback must be non-zero.");
+    }
+    return *(measurement_record.end() - lookback);
 }
 
 template <size_t W>
@@ -1036,8 +1043,8 @@ void TableauSimulator<W>::do_DEPOLARIZE2(const CircuitInstruction &target_data) 
 template <size_t W>
 void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
     auto nt = inst.targets.size();
-    size_t offset = measurement_record.storage.size();
-    measurement_record.storage.insert(measurement_record.storage.end(), nt, false);
+    size_t offset = measurement_record.size();
+    measurement_record.insert(measurement_record.end(), nt, false);
 
     uint64_t rng_buf = 0;
     size_t buf_size = 0;
@@ -1049,7 +1056,7 @@ void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
         }
         inv_state.xs.signs[qubit] ^= (bool)(rng_buf & 1);
         inv_state.zs.signs[qubit] ^= (bool)(rng_buf & 2);
-        measurement_record.storage[offset + target] = true;
+        measurement_record[offset + target] = true;
         rng_buf >>= 2;
         buf_size -= 2;
     });
@@ -1058,8 +1065,8 @@ void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
 template <size_t W>
 void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
     auto nt = inst.targets.size();
-    size_t offset = measurement_record.storage.size();
-    measurement_record.storage.insert(measurement_record.storage.end(), nt, false);
+    size_t offset = measurement_record.size();
+    measurement_record.insert(measurement_record.end(), nt, false);
 
     double hi = inst.args[0];
     double hx = inst.args[1];
@@ -1073,7 +1080,7 @@ void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &
         conditionals[2] /= ht;
     }
     RareErrorIterator::for_samples(ht, nt, rng, [&](size_t target) {
-        measurement_record.storage[offset + target] = true;
+        measurement_record[offset + target] = true;
         do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target], ""});
     });
 }
@@ -1183,7 +1190,7 @@ simd_bits<W> TableauSimulator<W>::sample_circuit(const Circuit &circuit, std::mt
     TableauSimulator<W> sim(std::move(rng), circuit.count_qubits(), sign_bias);
     sim.safe_do_circuit(circuit);
 
-    const std::vector<bool> &v = sim.measurement_record.storage;
+    const std::vector<bool> &v = sim.measurement_record;
     simd_bits<W> result(v.size());
     for (size_t k = 0; k < v.size(); k++) {
         result[k] ^= v[k];
@@ -1198,42 +1205,6 @@ void TableauSimulator<W>::ensure_large_enough_for_qubits(size_t num_qubits) {
         return;
     }
     inv_state.expand(num_qubits, 1.1);
-}
-
-template <size_t W>
-void TableauSimulator<W>::sample_stream(
-    FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
-    TableauSimulator<W> sim(std::move(rng), 1);
-    auto writer = MeasureRecordWriter::make(out, format);
-    Circuit unprocessed;
-    while (true) {
-        unprocessed.clear();
-        if (interactive) {
-            try {
-                unprocessed.append_from_file(in, true);
-            } catch (const std::exception &ex) {
-                std::cerr << "\033[31m" << ex.what() << "\033[0m\n";
-                continue;
-            }
-        } else {
-            unprocessed.append_from_file(in, true);
-        }
-        if (unprocessed.operations.empty()) {
-            break;
-        }
-        sim.ensure_large_enough_for_qubits(unprocessed.count_qubits());
-
-        unprocessed.for_each_operation([&](const CircuitInstruction &op) {
-            sim.do_gate(op);
-            sim.measurement_record.write_unwritten_results_to(*writer);
-            if (interactive && op.count_measurement_results()) {
-                putc('\n', out);
-                fflush(out);
-            }
-        });
-    }
-    rng = std::move(sim.rng);
-    writer->write_end();
 }
 
 template <size_t W>
@@ -1475,7 +1446,7 @@ std::pair<bool, PauliString<W>> TableauSimulator<W>::measure_kickback_z(GateTarg
             kickback = temp_transposed.unsigned_x_input(pivot);
         }
         bool result = inv_state.zs.signs[q] ^ flipped;
-        measurement_record.storage.push_back(result);
+        measurement_record.push_back(result);
 
         // Prevent later measure_kickback calls from unnecessarily targeting this qubit with a Z gate.
         collapse_isolate_qubit_z(q, temp_transposed);
@@ -1541,7 +1512,7 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
         return 0;
     }
     state.do_MZ({GateType::M, {}, &anc, ""});
-    return state.measurement_record.storage.back() ? -1 : +1;
+    return state.measurement_record.back() ? -1 : +1;
 }
 
 template <size_t W>

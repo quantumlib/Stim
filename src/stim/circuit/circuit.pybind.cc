@@ -2,7 +2,6 @@
 
 #include <fstream>
 
-#include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"

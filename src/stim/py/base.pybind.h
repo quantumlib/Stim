@@ -19,12 +19,7 @@
 #include <pybind11/pybind11.h>
 #include <random>
 
-#include "stim/io/stim_data_formats.h"
-
 namespace stim_pybind {
-
-std::mt19937_64 make_py_seeded_rng(const pybind11::object &seed);
-stim::SampleFormat format_to_enum(std::string_view format);
 
 /// Converts a python index or slice into a form that's easier to consume.
 ///
