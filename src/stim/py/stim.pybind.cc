@@ -5,18 +5,10 @@
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 
-#define xstr_literal(s) str_literal(s)
-#define str_literal(s) #s
-
 using namespace stim;
 using namespace stim_pybind;
 
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
-    m.attr("__version__") = xstr_literal(VERSION_INFO);
-    m.doc() = R"pbdoc(
-        Stim: A fast stabilizer circuit library.
-    )pbdoc";
-
     m.def(
         "test",
         []() {
@@ -25,12 +17,14 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
                 MPP X0*X1 Y0*Y1
             )CIRCUIT");
 
-
-
             TableauSimulator<MAX_BITWORD_WIDTH> sim(std::mt19937_64(0), circuit.count_qubits(), +1);
 
             std::cerr << "do_circuit start\n";
-            sim.safe_do_circuit(circuit);
+            decompose_mpp_operation(circuit.operations[0], 2, [&](const CircuitInstruction &inst) {
+              std::cerr << " do inst " << inst << "\n";
+                sim.do_gate(inst);
+            });
+//            sim.safe_do_circuit(circuit);
             std::cerr << "do_circuit end\n";
 
             std::cerr << "copy start\n";
