@@ -121,12 +121,18 @@ uint64_t CircuitInstruction::count_measurement_results() const {
     if (flags & GATE_TARGETS_PAIRS) {
         return n >> 1;
     } else if (flags & GATE_TARGETS_COMBINERS) {
+      std::cerr << "counting start ... " << n << "\n";
         for (auto e : targets) {
+      std::cerr << "target " << e << "\n";
             if (e.is_combiner()) {
+      std::cerr << "combiner!\n";
                 n -= 2;
             }
+      std::cerr << "count is now " << n << "\n";
         }
+      std::cerr << "count final 1 " << n << "\n";
     }
+      std::cerr << "count final final " << n << "\n";
     return n;
 }
 
