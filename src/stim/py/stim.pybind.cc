@@ -12,10 +12,10 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def(
         "test",
         []() {
-//            Circuit circuit;
-//            circuit.append_from_text(R"CIRCUIT(
-//                MPP X0*X1 Y0*Y1
-//            )CIRCUIT");
+            Circuit circuit;
+            circuit.append_from_text(R"CIRCUIT(
+                MPP X0*X1 Y0*Y1
+            )CIRCUIT");
 
 //            TableauSimulator<MAX_BITWORD_WIDTH> sim(std::mt19937_64(0), circuit.count_qubits(), +1);
 //
@@ -35,7 +35,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 //            std::cerr << "copy done\n";
 
             std::cerr << "alloc start\n";
-            simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(2);
+            simd_bits<MAX_BITWORD_WIDTH> reference_sample(2);
             reference_sample[1] = true;
             std::cerr << "alloc done\n";
             std::cerr << "count start\n";
