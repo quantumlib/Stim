@@ -52,9 +52,6 @@ stim_polyfill = Extension(
     ],
 )
 
-with open('glue/python/README.md', encoding='UTF-8') as f:
-    long_description = f.read()
-
 setup(
     name='stim',
     version=__version__,
@@ -63,13 +60,13 @@ setup(
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
     description='A fast library for analyzing with quantum stabilizer circuits.',
-    long_description=long_description,
+    long_description="",
     long_description_content_type='text/markdown',
     ext_modules=[stim_polyfill],
     python_requires='>=3.6.0',
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
-    package_data={'': [*HEADER_FILES, 'glue/python/src/stim/__init__.pyi', 'glue/python/README.md', 'pyproject.toml']},
+    package_data={'': [*HEADER_FILES, 'pyproject.toml']},
     include_package_data=True,
     install_requires=['numpy'],
     entry_points={
