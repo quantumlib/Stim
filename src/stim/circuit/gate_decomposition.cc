@@ -215,33 +215,6 @@ static void decompose_spp_or_spp_dag_operation_helper(
         do_instruction_callback(CircuitInstruction(g, {}, &t, tag));
     }
 }
-
-void stim::decompose_spp_or_spp_dag_operation(
-    const CircuitInstruction &spp_op,
-    size_t num_qubits,
-    bool invert_sign,
-    const std::function<void(const CircuitInstruction &inst)> &do_instruction_callback) {
-    PauliString<64> obs(num_qubits);
-    std::vector<GateTarget> h_xz_buf;
-    std::vector<GateTarget> h_yz_buf;
-    std::vector<GateTarget> cnot_buf;
-    std::vector<GateTarget> bits;
-
-    if (spp_op.gate_type == GateType::SPP) {
-        // No sign inversion needed.
-    } else if (spp_op.gate_type == GateType::SPP_DAG) {
-        invert_sign ^= true;
-    } else {
-        throw std::invalid_argument("Not an SPP or SPP_DAG instruction: " + spp_op.str());
-    }
-
-    size_t start = 0;
-    while (accumulate_next_obs_terms_to_pauli_string_helper(spp_op, &start, &obs, &bits)) {
-        decompose_spp_or_spp_dag_operation_helper(
-            obs, bits, invert_sign, do_instruction_callback, &h_xz_buf, &h_yz_buf, &cnot_buf, spp_op.tag);
-    }
-}
-
 void stim::decompose_pair_instruction_into_disjoint_segments(
     const CircuitInstruction &inst, size_t num_qubits, const std::function<void(CircuitInstruction)> &callback) {
     simd_bits<64> used_as_control(num_qubits);

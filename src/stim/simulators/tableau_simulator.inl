@@ -1518,24 +1518,6 @@ int8_t TableauSimulator<W>::peek_observable_expectation(const PauliString<W> &ob
 template <size_t W>
 void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
     switch (inst.gate_type) {
-        case GateType::DETECTOR:
-            do_I(inst);
-            break;
-        case GateType::OBSERVABLE_INCLUDE:
-            do_I(inst);
-            break;
-        case GateType::TICK:
-            do_I(inst);
-            break;
-        case GateType::QUBIT_COORDS:
-            do_I(inst);
-            break;
-        case GateType::SHIFT_COORDS:
-            do_I(inst);
-            break;
-        case GateType::REPEAT:
-            do_I(inst);
-            break;
         case GateType::MX:
             do_MX(inst);
             break;
@@ -1545,44 +1527,8 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::M:
             do_MZ(inst);
             break;
-        case GateType::MRX:
-            do_MRX(inst);
-            break;
-        case GateType::MRY:
-            do_MRY(inst);
-            break;
-        case GateType::MR:
-            do_MRZ(inst);
-            break;
-        case GateType::RX:
-            do_RX(inst);
-            break;
-        case GateType::RY:
-            do_RY(inst);
-            break;
-        case GateType::R:
-            do_RZ(inst);
-            break;
         case GateType::MPP:
             do_MPP(inst);
-            break;
-        case GateType::SPP:
-            do_SPP(inst);
-            break;
-        case GateType::SPP_DAG:
-            do_SPP_DAG(inst);
-            break;
-        case GateType::MXX:
-            do_MXX(inst);
-            break;
-        case GateType::MYY:
-            do_MYY(inst);
-            break;
-        case GateType::MZZ:
-            do_MZZ(inst);
-            break;
-        case GateType::MPAD:
-            do_MPAD(inst);
             break;
         case GateType::XCX:
             do_XCX(inst);
@@ -1656,12 +1602,6 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::ELSE_CORRELATED_ERROR:
             do_ELSE_CORRELATED_ERROR(inst);
             break;
-        case GateType::I:
-        case GateType::II:
-        case GateType::I_ERROR:
-        case GateType::II_ERROR:
-            do_I(inst);
-            break;
         case GateType::X:
             do_X(inst);
             break;
@@ -1671,89 +1611,11 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
         case GateType::Z:
             do_Z(inst);
             break;
-        case GateType::C_XYZ:
-            do_C_XYZ(inst);
-            break;
-        case GateType::C_NXYZ:
-            do_C_NXYZ(inst);
-            break;
-        case GateType::C_XNYZ:
-            do_C_XNYZ(inst);
-            break;
-        case GateType::C_XYNZ:
-            do_C_XYNZ(inst);
-            break;
-        case GateType::C_ZYX:
-            do_C_ZYX(inst);
-            break;
-        case GateType::C_NZYX:
-            do_C_NZYX(inst);
-            break;
-        case GateType::C_ZNYX:
-            do_C_ZNYX(inst);
-            break;
-        case GateType::C_ZYNX:
-            do_C_ZYNX(inst);
-            break;
         case GateType::SQRT_X:
             do_SQRT_X(inst);
             break;
         case GateType::SQRT_X_DAG:
             do_SQRT_X_DAG(inst);
-            break;
-        case GateType::SQRT_Y:
-            do_SQRT_Y(inst);
-            break;
-        case GateType::SQRT_Y_DAG:
-            do_SQRT_Y_DAG(inst);
-            break;
-        case GateType::S:
-            do_SQRT_Z(inst);
-            break;
-        case GateType::S_DAG:
-            do_SQRT_Z_DAG(inst);
-            break;
-        case GateType::SQRT_XX:
-            do_SQRT_XX(inst);
-            break;
-        case GateType::SQRT_XX_DAG:
-            do_SQRT_XX_DAG(inst);
-            break;
-        case GateType::SQRT_YY:
-            do_SQRT_YY(inst);
-            break;
-        case GateType::SQRT_YY_DAG:
-            do_SQRT_YY_DAG(inst);
-            break;
-        case GateType::SQRT_ZZ:
-            do_SQRT_ZZ(inst);
-            break;
-        case GateType::SQRT_ZZ_DAG:
-            do_SQRT_ZZ_DAG(inst);
-            break;
-        case GateType::SWAP:
-            do_SWAP(inst);
-            break;
-        case GateType::ISWAP:
-            do_ISWAP(inst);
-            break;
-        case GateType::ISWAP_DAG:
-            do_ISWAP_DAG(inst);
-            break;
-        case GateType::CXSWAP:
-            do_CXSWAP(inst);
-            break;
-        case GateType::CZSWAP:
-            do_CZSWAP(inst);
-            break;
-        case GateType::SWAPCX:
-            do_SWAPCX(inst);
-            break;
-        case GateType::HERALDED_ERASE:
-            do_HERALDED_ERASE(inst);
-            break;
-        case GateType::HERALDED_PAULI_CHANNEL_1:
-            do_HERALDED_PAULI_CHANNEL_1(inst);
             break;
         default:
             throw std::invalid_argument(
