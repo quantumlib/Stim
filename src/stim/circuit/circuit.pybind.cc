@@ -2,32 +2,16 @@
 
 #include <fstream>
 
-#include "stim/circuit/circuit_instruction.pybind.h"
-#include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
-#include "stim/py/compiled_detector_sampler.pybind.h"
-#include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
-
-std::string circuit_repr(const Circuit &self) {
-    if (self.operations.empty()) {
-        return "stim.Circuit()";
-    }
-    std::stringstream ss;
-    ss << "stim.Circuit('''\n";
-    print_circuit(ss, self, 4);
-    ss << "\n''')";
-    return ss.str();
-}
 
 pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
@@ -71,49 +55,6 @@ pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
             .data());
 
     return c;
-}
-
-uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
-    try {
-        return obj.cast<uint64_t>();
-    } catch (const pybind11::cast_error &) {
-    }
-    try {
-        ExposedDemTarget t = obj.cast<ExposedDemTarget>();
-        if (t.is_relative_detector_id()) {
-            return t.data;
-        }
-    } catch (const pybind11::cast_error &) {
-    }
-    if (!fail) {
-        return UINT64_MAX;
-    }
-
-    std::stringstream ss;
-    ss << "Expected a detector id but didn't get a stim.DemTarget or a uint64_t.";
-    ss << " Got " << pybind11::repr(obj);
-    throw std::invalid_argument(ss.str());
-}
-
-std::set<uint64_t> obj_to_abs_detector_id_set(
-    const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors) {
-    std::set<uint64_t> filter;
-    if (obj.is_none()) {
-        size_t n = get_num_detectors();
-        for (size_t k = 0; k < n; k++) {
-            filter.insert(k);
-        }
-    } else {
-        uint64_t single = obj_to_abs_detector_id(obj, false);
-        if (single != UINT64_MAX) {
-            filter.insert(single);
-        } else {
-            for (const auto &e : obj) {
-                filter.insert(obj_to_abs_detector_id(e, true));
-            }
-        }
-    }
-    return filter;
 }
 
 void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Circuit> &c) {

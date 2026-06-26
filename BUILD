@@ -102,13 +102,6 @@ cc_binary(
     deps = ["@pybind11//:pybind11"],
 )
 
-genrule(
-    name = "stim_wheel_files",
-    srcs = ["doc/stim.pyi"],
-    outs = ["stim.pyi"],
-    cmd = "cp $(location doc/stim.pyi) $@",
-)
-
 py_wheel(
     name = "stim_dev_wheel",
     distribution = "stim",
@@ -116,6 +109,5 @@ py_wheel(
     version = "0.0.dev0",
     deps = [
         ":stim.so",
-        ":stim_wheel_files",
     ],
 )

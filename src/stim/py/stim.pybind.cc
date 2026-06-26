@@ -2,9 +2,6 @@
 #include <pybind11/pybind11.h>
 
 #include "stim/circuit/circuit.pybind.h"
-#include "stim/circuit/circuit_repeat_block.pybind.h"
-#include "stim/py/compiled_measurement_sampler.pybind.h"
-#include "stim/stabilizers/flow.pybind.h"
 
 #define xstr_literal(s) str_literal(s)
 #define str_literal(s) #s
