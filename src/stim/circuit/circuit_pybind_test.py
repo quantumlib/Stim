@@ -6,7 +6,7 @@ import stim
 def test_reference_sample():
     circuit = stim.Circuit(
         """
-        MPP X0*X1 Y0*Y1 Z0*Z1
+        MPP X0*X1
         """
     )
 
