@@ -2,12 +2,9 @@
 
 #include <fstream>
 
-#include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/gen/circuit_gen_params.h"
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
