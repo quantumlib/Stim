@@ -69,30 +69,6 @@ stim_polyfill = Extension(
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_polyfill',
     ],
 )
-stim_sse2 = Extension(
-    'stim._stim_sse2',
-    sources=RELEVANT_SOURCE_FILES,
-    include_dirs=[pybind11.get_include(), "src"],
-    language='c++',
-    extra_compile_args=[
-        *common_compile_args,
-        *arch_sse,
-        '-DSTIM_PYBIND11_MODULE_NAME=_stim_sse2',
-    ],
-)
-
-# NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
-# stim_avx2 = Extension(
-#     'stim._stim_avx2',
-#     sources=RELEVANT_SOURCE_FILES,
-#     include_dirs=[pybind11.get_include(), "src"],
-#     language='c++',
-#     extra_compile_args=[
-#         *common_compile_args,
-#         *arch_avx,
-#         '-DSTIM_PYBIND11_MODULE_NAME=_stim_avx2',
-#     ],
-# )
 
 with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
@@ -102,9 +78,7 @@ def _get_extensions():
     if any(_ext in platform.processor().lower() for _ext in archs):
         # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
         # stim_avx2,
-        return [stim_detect_machine_architecture, stim_polyfill,
-                # stim_avx2,
-                stim_sse2]
+        return [stim_detect_machine_architecture, stim_polyfill]
     else:
         return [stim_detect_machine_architecture, stim_polyfill]
 
