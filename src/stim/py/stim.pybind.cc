@@ -24,7 +24,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
               std::cerr << " do inst " << inst << "\n";
                 sim.do_gate(inst);
             });
-//            sim.safe_do_circuit(circuit);
             std::cerr << "do_circuit end\n";
 
             std::cerr << "copy start\n";
@@ -41,7 +40,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
             std::cerr << "count start\n";
             size_t num_measure = circuit.count_measurements();
             std::cerr << "count done\n";
-            std::cerr << "to numpy start\n";
+            std::cerr << "to numpy start" << reference_sample << ", " << num_measure << "\n";
             auto result = simd_bits_to_numpy(reference_sample, num_measure, false);
             std::cerr << "to numpy done\n";
             return result;
