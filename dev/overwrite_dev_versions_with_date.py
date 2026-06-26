@@ -34,14 +34,6 @@ def main():
     # Overwrite existing versions.
     package_setup_files = [
         "setup.py",
-        "glue/cirq/setup.py",
-        "glue/cirq/stimcirq/__init__.py",
-        "glue/zx/stimzx/__init__.py",
-        "glue/zx/setup.py",
-        "glue/sample/setup.py",
-        "glue/sample/src/sinter/__init__.py",
-        "glue/stimflow/setup.py",
-        "glue/stimflow/src/stimflow/__init__.py",
     ]
     for path in package_setup_files:
         with open(path) as f:
