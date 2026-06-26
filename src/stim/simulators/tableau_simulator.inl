@@ -17,7 +17,6 @@
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/gates/gates.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/util_bot/probability_util.h"
 
 namespace stim {
 
@@ -451,13 +450,6 @@ void TableauSimulator<W>::do_MRZ(const CircuitInstruction &target_data) {
 
 template <size_t W>
 void TableauSimulator<W>::noisify_new_measurements(SpanRef<const double> args, size_t num_targets) {
-    if (args.empty()) {
-        return;
-    }
-    size_t last = measurement_record.size() - 1;
-    RareErrorIterator::for_samples(args[0], num_targets, rng, [&](size_t k) {
-        measurement_record[last - k] = !measurement_record[last - k];
-    });
 }
 
 template <size_t W>
@@ -1016,152 +1008,6 @@ void TableauSimulator<W>::do_YCZ(const CircuitInstruction &target_data) {
 }
 
 template <size_t W>
-void TableauSimulator<W>::do_DEPOLARIZE1(const CircuitInstruction &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
-        auto p = 1 + (rng() % 3);
-        inv_state.xs.signs[q.data] ^= p & 1;
-        inv_state.zs.signs[q.data] ^= p & 2;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_DEPOLARIZE2(const CircuitInstruction &target_data) {
-    const auto &targets = target_data.targets;
-    assert(!(targets.size() & 1));
-    auto n = targets.size() >> 1;
-    RareErrorIterator::for_samples(target_data.args[0], n, rng, [&](size_t s) {
-        auto p = 1 + (rng() % 15);
-        auto q1 = targets[s << 1].data;
-        auto q2 = targets[1 | (s << 1)].data;
-        inv_state.xs.signs[q1] ^= p & 1;
-        inv_state.zs.signs[q1] ^= p & 2;
-        inv_state.xs.signs[q2] ^= p & 4;
-        inv_state.zs.signs[q2] ^= p & 8;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_HERALDED_ERASE(const CircuitInstruction &inst) {
-    auto nt = inst.targets.size();
-    size_t offset = measurement_record.size();
-    measurement_record.insert(measurement_record.end(), nt, false);
-
-    uint64_t rng_buf = 0;
-    size_t buf_size = 0;
-    RareErrorIterator::for_samples(inst.args[0], nt, rng, [&](size_t target) {
-        auto qubit = inst.targets[target].qubit_value();
-        if (buf_size == 0) {
-            rng_buf = rng();
-            buf_size = 64;
-        }
-        inv_state.xs.signs[qubit] ^= (bool)(rng_buf & 1);
-        inv_state.zs.signs[qubit] ^= (bool)(rng_buf & 2);
-        measurement_record[offset + target] = true;
-        rng_buf >>= 2;
-        buf_size -= 2;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_HERALDED_PAULI_CHANNEL_1(const CircuitInstruction &inst) {
-    auto nt = inst.targets.size();
-    size_t offset = measurement_record.size();
-    measurement_record.insert(measurement_record.end(), nt, false);
-
-    double hi = inst.args[0];
-    double hx = inst.args[1];
-    double hy = inst.args[2];
-    double hz = inst.args[3];
-    double ht = std::min(1.0, hi + hx + hy + hz);
-    std::array<double, 3> conditionals{hx, hy, hz};
-    if (ht != 0) {
-        conditionals[0] /= ht;
-        conditionals[1] /= ht;
-        conditionals[2] /= ht;
-    }
-    RareErrorIterator::for_samples(ht, nt, rng, [&](size_t target) {
-        measurement_record[offset + target] = true;
-        do_PAULI_CHANNEL_1(CircuitInstruction{GateType::PAULI_CHANNEL_1, conditionals, &inst.targets[target], ""});
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_X_ERROR(const CircuitInstruction &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
-        inv_state.zs.signs[q.data] ^= true;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_Y_ERROR(const CircuitInstruction &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
-        inv_state.xs.signs[q.data] ^= true;
-        inv_state.zs.signs[q.data] ^= true;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_Z_ERROR(const CircuitInstruction &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
-        inv_state.xs.signs[q.data] ^= true;
-    });
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_PAULI_CHANNEL_1(const CircuitInstruction &target_data) {
-    bool tmp = last_correlated_error_occurred;
-    perform_pauli_errors_via_correlated_errors<1>(
-        target_data,
-        [&]() {
-            last_correlated_error_occurred = false;
-        },
-        [&](const CircuitInstruction &d) {
-            do_ELSE_CORRELATED_ERROR(d);
-        });
-    last_correlated_error_occurred = tmp;
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_PAULI_CHANNEL_2(const CircuitInstruction &target_data) {
-    bool tmp = last_correlated_error_occurred;
-    perform_pauli_errors_via_correlated_errors<2>(
-        target_data,
-        [&]() {
-            last_correlated_error_occurred = false;
-        },
-        [&](const CircuitInstruction &d) {
-            do_ELSE_CORRELATED_ERROR(d);
-        });
-    last_correlated_error_occurred = tmp;
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_CORRELATED_ERROR(const CircuitInstruction &target_data) {
-    last_correlated_error_occurred = false;
-    do_ELSE_CORRELATED_ERROR(target_data);
-}
-
-template <size_t W>
-void TableauSimulator<W>::do_ELSE_CORRELATED_ERROR(const CircuitInstruction &target_data) {
-    if (last_correlated_error_occurred) {
-        return;
-    }
-    last_correlated_error_occurred = std::bernoulli_distribution(target_data.args[0])(rng);
-    if (!last_correlated_error_occurred) {
-        return;
-    }
-    for (auto qxz : target_data.targets) {
-        auto q = qxz.qubit_value();
-        if (qxz.data & TARGET_PAULI_X_BIT) {
-            inv_state.prepend_X(q);
-        }
-        if (qxz.data & TARGET_PAULI_Z_BIT) {
-            inv_state.prepend_Z(q);
-        }
-    }
-}
-
-template <size_t W>
 void TableauSimulator<W>::do_X(const CircuitInstruction &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
@@ -1574,33 +1420,6 @@ void TableauSimulator<W>::do_gate(const CircuitInstruction &inst) {
             break;
         case GateType::H_NYZ:
             do_H_NYZ(inst);
-            break;
-        case GateType::DEPOLARIZE1:
-            do_DEPOLARIZE1(inst);
-            break;
-        case GateType::DEPOLARIZE2:
-            do_DEPOLARIZE2(inst);
-            break;
-        case GateType::X_ERROR:
-            do_X_ERROR(inst);
-            break;
-        case GateType::Y_ERROR:
-            do_Y_ERROR(inst);
-            break;
-        case GateType::Z_ERROR:
-            do_Z_ERROR(inst);
-            break;
-        case GateType::PAULI_CHANNEL_1:
-            do_PAULI_CHANNEL_1(inst);
-            break;
-        case GateType::PAULI_CHANNEL_2:
-            do_PAULI_CHANNEL_2(inst);
-            break;
-        case GateType::E:
-            do_CORRELATED_ERROR(inst);
-            break;
-        case GateType::ELSE_CORRELATED_ERROR:
-            do_ELSE_CORRELATED_ERROR(inst);
             break;
         case GateType::X:
             do_X(inst);

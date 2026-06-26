@@ -20,7 +20,6 @@
 
 #include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
-#include "stim/util_bot/str_util.h"
 
 using namespace stim;
 
