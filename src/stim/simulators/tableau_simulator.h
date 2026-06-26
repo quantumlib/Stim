@@ -74,12 +74,6 @@ struct TableauSimulator {
     /// Shrinking the size will result in qubits beyond the size threshold being collapsed and discarded.
     void set_num_qubits(size_t new_num_qubits);
 
-    /// Finds a state vector satisfying the current stabilizer generators, and returns a vector simulator in that state.
-    VectorSimulator to_vector_sim() const;
-
-    /// Returns a state vector satisfying the current stabilizer generators.
-    std::vector<std::complex<float>> to_state_vector(bool little_endian) const;
-
     /// Collapses then records an observable.
     ///
     /// Args:

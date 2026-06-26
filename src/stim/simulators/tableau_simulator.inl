@@ -17,7 +17,6 @@
 #include "stim/circuit/gate_decomposition.h"
 #include "stim/gates/gates.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/simulators/vector_simulator.h"
 #include "stim/util_bot/probability_util.h"
 
 namespace stim {
@@ -1238,29 +1237,8 @@ void TableauSimulator<W>::sample_stream(
 }
 
 template <size_t W>
-VectorSimulator TableauSimulator<W>::to_vector_sim() const {
-    auto inv = inv_state.inverse();
-    std::vector<PauliStringRef<W>> stabilizers;
-    for (size_t k = 0; k < inv.num_qubits; k++) {
-        stabilizers.push_back(inv.zs[k]);
-    }
-    return VectorSimulator::from_stabilizers<W>(stabilizers);
-}
-
-template <size_t W>
 void TableauSimulator<W>::apply_tableau(const Tableau<W> &tableau, const std::vector<size_t> &targets) {
     inv_state.inplace_scatter_prepend(tableau.inverse(), targets);
-}
-
-template <size_t W>
-std::vector<std::complex<float>> TableauSimulator<W>::to_state_vector(bool little_endian) const {
-    auto sim = to_vector_sim();
-    if (!little_endian && inv_state.num_qubits > 0) {
-        for (size_t q = 0; q < inv_state.num_qubits - q - 1; q++) {
-            sim.apply(GateType::SWAP, q, inv_state.num_qubits - q - 1);
-        }
-    }
-    return sim.state;
 }
 
 template <size_t W>

@@ -92,7 +92,6 @@ struct Tableau {
     /// Returns the Tableau raised to an integer power (using repeated squaring).
     Tableau<W> raised_to(int64_t exponent) const;
 
-    std::vector<std::complex<float>> to_flat_unitary_matrix(bool little_endian) const;
     bool satisfies_invariants() const;
 
     /// If a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
