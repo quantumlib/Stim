@@ -15,15 +15,10 @@
 #ifndef _STIM_PY_BASE_PYBIND_H
 #define _STIM_PY_BASE_PYBIND_H
 
-#include <pybind11/complex.h>
 #include <pybind11/numpy.h>
-#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 #include <random>
 
-#include "stim/circuit/circuit.h"
-#include "stim/cmd/command_help.h"
 #include "stim/io/stim_data_formats.h"
 
 namespace stim_pybind {
