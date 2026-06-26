@@ -1,7 +1,6 @@
 import sys
 
 import stim
-import numpy as np
 
 
 def test_reference_sample():
@@ -17,6 +16,5 @@ def test_reference_sample():
 
     print("TEST PROGRESSION: E", file=sys.stderr)
     _ = circuit.reference_sample()
-    # np.testing.assert_array_equal(circuit.reference_sample(), circuit.reference_sample())
 
     print("TEST PROGRESSION: F", file=sys.stderr)
