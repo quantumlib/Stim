@@ -20,13 +20,23 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def(
         "test",
         []() {
-            Circuit self;
-            self.append_from_text(R"CIRCUIT(
+            Circuit circuit;
+            circuit.append_from_text(R"CIRCUIT(
                 MPP X0*X1 Y0*Y1
             )CIRCUIT");
-            auto ref = TableauSimulator<MAX_BITWORD_WIDTH>::reference_sample_circuit(self);
-            simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample(ref.ptr_simd, ref.num_simd_words);
-            size_t num_measure = self.count_measurements();
-            return simd_bits_to_numpy(reference_sample, num_measure, false);
+            std::mt19937_64 irrelevant_rng(0);
+            std::cerr << "ref start\n";
+            auto ref = TableauSimulator<64>::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
+            std::cerr << "ref done\n";
+            std::cerr << "alloc start\n";
+            simd_bits_range_ref<64> reference_sample(ref.ptr_simd, ref.num_simd_words);
+            std::cerr << "alloc done\n";
+            std::cerr << "count start\n";
+            size_t num_measure = circuit.count_measurements();
+            std::cerr << "count done\n";
+            std::cerr << "to numpy start\n";
+            auto result = simd_bits_to_numpy(reference_sample, num_measure, false);
+            std::cerr << "to numpy done\n";
+            return result;
         });
 }
