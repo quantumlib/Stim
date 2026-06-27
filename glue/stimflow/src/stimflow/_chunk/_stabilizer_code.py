@@ -269,7 +269,7 @@ class StabilizerCode:
 
     def z_basis_subset(self) -> StabilizerCode:
         return StabilizerCode(
-            stabilizers=self.stabilizers.with_only_x_tiles(),
+            stabilizers=self.stabilizers.with_only_z_tiles(),
             logicals=self.list_pure_basis_observables("Z"),
         )
 
