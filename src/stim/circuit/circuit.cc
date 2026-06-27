@@ -4,7 +4,6 @@
 #include <string>
 #include <utility>
 
-#include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
 
 using namespace stim;

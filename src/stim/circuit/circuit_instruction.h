@@ -19,7 +19,7 @@
 
 #include <cstdint>
 
-#include "stim/circuit/gate_target.h"
+#include "stim/gates/gates.h"
 #include "stim/mem/span_ref.h"
 
 namespace stim {
