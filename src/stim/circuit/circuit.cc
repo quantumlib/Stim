@@ -535,30 +535,6 @@ size_t Circuit::count_sweep_bits() const {
     return 0;
 }
 
-Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
-    assert(slice_length >= 0);
-    assert(slice_length == 0 || start >= 0);
-    Circuit result;
-    for (size_t k = 0; k < (size_t)slice_length; k++) {
-        const auto &op = operations[start + step * k];
-        if (op.gate_type == GateType::REPEAT) {
-            result.target_buf.append_tail(GateTarget{(uint32_t)result.blocks.size()});
-            result.target_buf.append_tail(op.targets[1]);
-            result.target_buf.append_tail(op.targets[2]);
-            auto targets = result.target_buf.commit_tail();
-            auto tag = result.tag_buf.take_copy(op.tag);
-            result.blocks.push_back(op.repeat_block_body(*this));
-            result.operations.push_back(CircuitInstruction(op.gate_type, {}, targets, tag));
-        } else {
-            auto args = result.arg_buf.take_copy(op.args);
-            auto targets = result.target_buf.take_copy(op.targets);
-            auto tag = result.tag_buf.take_copy(op.tag);
-            result.operations.push_back({op.gate_type, args, targets, tag});
-        }
-    }
-    return result;
-}
-
 void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag) {
     if (repeat_count == 0) {
         throw std::invalid_argument("Can't repeat 0 times.");

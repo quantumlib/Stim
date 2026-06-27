@@ -117,9 +117,6 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Gets a python-style slice of the circuit's instructions.
-    Circuit py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
-
     /// Returns a noiseless version of the given circuit. The result must live for less time than the given circuit.
     ///
     /// CAUTION: for performance, the returned circuit contains pointers into the given circuit!
