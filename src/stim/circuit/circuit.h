@@ -94,9 +94,6 @@ struct Circuit {
         const std::vector<double> &args = {},
         std::string_view tag = "");
     /// Safely copies a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag);
-    /// Safely moves a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag);
 
     void safe_insert(size_t index, const CircuitInstruction &instruction);
     void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag);
