@@ -47,12 +47,3 @@ uint64_t Circuit::count_observables() const {
         return op.gate_type == GateType::OBSERVABLE_INCLUDE ? (size_t)op.args[0] + 1 : 0;
     });
 }
-
-void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
-    while (target.size() < offset.size()) {
-        target.push_back(0);
-    }
-    for (size_t k = 0; k < offset.size(); k++) {
-        target[k] += offset[k] * mul;
-    }
-}

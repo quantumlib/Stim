@@ -68,8 +68,6 @@ struct Circuit {
     }
 };
 
-void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
-
 }  // namespace stim
 
 #endif
