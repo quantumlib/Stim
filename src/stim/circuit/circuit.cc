@@ -485,27 +485,11 @@ Circuit &Circuit::operator*=(uint64_t repetitions) {
 }
 
 size_t Circuit::count_qubits() const {
-    return (uint32_t)max_operation_property([](const CircuitInstruction &op) -> uint32_t {
-        uint32_t r = 0;
-        for (auto t : op.targets) {
-            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-                r = std::max(r, t.qubit_value() + uint32_t{1});
-            }
-        }
-        return r;
-    });
+    return 0;
 }
 
 size_t Circuit::max_lookback() const {
-    return max_operation_property([](const CircuitInstruction &op) -> uint32_t {
-        uint32_t r = 0;
-        for (auto t : op.targets) {
-            if (t.data & TARGET_RECORD_BIT) {
-                r = std::max(r, t.qubit_value());
-            }
-        }
-        return r;
-    });
+    return 0;
 }
 
 uint64_t stim::add_saturate(uint64_t a, uint64_t b) {
@@ -548,15 +532,7 @@ uint64_t Circuit::count_observables() const {
 }
 
 size_t Circuit::count_sweep_bits() const {
-    return max_operation_property([](const CircuitInstruction &op) -> uint32_t {
-        uint32_t r = 0;
-        for (auto t : op.targets) {
-            if (t.data & TARGET_SWEEP_BIT) {
-                r = std::max(r, t.qubit_value() + 1);
-            }
-        }
-        return r;
-    });
+    return 0;
 }
 
 Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
@@ -634,14 +610,6 @@ void get_final_qubit_coords_helper(
         } else if (op.gate_type == GateType::QUBIT_COORDS) {
             while (out_coord_shift.size() < op.args.size()) {
                 out_coord_shift.push_back(0);
-            }
-            for (const auto &t : op.targets) {
-                if (t.is_qubit_target()) {
-                    auto &vec = new_qubit_coords[t.qubit_value()];
-                    for (size_t k = 0; k < op.args.size(); k++) {
-                        vec.push_back(op.args[k] + out_coord_shift[k]);
-                    }
-                }
             }
         }
     }
