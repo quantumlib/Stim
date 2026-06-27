@@ -32,9 +32,6 @@ CircuitInstruction::CircuitInstruction(
     : gate_type(gate_type), args(args), targets(targets), tag(tag) {
 }
 
-void CircuitInstruction::validate() const {
-}
-
 uint64_t CircuitInstruction::count_measurement_results() const {
     uint64_t n = (uint64_t)targets.size();
     std::cerr << "counting start ... " << n << "\n";
@@ -45,11 +42,6 @@ uint64_t CircuitInstruction::count_measurement_results() const {
     }
     std::cerr << "count final " << n << "\n";
     return n;
-}
-
-bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
-    auto flags = GATE_DATA[gate_type].flags;
-    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE) && tag == other.tag;
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
