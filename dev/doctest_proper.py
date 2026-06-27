@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+
+"""Runs doctests on a module, including any objects imported into the module."""
+import argparse
+import doctest
+import inspect
+import sys
+from typing import Dict
+
+
+SKIPPED_FIELDS = {
+    '__base__',
+    '__name__',
+    '__path__',
+    '__spec__',
+    '__version__',
+    '__package__',
+    '__subclasshook__',
+    '__abstractmethods__',
+    '__bases__',
+    '__basicsize__',
+    '__class__',
+    '__builtins__',
+    '__cached__',
+    '__doc__',
+    '__loader__',
+    '__file__',
+    '__firstlineno__',
+    '__static_attributes__',
+    '__match_args__',
+}
+
+
+def no_really_i_have_a_doc_why_is_this_needed_argh(v: object, fullname: str) -> object:
+    def so_much_doc():
+        pass
+    so_much_doc.__doc__ = v.__doc__
+    so_much_doc.__qualname__ = fullname
+    return so_much_doc
+
+
+def gen(*, obj: object, fullname: str, out: Dict[str, object]) -> None:
+    if obj is None:
+        return
+    if inspect.isfunction(obj) or inspect.ismethod(obj) or inspect.isbuiltin(obj) or inspect.isroutine(obj):
+        if hasattr(obj, '__doc__'):
+            out[fullname] = obj
+        return
+    if not inspect.ismodule(obj) and not inspect.isclass(obj):
+        if hasattr(obj, '__doc__'):
+            out[fullname] = no_really_i_have_a_doc_why_is_this_needed_argh(obj, fullname)
+        return
+    if hasattr(obj, '__doc__'):
+        out[fullname] = obj
+
+    for sub_name in dir(obj):
+        if sub_name in SKIPPED_FIELDS:
+            continue
+        if sub_name.startswith('__pybind11_module'):
+            continue
+        sub_obj = getattr(obj, sub_name, None)
+        if inspect.ismodule(sub_obj):
+            continue
+        sub_full_name = fullname + "." + sub_name
+        gen(obj=sub_obj, fullname=sub_full_name, out=out)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--module",
+        type=str,
+        required=True,
+        nargs='+',
+        help="The module to test. "
+             "This module will be imported, "
+             "its imported values will be recursively explored, "
+             "and doctests will be run on them.")
+    parser.add_argument(
+        '--import',
+        default=(),
+        nargs='*',
+        type=str,
+        help="Modules to import for each doctest.")
+    parser.add_argument(
+        '--suppress_examples_warning_for',
+        default=(),
+        nargs='*',
+        type=str,
+        help="Objects that don't need an 'examples:' section in their documentation.")
+    args = parser.parse_args()
+
+    globs = {
+        k: __import__(k) for k in getattr(args, 'import')
+    }
+    any_failed = False
+    for module_name in args.module:
+        module = __import__(module_name)
+        out = {}
+        gen(obj=module, fullname=module_name, out=out)
+        for k, v in out.items():
+            if v.__doc__ is None:
+                continue
+            v = v.__doc__.lower()
+            if '\n' in v.strip() and 'examples:' not in v and 'example:' not in v and '[deprecated]' not in v:
+                if k.split('.')[-1] not in ['__format__', '__next__', '__iter__', '__init_subclass__', '__module__', '__eq__', '__ne__', '__str__', '__repr__']:
+                    if all(not (e.startswith('_') and not e.startswith('__')) for e in k.split('.')):
+                        if all(not k.startswith(prefix) for prefix in args.suppress_examples_warning_for):
+                            print(f"    Warning: Missing 'examples:' section in docstring of {k!r}", file=sys.stderr)
+
+        module.__test__ = {k: v for k, v in out.items()}
+        if doctest.testmod(module, globs=globs).failed:
+            any_failed = True
+    if any_failed:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

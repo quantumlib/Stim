@@ -1,0 +1,163 @@
+from typing import Any, Dict, Iterable, List, Tuple, Union
+
+import cirq
+import stim
+
+
+@cirq.value_equality
+class CumulativeObservableAnnotation(cirq.Operation):
+    """Annotates that a particular combination of measurements is part of a logical observable.
+
+    Creates an OBSERVABLE_INCLUDE operation when converting to a stim circuit.
+    """
+
+    def __init__(
+        self,
+        *,
+        parity_keys: Iterable[str] = (),
+        relative_keys: Iterable[int] = (),
+        pauli_keys: Union[Iterable[Tuple[cirq.Qid, str]], Iterable[str]] = (),
+        observable_index: int,
+    ):
+        """
+
+        Args:
+            parity_keys: The keys of some measurements to include in the logical observable.
+            relative_keys: Refers to measurements relative to this operation. For example,
+                relative key -1 is the previous measurement. All entries must be negative.
+            observable_index: A unique index for the logical observable.
+        """
+        self.parity_keys = frozenset(parity_keys)
+        self.relative_keys = frozenset(relative_keys)
+        _pauli_keys = []
+        _qubits_to_pauli_keys = []
+        for k in pauli_keys:
+            if isinstance(k, str):
+                # For backward compatibility
+                _pauli_keys.append(k)
+                _qubits_to_pauli_keys.append((cirq.LineQubit(int(k[1:])), k))
+            else:
+                qubit, basis_and_id = k
+                assert isinstance(basis_and_id, str)
+                assert isinstance(qubit, cirq.Qid)
+                _pauli_keys.append(basis_and_id)
+                _qubits_to_pauli_keys.append((qubit, basis_and_id))
+        self._qubits_to_pauli_keys = tuple(_qubits_to_pauli_keys)
+        self.pauli_keys = frozenset(_pauli_keys)
+        self.observable_index = observable_index
+
+    @property
+    def qubits(self) -> Tuple[cirq.Qid, ...]:
+        return tuple(sorted(q for q, _ in self._qubits_to_pauli_keys))
+
+    def with_qubits(self, *new_qubits) -> 'CumulativeObservableAnnotation':
+        if len(self.qubits) == len(new_qubits):
+            qubits_to_pauli_keys = dict(self._qubits_to_pauli_keys)
+            return CumulativeObservableAnnotation(
+                parity_keys=self.parity_keys,
+                relative_keys=self.relative_keys,
+                pauli_keys=tuple(
+                    (newq, qubits_to_pauli_keys[q]) for newq, q in zip(new_qubits, self.qubits)
+                ),
+                observable_index=self.observable_index,
+            )
+
+        raise ValueError("Number of qubits does not match")
+
+    def _value_equality_values_(self) -> Any:
+        return self.parity_keys, self.relative_keys, self._qubits_to_pauli_keys, self.observable_index
+
+    def _circuit_diagram_info_(self, args: Any) -> Union[str, Tuple[str]]:
+        items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
+        items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        
+        if len(self._qubits_to_pauli_keys):
+            pauli_map = dict(self._qubits_to_pauli_keys)
+            out = []
+            for q in self.qubits:
+                k = ",".join([str(e) for e in items] + [f'{str(q)}{pauli_map[q][0]}'])
+                out.append(f"Obs{self.observable_index}({k})")
+            return tuple(out)
+        else:
+            k = ",".join(str(e) for e in items)
+            return f"Obs{self.observable_index}({k})"
+
+
+    def __repr__(self) -> str:
+        return (
+            f'stimcirq.CumulativeObservableAnnotation('
+            f'parity_keys={sorted(self.parity_keys)}, '
+            f'relative_keys={sorted(self.relative_keys)}, '
+            f'pauli_keys={sorted(self._qubits_to_pauli_keys)}, '
+            f'observable_index={self.observable_index!r})'
+        )
+
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
+    def _json_dict_(self) -> Dict[str, Any]:
+        result = {
+            'parity_keys': sorted(self.parity_keys),
+            'observable_index': self.observable_index,
+            'pauli_keys': sorted(self._qubits_to_pauli_keys),
+        }
+        if self.relative_keys:
+            result['relative_keys'] = sorted(self.relative_keys)
+        return result
+
+    def _decompose_(self):
+        return []
+
+    def _is_comment_(self) -> bool:
+        return True
+
+    def _stim_conversion_(
+        self,
+        *,
+        edit_circuit: stim.Circuit,
+        edit_measurement_key_lengths: List[Tuple[str, int]],
+        have_seen_loop: bool = False,
+        tag: str,
+        targets: List[int],
+        **kwargs,
+    ):
+        # Ideally these references would all be resolved ahead of time, to avoid the redundant
+        # linear search overhead and also to avoid the detectors and measurements being interleaved
+        # instead of grouped (grouping measurements is helpful for stabilizer simulation). But that
+        # didn't happen and this is the context we're called in and we're going to make it work.
+
+        if have_seen_loop and self.parity_keys:
+            raise NotImplementedError(
+                "Measurement key conversion is not reliable when loops are present."
+            )
+
+        # Find indices of measurement record targets.
+        remaining = set(self.parity_keys)
+        rec_targets = [stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)]
+        for offset in range(len(edit_measurement_key_lengths)):
+            m_key, m_len = edit_measurement_key_lengths[-1 - offset]
+            if m_len != 1:
+                raise NotImplementedError(f"multi-qubit measurement {m_key!r}")
+            if m_key in remaining:
+                remaining.discard(m_key)
+                rec_targets.append(stim.target_rec(-1 - offset))
+                if not remaining:
+                    break
+        
+        qubit_to_basis = dict([(q,k[0]) for q, k in self._qubits_to_pauli_keys])
+
+        rec_targets.extend(
+            [
+                stim.target_pauli(qubit_index=tid, pauli=qubit_to_basis[q]) 
+                for q, tid in zip(self.qubits, targets)
+            ]
+        )
+        if remaining:
+            raise ValueError(
+                f"{self!r} was processed before measurements it referenced ({sorted(remaining)!r})."
+                f" Make sure the referenced measurements keys are actually in the circuit, and come"
+                f" in an earlier moment (or earlier in the same moment's operation order)."
+            )
+
+        edit_circuit.append("OBSERVABLE_INCLUDE", rec_targets, self.observable_index, tag=tag)

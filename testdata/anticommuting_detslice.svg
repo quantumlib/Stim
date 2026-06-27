@@ -1,0 +1,54 @@
+<svg viewBox="0 0 604.8 336"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<g id="slice:1:3">
+<path d="M80,256 C99.2 268.8, 124.8 268.8, 144 256 C124.8 243.2, 99.2 243.2, 80 256" stroke="none" fill="#FF4040"/>
+<path d="M80,256 C99.2 268.8, 124.8 268.8, 144 256 C124.8 243.2, 99.2 243.2, 80 256" stroke="black" fill="none"/>
+</g>
+<g id="slice:0:1">
+<circle cx="208" cy="80" r="24" stroke="none" fill="#4DA6FF"/>
+<circle cx="208" cy="80" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:0:2">
+<circle cx="524.8" cy="80" r="24" stroke="none" fill="#4DA6FF"/>
+<circle cx="524.8" cy="80" r="24" stroke="black" fill="none"/>
+</g>
+<g id="slice:0:3">
+<circle cx="208" cy="256" r="24" stroke="none" fill="#4DA6FF"/>
+<circle cx="208" cy="256" r="24" stroke="black" fill="none"/>
+</g>
+<circle cx="80" cy="256" r="24" fill="none" stroke="magenta" stroke-width="12"/>
+<g id="qubit_dots">
+<circle id="qubit_dot:0:0" cx="80" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:0" cx="144" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:0" cx="208" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:0" cx="80" cy="256" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:0" cx="144" cy="256" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:0" cx="208" cy="256" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:1" cx="396.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1" cx="460.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:1" cx="524.8" cy="80" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:0:1" cx="396.8" cy="256" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:1:1" cx="460.8" cy="256" r="2" stroke="none" fill="black"/>
+<circle id="qubit_dot:2:1" cx="524.8" cy="256" r="2" stroke="none" fill="black"/>
+</g>
+<rect x="380.8" y="64" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="396.8" y="80" fill="white">R</text>
+<rect x="64" y="240" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="80" y="256" fill="white">R</text>
+<path d="M396.8,256 L460.8,256 " fill="none" stroke="black" stroke-width="5"/>
+<rect x="380.8" y="240" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="396.8" y="250" fill="white">M<tspan baseline-shift="sub" font-size="18">XX</tspan></text>
+<rect x="444.8" y="240" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="18" x="460.8" y="250" fill="white">M<tspan baseline-shift="sub" font-size="18">XX</tspan></text>
+<rect x="508.8" y="240" width="32" height="32" stroke="black" fill="black"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="524.8" y="256" fill="white">M</text>
+<g id="tick_borders">
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-282">Tick 0</text>
+<rect id="tick_border:0:0_0:0" x="0" y="0" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="80" y="-598.8">Tick 1</text>
+<rect id="tick_border:1:0_1:1" x="316.8" y="0" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="256" y="-282">Tick 2</text>
+<rect id="tick_border:2:1_0:2" x="0" y="176" width="288" height="160" stroke="black" fill="none"/>
+<text dominant-baseline="hanging" text-anchor="middle" font-family="serif" font-size="18" transform="rotate(90)" x="256" y="-598.8">Tick 3</text>
+<rect id="tick_border:3:1_1:3" x="316.8" y="176" width="288" height="160" stroke="black" fill="none"/>
+</g>
+</svg>
