@@ -217,50 +217,6 @@ struct Circuit {
         }
         return n;
     }
-
-    /// Looks for QUBIT_COORDS instructions in the circuit, and returns a map from qubit index to qubit coordinate.
-    ///
-    /// This method efficiently handles REPEAT blocks. It finishes in time proportional to the size of the circuit
-    /// file, not time proportional to the amount of data produced by the circuit.
-    std::map<uint64_t, std::vector<double>> get_final_qubit_coords() const;
-
-    /// Looks up the coordinate data of a detector.
-    ///
-    /// Args:
-    ///     detector_index: The index of the detector to get coordinate data for.
-    ///         Detectors are indexed by the order they appear in the circuit (accounting for repeat blocks).
-    ///
-    /// Returns:
-    ///     The coordinate data for the detector.
-    ///     If the detector has no coordinate data, an empty vector is returned.
-    ///
-    /// Throws:
-    ///     std::invalid_argument: The detector index is greater than or equal to circuit.count_detectors().
-    std::vector<double> coords_of_detector(uint64_t detector_index) const;
-
-    /// Looks up the coordinate data of a given set of detectors.
-    ///
-    /// Args:
-    ///     included_detector_indices: An ordered set of the indices of detectors to get coordinate data for.
-    ///
-    /// Returns:
-    ///     A map from detector index to coordinate data.
-    ///     Every index from included_detector_indices will be in this map as a key.
-    ///     Detectors with no coordinate data are mapped to an empty vector.
-    ///
-    /// Throws:
-    ///     std::invalid_argument: A detector index is greater than or equal to circuit.count_detectors().
-    std::map<uint64_t, std::vector<double>> get_detector_coordinates(
-        const std::set<uint64_t> &included_detector_indices) const;
-
-    /// Returns the total coordinate shift accumulated over the entire circuit, accounting for REPEAT blocks.
-    std::vector<double> final_coord_shift() const;
-
-    /// Helper method for building up human readable descriptions of circuit locations.
-    std::string describe_instruction_location(size_t instruction_offset) const;
-
-    void try_fuse_last_two_ops();
-    void try_fuse_after(size_t index);
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);

@@ -233,71 +233,6 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
         CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
 }
 
-void Circuit::try_fuse_last_two_ops() {
-    if (operations.size() >= 2) {
-        try_fuse_after(operations.size() - 2);
-    }
-}
-
-void Circuit::try_fuse_after(size_t index) {
-    if (index + 1 >= operations.size()) {
-        return;
-    }
-    if (operations[index].can_fuse(operations[index + 1])) {
-        fuse_data(operations[index].targets, operations[index + 1].targets, target_buf);
-        operations.erase(operations.begin() + index + 1);
-    }
-}
-
-template <typename SOURCE>
-void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION read_condition) {
-    auto &ops = circuit.operations;
-    do {
-        int c = read_char();
-        read_past_dead_space_between_commands(c, read_char);
-        if (c == EOF) {
-            if (read_condition == READ_CONDITION::READ_UNTIL_END_OF_BLOCK) {
-                throw std::invalid_argument("Unterminated block. Got a '{' without an eventual '}'.");
-            }
-            return;
-        }
-        if (c == '}') {
-            if (read_condition != READ_CONDITION::READ_UNTIL_END_OF_BLOCK) {
-                throw std::invalid_argument("Uninitiated block. Got a '}' without a '{'.");
-            }
-            return;
-        }
-        circuit_read_single_operation(circuit, c, read_char);
-        CircuitInstruction &new_op = ops.back();
-
-        if (new_op.gate_type == GateType::REPEAT) {
-            if (new_op.targets.size() != 2) {
-                throw std::invalid_argument("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
-            }
-            uint32_t rep_count_low = new_op.targets[0].data;
-            uint32_t rep_count_high = new_op.targets[1].data;
-            uint32_t block_id = (uint32_t)circuit.blocks.size();
-            if (rep_count_low == 0 && rep_count_high == 0) {
-                throw std::invalid_argument("Repeating 0 times is not supported.");
-            }
-
-            // Read block.
-            circuit.blocks.emplace_back();
-            circuit_read_operations(circuit.blocks.back(), read_char, READ_CONDITION::READ_UNTIL_END_OF_BLOCK);
-
-            // Rewrite target data to reference the parsed block.
-            circuit.target_buf.ensure_available(3);
-            circuit.target_buf.append_tail(GateTarget{block_id});
-            circuit.target_buf.append_tail(GateTarget{rep_count_low});
-            circuit.target_buf.append_tail(GateTarget{rep_count_high});
-            new_op.targets = circuit.target_buf.commit_tail();
-        }
-
-        // Fuse operations.
-        circuit.try_fuse_last_two_ops();
-    } while (read_condition != READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE);
-}
-
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     auto flags = GATE_DATA[operation.gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
@@ -366,11 +301,6 @@ void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {
     copy.tag = tag_buf.take_copy(copy.tag);
     operations.insert(operations.begin() + index, copy);
 
-    // Fuse at boundaries.
-    try_fuse_after(index);
-    if (index > 0) {
-        try_fuse_after(index - 1);
-    }
 }
 
 void Circuit::safe_insert(size_t index, const Circuit &circuit) {
@@ -396,13 +326,6 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
         }
     }
 
-    // Fuse at boundaries.
-    if (!circuit.operations.empty()) {
-        try_fuse_after(index + circuit.operations.size() - 1);
-        if (index > 0) {
-            try_fuse_after(index - 1);
-        }
-    }
 }
 
 void Circuit::safe_insert_repeat_block(
@@ -684,135 +607,6 @@ void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body, st
     operations.push_back(CircuitInstruction(GateType::REPEAT, {}, targets, tag_buf.take_copy(tag)));
 }
 
-const Circuit Circuit::aliased_noiseless_circuit() const {
-    // HACK: result has pointers into `circuit`!
-    Circuit result;
-    for (const auto &op : operations) {
-        auto flags = GATE_DATA[op.gate_type].flags;
-        if (flags & GATE_PRODUCES_RESULTS) {
-            if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
-                // Replace heralded errors with fixed MPAD.
-                result.target_buf.ensure_available(op.targets.size());
-                auto &tail = result.target_buf.tail;
-                tail.ptr_end = tail.ptr_start + op.targets.size();
-                memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
-                result.operations.push_back(
-                    CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), op.tag));
-                result.try_fuse_last_two_ops();
-            } else {
-                // Drop result flip probability.
-                result.operations.push_back(CircuitInstruction(op.gate_type, {}, op.targets, op.tag));
-            }
-        } else if (!(flags & GATE_IS_NOISY)) {
-            // Keep noiseless operations.
-            result.operations.push_back(op);
-        }
-
-        // Because some operations are rewritten into others, and some become fusable due to
-        // arguments getting removed, just keep trying to fuse things.
-        result.try_fuse_last_two_ops();
-    }
-    for (const auto &block : blocks) {
-        result.blocks.push_back(block.aliased_noiseless_circuit());
-    }
-    return result;
-}
-
-Circuit Circuit::without_tags() const {
-    Circuit result;
-    for (CircuitInstruction inst : operations) {
-        if (inst.gate_type == GateType::REPEAT) {
-            result.append_repeat_block(inst.repeat_block_rep_count(), inst.repeat_block_body(*this).without_tags(), "");
-        } else {
-            inst.tag = "";
-            result.safe_append(inst);
-        }
-    }
-    return result;
-}
-
-Circuit Circuit::without_noise() const {
-    Circuit result;
-    for (const auto &op : operations) {
-        auto flags = GATE_DATA[op.gate_type].flags;
-        if (flags & GATE_PRODUCES_RESULTS) {
-            if (op.gate_type == GateType::HERALDED_ERASE || op.gate_type == GateType::HERALDED_PAULI_CHANNEL_1) {
-                // Replace heralded errors with fixed MPAD.
-                result.target_buf.ensure_available(op.targets.size());
-                auto &tail = result.target_buf.tail;
-                tail.ptr_end = tail.ptr_start + op.targets.size();
-                memset(tail.ptr_start, 0, (tail.ptr_end - tail.ptr_start) * sizeof(GateTarget));
-                auto tag = result.tag_buf.take_copy(op.tag);
-                result.operations.push_back(
-                    CircuitInstruction(GateType::MPAD, {}, result.target_buf.commit_tail(), tag));
-            } else {
-                // Drop result flip probabilities.
-                auto targets = result.target_buf.take_copy(op.targets);
-                auto tag = result.tag_buf.take_copy(op.tag);
-                result.safe_append(CircuitInstruction(op.gate_type, {}, targets, tag));
-            }
-        } else if (op.gate_type == GateType::REPEAT) {
-            auto args = result.arg_buf.take_copy(op.args);
-            auto targets = result.target_buf.take_copy(op.targets);
-            auto tag = result.tag_buf.take_copy(op.tag);
-            result.operations.push_back({op.gate_type, args, targets, tag});
-        } else if (!(flags & GATE_IS_NOISY)) {
-            // Keep noiseless operations.
-            auto args = result.arg_buf.take_copy(op.args);
-            auto targets = result.target_buf.take_copy(op.targets);
-            auto tag = result.tag_buf.take_copy(op.tag);
-            result.safe_append(CircuitInstruction(op.gate_type, args, targets, tag));
-        }
-
-        // Because some operations are rewritten into others, and some become fusable due to
-        // arguments getting removed, just keep trying to fuse things.
-        result.try_fuse_last_two_ops();
-    }
-    for (const auto &block : blocks) {
-        result.blocks.push_back(block.without_noise());
-    }
-    return result;
-}
-
-void flattened_helper(
-    const Circuit &body, std::vector<double> &cur_coordinate_shift, std::vector<double> &coord_buffer, Circuit &out) {
-    for (const auto &op : body.operations) {
-        GateType id = op.gate_type;
-        if (id == GateType::SHIFT_COORDS) {
-            while (cur_coordinate_shift.size() < op.args.size()) {
-                cur_coordinate_shift.push_back(0);
-            }
-            for (size_t k = 0; k < op.args.size(); k++) {
-                cur_coordinate_shift[k] += op.args[k];
-            }
-        } else if (id == GateType::REPEAT) {
-            uint64_t reps = op.repeat_block_rep_count();
-            const auto &loop_body = op.repeat_block_body(body);
-            for (uint64_t k = 0; k < reps; k++) {
-                flattened_helper(loop_body, cur_coordinate_shift, coord_buffer, out);
-            }
-        } else {
-            coord_buffer.clear();
-            coord_buffer.insert(coord_buffer.end(), op.args.begin(), op.args.end());
-            if (id == GateType::QUBIT_COORDS || id == GateType::DETECTOR) {
-                for (size_t k = 0; k < coord_buffer.size() && k < cur_coordinate_shift.size(); k++) {
-                    coord_buffer[k] += cur_coordinate_shift[k];
-                }
-            }
-            out.safe_append(CircuitInstruction(op.gate_type, coord_buffer, op.targets, op.tag));
-        }
-    }
-}
-
-Circuit Circuit::flattened() const {
-    Circuit result;
-    std::vector<double> shift;
-    std::vector<double> coord_buffer;
-    flattened_helper(*this, shift, coord_buffer, result);
-    return result;
-}
-
-
 void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
     while (target.size() < offset.size()) {
         target.push_back(0);
@@ -876,25 +670,4 @@ void get_final_qubit_coords_helper(
     for (const auto &kv : new_qubit_coords) {
         out_qubit_coords[kv.first] = kv.second;
     }
-}
-
-std::map<uint64_t, std::vector<double>> Circuit::get_final_qubit_coords() const {
-    std::vector<double> coord_shift;
-    std::map<uint64_t, std::vector<double>> qubit_coords;
-    get_final_qubit_coords_helper(*this, 1, coord_shift, qubit_coords);
-    return qubit_coords;
-}
-
-std::vector<double> Circuit::final_coord_shift() const {
-    std::vector<double> coord_shift;
-    for (const auto &op : operations) {
-        if (op.gate_type == GateType::SHIFT_COORDS) {
-            vec_pad_add_mul(coord_shift, op.args);
-        } else if (op.gate_type == GateType::REPEAT) {
-            const auto &block = op.repeat_block_body(*this);
-            uint64_t reps = op.repeat_block_rep_count();
-            vec_pad_add_mul(coord_shift, block.final_coord_shift(), reps);
-        }
-    }
-    return coord_shift;
 }
