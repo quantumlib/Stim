@@ -20,26 +20,22 @@ struct CircuitInstruction {
     }
 };
 
+void repro() {
+    std::vector<uint32_t> targets{
+        0,
+        27,
+        1,
+        2,
+        27,
+        3,
+    };
+    CircuitInstruction inst{
+        targets,
+    };
+    if (inst.count_measurement_results() != 2) {
+        throw std::invalid_argument("WRONG COUNT!");
+    }
+}
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
-    m.def(
-        "test",
-        []() -> int {
-            std::vector<uint32_t> targets{
-                0,
-                27,
-                1,
-                2,
-                27,
-                3,
-            };
-            CircuitInstruction inst{
-                targets,
-            };
-
-            size_t num_measure = inst.count_measurement_results();
-            if (num_measure != 2) {
-                throw std::invalid_argument("WRONG COUNT!");
-            }
-            return 1;
-        });
+    m.def("test", &repro);
 }
