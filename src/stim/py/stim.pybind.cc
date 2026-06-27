@@ -3,7 +3,7 @@
 
 #include "stim/py/base.pybind.h"
 #include "stim/py/numpy.pybind.h"
-#include "stim/simulators/tableau_simulator.h"
+#include "stim/circuit/circuit.h"
 
 using namespace stim;
 using namespace stim_pybind;
