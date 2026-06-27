@@ -298,16 +298,6 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
     } while (read_condition != READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE);
 }
 
-void Circuit::append_from_text(std::string_view text) {
-    size_t k = 0;
-    circuit_read_operations(
-        *this,
-        [&]() {
-            return k < text.size() ? text[k++] : EOF;
-        },
-        READ_CONDITION::READ_UNTIL_END_OF_FILE);
-}
-
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     auto flags = GATE_DATA[operation.gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
@@ -471,59 +461,6 @@ void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool 
     }
 }
 
-void Circuit::append_from_file(FILE *file, bool stop_asap) {
-    circuit_read_operations(
-        *this,
-        [&]() {
-            return getc(file);
-        },
-        stop_asap ? READ_CONDITION::READ_AS_LITTLE_AS_POSSIBLE : READ_CONDITION::READ_UNTIL_END_OF_FILE);
-}
-
-void stim::print_circuit(std::ostream &out, const Circuit &c, size_t indentation) {
-    bool first = true;
-    for (const auto &op : c.operations) {
-        if (first) {
-            first = false;
-        } else {
-            out << "\n";
-        }
-
-        // Recurse on repeat blocks.
-        if (op.gate_type == GateType::REPEAT) {
-            if (op.targets.size() == 3 && op.targets[0].data < c.blocks.size()) {
-                for (size_t k = 0; k < indentation; k++) {
-                    out << ' ';
-                }
-                out << "REPEAT";
-                if (!op.tag.empty()) {
-                    out << '[';
-                    write_tag_escaped_string_to(op.tag, out);
-                    out << ']';
-                }
-                out << " " << op.repeat_block_rep_count() << " {\n";
-                print_circuit(out, c.blocks[op.targets[0].data], indentation + 4);
-                out << '\n';
-                for (size_t k = 0; k < indentation; k++) {
-                    out << ' ';
-                }
-                out << '}';
-                continue;
-            }
-        }
-
-        for (size_t k = 0; k < indentation; k++) {
-            out << ' ';
-        }
-        out << op;
-    }
-}
-
-std::ostream &stim::operator<<(std::ostream &out, const Circuit &c) {
-    print_circuit(out, c, 0);
-    return out;
-}
-
 void Circuit::clear() {
     target_buf.clear();
     arg_buf.clear();
@@ -622,22 +559,6 @@ Circuit &Circuit::operator*=(uint64_t repetitions) {
         *this = *this * repetitions;
     }
     return *this;
-}
-
-std::string Circuit::str() const {
-    std::stringstream s;
-    s << *this;
-    return s.str();
-}
-
-Circuit Circuit::from_file(FILE *file) {
-    Circuit result;
-    result.append_from_file(file, false);
-    return result;
-}
-
-Circuit::Circuit(std::string_view text) {
-    append_from_text(text);
 }
 
 size_t Circuit::count_qubits() const {
