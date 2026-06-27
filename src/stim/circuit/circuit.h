@@ -10,9 +10,9 @@
 #include <set>
 #include <unordered_map>
 #include <vector>
+#include <cassert>
 
 #include "stim/circuit/circuit_instruction.h"
-#include "stim/gates/gates.h"
 #include "stim/mem/span_ref.h"
 
 namespace stim {
@@ -36,7 +36,7 @@ struct Circuit {
     uint64_t flat_count_operations(const COUNT &count) const {
         uint64_t n = 0;
         for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
+            if (op.gate_type == 8) {
                 assert(op.targets.size() == 3);
                 auto b = op.targets[0];
                 assert(b < blocks.size());
@@ -57,7 +57,7 @@ struct Circuit {
             n = std::max(n, block.max_operation_property<MAP>(map));
         }
         for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
+            if (op.gate_type == 8) {
                 // Handled in block case.
                 continue;
             }

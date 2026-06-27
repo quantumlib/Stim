@@ -4,8 +4,6 @@
 #include <string>
 #include <utility>
 
-#include "stim/gates/gates.h"
-
 using namespace stim;
 
 uint64_t stim::add_saturate(uint64_t a, uint64_t b) {
@@ -31,18 +29,18 @@ uint64_t Circuit::count_measurements() const {
 
 uint64_t Circuit::count_detectors() const {
     return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::DETECTOR;
+        return op.gate_type == 5;
     });
 }
 
 uint64_t Circuit::count_ticks() const {
     return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::TICK;
+        return op.gate_type == 6;
     });
 }
 
 uint64_t Circuit::count_observables() const {
     return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? 2 : 0;
+        return op.gate_type == 7 ? 2 : 0;
     });
 }

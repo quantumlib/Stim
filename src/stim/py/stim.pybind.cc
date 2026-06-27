@@ -18,7 +18,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
                 3,
             };
             CircuitInstruction inst{
-                GateType::MPP,
+                33,
                 targets,
             };
 

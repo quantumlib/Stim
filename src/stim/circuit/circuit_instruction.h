@@ -19,7 +19,6 @@
 
 #include <cstdint>
 
-#include "stim/gates/gates.h"
 #include "stim/mem/span_ref.h"
 
 namespace stim {
@@ -28,7 +27,7 @@ struct Circuit;
 
 struct CircuitInstruction {
     /// The gate applied by the operation.
-    GateType gate_type;
+    uint32_t gate_type;
     SpanRef<uint32_t> targets;
 
     bool can_fuse(const CircuitInstruction &other) const;
