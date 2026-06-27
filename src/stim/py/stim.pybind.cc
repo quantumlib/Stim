@@ -8,6 +8,18 @@
 using namespace stim;
 using namespace stim_pybind;
 
+uint64_t count_measurement_results(std::span<const GateTarget> targets) {
+    uint64_t n = (uint64_t)targets.size();
+    std::cerr << "counting start ... " << n << "\n";
+    for (auto e : targets) {
+        if (e.is_combiner()) {
+            n -= 2;
+        }
+    }
+    std::cerr << "count final " << n << "\n";
+    return n;
+}
+
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def(
         "test",
@@ -39,7 +51,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
             reference_sample[1] = true;
             std::cerr << "alloc done\n";
             std::cerr << "count start\n";
-            size_t num_measure = circuit.count_measurements();
+            size_t num_measure = count_measurement_results(circuit.operations[0].targets);
             std::cerr << "count done\n";
             std::cerr << "to numpy start" << reference_sample << ", " << num_measure << "\n";
             auto result = simd_bits_to_numpy(reference_sample, num_measure, false);
