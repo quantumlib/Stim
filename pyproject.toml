@@ -1,3 +1,8 @@
 [build-system]
 requires = ["setuptools", "wheel", "pybind11~=2.11.1"]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel.windows]
+# CAUTION! This is /O0 instead of /O2 because of bugs in the msvc compiler!
+# See: https://github.com/quantumlib/Stim/issues/1078
+environment = "CFLAGS='/O0' CXXFLAGS='/O0'"
