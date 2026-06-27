@@ -16,7 +16,3 @@
 
 using namespace stim;
 
-GateDataMap::GateDataMap() {
-}
-
-extern const GateDataMap stim::GATE_DATA = GateDataMap();
