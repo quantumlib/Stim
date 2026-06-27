@@ -27,20 +27,6 @@ uint64_t CircuitInstruction::repeat_block_rep_count() const {
     return low | (high << 32);
 }
 
-Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0].data;
-    assert(b < host.blocks.size());
-    return host.blocks[b];
-}
-
-const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0].data;
-    assert(b < host.blocks.size());
-    return host.blocks[b];
-}
-
 CircuitInstruction::CircuitInstruction(
     GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag)
     : gate_type(gate_type), args(args), targets(targets), tag(tag) {
