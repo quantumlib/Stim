@@ -24,8 +24,6 @@
 
 namespace stim {
 
-struct Circuit;
-
 /// Stores a variety of circuit quantities relevant for sizing memory.
 struct CircuitStats {
     uint64_t num_detectors = 0;
@@ -79,11 +77,6 @@ struct CircuitInstruction {
     CircuitInstruction(
         GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
 
-    /// Computes number of qubits, number of measurements, etc.
-    CircuitStats compute_stats(const Circuit *host) const;
-    /// Computes number of qubits, number of measurements, etc and adds them into a target.
-    void add_stats_to(CircuitStats &out, const Circuit *host) const;
-
     /// Determines if two operations can be combined into one operation (with combined targeting data).
     ///
     /// For example, `H 1` then `H 2 1` is equivalent to `H 1 2 1` so those instructions are fusable.
@@ -103,8 +96,6 @@ struct CircuitInstruction {
     uint64_t count_measurement_results() const;
 
     uint64_t repeat_block_rep_count() const;
-    Circuit &repeat_block_body(Circuit &host) const;
-    const Circuit &repeat_block_body(const Circuit &host) const;
 
     /// Verifies complex invariants that circuit instructions are supposed to follow.
     ///

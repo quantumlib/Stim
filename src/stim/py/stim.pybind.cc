@@ -1,7 +1,7 @@
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 
-#include "stim/circuit/circuit.h"
+#include "stim/circuit/circuit_instruction.h"
 
 using namespace stim;
 
