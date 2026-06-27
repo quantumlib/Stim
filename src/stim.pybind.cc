@@ -5,8 +5,8 @@
 #include <iostream>
 
 struct CircuitInstruction {
-    uint32_t gate_type;
     std::span<const uint32_t> targets;
+
     uint64_t count_measurement_results() const {
         uint64_t n = (uint64_t)targets.size();
         std::cerr << "counting start ... " << n << "\n";
@@ -33,7 +33,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
                 3,
             };
             CircuitInstruction inst{
-                33,
                 targets,
             };
 
