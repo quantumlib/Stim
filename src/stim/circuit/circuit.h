@@ -32,49 +32,19 @@ struct Circuit {
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
-    // Returns one more than the largest `k` from any qubit target `k` or `!k` or `{X,Y,Z}k`.
     size_t count_qubits() const;
-    // Returns the number of measurement bits produced by the circuit.
     uint64_t count_measurements() const;
-    // Returns the number of detection event bits produced by the circuit.
     uint64_t count_detectors() const;
-    // Returns one more than the largest `k` from any `OBSERVABLE_INCLUDE(k)` instruction.
     uint64_t count_observables() const;
-    // Returns the number of ticks performed when running the circuit.
     uint64_t count_ticks() const;
-    // Returns the largest `k` from any `rec[-k]` target.
     size_t max_lookback() const;
-    // Returns one more than the largest `k` from any `sweep[k]` target.
     size_t count_sweep_bits() const;
 
-    /// Constructs an empty circuit.
     Circuit();
-    /// Copy constructor.
     Circuit(const Circuit &circuit);
-    /// Move constructor.
     Circuit(Circuit &&circuit) noexcept;
-    /// Copy assignment.
     Circuit &operator=(const Circuit &circuit);
-    /// Move assignment.
     Circuit &operator=(Circuit &&circuit) noexcept;
-
-    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append(CircuitInstruction operation, bool block_fusion = false);
-    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append_ua(
-        std::string_view gate_name,
-        const std::vector<uint32_t> &targets,
-        double singleton_arg,
-        std::string_view tag = "");
-    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void safe_append_u(
-        std::string_view gate_name,
-        const std::vector<uint32_t> &targets,
-        const std::vector<double> &args = {},
-        std::string_view tag = "");
-
-    /// Resets the circuit back to an empty circuit.
-    void clear();
 
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>

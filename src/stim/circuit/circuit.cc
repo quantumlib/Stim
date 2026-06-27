@@ -63,13 +63,6 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
     return *this;
 }
 
-void Circuit::clear() {
-    target_buf.clear();
-    arg_buf.clear();
-    operations.clear();
-    blocks.clear();
-}
-
 size_t Circuit::count_qubits() const {
     return 0;
 }
