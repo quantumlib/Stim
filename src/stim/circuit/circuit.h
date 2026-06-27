@@ -117,55 +117,6 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Returns a circuit that implements the inverse Clifford operation.
-    ///
-    /// Args:
-    ///     allow_weak_inverse: When this is set to true, the inverse of the circuit doesn't need
-    ///         to be exact. In particular, noise and measurement becomes self-inverse. Examples:
-    ///             - The weak inverse of MX is MX.
-    ///             - The weak inverse of MRX is MRX.
-    ///             - The weak inverse of RX is MRX.
-    ///             - The weak inverse of X_ERROR(0.1) is X_ERROR(0.1).
-    ///             - The weak inverse of DETECTOR is [discard the operation].
-    ///             - The weak inverse of OBSERVABLE_INCLUDE is [discard the operation].
-    ///
-    /// Returns:
-    ///     The inverted circuit.
-    Circuit inverse(bool allow_weak_inverse = false) const;
-
-    /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
-    template <typename CALLBACK>
-    void for_each_operation(const CALLBACK &callback) const {
-        for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
-                uint64_t repeats = op.repeat_block_rep_count();
-                const auto &block = op.repeat_block_body(*this);
-                for (uint64_t k = 0; k < repeats; k++) {
-                    block.for_each_operation(callback);
-                }
-            } else {
-                callback(op);
-            }
-        }
-    }
-
-    /// Helper method for reverse-executing the circuit, e.g. repeating REPEAT blocks.
-    template <typename CALLBACK>
-    void for_each_operation_reverse(const CALLBACK &callback) const {
-        for (size_t p = operations.size(); p-- > 0;) {
-            const auto &op = operations[p];
-            if (op.gate_type == GateType::REPEAT) {
-                uint64_t repeats = op.repeat_block_rep_count();
-                const auto &block = op.repeat_block_body(*this);
-                for (uint64_t k = 0; k < repeats; k++) {
-                    block.for_each_operation_reverse(callback);
-                }
-            } else {
-                callback(op);
-            }
-        }
-    }
-
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
     uint64_t flat_count_operations(const COUNT &count) const {
