@@ -6,20 +6,6 @@
 
 using namespace stim;
 
-uint64_t stim::add_saturate(uint64_t a, uint64_t b) {
-    uint64_t r = a + b;
-    if (r < a) {
-        return UINT64_MAX;
-    }
-    return r;
-}
-
-uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
-    if (b && a > UINT64_MAX / b) {
-        return UINT64_MAX;
-    }
-    return a * b;
-}
 
 uint64_t Circuit::count_observables() const {
     return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {

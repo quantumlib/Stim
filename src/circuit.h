@@ -16,17 +16,26 @@
 
 namespace stim {
 
-uint64_t add_saturate(uint64_t a, uint64_t b);
-uint64_t mul_saturate(uint64_t a, uint64_t b);
+uint64_t add_saturate(uint64_t a, uint64_t b) {
+    uint64_t r = a + b;
+    if (r < a) {
+        return UINT64_MAX;
+    }
+    return r;
+}
 
-/// A description of a quantum computation.
+uint64_t mul_saturate(uint64_t a, uint64_t b) {
+    if (b && a > UINT64_MAX / b) {
+        return UINT64_MAX;
+    }
+    return a * b;
+}
+
 struct Circuit {
-    /// Backing data stores for variable-sized target data referenced by operations.
     std::vector<CircuitInstruction> operations;
 
     uint64_t count_observables() const;
 
-    /// Helper method for finding the largest observable, etc.
     template <typename MAP>
     uint64_t max_operation_property(const MAP &map) const {
         uint64_t n = 0;
