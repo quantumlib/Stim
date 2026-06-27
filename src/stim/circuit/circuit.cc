@@ -379,27 +379,19 @@ uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.count_measurement_results();
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_detectors() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::DETECTOR;
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_ticks() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::TICK;
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_observables() const {
-    return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? (size_t)op.args[0] + 1 : 0;
-    });
+    return 0;
 }
 
 size_t Circuit::count_sweep_bits() const {
