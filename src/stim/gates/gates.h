@@ -25,8 +25,6 @@
 #include <iostream>
 #include <vector>
 
-#include "stim/mem/fixed_cap_vector.h"
-
 namespace stim {
 
 template <size_t W>
