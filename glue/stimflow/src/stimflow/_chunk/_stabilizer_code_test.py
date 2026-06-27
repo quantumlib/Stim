@@ -312,3 +312,70 @@ def test_with_remaining_degrees_of_freedom_as_logicals():
             ),
         ],
     )
+
+def test_basis_subset():
+    code = stimflow.StabilizerCode(
+        stabilizers=[
+            stimflow.Tile(bases="XX", data_qubits=[0, 1]),
+            stimflow.Tile(bases="ZZ", data_qubits=[2, 3]),
+        ],
+        logicals=[
+            (
+                stimflow.PauliMap.from_xs([0]).with_obs_name("X"),
+                stimflow.PauliMap.from_zs([1]).with_obs_name("Z"),
+            ),
+        ],
+    )
+
+    x_subset = code.x_basis_subset()
+    z_subset = code.z_basis_subset()
+
+    assert x_subset.stabilizers == stimflow.Patch(
+        [
+            stimflow.Tile(bases="XX", data_qubits=[0, 1]),
+        ]
+    )
+    assert x_subset.logicals == (
+        stimflow.PauliMap.from_xs([0]).with_obs_name("X"),
+    )
+    assert z_subset.stabilizers == stimflow.Patch(
+        [
+            stimflow.Tile(bases="ZZ", data_qubits=[2, 3]),
+        ]
+    )
+    assert z_subset.logicals == (
+        stimflow.PauliMap.from_zs([1]).with_obs_name("Z"),
+    )
+
+def test_flat_logicals():
+    code = stimflow.StabilizerCode(
+        stabilizers=[
+            stimflow.Tile(bases="XX", data_qubits=[0, 1]),
+            stimflow.Tile(bases="ZZ", data_qubits=[2, 3]),
+        ],
+        logicals=[
+            (
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([2, 3]).with_obs_name("LZ1"),
+            ),
+            (
+                stimflow.PauliMap.from_xs([4, 5]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_zs([6, 7]).with_obs_name("LZ2"),
+            ),
+        ],
+        scattered_logicals=[
+            stimflow.PauliMap.from_xs([2, 3]).with_obs_name("LX3"),
+            stimflow.PauliMap.from_zs([4, 5]).with_obs_name("LZ3"),
+        ],
+    )
+
+    flat_logicals = code.flat_logicals
+
+    assert flat_logicals == (
+        stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+        stimflow.PauliMap.from_zs([2, 3]).with_obs_name("LZ1"),
+        stimflow.PauliMap.from_xs([4, 5]).with_obs_name("LX2"),
+        stimflow.PauliMap.from_zs([6, 7]).with_obs_name("LZ2"),
+        stimflow.PauliMap.from_xs([2, 3]).with_obs_name("LX3"),
+        stimflow.PauliMap.from_zs([4, 5]).with_obs_name("LZ3"),
+    )
