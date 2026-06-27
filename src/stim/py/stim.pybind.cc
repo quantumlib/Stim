@@ -15,7 +15,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
             Circuit circuit(R"CIRCUIT(
                 MPP X0*X1 Y0*Y1
             )CIRCUIT");
-            size_t num_measure = circuit.count_measurements();
+            size_t num_measure = circuit.operations[0].count_measurements();
             if (num_measure != 2) {
                 throw std::invalid_argument("WRONG COUNT!");
             }
