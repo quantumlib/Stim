@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 
 #include <cstdint>
+#include <iostream>
 
 void repro() {
     int targets[6]{0, 1, 0, 0, 1, 0};
@@ -10,6 +11,7 @@ void repro() {
             n -= 2;
         }
     }
+    std::cerr << "n=" << n << "\n";
     if (n != 2) {
         throw std::invalid_argument("WRONG COUNT!");
     }
