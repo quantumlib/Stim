@@ -100,6 +100,118 @@ bool Circuit::operator==(const Circuit &other) const {
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
 }
+bool Circuit::approx_equals(const Circuit &other, double atol) const {
+    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
+            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
+                return false;
+            }
+            const auto &b1 = operations[k].repeat_block_body(*this);
+            const auto &b2 = other.operations[k].repeat_block_body(other);
+            if (!b1.approx_equals(b2, atol)) {
+                return false;
+            }
+        } else if (!operations[k].approx_equals(other.operations[k], atol)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline bool is_name_char(int c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+template <typename SOURCE>
+inline const Gate &read_gate_name(int &c, SOURCE read_char) {
+    char name_buf[32];
+    size_t n = 0;
+    while (is_name_char(c) && n < sizeof(name_buf)) {
+        name_buf[n] = (char)c;
+        c = read_char();
+        n++;
+    }
+    // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
+    try {
+        return GATE_DATA.at(std::string_view{&name_buf[0], n});
+    } catch (const std::out_of_range &ex) {
+        throw std::invalid_argument(ex.what());
+    }
+}
+
+template <typename SOURCE>
+uint64_t read_uint63_t(int &c, SOURCE read_char) {
+    if (!(c >= '0' && c <= '9')) {
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
+    }
+    uint64_t result = 0;
+    do {
+        result *= 10;
+        result += c - '0';
+        if (result >= uint64_t{1} << 63) {
+            throw std::invalid_argument("Number too large.");
+        }
+        c = read_char();
+    } while (c >= '0' && c <= '9');
+    return result;
+}
+
+template <typename SOURCE>
+inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
+    bool need_space = true;
+    while (read_until_next_line_arg(c, read_char, need_space)) {
+        GateTarget t = read_single_gate_target(c, read_char);
+        circuit.target_buf.append_tail(t);
+        need_space = !t.is_combiner();
+    }
+}
+
+template <typename SOURCE>
+inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
+    while (read_until_next_line_arg(c, read_char)) {
+        uint64_t q = read_uint63_t(c, read_char);
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q & 0xFFFFFFFFULL)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q >> 32)});
+    }
+}
+
+template <typename SOURCE>
+void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read_char) {
+    int c = (int)lead_char;
+    const auto &gate = read_gate_name(c, read_char);
+    std::string_view tail_tag;
+    try {
+        read_tag(c, gate.name, read_char, circuit.tag_buf);
+        if (!circuit.tag_buf.tail.empty()) {
+            tail_tag = std::string_view(circuit.tag_buf.tail.ptr_start, circuit.tag_buf.tail.size());
+        }
+
+        read_parens_arguments(c, gate.name, read_char, circuit.arg_buf);
+        if (gate.flags & GATE_IS_BLOCK) {
+            read_result_targets64_into(c, read_char, circuit);
+            if (c != '{') {
+                throw std::invalid_argument("Missing '{' at start of " + std::string(gate.name) + " block.");
+            }
+        } else {
+            read_arbitrary_targets_into(c, read_char, circuit);
+            if (c == '{') {
+                throw std::invalid_argument("Unexpected '{'.");
+            }
+            CircuitInstruction(gate.id, circuit.arg_buf.tail, circuit.target_buf.tail, tail_tag).validate();
+        }
+    } catch (const std::invalid_argument &ex) {
+        circuit.target_buf.discard_tail();
+        circuit.arg_buf.discard_tail();
+        throw ex;
+    }
+
+    circuit.tag_buf.commit_tail();
+    circuit.operations.push_back(
+        CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
+}
 
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     auto flags = GATE_DATA[operation.gate_type].flags;
@@ -190,12 +302,57 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
 
 void Circuit::safe_insert_repeat_block(
     size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(block);
+    auto targets = target_buf.commit_tail();
+    operations.insert(operations.begin() + index, CircuitInstruction(GateType::REPEAT, {}, targets, tag));
 }
 
 void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs) {
+    if (reverse_in_pairs) {
+        if (instruction.targets.size() % 2 != 0) {
+            throw std::invalid_argument("targets.size() % 2 != 0");
+        }
+        for (size_t k = instruction.targets.size(); k;) {
+            k -= 2;
+            target_buf.append_tail(instruction.targets[k]);
+            target_buf.append_tail(instruction.targets[k + 1]);
+        }
+    } else {
+        for (size_t k = instruction.targets.size(); k-- > 0;) {
+            target_buf.append_tail(instruction.targets[k]);
+        }
+    }
+
+    CircuitInstruction to_add = instruction;
+    try {
+        to_add.validate();
+    } catch (const std::invalid_argument &ex) {
+        target_buf.discard_tail();
+        throw;
+    }
+
+    // Commit reversed tail data.
+    to_add.targets = target_buf.commit_tail();
+
+    // Ensure arg/tag data is backed by copying it into this circuit's buffers.
+    to_add.args = arg_buf.take_copy(to_add.args);
+    to_add.tag = tag_buf.take_copy(to_add.tag);
 }
 
 void Circuit::clear() {
+    target_buf.clear();
+    arg_buf.clear();
+    operations.clear();
+    blocks.clear();
 }
 
 size_t Circuit::count_qubits() const {
@@ -222,23 +379,55 @@ uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.count_measurement_results();
+    });
 }
 
 uint64_t Circuit::count_detectors() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::DETECTOR;
+    });
 }
 
 uint64_t Circuit::count_ticks() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::TICK;
+    });
 }
 
 uint64_t Circuit::count_observables() const {
-    return 0;
+    return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? (size_t)op.args[0] + 1 : 0;
+    });
 }
 
 size_t Circuit::count_sweep_bits() const {
     return 0;
+}
+
+void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(std::move(body));
+    auto targets = target_buf.commit_tail();
+    operations.push_back(CircuitInstruction(GateType::REPEAT, {}, targets, tag_buf.take_copy(tag)));
+}
+
+void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(body);
+    auto targets = target_buf.commit_tail();
+    operations.push_back(CircuitInstruction(GateType::REPEAT, {}, targets, tag_buf.take_copy(tag)));
 }
 
 void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
