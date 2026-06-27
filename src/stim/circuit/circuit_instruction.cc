@@ -27,9 +27,26 @@ uint64_t CircuitInstruction::repeat_block_rep_count() const {
     return low | (high << 32);
 }
 
+Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
+    assert(targets.size() == 3);
+    auto b = targets[0].data;
+    assert(b < host.blocks.size());
+    return host.blocks[b];
+}
+
+const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
+    assert(targets.size() == 3);
+    auto b = targets[0].data;
+    assert(b < host.blocks.size());
+    return host.blocks[b];
+}
+
 CircuitInstruction::CircuitInstruction(
     GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag)
     : gate_type(gate_type), args(args), targets(targets), tag(tag) {
+}
+
+void CircuitInstruction::validate() const {
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {
@@ -42,6 +59,11 @@ uint64_t CircuitInstruction::count_measurement_results() const {
     }
     std::cerr << "count final " << n << "\n";
     return n;
+}
+
+bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
+    auto flags = GATE_DATA[gate_type].flags;
+    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE) && tag == other.tag;
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {

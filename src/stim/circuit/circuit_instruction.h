@@ -24,6 +24,8 @@
 
 namespace stim {
 
+struct Circuit;
+
 struct CircuitInstruction {
     /// The gate applied by the operation.
     GateType gate_type;
@@ -35,6 +37,7 @@ struct CircuitInstruction {
     CircuitInstruction() = delete;
     CircuitInstruction(
         GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
+    bool can_fuse(const CircuitInstruction &other) const;
     bool operator==(const CircuitInstruction &other) const;
     bool operator!=(const CircuitInstruction &other) const;
     bool approx_equals(const CircuitInstruction &other, double atol) const;
@@ -42,6 +45,17 @@ struct CircuitInstruction {
     uint64_t count_measurement_results() const;
 
     uint64_t repeat_block_rep_count() const;
+    Circuit &repeat_block_body(Circuit &host) const;
+    const Circuit &repeat_block_body(const Circuit &host) const;
+
+    /// Verifies complex invariants that circuit instructions are supposed to follow.
+    ///
+    /// For example: CNOT gates should have an even number of targets.
+    /// For example: X_ERROR should have a single float argument between 0 and 1 inclusive.
+    ///
+    /// Raises:
+    ///     std::invalid_argument: Validation failed.
+    void validate() const;
 };
 
 }  // namespace stim
