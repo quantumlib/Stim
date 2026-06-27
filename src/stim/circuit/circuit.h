@@ -13,7 +13,6 @@
 #include <cassert>
 
 #include "stim/circuit/circuit_instruction.h"
-#include "stim/mem/span_ref.h"
 
 namespace stim {
 

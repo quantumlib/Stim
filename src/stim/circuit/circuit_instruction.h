@@ -18,8 +18,9 @@
 #define _STIM_CIRCUIT_INSTRUCTION_H
 
 #include <cstdint>
+#include <cassert>
+#include <span>
 
-#include "stim/mem/span_ref.h"
 
 namespace stim {
 
