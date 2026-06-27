@@ -8,7 +8,5 @@ using namespace stim;
 
 
 uint64_t Circuit::count_observables() const {
-    return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
-        return 1;
-    });
+    return 0;
 }
