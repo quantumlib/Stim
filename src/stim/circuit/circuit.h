@@ -117,20 +117,6 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Returns a noiseless version of the given circuit. The result must live for less time than the given circuit.
-    ///
-    /// CAUTION: for performance, the returned circuit contains pointers into the given circuit!
-    /// The result's lifetime must be shorter than the given circuit's lifetime!
-    const Circuit aliased_noiseless_circuit() const;
-
-    /// Returns a copy of the circuit with all noise processes removed.
-    Circuit without_noise() const;
-    /// Returns a copy of the circuit with all tags removed.
-    Circuit without_tags() const;
-
-    /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
-    Circuit flattened() const;
-
     /// Returns a circuit that implements the inverse Clifford operation.
     ///
     /// Args:
