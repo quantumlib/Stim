@@ -10,8 +10,6 @@ namespace stim {
 struct Circuit {
     std::vector<CircuitInstruction> operations;
 
-    uint64_t count_observables() const;
-
     template <typename MAP>
     uint64_t max_operation_property(const MAP &map) const {
         uint64_t n = 0;
