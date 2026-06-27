@@ -23,26 +23,6 @@
 
 using namespace stim;
 
-enum class READ_CONDITION {
-    READ_AS_LITTLE_AS_POSSIBLE,
-    READ_UNTIL_END_OF_BLOCK,
-    READ_UNTIL_END_OF_FILE,
-};
-
-/// Concatenates the second pointer range's data into the first.
-/// Typically, the two ranges are contiguous and so this only requires advancing the end of the destination region.
-/// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
-/// the start and end of the destination range move.
-void fuse_data(SpanRef<const GateTarget> &dst, SpanRef<const GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
-    if (dst.ptr_end != src.ptr_start) {
-        buf.ensure_available(src.size() + dst.size());
-        dst = buf.take_copy(dst);
-        src = buf.take_copy(src);
-    }
-    assert(dst.ptr_end == src.ptr_start);
-    dst.ptr_end = src.ptr_end;
-}
-
 Circuit::Circuit() : target_buf(), arg_buf(), tag_buf(), operations(), blocks() {
 }
 
@@ -245,14 +225,6 @@ void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     operation.args = arg_buf.take_copy(operation.args);
     operation.targets = target_buf.take_copy(operation.targets);
     operation.tag = tag_buf.take_copy(operation.tag);
-
-    if (!block_fusion && !operations.empty() && operations.back().can_fuse(operation)) {
-        // Extend targets of last gate.
-        fuse_data(operations.back().targets, operation.targets, target_buf);
-    } else {
-        // Add a fresh new operation with its own target data.
-        operations.push_back(operation);
-    }
 }
 
 void Circuit::safe_append_ua(
@@ -374,14 +346,6 @@ void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool 
     // Ensure arg/tag data is backed by copying it into this circuit's buffers.
     to_add.args = arg_buf.take_copy(to_add.args);
     to_add.tag = tag_buf.take_copy(to_add.tag);
-
-    if (!operations.empty() && operations.back().can_fuse(to_add)) {
-        // Extend targets of last gate.
-        fuse_data(operations.back().targets, to_add.targets, target_buf);
-    } else {
-        // Add a fresh new operation with its own target data.
-        operations.push_back(to_add);
-    }
 }
 
 void Circuit::clear() {
