@@ -356,25 +356,6 @@ struct GateDataMapHashEntry {
 };
 
 struct GateDataMap {
-   private:
-    void add_gate(bool &failed, const Gate &data);
-    void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
-    void add_gate_data_annotations(bool &failed);
-    void add_gate_data_blocks(bool &failed);
-    void add_gate_data_heralded(bool &failed);
-    void add_gate_data_collapsing(bool &failed);
-    void add_gate_data_controlled(bool &failed);
-    void add_gate_data_hada(bool &failed);
-    void add_gate_data_noisy(bool &failed);
-    void add_gate_data_pauli(bool &failed);
-    void add_gate_data_period_3(bool &failed);
-    void add_gate_data_period_4(bool &failed);
-    void add_gate_data_pp(bool &failed);
-    void add_gate_data_swaps(bool &failed);
-    void add_gate_data_pair_measure(bool &failed);
-    void add_gate_data_pauli_product(bool &failed);
-
-   public:
     std::array<GateDataMapHashEntry, 512> hashed_name_to_gate_type_table;
     std::array<Gate, NUM_DEFINED_GATES> items;
     GateDataMap();
@@ -398,12 +379,6 @@ struct GateDataMap {
         }
         // Canonicalize.
         return (*this)[entry.id];
-    }
-
-    inline bool has(std::string_view text) const {
-        auto h = gate_name_to_hash(text);
-        const auto &entry = hashed_name_to_gate_type_table[h];
-        return !_case_insensitive_mismatch(text, entry.expected_name);
     }
 };
 
