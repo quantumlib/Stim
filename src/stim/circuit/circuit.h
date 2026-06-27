@@ -27,13 +27,10 @@ struct Circuit {
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
-    size_t count_qubits() const;
     uint64_t count_measurements() const;
     uint64_t count_detectors() const;
     uint64_t count_observables() const;
     uint64_t count_ticks() const;
-    size_t max_lookback() const;
-    size_t count_sweep_bits() const;
 
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
