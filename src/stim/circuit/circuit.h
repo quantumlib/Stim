@@ -59,23 +59,6 @@ struct Circuit {
         }
         return n;
     }
-
-    /// Helper method for finding the largest observable, etc.
-    template <typename MAP>
-    uint64_t max_operation_property(const MAP &map) const {
-        uint64_t n = 0;
-        for (const auto &block : blocks) {
-            n = std::max(n, block.max_operation_property<MAP>(map));
-        }
-        for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
-                // Handled in block case.
-                continue;
-            }
-            n = std::max(n, (uint64_t)map(op));
-        }
-        return n;
-    }
 };
 
 }  // namespace stim
