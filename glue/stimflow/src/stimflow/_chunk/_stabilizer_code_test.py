@@ -346,3 +346,36 @@ def test_basis_subset():
     assert z_subset.logicals == (
         stimflow.PauliMap.from_zs([1]).with_obs_name("Z"),
     )
+
+def test_flat_logicals():
+    code = stimflow.StabilizerCode(
+        stabilizers=[
+            stimflow.Tile(bases="XX", data_qubits=[0, 1]),
+            stimflow.Tile(bases="ZZ", data_qubits=[2, 3]),
+        ],
+        logicals=[
+            (
+                stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+                stimflow.PauliMap.from_zs([2, 3]).with_obs_name("LZ1"),
+            ),
+            (
+                stimflow.PauliMap.from_xs([4, 5]).with_obs_name("LX2"),
+                stimflow.PauliMap.from_zs([6, 7]).with_obs_name("LZ2"),
+            ),
+        ],
+        scattered_logicals=[
+            stimflow.PauliMap.from_xs([2, 3]).with_obs_name("LX3"),
+            stimflow.PauliMap.from_zs([4, 5]).with_obs_name("LZ3"),
+        ],
+    )
+
+    flat_logicals = code.flat_logicals
+
+    assert flat_logicals == (
+        stimflow.PauliMap.from_xs([0, 1]).with_obs_name("LX1"),
+        stimflow.PauliMap.from_zs([2, 3]).with_obs_name("LZ1"),
+        stimflow.PauliMap.from_xs([4, 5]).with_obs_name("LX2"),
+        stimflow.PauliMap.from_zs([6, 7]).with_obs_name("LZ2"),
+        stimflow.PauliMap.from_xs([2, 3]).with_obs_name("LX3"),
+        stimflow.PauliMap.from_zs([4, 5]).with_obs_name("LZ3"),
+    )
