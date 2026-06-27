@@ -3,17 +3,10 @@
 #include <cstdint>
 
 void repro() {
-    uint32_t targets[6]{
-        0,
-        27,
-        0,
-        0,
-        27,
-        0
-    };
+    int targets[6]{0, 1, 0, 0, 1, 0};
     uint64_t n = 6;
-    for (size_t k = 0; k < 6; k++) {
-        if (targets[k] == 27) {
+    for (int k = 0; k < 6; k++) {
+        if (targets[k]) {
             n -= 2;
         }
     }
