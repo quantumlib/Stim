@@ -31,9 +31,6 @@ struct Circuit {
     template <typename MAP>
     uint64_t max_operation_property(const MAP &map) const {
         uint64_t n = 0;
-        for (const auto &block : blocks) {
-            n = std::max(n, block.max_operation_property<MAP>(map));
-        }
         for (const auto &op : operations) {
             if (op.gate_type == 8) {
                 // Handled in block case.
