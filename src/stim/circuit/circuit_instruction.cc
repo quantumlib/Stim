@@ -113,26 +113,14 @@ void CircuitInstruction::validate() const {
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {
-    auto flags = GATE_DATA[gate_type].flags;
-    if (!(flags & GATE_PRODUCES_RESULTS)) {
-        return 0;
-    }
     uint64_t n = (uint64_t)targets.size();
-    if (flags & GATE_TARGETS_PAIRS) {
-        return n >> 1;
-    } else if (flags & GATE_TARGETS_COMBINERS) {
-      std::cerr << "counting start ... " << n << "\n";
-        for (auto e : targets) {
-      std::cerr << "target " << e << "\n";
-            if (e.is_combiner()) {
-                n -= 2;
-            }
-      // std::cerr << "count is now " << n << "\n";
+    std::cerr << "counting start ... " << n << "\n";
+    for (auto e : targets) {
+        if (e.is_combiner()) {
+            n -= 2;
         }
-      std::cerr << "count final 1 " << n << "\n";
     }
-      std::cerr << "count final final " << n << "\n";
-    return n;
+    std::cerr << "count final " << n << "\n";
 }
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
