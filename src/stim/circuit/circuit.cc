@@ -485,11 +485,27 @@ Circuit &Circuit::operator*=(uint64_t repetitions) {
 }
 
 size_t Circuit::count_qubits() const {
-    return 0;
+    return (uint32_t)max_operation_property([](const CircuitInstruction &op) -> uint32_t {
+        uint32_t r = 0;
+        for (auto t : op.targets) {
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+                r = std::max(r, t.qubit_value() + uint32_t{1});
+            }
+        }
+        return r;
+    });
 }
 
 size_t Circuit::max_lookback() const {
-    return 0;
+    return max_operation_property([](const CircuitInstruction &op) -> uint32_t {
+        uint32_t r = 0;
+        for (auto t : op.targets) {
+            if (t.data & TARGET_RECORD_BIT) {
+                r = std::max(r, t.qubit_value());
+            }
+        }
+        return r;
+    });
 }
 
 uint64_t stim::add_saturate(uint64_t a, uint64_t b) {
@@ -508,23 +524,39 @@ uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.count_measurement_results();
+    });
 }
 
 uint64_t Circuit::count_detectors() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::DETECTOR;
+    });
 }
 
 uint64_t Circuit::count_ticks() const {
-    return 0;
+    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::TICK;
+    });
 }
 
 uint64_t Circuit::count_observables() const {
-    return 0;
+    return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
+        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? (size_t)op.args[0] + 1 : 0;
+    });
 }
 
 size_t Circuit::count_sweep_bits() const {
-    return 0;
+    return max_operation_property([](const CircuitInstruction &op) -> uint32_t {
+        uint32_t r = 0;
+        for (auto t : op.targets) {
+            if (t.data & TARGET_SWEEP_BIT) {
+                r = std::max(r, t.qubit_value() + 1);
+            }
+        }
+        return r;
+    });
 }
 
 Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
