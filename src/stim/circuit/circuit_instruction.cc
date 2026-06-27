@@ -125,7 +125,7 @@ uint64_t CircuitInstruction::count_measurement_results() const {
         for (auto e : targets) {
       // std::cerr << "target " << e << "\n";
             if (e.is_combiner()) {
-      // std::cerr << "combiner!\n";
+      std::cerr << "combiner!\n";
                 n -= 2;
             }
       // std::cerr << "count is now " << n << "\n";
