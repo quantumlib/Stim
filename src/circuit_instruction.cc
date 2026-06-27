@@ -11,17 +11,11 @@ uint64_t CircuitInstruction::repeat_block_rep_count() const {
 }
 
 Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0];
-    assert(b < host.blocks.size());
-    return host.blocks[b];
+    return *new Circuit();
 }
 
 const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
-    assert(targets.size() == 3);
-    auto b = targets[0];
-    assert(b < host.blocks.size());
-    return host.blocks[b];
+    return *new Circuit();
 }
 
 uint64_t CircuitInstruction::count_measurement_results() const {

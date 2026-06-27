@@ -23,7 +23,6 @@ uint64_t mul_saturate(uint64_t a, uint64_t b);
 struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
     std::vector<CircuitInstruction> operations;
-    std::vector<Circuit> blocks;
 
     uint64_t count_observables() const;
 
