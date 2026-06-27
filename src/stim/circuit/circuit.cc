@@ -9,9 +9,6 @@
 
 using namespace stim;
 
-Circuit::Circuit() : target_buf(), arg_buf(), tag_buf(), operations(), blocks() {
-}
-
 size_t Circuit::count_qubits() const {
     return 0;
 }

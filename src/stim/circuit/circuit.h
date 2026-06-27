@@ -14,7 +14,6 @@
 #include "stim/circuit/circuit_instruction.h"
 #include "stim/circuit/gate_target.h"
 #include "stim/gates/gates.h"
-#include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/span_ref.h"
 
 namespace stim {
@@ -25,10 +24,6 @@ uint64_t mul_saturate(uint64_t a, uint64_t b);
 /// A description of a quantum computation.
 struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
-    MonotonicBuffer<GateTarget> target_buf;
-    MonotonicBuffer<double> arg_buf;
-    MonotonicBuffer<char> tag_buf;
-    /// Operations in the circuit, from earliest to latest.
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
@@ -39,8 +34,6 @@ struct Circuit {
     uint64_t count_ticks() const;
     size_t max_lookback() const;
     size_t count_sweep_bits() const;
-
-    Circuit();
 
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
