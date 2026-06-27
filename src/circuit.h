@@ -16,7 +16,7 @@
 
 namespace stim {
 
-uint64_t add_saturate(uint64_t a, uint64_t b) {
+inline uint64_t add_saturate(uint64_t a, uint64_t b) {
     uint64_t r = a + b;
     if (r < a) {
         return UINT64_MAX;
@@ -24,7 +24,7 @@ uint64_t add_saturate(uint64_t a, uint64_t b) {
     return r;
 }
 
-uint64_t mul_saturate(uint64_t a, uint64_t b) {
+inline uint64_t mul_saturate(uint64_t a, uint64_t b) {
     if (b && a > UINT64_MAX / b) {
         return UINT64_MAX;
     }
