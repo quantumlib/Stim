@@ -121,6 +121,7 @@ uint64_t CircuitInstruction::count_measurement_results() const {
         }
     }
     std::cerr << "count final " << n << "\n";
+    return n;
 }
 
 bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
