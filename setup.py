@@ -30,7 +30,9 @@ __version__ = '1.17.dev0'
 if platform.system().startswith('Win'):
     common_compile_args = [
         '/std:c++20',
-        '/O2',
+        # CAUTION! This is /Od instead of /O2 because of bugs in the msvc compiler!
+        # See: https://github.com/quantumlib/Stim/issues/1078
+        '/Od',
         f'/DVERSION_INFO={__version__}',
     ]
     arch_avx = ['/arch:AVX2']
