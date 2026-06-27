@@ -28,9 +28,7 @@ uint64_t Circuit::count_measurements() const {
 }
 
 uint64_t Circuit::count_detectors() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == 5;
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_ticks() const {
