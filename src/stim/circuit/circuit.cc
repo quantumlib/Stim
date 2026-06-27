@@ -190,57 +190,12 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
 
 void Circuit::safe_insert_repeat_block(
     size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
-    if (repeat_count == 0) {
-        throw std::invalid_argument("Can't repeat 0 times.");
-    }
-    if (index > operations.size()) {
-        throw std::invalid_argument("index > operations.size()");
-    }
-    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
-    blocks.push_back(block);
-    auto targets = target_buf.commit_tail();
-    operations.insert(operations.begin() + index, CircuitInstruction(GateType::REPEAT, {}, targets, tag));
 }
 
 void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs) {
-    if (reverse_in_pairs) {
-        if (instruction.targets.size() % 2 != 0) {
-            throw std::invalid_argument("targets.size() % 2 != 0");
-        }
-        for (size_t k = instruction.targets.size(); k;) {
-            k -= 2;
-            target_buf.append_tail(instruction.targets[k]);
-            target_buf.append_tail(instruction.targets[k + 1]);
-        }
-    } else {
-        for (size_t k = instruction.targets.size(); k-- > 0;) {
-            target_buf.append_tail(instruction.targets[k]);
-        }
-    }
-
-    CircuitInstruction to_add = instruction;
-    try {
-        to_add.validate();
-    } catch (const std::invalid_argument &ex) {
-        target_buf.discard_tail();
-        throw;
-    }
-
-    // Commit reversed tail data.
-    to_add.targets = target_buf.commit_tail();
-
-    // Ensure arg/tag data is backed by copying it into this circuit's buffers.
-    to_add.args = arg_buf.take_copy(to_add.args);
-    to_add.tag = tag_buf.take_copy(to_add.tag);
 }
 
 void Circuit::clear() {
-    target_buf.clear();
-    arg_buf.clear();
-    operations.clear();
-    blocks.clear();
 }
 
 size_t Circuit::count_qubits() const {
