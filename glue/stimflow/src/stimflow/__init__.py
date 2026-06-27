@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = '1.17.dev0'
 
 from stimflow._chunk import (
     Chunk,
@@ -46,7 +46,7 @@ from stimflow._viz import (
     Viewable3dModelGLTF,
     html_viewer_for_gltf_model,
     make_3d_model,
-    stim_circuit_html_viewer,
-    svg,
+    html_viewer,
+    svg_viewer,
     TextDataFor3DModel,
 )

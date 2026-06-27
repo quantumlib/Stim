@@ -40,6 +40,8 @@ def main():
         "glue/zx/setup.py",
         "glue/sample/setup.py",
         "glue/sample/src/sinter/__init__.py",
+        "glue/stimflow/setup.py",
+        "glue/stimflow/src/stimflow/__init__.py",
     ]
     for path in package_setup_files:
         with open(path) as f:

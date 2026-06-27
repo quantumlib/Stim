@@ -25,12 +25,14 @@ MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
-__version__ = '1.16.dev0'
+__version__ = '1.17.dev0'
 
 if platform.system().startswith('Win'):
     common_compile_args = [
         '/std:c++20',
-        '/O2',
+        # CAUTION! This is /Od instead of /O2 because of bugs in the msvc compiler!
+        # See: https://github.com/quantumlib/Stim/issues/1078
+        '/Od',
         f'/DVERSION_INFO={__version__}',
     ]
     arch_avx = ['/arch:AVX2']

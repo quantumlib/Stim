@@ -161,13 +161,13 @@ class ChunkLoop:
         known_error: Iterable[stim.ExplainedError] | None = None,
     ) -> str_html:
         """Returns an HTML document containing a viewer for the chunk loop's circuit."""
-        from stimflow._viz import stim_circuit_html_viewer
+        from stimflow._viz import html_viewer
 
         if patch is None:
             patch = self.start_patch()
             if len(patch.tiles) == 0:
                 patch = self.end_patch()
-        return stim_circuit_html_viewer(
+        return html_viewer(
             self.to_closed_circuit(),
             background=patch,
             tile_color_func=tile_color_func,

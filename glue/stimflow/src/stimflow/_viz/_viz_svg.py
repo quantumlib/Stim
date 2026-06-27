@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Iterable
-from typing import Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING, Any
 
 import stim
+from stimflow import PauliMap
 
 from stimflow._viz._viz_patch_svg import _draw_patch
 
@@ -12,10 +13,10 @@ if TYPE_CHECKING:
     import stimflow
 
 
-def svg(
-    objects: Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit],
+def svg_viewer(
+    obj: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any],
     *,
-    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | None = None,
+    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | None = None,
     title: str | list[str] | None = None,
     canvas_height: int | None = None,
     show_order: bool = False,
@@ -41,32 +42,39 @@ def svg(
     show_frames: bool = True,
     pad: float | None = None,
 ) -> stimflow.str_svg:
-    """Returns an SVG image of the given objects."""
+    """Returns an SVG image of the given objects.
+    """
+    from stimflow._chunk import Patch, StabilizerCode, ChunkInterface
+    if hasattr(obj, '_inline_svg_') or isinstance(obj, (Patch, StabilizerCode, ChunkInterface, stim.Circuit, PauliMap)):
+        objects = [obj]
+    else:
+        objects = obj
+
     system_qubits = frozenset(system_qubits)
     if canvas_height is None:
         canvas_height = 500
 
     extra_used_coords = frozenset(extra_used_coords)
-    from stimflow._layers import LayerCircuit
 
-    patches = tuple(
-        patch.to_stim_circuit() if isinstance(patch, LayerCircuit) else patch for patch in objects
-    )
-    all_points: set[complex] = set()
-    all_points.update(system_qubits)
-    all_points.update(extra_used_coords)
-    for patch in patches:
-        if isinstance(patch, stim.Circuit):
-            all_points.update(
-                v[0] + v[1] * 1j for v in patch.get_final_qubit_coordinates().values()
+    min_max_points: set[complex] = set()
+    min_max_points.update(system_qubits)
+    min_max_points.update(extra_used_coords)
+    for e in [*objects, background]:
+        if e is None:
+            continue
+        elif hasattr(e, '_min_max_complex_'):
+            min_max_points.update(e._min_max_complex_())
+        elif isinstance(e, stim.Circuit):
+            min_max_points.update(
+                v[0] + v[1] * 1j for v in e.get_final_qubit_coordinates().values()
             )
         else:
-            all_points.update(patch.used_set)
+            raise NotImplementedError(f"Don't know how to determine qubits used by {type(e)=}")
     if show_all_qubits:
-        system_qubits = frozenset(all_points)
+        system_qubits = frozenset(min_max_points)
     from stimflow._core import min_max_complex
 
-    min_c, max_c = min_max_complex(all_points, default=0)
+    min_c, max_c = min_max_complex(min_max_points, default=0)
     min_c -= 0.5 + 0.5j
     max_c += 0.5 + 0.5j
     offset: complex = 0
@@ -82,14 +90,14 @@ def svg(
     box_x_pitch = box_width + pad
     box_y_pitch = box_height + pad
     if cols is None and rows is None:
-        cols = min(len(patches), math.ceil(math.sqrt(len(patches) * 2)))
-        rows = math.ceil(len(patches) / max(1, cols))
+        cols = min(len(objects), math.ceil(math.sqrt(len(objects) * 2)))
+        rows = math.ceil(len(objects) / max(1, cols))
     elif cols is None:
-        cols = math.ceil(len(patches) / max(1, rows))
+        cols = math.ceil(len(objects) / max(1, rows))
     elif rows is None:
-        rows = math.ceil(len(patches) / max(1, cols))
+        rows = math.ceil(len(objects) / max(1, cols))
     else:
-        assert cols * rows >= len(patches)
+        assert cols * rows >= len(objects)
     total_height = max(1.0, box_y_pitch * rows - pad + offset.imag)
     total_width = max(1.0, box_x_pitch * cols - pad + offset.real)
     scale_factor = canvas_height / max(total_height, 1)
@@ -132,7 +140,7 @@ def svg(
             )
 
     clip_path_id_ptr = [0]
-    for plan_i, plan in enumerate(patches):
+    for plan_i, plan in enumerate(objects):
         layers = [plan]
         if background is not None:
             if isinstance(background, (tuple, list)):
@@ -160,7 +168,7 @@ def svg(
 
     # Draw frame outlines
     if show_frames:
-        for outline_index in range(len(patches)):
+        for outline_index in range(len(objects)):
             a = patch_q2p(outline_index, min_c)
             a += offset
             b = patch_q2p(outline_index, max_c)

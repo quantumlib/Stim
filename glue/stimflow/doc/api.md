@@ -1,4 +1,4 @@
-# stimflow v0.1.0 API Reference
+# stimflow (Development Version) API Reference
 
 ## Index
 - [`stimflow.Chunk`](#stimflow.Chunk)
@@ -228,18 +228,18 @@
 - [`stimflow.find_d2_error`](#stimflow.find_d2_error)
 - [`stimflow.gate_counts_for_circuit`](#stimflow.gate_counts_for_circuit)
 - [`stimflow.gates_used_by_circuit`](#stimflow.gates_used_by_circuit)
+- [`stimflow.html_viewer`](#stimflow.html_viewer)
 - [`stimflow.html_viewer_for_gltf_model`](#stimflow.html_viewer_for_gltf_model)
 - [`stimflow.make_3d_model`](#stimflow.make_3d_model)
 - [`stimflow.min_max_complex`](#stimflow.min_max_complex)
 - [`stimflow.sorted_complex`](#stimflow.sorted_complex)
-- [`stimflow.stim_circuit_html_viewer`](#stimflow.stim_circuit_html_viewer)
 - [`stimflow.stim_circuit_with_transformed_coords`](#stimflow.stim_circuit_with_transformed_coords)
 - [`stimflow.stim_circuit_with_transformed_moments`](#stimflow.stim_circuit_with_transformed_moments)
 - [`stimflow.str_html`](#stimflow.str_html)
     - [`stimflow.str_html.write_to`](#stimflow.str_html.write_to)
 - [`stimflow.str_svg`](#stimflow.str_svg)
     - [`stimflow.str_svg.write_to`](#stimflow.str_svg.write_to)
-- [`stimflow.svg`](#stimflow.svg)
+- [`stimflow.svg_viewer`](#stimflow.svg_viewer)
 - [`stimflow.transpile_to_z_basis_interaction_circuit`](#stimflow.transpile_to_z_basis_interaction_circuit)
 - [`stimflow.transversal_code_transition_chunks`](#stimflow.transversal_code_transition_chunks)
 - [`stimflow.verify_distance_is_at_least`](#stimflow.verify_distance_is_at_least)
@@ -927,19 +927,29 @@ def add_flow(
 ) -> None:
     """Declares that the circuit being built should have a given stabilizer flow.
 
-    When chunks are concatenated, their flows are paired up in order to form detectors.
+    When chunks are concatenated, their flows are matched up in order to form detectors.
+    At most one of `start`, `end`, and `measurements` can be set to "auto" in order to
+    infer it.
 
     Args:
         start: Defaults to None (empty). The stabilizer that the flow starts as, at the
             beginning of the circuit. If the flow begins within the circuit, this should
-            be set to None or an empty PauliMap.
+            be set to None or an empty PauliMap. If this is set to "auto", it will be
+            inferred  by backpropagation from `end` and `measurements`.
         end: Defaults to None (empty). The stabilizer that the flow ends as, at the
             end of the circuit. If the flow ends within the circuit, this should
-            be set to None or an empty PauliMap.
+            be set to None or an empty PauliMap. If this is set to "auto", it will be
+            inferred by forward propagating from `start` and measurements` (no resets will
+            be included in the forward propagation).
         measurements: Defaults to empty. The keys identifying measurements mediate the flow.
             For example, if a stabilizer is measured by a circuit then this would
             typically be a singleton list containing the measurement that reveals
-            the stabilizer's value.
+            the stabilizer's value. If this is set to "auto", it will be inferred from
+            `start` and `end` by Gaussian elimination via `stim.Circuit.flow_generators`.
+
+            Caution: beware using "auto" when the solution isn't unique (e.g. this is
+            common if the circuit includes multiple rounds of stabilizer measurement), as
+            it may select a solution you don't expect.
         ignore_unknown_measurements: Defaults to False. When set to False, unrecognized measurement
             ids cause the method to raise an exception instead of adding the flow. When set
             to True, unrecognized measurements are silently discarded.
@@ -958,14 +968,60 @@ def add_flow(
     Examples:
         >>> import stimflow as sf
         >>> builder = sf.ChunkBuilder()
-        >>> builder.append('R', [0])
-        >>> builder.append('MX', [1j])
-        >>> builder.append('TICK')
-        >>> builder.append('CX', [(1j, 0)])
 
-        >>> builder.add_flow(end=sf.PauliMap.from_xs([0, 1j]), measurements=[1j])
-        >>> builder.add_flow(end=sf.PauliMap.from_zs([0, 1j]))
-        >>> builder.add_flow(start=sf.PauliMap.from_xs([1j]), measurements=[1j])
+        >>> # 0 ───────@─────────── 0
+        >>> #          │
+        >>> # 1 ───R───X───X───M─── 1
+        >>> #              │
+        >>> # 2 ───────────@─────── 2
+        >>> builder.append('R', [1])
+        >>> builder.append('TICK')
+        >>> builder.append('CX', [(0, 1)])
+        >>> builder.append('TICK')
+        >>> builder.append('CX', [(2, 1)])
+        >>> builder.append('TICK')
+        >>> builder.append('M', [1])
+
+        >>> # 0 z━━━━━━━@─────────── 0
+        >>> #           ┃
+        >>> # 1  ───R━━━X━━━X━━[M]── 1
+        >>> #               ┃
+        >>> # 2 z━━━━━━━━━━━@─────── 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'Z', 2: 'Z'}),
+        ...     measurements=[1],
+        ... )
+
+        >>> # 0 ───────@━━━━━━━━━━━z 0
+        >>> #          ┃
+        >>> # 1 ───R━━━X━━━X━━[M]──  1
+        >>> #              ┃
+        >>> # 2 ───────────@━━━━━━━z 2
+        >>> builder.add_flow(
+        ...     measurements=[1],
+        ...     end=sf.PauliMap({0: 'Z', 2: 'Z'}),
+        ... )
+
+        >>> # 0 x═══════@═══════════x 0
+        >>> #           ║
+        >>> # 1  ───R───X═══X───M───  1
+        >>> #               ║
+        >>> # 2 x═══════════@═══════x 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'X', 2: 'X'}),
+        ...     end=sf.PauliMap({0: 'X', 2: 'X'}),
+        ... )
+
+        >>> # 0 z━━━━━━━@───────────  0
+        >>> #           ┃
+        >>> # 1  ───R━━━X━━━X━━[M]──  1
+        >>> #               ┃
+        >>> # 2  ───────────@━━━━━━━z 2
+        >>> builder.add_flow(
+        ...     start=sf.PauliMap({0: 'Z'}),
+        ...     measurements=[1],
+        ...     end=sf.PauliMap({2: 'Z'}),
+        ... )
 
         >>> builder.finish_chunk().verify()
     """
@@ -1168,6 +1224,66 @@ def lookup_measurement_indices(
 # (at top-level in the stimflow module)
 class ChunkCompiler:
     """Compiles appended chunks into a unified circuit.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
@@ -1186,6 +1302,66 @@ def __init__(
     Args:
         metadata_func: Determines coordinate data appended to detectors
             (after x, y, and t). Defaults to None (no extra metadata).
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+        ''')
     """
 ```
 
@@ -3093,7 +3269,8 @@ def find_logical_error(
     self,
     *,
     max_search_weight: int,
-) -> list[stim.ExplainedError]:
+    return_stim_explained_error: bool = False,
+) -> PauliMap | list[stim.ExplainedError]:
 ```
 
 <a name="stimflow.StabilizerCode.flat_logicals"></a>
@@ -4010,6 +4187,40 @@ def gates_used_by_circuit(
     """
 ```
 
+<a name="stimflow.html_viewer"></a>
+```python
+# stimflow.html_viewer
+
+# (at top-level in the stimflow module)
+def html_viewer(
+    obj: stim.Circuit | Any,
+    *,
+    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | dict[int, stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface] | None = None,
+    tile_color_func: Callable[[stimflow.Tile], tuple[float, float, float, float] | tuple[float, float, float] | str] | None = None,
+    width: int = 500,
+    height: int = 500,
+    known_error: Iterable[stim.ExplainedError] | None = None,
+) -> str_html:
+    """Creates an HTML page for viewing the given object.
+
+    Args:
+        obj: The object to be visualized.
+        background: Something to draw in the background of the viewer (e.g. the
+            stimflow.StabilizerCode implemented by the circuit being viewed).
+        tile_color_func: Customizes how stabilizers and other operators are drawn.
+        width: The width of the viewer.
+        height: The height of the viewer.
+        known_error: An error (e.g. returned from stim.Circuit.shortest_graphlike_error)
+            to show as part of the object.
+
+    Returns:
+        The HTML string (as a stimflow.str_html, which inherits from python's `str`).
+
+        (The result is of type stimflow.str_html so that its viewer is shown automatically
+        in Jupyter notebooks, and also for convenience methods like `write_to`.)
+    """
+```
+
 <a name="stimflow.html_viewer_for_gltf_model"></a>
 ```python
 # stimflow.html_viewer_for_gltf_model
@@ -4155,22 +4366,6 @@ def sorted_complex(
     """
 ```
 
-<a name="stimflow.stim_circuit_html_viewer"></a>
-```python
-# stimflow.stim_circuit_html_viewer
-
-# (at top-level in the stimflow module)
-def stim_circuit_html_viewer(
-    circuit: stim.Circuit,
-    *,
-    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | dict[int, stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface] | None = None,
-    tile_color_func: Callable[[stimflow.Tile], tuple[float, float, float, float] | tuple[float, float, float] | str] | None = None,
-    width: int = 500,
-    height: int = 500,
-    known_error: Iterable[stim.ExplainedError] | None = None,
-) -> str_html:
-```
-
 <a name="stimflow.stim_circuit_with_transformed_coords"></a>
 ```python
 # stimflow.stim_circuit_with_transformed_coords
@@ -4304,15 +4499,15 @@ def write_to(
     """
 ```
 
-<a name="stimflow.svg"></a>
+<a name="stimflow.svg_viewer"></a>
 ```python
-# stimflow.svg
+# stimflow.svg_viewer
 
 # (at top-level in the stimflow module)
-def svg(
-    objects: Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit],
+def svg_viewer(
+    obj: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | Iterable[stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any],
     *,
-    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | None = None,
+    background: stimflow.Patch | stimflow.StabilizerCode | stimflow.ChunkInterface | stim.Circuit | PauliMap | Any | None = None,
     title: str | list[str] | None = None,
     canvas_height: int | None = None,
     show_order: bool = False,

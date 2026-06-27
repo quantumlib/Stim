@@ -269,7 +269,7 @@ class StabilizerCode:
 
     def z_basis_subset(self) -> StabilizerCode:
         return StabilizerCode(
-            stabilizers=self.stabilizers.with_only_x_tiles(),
+            stabilizers=self.stabilizers.with_only_z_tiles(),
             logicals=self.list_pure_basis_observables("Z"),
         )
 
@@ -355,19 +355,33 @@ class StabilizerCode:
                         f"\n    {loc2.gate_target.pauli_type} at {loc2.coords}"
                     )
 
+    def _min_max_complex_(self) -> tuple[complex, complex]:
+        return min_max_complex(self.used_set, default=0)
+
     def find_distance(self, *, max_search_weight: int) -> int:
         return len(self.find_logical_error(max_search_weight=max_search_weight))
 
-    def find_logical_error(self, *, max_search_weight: int) -> list[stim.ExplainedError]:
+    def find_logical_error(self, *, max_search_weight: int, return_stim_explained_error: bool = False) -> PauliMap | list[stim.ExplainedError]:
         circuit = self.make_code_capacity_circuit(noise=1e-3)
         if max_search_weight == 2:
-            return circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
-        return circuit.search_for_undetectable_logical_errors(
-            dont_explore_edges_with_degree_above=max_search_weight,
-            dont_explore_detection_event_sets_with_size_above=max_search_weight,
-            dont_explore_edges_increasing_symptom_degree=False,
-            canonicalize_circuit_errors=True,
-        )
+            result = circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
+        else:
+            result = circuit.search_for_undetectable_logical_errors(
+                dont_explore_edges_with_degree_above=max_search_weight,
+                dont_explore_detection_event_sets_with_size_above=max_search_weight,
+                dont_explore_edges_increasing_symptom_degree=False,
+                canonicalize_circuit_errors=True,
+            )
+        if return_stim_explained_error:
+            return result
+
+        pauli_map = {}
+        for err in result:
+            for loc in err.circuit_error_locations:
+                for term in loc.flipped_pauli_product:
+                    real, imag = term.coords
+                    pauli_map[real + 1j*imag] = term.gate_target.pauli_type
+        return PauliMap(pauli_map)
 
     def with_observables_from_basis(self, basis: Literal["X", "Y", "Z"]) -> StabilizerCode:
         if basis == "X":
@@ -459,7 +473,7 @@ class StabilizerCode:
                 t2 = tile2.to_pauli_map()
                 if not t1.commutes(t2):
                     raise ValueError(
-                        f"Tile stabilizer {t1=} anticommutes with tile stabilizer {t2=}."
+                        f"The following two stabilizers anticommute:\n    {t1}\n    {t2}\n\nMore details:\n\n{tile1!r}\n\n{tile2!r}"
                     )
 
         for tile in self.stabilizers.tiles:
@@ -538,10 +552,10 @@ class StabilizerCode:
         elif other is not None:
             flat.extend(other)
 
-        from stimflow._viz import svg
+        from stimflow._viz import svg_viewer
 
-        return svg(
-            objects=flat,
+        return svg_viewer(
+            flat,
             title=title,
             show_obs=show_obs,
             canvas_height=canvas_height,

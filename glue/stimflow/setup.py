@@ -19,7 +19,7 @@ with open('README.md', encoding='UTF-8') as f:
 with open('requirements.txt', encoding='UTF-8') as f:
     requirements = f.read().splitlines()
 
-__version__ = '1.16.dev0'
+__version__ = '1.17.dev0'
 
 setup(
     name='stimflow',
@@ -28,7 +28,7 @@ setup(
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
-    packages=['stimflow'],
+    packages=['stimflow', 'stimflow._chunk', 'stimflow._core', 'stimflow._layers', 'stimflow._viz'],
     package_dir={'': 'src'},
     description='A library for creating quantum error correction circuits.',
     long_description=long_description,

@@ -29,7 +29,7 @@ def _solve_auto_flow_starts(
         except ValueError:
             failure_out.append(flow)
             continue
-        start = PauliMap({i2q[q]: "_XYZ"[stim_start[q]] for q in stim_start.pauli_indices()})
+        start = PauliMap({i2q[q]: "_XYZ"[stim_start[q]] for q in stim_start.pauli_indices()}, obs_name=flow.end.obs_name)
         new_flows.append(flow.with_edits(start=start))
 
     return new_flows
@@ -43,7 +43,7 @@ def _solve_auto_flow_ends(
     failure_out: list[Flow],
 ) -> list[Flow]:
 
-    num_qubits = circuit.num_qubits
+    num_qubits = max(q2i.values(), default=-1) + 1
     i2q = {i: q for q, i in q2i.items()}
 
     new_flows = []
@@ -54,7 +54,7 @@ def _solve_auto_flow_ends(
         except ValueError:
             failure_out.append(flow)
             continue
-        end = PauliMap({i2q[q]: "_XYZ"[stim_end[q]] for q in stim_end.pauli_indices()})
+        end = PauliMap({i2q[q]: "_XYZ"[stim_end[q]] for q in stim_end.pauli_indices()}, obs_name=flow.start.obs_name)
         new_flows.append(flow.with_edits(end=end))
 
     return new_flows
