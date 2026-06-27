@@ -1,5 +1,5 @@
 #include "circuit_instruction.h"
-#include "circuit.h"
+#include <iostream>
 
 using namespace stim;
 
