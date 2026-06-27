@@ -74,11 +74,6 @@ struct Circuit {
     /// Move assignment.
     Circuit &operator=(Circuit &&circuit) noexcept;
 
-    Circuit operator+(const Circuit &other) const;
-    Circuit operator*(uint64_t repetitions) const;
-    Circuit &operator+=(const Circuit &other);
-    Circuit &operator*=(uint64_t repetitions);
-
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append(CircuitInstruction operation, bool block_fusion = false);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
