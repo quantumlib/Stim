@@ -10,14 +10,6 @@ uint64_t CircuitInstruction::repeat_block_rep_count() const {
     return low | (high << 32);
 }
 
-Circuit &CircuitInstruction::repeat_block_body(Circuit &host) const {
-    return *new Circuit();
-}
-
-const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const {
-    return *new Circuit();
-}
-
 uint64_t CircuitInstruction::count_measurement_results() const {
     uint64_t n = (uint64_t)targets.size();
     std::cerr << "counting start ... " << n << "\n";
