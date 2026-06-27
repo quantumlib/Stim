@@ -120,52 +120,6 @@ struct Circuit {
     /// Gets a python-style slice of the circuit's instructions.
     Circuit py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
 
-    /// Returns a noiseless version of the given circuit. The result must live for less time than the given circuit.
-    ///
-    /// CAUTION: for performance, the returned circuit contains pointers into the given circuit!
-    /// The result's lifetime must be shorter than the given circuit's lifetime!
-    const Circuit aliased_noiseless_circuit() const;
-
-    /// Returns a copy of the circuit with all noise processes removed.
-    Circuit without_noise() const;
-    /// Returns a copy of the circuit with all tags removed.
-    Circuit without_tags() const;
-
-    /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
-    Circuit flattened() const;
-
-    /// Returns a circuit that implements the inverse Clifford operation.
-    ///
-    /// Args:
-    ///     allow_weak_inverse: When this is set to true, the inverse of the circuit doesn't need
-    ///         to be exact. In particular, noise and measurement becomes self-inverse. Examples:
-    ///             - The weak inverse of MX is MX.
-    ///             - The weak inverse of MRX is MRX.
-    ///             - The weak inverse of RX is MRX.
-    ///             - The weak inverse of X_ERROR(0.1) is X_ERROR(0.1).
-    ///             - The weak inverse of DETECTOR is [discard the operation].
-    ///             - The weak inverse of OBSERVABLE_INCLUDE is [discard the operation].
-    ///
-    /// Returns:
-    ///     The inverted circuit.
-    Circuit inverse(bool allow_weak_inverse = false) const;
-
-    /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
-    template <typename CALLBACK>
-    void for_each_operation(const CALLBACK &callback) const {
-        for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
-                uint64_t repeats = op.repeat_block_rep_count();
-                const auto &block = op.repeat_block_body(*this);
-                for (uint64_t k = 0; k < repeats; k++) {
-                    block.for_each_operation(callback);
-                }
-            } else {
-                callback(op);
-            }
-        }
-    }
-
     /// Helper method for reverse-executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>
     void for_each_operation_reverse(const CALLBACK &callback) const {
