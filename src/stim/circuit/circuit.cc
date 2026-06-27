@@ -87,15 +87,11 @@ uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.count_measurement_results();
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_detectors() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::DETECTOR;
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_ticks() const {
@@ -112,13 +108,4 @@ uint64_t Circuit::count_observables() const {
 
 size_t Circuit::count_sweep_bits() const {
     return 0;
-}
-
-void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
-    while (target.size() < offset.size()) {
-        target.push_back(0);
-    }
-    for (size_t k = 0; k < offset.size(); k++) {
-        target[k] += offset[k] * mul;
-    }
 }
