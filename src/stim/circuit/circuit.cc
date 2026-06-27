@@ -98,17 +98,139 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
 }
 
 bool Circuit::operator==(const Circuit &other) const {
+    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
+            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
+                return false;
+            }
+            const auto &b1 = operations[k].repeat_block_body(*this);
+            const auto &b2 = other.operations[k].repeat_block_body(other);
+            if (b1 != b2) {
+                return false;
+            }
+        } else if (operations[k] != other.operations[k]) {
+            return false;
+        }
+    }
     return true;
 }
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
 }
 bool Circuit::approx_equals(const Circuit &other, double atol) const {
+    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
+            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
+                return false;
+            }
+            const auto &b1 = operations[k].repeat_block_body(*this);
+            const auto &b2 = other.operations[k].repeat_block_body(other);
+            if (!b1.approx_equals(b2, atol)) {
+                return false;
+            }
+        } else if (!operations[k].approx_equals(other.operations[k], atol)) {
+            return false;
+        }
+    }
     return true;
 }
 
 inline bool is_name_char(int c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+template <typename SOURCE>
+inline const Gate &read_gate_name(int &c, SOURCE read_char) {
+    char name_buf[32];
+    size_t n = 0;
+    while (is_name_char(c) && n < sizeof(name_buf)) {
+        name_buf[n] = (char)c;
+        c = read_char();
+        n++;
+    }
+    // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
+    try {
+        return GATE_DATA.at(std::string_view{&name_buf[0], n});
+    } catch (const std::out_of_range &ex) {
+        throw std::invalid_argument(ex.what());
+    }
+}
+
+template <typename SOURCE>
+uint64_t read_uint63_t(int &c, SOURCE read_char) {
+    if (!(c >= '0' && c <= '9')) {
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
+    }
+    uint64_t result = 0;
+    do {
+        result *= 10;
+        result += c - '0';
+        if (result >= uint64_t{1} << 63) {
+            throw std::invalid_argument("Number too large.");
+        }
+        c = read_char();
+    } while (c >= '0' && c <= '9');
+    return result;
+}
+
+template <typename SOURCE>
+inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
+    bool need_space = true;
+    while (read_until_next_line_arg(c, read_char, need_space)) {
+        GateTarget t = read_single_gate_target(c, read_char);
+        circuit.target_buf.append_tail(t);
+        need_space = !t.is_combiner();
+    }
+}
+
+template <typename SOURCE>
+inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
+    while (read_until_next_line_arg(c, read_char)) {
+        uint64_t q = read_uint63_t(c, read_char);
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q & 0xFFFFFFFFULL)});
+        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q >> 32)});
+    }
+}
+
+template <typename SOURCE>
+void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read_char) {
+    int c = (int)lead_char;
+    const auto &gate = read_gate_name(c, read_char);
+    std::string_view tail_tag;
+    try {
+        read_tag(c, gate.name, read_char, circuit.tag_buf);
+        if (!circuit.tag_buf.tail.empty()) {
+            tail_tag = std::string_view(circuit.tag_buf.tail.ptr_start, circuit.tag_buf.tail.size());
+        }
+
+        read_parens_arguments(c, gate.name, read_char, circuit.arg_buf);
+        if (gate.flags & GATE_IS_BLOCK) {
+            read_result_targets64_into(c, read_char, circuit);
+            if (c != '{') {
+                throw std::invalid_argument("Missing '{' at start of " + std::string(gate.name) + " block.");
+            }
+        } else {
+            read_arbitrary_targets_into(c, read_char, circuit);
+            if (c == '{') {
+                throw std::invalid_argument("Unexpected '{'.");
+            }
+            CircuitInstruction(gate.id, circuit.arg_buf.tail, circuit.target_buf.tail, tail_tag).validate();
+        }
+    } catch (const std::invalid_argument &ex) {
+        circuit.target_buf.discard_tail();
+        circuit.arg_buf.discard_tail();
+        throw ex;
+    }
+
+    circuit.tag_buf.commit_tail();
+    circuit.operations.push_back(
+        CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
 }
 
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
@@ -182,10 +304,44 @@ void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {
 }
 
 void Circuit::safe_insert(size_t index, const Circuit &circuit) {
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+
+    operations.insert(operations.begin() + index, circuit.operations.begin(), circuit.operations.end());
+
+    // Copy backing data over into this circuit.
+    for (size_t k = index; k < index + circuit.operations.size(); k++) {
+        if (operations[k].gate_type == GateType::REPEAT) {
+            blocks.push_back(operations[k].repeat_block_body(circuit));
+            auto repeat_count = operations[k].repeat_block_rep_count();
+            target_buf.append_tail(GateTarget{(uint32_t)(blocks.size() - 1)});
+            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+            operations[k].targets = target_buf.commit_tail();
+        } else {
+            operations[k].targets = target_buf.take_copy(operations[k].targets);
+            operations[k].args = arg_buf.take_copy(operations[k].args);
+            operations[k].tag = tag_buf.take_copy(operations[k].tag);
+        }
+    }
+
 }
 
 void Circuit::safe_insert_repeat_block(
     size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+    if (index > operations.size()) {
+        throw std::invalid_argument("index > operations.size()");
+    }
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(block);
+    auto targets = target_buf.commit_tail();
+    operations.insert(operations.begin() + index, CircuitInstruction(GateType::REPEAT, {}, targets, tag));
 }
 
 void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs) {
@@ -241,7 +397,26 @@ Circuit Circuit::operator+(const Circuit &other) const {
     return result;
 }
 Circuit Circuit::operator*(uint64_t repetitions) const {
+    if (repetitions == 0) {
+        return Circuit();
+    }
+    if (repetitions == 1) {
+        return *this;
+    }
+    // If the entire circuit is a repeat block, just adjust its repeat count.
+    if (operations.size() == 1 && operations[0].gate_type == GateType::REPEAT) {
+        uint64_t old_reps = operations[0].repeat_block_rep_count();
+        uint64_t new_reps = old_reps * repetitions;
+        if (old_reps != new_reps / repetitions) {
+            throw std::invalid_argument("Fused repetition count is too large.");
+        }
+        Circuit copy;
+        copy.append_repeat_block(new_reps, operations[0].repeat_block_body(*this), "");
+        return copy;
+    }
+
     Circuit result;
+    result.append_repeat_block(repetitions, *this, "");
     return result;
 }
 
@@ -406,5 +581,61 @@ void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> of
     }
     for (size_t k = 0; k < offset.size(); k++) {
         target[k] += offset[k] * mul;
+    }
+}
+
+void get_final_qubit_coords_helper(
+    const Circuit &circuit,
+    uint64_t repetitions,
+    std::vector<double> &out_coord_shift,
+    std::map<uint64_t, std::vector<double>> &out_qubit_coords) {
+    auto initial_shift = out_coord_shift;
+    std::map<uint64_t, std::vector<double>> new_qubit_coords;
+
+    for (const auto &op : circuit.operations) {
+        if (op.gate_type == GateType::REPEAT) {
+            const auto &block = circuit.blocks[op.targets[0].data];
+            uint64_t block_repeats = op.repeat_block_rep_count();
+            get_final_qubit_coords_helper(block, block_repeats, out_coord_shift, new_qubit_coords);
+        } else if (op.gate_type == GateType::SHIFT_COORDS) {
+            vec_pad_add_mul(out_coord_shift, op.args);
+        } else if (op.gate_type == GateType::QUBIT_COORDS) {
+            while (out_coord_shift.size() < op.args.size()) {
+                out_coord_shift.push_back(0);
+            }
+            for (const auto &t : op.targets) {
+                if (t.is_qubit_target()) {
+                    auto &vec = new_qubit_coords[t.qubit_value()];
+                    for (size_t k = 0; k < op.args.size(); k++) {
+                        vec.push_back(op.args[k] + out_coord_shift[k]);
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle additional iterations by computing the total coordinate shift instead of iterating instructions.
+    if (repetitions > 1 && out_coord_shift != initial_shift) {
+        // Determine how much each coordinate shifts in each iteration.
+        auto gain_per_iteration = out_coord_shift;
+        for (size_t k = 0; k < initial_shift.size(); k++) {
+            gain_per_iteration[k] -= initial_shift[k];
+        }
+
+        // Shift in-loop qubit coordinates forward to the last iteration's values.
+        for (auto &kv : new_qubit_coords) {
+            auto &qc = kv.second;
+            for (size_t k = 0; k < qc.size(); k++) {
+                qc[k] += gain_per_iteration[k] * (repetitions - 1);
+            }
+        }
+
+        // Advance the coordinate shifts to account for all iterations.
+        vec_pad_add_mul(out_coord_shift, gain_per_iteration, repetitions - 1);
+    }
+
+    // Output updated values.
+    for (const auto &kv : new_qubit_coords) {
+        out_qubit_coords[kv.first] = kv.second;
     }
 }
