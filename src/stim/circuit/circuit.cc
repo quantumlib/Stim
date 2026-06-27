@@ -25,15 +25,11 @@ uint64_t stim::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.count_measurement_results();
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_detectors() const {
-    return flat_count_operations([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::DETECTOR;
-    });
+    return 0;
 }
 
 uint64_t Circuit::count_ticks() const {
