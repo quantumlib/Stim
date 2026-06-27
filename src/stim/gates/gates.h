@@ -246,20 +246,6 @@ struct Gate {
     /// Bit-packed data describing details of the gate.
     GateFlags flags;
 
-    /// A word describing what sort of gate this is.
-    std::string_view category;
-    /// Prose summary of what the gate is, how it fits into Stim, and how to use it.
-    std::string_view help;
-    /// A unitary matrix describing the gate. (Size 0 if the gate is not unitary.)
-    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data;
-    /// A shorthand description of the stabilizer flows of the gate.
-    /// For single qubit Cliffords, this should be the output stabilizers for X then Z.
-    /// For 2 qubit Cliffords, this should be the output stabilizers for X_, Z_, _X, _Z.
-    /// For 2 qubit dissipative gates, this should be flows like "X_ -> XX xor rec[-1]".
-    FixedCapVector<const char *, 10> flow_data;
-    /// Stim circuit file contents of a decomposition into H+S+CX+M+R operations. (nullptr if not decomposable.)
-    const char *h_s_cx_m_r_decomposition;
-
     inline bool operator==(const Gate &other) const {
         return id == other.id;
     }
@@ -268,45 +254,6 @@ struct Gate {
     }
 
     const Gate &inverse() const;
-
-    template <size_t W>
-    Tableau<W> tableau() const {
-        if (!(flags & GateFlags::GATE_IS_UNITARY)) {
-            throw std::invalid_argument(std::string(name) + " isn't unitary so it doesn't have a tableau.");
-        }
-        const auto &d = flow_data;
-        if (flow_data.size() == 2) {
-            return Tableau<W>::gate1(d[0], d[1]);
-        }
-        if (flow_data.size() == 4) {
-            return Tableau<W>::gate2(d[0], d[1], d[2], d[3]);
-        }
-        throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
-    }
-
-    template <size_t W>
-    std::vector<Flow<W>> flows() const {
-        if (has_known_unitary_matrix()) {
-            auto t = tableau<W>();
-            if (flags & GateFlags::GATE_TARGETS_PAIRS) {
-                return {
-                    Flow<W>{stim::PauliString<W>::from_str("X_"), t.xs[0], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("Z_"), t.zs[0], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("_X"), t.xs[1], {}},
-                    Flow<W>{stim::PauliString<W>::from_str("_Z"), t.zs[1], {}},
-                };
-            }
-            return {
-                Flow<W>{stim::PauliString<W>::from_str("X"), t.xs[0], {}},
-                Flow<W>{stim::PauliString<W>::from_str("Z"), t.zs[0], {}},
-            };
-        }
-        std::vector<Flow<W>> out;
-        for (const auto &c : flow_data) {
-            out.push_back(Flow<W>::from_str(c));
-        }
-        return out;
-    }
 
     std::vector<std::vector<std::complex<float>>> unitary() const;
 
