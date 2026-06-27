@@ -119,58 +119,6 @@ struct Circuit {
 
     /// Gets a python-style slice of the circuit's instructions.
     Circuit py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
-
-    /// Helper method for reverse-executing the circuit, e.g. repeating REPEAT blocks.
-    template <typename CALLBACK>
-    void for_each_operation_reverse(const CALLBACK &callback) const {
-        for (size_t p = operations.size(); p-- > 0;) {
-            const auto &op = operations[p];
-            if (op.gate_type == GateType::REPEAT) {
-                uint64_t repeats = op.repeat_block_rep_count();
-                const auto &block = op.repeat_block_body(*this);
-                for (uint64_t k = 0; k < repeats; k++) {
-                    block.for_each_operation_reverse(callback);
-                }
-            } else {
-                callback(op);
-            }
-        }
-    }
-
-    /// Helper method for counting measurements, detectors, etc.
-    template <typename COUNT>
-    uint64_t flat_count_operations(const COUNT &count) const {
-        uint64_t n = 0;
-        for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
-                assert(op.targets.size() == 3);
-                auto b = op.targets[0].data;
-                assert(b < blocks.size());
-                auto sub = blocks[b].flat_count_operations<COUNT>(count);
-                n = add_saturate(n, mul_saturate(sub, op.repeat_block_rep_count()));
-            } else {
-                n = add_saturate(n, count(op));
-            }
-        }
-        return n;
-    }
-
-    /// Helper method for finding the largest observable, etc.
-    template <typename MAP>
-    uint64_t max_operation_property(const MAP &map) const {
-        uint64_t n = 0;
-        for (const auto &block : blocks) {
-            n = std::max(n, block.max_operation_property<MAP>(map));
-        }
-        for (const auto &op : operations) {
-            if (op.gate_type == GateType::REPEAT) {
-                // Handled in block case.
-                continue;
-            }
-            n = std::max(n, (uint64_t)map(op));
-        }
-        return n;
-    }
 };
 
 void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
