@@ -1,19 +1,3 @@
-/*
- * Copyright 2021 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #ifndef _STIM_CIRCUIT_CIRCUIT_H
 #define _STIM_CIRCUIT_CIRCUIT_H
 
@@ -88,17 +72,6 @@ struct Circuit {
         const std::vector<uint32_t> &targets,
         const std::vector<double> &args = {},
         std::string_view tag = "");
-    /// Safely copies a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag);
-    /// Safely moves a repeat block to the end of the circuit.
-    void append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag);
-
-    void safe_insert(size_t index, const CircuitInstruction &instruction);
-    void safe_insert_repeat_block(size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag);
-    void safe_insert(size_t index, const Circuit &circuit);
-
-    /// Appends the given gate, but with targets reversed.
-    void safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
