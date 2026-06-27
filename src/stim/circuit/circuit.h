@@ -41,10 +41,6 @@ struct Circuit {
     size_t count_sweep_bits() const;
 
     Circuit();
-    Circuit(const Circuit &circuit);
-    Circuit(Circuit &&circuit) noexcept;
-    Circuit &operator=(const Circuit &circuit);
-    Circuit &operator=(Circuit &&circuit) noexcept;
 
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
