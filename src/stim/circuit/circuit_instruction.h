@@ -28,7 +28,7 @@ struct Circuit;
 struct CircuitInstruction {
     /// The gate applied by the operation.
     uint32_t gate_type;
-    SpanRef<uint32_t> targets;
+    std::span<const uint32_t> targets;
 
     bool can_fuse(const CircuitInstruction &other) const;
     bool operator==(const CircuitInstruction &other) const;
