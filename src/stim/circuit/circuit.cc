@@ -98,139 +98,17 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
 }
 
 bool Circuit::operator==(const Circuit &other) const {
-    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < operations.size(); k++) {
-        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
-            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
-                return false;
-            }
-            const auto &b1 = operations[k].repeat_block_body(*this);
-            const auto &b2 = other.operations[k].repeat_block_body(other);
-            if (b1 != b2) {
-                return false;
-            }
-        } else if (operations[k] != other.operations[k]) {
-            return false;
-        }
-    }
     return true;
 }
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
 }
 bool Circuit::approx_equals(const Circuit &other, double atol) const {
-    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < operations.size(); k++) {
-        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
-            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
-                return false;
-            }
-            const auto &b1 = operations[k].repeat_block_body(*this);
-            const auto &b2 = other.operations[k].repeat_block_body(other);
-            if (!b1.approx_equals(b2, atol)) {
-                return false;
-            }
-        } else if (!operations[k].approx_equals(other.operations[k], atol)) {
-            return false;
-        }
-    }
     return true;
 }
 
 inline bool is_name_char(int c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
-}
-
-template <typename SOURCE>
-inline const Gate &read_gate_name(int &c, SOURCE read_char) {
-    char name_buf[32];
-    size_t n = 0;
-    while (is_name_char(c) && n < sizeof(name_buf)) {
-        name_buf[n] = (char)c;
-        c = read_char();
-        n++;
-    }
-    // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
-    try {
-        return GATE_DATA.at(std::string_view{&name_buf[0], n});
-    } catch (const std::out_of_range &ex) {
-        throw std::invalid_argument(ex.what());
-    }
-}
-
-template <typename SOURCE>
-uint64_t read_uint63_t(int &c, SOURCE read_char) {
-    if (!(c >= '0' && c <= '9')) {
-        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
-    }
-    uint64_t result = 0;
-    do {
-        result *= 10;
-        result += c - '0';
-        if (result >= uint64_t{1} << 63) {
-            throw std::invalid_argument("Number too large.");
-        }
-        c = read_char();
-    } while (c >= '0' && c <= '9');
-    return result;
-}
-
-template <typename SOURCE>
-inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    bool need_space = true;
-    while (read_until_next_line_arg(c, read_char, need_space)) {
-        GateTarget t = read_single_gate_target(c, read_char);
-        circuit.target_buf.append_tail(t);
-        need_space = !t.is_combiner();
-    }
-}
-
-template <typename SOURCE>
-inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
-        uint64_t q = read_uint63_t(c, read_char);
-        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q & 0xFFFFFFFFULL)});
-        circuit.target_buf.append_tail(GateTarget{(uint32_t)(q >> 32)});
-    }
-}
-
-template <typename SOURCE>
-void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read_char) {
-    int c = (int)lead_char;
-    const auto &gate = read_gate_name(c, read_char);
-    std::string_view tail_tag;
-    try {
-        read_tag(c, gate.name, read_char, circuit.tag_buf);
-        if (!circuit.tag_buf.tail.empty()) {
-            tail_tag = std::string_view(circuit.tag_buf.tail.ptr_start, circuit.tag_buf.tail.size());
-        }
-
-        read_parens_arguments(c, gate.name, read_char, circuit.arg_buf);
-        if (gate.flags & GATE_IS_BLOCK) {
-            read_result_targets64_into(c, read_char, circuit);
-            if (c != '{') {
-                throw std::invalid_argument("Missing '{' at start of " + std::string(gate.name) + " block.");
-            }
-        } else {
-            read_arbitrary_targets_into(c, read_char, circuit);
-            if (c == '{') {
-                throw std::invalid_argument("Unexpected '{'.");
-            }
-            CircuitInstruction(gate.id, circuit.arg_buf.tail, circuit.target_buf.tail, tail_tag).validate();
-        }
-    } catch (const std::invalid_argument &ex) {
-        circuit.target_buf.discard_tail();
-        circuit.arg_buf.discard_tail();
-        throw ex;
-    }
-
-    circuit.tag_buf.commit_tail();
-    circuit.operations.push_back(
-        CircuitInstruction(gate.id, circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail(), tail_tag));
 }
 
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
