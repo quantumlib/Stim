@@ -10,12 +10,12 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         "test",
         []() -> int {
             std::vector<GateTarget> targets{
-                GateTarget::x(0),
-                GateTarget::combiner(),
-                GateTarget::x(1),
-                GateTarget::y(0),
-                GateTarget::combiner(),
-                GateTarget::y(1),
+                GateTarget{0},
+                GateTarget{TARGET_COMBINER},
+                GateTarget{1},
+                GateTarget{2},
+                GateTarget{TARGET_COMBINER},
+                GateTarget{3},
             };
             CircuitInstruction inst{
                 GateType::MPP,

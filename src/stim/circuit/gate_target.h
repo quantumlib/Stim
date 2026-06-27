@@ -35,17 +35,7 @@ constexpr uint32_t TARGET_SWEEP_BIT = uint32_t{1} << 26;
 struct GateTarget {
     uint32_t data;
     int32_t value() const;
-
-    static GateTarget x(uint32_t qubit, bool inverted = false);
-    static GateTarget y(uint32_t qubit, bool inverted = false);
-    static GateTarget combiner();
-
-    GateTarget operator!() const;
     bool is_combiner() const;
-    uint32_t qubit_value() const;
-    bool operator==(const GateTarget &other) const;
-    bool operator!=(const GateTarget &other) const;
-    bool operator<(const GateTarget &other) const;
 };
 
 }  // namespace stim
