@@ -106,30 +106,6 @@ size_t Circuit::count_sweep_bits() const {
     return 0;
 }
 
-void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body, std::string_view tag) {
-    if (repeat_count == 0) {
-        throw std::invalid_argument("Can't repeat 0 times.");
-    }
-    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
-    blocks.push_back(std::move(body));
-    auto targets = target_buf.commit_tail();
-    operations.push_back(CircuitInstruction(GateType::REPEAT, {}, targets, tag_buf.take_copy(tag)));
-}
-
-void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body, std::string_view tag) {
-    if (repeat_count == 0) {
-        throw std::invalid_argument("Can't repeat 0 times.");
-    }
-    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
-    blocks.push_back(body);
-    auto targets = target_buf.commit_tail();
-    operations.push_back(CircuitInstruction(GateType::REPEAT, {}, targets, tag_buf.take_copy(tag)));
-}
-
 void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul) {
     while (target.size() < offset.size()) {
         target.push_back(0);
