@@ -27,8 +27,6 @@ struct Circuit {
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
-    uint64_t count_measurements() const;
-    uint64_t count_detectors() const;
     uint64_t count_observables() const;
     uint64_t count_ticks() const;
 
