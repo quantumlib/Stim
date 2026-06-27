@@ -12,7 +12,7 @@
 #include <vector>
 #include <cassert>
 
-#include "stim/circuit/circuit_instruction.h"
+#include "circuit_instruction.h"
 
 namespace stim {
 

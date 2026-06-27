@@ -1,4 +1,4 @@
-#include "stim/circuit/circuit.h"
+#include "circuit.h"
 
 #include <algorithm>
 #include <string>
