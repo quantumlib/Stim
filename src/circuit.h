@@ -25,28 +25,7 @@ struct Circuit {
     std::vector<CircuitInstruction> operations;
     std::vector<Circuit> blocks;
 
-    uint64_t count_measurements() const;
-    uint64_t count_detectors() const;
     uint64_t count_observables() const;
-    uint64_t count_ticks() const;
-
-    /// Helper method for counting measurements, detectors, etc.
-    template <typename COUNT>
-    uint64_t flat_count_operations(const COUNT &count) const {
-        uint64_t n = 0;
-        for (const auto &op : operations) {
-            if (op.gate_type == 8) {
-                assert(op.targets.size() == 3);
-                auto b = op.targets[0];
-                assert(b < blocks.size());
-                auto sub = blocks[b].flat_count_operations<COUNT>(count);
-                n = add_saturate(n, mul_saturate(sub, op.repeat_block_rep_count()));
-            } else {
-                n = add_saturate(n, count(op));
-            }
-        }
-        return n;
-    }
 
     /// Helper method for finding the largest observable, etc.
     template <typename MAP>
