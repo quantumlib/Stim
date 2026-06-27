@@ -108,15 +108,6 @@ struct Circuit {
     /// Resets the circuit back to an empty circuit.
     void clear();
 
-    /// Returns a text description of the circuit.
-    std::string str() const;
-    /// Equality.
-    bool operator==(const Circuit &other) const;
-    /// Inequality.
-    bool operator!=(const Circuit &other) const;
-    /// Approximate equality.
-    bool approx_equals(const Circuit &other, double atol) const;
-
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
     uint64_t flat_count_operations(const COUNT &count) const {

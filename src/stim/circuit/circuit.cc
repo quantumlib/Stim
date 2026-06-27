@@ -77,50 +77,6 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
     return *this;
 }
 
-bool Circuit::operator==(const Circuit &other) const {
-    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < operations.size(); k++) {
-        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
-            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
-                return false;
-            }
-            const auto &b1 = operations[k].repeat_block_body(*this);
-            const auto &b2 = other.operations[k].repeat_block_body(other);
-            if (b1 != b2) {
-                return false;
-            }
-        } else if (operations[k] != other.operations[k]) {
-            return false;
-        }
-    }
-    return true;
-}
-bool Circuit::operator!=(const Circuit &other) const {
-    return !(*this == other);
-}
-bool Circuit::approx_equals(const Circuit &other, double atol) const {
-    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < operations.size(); k++) {
-        if (operations[k].gate_type == GateType::REPEAT && other.operations[k].gate_type == GateType::REPEAT) {
-            if (operations[k].repeat_block_rep_count() != other.operations[k].repeat_block_rep_count()) {
-                return false;
-            }
-            const auto &b1 = operations[k].repeat_block_body(*this);
-            const auto &b2 = other.operations[k].repeat_block_body(other);
-            if (!b1.approx_equals(b2, atol)) {
-                return false;
-            }
-        } else if (!operations[k].approx_equals(other.operations[k], atol)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void Circuit::safe_append(CircuitInstruction operation, bool block_fusion) {
     auto flags = GATE_DATA[operation.gate_type].flags;
     if (flags & GATE_IS_BLOCK) {
