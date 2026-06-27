@@ -68,7 +68,7 @@ setup(
     package_dir={'stim': 'glue/python/src/stim'},
     package_data={'': [*HEADER_FILES, 'pyproject.toml']},
     include_package_data=True,
-    install_requires=['numpy'],
+    install_requires=[],
     entry_points={
         'console_scripts': ['stim=stim._main_argv:main_argv'],
     },

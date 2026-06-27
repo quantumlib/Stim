@@ -1,12 +1,9 @@
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 
-#include "stim/py/base.pybind.h"
-#include "stim/py/numpy.pybind.h"
 #include "stim/circuit/circuit.h"
 
 using namespace stim;
-using namespace stim_pybind;
 
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def(

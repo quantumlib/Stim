@@ -105,7 +105,7 @@ cc_binary(
 py_wheel(
     name = "stim_dev_wheel",
     distribution = "stim",
-    requires = ["numpy"],
+    requires = [],
     version = "0.0.dev0",
     deps = [
         ":stim.so",
