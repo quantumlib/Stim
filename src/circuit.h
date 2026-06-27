@@ -1,17 +1,8 @@
 #ifndef _STIM_CIRCUIT_CIRCUIT_H
 #define _STIM_CIRCUIT_CIRCUIT_H
 
-#include <cmath>
-#include <cstdint>
-#include <cstring>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <set>
-#include <unordered_map>
-#include <vector>
-#include <cassert>
 
+#include <vector>
 #include "circuit_instruction.h"
 
 namespace stim {
