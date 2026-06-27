@@ -9,13 +9,13 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def(
         "test",
         []() -> int {
-            std::vector<GateTarget> targets{
-                GateTarget{0},
-                GateTarget{TARGET_COMBINER},
-                GateTarget{1},
-                GateTarget{2},
-                GateTarget{TARGET_COMBINER},
-                GateTarget{3},
+            std::vector<uint32_t> targets{
+                0,
+                27,
+                1,
+                2,
+                27,
+                3,
             };
             CircuitInstruction inst{
                 GateType::MPP,

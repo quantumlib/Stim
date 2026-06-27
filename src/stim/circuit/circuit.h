@@ -39,7 +39,7 @@ struct Circuit {
         for (const auto &op : operations) {
             if (op.gate_type == GateType::REPEAT) {
                 assert(op.targets.size() == 3);
-                auto b = op.targets[0].data;
+                auto b = op.targets[0];
                 assert(b < blocks.size());
                 auto sub = blocks[b].flat_count_operations<COUNT>(count);
                 n = add_saturate(n, mul_saturate(sub, op.repeat_block_rep_count()));

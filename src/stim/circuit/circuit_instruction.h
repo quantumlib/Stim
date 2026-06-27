@@ -29,7 +29,7 @@ struct Circuit;
 struct CircuitInstruction {
     /// The gate applied by the operation.
     GateType gate_type;
-    SpanRef<const GateTarget> targets;
+    SpanRef<uint32_t> targets;
 
     bool can_fuse(const CircuitInstruction &other) const;
     bool operator==(const CircuitInstruction &other) const;
