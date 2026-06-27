@@ -113,9 +113,9 @@ struct Circuit {
                 auto b = op.targets[0].data;
                 assert(b < blocks.size());
                 auto sub = blocks[b].flat_count_operations<COUNT>(count);
-                n = add_saturate(n, mul_saturate(sub, op.repeat_block_rep_count()));
+                n += sub * op.repeat_block_rep_count();
             } else {
-                n = add_saturate(n, count(op));
+                n += count(op);
             }
         }
         return n;
