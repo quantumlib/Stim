@@ -717,14 +717,6 @@ size_t Circuit::count_sweep_bits() const {
     });
 }
 
-CircuitStats Circuit::compute_stats() const {
-    CircuitStats total;
-    for (const auto &op : operations) {
-        op.add_stats_to(total, this);
-    }
-    return total;
-}
-
 Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
     assert(slice_length >= 0);
     assert(slice_length == 0 || start >= 0);

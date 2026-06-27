@@ -63,8 +63,6 @@ struct Circuit {
     // Returns one more than the largest `k` from any `sweep[k]` target.
     size_t count_sweep_bits() const;
 
-    CircuitStats compute_stats() const;
-
     /// Constructs an empty circuit.
     Circuit();
     /// Copy constructor.
