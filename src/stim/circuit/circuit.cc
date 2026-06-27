@@ -182,44 +182,10 @@ void Circuit::safe_insert(size_t index, const CircuitInstruction &instruction) {
 }
 
 void Circuit::safe_insert(size_t index, const Circuit &circuit) {
-    if (index > operations.size()) {
-        throw std::invalid_argument("index > operations.size()");
-    }
-
-    operations.insert(operations.begin() + index, circuit.operations.begin(), circuit.operations.end());
-
-    // Copy backing data over into this circuit.
-    for (size_t k = index; k < index + circuit.operations.size(); k++) {
-        if (operations[k].gate_type == GateType::REPEAT) {
-            blocks.push_back(operations[k].repeat_block_body(circuit));
-            auto repeat_count = operations[k].repeat_block_rep_count();
-            target_buf.append_tail(GateTarget{(uint32_t)(blocks.size() - 1)});
-            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
-            target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
-            operations[k].targets = target_buf.commit_tail();
-        } else {
-            operations[k].targets = target_buf.take_copy(operations[k].targets);
-            operations[k].args = arg_buf.take_copy(operations[k].args);
-            operations[k].tag = tag_buf.take_copy(operations[k].tag);
-        }
-    }
-
 }
 
 void Circuit::safe_insert_repeat_block(
     size_t index, uint64_t repeat_count, const Circuit &block, std::string_view tag) {
-    if (repeat_count == 0) {
-        throw std::invalid_argument("Can't repeat 0 times.");
-    }
-    if (index > operations.size()) {
-        throw std::invalid_argument("index > operations.size()");
-    }
-    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
-    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
-    blocks.push_back(block);
-    auto targets = target_buf.commit_tail();
-    operations.insert(operations.begin() + index, CircuitInstruction(GateType::REPEAT, {}, targets, tag));
 }
 
 void Circuit::safe_append_reversed_targets(CircuitInstruction instruction, bool reverse_in_pairs) {
@@ -275,26 +241,7 @@ Circuit Circuit::operator+(const Circuit &other) const {
     return result;
 }
 Circuit Circuit::operator*(uint64_t repetitions) const {
-    if (repetitions == 0) {
-        return Circuit();
-    }
-    if (repetitions == 1) {
-        return *this;
-    }
-    // If the entire circuit is a repeat block, just adjust its repeat count.
-    if (operations.size() == 1 && operations[0].gate_type == GateType::REPEAT) {
-        uint64_t old_reps = operations[0].repeat_block_rep_count();
-        uint64_t new_reps = old_reps * repetitions;
-        if (old_reps != new_reps / repetitions) {
-            throw std::invalid_argument("Fused repetition count is too large.");
-        }
-        Circuit copy;
-        copy.append_repeat_block(new_reps, operations[0].repeat_block_body(*this), "");
-        return copy;
-    }
-
     Circuit result;
-    result.append_repeat_block(repetitions, *this, "");
     return result;
 }
 
@@ -459,61 +406,5 @@ void stim::vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> of
     }
     for (size_t k = 0; k < offset.size(); k++) {
         target[k] += offset[k] * mul;
-    }
-}
-
-void get_final_qubit_coords_helper(
-    const Circuit &circuit,
-    uint64_t repetitions,
-    std::vector<double> &out_coord_shift,
-    std::map<uint64_t, std::vector<double>> &out_qubit_coords) {
-    auto initial_shift = out_coord_shift;
-    std::map<uint64_t, std::vector<double>> new_qubit_coords;
-
-    for (const auto &op : circuit.operations) {
-        if (op.gate_type == GateType::REPEAT) {
-            const auto &block = circuit.blocks[op.targets[0].data];
-            uint64_t block_repeats = op.repeat_block_rep_count();
-            get_final_qubit_coords_helper(block, block_repeats, out_coord_shift, new_qubit_coords);
-        } else if (op.gate_type == GateType::SHIFT_COORDS) {
-            vec_pad_add_mul(out_coord_shift, op.args);
-        } else if (op.gate_type == GateType::QUBIT_COORDS) {
-            while (out_coord_shift.size() < op.args.size()) {
-                out_coord_shift.push_back(0);
-            }
-            for (const auto &t : op.targets) {
-                if (t.is_qubit_target()) {
-                    auto &vec = new_qubit_coords[t.qubit_value()];
-                    for (size_t k = 0; k < op.args.size(); k++) {
-                        vec.push_back(op.args[k] + out_coord_shift[k]);
-                    }
-                }
-            }
-        }
-    }
-
-    // Handle additional iterations by computing the total coordinate shift instead of iterating instructions.
-    if (repetitions > 1 && out_coord_shift != initial_shift) {
-        // Determine how much each coordinate shifts in each iteration.
-        auto gain_per_iteration = out_coord_shift;
-        for (size_t k = 0; k < initial_shift.size(); k++) {
-            gain_per_iteration[k] -= initial_shift[k];
-        }
-
-        // Shift in-loop qubit coordinates forward to the last iteration's values.
-        for (auto &kv : new_qubit_coords) {
-            auto &qc = kv.second;
-            for (size_t k = 0; k < qc.size(); k++) {
-                qc[k] += gain_per_iteration[k] * (repetitions - 1);
-            }
-        }
-
-        // Advance the coordinate shifts to account for all iterations.
-        vec_pad_add_mul(out_coord_shift, gain_per_iteration, repetitions - 1);
-    }
-
-    // Output updated values.
-    for (const auto &kv : new_qubit_coords) {
-        out_qubit_coords[kv.first] = kv.second;
     }
 }
