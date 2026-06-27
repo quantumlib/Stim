@@ -44,6 +44,6 @@ uint64_t Circuit::count_ticks() const {
 
 uint64_t Circuit::count_observables() const {
     return max_operation_property([=](const CircuitInstruction &op) -> uint64_t {
-        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? (size_t)op.args[0] + 1 : 0;
+        return op.gate_type == GateType::OBSERVABLE_INCLUDE ? 2 : 0;
     });
 }

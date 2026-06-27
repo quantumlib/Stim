@@ -29,14 +29,8 @@ struct Circuit;
 struct CircuitInstruction {
     /// The gate applied by the operation.
     GateType gate_type;
-
-    SpanRef<const double> args;
     SpanRef<const GateTarget> targets;
-    std::string_view tag;
 
-    CircuitInstruction() = delete;
-    CircuitInstruction(
-        GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag);
     bool can_fuse(const CircuitInstruction &other) const;
     bool operator==(const CircuitInstruction &other) const;
     bool operator!=(const CircuitInstruction &other) const;

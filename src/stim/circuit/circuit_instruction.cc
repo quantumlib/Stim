@@ -41,14 +41,6 @@ const Circuit &CircuitInstruction::repeat_block_body(const Circuit &host) const 
     return host.blocks[b];
 }
 
-CircuitInstruction::CircuitInstruction(
-    GateType gate_type, SpanRef<const double> args, SpanRef<const GateTarget> targets, std::string_view tag)
-    : gate_type(gate_type), args(args), targets(targets), tag(tag) {
-}
-
-void CircuitInstruction::validate() const {
-}
-
 uint64_t CircuitInstruction::count_measurement_results() const {
     uint64_t n = (uint64_t)targets.size();
     std::cerr << "counting start ... " << n << "\n";
@@ -59,29 +51,4 @@ uint64_t CircuitInstruction::count_measurement_results() const {
     }
     std::cerr << "count final " << n << "\n";
     return n;
-}
-
-bool CircuitInstruction::can_fuse(const CircuitInstruction &other) const {
-    auto flags = GATE_DATA[gate_type].flags;
-    return gate_type == other.gate_type && args == other.args && !(flags & GATE_IS_NOT_FUSABLE) && tag == other.tag;
-}
-
-bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate_type == other.gate_type && args == other.args && targets == other.targets && tag == other.tag;
-}
-bool CircuitInstruction::approx_equals(const CircuitInstruction &other, double atol) const {
-    if (gate_type != other.gate_type || targets != other.targets || args.size() != other.args.size() ||
-        tag != other.tag) {
-        return false;
-    }
-    for (size_t k = 0; k < args.size(); k++) {
-        if (fabs(args[k] - other.args[k]) > atol) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
-    return !(*this == other);
 }

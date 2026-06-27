@@ -19,9 +19,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
             };
             CircuitInstruction inst{
                 GateType::MPP,
-                {},
                 targets,
-                "",
             };
 
             size_t num_measure = inst.count_measurement_results();
