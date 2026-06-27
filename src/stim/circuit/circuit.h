@@ -41,6 +41,10 @@ struct Circuit {
     size_t count_sweep_bits() const;
 
     Circuit();
+    Circuit(const Circuit &circuit);
+    Circuit(Circuit &&circuit) noexcept;
+    Circuit &operator=(const Circuit &circuit);
+    Circuit &operator=(Circuit &&circuit) noexcept;
 
     /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
@@ -59,7 +63,26 @@ struct Circuit {
         }
         return n;
     }
+
+    /// Helper method for finding the largest observable, etc.
+    template <typename MAP>
+    uint64_t max_operation_property(const MAP &map) const {
+        uint64_t n = 0;
+        for (const auto &block : blocks) {
+            n = std::max(n, block.max_operation_property<MAP>(map));
+        }
+        for (const auto &op : operations) {
+            if (op.gate_type == GateType::REPEAT) {
+                // Handled in block case.
+                continue;
+            }
+            n = std::max(n, (uint64_t)map(op));
+        }
+        return n;
+    }
 };
+
+void vec_pad_add_mul(std::vector<double> &target, SpanRef<const double> offset, uint64_t mul = 1);
 
 }  // namespace stim
 
