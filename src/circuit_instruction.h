@@ -24,8 +24,6 @@
 
 namespace stim {
 
-struct Circuit;
-
 struct CircuitInstruction {
     /// The gate applied by the operation.
     uint32_t gate_type;
@@ -39,8 +37,6 @@ struct CircuitInstruction {
     uint64_t count_measurement_results() const;
 
     uint64_t repeat_block_rep_count() const;
-    Circuit &repeat_block_body(Circuit &host) const;
-    const Circuit &repeat_block_body(const Circuit &host) const;
 
     /// Verifies complex invariants that circuit instructions are supposed to follow.
     ///
