@@ -89,6 +89,7 @@ def main():
         type=str,
         help="Objects that don't need an 'examples:' section in their documentation.")
     args = parser.parse_args()
+    suppressed = args.suppress_examples_warning_for
 
     globs = {
         k: __import__(k) for k in getattr(args, 'import')
@@ -105,7 +106,7 @@ def main():
             if '\n' in v.strip() and 'examples:' not in v and 'example:' not in v and '[deprecated]' not in v:
                 if k.split('.')[-1] not in ['__format__', '__next__', '__iter__', '__init_subclass__', '__module__', '__eq__', '__ne__', '__str__', '__repr__']:
                     if all(not (e.startswith('_') and not e.startswith('__')) for e in k.split('.')):
-                        if all(not k.startswith(prefix) for prefix in args.suppress_examples_warning_for):
+                        if all(not k.startswith(prefix) for prefix in suppressed):
                             print(f"    Warning: Missing 'examples:' section in docstring of {k!r}", file=sys.stderr)
 
         module.__test__ = {k: v for k, v in out.items()}

@@ -186,7 +186,7 @@ class Chunk:
             else:
                 new_flows.append(flow)
         for out, inputs in other.out2in.items():
-            acc = None
+            acc: Flow | None = None
             used_outputs.update(inputs)
             for inp in inputs:
                 if inp in old_discarded_outputs:
@@ -316,7 +316,10 @@ class Chunk:
         lines.append(f"    q2i={self.q2i!r},")
         lines.append(f"    circuit={self.circuit!r},".replace("\n", "\n    "))
         if self.flows:
-            lines.append(f"    flows={self.flows!r},")
+            lines.append(f"    flows=[")
+            for flow in self.flows:
+                lines.append(f"        {flow!r},".replace('\n', '\n        '))
+            lines.append("    ],")
         if self.discarded_inputs:
             lines.append(f"    discarded_inputs={self.discarded_inputs!r},")
         if self.discarded_outputs:
@@ -324,7 +327,7 @@ class Chunk:
         if self.wants_to_merge_with_prev:
             lines.append(f"    wants_to_merge_with_prev={self.wants_to_merge_with_prev!r},")
         if self.wants_to_merge_with_next:
-            lines.append(f"    discarded_outputs={self.wants_to_merge_with_next!r},")
+            lines.append(f"    wants_to_merge_with_next={self.wants_to_merge_with_next!r},")
         lines.append(")")
         return "\n".join(lines)
 

@@ -81,12 +81,22 @@ class ChunkCompiler:
         ''')
     """
 
-    def __init__(self, *, metadata_func: Callable[[Flow], FlowMetadata] | None = None):
+    def __init__(
+            self,
+            *,
+            metadata_func: Callable[[Flow], FlowMetadata] | None = None,
+            skip_verification_before_append: bool = False,
+    ):
         """
 
         Args:
             metadata_func: Determines coordinate data appended to detectors
                 (after x, y, and t). Defaults to None (no extra metadata).
+            skip_verification_before_append: Defaults to False. When False, the
+                `verify` method if chunks (or other objects being appended) are
+                verified before being appended. When True, this verification step
+                is skipped. Setting to True will improve performance at the cost
+                of safety.
 
         Examples:
             >>> import stim
@@ -159,6 +169,7 @@ class ChunkCompiler:
         self.discarded_observables: set[int] = set()
         self.metadata_func: Callable[[Flow], FlowMetadata] = cast(Any, metadata_func)
         self.prev_chunk_wants_to_merge_with_next: bool = False
+        self.skip_verification_before_append: bool = skip_verification_before_append
 
     def ensure_qubits_included(self, qubits: Iterable[complex]):
         """Adds the given qubit positions to the indexed positions, if they aren't already."""
@@ -213,7 +224,8 @@ class ChunkCompiler:
         from stimflow._viz import html_viewer
 
         return html_viewer(
-            circuit=copy.finish_circuit(), background=self.cur_end_interface()
+            copy.finish_circuit(),
+            background=self.cur_end_interface()
         )
 
     def finish_circuit(self) -> stim.Circuit:
@@ -372,8 +384,18 @@ class ChunkCompiler:
 
         The input flows of the appended chunk must exactly match the open outgoing flows of the
         circuit so far.
+
+        Args:
+            appended: The object to append to the circuit.
+
+                Unless `skip_verification_before_append=True` was specified when constructing the
+                compiler, the `verify` method of this object will be called in order to ensure it
+                is well form. If verification is skipped and the object is not well-formed, the
+                compiler may output an invalid Stim circuit (e.g. with non-deterministic detectors).
         """
         __tracebackhide__ = True
+        if not self.skip_verification_before_append:
+            appended.verify()
 
         if self.waiting_for_magic_init:
             self.append_magic_init_chunk(appended.start_interface())

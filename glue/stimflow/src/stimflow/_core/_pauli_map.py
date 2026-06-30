@@ -132,19 +132,19 @@ class PauliMap:
             out_lines.append(f'''<text x="{pt.real}" y="{pt.imag}" dominant-baseline="central" text-anchor="middle" font-size="{scale}">{p}</text>''')
 
     @staticmethod
-    def from_xs(xs: Iterable[complex], *, name: Any = None) -> PauliMap:
+    def from_xs(xs: Iterable[complex], *, obs_name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the X basis."""
-        return PauliMap({"X": xs}, obs_name=name)
+        return PauliMap({"X": xs}, obs_name=obs_name)
 
     @staticmethod
-    def from_ys(ys: Iterable[complex], *, name: Any = None) -> PauliMap:
+    def from_ys(ys: Iterable[complex], *, obs_name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the Y basis."""
-        return PauliMap({"Y": ys}, obs_name=name)
+        return PauliMap({"Y": ys}, obs_name=obs_name)
 
     @staticmethod
-    def from_zs(zs: Iterable[complex], *, name: Any = None) -> PauliMap:
+    def from_zs(zs: Iterable[complex], *, obs_name: Any = None) -> PauliMap:
         """Returns a PauliMap mapping the given qubits to the Z basis."""
-        return PauliMap({"Z": zs}, obs_name=name)
+        return PauliMap({"Z": zs}, obs_name=obs_name)
 
     def __contains__(self, item: complex) -> bool:
         """Determines if the PauliMap maps the given qubit to a non-identity Pauli."""
@@ -224,6 +224,8 @@ class PauliMap:
             p = set(self.values())
             if p == {'X'}:
                 return f"stimflow.PauliMap.from_xs({qs!r}{s2})"
+            if p == {'Y'}:
+                return f"stimflow.PauliMap.from_ys({qs!r}{s2})"
             if p == {'Z'}:
                 return f"stimflow.PauliMap.from_zs({qs!r}{s2})"
         s = {q: self._dict[q] for q in qs}
