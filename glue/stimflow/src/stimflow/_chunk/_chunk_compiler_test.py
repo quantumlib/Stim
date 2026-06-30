@@ -149,14 +149,14 @@ def test_chunk_compiler_loop():
         stimflow.Chunk(
             circuit=stim.Circuit(
                 """
-            QUBIT_COORDS(0, 0) 0
-            QUBIT_COORDS(0, 1) 1
-            QUBIT_COORDS(0, 2) 2
-            QUBIT_COORDS(0, 3) 3
-            R 0 1 2 3
-        """
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(0, 2) 2
+                QUBIT_COORDS(0, 3) 3
+                R 0 1 2 3
+                """
             ),
-            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([k]), center=0) for k in range(4)],
+            flows=[stimflow.Flow(end=stimflow.PauliMap.from_zs([k*1j]), center=0) for k in range(4)],
         )
     )
     compiler.append(
@@ -165,27 +165,27 @@ def test_chunk_compiler_loop():
                 stimflow.Chunk(
                     circuit=stim.Circuit(
                         """
-                    QUBIT_COORDS(0, 0) 0
-                    QUBIT_COORDS(0, 1) 1
-                    QUBIT_COORDS(0, 2) 2
-                    QUBIT_COORDS(0, 3) 3
-                    SWAP 0 1
-                    SWAP 1 2
-                    SWAP 2 3
-                    M 3
-                """
+                        QUBIT_COORDS(0, 0) 0
+                        QUBIT_COORDS(0, 1) 1
+                        QUBIT_COORDS(0, 2) 2
+                        QUBIT_COORDS(0, 3) 3
+                        SWAP 0 1
+                        SWAP 1 2
+                        SWAP 2 3
+                        M 3
+                        """
                     ),
                     flows=[
                         stimflow.Flow(start=stimflow.PauliMap.from_zs([0]), measurement_indices=[0], center=0),
-                        stimflow.Flow(end=stimflow.PauliMap.from_zs([3]), measurement_indices=[0], center=0),
+                        stimflow.Flow(end=stimflow.PauliMap.from_zs([3j]), measurement_indices=[0], center=0),
                         stimflow.Flow(
-                            start=stimflow.PauliMap.from_zs([1]), end=stimflow.PauliMap.from_zs([0]), center=0
+                            start=stimflow.PauliMap.from_zs([1j]), end=stimflow.PauliMap.from_zs([0]), center=0
                         ),
                         stimflow.Flow(
-                            start=stimflow.PauliMap.from_zs([2]), end=stimflow.PauliMap.from_zs([1]), center=0
+                            start=stimflow.PauliMap.from_zs([2j]), end=stimflow.PauliMap.from_zs([1j]), center=0
                         ),
                         stimflow.Flow(
-                            start=stimflow.PauliMap.from_zs([3]), end=stimflow.PauliMap.from_zs([2]), center=0
+                            start=stimflow.PauliMap.from_zs([3j]), end=stimflow.PauliMap.from_zs([2j]), center=0
                         ),
                     ],
                 )
@@ -197,14 +197,14 @@ def test_chunk_compiler_loop():
         stimflow.Chunk(
             circuit=stim.Circuit(
                 """
-            QUBIT_COORDS(0, 0) 0
-            QUBIT_COORDS(0, 1) 1
-            QUBIT_COORDS(0, 2) 2
-            QUBIT_COORDS(0, 3) 3
-            M 0 1 2 3
-        """
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(0, 2) 2
+                QUBIT_COORDS(0, 3) 3
+                M 0 1 2 3
+                """
             ),
-            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([k]), measurement_indices=[k], center=0) for k in range(4)],
+            flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([k*1j]), measurement_indices=[k], center=0) for k in range(4)],
         )
     )
     assert compiler.finish_circuit() == stim.Circuit(
@@ -449,7 +449,7 @@ def test_chunk_compiler_propagate_discards():
         stimflow.Chunk(
             stim.Circuit(
                 """
-                    MZZ 0 1
+                MZZ 0 1
                 """
             ),
             q2i={0: 0, 1: 1},
@@ -464,14 +464,15 @@ def test_chunk_compiler_propagate_discards():
         stimflow.Chunk(
             stim.Circuit(
                 """
-                    MX 0 1
+                MX 0 1
                 """
             ),
             q2i={0: 0, 1: 1},
             discarded_inputs=[zz],
-            flows=[stimflow.Flow(start=xx, center=0, measurement_indices=[0])],
+            flows=[stimflow.Flow(start=xx, center=0, measurement_indices=[0, 1])],
         )
     )
+    print(c.finish_circuit())
     assert c.finish_circuit() == stim.Circuit(
         """
         QUBIT_COORDS(0, 0) 0
@@ -483,7 +484,7 @@ def test_chunk_compiler_propagate_discards():
         SHIFT_COORDS(0, 0, 1)
         TICK
         MX 0 1
-    """
+        """
     )
 
 
@@ -675,10 +676,11 @@ def test_merges_with_loop():
         stimflow.Chunk(
             circuit=stim.Circuit(
                 """
-            QUBIT_COORDS(0, 1) 0
-            R 0
-            M 0
-        """
+                QUBIT_COORDS(0, 0) 1
+                QUBIT_COORDS(0, 1) 0
+                R 0
+                M 0
+                """
             ),
             flows=[
                 stimflow.Flow(start=stimflow.PauliMap.from_zs([0]), end=stimflow.PauliMap.from_zs([0])),
