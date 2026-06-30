@@ -391,7 +391,7 @@ class ChunkBuilder:
         end: PauliMap | Tile | Literal["auto"] | None = None,
         measurements: Iterable[Any] | Literal["auto"] = (),
         ignore_unknown_measurements: bool = False,
-        center: complex | None = None,
+        center: complex | None | Literal['infer'] = 'infer',
         flags: Iterable[str] = frozenset(),
         sign: bool | None = None,
     ) -> None:

@@ -110,8 +110,16 @@ class Chunk:
             ... )
             >>> chunk.verify()
         """
+        flows = tuple(flows)
         if q2i is None:
             q2i = {x + 1j * y: i for i, (x, y) in circuit.get_final_qubit_coordinates().items()}
+            for flow in flows:
+                for pauli_string in flow.start, flow.end:
+                    for q in pauli_string.keys():
+                        if q not in q2i:
+                            raise ValueError(
+                                f"The given flows use the qubit position {q}, but the given circuit doesn't include a QUBIT_COORDS for this position.\n"
+                                f"    Affected flow: {flow}")
             if len(q2i) != circuit.num_qubits:
                 raise ValueError(
                     "The given circuit doesn't have enough `QUBIT_COORDS` instructions to "
@@ -119,7 +127,6 @@ class Chunk:
                     "specify it by passing a `q2i={...}` argument, or add the missing "
                     "`QUBIT_COORDS`."
                 )
-        flows = tuple(flows)
         if o2i is None:
             if circuit.num_observables:
                 raise ValueError(
@@ -186,7 +193,7 @@ class Chunk:
             else:
                 new_flows.append(flow)
         for out, inputs in other.out2in.items():
-            acc = None
+            acc: Flow | None = None
             used_outputs.update(inputs)
             for inp in inputs:
                 if inp in old_discarded_outputs:
@@ -316,7 +323,10 @@ class Chunk:
         lines.append(f"    q2i={self.q2i!r},")
         lines.append(f"    circuit={self.circuit!r},".replace("\n", "\n    "))
         if self.flows:
-            lines.append(f"    flows={self.flows!r},")
+            lines.append(f"    flows=[")
+            for flow in self.flows:
+                lines.append(f"        {flow!r},".replace('\n', '\n        '))
+            lines.append("    ],")
         if self.discarded_inputs:
             lines.append(f"    discarded_inputs={self.discarded_inputs!r},")
         if self.discarded_outputs:
@@ -324,7 +334,7 @@ class Chunk:
         if self.wants_to_merge_with_prev:
             lines.append(f"    wants_to_merge_with_prev={self.wants_to_merge_with_prev!r},")
         if self.wants_to_merge_with_next:
-            lines.append(f"    discarded_outputs={self.wants_to_merge_with_next!r},")
+            lines.append(f"    wants_to_merge_with_next={self.wants_to_merge_with_next!r},")
         lines.append(")")
         return "\n".join(lines)
 

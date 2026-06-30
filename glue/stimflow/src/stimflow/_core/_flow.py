@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, cast
+from typing import Any, cast, Literal
 
 import stim
 
@@ -12,7 +12,7 @@ from stimflow._core._tile import Tile
 
 class _UNSPECIFIED_:
     def __repr__(self):
-        return "<keep_original>"
+        return "_UNSPECIFIED"
 _UNSPECIFIED: Any = _UNSPECIFIED_()
 
 
@@ -25,25 +25,26 @@ class Flow:
         start: PauliMap | Tile | None = None,
         end: PauliMap | Tile | None = None,
         measurement_indices: Iterable[int] = (),
-        center: complex | None = None,
+        center: complex | None | Literal['infer'] = 'infer',
         flags: Iterable[Any] = frozenset(),
         sign: bool | None = None,
     ):
         """Initializes a Flow.
 
         Args:
-            start: Defaults to None (empty). The Pauli product operator at the beginning of the
-                circuit (before *all* operations, including resets).
+            start: Defaults to None (empty). The Pauli product operator at the beginning of
+                the circuit (before *all* operations, including resets).
             end: Defaults to None (empty). The Pauli product operator at the end of the
                 circuit (after *all* operations, including measurements).
-            measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
-                into it as it traverses the circuit).
-            center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
-                when the flow is completed into a detector. Incompatible with obs_name.
-            flags: Defaults to empty. Custom information about the flow, that can be used by code
-                operating on chunks for a variety of purposes. For example, this could identify the
-                "color" of the flow in a color code.
-            sign: Defaults to None (unsigned). The expected sign of the flow.
+            measurement_indices: Defaults to empty. Indices of measurements that mediate
+                the flow (that multiply into it as it traverses the circuit).
+            center: Defaults to 'infer' (attempt to infer). Specifies a 2d coordinate to
+                use in metadata, when the flow is completed into a detector. Can be set to a
+                complex number or to None.
+            flags: Defaults to empty. Custom information about the flow, that can be used by
+                code operating on chunks for a variety of purposes. For example, this could
+                identify the "color" of the flow in a color code.
+            sign: Defaults to None (unsigned).
         """
         if start is not None and not isinstance(start, (PauliMap, Tile)):
             raise TypeError(
@@ -57,10 +58,12 @@ class Flow:
             raise TypeError(f"{flags=} is a str instead of a set")
         if isinstance(start, PauliMap) and isinstance(end, PauliMap) and start.obs_name != end.obs_name:
             raise ValueError(f'{start.obs_name=} != {end.obs_name=}')
+        if sign == -1:
+            raise ValueError(f"sign is a bool, not an int. Specify sign=True instead of {sign=}.")
 
-        if center is None and isinstance(start, Tile):
+        if center == 'infer' and isinstance(start, Tile):
             center = start.measure_qubit
-        if center is None and isinstance(end, Tile):
+        if center == 'infer' and isinstance(end, Tile):
             center = end.measure_qubit
 
         if isinstance(start, PauliMap):
@@ -78,12 +81,14 @@ class Flow:
         elif end is None:
             end = PauliMap(obs_name=obs_name)
 
-        if center is None:
+        if center == 'infer':
             qubits: list[complex] = []
             qubits.extend(start.keys())
             qubits.extend(end.keys())
             if qubits:
                 center = sum(qubits) / len(qubits)
+            else:
+                center = None
 
         self.start: PauliMap = start
         self.end: PauliMap = end
@@ -95,6 +100,31 @@ class Flow:
     def to_stim_flow(
         self, *, q2i: dict[complex, int], o2i: Mapping[Any, int | None] | None = None
     ) -> stim.Flow:
+        """Converts this `stimflow.Flow` into a `stim.Flow`.
+
+        Args:
+            q2i: A mapping from stimflow qubit positions to stim qubit indices.
+            o2i: A mapping from stimflow obs names to stim obs indices.
+                This argument can be skipped if the flow has no obs_name.
+
+        Returns:
+            The stim flow.
+
+        Raise:
+            ValueError:
+                The flow has an `obs_name` but `o2i` wasn't specified.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> flow = sf.Flow(
+            ...     start=sf.PauliMap({'Z': 1j}, obs_name="test"),
+            ...     end=sf.PauliMap({'X': 1 + 1j}, obs_name="test"),
+            ...     measurement_indices=[1, 2],
+            ...     sign=True,
+            ... )
+            >>> flow.to_stim_flow(q2i={1j: 2, 1 + 1j: 3}, o2i={"test": 0})
+            stim.Flow("__Z -> -___X xor rec[1] xor rec[2] xor obs[0]")
+        """
         out = self.end.to_stim_pauli_string(q2i)
         if self.sign:
             out.sign = -1
@@ -129,10 +159,59 @@ class Flow:
         center: complex | None = _UNSPECIFIED,
         flags: Iterable[str] = _UNSPECIFIED,
         sign: Any = _UNSPECIFIED,
+        obs_name: None | str = _UNSPECIFIED,
     ) -> Flow:
+        """Returns the same flow but with specified edits.
+
+        Args:
+            start: If specified, the returned flow has the specified start instead of the
+                start used by the original flow. Note: if `obs_name` is also specified,
+                the obs_name of this argument must be consistent with the given `obs_name`.
+            end: If specified, the returned flow has the specified end instead of the
+                end used by the original flow. Note: if `obs_name` is also specified,
+                the obs_name of this argument must be consistent with the given `obs_name`.
+            measurement_indices: If specified, the returned flow has the specified
+                measurement_indices instead of the measurement_indices used by the original
+                flow.
+            center: If specified, the returned flow has the specified center instead of the
+                center used by the original flow.
+            flags: If specified, the returned flow has the specified flags instead of the
+                flags used by the original flow.
+            sign: If specified, the returned flow has the specified sign instead of the
+                sign used by the original flow.
+            obs_name: If specified, the returned flow has the obs_name of both its start and
+                end changed to the given value. If `start` or `end` are specified alongside
+                this argument, they must use the same observable name.
+
+        Returns:
+            The edited flow.
+
+        Raises:
+            ValueError:
+                Specified contradictory `obs_name=` and `start=` values.
+
+                OR
+
+                Specified contradictory `obs_name=` and `end=` values.
+
+                OR
+
+                The edits produced an invalid flow (stimflow.Flow.__init__ raised an error).
+        """
+        if start is not _UNSPECIFIED and obs_name is not _UNSPECIFIED and start.obs_name != obs_name:
+            raise ValueError(f"Specified contradictory observable names in `start` and `obs_name`.\n    {start.obs_name=}\n    {obs_name=}")
+        if end is not _UNSPECIFIED and obs_name is not _UNSPECIFIED and end.obs_name != obs_name:
+            raise ValueError(f"Specified contradictory observable names in `end` and `obs_name`.\n    {end.obs_name=}\n    {obs_name=}")
+
+        start = self.start if start is _UNSPECIFIED else start
+        end = self.end if end is _UNSPECIFIED else end
+        if obs_name is not _UNSPECIFIED:
+            start = start.with_obs_name(obs_name)
+            end = end.with_obs_name(obs_name)
+
         return Flow(
-            start=self.start if start is _UNSPECIFIED else start,
-            end=self.end if end is _UNSPECIFIED else end,
+            start=start,
+            end=end,
             measurement_indices=(
                 self.measurement_indices
                 if measurement_indices is _UNSPECIFIED
@@ -211,17 +290,17 @@ class Flow:
     def __repr__(self):
         lines = ["stimflow.Flow("]
         if self.start:
-            lines.append(f"start={self.start!r},")
+            lines.append(f"    start={self.start!r},")
         if self.end:
-            lines.append(f"end={self.end!r},")
+            lines.append(f"    end={self.end!r},")
         if self.measurement_indices:
-            lines.append(f"measurement_indices={self.measurement_indices!r},")
+            lines.append(f"    measurement_indices={self.measurement_indices!r},")
         if self.flags:
-            lines.append(f"flags={self.flags!r},")
+            lines.append(f"    flags={self.flags!r},")
         if self.center is not None:
-            lines.append(f"center={self.center!r},")
+            lines.append(f"    center={self.center!r},")
         if self.sign is not None:
-            lines.append(f"sign={self.sign!r},")
+            lines.append(f"    sign={self.sign!r},")
         lines.append(")")
         return '\n'.join(lines)
 
@@ -236,6 +315,43 @@ class Flow:
         )
 
     def fused_with_next_flow(self, next_flow: Flow, *, next_flow_measure_offset: int) -> Flow:
+        """Combines flows tail-to-head.
+
+        For example, fusing X1 -> Y2 with Y2 -> Z3 produces X1 -> Z3.
+
+        Measurement sets are xored, adjusting for the offset. Centers are
+        taken as is, preferring the center of the prior flow. Signs are xored.
+        flags are union'd.
+
+        Args:
+            next_flow: The flow that occurs after this flow. Must have a start
+                that matches the end of this flow.
+            next_flow_measure_offset: What offset to add into measurement indices
+                used by the other flow.
+
+        Returns:
+            The fused flow.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> a = sf.Flow(
+            ...     start=sf.PauliMap({1: 'X'}),
+            ...     end=sf.PauliMap({2: 'Y'}),
+            ...     measurement_indices=[-1, 2],
+            ... )
+            >>> b = sf.Flow(
+            ...     start=sf.PauliMap({2: 'Y'}),
+            ...     end=sf.PauliMap({3: 'Z'}),
+            ...     measurement_indices=[-10, 20],
+            ... )
+            >>> a.fused_with_next_flow(b, next_flow_measure_offset=100)
+            stimflow.Flow(
+                start=stimflow.PauliMap({(1+0j): 'X'}),
+                end=stimflow.PauliMap({(3+0j): 'Z'}),
+                measurement_indices=(2, 90, 99, 120),
+                center=(2+0j),
+            )
+        """
         if next_flow.start != self.end:
             raise ValueError("other.start != self.end")
         if next_flow.obs_name != self.obs_name:
@@ -265,7 +381,42 @@ class Flow:
     def __mul__(self, other: Flow) -> Flow:
         """Computes the product of two flows.
 
-        The product of A -> B and C -> D is (A*C) -> (B*D).
+        The product of two flows sends the product of their inputs to the product of their
+        outputs. For example, (A -> B) * (C -> D) = (A*C) -> (B*D).
+
+        Starts are multiplied. Ends are multiplied. Measurement sets are xored. Centers are
+        averaged. Signs are xored. flags are union'd.
+
+        Args:
+            other: The other flow in the multiplication.
+
+        Raises:
+            ValueError:
+                The flows have incompatible observable names.
+
+                OR
+
+                The flows disagree on whether they're unsigned.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> a = sf.Flow(
+            ...     start=sf.PauliMap({1: 'X'}),
+            ...     end=sf.PauliMap({2: 'Y'}),
+            ...     measurement_indices=[-1, 2],
+            ... )
+            >>> b = sf.Flow(
+            ...     start=sf.PauliMap({2: 'Y'}),
+            ...     end=sf.PauliMap({3: 'Z'}),
+            ...     measurement_indices=[-10, 20],
+            ... )
+            >>> a * b
+            stimflow.Flow(
+                start=stimflow.PauliMap({(1+0j): 'X', (2+0j): 'Y'}),
+                end=stimflow.PauliMap({(2+0j): 'Y', (3+0j): 'Z'}),
+                measurement_indices=(-10, -1, 2, 20),
+                center=(2+0j),
+            )
         """
         if self.obs_name != other.obs_name:
             raise ValueError(f"{self.obs_name=} != {other.obs_name=}")
