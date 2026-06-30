@@ -921,7 +921,7 @@ def add_flow(
     end: "PauliMap | Tile | Literal['auto'] | None" = None,
     measurements: "Iterable[Any] | Literal['auto']" = (),
     ignore_unknown_measurements: bool = False,
-    center: complex | None = None,
+    center: "complex | None | Literal['infer']" = 'infer,
     flags: Iterable[str] = frozenset(),
     sign: bool | None = None,
 ) -> None:
@@ -1296,12 +1296,18 @@ def __init__(
     self,
     *,
     metadata_func: Callable[[Flow], FlowMetadata] | None = None,
+    skip_verification_before_append: bool = False,
 ):
     """
 
     Args:
         metadata_func: Determines coordinate data appended to detectors
             (after x, y, and t). Defaults to None (no extra metadata).
+        skip_verification_before_append: Defaults to False. When False, the
+            `verify` method if chunks (or other objects being appended) are
+            verified before being appended. When True, this verification step
+            is skipped. Setting to True will improve performance at the cost
+            of safety.
 
     Examples:
         >>> import stim
@@ -1378,6 +1384,14 @@ def append(
 
     The input flows of the appended chunk must exactly match the open outgoing flows of the
     circuit so far.
+
+    Args:
+        appended: The object to append to the circuit.
+
+            Unless `skip_verification_before_append=True` was specified when constructing the
+            compiler, the `verify` method of this object will be called in order to ensure it
+            is well form. If verification is skipped and the object is not well-formed, the
+            compiler may output an invalid Stim circuit (e.g. with non-deterministic detectors).
     """
 ```
 
@@ -2015,25 +2029,26 @@ def __init__(
     start: PauliMap | Tile | None = None,
     end: PauliMap | Tile | None = None,
     measurement_indices: Iterable[int] = (),
-    center: complex | None = None,
+    center: "complex | None | Literal['infer']" = 'infer,
     flags: Iterable[Any] = frozenset(),
     sign: bool | None = None,
 ):
     """Initializes a Flow.
 
     Args:
-        start: Defaults to None (empty). The Pauli product operator at the beginning of the
-            circuit (before *all* operations, including resets).
+        start: Defaults to None (empty). The Pauli product operator at the beginning of
+            the circuit (before *all* operations, including resets).
         end: Defaults to None (empty). The Pauli product operator at the end of the
             circuit (after *all* operations, including measurements).
-        measurement_indices: Defaults to empty. Indices of measurements that mediate the flow (that multiply
-            into it as it traverses the circuit).
-        center: Defaults to None (unspecified). Specifies a 2d coordinate to use in metadata
-            when the flow is completed into a detector. Incompatible with obs_name.
-        flags: Defaults to empty. Custom information about the flow, that can be used by code
-            operating on chunks for a variety of purposes. For example, this could identify the
-            "color" of the flow in a color code.
-        sign: Defaults to None (unsigned). The expected sign of the flow.
+        measurement_indices: Defaults to empty. Indices of measurements that mediate
+            the flow (that multiply into it as it traverses the circuit).
+        center: Defaults to 'infer' (attempt to infer). Specifies a 2d coordinate to
+            use in metadata, when the flow is completed into a detector. Can be set to a
+            complex number or to None.
+        flags: Defaults to empty. Custom information about the flow, that can be used by
+            code operating on chunks for a variety of purposes. For example, this could
+            identify the "color" of the flow in a color code.
+        sign: Defaults to None (unsigned).
     """
 ```
 
@@ -2048,7 +2063,42 @@ def __mul__(
 ) -> Flow:
     """Computes the product of two flows.
 
-    The product of A -> B and C -> D is (A*C) -> (B*D).
+    The product of two flows sends the product of their inputs to the product of their
+    outputs. For example, (A -> B) * (C -> D) = (A*C) -> (B*D).
+
+    Starts are multiplied. Ends are multiplied. Measurement sets are xored. Centers are
+    averaged. Signs are xored. flags are union'd.
+
+    Args:
+        other: The other flow in the multiplication.
+
+    Raises:
+        ValueError:
+            The flows have incompatible observable names.
+
+            OR
+
+            The flows disagree on whether they're unsigned.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> a = sf.Flow(
+        ...     start=sf.PauliMap({1: 'X'}),
+        ...     end=sf.PauliMap({2: 'Y'}),
+        ...     measurement_indices=[-1, 2],
+        ... )
+        >>> b = sf.Flow(
+        ...     start=sf.PauliMap({2: 'Y'}),
+        ...     end=sf.PauliMap({3: 'Z'}),
+        ...     measurement_indices=[-10, 20],
+        ... )
+        >>> a * b
+        stimflow.Flow(
+            start=stimflow.PauliMap({(1+0j): 'X', (2+0j): 'Y'}),
+            end=stimflow.PauliMap({(2+0j): 'Y', (3+0j): 'Z'}),
+            measurement_indices=(-10, -1, 2, 20),
+            center=(2+0j),
+        )
     """
 ```
 
@@ -2063,6 +2113,43 @@ def fused_with_next_flow(
     *,
     next_flow_measure_offset: int,
 ) -> Flow:
+    """Combines flows tail-to-head.
+
+    For example, fusing X1 -> Y2 with Y2 -> Z3 produces X1 -> Z3.
+
+    Measurement sets are xored, adjusting for the offset. Centers are
+    taken as is, preferring the center of the prior flow. Signs are xored.
+    flags are union'd.
+
+    Args:
+        next_flow: The flow that occurs after this flow. Must have a start
+            that matches the end of this flow.
+        next_flow_measure_offset: What offset to add into measurement indices
+            used by the other flow.
+
+    Returns:
+        The fused flow.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> a = sf.Flow(
+        ...     start=sf.PauliMap({1: 'X'}),
+        ...     end=sf.PauliMap({2: 'Y'}),
+        ...     measurement_indices=[-1, 2],
+        ... )
+        >>> b = sf.Flow(
+        ...     start=sf.PauliMap({2: 'Y'}),
+        ...     end=sf.PauliMap({3: 'Z'}),
+        ...     measurement_indices=[-10, 20],
+        ... )
+        >>> a.fused_with_next_flow(b, next_flow_measure_offset=100)
+        stimflow.Flow(
+            start=stimflow.PauliMap({(1+0j): 'X'}),
+            end=stimflow.PauliMap({(3+0j): 'Z'}),
+            measurement_indices=(2, 90, 99, 120),
+            center=(2+0j),
+        )
+    """
 ```
 
 <a name="stimflow.Flow.obs_name"></a>
@@ -2087,6 +2174,31 @@ def to_stim_flow(
     q2i: dict[complex, int],
     o2i: Mapping[Any, int | None] | None = None,
 ) -> stim.Flow:
+    """Converts this `stimflow.Flow` into a `stim.Flow`.
+
+    Args:
+        q2i: A mapping from stimflow qubit positions to stim qubit indices.
+        o2i: A mapping from stimflow obs names to stim obs indices.
+            This argument can be skipped if the flow has no obs_name.
+
+    Returns:
+        The stim flow.
+
+    Raise:
+        ValueError:
+            The flow has an `obs_name` but `o2i` wasn't specified.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> flow = sf.Flow(
+        ...     start=sf.PauliMap({'Z': 1j}, obs_name="test"),
+        ...     end=sf.PauliMap({'X': 1 + 1j}, obs_name="test"),
+        ...     measurement_indices=[1, 2],
+        ...     sign=True,
+        ... )
+        >>> flow.to_stim_flow(q2i={1j: 2, 1 + 1j: 3}, o2i={"test": 0})
+        stim.Flow("__Z -> -___X xor rec[1] xor rec[2] xor obs[0]")
+    """
 ```
 
 <a name="stimflow.Flow.with_edits"></a>
@@ -2097,13 +2209,51 @@ def to_stim_flow(
 def with_edits(
     self,
     *,
-    start: PauliMap = <keep_original>,
-    end: PauliMap = <keep_original>,
-    measurement_indices: Iterable[int] = <keep_original>,
-    center: complex | None = <keep_original>,
-    flags: Iterable[str] = <keep_original>,
-    sign: Any = <keep_original>,
+    start: PauliMap = _UNSPECIFIED,
+    end: PauliMap = _UNSPECIFIED,
+    measurement_indices: Iterable[int] = _UNSPECIFIED,
+    center: complex | None = _UNSPECIFIED,
+    flags: Iterable[str] = _UNSPECIFIED,
+    sign: Any = _UNSPECIFIED,
+    obs_name: None | str = _UNSPECIFIED,
 ) -> Flow:
+    """Returns the same flow but with specified edits.
+
+    Args:
+        start: If specified, the returned flow has the specified start instead of the
+            start used by the original flow. Note: if `obs_name` is also specified,
+            the obs_name of this argument must be consistent with the given `obs_name`.
+        end: If specified, the returned flow has the specified end instead of the
+            end used by the original flow. Note: if `obs_name` is also specified,
+            the obs_name of this argument must be consistent with the given `obs_name`.
+        measurement_indices: If specified, the returned flow has the specified
+            measurement_indices instead of the measurement_indices used by the original
+            flow.
+        center: If specified, the returned flow has the specified center instead of the
+            center used by the original flow.
+        flags: If specified, the returned flow has the specified flags instead of the
+            flags used by the original flow.
+        sign: If specified, the returned flow has the specified sign instead of the
+            sign used by the original flow.
+        obs_name: If specified, the returned flow has the obs_name of both its start and
+            end changed to the given value. If `start` or `end` are specified alongside
+            this argument, they must use the same observable name.
+
+    Returns:
+        The edited flow.
+
+    Raises:
+        ValueError:
+            Specified contradictory `obs_name=` and `start=` values.
+
+            OR
+
+            Specified contradictory `obs_name=` and `end=` values.
+
+            OR
+
+            The edits produced an invalid flow (stimflow.Flow.__init__ raised an error).
+    """
 ```
 
 <a name="stimflow.Flow.with_transformed_coords"></a>
@@ -2983,7 +3133,7 @@ def commutes(
 def from_xs(
     xs: Iterable[complex],
     *,
-    name: Any = None,
+    obs_name: Any = None,
 ) -> PauliMap:
     """Returns a PauliMap mapping the given qubits to the X basis.
     """
@@ -2997,7 +3147,7 @@ def from_xs(
 def from_ys(
     ys: Iterable[complex],
     *,
-    name: Any = None,
+    obs_name: Any = None,
 ) -> PauliMap:
     """Returns a PauliMap mapping the given qubits to the Y basis.
     """
@@ -3011,7 +3161,7 @@ def from_ys(
 def from_zs(
     zs: Iterable[complex],
     *,
-    name: Any = None,
+    obs_name: Any = None,
 ) -> PauliMap:
     """Returns a PauliMap mapping the given qubits to the Z basis.
     """
