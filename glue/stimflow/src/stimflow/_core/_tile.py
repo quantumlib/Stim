@@ -163,16 +163,33 @@ class Tile:
 
     @functools.cached_property
     def data_set(self) -> frozenset[complex]:
+        """Returns the set of data qubits used by the Tile."""
         return frozenset(e for e in self.data_qubits if e is not None)
 
     @functools.cached_property
     def used_set(self) -> frozenset[complex]:
+        """Returns the set of data and/or measure qubits used by the Tile."""
         if self.measure_qubit is None:
             return self.data_set
         return self.data_set | frozenset([self.measure_qubit])
 
     @functools.cached_property
     def basis(self) -> Literal["X", "Y", "Z"] | None:
+        """Returns the basis of the stabilizer, assuming it has exactly one.
+
+        Returns:
+            If all data qubits have the same basis, returns that basis.
+            Otherwise, returns None.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> sf.Tile(bases="X", data_qubits=[0, 1, 1j]).basis
+            'X'
+            >>> sf.Tile(bases="ZZZ", data_qubits=[0, 1, 1j]).basis
+            'Z'
+            >>> sf.Tile(bases="XYZ", data_qubits=[0, 1, 1j]).basis is None
+            True
+        """
         bs: set[Literal["X", "Y", "Z"]]
         bs = cast(Any, {b for q, b in zip(self.data_qubits, self.bases) if q is not None})
         if len(bs) == 0:

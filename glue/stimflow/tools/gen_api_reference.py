@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import dataclasses
+import functools
 import inspect
 import sys
 import types
@@ -145,11 +146,13 @@ def splay_signature(sig: str) -> list[str]:
 
 
 def _handle_pybind_method(
-    *, obj: Any, is_property: bool, out_obj: DescribedObject, parent: Any, full_name: str
+    *, obj: Any, is_property: bool, is_cached_property: bool, out_obj: DescribedObject, parent: Any, full_name: str
 ) -> tuple[str, bool, str, str]:
     doc = normalize_doc_string(getattr(obj, "__doc__", "") or "")
     if is_property:
         out_obj.lines.append("@property")
+    if is_cached_property:
+        out_obj.lines.append("@functools.cached_property")
     doc_lines = doc.splitlines()
     new_args_name = None
     was_args = False
@@ -162,6 +165,14 @@ def _handle_pybind_method(
             new_args_name = line[line.index("*") : line.index(":")]
         doc_lines_left.append(line)
         was_args = "Args:" in line
+
+    if not doc_lines_left:
+        doc_lines_left.append("<documentation not found>")
+        print(f"WARNING: no documentation for {full_name}", file=sys.stderr)
+
+    if is_cached_property:
+        return_type = obj.func.__annotations__['return']
+        return f"def {term_name}(self) -> {return_type}:", False, "\n".join(doc_lines_left).lstrip(), ""
 
     if is_property:
         sig_name = f"{term_name}(self)"
@@ -206,6 +217,7 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Des
 
     term_name = full_name.split(".")[-1]
     is_property = isinstance(obj, property)
+    is_cached_property = isinstance(obj, functools.cached_property)
     is_method = doc.startswith(term_name)
     has_setter = False
     is_normal_method = isinstance(obj, types.FunctionType)
@@ -228,9 +240,9 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Des
                     text = text.replace(",,", ",")
 
         text = text.replace("numpy.", "np.")
-    elif is_method or is_property:
+    elif is_method or is_property or is_cached_property:
         text, has_setter, doc, sig_name = _handle_pybind_method(
-            obj=obj, is_property=is_property, out_obj=out_obj, parent=parent, full_name=full_name
+            obj=obj, is_property=is_property, is_cached_property=is_cached_property, out_obj=out_obj, parent=parent, full_name=full_name
         )
     elif isinstance(obj, (int, str)):
         text = f"{term_name}: {type(obj).__name__} = {obj!r}"
@@ -339,6 +351,7 @@ from typing import overload, TYPE_CHECKING, Any, Iterable
 import io
 import pathlib
 import numpy as np
+import functools
 ```
 """.strip()
     )

@@ -286,6 +286,70 @@ class ChunkCompiler:
                 verified that the next appended chunk actually has a start interface
                 matching the given expected interface. If set to None, then no checks are
                 performed; no constraints are placed on the next chunk.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+
+            >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+            >>> lz = sf.PauliMap({0: 'Z'}, obs_name='LZ')
+            >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='LX')
+            >>> idle_chunk = sf.Chunk(
+            ...     stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(0, 1) 1
+            ...         QUBIT_COORDS(1, 1) 2
+            ...         R 1
+            ...         TICK
+            ...         CX 0 1
+            ...         TICK
+            ...         CX 2 1
+            ...         TICK
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=zz, measurement_indices=[0]),
+            ...         sf.Flow(end=zz, measurement_indices=[0]),
+            ...         sf.Flow(start=lz, end=lz),
+            ...         sf.Flow(start=lx, end=lx),
+            ...     ]
+            ... )
+
+            >>> compiler = sf.ChunkCompiler()
+            >>> # Tell the compiler to somehow satisfy whatever chunk comes next.
+            >>> compiler.append_magic_init_chunk()
+            >>> # As the next chunk is appended, the compiler notes its expected inputs and
+            >>> # adds corresponding MPP and OBSERVABLE_INCLUDE instructions:
+            >>> compiler.append(idle_chunk)
+            >>> compiler.append_magic_end_chunk()
+            >>> compiler.finish_circuit()
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 1) 2
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+                TICK
+                MPP Z0*Z2
+                TICK
+                R 1
+                TICK
+                CX 0 1
+                TICK
+                CX 2 1
+                TICK
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                TICK
+                MPP Z0*Z2
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                TICK
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+            ''')
         """
         if expected is None:
             self.waiting_for_magic_init = True
@@ -322,6 +386,67 @@ class ChunkCompiler:
             expected: Defaults to None (unused). If set to None, no extra checks are performed.
                 If set to a ChunkInterface, it is verified that the open flows actually
                 correspond to this interface.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+
+            >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+            >>> lz = sf.PauliMap({0: 'Z'}, obs_name='LZ')
+            >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='LX')
+            >>> idle_chunk = sf.Chunk(
+            ...     stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(0, 1) 1
+            ...         QUBIT_COORDS(1, 1) 2
+            ...         R 1
+            ...         TICK
+            ...         CX 0 1
+            ...         TICK
+            ...         CX 2 1
+            ...         TICK
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=zz, measurement_indices=[0]),
+            ...         sf.Flow(end=zz, measurement_indices=[0]),
+            ...         sf.Flow(start=lz, end=lz),
+            ...         sf.Flow(start=lx, end=lx),
+            ...     ]
+            ... )
+
+            >>> compiler = sf.ChunkCompiler()
+            >>> compiler.append_magic_init_chunk()
+            >>> compiler.append(idle_chunk)
+            >>> compiler.append_magic_end_chunk()
+            >>> compiler.finish_circuit()
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 1) 2
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+                TICK
+                MPP Z0*Z2
+                TICK
+                R 1
+                TICK
+                CX 0 1
+                TICK
+                CX 2 1
+                TICK
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                TICK
+                MPP Z0*Z2
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                TICK
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+            ''')
         """
         if self.waiting_for_magic_init:
             self.waiting_for_magic_init = False

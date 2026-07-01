@@ -251,6 +251,7 @@ from typing import overload, TYPE_CHECKING, Any, Iterable
 import io
 import pathlib
 import numpy as np
+import functools
 ```
 
 <a name="stimflow.Chunk"></a>
@@ -1410,6 +1411,67 @@ def append_magic_end_chunk(
         expected: Defaults to None (unused). If set to None, no extra checks are performed.
             If set to a ChunkInterface, it is verified that the open flows actually
             correspond to this interface.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='LZ')
+        >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='LX')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=lx, end=lx),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append_magic_init_chunk()
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+            TICK
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            TICK
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+        ''')
     """
 ```
 
@@ -1429,6 +1491,70 @@ def append_magic_init_chunk(
             verified that the next appended chunk actually has a start interface
             matching the given expected interface. If set to None, then no checks are
             performed; no constraints are placed on the next chunk.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='LZ')
+        >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='LX')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         TICK
+        ...         CX 0 1
+        ...         TICK
+        ...         CX 2 1
+        ...         TICK
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=lx, end=lx),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> # Tell the compiler to somehow satisfy whatever chunk comes next.
+        >>> compiler.append_magic_init_chunk()
+        >>> # As the next chunk is appended, the compiler notes its expected inputs and
+        >>> # adds corresponding MPP and OBSERVABLE_INCLUDE instructions:
+        >>> compiler.append(idle_chunk)
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+            TICK
+            MPP Z0*Z2
+            TICK
+            R 1
+            TICK
+            CX 0 1
+            TICK
+            CX 2 1
+            TICK
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            TICK
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+        ''')
     """
 ```
 
@@ -1519,7 +1645,10 @@ class ChunkInterface:
 # stimflow.ChunkInterface.data_set
 
 # (in class stimflow.ChunkInterface)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of qubits used by the interface's stabilizers and observables.
+    """
 ```
 
 <a name="stimflow.ChunkInterface.partitioned_detector_flows"></a>
@@ -1586,7 +1715,8 @@ def to_svg(
 # stimflow.ChunkInterface.used_set
 
 # (in class stimflow.ChunkInterface)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
     """Returns the set of qubits used in any flow mentioned by the chunk interface.
     """
 ```
@@ -1939,7 +2069,12 @@ def from_auto_rewrite_transitions_using_stable(
 # stimflow.ChunkReflow.removed_inputs
 
 # (in class stimflow.ChunkReflow)
-class removed_inputs:
+@functools.cached_property
+def removed_inputs(self) -> frozenset[PauliMap]:
+    """Returns the set of inputs expected by the reflow chunk.
+
+    This includes stabilizer inputs, observable inputs, and discarded inputs.
+    """
 ```
 
 <a name="stimflow.ChunkReflow.start_code"></a>
@@ -2049,6 +2184,15 @@ def __init__(
             code operating on chunks for a variety of purposes. For example, this could
             identify the "color" of the flow in a color code.
         sign: Defaults to None (unsigned).
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.Flow(start=sf.PauliMap.from_xs([0]), measurement_indices=[1])
+        stimflow.Flow(
+            start=stimflow.PauliMap({0j: 'X'}),
+            measurement_indices=(1,),
+            center=0j,
+        )
     """
 ```
 
@@ -2161,6 +2305,19 @@ def fused_with_next_flow(
 def obs_name(
     self,
 ):
+    """The name of the observable that the flow is mapping.
+
+    If the flow is not acting on a logical operator, this returns None.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.Flow(start=sf.PauliMap.from_xs([0], obs_name='test')).obs_name
+        'test'
+        >>> sf.Flow(end=sf.PauliMap.from_xs([0], obs_name='rest')).obs_name
+        'rest'
+        >>> sf.Flow(start=sf.PauliMap.from_xs([0])).obs_name is None
+        True
+    """
 ```
 
 <a name="stimflow.Flow.to_stim_flow"></a>
@@ -2253,6 +2410,18 @@ def with_edits(
             OR
 
             The edits produced an invalid flow (stimflow.Flow.__init__ raised an error).
+
+
+    Examples:
+        >>> import stimflow as sf
+        >>> flow = sf.Flow(start=sf.PauliMap.from_xs([0]), measurement_indices=[1])
+        >>> flow.with_edits(end=sf.PauliMap.from_xs([1j]))
+        stimflow.Flow(
+            start=stimflow.PauliMap({0j: 'X'}),
+            end=stimflow.PauliMap({1j: 'X'}),
+            measurement_indices=(1,),
+            center=0j,
+        )
     """
 ```
 
@@ -2877,7 +3046,8 @@ class Patch:
 # stimflow.Patch.data_set
 
 # (in class stimflow.Patch)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
     """Returns the set of all data qubits used by tiles in the patch.
     """
 ```
@@ -2887,7 +3057,15 @@ class data_set:
 # stimflow.Patch.m2tile
 
 # (in class stimflow.Patch)
-class m2tile:
+@functools.cached_property
+def m2tile(self) -> dict[complex, Tile]:
+    """Returns a measure-qubit-to-tile dictionary for the patch's tiles.
+
+    Assumes all tiles have a unique measure qubit. Ignores tiles with no measure qubit.
+
+    WARNING: Do not edit the returned dictionary! It is cached and returned by all
+    future calls to this property. Editing it will break future results.
+    """
 ```
 
 <a name="stimflow.Patch.measure_set"></a>
@@ -2895,7 +3073,8 @@ class m2tile:
 # stimflow.Patch.measure_set
 
 # (in class stimflow.Patch)
-class measure_set:
+@functools.cached_property
+def measure_set(self) -> frozenset[complex]:
     """Returns the set of all measure qubits used by tiles in the patch.
     """
 ```
@@ -2905,7 +3084,8 @@ class measure_set:
 # stimflow.Patch.partitioned_tiles
 
 # (in class stimflow.Patch)
-class partitioned_tiles:
+@functools.cached_property
+def partitioned_tiles(self) -> tuple[tuple[Tile, ...], ...]:
     """Returns the tiles of the patch, but split into non-overlapping groups.
     """
 ```
@@ -2938,7 +3118,8 @@ def to_svg(
 # stimflow.Patch.used_set
 
 # (in class stimflow.Patch)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
     """Returns the set of all data and measure qubits used by tiles in the patch.
     """
 ```
@@ -3395,7 +3576,10 @@ def concat_over(
 # stimflow.StabilizerCode.data_set
 
 # (in class stimflow.StabilizerCode)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of data qubits used by the stabilizers/logicals of the code.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.find_distance"></a>
@@ -3428,7 +3612,8 @@ def find_logical_error(
 # stimflow.StabilizerCode.flat_logicals
 
 # (in class stimflow.StabilizerCode)
-class flat_logicals:
+@functools.cached_property
+def flat_logicals(self) -> tuple[PauliMap, ...]:
     """Returns a list of the logical operators defined by the stabilizer code.
 
     It's "flat" because paired X/Z logicals are returned separately instead of
@@ -3507,7 +3692,13 @@ def make_phenom_circuit(
 # stimflow.StabilizerCode.measure_set
 
 # (in class stimflow.StabilizerCode)
-class measure_set:
+@functools.cached_property
+def measure_set(self) -> frozenset[complex]:
+    """Returns the set of measure qubits used by tiles of the code.
+
+    Note that tiles may not specify measure qubits, in which case this will return
+    the empty set.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.patch"></a>
@@ -3621,7 +3812,12 @@ def transversal_measure_chunk(
 # stimflow.StabilizerCode.used_set
 
 # (in class stimflow.StabilizerCode)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
+    """Returns the set of all qubits mentioned by this code.
+
+    This includes data qubits *and* measure qubits.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.verify"></a>
@@ -3964,7 +4160,23 @@ def __init__(
 # stimflow.Tile.basis
 
 # (in class stimflow.Tile)
-class basis:
+@functools.cached_property
+def basis(self) -> Literal['X', 'Y', 'Z'] | None:
+    """Returns the basis of the stabilizer, assuming it has exactly one.
+
+    Returns:
+        If all data qubits have the same basis, returns that basis.
+        Otherwise, returns None.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.Tile(bases="X", data_qubits=[0, 1, 1j]).basis
+        'X'
+        >>> sf.Tile(bases="ZZZ", data_qubits=[0, 1, 1j]).basis
+        'Z'
+        >>> sf.Tile(bases="XYZ", data_qubits=[0, 1, 1j]).basis is None
+        True
+    """
 ```
 
 <a name="stimflow.Tile.center"></a>
@@ -3982,7 +4194,10 @@ def center(
 # stimflow.Tile.data_set
 
 # (in class stimflow.Tile)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of data qubits used by the Tile.
+    """
 ```
 
 <a name="stimflow.Tile.to_pauli_map"></a>
@@ -4000,7 +4215,10 @@ def to_pauli_map(
 # stimflow.Tile.used_set
 
 # (in class stimflow.Tile)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
+    """Returns the set of data and/or measure qubits used by the Tile.
+    """
 ```
 
 <a name="stimflow.Tile.with_bases"></a>

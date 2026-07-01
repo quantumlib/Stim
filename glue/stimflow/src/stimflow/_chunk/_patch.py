@@ -94,7 +94,14 @@ class Patch:
 
     @functools.cached_property
     def m2tile(self) -> dict[complex, Tile]:
-        return {e.measure_qubit: e for e in self.tiles}
+        """Returns a measure-qubit-to-tile dictionary for the patch's tiles.
+
+        Assumes all tiles have a unique measure qubit. Ignores tiles with no measure qubit.
+
+        WARNING: Do not edit the returned dictionary! It is cached and returned by all
+        future calls to this property. Editing it will break future results.
+        """
+        return {e.measure_qubit: e for e in self.tiles if e.measure_qubit is not None}
 
     def _repr_svg_(self) -> str:
         return self.to_svg()

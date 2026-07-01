@@ -422,6 +422,8 @@ class StabilizerCode:
 
     @functools.cached_property
     def data_set(self) -> frozenset[complex]:
+        """Returns the set of data qubits used by the stabilizers/logicals of the code.
+        """
         result = set(self.stabilizers.data_set)
         for obs in self.logicals:
             if isinstance(obs, PauliMap):
@@ -434,10 +436,19 @@ class StabilizerCode:
 
     @functools.cached_property
     def measure_set(self) -> frozenset[complex]:
+        """Returns the set of measure qubits used by tiles of the code.
+
+        Note that tiles may not specify measure qubits, in which case this will return
+        the empty set.
+        """
         return self.stabilizers.measure_set
 
     @functools.cached_property
     def used_set(self) -> frozenset[complex]:
+        """Returns the set of all qubits mentioned by this code.
+
+        This includes data qubits *and* measure qubits.
+        """
         result = set(self.stabilizers.used_set)
         for obs in self.logicals:
             if isinstance(obs, PauliMap):

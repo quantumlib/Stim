@@ -45,6 +45,15 @@ class Flow:
                 code operating on chunks for a variety of purposes. For example, this could
                 identify the "color" of the flow in a color code.
             sign: Defaults to None (unsigned).
+
+        Examples:
+            >>> import stimflow as sf
+            >>> sf.Flow(start=sf.PauliMap.from_xs([0]), measurement_indices=[1])
+            stimflow.Flow(
+                start=stimflow.PauliMap({0j: 'X'}),
+                measurement_indices=(1,),
+                center=0j,
+            )
         """
         if start is not None and not isinstance(start, (PauliMap, Tile)):
             raise TypeError(
@@ -148,6 +157,19 @@ class Flow:
 
     @property
     def obs_name(self) -> Any:
+        """The name of the observable that the flow is mapping.
+
+        If the flow is not acting on a logical operator, this returns None.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> sf.Flow(start=sf.PauliMap.from_xs([0], obs_name='test')).obs_name
+            'test'
+            >>> sf.Flow(end=sf.PauliMap.from_xs([0], obs_name='rest')).obs_name
+            'rest'
+            >>> sf.Flow(start=sf.PauliMap.from_xs([0])).obs_name is None
+            True
+        """
         return self.start.obs_name
 
     def with_edits(
@@ -197,6 +219,18 @@ class Flow:
                 OR
 
                 The edits produced an invalid flow (stimflow.Flow.__init__ raised an error).
+
+
+        Examples:
+            >>> import stimflow as sf
+            >>> flow = sf.Flow(start=sf.PauliMap.from_xs([0]), measurement_indices=[1])
+            >>> flow.with_edits(end=sf.PauliMap.from_xs([1j]))
+            stimflow.Flow(
+                start=stimflow.PauliMap({0j: 'X'}),
+                end=stimflow.PauliMap({1j: 'X'}),
+                measurement_indices=(1,),
+                center=0j,
+            )
         """
         if start is not _UNSPECIFIED and obs_name is not _UNSPECIFIED and start.obs_name != obs_name:
             raise ValueError(f"Specified contradictory observable names in `start` and `obs_name`.\n    {start.obs_name=}\n    {obs_name=}")
