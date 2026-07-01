@@ -251,6 +251,7 @@ from typing import overload, TYPE_CHECKING, Any, Iterable
 import io
 import pathlib
 import numpy as np
+import functools
 ```
 
 <a name="stimflow.Chunk"></a>
@@ -1519,7 +1520,10 @@ class ChunkInterface:
 # stimflow.ChunkInterface.data_set
 
 # (in class stimflow.ChunkInterface)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of qubits used by the interface's stabilizers and observables.
+    """
 ```
 
 <a name="stimflow.ChunkInterface.partitioned_detector_flows"></a>
@@ -1586,7 +1590,8 @@ def to_svg(
 # stimflow.ChunkInterface.used_set
 
 # (in class stimflow.ChunkInterface)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
     """Returns the set of qubits used in any flow mentioned by the chunk interface.
     """
 ```
@@ -1939,7 +1944,12 @@ def from_auto_rewrite_transitions_using_stable(
 # stimflow.ChunkReflow.removed_inputs
 
 # (in class stimflow.ChunkReflow)
-class removed_inputs:
+@functools.cached_property
+def removed_inputs(self) -> frozenset[PauliMap]:
+    """Returns the set of inputs expected by the reflow chunk.
+
+    This includes stabilizer inputs, observable inputs, and discarded inputs.
+    """
 ```
 
 <a name="stimflow.ChunkReflow.start_code"></a>
@@ -2161,6 +2171,10 @@ def fused_with_next_flow(
 def obs_name(
     self,
 ):
+    """The name of the observable that the flow is mapping.
+
+    If the flow is not acting on a logical operator, this returns None.
+    """
 ```
 
 <a name="stimflow.Flow.to_stim_flow"></a>
@@ -2877,7 +2891,8 @@ class Patch:
 # stimflow.Patch.data_set
 
 # (in class stimflow.Patch)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
     """Returns the set of all data qubits used by tiles in the patch.
     """
 ```
@@ -2887,7 +2902,15 @@ class data_set:
 # stimflow.Patch.m2tile
 
 # (in class stimflow.Patch)
-class m2tile:
+@functools.cached_property
+def m2tile(self) -> dict[complex, Tile]:
+    """Returns a measure-qubit-to-tile dictionary for the patch's tiles.
+
+    Assumes all tiles have a unique measure qubit. Ignores tiles with no measure qubit.
+
+    WARNING: Do not edit the returned dictionary! It is cached and returned by all
+    future calls to this property. Editing it will break future results.
+    """
 ```
 
 <a name="stimflow.Patch.measure_set"></a>
@@ -2895,7 +2918,8 @@ class m2tile:
 # stimflow.Patch.measure_set
 
 # (in class stimflow.Patch)
-class measure_set:
+@functools.cached_property
+def measure_set(self) -> frozenset[complex]:
     """Returns the set of all measure qubits used by tiles in the patch.
     """
 ```
@@ -2905,7 +2929,8 @@ class measure_set:
 # stimflow.Patch.partitioned_tiles
 
 # (in class stimflow.Patch)
-class partitioned_tiles:
+@functools.cached_property
+def partitioned_tiles(self) -> tuple[tuple[Tile, ...], ...]:
     """Returns the tiles of the patch, but split into non-overlapping groups.
     """
 ```
@@ -2938,7 +2963,8 @@ def to_svg(
 # stimflow.Patch.used_set
 
 # (in class stimflow.Patch)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
     """Returns the set of all data and measure qubits used by tiles in the patch.
     """
 ```
@@ -3395,7 +3421,10 @@ def concat_over(
 # stimflow.StabilizerCode.data_set
 
 # (in class stimflow.StabilizerCode)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of data qubits used by the stabilizers/logicals of the code.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.find_distance"></a>
@@ -3428,7 +3457,8 @@ def find_logical_error(
 # stimflow.StabilizerCode.flat_logicals
 
 # (in class stimflow.StabilizerCode)
-class flat_logicals:
+@functools.cached_property
+def flat_logicals(self) -> tuple[PauliMap, ...]:
     """Returns a list of the logical operators defined by the stabilizer code.
 
     It's "flat" because paired X/Z logicals are returned separately instead of
@@ -3507,7 +3537,13 @@ def make_phenom_circuit(
 # stimflow.StabilizerCode.measure_set
 
 # (in class stimflow.StabilizerCode)
-class measure_set:
+@functools.cached_property
+def measure_set(self) -> frozenset[complex]:
+    """Returns the set of measure qubits used by tiles of the code.
+
+    Note that tiles may not specify measure qubits, in which case this will return
+    the empty set.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.patch"></a>
@@ -3621,7 +3657,12 @@ def transversal_measure_chunk(
 # stimflow.StabilizerCode.used_set
 
 # (in class stimflow.StabilizerCode)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
+    """Returns the set of all qubits mentioned by this code.
+
+    This includes data qubits *and* measure qubits.
+    """
 ```
 
 <a name="stimflow.StabilizerCode.verify"></a>
@@ -3964,7 +4005,23 @@ def __init__(
 # stimflow.Tile.basis
 
 # (in class stimflow.Tile)
-class basis:
+@functools.cached_property
+def basis(self) -> Literal['X', 'Y', 'Z'] | None:
+    """Returns the basis of the stabilizer, assuming it has exactly one.
+
+    Returns:
+        If all data qubits have the same basis, returns that basis.
+        Otherwise, returns None.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> sf.Tile(bases="X", data_qubits=[0, 1, 1j]).basis
+        'X'
+        >>> sf.Tile(bases="ZZZ", data_qubits=[0, 1, 1j]).basis
+        'Z'
+        >>> sf.Tile(bases="XYZ", data_qubits=[0, 1, 1j]).basis is None
+        True
+    """
 ```
 
 <a name="stimflow.Tile.center"></a>
@@ -3982,7 +4039,10 @@ def center(
 # stimflow.Tile.data_set
 
 # (in class stimflow.Tile)
-class data_set:
+@functools.cached_property
+def data_set(self) -> frozenset[complex]:
+    """Returns the set of data qubits used by the Tile.
+    """
 ```
 
 <a name="stimflow.Tile.to_pauli_map"></a>
@@ -4000,7 +4060,10 @@ def to_pauli_map(
 # stimflow.Tile.used_set
 
 # (in class stimflow.Tile)
-class used_set:
+@functools.cached_property
+def used_set(self) -> frozenset[complex]:
+    """Returns the set of data and/or measure qubits used by the Tile.
+    """
 ```
 
 <a name="stimflow.Tile.with_bases"></a>

@@ -196,6 +196,10 @@ class ChunkReflow:
 
     @functools.cached_property
     def removed_inputs(self) -> frozenset[PauliMap]:
+        """Returns the set of inputs expected by the reflow chunk.
+
+        This includes stabilizer inputs, observable inputs, and discarded inputs.
+        """
         return frozenset(v for vs in self.out2in.values() for v in vs) | frozenset(self.discard_in)
 
     def verify(

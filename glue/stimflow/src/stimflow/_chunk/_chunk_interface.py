@@ -137,6 +137,7 @@ class ChunkInterface:
 
     @functools.cached_property
     def data_set(self) -> frozenset[complex]:
+        """Returns the set of qubits used by the interface's stabilizers and observables."""
         return frozenset(
             q
             for pauli_string_list in [self.ports, self.discards]

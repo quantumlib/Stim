@@ -148,6 +148,10 @@ class Flow:
 
     @property
     def obs_name(self) -> Any:
+        """The name of the observable that the flow is mapping.
+
+        If the flow is not acting on a logical operator, this returns None.
+        """
         return self.start.obs_name
 
     def with_edits(
