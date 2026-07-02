@@ -231,9 +231,51 @@ class ChunkCompiler:
     def finish_circuit(self) -> stim.Circuit:
         """Returns the circuit built by the compiler.
 
-        Performs some final translation steps:
-        - Re-indexing the qubits to be in a sorted order.
-        - Re-indexing the observables to omit discarded observable flows.
+        Also performs some final polishing steps on the circuit, such as re-indexing the
+        qubits to be in a sorted-by-position order and re-indexing the observables to omit
+        unused indices due to e.g. discarded observable flows.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+            >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_ZI')
+            >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='L_XX')
+            >>> idle_chunk = sf.Chunk(
+            ...     stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(0, 1) 1
+            ...         QUBIT_COORDS(1, 1) 2
+            ...         R 1
+            ...         CX 0 1 2 1
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=zz, measurement_indices=[0]),
+            ...         sf.Flow(end=zz, measurement_indices=[0]),
+            ...         sf.Flow(start=lz, end=lz),
+            ...         sf.Flow(start=lx, end=lx),
+            ...     ]
+            ... )
+
+            >>> compiler = sf.ChunkCompiler()
+            >>> compiler.append(idle_chunk.start_code().transversal_init_chunk(basis='Z'))
+            >>> compiler.append(idle_chunk)  # Note: L_XX discarded by transversal chunks.
+            >>> compiler.append(idle_chunk.end_code().transversal_measure_chunk(basis='Z'))
+            >>> compiler.finish_circuit()
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 1) 2
+                R 0 2 1
+                CX 0 1 2 1
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                M 2 0
+                DETECTOR(0.5, 0.5, 0) rec[-3] rec[-2] rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            ''')
         """
 
         if self.open_flows or self.waiting_for_magic_init:
@@ -505,18 +547,74 @@ class ChunkCompiler:
         return ChunkInterface(ports, discards=discards)
 
     def append(self, appended: Chunk | ChunkLoop | ChunkReflow) -> None:
-        """Appends a chunk to the circuit being built.
+        """Appends a circuit chunk, or other object, to the circuit being built.
 
-        The input flows of the appended chunk must exactly match the open outgoing flows of the
-        circuit so far.
+        The input flows of the appended chunk must exactly match the open outgoing flows of
+        the circuit so far.
 
         Args:
             appended: The object to append to the circuit.
+
+                This can be a Chunk, a ChunkReflow, or a ChunkLoop.
 
                 Unless `skip_verification_before_append=True` was specified when constructing the
                 compiler, the `verify` method of this object will be called in order to ensure it
                 is well form. If verification is skipped and the object is not well-formed, the
                 compiler may output an invalid Stim circuit (e.g. with non-deterministic detectors).
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+            >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_REP_CODE_ZZ')
+            >>> idle_chunk = sf.Chunk(
+            ...     stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(0, 1) 1
+            ...         QUBIT_COORDS(1, 1) 2
+            ...         R 1
+            ...         CX 0 1 2 1
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=zz, measurement_indices=[0]),
+            ...         sf.Flow(end=zz, measurement_indices=[0]),
+            ...         sf.Flow(start=lz, end=lz),
+            ...     ]
+            ... )
+
+            >>> compiler = sf.ChunkCompiler()
+            >>> compiler.append(idle_chunk.start_code().transversal_init_chunk(basis='Z'))
+            >>> compiler.append(idle_chunk * 100)
+            >>> compiler.append(idle_chunk.end_code().transversal_measure_chunk(basis='Z'))
+            >>> compiler.finish_circuit()
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 1) 2
+                R 0 2 1
+                CX 0 1 2 1
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                TICK
+                REPEAT 98 {
+                    R 1
+                    CX 0 1 2 1
+                    M 1
+                    DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                    SHIFT_COORDS(0, 0, 1)
+                    TICK
+                }
+                R 1
+                CX 0 1 2 1
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                M 2 0
+                DETECTOR(0.5, 0.5, 0) rec[-3] rec[-2] rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            ''')
         """
         __tracebackhide__ = True
         if not self.skip_verification_before_append:
