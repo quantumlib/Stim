@@ -83,10 +83,39 @@ class StabilizerCode:
 
     @functools.cached_property
     def flat_logicals(self) -> tuple[PauliMap, ...]:
-        """Returns a list of the logical operators defined by the stabilizer code.
+        """Returns a tuple of the logical operators defined by the stabilizer code.
 
         It's "flat" because paired X/Z logicals are returned separately instead of
         as a tuple.
+
+        Returns:
+            The tuple of logical operators.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1, 2]}, obs_name="pair_LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j, 2j]}, obs_name="pair_LZ"),
+            ...         ),
+            ...         sf.PauliMap({"X": [3, 4, 5]}, obs_name="commuting_x0"),
+            ...         sf.PauliMap({"X": [6, 7, 8]}, obs_name="commuting_x1"),
+            ...     ],
+            ...     scattered_logicals=[
+            ...         sf.PauliMap({"X": [10, 11, 12]}, obs_name="scattered_x"),
+            ...         sf.PauliMap({"Y": [10, 11j, 12j]}, obs_name="scattered_y"),
+            ...     ],
+            ... )
+            >>> for logical in code.flat_logicals:
+            ...     print(logical)
+            (obs_name='pair_LX') X0*X1*X2
+            (obs_name='pair_LZ') Z0*Z1j*Z2j
+            (obs_name='commuting_x0') X3*X4*X5
+            (obs_name='commuting_x1') X6*X7*X8
+            (obs_name='scattered_x') X10*X11*X12
+            (obs_name='scattered_y') Y11j*Y12j*Y10
         """
         result: list[PauliMap] = []
         for logical in self.logicals:

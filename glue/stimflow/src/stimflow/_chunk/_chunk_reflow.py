@@ -40,6 +40,47 @@ class ChunkReflow:
     def from_auto_rewrite(
         *, inputs: Iterable[PauliMap], out2in: dict[PauliMap, list[PauliMap] | Literal["auto"]]
     ) -> ChunkReflow:
+        """Creates a ChunkReflow while allowing for some products to solved automatically.
+
+        In particular, the `out2in` dictionary can map an output to the string "auto"
+        instead of to an explicit list of PauliMap inputs. The method will then solve for
+        the product of inputs that produces the output.
+
+        Args:
+            inputs: The input Pauli products that are available for use when producing an
+                output Pauli product.
+            out2in: A dictionary mapping output Pauli products to an input Pauli product,
+                or list of input Pauli products, or the string "auto" in order to
+                automatically find a satisfying list of Pauli products that produces the
+                output.
+
+        Returns:
+            A stimflow.ChunkReflow instance containing the desired output-to-input mappings.
+
+        Raises:
+            ValueError:
+                An output was mapped to "auto", but could not be formed as a product of the
+                available inputs.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> xi = sf.PauliMap({0: "X"})
+            >>> ix = sf.PauliMap({1: "X"})
+            >>> xx = sf.PauliMap({0: "X", 1: "X"})
+            >>> sf.ChunkReflow.from_auto_rewrite(
+            ...     inputs=[xi, xx],
+            ...     out2in={ix: "auto", xi: "auto"},
+            ... )
+            stimflow.ChunkReflow(
+                out2in={
+                    stimflow.PauliMap({(1+0j): 'X'}): [
+                        stimflow.PauliMap({0j: 'X'}),
+                        stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                    ],
+                    stimflow.PauliMap({0j: 'X'}): [stimflow.PauliMap({0j: 'X'})],
+                },
+            )
+        """
         new_out2in: dict[PauliMap, list[PauliMap]] = {}
         unsolved: list[PauliMap] = []
         for pk, pv in out2in.items():
@@ -289,10 +330,12 @@ class ChunkReflow:
                     lines.append(f"            {v2!r},")
                 lines.append("        ],")
         lines.append("    },")
-        lines.append("    discard_in=(")
-        for discarded_in in self.discard_in:
-            lines.append(f"        {discarded_in!r},")
-        lines.append("    ),")
+        if self.discard_in:
+            lines.append("    discard_in=(")
+            for discarded_in in self.discard_in:
+                lines.append(f"        {discarded_in!r},")
+            lines.append("    ),")
+        lines.append(")")
         return "\n".join(lines)
 
     def __str__(self) -> str:

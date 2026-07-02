@@ -1,6 +1,21 @@
 import stimflow
 
 
+def test_repr():
+    xi = stimflow.PauliMap({0: "X"})
+    ix = stimflow.PauliMap({1: "X"})
+    xx = stimflow.PauliMap({0: "X", 1: "X"})
+    zz = stimflow.PauliMap({0: "Z", 1: "Z"})
+    val = stimflow.ChunkReflow(
+        out2in={xi: [ix, xx], ix: [ix]},
+        discard_in=[zz],
+    )
+    repr_text = repr(val)
+    reconstructed = eval(repr_text, {"stimflow": stimflow}, {})
+    assert reconstructed == val
+    assert repr(reconstructed) == repr_text
+
+
 def test_from_auto_rewrite_xs():
     result = stimflow.ChunkReflow.from_auto_rewrite(
         inputs=[

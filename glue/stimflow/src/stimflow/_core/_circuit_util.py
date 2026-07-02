@@ -77,6 +77,60 @@ def gate_counts_for_circuit(circuit: stim.Circuit) -> collections.Counter[str]:
     Feedback instructions like `CX rec[-1] 0` become the gate "feedback".
 
     Sweep instructions like `CX sweep[2] 0` become the gate "sweep".
+
+
+    Args:
+        circuit: The circuit to count gates from.
+
+    Returns:
+        A `collections.Counter` mapping gate names to gate counts.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     H 0 1 2 3
+        ...     CX 0 1
+        ...     TICK
+        ...     CX 2 3
+        ...     MZZ 2 3
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        CX: 2
+        H: 4
+        MZZ: 1
+        QUBIT_COORDS: 1
+        TICK: 1
+
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     MPP X0*X1 X0*Y1*Z2
+        ...     CX rec[-1] 2 rec[-1] 3 sweep[0] 2
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        MXX: 1
+        MXYZ: 1
+        feedback: 2
+        sweep: 1
+
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     CX 0 1
+        ...     REPEAT 1000 {
+        ...         H 0 1
+        ...         MPAD 0 0 0 0
+        ...         DETECTOR rec[-1] rec[-2]
+        ...         TICK
+        ...     }
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        CX: 1
+        DETECTOR: 1000
+        H: 2000
+        MPAD: 4000
+        TICK: 1000
     """
     ANNOTATION_OPS = {
         "DETECTOR",
@@ -84,7 +138,6 @@ def gate_counts_for_circuit(circuit: stim.Circuit) -> collections.Counter[str]:
         "QUBIT_COORDS",
         "SHIFT_COORDS",
         "TICK",
-        "MPAD",
     }
 
     out: collections.Counter[str] = collections.Counter()
@@ -155,55 +208,49 @@ def gates_used_by_circuit(circuit: stim.Circuit) -> set[str]:
     Feedback instructions like `CX rec[-1] 0` become the gate "feedback".
 
     Sweep instructions like `CX sweep[2] 0` become the gate "sweep".
+
+    Args:
+        circuit: The circuit to get gates from.
+
+    Returns:
+        The set of names of gates being used.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     H 0 1
+        ...     CX 0 1
+        ...     TICK
+        ...     CX 2 3
+        ...     MZZ 2 3
+        ... '''))
+        >>> sorted(gates)
+        ['CX', 'H', 'MZZ', 'QUBIT_COORDS', 'TICK']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     MPP X0*X1 X0*Y1*Z2
+        ... '''))
+        >>> sorted(gates)
+        ['MXX', 'MXYZ']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     M 0
+        ...     CX rec[-1] 2
+        ... '''))
+        >>> sorted(gates)
+        ['M', 'feedback']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     CX sweep[0] 2
+        ... '''))
+        >>> sorted(gates)
+        ['sweep']
     """
-    out = set()
-    for instruction in circuit:
-        if isinstance(instruction, stim.CircuitRepeatBlock):
-            out |= gates_used_by_circuit(instruction.body_copy())
-
-        elif instruction.name in ["CX", "CY", "CZ", "XCZ", "YCZ"]:
-            for a, b in instruction.target_groups():
-                if a.is_measurement_record_target or b.is_measurement_record_target:
-                    out.add("feedback")
-                elif a.is_sweep_bit_target or b.is_sweep_bit_target:
-                    out.add("sweep")
-                else:
-                    out.add(instruction.name)
-
-        elif instruction.name == "MPP":
-            op = "M"
-            targets = instruction.targets_copy()
-            is_continuing = True
-            for t in targets:
-                if t.is_combiner:
-                    is_continuing = True
-                    continue
-                p = (
-                    "X"
-                    if t.is_x_target
-                    else "Y" if t.is_y_target else "Z" if t.is_z_target else "?"
-                )
-                if is_continuing:
-                    op += p
-                    is_continuing = False
-                else:
-                    if op == "MZ":
-                        op = "M"
-                    out.add(op)
-                    op = "M" + p
-            if op:
-                if op == "MZ":
-                    op = "M"
-                out.add(op)
-
-        else:
-            out.add(instruction.name)
-
-    return out
+    return set(gate_counts_for_circuit(circuit).keys())
 
 
 def stim_circuit_with_transformed_coords(
-    circuit: stim.Circuit, transform: Callable[[complex], complex]
+    circuit: stim.Circuit,
+    transform: Callable[[complex], complex],
 ) -> stim.Circuit:
     """Returns an equivalent circuit, but with the qubit and detector position metadata modified.
     The "position" is assumed to be the first two coordinates. These are mapped to the real and
@@ -221,6 +268,24 @@ def stim_circuit_with_transformed_coords(
 
     Returns:
         The transformed circuit.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> sf.stim_circuit_with_transformed_coords(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     QUBIT_COORDS(1, 0) 1
+        ...     CX 0 1
+        ...     M 1
+        ...     DETECTOR(2, 3) rec[-1]
+        ... '''), lambda e: e*2j + 100)
+        stim.Circuit('''
+            QUBIT_COORDS(100, 0) 0
+            QUBIT_COORDS(100, 2) 1
+            CX 0 1
+            M 1
+            DETECTOR(94, 4) rec[-1]
+        ''')
     """
     result = stim.Circuit()
     for instruction in circuit:
@@ -253,7 +318,9 @@ def stim_circuit_with_transformed_coords(
 
 
 def stim_circuit_with_transformed_moments(
-    circuit: stim.Circuit, *, moment_func: Callable[[stim.Circuit], stim.Circuit]
+    circuit: stim.Circuit,
+    *,
+    moment_func: Callable[[stim.Circuit], stim.Circuit],
 ) -> stim.Circuit:
     """Applies a transformation to regions of a circuit separated by TICKs and blocks.
 
@@ -330,23 +397,53 @@ def append_reindexed_content_to_circuit(
     obs_i2i: dict[int, int | Literal["discard"]],
     rewrite_detector_time_coordinates: bool = False,
 ) -> None:
-    """Reindexes content and appends it to a circuit.
+    """Reindexes content from one circuit while appending it to another.
 
-    Note that QUBIT_COORDS instructions are skipped.
+    For example, if two circuits use different qubit-position-to-qubit-index mappings, this
+    method can be used to account for the difference while appending.
+
+    Note that `QUBIT_COORDS` instructions in the `content` circuit are skipped. They aren't
+    appended to `out_circuit`.
 
     Args:
         out_circuit: The output circuit. The circuit being edited.
         content: The circuit to be appended to the output circuit.
         qubit_i2i: A dictionary specifying how qubit indices are remapped. Indices outside the
             map are not changed.
-        obs_i2i: A dictionary specifying how observable indices are remapped. Indices outside the
-            map are not changed.
+        obs_i2i: A dictionary specifying how observable indices are remapped. Indices
+            outside the map are not changed. Indices can be mapped to the string "discard"
+            in order to discard `OBSERVABLE_INCLUDE` operations from the source that target
+            that index (rather than rewriting the index and appending it to the destination
+            circuit).
         rewrite_detector_time_coordinates: Defaults to False. When set to True, SHIFT_COORD and
             DETECTOR instructions are automatically rewritten to track the passage of time without
             using the same detector position twice at the same time.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> out_circuit = stim.Circuit("H 5")
+        >>> sf.append_reindexed_content_to_circuit(
+        ...     out_circuit=out_circuit,
+        ...     content=stim.Circuit('''
+        ...          CX 0 1
+        ...          M 0 1
+        ...          OBSERVABLE_INCLUDE(0) rec[-2]
+        ...          OBSERVABLE_INCLUDE(1) rec[-1]
+        ...     '''),
+        ...     qubit_i2i={0: 100, 1: 101},
+        ...     obs_i2i={1: 0, 0: "discard"},
+        ... )
+        >>> out_circuit
+        stim.Circuit('''
+            H 5
+            CX 100 101
+            M 100 101
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        ''')
     """
 
-    def rewritten_targets(inst: stim.CircuitInstruction) -> list[stim.GateTarget]:
+    def _rewritten_targets(inst: stim.CircuitInstruction) -> list[stim.GateTarget]:
         new_targets: list[int | stim.GateTarget] = []
         for t in inst.targets_copy():
             if t.is_qubit_target:
@@ -397,7 +494,7 @@ def append_reindexed_content_to_circuit(
             obs_index = obs_i2i.get(obs_index, obs_index)
             if obs_index != "discard":
                 out_circuit.append(
-                    "OBSERVABLE_INCLUDE", rewritten_targets(inst), obs_index, tag=inst.tag
+                    "OBSERVABLE_INCLUDE", _rewritten_targets(inst), obs_index, tag=inst.tag
                 )
         elif inst.name == "MPAD":
             out_circuit.append(inst)
@@ -408,7 +505,7 @@ def append_reindexed_content_to_circuit(
             out_circuit.append(inst)
         else:
             out_circuit.append(
-                inst.name, rewritten_targets(inst), inst.gate_args_copy(), tag=inst.tag
+                inst.name, _rewritten_targets(inst), inst.gate_args_copy(), tag=inst.tag
             )
 
     if rewrite_detector_time_coordinates and det_offset_needed > 0:
